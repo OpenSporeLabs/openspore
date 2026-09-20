@@ -55,6 +55,24 @@ Full binary recon report: `docs/RECON-3.1.0.22.md` — entry/bootstrap chain,
 namespace map, singletons (cAppSystem/cSimulatorSystem), DBPF v3, Pollinator
 service, knowledge gaps, Phase 1 priorities.
 
+### RenderWare / rendering research (2026-09-20): COMPLETE
+Report: `docs/RENDERWARE-RESEARCH.md` (17 sections) + `knowledgegraph/spore.db`
+entries. Headline findings:
+- RW3 is **statically linked** into SporeApp.exe (source-path strings prove it);
+  D3D9 backend behind a Maxis `Graphics::` device wrapper.
+- **RW4 container** spec fully decoded + validated on real assets (header/manifest/
+  sections/type codes incl. `0x2000b`/`0x7000b` still undocumented).
+- **gmdl (GameModelResource)** top-level layout decoded + validated (v8 heightfield
+  patches in FloraModels group).
+- **No runtime HLSL**: `d3dx9_27.dll` imported but zero call sites — shaders are
+  pre-compiled D3D9 bytecode in packages (groups `0x40212001`-`0x40212004`).
+- Draw path decompiled: active-shader vertex decl → per-stream rebind-on-change →
+  SetIndices scope check → DrawIndexedPrimitive.
+- Licenses: **librw = MIT (usable)**; re3/reVC = unlicensed (reference only);
+  Spore-ModAPI / SporeModder-FX = GPL (reference only).
+- Asset parsers live in `/tmp/opencode/spore/` (`dbpf.py` + QFS, `rw4.py`,
+  `typescan.py`) — promote to `tools/` in Phase 1.
+
 ---
 
 ## Next step: Phase 1 — Foundation
@@ -63,6 +81,8 @@ Build the first C++ engine skeleton + basic structures, compile clean, unit-test
 Pre-step (recon §10): run a Ghidra vtable-detection pass on the project so class/vtable
 structure is labeled before any code-generation work relies on it.
 
+0. **Tooling**: promote `/tmp/opencode/spore/{dbpf,rw4,typescan}.py` into `tools/`
+   (asset reference parsers; differential oracles for later C++ ports).
 1. **Build system**: `CMakeLists.txt` (C++17, Clang/GCC, `clang-tidy`, `cppcheck`, `clang-format` modified-Google, `fmt`).
 2. **Core structures** (`src/core/`): `Vector3`, `Quaternion`, `Matrix4`, `Stream`
    (binary read/write), `ResourceHandle` / `ResourceManager` stub.
