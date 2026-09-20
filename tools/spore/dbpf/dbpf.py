@@ -23,7 +23,8 @@ def type4cc(t):
 
 
 def read(pkg):
-    data = open(pkg, 'rb').read()
+    with open(pkg, 'rb') as f:
+        data = f.read()
     magic = data[:4].decode('latin1')
     big = magic == 'DBBF'
     assert magic in ('DBPF', 'DBBF'), f"bad magic {magic!r}"

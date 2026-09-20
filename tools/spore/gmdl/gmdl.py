@@ -81,7 +81,8 @@ def shader_data_size(k):
 class Gmdl:
     def __init__(self, path):
         self.path = path
-        self.b = open(path, 'rb').read()
+        with open(path, 'rb') as f:
+            self.b = f.read()
         self.parse()
 
     def parse(self):

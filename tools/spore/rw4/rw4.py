@@ -26,7 +26,8 @@ TYPES = {0x10030: 'BaseResource', 0x10031: '?', 0x10032: '?', 0x10010: '?', 0x10
 
 
 def parse(path):
-    b = open(path, 'rb').read()
+    with open(path, 'rb') as f:
+        b = f.read()
     assert b[:28] == MAGIC, f"bad magic {b[:12].hex()}"
     ftype = u32(b, 0x1C)
     tname = {1: 'MODEL', 0x04000000: 'TEXTURE', 0xCAFED00D: 'SPECIAL'}.get(ftype, f"0x{ftype:08x}")
