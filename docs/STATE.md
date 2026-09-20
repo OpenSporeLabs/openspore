@@ -35,22 +35,33 @@ Machine: **CachyOS / Arch** (use `pacman`, not `apt`).
   Project: `~/ghidra-spore-project/SporeProject`.
 
 ### Known issues
-- `ImportSporeSDK.java` aborts at the first non-function address
-  (`XmlAttributeException: Symbol exists but is not a function`). Import succeeds
-  and the project saves, but the symbol pass stops early → **not all SDK symbols
-  imported**. Fix: wrap `processFunctionAddress` in a try/catch (defensive import)
-  so it skips bad addresses instead of aborting.
+- ~~`ImportSporeSDK.java` aborts at the first non-function address~~ — FIXED:
+  defensive import script at `/tmp/opencode/ghidra/scripts/ImportSporeSDK.java`
+  (try/catch around `processFunctionAddress`; arg from `getScriptArgs()`).
+  Result: 1670/1671 functions named, 1895 structures.
 - GOG = digital build → use `SporeGhidra_march2017.xml` (not `_disk.xml`).
+- Original headless project was corrupt (0-byte `.gpr`); backed up to
+  `/tmp/opencode/ghidra/SporeProject.broken-backup/` and rebuilt from scratch.
+- No MSVC RTTI in the binary → no class hierarchy; Ghidra vtable detection
+  never ran headless (0 vtable labels). See recon report §9.
 
 ### Runtime note (per session)
-Before using the `ghidra` MCP tools, the Ghidra MCP server must be running:
-Ghidra GUI → Tools > GhidraMCP > Start MCP Server → `curl 127.0.0.1:8089/check_connection`.
+The Ghidra MCP server runs **headless** (GhidraMCP jar), not from the GUI:
+`java -jar .../GhidraMCP-7.0.0.jar -projectPath /home/juanr/ghidra-spore-project -allowScripts`,
+then `curl 127.0.0.1:8089/check_connection`.
+
+### Recon (2026-09-20)
+Full binary recon report: `docs/RECON-3.1.0.22.md` — entry/bootstrap chain,
+namespace map, singletons (cAppSystem/cSimulatorSystem), DBPF v3, Pollinator
+service, knowledge gaps, Phase 1 priorities.
 
 ---
 
 ## Next step: Phase 1 — Foundation
 
 Build the first C++ engine skeleton + basic structures, compile clean, unit-test.
+Pre-step (recon §10): run a Ghidra vtable-detection pass on the project so class/vtable
+structure is labeled before any code-generation work relies on it.
 
 1. **Build system**: `CMakeLists.txt` (C++17, Clang/GCC, `clang-tidy`, `cppcheck`, `clang-format` modified-Google, `fmt`).
 2. **Core structures** (`src/core/`): `Vector3`, `Quaternion`, `Matrix4`, `Stream`
