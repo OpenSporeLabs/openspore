@@ -51,24 +51,34 @@ anchors (3,081 candidates, 369 high-confidence, 20 labeled); a working runtime
 observatory; and the first real *Spore* trace captured — 1,004 events over a 33.2 s
 main-menu window. The first C++ code is committed: the Obj 7 Vulkan renderer
 skeleton (chapter [011](011-vulkan-skeleton.md)) with a green offscreen-triangle
-smoke test.
+smoke test, then the Obj 8 first real asset through the full pipeline
+(DBPF → RW4/GMDL → mesh → Vulkan).
 
-**Next: Obj 8** — the first real *Spore* asset through the full pipeline:
-DBPF → RW4/GMDL → mesh → Vulkan (roadmap: chapter [012](012-roadmap.md)).
+Since then the journal covers the Cell Stage sprint (chapter
+[013](013-cell-stage-slice.md)): Obj 13–18 — repo sanitation, cell-stage recon
+(BE refCount, DXT5 envelope, PNG32=RW4), materials/textures, the cell scene, a
+deterministic sim with eat/flee, a live SDL3+Vulkan window at 60 fps, and
+differential validation. The project now presents an **interactive,
+keyboard-driven Cell Stage** built entirely from clean-room-decoded game assets.
+
+**Next: second vertical slice** — creature-creator block assembly (sporemol XML →
+block gmdl placement) or a cell-mode runtime trace via Xvfb; plus resolving
+player-cell identity (`docs/STATE.md` §6).
 
 ## Where are we now?
 
-It is worth stating the pace plainly: the entire foundation above happened in two
-days, 2026-09-20 to 2026-09-21. Eleven chapters of RE and tooling — from repository
-audit to the first traced 1,004-event game trace to the first compiling, tested
-C++ renderer — landed between a morning scaffolding commit and a mid-morning
-Vulkan commit the next day. The journal currently ends at the Vulkan triangle.
+It is worth stating the pace plainly: everything from repository scaffolding to the
+first live game window happened across two days, 2026-09-20 to 2026-09-21. The Cell
+Stage sprint alone — sanitation, recon, materials/textures, scene, deterministic sim,
+live window, validation — landed between 12:05 and 18:41 on 09-21 (six commits,
+`e0d6230` → `b939cb7`). The journal currently ends at the interactive cell window
+(chapter [013](013-cell-stage-slice.md)).
 
-One caveat for future readers: `docs/STATE.md` is stale. Its last update stopped at
-the RenderWare research step (commit 36e704a, 2026-09-20), and its "Next step:
-Phase 1 — Foundation" plan is superseded by the incremental-reimplementation model.
-Refreshing it operationally is Obj 11 on the roadmap — planned, not done. This index
-is the current source of truth for state.
+Note for future readers: `docs/STATE.md` was refreshed operationally (Obj 11,
+`460b599`, and again this sprint) and now tracks the same state as this index.
+Chapters [006](006-vtable-detection.md)–[012](012-roadmap.md) are referenced in the
+index below but not yet written to disk — do not create those numbers; the next free
+chapter is 013.
 
 ## Chapters
 
@@ -87,6 +97,7 @@ is the current source of truth for state.
 | 010 | [Phase transition](010-phase-transition.md) | 2026-09-21 | From RE foundation to incremental reimplementation; the guiding model | Done |
 | 011 | [Vulkan skeleton](011-vulkan-skeleton.md) | 2026-09-21 | First C++: IRenderer, Vulkan backend, offscreen triangle, green smoke test | Done |
 | 012 | [Roadmap](012-roadmap.md) | 2026-09-21 | Obj 8–12 as *planned* work: first real asset end-to-end, replacement boundaries, final verification | Planned |
+| 013 | [Cell stage slice](013-cell-stage-slice.md) | 2026-09-21 | Obj 13–18: sanitation, cell-stage recon (BE refCount, DXT5 envelope, PNG32=RW4), materials/textures, cell scene, deterministic sim + eat, live window, differential validation | Done |
 
 ## Maintenance protocol
 
