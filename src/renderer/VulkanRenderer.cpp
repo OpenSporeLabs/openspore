@@ -39,6 +39,27 @@ VkShaderModule makeShaderModule(VkDevice device, const uint32_t *code,
   return module;
 }
 
+// Records a single color-image layout barrier into an arbitrary command buffer
+// (used by the one-time texture upload path, which does not use the frame's
+// command buffer).
+void imageBarrier(VkCommandBuffer cmd, VkImage image, VkImageLayout oldLayout,
+                  VkImageLayout newLayout, VkPipelineStageFlags srcStage,
+                  VkPipelineStageFlags dstStage, VkAccessFlags srcAccess,
+                  VkAccessFlags dstAccess) {
+  VkImageMemoryBarrier barrier{};
+  barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+  barrier.oldLayout = oldLayout;
+  barrier.newLayout = newLayout;
+  barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+  barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+  barrier.image = image;
+  barrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+  barrier.srcAccessMask = srcAccess;
+  barrier.dstAccessMask = dstAccess;
+  vkCmdPipelineBarrier(cmd, srcStage, dstStage, 0, 0, nullptr, 0, nullptr, 1,
+                      &barrier);
+}
+
 } // namespace
 
 VulkanRenderer::VulkanRenderer() = default;
@@ -53,7 +74,8 @@ bool VulkanRenderer::init(uint32_t width, uint32_t height) {
   height_ = height;
   if (!createInstance() || !pickPhysicalDevice() || !createDevice() ||
       !createCommandPool() || !createTargets() || !createRenderPass() ||
-      !createPipeline() || !createSync()) {
+      !createPipeline() || !createTextureSupport() || !createLitPipeline() ||
+      !createSync()) {
     shutdown();
     return false;
   }
@@ -71,6 +93,34 @@ void VulkanRenderer::shutdown() {
     destroyMeshResources(mesh);
   }
   meshes_.clear();
+  for (TexMesh &tm : texMeshes_) {
+    destroyTexMeshResources(tm);
+  }
+  texMeshes_.clear();
+  for (Texture &tex : textures_) {
+    destroyTextureResources(tex);
+  }
+  textures_.clear();
+  if (litPipeline_ != VK_NULL_HANDLE) {
+    vkDestroyPipeline(device_, litPipeline_, nullptr);
+    litPipeline_ = VK_NULL_HANDLE;
+  }
+  if (litPipelineLayout_ != VK_NULL_HANDLE) {
+    vkDestroyPipelineLayout(device_, litPipelineLayout_, nullptr);
+    litPipelineLayout_ = VK_NULL_HANDLE;
+  }
+  if (descPool_ != VK_NULL_HANDLE) {
+    vkDestroyDescriptorPool(device_, descPool_, nullptr);
+    descPool_ = VK_NULL_HANDLE;
+  }
+  if (texSetLayout_ != VK_NULL_HANDLE) {
+    vkDestroyDescriptorSetLayout(device_, texSetLayout_, nullptr);
+    texSetLayout_ = VK_NULL_HANDLE;
+  }
+  if (texSampler_ != VK_NULL_HANDLE) {
+    vkDestroySampler(device_, texSampler_, nullptr);
+    texSampler_ = VK_NULL_HANDLE;
+  }
   if (pipeline_ != VK_NULL_HANDLE) {
     vkDestroyPipeline(device_, pipeline_, nullptr);
     pipeline_ = VK_NULL_HANDLE;
@@ -820,6 +870,460 @@ void VulkanRenderer::destroyMeshResources(Mesh &mesh) {
   }
   mesh.indexCount = 0;
   mesh.valid = false;
+}
+
+bool VulkanRenderer::createTextureSupport() {
+  VkSamplerCreateInfo sampler{};
+  sampler.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+  sampler.magFilter = VK_FILTER_NEAREST;
+  sampler.minFilter = VK_FILTER_NEAREST;
+  sampler.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+  sampler.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+  sampler.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+  sampler.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+  sampler.anisotropyEnable = VK_FALSE;
+  sampler.maxAnisotropy = 1.0F;
+  sampler.compareEnable = VK_FALSE;
+  sampler.mipLodBias = 0.0F;
+  sampler.minLod = 0.0F;
+  sampler.maxLod = 0.0F;
+  sampler.borderColor = VK_BORDER_COLOR_INT_TRANSPARENT_BLACK;
+  if (!vkCheck(vkCreateSampler(device_, &sampler, nullptr, &texSampler_),
+               "vkCreateSampler")) {
+    return false;
+  }
+  VkDescriptorSetLayoutBinding binding{};
+  binding.binding = 0;
+  binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+  binding.descriptorCount = 1;
+  binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+  VkDescriptorSetLayoutCreateInfo layout{};
+  layout.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+  layout.bindingCount = 1;
+  layout.pBindings = &binding;
+  if (!vkCheck(vkCreateDescriptorSetLayout(device_, &layout, nullptr,
+                                           &texSetLayout_),
+               "vkCreateDescriptorSetLayout")) {
+    return false;
+  }
+  VkDescriptorPoolSize poolSize{};
+  poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+  poolSize.descriptorCount = 16;
+  VkDescriptorPoolCreateInfo pool{};
+  pool.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+  pool.maxSets = 16;
+  pool.poolSizeCount = 1;
+  pool.pPoolSizes = &poolSize;
+  return vkCheck(vkCreateDescriptorPool(device_, &pool, nullptr, &descPool_),
+                 "vkCreateDescriptorPool");
+}
+
+bool VulkanRenderer::createLitPipeline() {
+  VkShaderModule vert =
+      makeShaderModule(device_, kLitVertSpv, kLitVertSpvWordCount);
+  VkShaderModule frag =
+      makeShaderModule(device_, kLitFragSpv, kLitFragSpvWordCount);
+  if (vert == VK_NULL_HANDLE || frag == VK_NULL_HANDLE) {
+    if (vert != VK_NULL_HANDLE) {
+      vkDestroyShaderModule(device_, vert, nullptr);
+    }
+    if (frag != VK_NULL_HANDLE) {
+      vkDestroyShaderModule(device_, frag, nullptr);
+    }
+    return false;
+  }
+  VkPipelineShaderStageCreateInfo stages[2]{};
+  stages[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+  stages[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
+  stages[0].module = vert;
+  stages[0].pName = "main";
+  stages[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+  stages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+  stages[1].module = frag;
+  stages[1].pName = "main";
+
+  VkVertexInputBindingDescription binding{};
+  binding.binding = 0;
+  binding.stride = sizeof(TexVertex);
+  binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+  VkVertexInputAttributeDescription attrs[3]{};
+  attrs[0] = {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0};
+  attrs[1] = {1, 0, VK_FORMAT_R32G32B32_SFLOAT,
+              static_cast<uint32_t>(offsetof(TexVertex, normal))};
+  attrs[2] = {2, 0, VK_FORMAT_R32G32_SFLOAT,
+              static_cast<uint32_t>(offsetof(TexVertex, uv))};
+  VkPipelineVertexInputStateCreateInfo vertexInput{};
+  vertexInput.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+  vertexInput.vertexBindingDescriptionCount = 1;
+  vertexInput.pVertexBindingDescriptions = &binding;
+  vertexInput.vertexAttributeDescriptionCount = 3;
+  vertexInput.pVertexAttributeDescriptions = attrs;
+
+  VkPipelineInputAssemblyStateCreateInfo assembly{};
+  assembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+  assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+
+  VkViewport viewport{
+      0.0F, 0.0F, static_cast<float>(width_), static_cast<float>(height_),
+      0.0F, 1.0F};
+  VkRect2D scissor{{0, 0}, {width_, height_}};
+  VkPipelineViewportStateCreateInfo viewportState{};
+  viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+  viewportState.viewportCount = 1;
+  viewportState.pViewports = &viewport;
+  viewportState.scissorCount = 1;
+  viewportState.pScissors = &scissor;
+
+  VkPipelineRasterizationStateCreateInfo raster{};
+  raster.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+  raster.polygonMode = VK_POLYGON_MODE_FILL;
+  raster.cullMode = VK_CULL_MODE_NONE;
+  raster.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+  raster.lineWidth = 1.0F;
+
+  VkPipelineMultisampleStateCreateInfo msaa{};
+  msaa.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+  msaa.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+
+  VkPipelineDepthStencilStateCreateInfo depth{};
+  depth.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+  depth.depthTestEnable = VK_TRUE;
+  depth.depthWriteEnable = VK_TRUE;
+  depth.depthCompareOp = VK_COMPARE_OP_LESS;
+
+  VkPipelineColorBlendAttachmentState blend{};
+  blend.blendEnable = VK_TRUE;
+  blend.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+  blend.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+  blend.colorBlendOp = VK_BLEND_OP_ADD;
+  blend.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+  blend.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+  blend.alphaBlendOp = VK_BLEND_OP_ADD;
+  blend.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
+                         VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+  VkPipelineColorBlendStateCreateInfo blending{};
+  blending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+  blending.attachmentCount = 1;
+  blending.pAttachments = &blend;
+
+  VkPushConstantRange push{};
+  push.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+  push.offset = 0;
+  push.size = 16; // vec4 light
+  VkPipelineLayoutCreateInfo layout{};
+  layout.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+  layout.setLayoutCount = 1;
+  layout.pSetLayouts = &texSetLayout_;
+  layout.pushConstantRangeCount = 1;
+  layout.pPushConstantRanges = &push;
+  bool ok = vkCheck(vkCreatePipelineLayout(device_, &layout, nullptr,
+                                           &litPipelineLayout_),
+                    "vkCreatePipelineLayout(lit)");
+  if (ok) {
+    VkGraphicsPipelineCreateInfo pipeline{};
+    pipeline.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    pipeline.stageCount = 2;
+    pipeline.pStages = stages;
+    pipeline.pVertexInputState = &vertexInput;
+    pipeline.pInputAssemblyState = &assembly;
+    pipeline.pViewportState = &viewportState;
+    pipeline.pRasterizationState = &raster;
+    pipeline.pMultisampleState = &msaa;
+    pipeline.pDepthStencilState = &depth;
+    pipeline.pColorBlendState = &blending;
+    pipeline.layout = litPipelineLayout_;
+    pipeline.renderPass = renderPass_;
+    pipeline.subpass = 0;
+    ok = vkCheck(vkCreateGraphicsPipelines(device_, VK_NULL_HANDLE, 1, &pipeline,
+                                          nullptr, &litPipeline_),
+                 "vkCreateGraphicsPipelines(lit)");
+  }
+  vkDestroyShaderModule(device_, vert, nullptr);
+  vkDestroyShaderModule(device_, frag, nullptr);
+  return ok;
+}
+
+void VulkanRenderer::submitOneTime(VkCommandBuffer cmd) {
+  VkFence fence = VK_NULL_HANDLE;
+  VkFenceCreateInfo fi{};
+  fi.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+  if (!vkCheck(vkCreateFence(device_, &fi, nullptr, &fence),
+               "vkCreateFence(upload)")) {
+    return;
+  }
+  VkSubmitInfo submit{};
+  submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+  submit.commandBufferCount = 1;
+  submit.pCommandBuffers = &cmd;
+  if (!vkCheck(vkQueueSubmit(graphicsQueue_, 1, &submit, fence),
+               "vkQueueSubmit(upload)")) {
+    vkDestroyFence(device_, fence, nullptr);
+    return;
+  }
+  vkWaitForFences(device_, 1, &fence, VK_TRUE, UINT64_MAX);
+  vkDestroyFence(device_, fence, nullptr);
+}
+
+TextureHandle VulkanRenderer::createTexture(const ImageRGBA &image) {
+  if (!initialized_ || image.width == 0 || image.height == 0 ||
+      image.pixels.size() <
+          static_cast<size_t>(image.width) * image.height * 4) {
+    return kInvalidTexture;
+  }
+  const uint32_t w = image.width;
+  const uint32_t h = image.height;
+  const VkDeviceSize dataSize =
+      static_cast<VkDeviceSize>(w) * h * 4;
+  const VkMemoryPropertyFlags hostFlags =
+      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+  VkBuffer staging = VK_NULL_HANDLE;
+  VkDeviceMemory stagingMem = VK_NULL_HANDLE;
+  if (!createBuffer(dataSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, hostFlags,
+                    &staging, &stagingMem)) {
+    return kInvalidTexture;
+  }
+  void *mapped = nullptr;
+  if (!vkCheck(vkMapMemory(device_, stagingMem, 0, dataSize, 0, &mapped),
+               "vkMapMemory(tex)")) {
+    vkDestroyBuffer(device_, staging, nullptr);
+    vkFreeMemory(device_, stagingMem, nullptr);
+    return kInvalidTexture;
+  }
+  std::memcpy(mapped, image.pixels.data(), static_cast<size_t>(dataSize));
+  vkUnmapMemory(device_, stagingMem);
+
+  Texture tex{};
+  tex.width = w;
+  tex.height = h;
+  bool imageOk =
+      createImage(w, h, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
+                  VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, &tex.image, &tex.memory);
+  if (imageOk) {
+    VkImageViewCreateInfo view{};
+    view.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    view.image = tex.image;
+    view.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    view.format = VK_FORMAT_R8G8B8A8_UNORM;
+    view.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
+    imageOk = vkCheck(vkCreateImageView(device_, &view, nullptr, &tex.view),
+                      "vkCreateImageView(tex)");
+  }
+
+  if (imageOk) {
+    VkCommandBuffer upload = VK_NULL_HANDLE;
+    VkCommandBufferAllocateInfo alloc{};
+    alloc.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    alloc.commandPool = commandPool_;
+    alloc.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    alloc.commandBufferCount = 1;
+    VkCommandBufferBeginInfo begin{};
+    begin.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    begin.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    if (vkCheck(vkAllocateCommandBuffers(device_, &alloc, &upload),
+                "vkAllocateCommandBuffers(tex)") &&
+        vkCheck(vkBeginCommandBuffer(upload, &begin),
+                "vkBeginCommandBuffer(tex)")) {
+      imageBarrier(upload, tex.image, VK_IMAGE_LAYOUT_UNDEFINED,
+                   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                   VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                   VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
+                   VK_ACCESS_TRANSFER_WRITE_BIT);
+      VkBufferImageCopy region{};
+      region.bufferOffset = 0;
+      region.bufferRowLength = 0;
+      region.bufferImageHeight = h;
+      region.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1};
+      region.imageOffset = {0, 0, 0};
+      region.imageExtent = {w, h, 1};
+      vkCmdCopyBufferToImage(upload, staging, tex.image,
+                             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+      imageBarrier(upload, tex.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                   VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                   VK_PIPELINE_STAGE_TRANSFER_BIT,
+                   VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                   VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT);
+      vkEndCommandBuffer(upload);
+      submitOneTime(upload);
+    }
+    vkFreeCommandBuffers(device_, commandPool_, 1, &upload);
+  }
+  vkDestroyBuffer(device_, staging, nullptr);
+  vkFreeMemory(device_, stagingMem, nullptr);
+  if (!imageOk) {
+    destroyTextureResources(tex);
+    return kInvalidTexture;
+  }
+
+  VkDescriptorSetAllocateInfo setAlloc{};
+  setAlloc.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+  setAlloc.descriptorPool = descPool_;
+  setAlloc.descriptorSetCount = 1;
+  setAlloc.pSetLayouts = &texSetLayout_;
+  if (vkCheck(vkAllocateDescriptorSets(device_, &setAlloc, &tex.set),
+              "vkAllocateDescriptorSets") &&
+      tex.set != VK_NULL_HANDLE) {
+    VkDescriptorImageInfo imgInfo{};
+    imgInfo.sampler = texSampler_;
+    imgInfo.imageView = tex.view;
+    imgInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    VkWriteDescriptorSet write{};
+    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    write.dstSet = tex.set;
+    write.dstBinding = 0;
+    write.dstArrayElement = 0;
+    write.descriptorCount = 1;
+    write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    write.pImageInfo = &imgInfo;
+    vkUpdateDescriptorSets(device_, 1, &write, 0, nullptr);
+  }
+  tex.valid = tex.set != VK_NULL_HANDLE;
+  if (!tex.valid) {
+    destroyTextureResources(tex);
+    return kInvalidTexture;
+  }
+  for (size_t i = 0; i < textures_.size(); ++i) {
+    if (!textures_[i].valid) {
+      textures_[i] = tex;
+      return static_cast<TextureHandle>(i);
+    }
+  }
+  textures_.push_back(tex);
+  return static_cast<TextureHandle>(textures_.size() - 1);
+}
+
+void VulkanRenderer::destroyTextureResources(Texture &tex) {
+  if (tex.view != VK_NULL_HANDLE) {
+    vkDestroyImageView(device_, tex.view, nullptr);
+    tex.view = VK_NULL_HANDLE;
+  }
+  if (tex.image != VK_NULL_HANDLE) {
+    vkDestroyImage(device_, tex.image, nullptr);
+    tex.image = VK_NULL_HANDLE;
+  }
+  if (tex.memory != VK_NULL_HANDLE) {
+    vkFreeMemory(device_, tex.memory, nullptr);
+    tex.memory = VK_NULL_HANDLE;
+  }
+  tex.set = VK_NULL_HANDLE;
+  tex.valid = false;
+}
+
+void VulkanRenderer::destroyTexture(TextureHandle texture) {
+  if (texture < textures_.size() && textures_[texture].valid) {
+    destroyTextureResources(textures_[texture]);
+    textures_[texture] = Texture{};
+  }
+}
+
+MeshHandle VulkanRenderer::createTexMesh(const TexVertex *vertices,
+                                         size_t vertexCount,
+                                         const uint32_t *indices,
+                                         size_t indexCount) {
+  if (!initialized_ || vertices == nullptr || vertexCount == 0 ||
+      indices == nullptr || indexCount == 0) {
+    return kInvalidMesh;
+  }
+  TexMesh mesh{};
+  const VkDeviceSize vbSize = vertexCount * sizeof(TexVertex);
+  const VkDeviceSize ibSize = indexCount * sizeof(uint32_t);
+  const VkMemoryPropertyFlags hostFlags =
+      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+  if (!createBuffer(vbSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, hostFlags,
+                    &mesh.vertexBuffer, &mesh.vertexMemory) ||
+      !createBuffer(ibSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, hostFlags,
+                    &mesh.indexBuffer, &mesh.indexMemory)) {
+    destroyTexMeshResources(mesh);
+    return kInvalidMesh;
+  }
+  void *mapped = nullptr;
+  if (!vkCheck(vkMapMemory(device_, mesh.vertexMemory, 0, vbSize, 0, &mapped),
+               "vkMapMemory(tvb)")) {
+    destroyTexMeshResources(mesh);
+    return kInvalidMesh;
+  }
+  std::memcpy(mapped, vertices, static_cast<size_t>(vbSize));
+  vkUnmapMemory(device_, mesh.vertexMemory);
+  if (!vkCheck(vkMapMemory(device_, mesh.indexMemory, 0, ibSize, 0, &mapped),
+               "vkMapMemory(tib)")) {
+    destroyTexMeshResources(mesh);
+    return kInvalidMesh;
+  }
+  std::memcpy(mapped, indices, static_cast<size_t>(ibSize));
+  vkUnmapMemory(device_, mesh.indexMemory);
+  mesh.indexCount = static_cast<uint32_t>(indexCount);
+  mesh.valid = true;
+  for (size_t i = 0; i < texMeshes_.size(); ++i) {
+    if (!texMeshes_[i].valid) {
+      texMeshes_[i] = mesh;
+      return static_cast<MeshHandle>(i);
+    }
+  }
+  texMeshes_.push_back(mesh);
+  return static_cast<MeshHandle>(texMeshes_.size() - 1);
+}
+
+void VulkanRenderer::destroyTexMeshResources(TexMesh &mesh) {
+  if (mesh.vertexBuffer != VK_NULL_HANDLE) {
+    vkDestroyBuffer(device_, mesh.vertexBuffer, nullptr);
+    mesh.vertexBuffer = VK_NULL_HANDLE;
+  }
+  if (mesh.vertexMemory != VK_NULL_HANDLE) {
+    vkFreeMemory(device_, mesh.vertexMemory, nullptr);
+    mesh.vertexMemory = VK_NULL_HANDLE;
+  }
+  if (mesh.indexBuffer != VK_NULL_HANDLE) {
+    vkDestroyBuffer(device_, mesh.indexBuffer, nullptr);
+    mesh.indexBuffer = VK_NULL_HANDLE;
+  }
+  if (mesh.indexMemory != VK_NULL_HANDLE) {
+    vkFreeMemory(device_, mesh.indexMemory, nullptr);
+    mesh.indexMemory = VK_NULL_HANDLE;
+  }
+  mesh.indexCount = 0;
+  mesh.valid = false;
+}
+
+void VulkanRenderer::destroyTexMesh(MeshHandle mesh) {
+  if (mesh < texMeshes_.size() && texMeshes_[mesh].valid) {
+    destroyTexMeshResources(texMeshes_[mesh]);
+    texMeshes_[mesh] = TexMesh{};
+  }
+}
+
+void VulkanRenderer::drawTextured(MeshHandle mesh, TextureHandle texture,
+                                  const MaterialState &material) {
+  if (!recording_) {
+    std::fprintf(stderr,
+                 "[VulkanRenderer] drawTextured outside begin/end frame\n");
+    return;
+  }
+  if (mesh >= texMeshes_.size() || !texMeshes_[mesh].valid) {
+    std::fprintf(stderr, "[VulkanRenderer] drawTextured invalid mesh %u\n",
+                 mesh);
+    return;
+  }
+  if (texture >= textures_.size() || !textures_[texture].valid) {
+    std::fprintf(stderr, "[VulkanRenderer] drawTextured invalid texture %u\n",
+                 texture);
+    return;
+  }
+  const TexMesh &m = texMeshes_[mesh];
+  const Texture &t = textures_[texture];
+  vkCmdBindPipeline(commandBuffer_, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                   litPipeline_);
+  VkDescriptorSet set = t.set;
+  vkCmdBindDescriptorSets(commandBuffer_, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                          litPipelineLayout_, 0, 1, &set, 0, nullptr);
+  float push[4] = {material.lightDir[0], material.lightDir[1],
+                   material.lightDir[2], material.ambient};
+  vkCmdPushConstants(commandBuffer_, litPipelineLayout_,
+                     VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(push), push);
+  const VkDeviceSize offset = 0;
+  vkCmdBindVertexBuffers(commandBuffer_, 0, 1, &m.vertexBuffer, &offset);
+  vkCmdBindIndexBuffer(commandBuffer_, m.indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+  vkCmdDrawIndexed(commandBuffer_, m.indexCount, 1, 0, 0, 0);
 }
 
 } // namespace openspore

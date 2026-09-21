@@ -178,7 +178,7 @@ GMDL_STRIDE = 16
 def build_gmdl():
     idx = [(i * 17) % GMDL_VTX_COUNT for i in range(GMDL_IDX_COUNT)]
     vtx = bytes((i * 7 + (i % GMDL_STRIDE) * 3) & 0xFF for i in range(GMDL_VTX_COUNT * GMDL_STRIDE))
-    b = struct.pack('<II', 8, 1)
+    b = struct.pack('<I', 8) + struct.pack('>I', 1)  # refCount is big-endian
     b += struct.pack('<III', 0x11111111, 0x22222222, 0x00E6BCE5)  # referenced file key
     b += struct.pack('<I', 1)                                      # meshCount
     b += struct.pack('<6f', *GMDL_BBOX_MIN, *GMDL_BBOX_MAX)

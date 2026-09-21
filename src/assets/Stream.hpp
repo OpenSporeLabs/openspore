@@ -60,6 +60,19 @@ public:
     return v;
   }
 
+  // Big-endian u32. Only the GMDL refCount word is stored BE on v8 records.
+  uint32_t readU32BE() {
+    if (remaining() < 4) {
+      ok_ = false;
+      return 0;
+    }
+    const uint8_t *p = data_ + pos_;
+    pos_ += 4;
+    return (static_cast<uint32_t>(p[0]) << 24) |
+           (static_cast<uint32_t>(p[1]) << 16) |
+           (static_cast<uint32_t>(p[2]) << 8) | static_cast<uint32_t>(p[3]);
+  }
+
   float readF32() {
     uint32_t bits = readU32();
     float v = 0.0F;

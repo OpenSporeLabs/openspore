@@ -59,4 +59,8 @@ void computeMeshBounds(Mesh &mesh);
 // otherwise -> a deterministic height ramp (low = steel blue, high = ember).
 RendererMesh toRendererMesh(const Mesh &mesh);
 
+// Interleaves positions + normals + uvs into a normal-lit TexMesh. Missing
+// normals default to +Z; missing uvs default to (0,0).
+TexMesh toRendererTexMesh(const Mesh &mesh);
+
 } // namespace openspore::assets

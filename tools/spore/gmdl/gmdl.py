@@ -4,7 +4,7 @@
 Byte layout (little-endian), verified against version-8 game samples:
 
     version          u32
-    refCount         u32
+    refCount         u32  (BIG-endian; every other word is little-endian)
       refCount *     { instanceID, groupID, typeID } u32 x3
     meshCount        u32
     boundingBox      min Vector3 (3 f32) + max Vector3 (3 f32)
@@ -70,6 +70,12 @@ def u(b, o, f='I'):
     return struct.unpack_from('<' + f, b, o)[0]
 
 
+def u32be(b, o):
+    # Only the GMDL refCount word is big-endian; a LE read of N gives N<<24
+    # and walks the referenced-file table past the end of the record.
+    return struct.unpack_from('>I', b, o)[0]
+
+
 def f32(b, o):
     return struct.unpack_from('<f', b, o)[0]
 
@@ -89,7 +95,7 @@ class Gmdl:
         b = self.b
         o = 0
         self.version = u(b, o); o += 4
-        self.refCount = u(b, o); o += 4
+        self.refCount = u32be(b, o); o += 4
         self.refs = []
         for _ in range(self.refCount):
             self.refs.append((u(b, o), u(b, o + 4), u(b, o + 8)))

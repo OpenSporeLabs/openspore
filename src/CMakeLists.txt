@@ -20,11 +20,25 @@ add_custom_command(
   COMMENT "Compiling triangle.frag to SPIR-V"
   VERBATIM)
 add_custom_command(
+  OUTPUT ${GENERATED_DIR}/lit.vert.spv
+  COMMAND ${GLSLANG_VALIDATOR} -V ${SHADER_DIR}/lit.vert -o ${GENERATED_DIR}/lit.vert.spv
+  DEPENDS ${SHADER_DIR}/lit.vert
+  COMMENT "Compiling lit.vert to SPIR-V"
+  VERBATIM)
+add_custom_command(
+  OUTPUT ${GENERATED_DIR}/lit.frag.spv
+  COMMAND ${GLSLANG_VALIDATOR} -V ${SHADER_DIR}/lit.frag -o ${GENERATED_DIR}/lit.frag.spv
+  DEPENDS ${SHADER_DIR}/lit.frag
+  COMMENT "Compiling lit.frag to SPIR-V"
+  VERBATIM)
+add_custom_command(
   OUTPUT ${GENERATED_DIR}/shaders_spv.h
   COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/renderer/embed_spv.py
           ${GENERATED_DIR}/triangle.vert.spv ${GENERATED_DIR}/triangle.frag.spv
+          ${GENERATED_DIR}/lit.vert.spv ${GENERATED_DIR}/lit.frag.spv
           ${GENERATED_DIR}/shaders_spv.h
   DEPENDS ${GENERATED_DIR}/triangle.vert.spv ${GENERATED_DIR}/triangle.frag.spv
+          ${GENERATED_DIR}/lit.vert.spv ${GENERATED_DIR}/lit.frag.spv
           ${CMAKE_CURRENT_SOURCE_DIR}/renderer/embed_spv.py
   COMMENT "Embedding SPIR-V as C arrays"
   VERBATIM)
@@ -54,6 +68,16 @@ target_link_libraries(asset_view PRIVATE openspore_assets openspore_renderer)
 add_test(
   NAME asset_render
   COMMAND asset_view ${PROJECT_SOURCE_DIR}/SPORE/Data/Spore_Content.package
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+
+# Obj15: renders the real mesh through the normal-lit textured path with its
+# real DXT5 texture and asserts non-uniform texture pixels + frame-to-frame
+# light change. Env-dependent (skips when SPORE/ is absent).
+add_executable(material_smoke apps/material_smoke.cpp)
+target_link_libraries(material_smoke PRIVATE openspore_assets openspore_renderer)
+add_test(
+  NAME material_smoke
+  COMMAND material_smoke ${PROJECT_SOURCE_DIR}/SPORE/Data/Spore_Content.package
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
 add_subdirectory(assets)

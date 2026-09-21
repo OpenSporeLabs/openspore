@@ -301,8 +301,18 @@ class NullRenderer : public openspore::IRenderer {
     return 1;
   }
   void destroyMesh(openspore::MeshHandle) override {}
+  openspore::TextureHandle createTexture(const openspore::ImageRGBA &) override {
+    return 0;
+  }
+  void destroyTexture(openspore::TextureHandle) override {}
+  openspore::MeshHandle createTexMesh(const openspore::TexVertex *, size_t,
+                                      const uint32_t *, size_t) override {
+    return 2;
+  }
   void beginFrame(float, float, float, float) override {}
   void drawMesh(openspore::MeshHandle) override { ++draws; }
+  void drawTextured(openspore::MeshHandle, openspore::TextureHandle,
+                    const openspore::MaterialState &) override {}
   void endFrame() override {}
   openspore::ImageRGBA readbackPixels() override { return {}; }
   size_t verts = 0, idx = 0, draws = 0;

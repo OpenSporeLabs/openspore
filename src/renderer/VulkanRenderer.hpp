@@ -25,8 +25,17 @@ public:
                         const uint32_t *indices, size_t indexCount) override;
   void destroyMesh(MeshHandle mesh) override;
 
+  TextureHandle createTexture(const ImageRGBA &image) override;
+  void destroyTexture(TextureHandle texture) override;
+
+  MeshHandle createTexMesh(const TexVertex *vertices, size_t vertexCount,
+                           const uint32_t *indices, size_t indexCount) override;
+  void destroyTexMesh(MeshHandle mesh);
+
   void beginFrame(float r, float g, float b, float a) override;
   void drawMesh(MeshHandle mesh) override;
+  void drawTextured(MeshHandle mesh, TextureHandle texture,
+                    const MaterialState &material) override;
   void endFrame() override;
 
   ImageRGBA readbackPixels() override;
@@ -43,6 +52,23 @@ private:
     uint32_t indexCount = 0;
     bool valid = false;
   };
+  struct TexMesh {
+    VkBuffer vertexBuffer = VK_NULL_HANDLE;
+    VkDeviceMemory vertexMemory = VK_NULL_HANDLE;
+    VkBuffer indexBuffer = VK_NULL_HANDLE;
+    VkDeviceMemory indexMemory = VK_NULL_HANDLE;
+    uint32_t indexCount = 0;
+    bool valid = false;
+  };
+  struct Texture {
+    VkImage image = VK_NULL_HANDLE;
+    VkDeviceMemory memory = VK_NULL_HANDLE;
+    VkImageView view = VK_NULL_HANDLE;
+    VkDescriptorSet set = VK_NULL_HANDLE;
+    uint32_t width = 0;
+    uint32_t height = 0;
+    bool valid = false;
+  };
 
   bool createInstance();
   bool pickPhysicalDevice();
@@ -51,7 +77,10 @@ private:
   bool createTargets();
   bool createRenderPass();
   bool createPipeline();
+  bool createTextureSupport();
+  bool createLitPipeline();
   bool createSync();
+  void submitOneTime(VkCommandBuffer cmd);
 
   uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags props);
   bool createBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
@@ -67,9 +96,11 @@ private:
                        VkAccessFlags srcAccess, VkAccessFlags dstAccess,
                        VkPipelineStageFlags srcStage,
                        VkPipelineStageFlags dstStage);
-  void destroyMeshResources(Mesh &mesh);
+   void destroyMeshResources(Mesh &mesh);
+   void destroyTextureResources(Texture &tex);
+   void destroyTexMeshResources(TexMesh &tex);
 
-  uint32_t width_ = 0;
+   uint32_t width_ = 0;
   uint32_t height_ = 0;
   bool initialized_ = false;
   bool recording_ = false;
@@ -99,7 +130,15 @@ private:
   VkPipelineLayout pipelineLayout_ = VK_NULL_HANDLE;
   VkPipeline pipeline_ = VK_NULL_HANDLE;
 
+  VkSampler texSampler_ = VK_NULL_HANDLE;
+  VkDescriptorSetLayout texSetLayout_ = VK_NULL_HANDLE;
+  VkDescriptorPool descPool_ = VK_NULL_HANDLE;
+  VkPipelineLayout litPipelineLayout_ = VK_NULL_HANDLE;
+  VkPipeline litPipeline_ = VK_NULL_HANDLE;
+
   std::vector<Mesh> meshes_;
+  std::vector<TexMesh> texMeshes_;
+  std::vector<Texture> textures_;
 };
 
 } // namespace openspore

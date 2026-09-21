@@ -110,7 +110,13 @@ bool parseGmdl(const uint8_t *data, size_t size, GmdlModel &out,
             " (want 8)";
     return false;
   }
-  const uint32_t refCount = r.readU32();
+  // The refCount word is big-endian on version-8 records; every other word
+  // in the record is little-endian. A LE read of a refCount of N gives
+  // N*0x01000000 and walks the key table past the end of the record.
+  const uint32_t refCount = r.readU32BE();
+  if (!r.ok()) {
+    return fail(error, "gmdl: truncated refCount");
+  }
   for (uint32_t i = 0; i < refCount; ++i) {
     r.skip(12); // {instance, group, type} file key
   }
@@ -211,7 +217,14 @@ bool parseGmdl(const uint8_t *data, size_t size, GmdlModel &out,
       }
       if (id == kTextureSetId) {
         const uint32_t texCount = r.readU32();
-        if (!r.skip(static_cast<size_t>(texCount) * kTexEntrySize)) {
+        for (uint32_t t = 0; t < texCount; ++t) {
+          r.skip(16); // {sampler, opaque}
+          GmdlTextureRef ref;
+          ref.instance = r.readU32();
+          ref.group = r.readU32();
+          out.textureRefs.push_back(ref);
+        }
+        if (!r.ok()) {
           return fail(error, "gmdl: truncated texture set");
         }
       } else {

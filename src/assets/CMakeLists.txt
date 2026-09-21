@@ -1,8 +1,10 @@
 # Objective-8a asset pipeline: DBPF v3 + QFS + minimal GMDL walker -> Mesh.
 add_library(openspore_assets STATIC
   Dbpf.cpp
+  Dxt5.cpp
   Gmdl.cpp
-  Mesh.cpp)
+  Mesh.cpp
+  Texture.cpp)
 target_include_directories(openspore_assets PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_SOURCE_DIR}/..)

@@ -46,6 +46,13 @@ struct GmdlMeshRef {
   uint32_t vertexBuffer = 0;
 };
 
+// Texture-set (0x20D) reference: the instance/group key of the referenced
+// texture record (the on-disk entry carries no type word).
+struct GmdlTextureRef {
+  uint32_t instance = 0;
+  uint32_t group = 0;
+};
+
 struct GmdlModel {
   uint32_t version = 0;
   uint32_t meshCount = 0;
@@ -57,6 +64,8 @@ struct GmdlModel {
   std::vector<GmdlVertexBuffer> vertexBuffers;
   std::vector<GmdlMeshRef> meshes;
   std::vector<uint32_t> materialIds;
+  // Texture-set references in order of appearance (all meshes).
+  std::vector<GmdlTextureRef> textureRefs;
   std::array<uint32_t, 3> unknownKey = {0, 0, 0};
   size_t consumed = 0; // input bytes consumed; equals input size on full parse
 };

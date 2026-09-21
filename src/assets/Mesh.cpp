@@ -213,4 +213,36 @@ RendererMesh toRendererMesh(const Mesh &mesh) {
   return out;
 }
 
+TexMesh toRendererTexMesh(const Mesh &mesh) {
+  TexMesh out;
+  out.vertices.reserve(mesh.positions.size());
+  out.indices = mesh.indices;
+  const bool hasNormals = mesh.normals.size() == mesh.positions.size();
+  const bool hasUvs = mesh.uvs.size() == mesh.positions.size();
+  for (size_t i = 0; i < mesh.positions.size(); ++i) {
+    TexVertex v;
+    v.pos[0] = mesh.positions[i][0];
+    v.pos[1] = mesh.positions[i][1];
+    v.pos[2] = mesh.positions[i][2];
+    if (hasNormals) {
+      v.normal[0] = mesh.normals[i][0];
+      v.normal[1] = mesh.normals[i][1];
+      v.normal[2] = mesh.normals[i][2];
+    } else {
+      v.normal[0] = 0.0F;
+      v.normal[1] = 0.0F;
+      v.normal[2] = 1.0F;
+    }
+    if (hasUvs) {
+      v.uv[0] = mesh.uvs[i][0];
+      v.uv[1] = mesh.uvs[i][1];
+    } else {
+      v.uv[0] = 0.0F;
+      v.uv[1] = 0.0F;
+    }
+    out.vertices.push_back(v);
+  }
+  return out;
+}
+
 } // namespace openspore::assets
