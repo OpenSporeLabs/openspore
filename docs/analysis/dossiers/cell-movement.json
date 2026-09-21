@@ -1,0 +1,1250 @@
+{
+  "$schema": "re-dossier-1",
+  "topic": "cell-movement",
+  "sources": [
+    "tools/re/data/ghidra_snapshot_cell_movement.json",
+    "docs/analysis/vtables.json",
+    "knowledgegraph/spore.db",
+    "tools/observatory/out/*.jsonl"
+  ],
+  "snapshot_source": "Ghidra 12.1.2 headless (SporeProject / SporeApp.exe, GOG 3.1.0.22, x86:LE:32:windows). Generated via GhidraMCP 7.0.0 REST. See tools/re/ghidra_snapshot.py for regeneration.",
+  "evidence_summary": "Cell-mode per-frame update is vtable-dispatched: App::cCellModeStrategy::Update (RVA 0xd80980, vtable @ 0x01485550, no static callers) delegates to the real update body FUN_00e806b0, which calls Simulator::Cell::MovePlayerToMousePosition (RVA 0xd5b790). Headline finding: the player is steered by a RAY-PLANE INTERSECTION \u2014 the camera ray (from the mouse position) is intersected with the movement plane, and the hit point becomes the player's target position and orientation-to-travel. SDK names are VERIFIED via the march2017 SDK import; the ray-plane structure is OBSERVED in decompilation (evidence, not truth); the plane normal/point constant addresses are OBSERVED but their values are INFERRED (unread); runtime was NOT OBTAINED (see runtime section).",
+  "functions": [
+    {
+      "name": "App::cCellModeStrategy::Update",
+      "rva": "0xd80980",
+      "address": "0x00e80980",
+      "module": "SporeApp.exe",
+      "size_bytes": 28,
+      "namespace": "App::cCellModeStrategy",
+      "signature": "void App::cCellModeStrategy::Update(cCellModeStrategy *this, float fDelta1, float fDelta2)",
+      "dispatch": "vtable (no static callers; called through cCellModeStrategy vtable @ 21517648)",
+      "role_inferred": null,
+      "callers": [],
+      "callees": [
+        "FUN_00e806b0"
+      ],
+      "globals_referenced": [],
+      "key_constants": null,
+      "decompiled_evidence": "void Update(this, fDelta1, fDelta2){ FUN_00e806b0(this, fDelta1); }",
+      "evidence_level": "VERIFIED (SDK name) / INFERRED (param meaning: frame delta; the 'fDelta2' is unused in body)"
+    },
+    {
+      "name": "FUN_00e806b0",
+      "rva": "0xd806b0",
+      "address": "0x00e806b0",
+      "module": "SporeApp.exe",
+      "size_bytes": null,
+      "namespace": null,
+      "signature": "mangled/unknown (decompiler shows (ITextureManager*, float, int, int, int, D3DFORMAT, int) -- type guesses, NOT trusted)",
+      "dispatch": null,
+      "role_inferred": "Real per-frame update body for cell mode. Reads Simulator::Cell::sCellGame state; branches on a game-state word at sCellGame+20960. In the 'active' branch it scales dt*1000, updates space-trading, and calls Simulator::Cell::MovePlayerToMousePosition(dt_ms).",
+      "callers": [
+        "App::cCellModeStrategy::Update"
+      ],
+      "callees": [
+        "Simulator::Cell::MovePlayerToMousePosition",
+        "Simulator::cSpaceTrading::Get",
+        "FUN_00e82de0",
+        "FUN_00b3d3f0",
+        "FUN_00e7f3a0",
+        "FUN_00e7fd00",
+        "FUN_00e7f550",
+        "FUN_00e73f60",
+        "FUN_00e53b00",
+        "FUN_00e600a0",
+        "FUN_00e6c9f0",
+        "FUN_00e84bf0",
+        "FUN_006ffe00"
+      ],
+      "globals_referenced": [
+        "Simulator::Cell::sCellGame (+20960 state, +20828, +20832, +20880, +20952, +20953, +16652, +16656)"
+      ],
+      "key_constants": null,
+      "decompiled_evidence": "See tools/re/data/decompiled/FUN_00e806b0.c (captured from Ghidra decompiler; type-cast noise present).",
+      "evidence_level": "INFERRED (role) -- the MovePlayerToMousePosition call is OBSERVED in decompilation"
+    },
+    {
+      "name": "App::cCellModeStrategy::OnKeyDown",
+      "rva": "0xd818f0",
+      "address": "0x00e818f0",
+      "module": "SporeApp.exe",
+      "size_bytes": null,
+      "namespace": "App::cCellModeStrategy",
+      "signature": "bool App::cCellModeStrategy::OnKeyDown(cCellModeStrategy *this, int virtualKey, KeyModifiers modifiers)",
+      "dispatch": "vtable (cCellModeStrategy vtable @ 21517648)",
+      "role_inferred": null,
+      "callers": [],
+      "callees": [
+        "FUN_00e82900",
+        "GameInput::OnKeyDown",
+        "FUN_00e82cc0",
+        "FUN_00e81120",
+        "FUN_00e7f630"
+      ],
+      "globals_referenced": [
+        "Simulator::Cell::sCellUI (+2359)"
+      ],
+      "key_constants": null,
+      "decompiled_evidence": "Handles virtualKey; toggles sCellUI+2359 on key 2 (ESC); forwards to GameInput::OnKeyDown and per-mode handlers. Input is keyboard (thrust-style keys) PLUS mouse; the movement target is set by the mouse, not the keys (see MovePlayerToMousePosition).",
+      "evidence_level": "VERIFIED (SDK name) / INFERRED (key semantics)"
+    },
+    {
+      "name": "App::cCellModeStrategy::OnMouseMove",
+      "rva": "0xd51010",
+      "address": "0x00e51010",
+      "module": "SporeApp.exe",
+      "size_bytes": 25,
+      "namespace": "App::cCellModeStrategy",
+      "signature": "bool App::cCellModeStrategy::OnMouseMove(cCellModeStrategy *this, float mouseX, float mouseY, MouseState mouseState)",
+      "dispatch": "vtable (cCellModeStrategy vtable @ 21517648)",
+      "role_inferred": null,
+      "callers": [],
+      "callees": [],
+      "globals_referenced": [],
+      "key_constants": null,
+      "decompiled_evidence": "Small thunk; records mouse position consumed later by the camera-ray -> move-plane projection.",
+      "evidence_level": "VERIFIED (SDK name) / INFERRED (role)"
+    },
+    {
+      "name": "App::cCellModeStrategy::OnMouseWheel",
+      "rva": "0xd7d660",
+      "address": "0x00e7d660",
+      "module": "SporeApp.exe",
+      "size_bytes": null,
+      "namespace": "App::cCellModeStrategy",
+      "signature": null,
+      "dispatch": "vtable (cCellModeStrategy vtable @ 21517648)",
+      "role_inferred": null,
+      "callers": [],
+      "callees": [],
+      "globals_referenced": [],
+      "key_constants": null,
+      "decompiled_evidence": "Zoom / camera distance (INFERRED -- not decompiled in this snapshot; wheel present in SDK member list).",
+      "evidence_level": "VERIFIED (SDK name) / INFERRED (role)"
+    },
+    {
+      "name": "Simulator::Cell::MovePlayerToMousePosition",
+      "rva": "0xd5b790",
+      "address": "0x00e5b790",
+      "module": "SporeApp.exe",
+      "size_bytes": 625,
+      "namespace": null,
+      "signature": "void Simulator::Cell::MovePlayerToMousePosition(float deltaTime)",
+      "dispatch": null,
+      "role_inferred": null,
+      "callers": [
+        "FUN_00e806b0"
+      ],
+      "callees": [
+        "FUN_00e5b2e0",
+        "FUN_00743b50",
+        "FUN_00e4ce40",
+        "FUN_00e82130",
+        "FUN_00e50730",
+        "Graphics::IRenderer::Get",
+        "FUN_007c4900",
+        "FUN_0069b600"
+      ],
+      "globals_referenced": [
+        "Simulator::Cell::sCellGame (+20824 lock flag, +16668 player-ref, +20880)",
+        "Simulator::Cell::sCellUI (+36, +38)"
+      ],
+      "key_constants": {
+        "DAT_015a7c40": "plane normal X (movement plane)",
+        "DAT_015a7c44": "plane normal Y",
+        "DAT_015a7c48": "plane normal Z",
+        "DAT_016b3c28/2c/30": "plane point (origin offset) X/Y/Z"
+      },
+      "decompiled_evidence": "Guard: return if sCellGame+20824 != 0 (a lock/paused flag). Player = FUN_00b721d0(* (sCellGame+16668)) (container-getter-by-index); if 0 return. FUN_00e5b2e0(dt) (per-frame update). Camera mode = FUN_00e4ce40()[+212]. Camera origin+dir fetched (FUN_007c4900 fills origin via ILightingWorld; direction is the view ray). Compute t = dot(dir, planeNormal) inverse; if valid and t>=0 set player pos (player+8/12/16) = origin + dir*t (RAY-PLANE INTERSECTION on the movement plane). Then targetDelta = -(newPos - curPos) using curPos at player+76/80/84; FUN_0069b600(...) computes orientation (rotation) to face travel; stored at player+20..32. Sets sCellGame+20880+224 = 1 ('moving' flag).",
+      "evidence_level": "VERIFIED (SDK name + ray-plane intersection structure OBSERVED in decompilation); plane-normal/point constants = OBSERVED addresses, values INFERRED (need runtime to read)"
+    },
+    {
+      "name": "FUN_007c4900",
+      "rva": "0x6c4900",
+      "address": "0x007c4900",
+      "module": "SporeApp.exe",
+      "size_bytes": null,
+      "namespace": null,
+      "signature": null,
+      "dispatch": null,
+      "role_inferred": "Returns camera / lighting-world origin (fills caller buffer via ILightingManager::Get()->GetLightingWorld() then FUN_007c4730).",
+      "callers": [],
+      "callees": [],
+      "globals_referenced": [],
+      "key_constants": null,
+      "decompiled_evidence": null,
+      "evidence_level": "INFERRED"
+    },
+    {
+      "name": "FUN_00b721d0",
+      "rva": "0x7721d0",
+      "address": "0x00b721d0",
+      "module": "SporeApp.exe",
+      "size_bytes": null,
+      "namespace": null,
+      "signature": null,
+      "dispatch": null,
+      "role_inferred": "Container-getter-by-index: returns element pointer for valid index (index <= size, element id match), else 0. Used to fetch the player entity from the collection at sCellGame+16668.",
+      "callers": [],
+      "callees": [],
+      "globals_referenced": [],
+      "key_constants": null,
+      "decompiled_evidence": "if (id!=0 && (id&65535) <= *base+4) { p = base+5 *(id&65535) + *base; return (p[0]==id) ? p : 0; } return 0;",
+      "evidence_level": "INFERRED (structure OBSERVED)"
+    },
+    {
+      "name": "Simulator::cSpaceTrading::Get",
+      "rva": null,
+      "address": "vtable",
+      "module": "SporeApp.exe",
+      "size_bytes": null,
+      "namespace": null,
+      "signature": null,
+      "dispatch": null,
+      "role_inferred": "Space-trading subsystem singleton; called each frame in the update body (vtable method [14] invoked).",
+      "callers": [],
+      "callees": [],
+      "globals_referenced": [],
+      "key_constants": null,
+      "decompiled_evidence": null,
+      "evidence_level": "INFERRED"
+    }
+  ],
+  "callers": {
+    "App::cCellModeStrategy::Update": [],
+    "FUN_00e806b0": [
+      "App::cCellModeStrategy::Update"
+    ],
+    "App::cCellModeStrategy::OnKeyDown": [],
+    "App::cCellModeStrategy::OnMouseMove": [],
+    "App::cCellModeStrategy::OnMouseWheel": [],
+    "Simulator::Cell::MovePlayerToMousePosition": [
+      "FUN_00e806b0"
+    ],
+    "FUN_007c4900": [],
+    "FUN_00b721d0": [],
+    "Simulator::cSpaceTrading::Get": []
+  },
+  "callees": {
+    "App::cCellModeStrategy::Update": [
+      "FUN_00e806b0"
+    ],
+    "FUN_00e806b0": [
+      "Simulator::Cell::MovePlayerToMousePosition",
+      "Simulator::cSpaceTrading::Get",
+      "FUN_00e82de0",
+      "FUN_00b3d3f0",
+      "FUN_00e7f3a0",
+      "FUN_00e7fd00",
+      "FUN_00e7f550",
+      "FUN_00e73f60",
+      "FUN_00e53b00",
+      "FUN_00e600a0",
+      "FUN_00e6c9f0",
+      "FUN_00e84bf0",
+      "FUN_006ffe00"
+    ],
+    "App::cCellModeStrategy::OnKeyDown": [
+      "FUN_00e82900",
+      "GameInput::OnKeyDown",
+      "FUN_00e82cc0",
+      "FUN_00e81120",
+      "FUN_00e7f630"
+    ],
+    "App::cCellModeStrategy::OnMouseMove": [],
+    "App::cCellModeStrategy::OnMouseWheel": [],
+    "Simulator::Cell::MovePlayerToMousePosition": [
+      "FUN_00e5b2e0",
+      "FUN_00743b50",
+      "FUN_00e4ce40",
+      "FUN_00e82130",
+      "FUN_00e50730",
+      "Graphics::IRenderer::Get",
+      "FUN_007c4900",
+      "FUN_0069b600"
+    ],
+    "FUN_007c4900": [],
+    "FUN_00b721d0": [],
+    "Simulator::cSpaceTrading::Get": []
+  },
+  "vtables": [
+    {
+      "name": "App::cCellModeStrategy",
+      "address": "0x01485550",
+      "members": [
+        "Initialize",
+        "Dispose",
+        "OnEnter",
+        "OnExit",
+        "OnKeyDown",
+        "OnMouseMove",
+        "OnMouseDown",
+        "OnMouseUp",
+        "OnMouseWheel",
+        "Update",
+        "AddRef"
+      ],
+      "evidence": "CONFIRMED (docs/analysis/vtables.json + SDK XML)",
+      "scan_match": {
+        "address": "0x01485550",
+        "slots": [
+          {
+            "ptr": "0x00e5c590",
+            "func": null,
+            "funcStart": false,
+            "inFunc": false,
+            "sdk": false
+          },
+          {
+            "ptr": "0x00e62700",
+            "func": null,
+            "funcStart": false,
+            "inFunc": false,
+            "sdk": false
+          },
+          {
+            "ptr": "0x00dd3d10",
+            "func": "FUN_00dd3d10",
+            "funcStart": true,
+            "inFunc": false,
+            "sdk": false
+          },
+          {
+            "ptr": "0x01154720",
+            "func": "FUN_01154720",
+            "funcStart": true,
+            "inFunc": false,
+            "sdk": false
+          },
+          {
+            "ptr": "0x00e5c5a0",
+            "func": null,
+            "funcStart": false,
+            "inFunc": false,
+            "sdk": false
+          },
+          {
+            "ptr": "0x00b1fbf0",
+            "func": "FUN_00b1fbf0",
+            "funcStart": true,
+            "inFunc": false,
+            "sdk": false
+          },
+          {
+            "ptr": "0x00e81cf0",
+            "func": "App::cCellModeStrategy::Initialize",
+            "funcStart": true,
+            "inFunc": false,
+            "sdk": true
+          },
+          {
+            "ptr": "0x00e81f30",
+            "func": "App::cCellModeStrategy::Dispose",
+            "funcStart": true,
+            "inFunc": false,
+            "sdk": true
+          },
+          {
+            "ptr": "0x00e552f0",
+            "func": "App::cCellModeStrategy::OnEnter",
+            "funcStart": true,
+            "inFunc": false,
+            "sdk": true
+          },
+          {
+            "ptr": "0x00e7fc00",
+            "func": "App::cCellModeStrategy::OnExit",
+            "funcStart": true,
+            "inFunc": false,
+            "sdk": true
+          },
+          {
+            "ptr": "0x00e51000",
+            "func": null,
+            "funcStart": false,
+            "inFunc": false,
+            "sdk": false
+          },
+          {
+            "ptr": "0x00e818f0",
+            "func": "App::cCellModeStrategy::OnKeyDown",
+            "funcStart": true,
+            "inFunc": false,
+            "sdk": true
+          },
+          {
+            "ptr": "0x00e51010",
+            "func": "App::cCellModeStrategy::OnMouseMove",
+            "funcStart": true,
+            "inFunc": false,
+            "sdk": true
+          },
+          {
+            "ptr": "0x00e6c860",
+            "func": "App::cCellModeStrategy::OnMouseDown",
+            "funcStart": true,
+            "inFunc": false,
+            "sdk": true
+          },
+          {
+            "ptr": "0x00e5c0f0",
+            "func": "App::cCellModeStrategy::OnMouseUp",
+            "funcStart": true,
+            "inFunc": false,
+            "sdk": true
+          },
+          {
+            "ptr": "0x00e51030",
+            "func": null,
+            "funcStart": false,
+            "inFunc": false,
+            "sdk": false
+          },
+          {
+            "ptr": "0x00e7d660",
+            "func": "App::cCellModeStrategy::OnMouseWheel",
+            "funcStart": true,
+            "inFunc": false,
+            "sdk": true
+          },
+          {
+            "ptr": "0x00e80980",
+            "func": "App::cCellModeStrategy::Update",
+            "funcStart": true,
+            "inFunc": false,
+            "sdk": true
+          },
+          {
+            "ptr": "0x00c6a960",
+            "func": "FUN_00c6a960",
+            "funcStart": true,
+            "inFunc": false,
+            "sdk": false
+          },
+          {
+            "ptr": "0x007b86e0",
+            "func": "FUN_007b86e0",
+            "funcStart": true,
+            "inFunc": false,
+            "sdk": false
+          },
+          {
+            "ptr": "0x00630030",
+            "func": null,
+            "funcStart": false,
+            "inFunc": false,
+            "sdk": false
+          },
+          {
+            "ptr": "0x00e5cac0",
+            "func": "FUN_00e5cac0",
+            "funcStart": true,
+            "inFunc": false,
+            "sdk": false
+          },
+          {
+            "ptr": "0x00e51300",
+            "func": null,
+            "funcStart": false,
+            "inFunc": false,
+            "sdk": false
+          },
+          {
+            "ptr": "0x00e51370",
+            "func": null,
+            "funcStart": false,
+            "inFunc": false,
+            "sdk": false
+          },
+          {
+            "ptr": "0x00b1fbf0",
+            "func": "FUN_00b1fbf0",
+            "funcStart": true,
+            "inFunc": false,
+            "sdk": false
+          },
+          {
+            "ptr": "0x00b7d400",
+            "func": "FUN_00b7d400",
+            "funcStart": true,
+            "inFunc": false,
+            "sdk": false
+          },
+          {
+            "ptr": "0x00e5cad0",
+            "func": null,
+            "funcStart": false,
+            "inFunc": false,
+            "sdk": false
+          }
+        ],
+        "confidence": "HIGH",
+        "namespace": "App",
+        "source": "docs/analysis/vtables.json"
+      }
+    }
+  ],
+  "constants": [
+    {
+      "name": "DAT_015a7c40",
+      "function": "Simulator::Cell::MovePlayerToMousePosition",
+      "meaning": "plane normal X (movement plane)"
+    },
+    {
+      "name": "DAT_015a7c44",
+      "function": "Simulator::Cell::MovePlayerToMousePosition",
+      "meaning": "plane normal Y"
+    },
+    {
+      "name": "DAT_015a7c48",
+      "function": "Simulator::Cell::MovePlayerToMousePosition",
+      "meaning": "plane normal Z"
+    },
+    {
+      "name": "DAT_016b3c28/2c/30",
+      "function": "Simulator::Cell::MovePlayerToMousePosition",
+      "meaning": "plane point (origin offset) X/Y/Z"
+    }
+  ],
+  "globals": [
+    {
+      "name": "Simulator::Cell::sCellGame",
+      "note": "singleton cell-game state block; fields at +16652..+20953 decode state (player ref +16668, moving flag +20880+224, lock +20824, mode +20960)"
+    },
+    {
+      "name": "Simulator::Cell::sCellUI",
+      "note": "cell UI state; +36/+38 selection flags, +2359 toggle"
+    }
+  ],
+  "runtime": {
+    "obtained": false,
+    "reason": "No cell-mode trace was recorded. Xvfb is absent on this host and headless menu navigation is impossible, so the original could only be traced as far as the main menu; the existing traces (see traces_scanned) are from a small test binary (obs_m32) and an empty main_menu capture \u2014 none reach cell mode. Recorded, not fabricated.",
+    "traces_scanned": [
+      {
+        "file": "obs_m32.jsonl",
+        "events": 1801
+      },
+      {
+        "file": "obs_main_menu.jsonl",
+        "events": 0
+      }
+    ],
+    "matched_events": []
+  },
+  "resource_refs": [
+    {
+      "type": "0x00E6BCE5",
+      "group": "0x40666202",
+      "instance": "0x0D1B4BB56",
+      "purpose": "backdrop heightfield patch A (scene table, src/apps/cell_stage.cpp)",
+      "status": "CONFIRMED (present in DBPF index)"
+    },
+    {
+      "type": "0x00E6BCE5",
+      "group": "0x40666203",
+      "instance": "0x0D1B4BB56",
+      "purpose": "backdrop heightfield patch B",
+      "status": "CONFIRMED (present in DBPF index)"
+    },
+    {
+      "type": "0x2F4E681C",
+      "group": "0x40662900",
+      "instance": "0x0D1B4BB56",
+      "purpose": "backdrop DXT5 raster",
+      "status": "CONFIRMED (present in DBPF index)"
+    },
+    {
+      "type": "0x00E6BCE5",
+      "group": "0x40637E02",
+      "instance": "0x067A0801",
+      "purpose": "player-cell stand-in (APPROXIMATION identity)",
+      "status": "CONFIRMED (present in DBPF index)"
+    },
+    {
+      "type": "0x00E6BCE5",
+      "group": "0x40637E03",
+      "instance": "0x067CEDE8",
+      "purpose": "food stand-in A (APPROXIMATION position)",
+      "status": "CONFIRMED (present in DBPF index)"
+    },
+    {
+      "type": "0x00E6BCE5",
+      "group": "0x40637E03",
+      "instance": "0x067CEDEA",
+      "purpose": "food stand-in B (APPROXIMATION position)",
+      "status": "CONFIRMED (present in DBPF index)"
+    },
+    {
+      "type": "0x00E6BCE5",
+      "group": "0x40637E03",
+      "instance": "0x067CEDFB",
+      "purpose": "prey stand-in C (APPROXIMATION position)",
+      "status": "CONFIRMED (present in DBPF index)"
+    }
+  ],
+  "resource_note": {
+    "available": true,
+    "record_count": 17119,
+    "source": "SPORE/Data/Spore_Content.package"
+  },
+  "knowledge_graph": {
+    "available": true,
+    "db": "knowledgegraph/spore.db",
+    "nodes": [
+      {
+        "label": "AssetFormat",
+        "name": "dbpf_group_scheme",
+        "attrs_json": "{\"family\":\"upper 16 bits 0x4061-0x406b\",\"subblocks\":\"+0x0000 metadata (prop/summary/pollen/bem); +0x0001..3 gmdl; +0x2900..2 textures\",\"rule\":\"same instance ID across family (e.g. 0xd1b4bb56)\",\"paths\":\"no resource paths in DBPF; only opaque group IDs + build paths inside anim configs\",\"evidence\":\"CONFIRMED byte-level (CELLSTAGE-RECON 1)\"}",
+        "confidence": 1.0,
+        "origin": "dynamic"
+      },
+      {
+        "label": "AssetRecord",
+        "name": "asset:gmdl:00E6BCE5:40637E02:067A0801",
+        "attrs_json": "{\"verts\":244,\"role\":\"player-cell stand-in (flat)\",\"identity\":\"UNRESOLVED - no name<->group map exists in assets; creatures assembled from blocks via sporemol XML\"}",
+        "confidence": 0.5,
+        "origin": "manual"
+      },
+      {
+        "label": "AssetRecord",
+        "name": "asset:gmdl:00E6BCE5:40637E03:food-prey",
+        "attrs_json": "{\"instances\":\"0x067CEDE8/0x067CEDEA/0x067CEDFB\",\"verts\":\"79/435/248\",\"role\":\"food_a, food_b, prey_c in cell_stage\"}",
+        "confidence": 0.75,
+        "origin": "dynamic"
+      },
+      {
+        "label": "AssetRecord",
+        "name": "asset:gmdl:00E6BCE5:40666202:0D1B4BB56",
+        "attrs_json": "{\"package\":\"SPORE/Data/Spore_Content.package\",\"records\":\"15/16\",\"groups\":\"0x40666202/0x40666203\",\"instance\":\"0xd1b4bb56\",\"verts\":\"1059/750\",\"indices\":\"2169/1458 u16\",\"material\":\"0xd7be35f9\",\"topology\":\"heightfield patch (grid)\",\"role\":\"cell_stage backdrop_a/backdrop_b (textured)\",\"evidence\":\"VERIFIED-DIFFERENTIAL: geometry MATCH-ASSET-BYTES vs gmdl oracle\"}",
+        "confidence": 1.0,
+        "origin": "dynamic"
+      },
+      {
+        "label": "Function",
+        "name": "App::cCellModeStrategy",
+        "attrs_json": "{\"fns\":11,\"vtable\":\"0x01485550\",\"members\":\"Initialize/Dispose/OnEnter/OnExit/OnKeyDown/OnMouseMove/OnMouseDown/OnMouseUp/OnMouseWheel/Update\",\"input\":\"keyboard + mouse incl. wheel\",\"evidence\":\"CONFIRMED via vtables.json + SDK XML\"}",
+        "confidence": 0.9,
+        "origin": "sdk"
+      },
+      {
+        "label": "Implementation",
+        "name": "impl:src/apps/cell_stage.cpp",
+        "attrs_json": "{\"path\":\"src/apps/cell_stage.cpp\",\"roles\":\"offscreen scene (512^2 PPM + CELLSTAGE-MANIFEST v1, byte-identical); --input sim replay (CELLSTAGE-SIMMANIFEST); --interactive SDL3+Vulkan live window (60fps on :0 XWayland; scancode keys; driver fallback default->wayland->x11)\",\"camera\":\"orbit yaw/pitch/dist, CPU-baked NDC per vertex, follow player, wheel zoom [0.4,3.0]\"}",
+        "confidence": 0.9,
+        "origin": "static"
+      },
+      {
+        "label": "Implementation",
+        "name": "impl:src/sim/Sim.cpp",
+        "attrs_json": "{\"path\":\"src/sim/Sim.cpp\",\"role\":\"CellSim: Entity/PlayerState/CameraState/InputFrame; fixed dt 1/60s; MovementParams (all APPROXIMATION); eat-on-proximity + growMeter / flee (INFERRED); ScriptedInputSource JSON-lines replay\",\"determinism\":\"no time()/rand(); same entities + input => identical state\"}",
+        "confidence": 0.9,
+        "origin": "static"
+      },
+      {
+        "label": "Observation",
+        "name": "obs:cell_anim_state_db",
+        "attrs_json": "{\"package\":\"Spore_Game rec 544\",\"type\":\"0x9b8e862f\",\"states\":\"~73: Cell_mov_cil(_big|_mad|_scared), Cell_move_jet(_blink), cilia/jet/Flagella, Cell_eat_{filter,mand,prob,whole}, Cell_takedmg_*, Cell_death_{eaten,Player,npc}, mood Cell_{idle,hatch,grow,...}\",\"channels\":\"EyeCell/MoveCell/MouthCell/cell_electro\",\"evidence\":\"CONFIRMED text DB; dynamics UNOBSERVED\"}",
+        "confidence": 0.9,
+        "origin": "dynamic"
+      },
+      {
+        "label": "Observation",
+        "name": "obs:cell_mode_untraced",
+        "attrs_json": "{\"trace\":\"cell_mode\",\"events\":0,\"reason\":\"menu navigation impossible headless (no Xvfb/xdotool); menu_transition probes defined, never run\"}",
+        "confidence": 1.0,
+        "origin": "manual"
+      },
+      {
+        "label": "Structure",
+        "name": "CellWorldObjects",
+        "attrs_json": "{\"type\":\"0x0f43029a\",\"count\":1022,\"shape\":\"GUIDs+vectors+floats+0x1234\"}",
+        "confidence": 0.0,
+        "origin": "manual"
+      },
+      {
+        "label": "Subsystem",
+        "name": "sub:cell-sim-movement-interaction",
+        "attrs_json": "{\"status\":\"approximated\",\"commits\":[\"cf7147a\"],\"impl\":\"src/sim/Sim.cpp\",\"evidence\":\"MovementParams APPROXIMATION (never traced; OnKeyDown confirms thrust input only); eat/flee INFERRED (Cell_eat_* anim states + cCellLootTableResource); radii unobserved; no boundary seam (original unobserved)\"}",
+        "confidence": 0.5,
+        "origin": "manual"
+      },
+      {
+        "label": "Subsystem",
+        "name": "sub:cell-stage-scene-assembly",
+        "attrs_json": "{\"status\":\"approximated\",\"commits\":[\"b5e96f0\",\"cf7147a\",\"8cedc60\"],\"impl\":\"src/apps/cell_stage.cpp\",\"boundary\":\"B1+B2+B3 seams\",\"evidence\":\"asset identity MATCH-ASSET-BYTES; geometry MATCH-ASSET-BYTES; backdrop raster VERIFIED-DIFFERENTIAL; positions hard-coded (world-obj 0x0f43029a undecoded); player-cell identity UNRESOLVED; clear color APPROXIMATION\"}",
+        "confidence": 0.5,
+        "origin": "manual"
+      },
+      {
+        "label": "Subsystem",
+        "name": "sub:interactive-presentation",
+        "attrs_json": "{\"status\":\"replaced-stub\",\"commits\":[\"8cedc60\"],\"impl\":\"src/apps/cell_stage.cpp:runInteractive + VulkanRenderer present mode (swapchain, vsync FIFO, SDL3 window)\",\"boundary\":\"B3 present mode is backend-only (VulkanRenderer.hpp); IRenderer unchanged\",\"gate\":\"no differential oracle for interactive behavior (no headless trace of original)\"}",
+        "confidence": 0.75,
+        "origin": "manual"
+      },
+      {
+        "label": "Test",
+        "name": "test:cell_stage",
+        "attrs_json": "{\"ctest\":\"cell_stage\",\"scope\":\"offscreen scene: manifest byte-identical across runs; content window [60000,115000] on RADV; + test_cellstage.py two-run identity; cell_stage_interactive_smoke no-display exit 0\"}",
+        "confidence": 1.0,
+        "origin": "static"
+      },
+      {
+        "label": "Test",
+        "name": "test:sim_test",
+        "attrs_json": "{\"ctest\":\"sim_test\",\"scope\":\"pure C++ (no GPU/package): movement, eat/flee rules, scripted input replay, determinism (two runs byte-identical); + tests/test_sim.py replay vs SPORE/\"}",
+        "confidence": 1.0,
+        "origin": "static"
+      }
+    ],
+    "edges": [
+      {
+        "src": "asset:gmdl:00E6BCE5:40627100:067B0FBC",
+        "rel": "affectedBy",
+        "dst": "GmdlRefCountBE"
+      },
+      {
+        "src": "MaterialShader",
+        "rel": "binds",
+        "dst": "CompiledState"
+      },
+      {
+        "src": "sub:dbpf-index",
+        "rel": "boundedBy",
+        "dst": "impl:src/compat/ResourceProvider.hpp"
+      },
+      {
+        "src": "sub:qfs-decompress",
+        "rel": "boundedBy",
+        "dst": "impl:src/compat/ResourceProvider.hpp"
+      },
+      {
+        "src": "sub:gmdl-walk-v8-static",
+        "rel": "boundedBy",
+        "dst": "impl:src/compat/MeshSource.hpp"
+      },
+      {
+        "src": "sub:mesh-extract-bounds",
+        "rel": "boundedBy",
+        "dst": "impl:src/compat/MeshSource.hpp"
+      },
+      {
+        "src": "sub:renderer-offscreen-submit",
+        "rel": "boundedBy",
+        "dst": "impl:src/renderer/Renderer.hpp"
+      },
+      {
+        "src": "sub:cell-stage-scene-assembly",
+        "rel": "boundedBy",
+        "dst": "impl:src/compat/ResourceProvider.hpp"
+      },
+      {
+        "src": "sub:cell-stage-scene-assembly",
+        "rel": "boundedBy",
+        "dst": "impl:src/compat/MeshSource.hpp"
+      },
+      {
+        "src": "DBPFv3",
+        "rel": "compressesWith",
+        "dst": "QFSCompression"
+      },
+      {
+        "src": "DBPFv3",
+        "rel": "contains",
+        "dst": "RW4Container"
+      },
+      {
+        "src": "DBPFv3",
+        "rel": "contains",
+        "dst": "GameModelResource"
+      },
+      {
+        "src": "RenderUtils_CreateDevice",
+        "rel": "creates",
+        "dst": "SporeGraphicsDevice"
+      },
+      {
+        "src": "asset:raster:2F4E681C:40662900:0D1B4BB56",
+        "rel": "decodedBy",
+        "dst": "impl:src/assets/Dxt5.cpp"
+      },
+      {
+        "src": "asset:gmdl:00E6BCE5:40637E03:067A07F0",
+        "rel": "decodesWith",
+        "dst": "QFSCompression"
+      },
+      {
+        "src": "asset:raster:2F4E681C:40662900:0D1B4BB56",
+        "rel": "decodesWith",
+        "dst": "SporeRasterFormat"
+      },
+      {
+        "src": "TerrainSphereQuad",
+        "rel": "dispatches",
+        "dst": "RenderWare_Mesh_SetIndexBuffer_Draw"
+      },
+      {
+        "src": "dbpf_group_scheme",
+        "rel": "explains",
+        "dst": "asset:gmdl:00E6BCE5:40666202:0D1B4BB56"
+      },
+      {
+        "src": "dbpf_group_scheme",
+        "rel": "explains",
+        "dst": "asset:gmdl:00E6BCE5:40637E02:067A0801"
+      },
+      {
+        "src": "impl:src/assets/Gmdl.cpp",
+        "rel": "fixedFor",
+        "dst": "GmdlRefCountBE"
+      },
+      {
+        "src": "sub:renderer-offscreen-submit",
+        "rel": "gatedBy",
+        "dst": "test:triangle_smoke"
+      },
+      {
+        "src": "sub:renderer-offscreen-submit",
+        "rel": "gatedBy",
+        "dst": "test:asset_render"
+      },
+      {
+        "src": "sub:resource-manager-full",
+        "rel": "gatedBy",
+        "dst": "obs:menu_transition"
+      },
+      {
+        "src": "sub:utfwin-message-dispatch",
+        "rel": "gatedBy",
+        "dst": "obs:menu_transition"
+      },
+      {
+        "src": "obs:cell_mode_untraced",
+        "rel": "gates",
+        "dst": "sub:simulator-gameplay"
+      },
+      {
+        "src": "dbpf_group_scheme",
+        "rel": "governs",
+        "dst": "DBPFv3"
+      },
+      {
+        "src": "sub:dbpf-index",
+        "rel": "implementedBy",
+        "dst": "impl:src/assets/Dbpf.cpp"
+      },
+      {
+        "src": "sub:qfs-decompress",
+        "rel": "implementedBy",
+        "dst": "impl:src/assets/Dbpf.cpp"
+      },
+      {
+        "src": "sub:gmdl-walk-v8-static",
+        "rel": "implementedBy",
+        "dst": "impl:src/assets/Gmdl.cpp"
+      },
+      {
+        "src": "sub:mesh-extract-bounds",
+        "rel": "implementedBy",
+        "dst": "impl:src/assets/Mesh.cpp"
+      },
+      {
+        "src": "sub:renderer-offscreen-submit",
+        "rel": "implementedBy",
+        "dst": "impl:src/renderer/VulkanRenderer.cpp"
+      },
+      {
+        "src": "sub:cell-stage-scene-assembly",
+        "rel": "implementedBy",
+        "dst": "impl:src/apps/cell_stage.cpp"
+      },
+      {
+        "src": "sub:cell-sim-movement-interaction",
+        "rel": "implementedBy",
+        "dst": "impl:src/sim/Sim.cpp"
+      },
+      {
+        "src": "sub:interactive-presentation",
+        "rel": "implementedBy",
+        "dst": "impl:src/apps/cell_stage.cpp"
+      },
+      {
+        "src": "sub:interactive-presentation",
+        "rel": "implementedBy",
+        "dst": "impl:src/renderer/VulkanRenderer.cpp"
+      },
+      {
+        "src": "sub:material-shader-texture",
+        "rel": "implementedBy",
+        "dst": "impl:src/assets/Texture.cpp"
+      },
+      {
+        "src": "sub:material-shader-texture",
+        "rel": "implementedBy",
+        "dst": "impl:src/assets/Dxt5.cpp"
+      },
+      {
+        "src": "App::cCellModeStrategy",
+        "rel": "informs",
+        "dst": "sub:cell-sim-movement-interaction"
+      },
+      {
+        "src": "App::cCameraManager",
+        "rel": "informs",
+        "dst": "impl:src/sim/Sim.cpp"
+      },
+      {
+        "src": "obs:cell_anim_state_db",
+        "rel": "informs",
+        "dst": "sub:cell-sim-movement-interaction"
+      },
+      {
+        "src": "obs:main_menu:local_main",
+        "rel": "missed",
+        "dst": "App::Bootstrap::local_main"
+      },
+      {
+        "src": "obs:main_menu:stateMachine",
+        "rel": "missed",
+        "dst": "App::Bootstrap::stateMachine"
+      },
+      {
+        "src": "obs:menu_transition",
+        "rel": "missed",
+        "dst": "UI::cEditor::HandleMessage"
+      },
+      {
+        "src": "obs:menu_transition",
+        "rel": "missed",
+        "dst": "UI::cEditor::OnMouseDown"
+      },
+      {
+        "src": "obs:menu_transition",
+        "rel": "missed",
+        "dst": "UI::cEditor::Update"
+      },
+      {
+        "src": "obs:menu_transition",
+        "rel": "missed",
+        "dst": "UI::MessagePump::PeekDispatch"
+      },
+      {
+        "src": "obs:menu_transition",
+        "rel": "missed",
+        "dst": "Res::cResourceManager::Initialize"
+      },
+      {
+        "src": "obs:menu_transition",
+        "rel": "missed",
+        "dst": "Res::DatabasePackedFile::Lock"
+      },
+      {
+        "src": "obs:menu_transition",
+        "rel": "missed",
+        "dst": "Res::PFIndexModifiable::Read"
+      },
+      {
+        "src": "obs:menu_transition",
+        "rel": "missed",
+        "dst": "Frame::TimeAtStartOfFrame"
+      },
+      {
+        "src": "sub:bootstrap-appsystem-lifecycle",
+        "rel": "observedVia",
+        "dst": "obs:main_menu:entry"
+      },
+      {
+        "src": "sub:bootstrap-appsystem-lifecycle",
+        "rel": "observedVia",
+        "dst": "obs:main_menu:InitPlugins"
+      },
+      {
+        "src": "sub:bootstrap-appsystem-lifecycle",
+        "rel": "observedVia",
+        "dst": "obs:main_menu:Init"
+      },
+      {
+        "src": "sub:bootstrap-appsystem-lifecycle",
+        "rel": "observedVia",
+        "dst": "obs:main_menu:Startup"
+      },
+      {
+        "src": "sub:bootstrap-appsystem-lifecycle",
+        "rel": "observedVia",
+        "dst": "obs:main_menu:IAppSystem_Get"
+      },
+      {
+        "src": "obs:main_menu:entry",
+        "rel": "observes",
+        "dst": "entry"
+      },
+      {
+        "src": "obs:main_menu:InitPlugins",
+        "rel": "observes",
+        "dst": "App::cAppSystem::InitPlugins"
+      },
+      {
+        "src": "obs:main_menu:Init",
+        "rel": "observes",
+        "dst": "App::cAppSystem::Init"
+      },
+      {
+        "src": "obs:main_menu:Startup",
+        "rel": "observes",
+        "dst": "App::cAppSystem::Startup"
+      },
+      {
+        "src": "obs:main_menu:IAppSystem_Get",
+        "rel": "observes",
+        "dst": "App::IAppSystem::Get"
+      },
+      {
+        "src": "obs:main_menu:retrace_0event",
+        "rel": "observes",
+        "dst": "App::cAppSystem::Init"
+      },
+      {
+        "src": "asset:gmdl:00E6BCE5:40637E03:067A07F0",
+        "rel": "parsedBy",
+        "dst": "impl:src/assets/Gmdl.cpp"
+      },
+      {
+        "src": "asset:gmdl:00E6BCE5:40637E03:067A07F0",
+        "rel": "parsedBy",
+        "dst": "impl:src/assets/Mesh.cpp"
+      },
+      {
+        "src": "obs:menu_transition",
+        "rel": "precedes",
+        "dst": "obs:cell_mode_untraced"
+      },
+      {
+        "src": "asset:gmdl:00E6BCE5:40637E03:067A07F0",
+        "rel": "readBy",
+        "dst": "impl:src/assets/Dbpf.cpp"
+      },
+      {
+        "src": "RenderWare_Mesh_SetIndexBuffer_Draw",
+        "rel": "reads",
+        "dst": "MaterialShader"
+      },
+      {
+        "src": "RW4Container",
+        "rel": "references",
+        "dst": "CompiledState"
+      },
+      {
+        "src": "asset:gmdl:00E6BCE5:40627100:067B0FBC",
+        "rel": "references",
+        "dst": "png32_type_is_rw4"
+      },
+      {
+        "src": "asset:gmdl:00E6BCE5:40637E03:067A07F0",
+        "rel": "renderedBy",
+        "dst": "impl:src/renderer/VulkanRenderer.cpp"
+      },
+      {
+        "src": "asset:gmdl:00E6BCE5:40637E02:067A0801",
+        "rel": "renderedBy",
+        "dst": "impl:src/apps/cell_stage.cpp"
+      },
+      {
+        "src": "asset:gmdl:00E6BCE5:40666202:0D1B4BB56",
+        "rel": "renderedBy",
+        "dst": "impl:src/apps/cell_stage.cpp"
+      },
+      {
+        "src": "asset:gmdl:00E6BCE5:40637E03:067A07F0",
+        "rel": "storedIn",
+        "dst": "DBPFv3"
+      },
+      {
+        "src": "asset:gmdl:00E6BCE5:40666202:0D1B4BB56",
+        "rel": "storedIn",
+        "dst": "DBPFv3"
+      },
+      {
+        "src": "asset:gmdl:00E6BCE5:40627100:067B0FBC",
+        "rel": "storedIn",
+        "dst": "DBPFv3"
+      },
+      {
+        "src": "asset:gmdl:00E6BCE5:40637E02:067A0801",
+        "rel": "storedIn",
+        "dst": "DBPFv3"
+      },
+      {
+        "src": "asset:gmdl:00E6BCE5:40637E03:food-prey",
+        "rel": "storedIn",
+        "dst": "DBPFv3"
+      },
+      {
+        "src": "asset:raster:2F4E681C:40662900:0D1B4BB56",
+        "rel": "storedIn",
+        "dst": "DBPFv3"
+      },
+      {
+        "src": "impl:src/assets/Dbpf.cpp",
+        "rel": "testedBy",
+        "dst": "test:assets_synthetic"
+      },
+      {
+        "src": "impl:src/assets/Dbpf.cpp",
+        "rel": "testedBy",
+        "dst": "test:assets_real"
+      },
+      {
+        "src": "impl:src/assets/Gmdl.cpp",
+        "rel": "testedBy",
+        "dst": "test:assets_synthetic"
+      },
+      {
+        "src": "impl:src/assets/Gmdl.cpp",
+        "rel": "testedBy",
+        "dst": "test:assets_real"
+      },
+      {
+        "src": "impl:src/assets/Mesh.cpp",
+        "rel": "testedBy",
+        "dst": "test:assets_synthetic"
+      },
+      {
+        "src": "impl:src/assets/Mesh.cpp",
+        "rel": "testedBy",
+        "dst": "test:assets_real"
+      },
+      {
+        "src": "impl:src/renderer/VulkanRenderer.cpp",
+        "rel": "testedBy",
+        "dst": "test:triangle_smoke"
+      },
+      {
+        "src": "impl:src/renderer/VulkanRenderer.cpp",
+        "rel": "testedBy",
+        "dst": "test:asset_render"
+      },
+      {
+        "src": "impl:src/apps/cell_stage.cpp",
+        "rel": "testedBy",
+        "dst": "test:cell_stage"
+      },
+      {
+        "src": "impl:src/sim/Sim.cpp",
+        "rel": "testedBy",
+        "dst": "test:sim_test"
+      },
+      {
+        "src": "impl:src/assets/Texture.cpp",
+        "rel": "testedBy",
+        "dst": "test:material_smoke"
+      },
+      {
+        "src": "RenderWare_Mesh_SetIndexBuffer_Draw",
+        "rel": "uses",
+        "dst": "SporeGraphicsDevice"
+      },
+      {
+        "src": "asset:gmdl:00E6BCE5:40666202:0D1B4BB56",
+        "rel": "usesTexture",
+        "dst": "asset:raster:2F4E681C:40662900:0D1B4BB56"
+      },
+      {
+        "src": "sub:dbpf-index",
+        "rel": "verifiedBy",
+        "dst": "test:assets_synthetic"
+      },
+      {
+        "src": "sub:dbpf-index",
+        "rel": "verifiedBy",
+        "dst": "test:assets_real"
+      },
+      {
+        "src": "sub:qfs-decompress",
+        "rel": "verifiedBy",
+        "dst": "test:assets_synthetic"
+      },
+      {
+        "src": "sub:qfs-decompress",
+        "rel": "verifiedBy",
+        "dst": "test:assets_real"
+      },
+      {
+        "src": "sub:gmdl-walk-v8-static",
+        "rel": "verifiedBy",
+        "dst": "test:assets_synthetic"
+      },
+      {
+        "src": "sub:gmdl-walk-v8-static",
+        "rel": "verifiedBy",
+        "dst": "test:assets_real"
+      },
+      {
+        "src": "sub:mesh-extract-bounds",
+        "rel": "verifiedBy",
+        "dst": "test:assets_synthetic"
+      },
+      {
+        "src": "sub:mesh-extract-bounds",
+        "rel": "verifiedBy",
+        "dst": "test:assets_real"
+      },
+      {
+        "src": "test:assets_real",
+        "rel": "verifies",
+        "dst": "asset:gmdl:00E6BCE5:40637E03:067A07F0"
+      },
+      {
+        "src": "test:asset_render",
+        "rel": "verifies",
+        "dst": "asset:gmdl:00E6BCE5:40637E03:067A07F0"
+      },
+      {
+        "src": "asset:gmdl:00E6BCE5:40637E03:067A07F0",
+        "rel": "walksAs",
+        "dst": "GameModelResource"
+      },
+      {
+        "src": "asset:gmdl:00E6BCE5:40666202:0D1B4BB56",
+        "rel": "walksAs",
+        "dst": "GameModelResource"
+      }
+    ]
+  },
+  "asset_relationships": [
+    "Scene backdrop: gmdl 0x00E6BCE5 group 0x40666202 / 0x40666203, inst 0xD1B4BB56 (record presence CONFIRMED against the DBPF index; see resource_refs).",
+    "Backdrop raster: 0x2F4E681C group 0x40662900, inst 0xD1B4BB56 (CONFIRMED; DXT5, near-black RGB alpha mask per docs/CELLSTAGE.md).",
+    "Player/food/prey stand-in gmdl records are APPROXIMATION identities (no scene/world-object records decoded yet; docs/CELLSTAGE.md, recon section 4)."
+  ],
+  "hypotheses": [
+    "The movement plane is a fixed plane at constant depth: normal at DAT_015a7c40/44/48, point at DAT_016b3c28/2c/30 (addresses OBSERVED; values INFERRED until read at runtime).",
+    "sCellGame+0x5158 is a lock/pause flag: movement is skipped while non-zero (INFERRED from the observed `!= 0 \u2192 return` guard).",
+    "sCellGame+0x5190+0xe0 is a 'moving' flag, set to 1 when the ray-plane hit succeeds (INFERRED from the observed store; meaning from decompilation context).",
+    "Thrust-style keys (OnKeyDown) are secondary: the movement TARGET is set by the mouse via the camera ray, not by the keys (INFERRED from the OnKeyDown decompilation note).",
+    "The player entity is fetched by index through FUN_00b721d0, the collection-getter at sCellGame+0x411c (structure OBSERVED; role INFERRED)."
+  ],
+  "known_unknowns": [
+    "Plane normal / plane point constant VALUES \u2014 addresses OBSERVED, values unread; a runtime read is required.",
+    "Semantics of the camera-mode word at +0xd4 (which camera modes allow steering).",
+    "Meaning of the state word at sCellGame+0x51e0 that branches the update body.",
+    "Player entity field semantics at +0x4c..+0x58 (current position) \u2014 offsets OBSERVED, semantics INFERRED.",
+    "No runtime trace exists for cell mode: Xvfb is absent, headless menu navigation is impossible, and the only recorded trace (main_menu) does not reach cell mode."
+  ],
+  "openspore_counterpart": {
+    "files": [
+      "src/apps/cell_stage.cpp",
+      "src/sim/Sim.cpp (CellSim)"
+    ],
+    "label": "APPROXIMATION",
+    "note": "Current movement is keyboard thrust (WASD/Shift) + exponential damping in CellSim::update \u2014 an APPROXIMATION. It does NOT model mouse-ray \u2192 move-plane steering (the ray-plane intersection finding above); the sim's camera is a follow-cam, and there is no movement plane in the model yet."
+  },
+  "replacement_readiness": {
+    "status": "approximated",
+    "gate": "Replace keyboard-thrust movement with camera-ray \u2192 movement-plane steering in CellSim; then a differential check against a Wine cell-mode trace (currently absent). See docs/BOUNDARIES.md / docs/replacement-status.json (cell-sim-movement-interaction).",
+    "missing_evidence": [
+      "runtime trace of cell mode (Xvfb absent; headless menu navigation impossible)",
+      "plane normal/point constant values",
+      "camera-mode word semantics"
+    ]
+  }
+}

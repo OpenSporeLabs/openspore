@@ -1,0 +1,115 @@
+{
+  "$schema": "ghidra-function-snapshot-1",
+  "source": "Ghidra 12.1.2 headless (SporeProject / SporeApp.exe, GOG 3.1.0.22, x86:LE:32:windows). Generated via GhidraMCP 7.0.0 REST. See tools/re/ghidra_snapshot.py for regeneration.",
+  "image_base": "0x01100000",
+  "note": "Decompiler output is EVIDENCE, NOT TRUTH: Ghidra has no MSVC RTTI for this binary, so many callee types are mis-attributed (e.g. ITextureManager/ILightingManager casts are the decompiler's guess). SDK symbol names are CONFIRMED via the march2017 SDK XML import; FUN_* names are Ghidra autogen (address-based) and are NOT real names. RVA = address - image_base.",
+  "functions": [
+    {
+      "name": "App::cCellModeStrategy::Update",
+      "address": "0x00e80980",
+      "rva": "0xd80980",
+      "body": [15206784, 15206812],
+      "size_bytes": 28,
+      "namespace": "App::cCellModeStrategy",
+      "signature": "void App::cCellModeStrategy::Update(cCellModeStrategy *this, float fDelta1, float fDelta2)",
+      "dispatch": "vtable (no static callers; called through cCellModeStrategy vtable @ 21517648)",
+      "callers": [],
+      "callees": ["FUN_00e806b0"],
+      "decompiled_evidence": "void Update(this, fDelta1, fDelta2){ FUN_00e806b0(this, fDelta1); }",
+      "evidence_level": "VERIFIED (SDK name) / INFERRED (param meaning: frame delta; the 'fDelta2' is unused in body)"
+    },
+    {
+      "name": "FUN_00e806b0",
+      "address": "0x00e806b0",
+      "rva": "0xd806b0",
+      "signature": "mangled/unknown (decompiler shows (ITextureManager*, float, int, int, int, D3DFORMAT, int) -- type guesses, NOT trusted)",
+      "role_inferred": "Real per-frame update body for cell mode. Reads Simulator::Cell::sCellGame state; branches on a game-state word at sCellGame+20960. In the 'active' branch it scales dt*1000, updates space-trading, and calls Simulator::Cell::MovePlayerToMousePosition(dt_ms).",
+      "callers": ["App::cCellModeStrategy::Update"],
+      "callees": ["Simulator::Cell::MovePlayerToMousePosition", "Simulator::cSpaceTrading::Get", "FUN_00e82de0", "FUN_00b3d3f0", "FUN_00e7f3a0", "FUN_00e7fd00", "FUN_00e7f550", "FUN_00e73f60", "FUN_00e53b00", "FUN_00e600a0", "FUN_00e6c9f0", "FUN_00e84bf0", "FUN_006ffe00"],
+      "globals_referenced": ["Simulator::Cell::sCellGame (+20960 state, +20828, +20832, +20880, +20952, +20953, +16652, +16656)"],
+      "decompiled_evidence": "See tools/re/data/decompiled/FUN_00e806b0.c (captured from Ghidra decompiler; type-cast noise present).",
+      "evidence_level": "INFERRED (role) -- the MovePlayerToMousePosition call is OBSERVED in decompilation"
+    },
+    {
+      "name": "App::cCellModeStrategy::OnKeyDown",
+      "address": "0x00e818f0",
+      "rva": "0xd818f0",
+      "namespace": "App::cCellModeStrategy",
+      "signature": "bool App::cCellModeStrategy::OnKeyDown(cCellModeStrategy *this, int virtualKey, KeyModifiers modifiers)",
+      "dispatch": "vtable (cCellModeStrategy vtable @ 21517648)",
+      "callers": [],
+      "callees": ["FUN_00e82900", "GameInput::OnKeyDown", "FUN_00e82cc0", "FUN_00e81120", "FUN_00e7f630"],
+      "globals_referenced": ["Simulator::Cell::sCellUI (+2359)"],
+      "decompiled_evidence": "Handles virtualKey; toggles sCellUI+2359 on key 2 (ESC); forwards to GameInput::OnKeyDown and per-mode handlers. Input is keyboard (thrust-style keys) PLUS mouse; the movement target is set by the mouse, not the keys (see MovePlayerToMousePosition).",
+      "evidence_level": "VERIFIED (SDK name) / INFERRED (key semantics)"
+    },
+    {
+      "name": "App::cCellModeStrategy::OnMouseMove",
+      "address": "0x00e51010",
+      "rva": "0xd51010",
+      "namespace": "App::cCellModeStrategy",
+      "signature": "bool App::cCellModeStrategy::OnMouseMove(cCellModeStrategy *this, float mouseX, float mouseY, MouseState mouseState)",
+      "dispatch": "vtable (cCellModeStrategy vtable @ 21517648)",
+      "body": [15011856, 15011881],
+      "size_bytes": 25,
+      "decompiled_evidence": "Small thunk; records mouse position consumed later by the camera-ray -> move-plane projection.",
+      "evidence_level": "VERIFIED (SDK name) / INFERRED (role)"
+    },
+    {
+      "name": "App::cCellModeStrategy::OnMouseWheel",
+      "address": "0x00e7d660",
+      "rva": "0xd7d660",
+      "namespace": "App::cCellModeStrategy",
+      "dispatch": "vtable (cCellModeStrategy vtable @ 21517648)",
+      "decompiled_evidence": "Zoom / camera distance (INFERRED -- not decompiled in this snapshot; wheel present in SDK member list).",
+      "evidence_level": "VERIFIED (SDK name) / INFERRED (role)"
+    },
+    {
+      "name": "Simulator::Cell::MovePlayerToMousePosition",
+      "address": "0x00e5b790",
+      "rva": "0xd5b790",
+      "body": [15054736, 15055361],
+      "size_bytes": 625,
+      "signature": "void Simulator::Cell::MovePlayerToMousePosition(float deltaTime)",
+      "callers": ["FUN_00e806b0"],
+      "callees": ["FUN_00e5b2e0", "FUN_00743b50", "FUN_00e4ce40", "FUN_00e82130", "FUN_00e50730", "Graphics::IRenderer::Get", "FUN_007c4900", "FUN_0069b600"],
+      "globals_referenced": ["Simulator::Cell::sCellGame (+20824 lock flag, +16668 player-ref, +20880)", "Simulator::Cell::sCellUI (+36, +38)"],
+      "decompiled_evidence": "Guard: return if sCellGame+20824 != 0 (a lock/paused flag). Player = FUN_00b721d0(* (sCellGame+16668)) (container-getter-by-index); if 0 return. FUN_00e5b2e0(dt) (per-frame update). Camera mode = FUN_00e4ce40()[+212]. Camera origin+dir fetched (FUN_007c4900 fills origin via ILightingWorld; direction is the view ray). Compute t = dot(dir, planeNormal) inverse; if valid and t>=0 set player pos (player+8/12/16) = origin + dir*t (RAY-PLANE INTERSECTION on the movement plane). Then targetDelta = -(newPos - curPos) using curPos at player+76/80/84; FUN_0069b600(...) computes orientation (rotation) to face travel; stored at player+20..32. Sets sCellGame+20880+224 = 1 ('moving' flag).",
+      "key_constants": {
+        "DAT_015a7c40": "plane normal X (movement plane)",
+        "DAT_015a7c44": "plane normal Y",
+        "DAT_015a7c48": "plane normal Z",
+        "DAT_016b3c28/2c/30": "plane point (origin offset) X/Y/Z"
+      },
+      "evidence_level": "VERIFIED (SDK name + ray-plane intersection structure OBSERVED in decompilation); plane-normal/point constants = OBSERVED addresses, values INFERRED (need runtime to read)"
+    },
+    {
+      "name": "FUN_007c4900",
+      "address": "0x007c4900",
+      "rva": "0x6c4900",
+      "role_inferred": "Returns camera / lighting-world origin (fills caller buffer via ILightingManager::Get()->GetLightingWorld() then FUN_007c4730).",
+      "evidence_level": "INFERRED"
+    },
+    {
+      "name": "FUN_00b721d0",
+      "address": "0x00b721d0",
+      "rva": "0x7721d0",
+      "role_inferred": "Container-getter-by-index: returns element pointer for valid index (index <= size, element id match), else 0. Used to fetch the player entity from the collection at sCellGame+16668.",
+      "decompiled_evidence": "if (id!=0 && (id&65535) <= *base+4) { p = base+5 *(id&65535) + *base; return (p[0]==id) ? p : 0; } return 0;",
+      "evidence_level": "INFERRED (structure OBSERVED)"
+    },
+    {
+      "name": "Simulator::cSpaceTrading::Get",
+      "address": "vtable",
+      "role_inferred": "Space-trading subsystem singleton; called each frame in the update body (vtable method [14] invoked).",
+      "evidence_level": "INFERRED"
+    }
+  ],
+  "vtables": [
+    { "name": "App::cCellModeStrategy", "address": "0x01485550", "members": ["Initialize","Dispose","OnEnter","OnExit","OnKeyDown","OnMouseMove","OnMouseDown","OnMouseUp","OnMouseWheel","Update","AddRef"], "evidence": "CONFIRMED (docs/analysis/vtables.json + SDK XML)" }
+  ],
+  "globals": [
+    { "name": "Simulator::Cell::sCellGame", "note": "singleton cell-game state block; fields at +16652..+20953 decode state (player ref +16668, moving flag +20880+224, lock +20824, mode +20960)" },
+    { "name": "Simulator::Cell::sCellUI", "note": "cell UI state; +36/+38 selection flags, +2359 toggle" }
+  ]
+}
