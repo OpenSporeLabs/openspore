@@ -604,6 +604,15 @@ int main(int argc, char** argv) {
             if (polls % 10 == 1) {
                 std::vector<pid_t> pids = descendantsOf(target);
                 pids.push_back(target);
+                // Wine double-forks: the game process is born from an
+                // already-ptraced middle process, so its pid lands in
+                // `attached` via the fork-event drains but reparents to
+                // init/systemd, leaving the ppid tree. Scan attached pids
+                // too (dead pids yield empty maps; thread-ids share the mm).
+                for (std::set<pid_t>::iterator it = attached.begin();
+                     it != attached.end(); ++it)
+                    if (std::find(pids.begin(), pids.end(), *it) == pids.end())
+                        pids.push_back(*it);
                 for (size_t ti = 0; ti < pids.size() && !baseFound; ti++) {
                     std::vector<ModMap> cm = parseMaps(pids[ti]);
                     bool hasMod = false;
@@ -740,6 +749,12 @@ int main(int argc, char** argv) {
         pid_t loader = target;
         std::vector<pid_t> tree = descendantsOf(loader);
         tree.push_back(loader);
+        // Same reparenting case as the module-wait poll above: the game pid
+        // may have left the ppid tree but is still in `attached`.
+        for (std::set<pid_t>::iterator it = attached.begin();
+             it != attached.end(); ++it)
+            if (std::find(tree.begin(), tree.end(), *it) == tree.end())
+                tree.push_back(*it);
         for (size_t ti = 0; ti < tree.size(); ti++) {
             pid_t cand = tree[ti];
             std::vector<ModMap> cm = parseMaps(cand);

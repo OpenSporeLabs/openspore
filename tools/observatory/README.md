@@ -111,13 +111,27 @@ under trace (d3d/swapchain fixmes, 13 s event loop observed). Two Wine layout
 facts were handled along the way: the loader child maps only the PE header
 page, and the game process maps its code sections **anonymously**
 (`0x401000-0x13cc000 r-xp`, no file path), contiguous with the header.
-**Current blocker:** `wine SporeApp.exe` routes through `start.exe /exec`,
-which spawns the game reparented to init/systemd (PPID 845 observed untraced),
-outside the traced lineage — so `--module SporeApp.exe` never matches and the
-run exits 1 after `--wait-module`. Next lead: fork events survive reparenting,
-so scan `attached`-set pids' maps instead of just the ppid tree; or bypass
-`start.exe`. Full evidence: `SCENARIO-main_menu.md` §4. Native `-m32` targets
-remain the green path (1801-event self-test).
+**Reparenting fix (2026-09-21):** `wine SporeApp.exe` routes through
+`start.exe /exec`, which spawns the game reparented to systemd `--user`
+(PPID 845, outside the traced ppid tree) — but ptrace control survives, so
+the game pid is already in the tracer's `attached` set via fork-event drains.
+The module-wait poll and `findModuleHost` now scan `attached`-set pids in
+addition to `descendantsOf()`. Verified twice: module host found in the
+reparented game pid (header `0x400000` + anon code `0x401000-0x13cc000`),
+7/7 breakpoints planted, clean detach, exit 0. The `PR_SET_CHILD_SUBREAPER`
+backup was NOT needed (fork events reliably deliver the game pid) and is not
+implemented. **Obj 6.1d DONE (2026-09-21):** `observe.py main_menu
+--duration 30` on a fresh wineserver captured **1004 events** (`entry` ×1 →
+`InitPlugins`/`Init`/`Startup` ×1 each at ~503–543 ms → `IAppSystem::Get`
+×1000 capped +1 dropped; `local_main`/`stateMachine` not reached in-window).
+Full JSONL in `out/obs_main_menu.jsonl` (git-ignored), trimmed 150-event copy
+in `examples/obs_main_menu_example.jsonl`. Native `-m32` targets remain the
+green path for tracer development.
+**Boot-stall workaround (2026-09-21):** only the first boot per wineserver
+generation reaches the renderer; later boots stall single-threaded in
+`ntsync_schedule` or exit silently (SIGKILLed sessions poison wineserver-side
+sync state). Run `wineserver -k` before every game launch (traced or not).
+Details + per-launch table: `SCENARIO-main_menu.md` §6–§7.
 
 ## Pitfalls found while building this (read before touching the code)
 
@@ -156,5 +170,7 @@ remain the green path (1801-event self-test).
 * Call `depth` is a nesting heuristic, not a real stack unwind.
 * Function-entry probes only; hitting the per-function cap retires the
   breakpoint (later calls run unobserved, `dropped` counts the retiring hit).
-* Wine game target blocked: `start.exe /exec` reparents the game out of the
-  traced lineage (see blocker above); native `-m32` targets are the green path.
+* Wine game target: module discovery in the reparented game process works
+  (`attached`-set scan, see Wine status above); 1004 events captured on a
+  fresh wineserver. **Always `wineserver -k` before a game run** — later boots
+  on one wineserver generation stall in `ntsync_schedule` or exit silently.

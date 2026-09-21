@@ -1,9 +1,9 @@
 # SCENARIO-main_menu — launch → startup to first stable frame
 
-Status: **partial**. The tracer follows the Wine lineage without wedging and the
-game boots to renderer bring-up under trace, but **zero probe events** were
-captured: the game process is reparented out of the traced lineage before the
-module maps (blocker §4). Probe RVAs were verified and one real bug fixed (§3).
+Status: **done (Obj 6.1d, 2026-09-21)**. After a `wineserver -k`,
+the game boots cleanly and the traced run captured **1004 events**
+(entry → InitPlugins/Init/Startup → `IAppSystem::Get` capped at 1000).
+A boot-stall pattern was found and worked around along the way (§6).
 
 ## Exact command
 
@@ -129,3 +129,52 @@ neither installed; do NOT install without asking), (c) probes in
 present (swapchain-resize fixme) → send one click/key → capture 20 s →
 `analyze.py --json`. Keep `--max-events` tight on `HandleMessage`/`Update`
 (per-frame fire rate).
+
+## 6. Boot-stall investigation (2026-09-21, 6-launch budget — all used)
+
+Environment re-check: `DISPLAY=:0` present (Xwayland :0, Plasma/Wayland
+session), AMD RX 7900 XTX + direct rendering — display available, same as the
+known-good baseline. `which Xvfb xdotool` → both still absent. No missing
+display; suspect #1 ruled out.
+
+Stale wineserver ruled IN as the stall trigger. Observed pattern:
+
+| # | variant | result |
+|---|---------|--------|
+| 1 | untraced, after `wineserver -k` (killed stale 10:51 `wineserver`+services) | **boots**: 23-line d3d signature identical to §A, multi-thread, CPU-active |
+| 2 | traced `observe.py main_menu --duration 30` (same wineserver gen) | 7/7 planted, 33.7 s loop, **0 traps** — game mapped module + d3d DLLs but never reached `entry`; post-detach: 1 thread, 0 CPU, `ntsync_schedule` |
+| 3 | untraced, same wineserver | **silent exit <20 s, zero stderr** |
+| 4 | untraced `WINEDEBUG=+loaddll` | loader loads full DLL set (last: `d3d9.dll` on tid 0140), then frozen: 1 thread, 0 CPU, `ntsync_schedule`, no renderer fixmes |
+| 5 | untraced, after 2nd `wineserver -k` | **boots**: full d3d signature, 28 % CPU |
+| 6 | traced `observe.py main_menu --duration 30` (fresh wineserver) | **1004 events** (see §7) |
+
+Rule of thumb: **first boot after `wineserver -k` works (launches 1, 5);
+later boots on the same wineserver generation stall** (single-threaded
+`ntsync_schedule` before renderer bring-up) **or exit silently** (launches
+2–4). SIGKILL-terminated sessions (`timeout -s KILL`) appear to leave
+wineserver-side sync state behind that blocks re-init. Workaround: `wineserver
+-k` before any game run (traced or not). No sudo needed (plain `kill` on own
+PIDs + `wineserver -k` suffice). `/proc/<pid>/stack` was unreadable only
+because the pid had already exited (silent-exit case), not EACCES.
+
+## 7. Obj 6.1d traced capture (launch 6, fresh wineserver)
+
+`timeout -s KILL 120 python3 tools/observatory/observe.py main_menu
+--duration 30` → module host pid 120690 via attached-set discovery, 7/7
+breakpoints, 33.2 s event loop, **1004 events / 1005 traps**, single thread
+(tid 120690). Full JSONL: `out/obs_main_menu.jsonl` (git-ignored, 247 KB);
+trimmed 150-event copy: `examples/obs_main_menu_example.jsonl` (37 KB).
+
+| function | count | first | note |
+|----------|------:|-------|------|
+| entry | 1 | 0 ns | probe RVA correct, game reached it |
+| App::cAppSystem::InitPlugins | 1 | 503.766 ms | |
+| App::cAppSystem::Init | 1 | 503.802 ms | ~36 µs after InitPlugins |
+| App::cAppSystem::Startup | 1 | 543.544 ms | |
+| App::IAppSystem::Get | 1000 (+1 dropped at cap) | 519.524 ms | min-ival 22 µs, med 27.9 µs — hot singleton getter as predicted |
+| App::Bootstrap::local_main | 0 | — | not reached in 30 s window |
+| App::Bootstrap::stateMachine | 0 | — | not reached in 30 s window |
+
+Rate spikes: `[1s-2s): 178 events (13.7x)`, `[4s-5s): 235 events (235x)` —
+`IAppSystem::Get` bursts after Startup. `this` parameter captured
+(`ecx=0x0285eeb8` on Init/InitPlugins) for future `this`-typing work.
