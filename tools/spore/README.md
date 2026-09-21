@@ -11,6 +11,7 @@ python3 tools/spore/dbpf/dbpf.py  <file> [exts|list <pat>|get <idx>|find <pat>|d
 python3 tools/spore/rw4/rw4.py    <file> [<file> ...]
 python3 tools/spore/gmdl/gmdl.py  <inspect|dump> <file>
 python3 tools/spore/typescan.py   <file> [<file> ...]
+python3 tools/spore/asset_resolver.py <file> [--typeinfo|--map|--type 0x..|--group 0x..|--record T:G:I|--near G I]
 ```
 
 ## Layout
@@ -20,8 +21,10 @@ tools/spore/
   dbpf/dbpf.py        DBPF v3 container reader + QFS (RefPack) decompression
   rw4/rw4.py          RW4 container: header, manifest, type codes, sections
   gmdl/gmdl.py        GMDL GameModel (RenderAsset 0xE6BCE5) full-layout parser
-  types/typenames.json  canonical typeID -> name map (from the 0x1C7AC81 prop map)
+  types/typenames.json  canonical typeID -> name map (SDK-sourced + prop map)
+  types/groupnames.json SDK groupID -> name map (CommonIDs.h)
   typescan.py         per-package type histogram with decoded names
+  asset_resolver.py   record-level resolver: type/group/instance lookup + names
 ```
 
 ## dbpf.py
@@ -58,6 +61,30 @@ See the module docstring for the complete field layout.
 
 Prints a per-package type histogram. Names come from the package's own
 0x1C7AC81 prop record merged with the canonical `types/typenames.json` map.
+
+## asset_resolver.py
+
+Resolves individual DBPF records to `(type_id, type_name, group_id, group_name,
+instance_id, size, offset, stage, category)`. Names come from
+`types/typenames.json` and `types/groupnames.json`.
+
+Commands:
+
+- `--typeinfo` — type histogram with decoded names.
+- `--type 0x...` — list all records of a given type.
+- `--group 0x...` — list all records in a given group.
+- `--record T:G:I` — look up a specific record (all hex, colon-separated).
+- `--near GROUP INST --near-count N` — find records with the same group and
+  nearby instance IDs, plus same-type records in nearby groups.
+- `--map` — dump the full type and group name maps.
+- `--json` — JSON output for any of the above.
+
+Example:
+
+```bash
+python3 tools/spore/asset_resolver.py SPORE/Data/Spore_Content.package \
+    --record 0x00E6BCE5:0x40637E02:0x067A0801 --json
+```
 
 ## Legal note
 
