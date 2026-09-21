@@ -1,4 +1,4 @@
-# Compatibility / Replacement Boundaries (Objective 9)
+# Compatibility / Replacement Boundaries (Objective 9, reviewed Obj18)
 
 How OpenSpore subsystems replace original ones piecemeal. Rule:
 `original implementation ↔ compatibility boundary ↔ OpenSpore implementation`.
@@ -19,6 +19,31 @@ Replacement mechanics, stated honestly:
   DLL-injection-style replacement of code inside `SporeApp.exe` is **NOT**
   the current mechanism and is not planned: the binary is a static EXE with
   no engine DLLs (RECON §4).
+
+## The replacement pattern (applied per subsystem)
+
+Every subsystem goes through the same five steps before its boundary (if any)
+is drawn, and `docs/replacement-status.json` tracks where it stands:
+
+1. **Original behavior** — what the original does (SDK names, decompiled
+   signatures, asset layout).
+2. **Observed semantics** — what we actually saw: probe traces, real record
+   bytes, oracle measurements. No trace → labeled INFERRED/APPROXIMATION.
+3. **OpenSpore implementation** — clean-room code behind a `docs/BOUNDARIES.md`
+   seam (or no seam, while unobserved).
+4. **Validation** — differential evidence: oracle byte-match, CTest/Python
+   tests, pixel stats. Recorded in the status file's `evidence`/`commits`.
+5. **Replaceable subsystem** — the status (`replaced-verified` /
+   `replaced-stub` / `approximated` / …) that says whether the seam may be
+   trusted for substitution.
+
+Worked example — raster texture: (1) `raster` record type 0x2F4E681C
+(RECON/RENDERWARE-RESEARCH §9) → (2) 32-byte envelope + DXT5 blocks confirmed
+on 3 real records (MATERIALS-DESIGN §1) → (3) `decodeRasterMips`/`Dxt5` behind
+B1 (fetch) and B3 (`createTexture`) → (4) C++ output sha256-prefix-matches the
+independent python oracle (`a7bad32bd7ef8210`); the real 0x40662900 is a
+near-black alpha mask → (5) `replaced-verified` for decode; the lit pipeline's
+light values stay `approximated` (no light data observed).
 
 ## B1 — Resource access: `IResourceProvider`
 
@@ -73,13 +98,18 @@ Replacement mechanics, stated honestly:
   (state==2, QPC stamp, §5); per-mesh stream rebind draw path (§6.3);
   `triangle_smoke` + `asset_render` pixel evidence
   (`docs/RENDERER-DESIGN.md`, `docs/ASSET-PATH.md` stage 7).
-- **OpenSpore status: EXISTS (stub scope).** Backend is offscreen-only, one
-  vertex layout, no materials/swapchain (explicit non-goals in
-  RENDERER-DESIGN.md). Test consumer: `NullRenderer` in
+- **OpenSpore status: EXISTS (stub scope).** Backend is offscreen + WSI
+  present: Obj15 added the texture/lit path to the interface (purely
+  additive — verified by diff: only new structs/virtuals, no existing method
+  touched); Obj17b (8cedc60) added swapchain presentation to the *backend*
+  only (`VulkanRenderer` present mode: `initPresent`/`beginPresentFrame`/
+  `endPresentFrame`/`resizePresent`) — `IRenderer` itself stayed unchanged
+  through the whole cell-stage work. Test consumer: `NullRenderer` in
   `src/assets/tests/assets_test.cpp` proves any `IRenderer` backend accepts
   any `IMeshSource` without Vulkan.
-- **Scope limit:** no presentable/swapchain plug-in yet; no material or
-  lighting contract (N2).
+- **Scope limit:** no material or lighting contract in the interface (N2);
+  light values live in `MaterialState` and are APPROXIMATION (no light data
+  observed).
 
 ## What "done" means per boundary
 
@@ -87,7 +117,7 @@ Replacement mechanics, stated honestly:
 |---|---|
 | B1 | Real multi-package fetch (all 7 packages indexed, identities from gameplay traces) + `menu_transition` trace showing the original load path firing in the same order. |
 | B2 | Second mesh family (version 9 or 32-bit-index asset) through the same seam without interface change; RW4 MODEL decode lands behind `IMeshSource` as a second producer. |
-| B3 | Swapchain presentation + one material/lighting behavior matched pixel-wise against the original under Wine. |
+| B3 | Swapchain presentation (DONE, 8cedc60) + one material/lighting behavior matched pixel-wise against the original under Wine (open — no rendered original frame exists to compare). |
 
 ## Non-boundaries (UNKNOWN — no interface drawn)
 
@@ -124,3 +154,8 @@ Replacement mechanics, stated honestly:
 - `src/assets/tests/assets_test.cpp` (modified) — `testCompatBoundaries` +
   `NullRenderer`: every interface has a producer and a consumer in-tree.
 - `docs/replacement-status.json` (new) — machine-readable handoff to Obj 10.
+  Obj18 added the cell-sim / interactive / cell-stage-scene entries and the
+  `approximated` status; the replacement pattern (§above) governs them.
+- `docs/CELLSTAGE-VALIDATION.md` (Obj18) — per-claim differential validation
+  of the cell-stage slice, with the evidence labels this file's statuses
+  rest on.
