@@ -1,5 +1,7 @@
-// Vulkan offscreen backend for openspore::IRenderer. Clean-room implementation.
-#pragma once
+// Vulkan offscreen + WSI backend for openspore::IRenderer.
+// Clean-room implementation. X11 (Xlib) surface support: this box runs X.Org;
+// SDL3 creates its window surface on the same X11 platform.
+#define VK_USE_PLATFORM_XLIB_KHR
 
 #include <vulkan/vulkan.h>
 
@@ -43,6 +45,29 @@ public:
   // Human-readable name of the physical device selected at init().
   const std::string &deviceName() const { return deviceName_; }
 
+  // ---- Present (WSI) mode, Obj17b -----------------------------------------
+  // Additive path: renders into a swapchain on an app-provided surface
+  // (SDL window) and presents vsynced. The offscreen init() path above is
+  // untouched. beginSurfaceMode() creates the instance with the platform WSI
+  // extensions (from SDL_Vulkan_GetInstanceExtensions); the app then creates
+  // its surface against vkInstance() and passes it to initPresent().
+  // The renderer takes ownership of the surface (destroys it in shutdown()).
+  bool beginSurfaceMode(const char *const *extNames, uint32_t extCount);
+  VkInstance vkInstance() const { return instance_; }
+  bool initPresent(uint32_t width, uint32_t height, VkSurfaceKHR surface);
+  // Acquires the next swapchain image, opens the pass into it cleared to
+  // (r,g,b,a); draws go through the same drawMesh/drawTextured calls as the
+  // offscreen path.
+  bool beginPresentFrame(uint32_t *imageIndex, float r, float g, float b);
+  // Closes the pass, submits (acquire-wait / present-signal) and presents
+  // with the vsync (FIFO) present mode.
+  void endPresentFrame();
+  // Rebuilds the swapchain + per-image targets at the new size.
+  bool resizePresent(uint32_t width, uint32_t height);
+  uint32_t presentImageCount() const {
+    return static_cast<uint32_t>(presentTargets_.size());
+  }
+
 private:
   struct Mesh {
     VkBuffer vertexBuffer = VK_NULL_HANDLE;
@@ -76,10 +101,18 @@ private:
   bool createCommandPool();
   bool createTargets();
   bool createRenderPass();
-  bool createPipeline();
+  // Builds both the flat-color and the normal-lit textured pipelines against
+  // the given render pass (offscreen and present paths each call this).
+  bool createPipelinePair(VkRenderPass pass, VkPipeline &plain, VkPipeline &lit);
   bool createTextureSupport();
-  bool createLitPipeline();
   bool createSync();
+
+  bool createPresentSupport();
+  bool createSwapchain();
+  bool createPresentRenderPass();
+  bool createPresentTargets();
+  void destroyPresentTargets();
+  void destroyPresentSupport();
   void submitOneTime(VkCommandBuffer cmd);
 
   uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags props);
@@ -100,11 +133,49 @@ private:
    void destroyTextureResources(Texture &tex);
    void destroyTexMeshResources(TexMesh &tex);
 
-   uint32_t width_ = 0;
+    uint32_t width_ = 0;
   uint32_t height_ = 0;
   bool initialized_ = false;
   bool recording_ = false;
   std::string deviceName_;
+
+  // Present (WSI) mode state.
+  bool presentMode_ = false;
+  VkSurfaceKHR surface_ = VK_NULL_HANDLE;
+  std::vector<const char *> surfaceExtNames_;
+  VkSurfaceCapabilitiesKHR surfaceCaps_{};
+  VkFormat presentFormat_ = VK_FORMAT_UNDEFINED;
+  VkPresentModeKHR presentModeKind_ = VK_PRESENT_MODE_FIFO_KHR;
+  VkSwapchainKHR swapchain_ = VK_NULL_HANDLE;
+  uint32_t swapWidth_ = 0;
+  uint32_t swapHeight_ = 0;
+
+  struct PresentTarget {
+    VkImage image = VK_NULL_HANDLE;
+    VkImageView view = VK_NULL_HANDLE;
+    VkImage depthImage = VK_NULL_HANDLE;
+    VkDeviceMemory depthMemory = VK_NULL_HANDLE;
+    VkImageView depthView = VK_NULL_HANDLE;
+    VkFramebuffer framebuffer = VK_NULL_HANDLE;
+    VkFence fence = VK_NULL_HANDLE;
+    VkSemaphore present = VK_NULL_HANDLE;
+  };
+  std::vector<PresentTarget> presentTargets_;
+  // One shared acquire semaphore: vkAcquireNextImageKHR signals it; the index
+  // of the acquired image is only known after the call, so per-image acquire
+  // semaphores are not usable.
+  VkSemaphore presentAcquire_ = VK_NULL_HANDLE;
+  VkRenderPass presentRenderPass_ = VK_NULL_HANDLE;
+  VkPipeline presentPipeline_ = VK_NULL_HANDLE;
+  VkPipeline presentLitPipeline_ = VK_NULL_HANDLE;
+
+  // Pipelines active for the frame being recorded (offscreen or present).
+  VkPipeline activePipeline_ = VK_NULL_HANDLE;
+  VkPipeline activeLitPipeline_ = VK_NULL_HANDLE;
+  uint32_t activeImage_ = 0;
+  // Image whose frame was last submitted; its fence gates reuse of the shared
+  // command buffer + acquire semaphore (-1 = none submitted yet).
+  int prevPresentImage_ = -1;
 
   VkInstance instance_ = VK_NULL_HANDLE;
   VkPhysicalDevice physicalDevice_ = VK_NULL_HANDLE;

@@ -19,9 +19,14 @@
 //   --input FILE: Obj17 sim mode — replays a JSON-lines input script through
 //     the deterministic CellSim (src/sim), re-rendering the scene per frame
 //     with the player at its sim position and the camera following it.
+//   --interactive [--frames N]: Obj17 part B — real SDL3 window, live
+//     swapchain present (vsync), keyboard-driven sim (WASD/Shift/arrows/
+//     wheel/ESC). --frames N bounds the loop; no display / no SDL3 build
+//     exits 0 with a notice.
 // Env-dependent: exits 0 (SKIP) when the package is absent. Writes
 // cell_stage.ppm to the working directory. Clean-room code; no asset bytes
 // are embedded.
+#include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
@@ -37,6 +42,11 @@
 #include "Sim.hpp"
 #include "Texture.hpp"
 #include "renderer/VulkanRenderer.hpp"
+
+#if defined(SPORE_HAS_SDL3)
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_vulkan.h>
+#endif
 
 namespace {
 
@@ -531,6 +541,84 @@ int runFixedFrame(openspore::VulkanRenderer &renderer,
   return 1;
 }
 
+// One entity's device-side mesh for a frame (flat or textured handle).
+struct FrameDraw {
+  int entity = -1;
+  openspore::MeshHandle flat = openspore::kInvalidMesh;
+  openspore::MeshHandle tex = openspore::kInvalidMesh;
+};
+
+// Builds this frame's device meshes from the live sim state: the player is
+// at its sim position (rotated by heading), dead entities are culled, and
+// every vertex is baked through the view-clip matrix `vp` (the renderer has
+// no matrix uniforms). Used by both the offscreen sim replay and the
+// interactive presentation.
+void buildFrameDraws(openspore::VulkanRenderer &renderer,
+                     const std::vector<BakedMesh> &baked,
+                     const openspore::sim::CellSim &sim, const Mat4 &vp,
+                     std::vector<FrameDraw> &out) {
+  for (int e = 0; e < kEntityCount; ++e) {
+    const Entity &ent = kEntities[e];
+    float pos[3] = {ent.pos[0], ent.pos[1], ent.pos[2]};
+    float rot = 0.0F;
+    if (ent.textured) {
+      // backdrop: static.
+    } else if (std::strcmp(ent.role, "player_cell") == 0) {
+      const openspore::sim::PlayerState &p = sim.player();
+      pos[0] = p.pos[0];
+      pos[1] = p.pos[1];
+      pos[2] = p.pos[2];
+      rot = p.heading;
+    } else {
+      const openspore::sim::Entity *se = nullptr;
+      for (const auto &cand : sim.entities()) {
+        if (cand.role == ent.role) {
+          se = &cand;
+          break;
+        }
+      }
+      if (se == nullptr || !se->alive) {
+        continue; // culled (eaten)
+      }
+      pos[0] = se->pos[0];
+      pos[1] = se->pos[1];
+      pos[2] = se->pos[2];
+    }
+    FrameDraw d;
+    d.entity = e;
+    if (ent.textured) {
+      std::vector<openspore::TexVertex> v = baked[e].tex;
+      for (auto &tv : v) {
+        rotateY(rot, tv.pos[0], tv.pos[2]);
+        rotateY(rot, tv.normal[0], tv.normal[2]);
+        tv.pos[0] += pos[0];
+        tv.pos[1] += pos[1];
+        tv.pos[2] += pos[2];
+        transformPoint(vp, tv.pos[0], tv.pos[1], tv.pos[2]);
+      }
+      d.tex = renderer.createTexMesh(v.data(), v.size(),
+                                     baked[e].indices.data(),
+                                     baked[e].indices.size());
+    } else {
+      std::vector<openspore::Vertex> v = baked[e].flat;
+      for (auto &pv : v) {
+        rotateY(rot, pv.pos[0], pv.pos[2]);
+        pv.pos[0] += pos[0];
+        pv.pos[1] += pos[1];
+        pv.pos[2] += pos[2];
+        transformPoint(vp, pv.pos[0], pv.pos[1], pv.pos[2]);
+      }
+      d.flat = renderer.createMesh(v.data(), v.size(),
+                                   baked[e].indices.data(),
+                                   baked[e].indices.size());
+    }
+    if (d.flat != openspore::kInvalidMesh ||
+        d.tex != openspore::kInvalidMesh) {
+      out.push_back(d);
+    }
+  }
+}
+
 // Sim mode (Obj17): replays a scripted input through the deterministic
 // CellSim, re-rendering the scene every frame with the player at its sim
 // position (dead food culled) and the camera following it.
@@ -587,72 +675,8 @@ int runSimMode(openspore::VulkanRenderer &renderer,
     // Per-frame meshes: create all first, draw inside the frame, destroy only
     // after endFrame (the frame submits + waits, so the GPU is done with the
     // buffers by then; freeing before submit would race the draw).
-    struct FrameDraw {
-      int entity = -1;
-      openspore::MeshHandle flat = openspore::kInvalidMesh;
-      openspore::MeshHandle tex = openspore::kInvalidMesh;
-    };
     std::vector<FrameDraw> draws;
-    for (int e = 0; e < kEntityCount; ++e) {
-      const Entity &ent = kEntities[e];
-      float pos[3] = {ent.pos[0], ent.pos[1], ent.pos[2]};
-      float rot = 0.0F;
-      if (ent.textured) {
-        // backdrop: static.
-      } else if (std::strcmp(ent.role, "player_cell") == 0) {
-        const openspore::sim::PlayerState &p = sim.player();
-        pos[0] = p.pos[0];
-        pos[1] = p.pos[1];
-        pos[2] = p.pos[2];
-        rot = p.heading;
-      } else {
-        const openspore::sim::Entity *se = nullptr;
-        for (const auto &cand : sim.entities()) {
-          if (cand.role == ent.role) {
-            se = &cand;
-            break;
-          }
-        }
-        if (se == nullptr || !se->alive) {
-          continue; // culled (eaten)
-        }
-        pos[0] = se->pos[0];
-        pos[1] = se->pos[1];
-        pos[2] = se->pos[2];
-      }
-      FrameDraw d;
-      d.entity = e;
-      if (ent.textured) {
-        std::vector<openspore::TexVertex> v = baked[e].tex;
-        for (auto &tv : v) {
-          rotateY(rot, tv.pos[0], tv.pos[2]);
-          rotateY(rot, tv.normal[0], tv.normal[2]);
-          tv.pos[0] += pos[0];
-          tv.pos[1] += pos[1];
-          tv.pos[2] += pos[2];
-          transformPoint(vp, tv.pos[0], tv.pos[1], tv.pos[2]);
-        }
-        d.tex = renderer.createTexMesh(v.data(), v.size(),
-                                       baked[e].indices.data(),
-                                       baked[e].indices.size());
-      } else {
-        std::vector<openspore::Vertex> v = baked[e].flat;
-        for (auto &pv : v) {
-          rotateY(rot, pv.pos[0], pv.pos[2]);
-          pv.pos[0] += pos[0];
-          pv.pos[1] += pos[1];
-          pv.pos[2] += pos[2];
-          transformPoint(vp, pv.pos[0], pv.pos[1], pv.pos[2]);
-        }
-        d.flat = renderer.createMesh(v.data(), v.size(),
-                                     baked[e].indices.data(),
-                                     baked[e].indices.size());
-      }
-      if (d.flat != openspore::kInvalidMesh ||
-          d.tex != openspore::kInvalidMesh) {
-        draws.push_back(d);
-      }
-    }
+    buildFrameDraws(renderer, baked, sim, vp, draws);
 
     renderer.beginFrame(kClearR, kClearG, kClearB, 1.0F);
     for (const FrameDraw &d : draws) {
@@ -719,18 +743,311 @@ int runSimMode(openspore::VulkanRenderer &renderer,
   return 1;
 }
 
+// Interactive mode (Obj17 part B): opens a real SDL3 window, renders the
+// same scene live into a Vulkan swapchain (vsync), and drives the
+// deterministic CellSim from keyboard/mouse input:
+//   WASD thrust, Shift boost, arrows orbit camera, wheel zoom, ESC quit.
+// With --frames N the loop exits after N frames (bounded evidence runs).
+// Exits 0 (graceful) when no display is available or the build lacks SDL3.
+int runInteractive(openspore::VulkanRenderer &renderer,
+                   const openspore::ImageRGBA &texImage,
+                   const openspore::MaterialState &mat,
+                   const std::vector<Loaded> &loaded, int maxFrames) {
+#if defined(SPORE_HAS_SDL3)
+  // SDL's default video-driver auto-probe can fail (with an empty error) in
+  // some sessions even though an explicit backend works. Try the default
+  // first, then explicit backends. Portable, not environment-dependent.
+  static const char *const kDrivers[] = {nullptr, "wayland", "x11"};
+  const char *activeDriver = nullptr;
+  bool sdlUp = false;
+  for (const char *d : kDrivers) {
+    if (d != nullptr) {
+      SDL_setenv_unsafe("SDL_VIDEODRIVER", d, 1);
+    }
+    if (SDL_Init(SDL_INIT_VIDEO) == 0) {
+      SDL_Quit();
+      continue;
+    }
+    sdlUp = true;
+    activeDriver = d;
+    break;
+  }
+  if (!sdlUp) {
+    std::printf("cell_stage: interactive: no display available (%s)\n",
+                SDL_GetError());
+    return 0;
+  }
+  SDL_Window *window =
+      SDL_CreateWindow("OpenSpore Cell Stage", kViewport, kViewport,
+                        SDL_WINDOW_RESIZABLE | SDL_WINDOW_VULKAN);
+  if (window == nullptr) {
+    std::printf("cell_stage: interactive: no display available (%s)\n",
+                SDL_GetError());
+    SDL_Quit();
+    return 0;
+  }
+  std::printf("[cell_stage] video driver=%s\n",
+              activeDriver != nullptr ? activeDriver : "default");
+
+  Uint32 extCount = 0;
+  const char *const *extNames = SDL_Vulkan_GetInstanceExtensions(&extCount);
+  bool ready = extNames != nullptr && extCount > 0;
+  if (ready) {
+    ready = renderer.beginSurfaceMode(extNames, extCount);
+  }
+  if (!ready) {
+    std::fprintf(stderr, "[cell_stage] present-mode instance init failed\n");
+    SDL_DestroyWindow(window);
+    SDL_Quit();
+    return 1;
+  }
+
+  VkSurfaceKHR surface = VK_NULL_HANDLE;
+  if (!SDL_Vulkan_CreateSurface(window, renderer.vkInstance(), nullptr,
+                                &surface) ||
+      surface == VK_NULL_HANDLE) {
+    std::fprintf(stderr, "[cell_stage] SDL_Vulkan_CreateSurface failed\n");
+    SDL_DestroyWindow(window);
+    renderer.shutdown();
+    SDL_Quit();
+    return 1;
+  }
+
+  int winW = kViewport;
+  int winH = kViewport;
+  SDL_GetWindowSize(window, &winW, &winH);
+  if (!renderer.initPresent(static_cast<uint32_t>(winW),
+                            static_cast<uint32_t>(winH), surface)) {
+    std::fprintf(stderr, "[cell_stage] present init failed\n");
+    SDL_DestroyWindow(window);
+    renderer.shutdown();
+    SDL_Quit();
+    return 1;
+  }
+  std::printf("[cell_stage] device=%s (interactive)\n",
+              renderer.deviceName().c_str());
+
+  const openspore::TextureHandle texId =
+      texImage.pixels.empty() ? openspore::kInvalidTexture
+                              : renderer.createTexture(texImage);
+
+  // Sim setup: the same entities as sim mode (backdrop excluded — it is
+  // static and rendered as-is).
+  std::vector<openspore::sim::Entity> ents;
+  for (const Entity &e : kEntities) {
+    if (std::strncmp(e.role, "backdrop_", 9) == 0) {
+      continue;
+    }
+    openspore::sim::Entity se;
+    se.role = e.role;
+    se.group = e.group;
+    se.inst = e.inst;
+    se.pos[0] = e.pos[0];
+    se.pos[1] = e.pos[1];
+    se.pos[2] = e.pos[2];
+    se.targetSpan = e.targetSpan;
+    ents.push_back(se);
+  }
+  openspore::sim::CellSim sim(std::move(ents));
+  const float kDeg = 3.14159265358979F / 180.0F;
+  sim.camera().yaw = 35.0F * kDeg;
+  sim.camera().pitch = 15.0F * kDeg;
+
+  std::vector<BakedMesh> baked(kEntityCount);
+  for (int e = 0; e < kEntityCount; ++e) {
+    baked[e] = bakeEntity(loaded[e], kEntities[e]);
+  }
+
+  // Camera is tracked app-side; the sim stores it as absolute values.
+  float camYaw = sim.camera().yaw;
+  float camPitch = sim.camera().pitch;
+  float camZoom = 1.0F;
+  const float kYawStep = 0.06F;
+  const float kPitchStep = 0.05F;
+  const float kZoomStep = 1.1F;
+
+  bool quit = false;
+  int frame = 0;
+  // Meshes from the frame that has just finished (its fence is complete); they
+  // are destroyed at the top of the next frame, after beginPresentFrame() waits.
+  std::vector<FrameDraw> prevDraws;
+  const auto tStart = std::chrono::steady_clock::now();
+  std::printf("[cell_stage] present start t=0.000s\n");
+  while (!quit) {
+    int wheel = 0;
+    SDL_Event ev;
+    while (SDL_PollEvent(&ev)) {
+      switch (ev.type) {
+      case SDL_EVENT_QUIT:
+        quit = true;
+        break;
+      case SDL_EVENT_KEY_DOWN:
+        if (ev.key.key == SDLK_ESCAPE) {
+          quit = true;
+        }
+        break;
+      case SDL_EVENT_MOUSE_WHEEL:
+        wheel += ev.wheel.y;
+        break;
+      case SDL_EVENT_WINDOW_RESIZED:
+        renderer.resizePresent(static_cast<uint32_t>(ev.window.data1),
+                               static_cast<uint32_t>(ev.window.data2));
+        break;
+      default:
+        break;
+      }
+    }
+    if (wheel > 0) {
+      camZoom /= kZoomStep;
+    } else if (wheel < 0) {
+      camZoom *= kZoomStep;
+    }
+    camZoom = std::max(0.4F, std::min(3.0F, camZoom));
+
+    // SDL_GetKeyboardState returns an array indexed by SCANCODE (0..479),
+    // not by keycode. Index by SDL_SCANCODE_* (layout-stable).
+    const bool *keys = SDL_GetKeyboardState(nullptr);
+    openspore::sim::InputFrame input;
+    if (keys[SDL_SCANCODE_W]) {
+      input.thrustForward = true;
+    }
+    if (keys[SDL_SCANCODE_S]) {
+      input.thrustBack = true;
+    }
+    if (keys[SDL_SCANCODE_A]) {
+      input.thrustLeft = true;
+    }
+    if (keys[SDL_SCANCODE_D]) {
+      input.thrustRight = true;
+    }
+    if (keys[SDL_SCANCODE_LSHIFT] || keys[SDL_SCANCODE_RSHIFT]) {
+      input.boost = true;
+    }
+
+    bool camChanged = false;
+    if (keys[SDL_SCANCODE_LEFT]) {
+      camYaw += kYawStep;
+      camChanged = true;
+    }
+    if (keys[SDL_SCANCODE_RIGHT]) {
+      camYaw -= kYawStep;
+      camChanged = true;
+    }
+    if (keys[SDL_SCANCODE_UP]) {
+      camPitch = std::min(85.0F * kDeg, camPitch + kPitchStep);
+      camChanged = true;
+    }
+    if (keys[SDL_SCANCODE_DOWN]) {
+      camPitch = std::max(-80.0F * kDeg, camPitch - kPitchStep);
+      camChanged = true;
+    }
+    if (wheel != 0) {
+      camChanged = true;
+    }
+    if (camChanged) {
+      input.hasCamera = true;
+      input.cameraYaw = camYaw;
+      input.cameraPitch = camPitch;
+      input.cameraZoom = camZoom;
+    }
+
+    sim.update(input);
+
+    const openspore::sim::CameraState &cam = sim.camera();
+    const float up[3] = {0.0F, 1.0F, 0.0F};
+    const float eye[3] = {
+        cam.target[0] + cam.dist() * std::sin(cam.yaw) * std::cos(cam.pitch),
+        cam.target[1] + cam.dist() * std::sin(cam.pitch),
+        cam.target[2] + cam.dist() * std::cos(cam.yaw) * std::cos(cam.pitch)};
+    float aspect = 1.0F;
+    if (winH > 0) {
+      aspect = static_cast<float>(winW) / static_cast<float>(winH);
+    }
+    const Mat4 proj = perspective(60.0F * kDeg, aspect, 0.5F, 100.0F);
+    const Mat4 vp = mul(proj, lookAt(eye, cam.target, up));
+
+    // Begin the present frame first: beginPresentFrame() waits on the previous
+    // frame's fence, so that frame's meshes are no longer in flight and can be
+    // destroyed safely.
+    uint32_t imageIndex = 0;
+    if (!renderer.beginPresentFrame(&imageIndex, kClearR, kClearG, kClearB)) {
+      break;
+    }
+    for (const FrameDraw &d : prevDraws) {
+      if (kEntities[d.entity].textured) {
+        renderer.destroyTexMesh(d.tex);
+      } else {
+        renderer.destroyMesh(d.flat);
+      }
+    }
+    prevDraws.clear();
+
+    std::vector<FrameDraw> draws;
+    buildFrameDraws(renderer, baked, sim, vp, draws);
+    for (const FrameDraw &d : draws) {
+      const Entity &ent = kEntities[d.entity];
+      if (ent.textured) {
+        renderer.drawTextured(d.tex, texId, mat);
+      } else {
+        renderer.drawMesh(d.flat);
+      }
+    }
+    renderer.endPresentFrame();
+    // These meshes were just submitted; destroy them next frame, once their
+    // fence has completed (the renderer gates that in beginPresentFrame).
+    prevDraws = std::move(draws);
+
+    SDL_Delay(16); // ~60 fps pace; present is vsynced (FIFO)
+    ++frame;
+    if (maxFrames > 0 && frame >= maxFrames) {
+      break;
+    }
+  }
+
+  // Textures/meshes are destroyed by shutdown() after vkDeviceWaitIdle, so the
+  // last in-flight frame can no longer reference them.
+  renderer.shutdown(); // also destroys the SDL surface it owns
+  SDL_DestroyWindow(window);
+  SDL_Quit();
+  const auto tEnd = std::chrono::steady_clock::now();
+  const double elapsed =
+      std::chrono::duration<double>(tEnd - tStart).count();
+  std::printf("[cell_stage] present end t=%.3fs\n", elapsed);
+  std::printf("cell_stage: interactive: ran %d frames in %.3fs "
+              "(%.1f fps)\n",
+              frame, elapsed, frame > 0 ? frame / elapsed : 0.0);
+  return 0;
+#else
+  (void)renderer;
+  (void)texImage;
+  (void)mat;
+  (void)loaded;
+  (void)maxFrames;
+  std::printf("cell_stage: interactive: unavailable (built without SDL3)\n");
+  return 0;
+#endif
+}
+
 } // namespace
 
 int main(int argc, char **argv) {
   using namespace openspore::assets;
   if (argc < 2) {
-    std::printf("usage: cell_stage <Spore_Content.package> [--input FILE]\n");
+    std::printf("usage: cell_stage <Spore_Content.package> [--input FILE] "
+                "[--interactive] [--frames N]\n");
     return 1;
   }
   std::string inputPath;
+  bool interactive = false;
+  int maxFrames = 0;
   for (int i = 1; i < argc; ++i) {
     if (std::string(argv[i]) == "--input" && i + 1 < argc) {
       inputPath = argv[i + 1];
+      ++i;
+    } else if (std::string(argv[i]) == "--interactive") {
+      interactive = true;
+    } else if (std::string(argv[i]) == "--frames" && i + 1 < argc) {
+      maxFrames = std::atoi(argv[i + 1]);
       ++i;
     }
   }
@@ -822,6 +1139,19 @@ int main(int argc, char **argv) {
   }
 
   openspore::VulkanRenderer renderer;
+
+  openspore::MaterialState mat;
+  mat.lightDir[0] = 0.0F;
+  mat.lightDir[1] = 0.7071F;
+  mat.lightDir[2] = 0.7071F;
+  mat.ambient = 0.35F;
+
+  if (interactive) {
+    // Present path: the renderer creates its instance/device against the SDL
+    // surface (initPresent), so the offscreen init() is not called here.
+    return runInteractive(renderer, texImage, mat, loaded, maxFrames);
+  }
+
   if (!renderer.init(kViewport, kViewport)) {
     std::fprintf(stderr, "[cell_stage] renderer init failed\n");
     return 1;
@@ -832,12 +1162,6 @@ int main(int argc, char **argv) {
       texImage.pixels.empty() ? openspore::kInvalidTexture
                               : renderer.createTexture(texImage);
   check(texId != openspore::kInvalidTexture, "cell_stage: texture uploaded");
-
-  openspore::MaterialState mat;
-  mat.lightDir[0] = 0.0F;
-  mat.lightDir[1] = 0.7071F;
-  mat.lightDir[2] = 0.7071F;
-  mat.ambient = 0.35F;
 
   if (inputPath.empty()) {
     return runFixedFrame(renderer, texId, mat, loaded);

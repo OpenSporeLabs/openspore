@@ -87,10 +87,34 @@ add_test(
 add_executable(cell_stage apps/cell_stage.cpp)
 target_link_libraries(cell_stage PRIVATE
   openspore_assets openspore_renderer openspore_sim)
+# Obj17 part B: interactive mode needs SDL3 (window + WSI surface). When the
+# system lacks SDL3 the build still works; --interactive prints a notice and
+# exits 0.
+if(TARGET SDL3::SDL3)
+  target_link_libraries(cell_stage PRIVATE SDL3::SDL3)
+  target_compile_definitions(cell_stage PRIVATE SPORE_HAS_SDL3=1)
+elseif(PkgConfig_FOUND AND PkgConfig::SDL3)
+  target_link_libraries(cell_stage PRIVATE PkgConfig::SDL3)
+  target_compile_definitions(cell_stage PRIVATE SPORE_HAS_SDL3=1)
+endif()
 add_test(
   NAME cell_stage
   COMMAND cell_stage ${PROJECT_SOURCE_DIR}/SPORE/Data/Spore_Content.package
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+
+# Obj17 part B smoke: interactive mode with no display must fail gracefully
+# (exit 0 with a "no display" notice, never crash). A real Wayland session
+# (e.g. KWin) exports WAYLAND_DISPLAY, and SDL's wayland backend falls back to
+# the default wayland-0 socket even when the variable is unset — so point it at
+# a nonexistent socket and DISPLAY at a dead X server to force every backend to
+# fail.
+add_test(
+  NAME cell_stage_interactive_smoke
+  COMMAND bash -c "env -u XDG_SESSION_TYPE DISPLAY=:99 WAYLAND_DISPLAY=invalid-socket-xyz ./cell_stage ${PROJECT_SOURCE_DIR}/SPORE/Data/Spore_Content.package --interactive 2>&1 | grep -q 'cell_stage: interactive:'"
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+set_tests_properties(cell_stage_interactive_smoke PROPERTIES
+  TIMEOUT 20
+  ENVIRONMENT "DISPLAY=:99")
 
 add_subdirectory(assets)
 add_subdirectory(sim)

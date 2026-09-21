@@ -101,8 +101,47 @@ Determinism oracles: CTest `sim_test` (pure C++, CI-safe) and
 input does not move, the eat script emits `eat`/growMeter=1 with the final
 PPM differing from a no-eat baseline, and two runs are byte-identical.
 
+## Interactive (Obj17 part B)
+
+`build/src/cell_stage SPORE/Data/Spore_Content.package --interactive [--frames N]`
+
+A real SDL3 + Vulkan window presenting the same scene live: a swapchain
+(FIFO, vsynced) with a present render pass, the follow-orbit camera, and the
+fixed-dt sim stepped once per presented frame. Offscreen mode (above) is
+unchanged. `--frames N` bounds the loop (used by the smoke evidence); without
+it the loop runs until ESC.
+
+Keys (polled by **scancode** — `SDL_GetKeyboardState` is a scancode array, not
+a keycode one):
+
+| key            | action |
+|----------------|--------|
+| W / Up         | thrust forward |
+| S / Down       | thrust back |
+| A / Left       | strafe left (turns heading) |
+| D / Right      | strafe right (turns heading) |
+| LShift/RShift  | boost |
+| wheel          | camera zoom |
+| ESC            | quit |
+
+Notes:
+
+- **Driver fallback**: SDL's default video-driver auto-probe can fail (empty
+  error) in some sessions even when a backend works, so init tries
+  `default → wayland → x11` and reports the one that succeeded
+  (`[cell_stage] video driver=…`).
+- **No display** → exits 0 with `cell_stage: interactive: no display available`
+  (never crashes). No SDL3 at build time → exits 0 (`unavailable`).
+- Per-frame device meshes are destroyed next frame, after that frame's fence
+  completes (gated in `beginPresentFrame`); the previous present image's fence
+  gates reuse of the shared command buffer + acquire semaphore. Validation
+  layer (KHRONOS) reports zero errors across a 120-frame run.
+
 ## Verification
 
+- CTest `cell_stage_interactive_smoke`: with every display backend forced to
+  fail (dead `DISPLAY`, nonexistent Wayland socket) the app prints the
+  "no display" notice and exits 0 within the timeout.
 - CTest `cell_stage` (package as arg, build-dir CWD): all checks +
   calibrated pixel window `content in [60000,115000]` on RADV.
 - `tests/test_cellstage.py`: runs the binary twice, asserts the manifest
