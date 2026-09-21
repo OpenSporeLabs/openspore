@@ -96,8 +96,9 @@ void parseKeys(const std::string &line, InputFrame &f) {
 
 } // namespace
 
-CellSim::CellSim(std::vector<Entity> entities, MovementParams params)
-    : params_(params), entities_(std::move(entities)) {}
+CellSim::CellSim(std::vector<Entity> entities, MovementParams params,
+                 MovementPlane plane)
+    : params_(params), plane_(plane), entities_(std::move(entities)) {}
 
 std::vector<SimEvent> CellSim::update(const InputFrame &input) {
   std::vector<SimEvent> ev;
@@ -112,6 +113,29 @@ std::vector<SimEvent> CellSim::update(const InputFrame &input) {
   }
   if (input.thrustRight) {
     player_.heading += params_.turnRate * kDt;
+  }
+
+  // Steering target (Obj33, docs/analysis/dossiers/cell-movement.md): the
+  // camera ray (from the recorded mouse position) is intersected with the
+  // movement plane; the hit point becomes the player's target and the
+  // orientation-to-travel. The ray origin/dir come from the camera; the
+  // plane normal/point are named parameters (APPROXIMATION defaults — the
+  // original's constant values were never read, no runtime trace exists).
+  bool steer = false;
+  float target[3] = {0.0F, 0.0F, 0.0F};
+  if (input.hasMouse) {
+    float origin[3], dir[3];
+    cam_.viewRay(input.mouseX, input.mouseY, origin, dir);
+    if (rayPlaneHit(origin, dir, plane_, target)) {
+      steer = true;
+      const float dx = target[0] - player_.pos[0];
+      const float dy = target[1] - player_.pos[1];
+      const float dz = target[2] - player_.pos[2];
+      const float d = std::sqrtf(dx * dx + dy * dy + dz * dz);
+      if (d > params_.steerStopRadius && dx * dx + dz * dz > 1e-12F) {
+        player_.heading = std::atan2f(dx, dz); // face the travel direction
+      }
+    }
   }
 
   // FLEE (INFERRED): prey within fleeRadius -> face away, implicit forward
@@ -140,31 +164,71 @@ std::vector<SimEvent> CellSim::update(const InputFrame &input) {
 
   const float fwd = params_.forwardSpeed * (boost ? params_.boostMul : 1.0F);
   const float str = params_.strafeSpeed * (boost ? params_.boostMul : 1.0F);
+  const float sspd = params_.steerSpeed * (boost ? params_.boostMul : 1.0F);
   const float fx = std::sinf(player_.heading);
   const float fz = std::cosf(player_.heading);
   const float rx = fz;   // right = (fz, 0, -fx)
   const float rz = -fx;
-  float tvx = 0.0F, tvz = 0.0F;
-  if (input.thrustForward || fleeing) {
-    tvx += fx * fwd;
-    tvz += fz * fwd;
+  float tvx = 0.0F, tvy = 0.0F, tvz = 0.0F;
+  if (steer) {
+    // Mouse-driven target is primary: full steer velocity toward the hit.
+    const float dx = target[0] - player_.pos[0];
+    const float dy = target[1] - player_.pos[1];
+    const float dz = target[2] - player_.pos[2];
+    const float d = std::sqrtf(dx * dx + dy * dy + dz * dz);
+    if (d > params_.steerStopRadius) {
+      tvx = dx / d * sspd;
+      tvy = dy / d * sspd;
+      tvz = dz / d * sspd;
+      // Keyboard is SECONDARY (OnKeyDown): a reduced thrust bias on top of
+      // the mouse target; it never sets the target.
+      const float km = params_.keyboardSecondaryMul;
+      if (input.thrustForward) {
+        tvx += fx * fwd * km;
+        tvz += fz * fwd * km;
+      }
+      if (input.thrustBack) {
+        tvx -= fx * fwd * km;
+        tvz -= fz * fwd * km;
+      }
+      if (input.thrustLeft) {
+        tvx -= rx * str * km;
+        tvz -= rz * str * km;
+      }
+      if (input.thrustRight) {
+        tvx += rx * str * km;
+        tvz += rz * str * km;
+      }
+    }
+  } else {
+    // No mouse position this frame: keyboard-only thrust path.
+    if (input.thrustForward) {
+      tvx += fx * fwd;
+      tvz += fz * fwd;
+    }
+    if (input.thrustBack) {
+      tvx -= fx * fwd;
+      tvz -= fz * fwd;
+    }
+    if (input.thrustLeft) {
+      tvx -= rx * str;
+      tvz -= rz * str;
+    }
+    if (input.thrustRight) {
+      tvx += rx * str;
+      tvz += rz * str;
+    }
   }
-  if (input.thrustBack) {
-    tvx -= fx * fwd;
-    tvz -= fz * fwd;
-  }
-  if (input.thrustLeft) {
-    tvx -= rx * str;
-    tvz -= rz * str;
-  }
-  if (input.thrustRight) {
-    tvx += rx * str;
-    tvz += rz * str;
+  if (fleeing) {
+    // Flee overrides: straight ahead, boosted.
+    tvx = fx * fwd;
+    tvy = 0.0F;
+    tvz = fz * fwd;
   }
 
   const float k = std::min(1.0F, params_.damping * kDt);
   player_.vel[0] += (tvx - player_.vel[0]) * k;
-  player_.vel[1] += -player_.vel[1] * k;
+  player_.vel[1] += (tvy - player_.vel[1]) * k;
   player_.vel[2] += (tvz - player_.vel[2]) * k;
   player_.pos[0] += player_.vel[0] * kDt;
   player_.pos[1] += player_.vel[1] * kDt;
@@ -236,6 +300,26 @@ ScriptedInputSource::ScriptedInputSource(const std::string &path) {
       return;
     }
     parseKeys(line, fr);
+    const std::string m = jsonValue(line, "mouse");
+    if (!m.empty()) {
+      // "mouse": [x, y] — jsonValue returns the bracketed array text; skip
+      // the leading '[', parse the first float, skip to the second, parse it.
+      fr.hasMouse = true;
+      const char *p1 = m.c_str();
+      while (*p1 && (*p1 == '[' || *p1 == ' ' || *p1 == '\t')) {
+        ++p1;
+      }
+      char *end1 = nullptr;
+      fr.mouseX = std::strtof(p1, &end1);
+      if (end1 != p1) {
+        const char *p2 = end1;
+        while (*p2 && (*p2 == ',' || *p2 == ' ' || *p2 == '\t' || *p2 == ']')) {
+          ++p2;
+        }
+        char *end2 = nullptr;
+        fr.mouseY = std::strtof(p2, &end2);
+      }
+    }
     const std::string y = jsonValue(line, "yaw");
     const std::string p = jsonValue(line, "pitch");
     const std::string z = jsonValue(line, "zoom");

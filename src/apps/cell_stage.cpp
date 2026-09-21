@@ -705,6 +705,14 @@ int runSimMode(openspore::VulkanRenderer &renderer,
   // Deterministic sim manifest (the python oracle compares two runs).
   std::printf("CELLSTAGE-SIMMANIFEST v1\n");
   std::printf("frames=%d\n", totalFrames);
+  // The movement plane is a named sim parameter; the original's constant
+  // values (DAT_015a7c40/44/48, DAT_016b3c28/2c/30) were never read, so the
+  // defaults are APPROXIMATION until a runtime read lands.
+  const openspore::sim::MovementPlane &plane = sim.plane();
+  std::printf("plane normal=%.3f %.3f %.3f point=%.3f %.3f %.3f "
+              "(APPROXIMATION)\n",
+              plane.normal[0], plane.normal[1], plane.normal[2], plane.point[0],
+              plane.point[1], plane.point[2]);
   for (const auto &ev : sim.events()) {
     std::printf("event frame=%d type=%s entity=%s\n", ev.frame, ev.type,
                 ev.entity.c_str());
@@ -868,6 +876,11 @@ int runInteractive(openspore::VulkanRenderer &renderer,
 
   bool quit = false;
   int frame = 0;
+  // The recorded mouse position (OnMouseMove): NDC, consumed by the sim's
+  // camera-ray steering. Last position persists until the mouse moves again.
+  float mouseX = 0.0F;
+  float mouseY = 0.0F;
+  bool mouseActive = false;
   // Meshes from the frame that has just finished (its fence is complete); they
   // are destroyed at the top of the next frame, after beginPresentFrame() waits.
   std::vector<FrameDraw> prevDraws;
@@ -885,6 +898,18 @@ int runInteractive(openspore::VulkanRenderer &renderer,
         if (ev.key.key == SDLK_ESCAPE) {
           quit = true;
         }
+        break;
+      case SDL_EVENT_MOUSE_MOTION:
+        if (winW > 0 && winH > 0) {
+          mouseX = static_cast<float>(ev.motion.x) / static_cast<float>(winW) *
+                       2.0F -
+                   1.0F;
+          mouseY = -(static_cast<float>(ev.motion.y) /
+                        static_cast<float>(winH) *
+                        2.0F -
+                     1.0F);
+        }
+        mouseActive = true;
         break;
       case SDL_EVENT_MOUSE_WHEEL:
         wheel += ev.wheel.y;
@@ -922,6 +947,12 @@ int runInteractive(openspore::VulkanRenderer &renderer,
     }
     if (keys[SDL_SCANCODE_LSHIFT] || keys[SDL_SCANCODE_RSHIFT]) {
       input.boost = true;
+    }
+
+    if (mouseActive) {
+      input.hasMouse = true;
+      input.mouseX = mouseX;
+      input.mouseY = mouseY;
     }
 
     bool camChanged = false;

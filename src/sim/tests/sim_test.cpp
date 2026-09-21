@@ -124,12 +124,72 @@ void testFlee() {
   check(sim.player().vel[2] > 0.0F, "sim: flee boosts the player away");
 }
 
+void testRayPlaneHit() {
+  using openspore::sim::rayPlaneHit;
+  using openspore::sim::MovementPlane;
+  MovementPlane plane; // default: y=0 plane, normal (0,1,0), point origin
+  float hit[3];
+  // Perpendicular ray from above the plane -> hits at the origin.
+  const float o1[3] = {0.0F, 5.0F, 0.0F};
+  const float d1[3] = {0.0F, -1.0F, 0.0F};
+  check(rayPlaneHit(o1, d1, plane, hit) && std::fabs(hit[0]) < 1e-5F &&
+            std::fabs(hit[1]) < 1e-5F && std::fabs(hit[2]) < 1e-5F,
+        "sim: rayPlaneHit perpendicular ray -> origin");
+  // Parallel ray (in the plane's direction) -> no hit.
+  const float o2[3] = {0.0F, 5.0F, 0.0F};
+  const float d2[3] = {1.0F, 0.0F, 0.0F};
+  check(!rayPlaneHit(o2, d2, plane, hit),
+        "sim: rayPlaneHit parallel ray -> none");
+  // Ray pointing away from the plane (t < 0) -> no hit.
+  const float o3[3] = {0.0F, -5.0F, 0.0F};
+  const float d3[3] = {0.0F, -1.0F, 0.0F};
+  check(!rayPlaneHit(o3, d3, plane, hit),
+        "sim: rayPlaneHit ray behind plane -> none");
+}
+
+// Mouse steering (Obj33): with the camera pitched down, the view ray hits the
+// y=0 swim plane. NDC (0,0) targets the player's own position -> no movement;
+// NDC (0.5,0) targets a point ahead on +X -> the player swims toward +X.
+void testMouseSteer() {
+  CellSim sim(std::vector<Entity>{});
+  InputFrame in;
+  in.hasCamera = true;
+  in.cameraYaw = 0.0F;
+  in.cameraPitch = -0.3F;
+  in.cameraZoom = 1.0F;
+  // Mouse dead-center: the ray-plane target is the player's own position.
+  in.hasMouse = true;
+  in.mouseX = 0.0F;
+  in.mouseY = 0.0F;
+  for (int i = 0; i < 30; ++i) {
+    sim.update(in);
+  }
+  const auto &c = sim.player();
+  check(std::fabs(c.pos[0]) < 1e-3F && std::fabs(c.pos[1]) < 1e-3F &&
+            std::fabs(c.pos[2]) < 1e-3F,
+        "sim: mouse at screen center -> no movement");
+
+  // Offset the mouse right: the target lands on +X, the player swims +X.
+  in.mouseX = 0.5F;
+  for (int i = 0; i < 60; ++i) {
+    sim.update(in);
+  }
+  const auto &p = sim.player();
+  check(p.pos[0] > 1.0F, "sim: mouse right of center -> swims toward +X");
+  check(std::fabs(p.pos[2]) < 0.5F,
+        "sim: mouse steering stays on the swim plane (no z drift)");
+  check(std::fabs(p.pos[1]) < 0.5F,
+        "sim: mouse steering stays on the swim plane (no y drift)");
+}
+
 void testScriptedInput() {
   const char *path = "/tmp/opencode/sim_test_input.jsonl";
   std::ofstream f(path, std::ios::trunc);
   f << "{\"frame\": 0, \"keys\": [\"forward\"], \"yaw\": 0.6, "
         "\"pitch\": 0.2, \"zoom\": 0.8}\n";
   f << "{\"frame\": 1, \"keys\": [\"right\", \"boost\"]}\n";
+  f << "{\"frame\": 2, \"mouse\": [0.5, 0.0], \"yaw\": 0.0, "
+        "\"pitch\": -0.3}\n";
   f << "\n";
   f << "{\"keys\": [\"back\"]}\n";
   f.close();
@@ -139,7 +199,7 @@ void testScriptedInput() {
     std::printf("  (%s)\n", src.error().c_str());
     return;
   }
-  check(src.frameCount() == 3, "sim: 3 input frames parsed");
+  check(src.frameCount() == 4, "sim: 4 input frames parsed");
   const InputFrame f0 = src.frame(0);
   check(f0.thrustForward && f0.hasCamera &&
             std::fabs(f0.cameraYaw - 0.6F) < 1e-5F &&
@@ -149,7 +209,13 @@ void testScriptedInput() {
   check(f1.thrustRight && f1.boost && !f1.hasCamera,
         "sim: frame 1 keys, camera untouched");
   const InputFrame f2 = src.frame(2);
-  check(f2.thrustBack, "sim: frameless line lands on the next frame");
+  check(f2.hasMouse && std::fabs(f2.mouseX - 0.5F) < 1e-5F &&
+            std::fabs(f2.mouseY) < 1e-5F && f2.hasCamera &&
+            std::fabs(f2.cameraPitch - (-0.3F)) < 1e-5F &&
+            !f2.thrustBack,
+        "sim: frame 2 mouse NDC + camera parsed");
+  const InputFrame f3 = src.frame(3);
+  check(f3.thrustBack, "sim: frameless line lands on the next frame");
   const InputFrame f9 = src.frame(99);
   check(f9.thrustBack, "sim: frames past the end replay the last line");
   ScriptedInputSource bad("/tmp/opencode/definitely_absent_xyz.jsonl");
@@ -164,6 +230,8 @@ int main() {
   testDeterminism();
   testEat();
   testFlee();
+  testRayPlaneHit();
+  testMouseSteer();
   testScriptedInput();
   if (g_failures == 0) {
     std::printf("sim_test: ALL PASS\n");
