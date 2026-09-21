@@ -621,6 +621,34 @@
         "origin": "dynamic"
       },
       {
+        "label": "Contract",
+        "name": "contract:cell-sim-contract/1",
+        "attrs_json": "{\"version\":\"cell-sim-contract/1\",\"doc\":\"docs/CELL-CONTRACT.md\",\"fixtures\":\"tests/fixtures/cell/fixtures.json (5 scenarios, double-run byte-identical)\",\"invariants\":\"60Hz fixed step, binary32, %.9g float serialization, same-host bit-exact determinism\",\"evidence\":\"invariants VERIFIED; MovementPlane constants APPROXIMATION; steer/eat/flee semantics INFERRED/OBSERVED\"}",
+        "confidence": 0.75,
+        "origin": "manual"
+      },
+      {
+        "label": "Dossier",
+        "name": "dossier:cell-movement",
+        "attrs_json": "{\"topic\":\"cell-movement\",\"doc\":\"docs/analysis/dossiers/cell-movement.md\",\"schema\":\"re-dossier-1 (docs/RE-DOSSIER-SCHEMA.md)\",\"generator\":\"tools/re/dossier.py\",\"headline\":\"player is steered by a RAY-PLANE INTERSECTION: camera ray (from mouse) x movement plane; hit = target position + orientation-to-travel (Simulator::Cell::MovePlayerToMousePosition, VA 0xe5b790)\",\"evidence_present\":\"VERIFIED (SDK names) / OBSERVED (ray-plane structure in decompilation) / INFERRED (plane constant values, field meanings) / runtime NOT OBTAINED (no cell-mode trace)\"}",
+        "confidence": 0.75,
+        "origin": "static"
+      },
+      {
+        "label": "Finding",
+        "name": "finding:asset:player-cell-identity-rejected",
+        "attrs_json": "{\"claim\":\"cell_stage stand-in gmdl 0x00E6BCE5:0x40637E02:0x067A0801 is a BUILDING-category asset (cat 0x63, stage 0x7E) - NOT a cell asset; identity REJECTED. Real cell-stage GMDLs live at groups 0x40616201/0x40616202 (cat 0x61, stage 0x62, 88 records / 44 instances); 13 cll SporeMol records at group 0x40616200 define cell compositions; no cell-stage rasters in Spore_Content.package\",\"evidence\":\"VERIFIED via DBPF index of Spore_Content/Spore_Game packages + tools/spore/asset_resolver.py (Obj34, a4b5ac5)\"}",
+        "confidence": 1.0,
+        "origin": "static"
+      },
+      {
+        "label": "Finding",
+        "name": "finding:cell-movement:ray-plane-steering",
+        "attrs_json": "{\"claim\":\"MovePlayerToMousePosition intersects the camera view ray with the movement plane; hit point becomes the player target + face-travel orientation; keyboard thrust is secondary\",\"evidence\":\"OBSERVED in decompilation (tools/re/data/decompiled/MovePlayerToMousePosition.c); runtime NOT OBTAINED\",\"plane_constants\":\"DAT_015a7c40/44/48 (normal) + DAT_016b3c28/2c/30 (point): addresses OBSERVED, values INFERRED (never read)\"}",
+        "confidence": 0.5,
+        "origin": "static"
+      },
+      {
         "label": "Function",
         "name": "App::cCellModeStrategy",
         "attrs_json": "{\"fns\":11,\"vtable\":\"0x01485550\",\"members\":\"Initialize/Dispose/OnEnter/OnExit/OnKeyDown/OnMouseMove/OnMouseDown/OnMouseUp/OnMouseWheel/Update\",\"input\":\"keyboard + mouse incl. wheel\",\"evidence\":\"CONFIRMED via vtables.json + SDK XML\"}",
@@ -633,6 +661,13 @@
         "attrs_json": "{\"path\":\"src/apps/cell_stage.cpp\",\"roles\":\"offscreen scene (512^2 PPM + CELLSTAGE-MANIFEST v1, byte-identical); --input sim replay (CELLSTAGE-SIMMANIFEST); --interactive SDL3+Vulkan live window (60fps on :0 XWayland; scancode keys; driver fallback default->wayland->x11)\",\"camera\":\"orbit yaw/pitch/dist, CPU-baked NDC per vertex, follow player, wheel zoom [0.4,3.0]\"}",
         "confidence": 0.9,
         "origin": "static"
+      },
+      {
+        "label": "Implementation",
+        "name": "impl:src/replace/Replace.cpp",
+        "attrs_json": "{\"role\":\"clean-room replacement of MovePlayerToMousePosition; pure, deterministic, reads only ABI-documented state (CellGameView.hpp)\"}",
+        "confidence": 0.75,
+        "origin": "manual"
       },
       {
         "label": "Implementation",
@@ -653,6 +688,13 @@
         "name": "obs:cell_mode_untraced",
         "attrs_json": "{\"trace\":\"cell_mode\",\"events\":0,\"reason\":\"menu navigation impossible headless (no Xvfb/xdotool); menu_transition probes defined, never run\"}",
         "confidence": 1.0,
+        "origin": "manual"
+      },
+      {
+        "label": "ReplacementTarget",
+        "name": "replace:Simulator::Cell::MovePlayerToMousePosition",
+        "attrs_json": "{\"symbol\":\"Simulator::Cell::MovePlayerToMousePosition\",\"va\":\"0x00e5b790\",\"file_offset\":\"0xA5AB90 (SporeApp.exe 3.1.0.22)\",\"signature\":\"void (float deltaTime) cdecl\",\"status\":\"replaced-approx\",\"hook\":\"5-byte jmp 0xE9 rel32 at verified boundary a1 04 3c 6b 01\",\"differential\":\"64/64 MATCH vs decompilation reference (NOT live runtime)\",\"gate\":\"Wine cell-mode trace of the original to promote to replaced-verified\"}",
+        "confidence": 0.75,
         "origin": "manual"
       },
       {
@@ -767,6 +809,41 @@
         "dst": "GameModelResource"
       },
       {
+        "src": "replace:Simulator::Cell::MovePlayerToMousePosition",
+        "rel": "contractIs",
+        "dst": "contract:cell-sim-contract/1"
+      },
+      {
+        "src": "sub:cell-sim-movement-interaction",
+        "rel": "contractIs",
+        "dst": "contract:cell-sim-contract/1"
+      },
+      {
+        "src": "dossier:cell-movement",
+        "rel": "covers",
+        "dst": "App::cCellModeStrategy"
+      },
+      {
+        "src": "dossier:cell-movement",
+        "rel": "covers",
+        "dst": "asset:gmdl:cell-stage:40616201"
+      },
+      {
+        "src": "dossier:cell-movement",
+        "rel": "covers",
+        "dst": "asset:cll:sporemol:40616200"
+      },
+      {
+        "src": "dossier:cell-movement",
+        "rel": "covers",
+        "dst": "asset:gmdl:00E6BCE5:40666202:0D1B4BB56"
+      },
+      {
+        "src": "dossier:cell-movement",
+        "rel": "covers",
+        "dst": "asset:raster:2F4E681C:40662900:0D1B4BB56"
+      },
+      {
         "src": "RenderUtils_CreateDevice",
         "rel": "creates",
         "dst": "SporeGraphicsDevice"
@@ -787,9 +864,19 @@
         "dst": "SporeRasterFormat"
       },
       {
+        "src": "finding:asset:player-cell-identity-rejected",
+        "rel": "discoveredBy",
+        "dst": "impl:tools/spore/asset_resolver.py"
+      },
+      {
         "src": "TerrainSphereQuad",
         "rel": "dispatches",
         "dst": "RenderWare_Mesh_SetIndexBuffer_Draw"
+      },
+      {
+        "src": "finding:cell-movement:ray-plane-steering",
+        "rel": "documentedIn",
+        "dst": "dossier:cell-movement"
       },
       {
         "src": "dbpf_group_scheme",
@@ -892,6 +979,11 @@
         "dst": "impl:src/assets/Dxt5.cpp"
       },
       {
+        "src": "replace:Simulator::Cell::MovePlayerToMousePosition",
+        "rel": "implementedBy",
+        "dst": "impl:src/replace/Replace.cpp"
+      },
+      {
         "src": "App::cCellModeStrategy",
         "rel": "informs",
         "dst": "sub:cell-sim-movement-interaction"
@@ -905,6 +997,11 @@
         "src": "obs:cell_anim_state_db",
         "rel": "informs",
         "dst": "sub:cell-sim-movement-interaction"
+      },
+      {
+        "src": "finding:cell-movement:ray-plane-steering",
+        "rel": "informs",
+        "dst": "replace:Simulator::Cell::MovePlayerToMousePosition"
       },
       {
         "src": "obs:main_menu:local_main",
@@ -1147,6 +1244,11 @@
         "dst": "test:material_smoke"
       },
       {
+        "src": "impl:src/replace/Replace.cpp",
+        "rel": "testedBy",
+        "dst": "test:replace_diff_test"
+      },
+      {
         "src": "RenderWare_Mesh_SetIndexBuffer_Draw",
         "rel": "uses",
         "dst": "SporeGraphicsDevice"
@@ -1195,6 +1297,11 @@
         "src": "sub:mesh-extract-bounds",
         "rel": "verifiedBy",
         "dst": "test:assets_real"
+      },
+      {
+        "src": "replace:Simulator::Cell::MovePlayerToMousePosition",
+        "rel": "verifiedBy",
+        "dst": "test:replace_diff_test"
       },
       {
         "src": "test:assets_real",
