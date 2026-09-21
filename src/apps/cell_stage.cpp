@@ -14,7 +14,11 @@
 // into clip space), so the orbit camera view + perspective projection is
 // applied CPU-side to every vertex the same way.
 //
-// Usage: cell_stage <path-to-Spore_Content.package>
+// Usage: cell_stage <path-to-Spore_Content.package> [--input FILE]
+//   default (no --input): the Obj16 fixed-frame render, byte-stable manifest.
+//   --input FILE: Obj17 sim mode — replays a JSON-lines input script through
+//     the deterministic CellSim (src/sim), re-rendering the scene per frame
+//     with the player at its sim position and the camera following it.
 // Env-dependent: exits 0 (SKIP) when the package is absent. Writes
 // cell_stage.ppm to the working directory. Clean-room code; no asset bytes
 // are embedded.
@@ -30,6 +34,7 @@
 #include "Dbpf.hpp"
 #include "Gmdl.hpp"
 #include "Mesh.hpp"
+#include "Sim.hpp"
 #include "Texture.hpp"
 #include "renderer/VulkanRenderer.hpp"
 
@@ -350,105 +355,67 @@ PixelStats stats(const openspore::ImageRGBA &img) {
   return s;
 }
 
-} // namespace
+struct Loaded {
+  openspore::assets::Mesh mesh;
+  bool ok = false;
+};
 
-int main(int argc, char **argv) {
-  using namespace openspore::assets;
-  if (argc < 2) {
-    std::printf("usage: cell_stage <Spore_Content.package>\n");
-    return 1;
-  }
-  const std::vector<uint8_t> pkg = readFile(argv[1]);
-  if (pkg.empty()) {
-    std::printf("SKIP: package not found at %s (SPORE/ absent)\n", argv[1]);
-    return 0;
-  }
+// One entity's mesh scaled to targetSpan and centered at the origin, with
+// color/normal/uv preserved and the index list kept for re-upload.
+struct BakedMesh {
+  std::vector<openspore::Vertex> flat;
+  std::vector<openspore::TexVertex> tex;
+  std::vector<uint32_t> indices;
+};
 
-  std::string error;
-  std::vector<DbpfEntry> entries;
-  check(parseDbpfIndex(pkg.data(), pkg.size(), entries, error),
-        "cell_stage: package index parses");
-  if (g_failures > 0) {
-    return 1;
-  }
-
-  // Backdrop texture: the real 512x512 DXT5 raster of the patch family.
-  // CONFIRMED to be a near-black RGB alpha mask (Obj15); the lit pipeline's
-  // alpha blend composites it over the non-black clear so the patches stay
-  // visible (see docs/CELLSTAGE.md).
-  openspore::ImageRGBA texImage;
-  {
-    const int ti = findDbpfEntry(entries, kTypeRaster, kTexGroup, kTexInstance);
-    check(ti >= 0, "cell_stage: backdrop raster present");
-    if (ti >= 0) {
-      std::vector<uint8_t> blob;
-      if (extractDbpfRecord(pkg.data(), pkg.size(),
-                            entries[static_cast<size_t>(ti)], blob, error)) {
-        std::vector<openspore::ImageRGBA> mips;
-        RasterEnvelope env;
-        if (decodeRasterMips(blob.data(), blob.size(), mips, env, error) &&
-            !mips.empty()) {
-          texImage = mips[0];
-          const std::string h =
-              sha256Hex(texImage.pixels.data(), texImage.pixels.size());
-          check(h.compare(0, 16, kOracleSha16) == 0,
-                "cell_stage: backdrop raster sha256 matches Obj15 oracle");
-          check(texImage.width == 512 && texImage.height == 512,
-                "cell_stage: backdrop raster 512x512");
-        } else {
-          check(false, "cell_stage: backdrop raster decodes");
-        }
-      } else {
-        check(false, "cell_stage: backdrop raster extracts");
-      }
+BakedMesh bakeEntity(const Loaded &l, const Entity &ent) {
+  const openspore::assets::Mesh &m = l.mesh;
+  const float cx = (m.bboxMin[0] + m.bboxMax[0]) * 0.5F;
+  const float cy = (m.bboxMin[1] + m.bboxMax[1]) * 0.5F;
+  const float cz = (m.bboxMin[2] + m.bboxMax[2]) * 0.5F;
+  const float spanX = m.bboxMax[0] - m.bboxMin[0];
+  const float spanY = m.bboxMax[1] - m.bboxMin[1];
+  const float maxSpan = spanX > spanY ? spanX : spanY;
+  const float s = maxSpan > 1e-6F ? ent.targetSpan / maxSpan : 1.0F;
+  BakedMesh b;
+  b.indices = m.indices;
+  if (ent.textured) {
+    openspore::TexMesh tm = openspore::assets::toRendererTexMesh(m);
+    for (auto &v : tm.vertices) {
+      v.pos[0] = (v.pos[0] - cx) * s;
+      v.pos[1] = (v.pos[1] - cy) * s;
+      v.pos[2] = (v.pos[2] - cz) * s;
     }
-  }
-
-  // Load every scene entity.
-  struct Loaded {
-    Mesh mesh;
-    bool ok = false;
-  };
-  std::vector<Loaded> loaded(kEntityCount);
-  for (int e = 0; e < kEntityCount; ++e) {
-    const Entity &ent = kEntities[e];
-    const int ei = findDbpfEntry(entries, kTypeGmdl, ent.group, ent.inst);
-    char label[96];
-    std::snprintf(label, sizeof(label), "cell_stage: %s record present",
-                  ent.role);
-    check(ei >= 0, label);
-    if (ei < 0) {
-      continue;
+    b.tex = std::move(tm.vertices);
+  } else {
+    openspore::assets::RendererMesh rm = openspore::assets::toRendererMesh(m);
+    for (auto &v : rm.vertices) {
+      v.pos[0] = (v.pos[0] - cx) * s;
+      v.pos[1] = (v.pos[1] - cy) * s;
+      v.pos[2] = (v.pos[2] - cz) * s;
     }
-    std::vector<uint8_t> blob;
-    check(extractDbpfRecord(pkg.data(), pkg.size(),
-                            entries[static_cast<size_t>(ei)], blob, error),
-          "cell_stage: record extracts");
-    if (g_failures > 0) {
-      loaded[e].ok = false;
-      continue;
-    }
-    GmdlModel model;
-    check(parseGmdl(blob.data(), blob.size(), model, error),
-          "cell_stage: gmdl parses");
-    Mesh mesh;
-    check(meshFromGmdl(model, 0, mesh, error), "cell_stage: mesh converts");
-    if (g_failures > 0) {
-      loaded[e].ok = false;
-      continue;
-    }
-    std::snprintf(label, sizeof(label), "cell_stage: %s verts %zu", ent.role,
-                  mesh.positions.size());
-    check(mesh.positions.size() == ent.expectVerts, label);
-    loaded[e].mesh = std::move(mesh);
-    loaded[e].ok = g_failures == 0;
+    b.flat = std::move(rm.vertices);
   }
+  return b;
+}
 
-  if (g_failures > 0) {
-    std::printf("cell_stage: %d FAILURES\n", g_failures);
-    return 1;
-  }
+// Rotate a vector around +Y by `h` (matches the sim heading convention:
+// h=0 faces +Z, increasing h turns toward +X).
+void rotateY(float h, float &x, float &z) {
+  const float c = std::cosf(h);
+  const float s = std::sinf(h);
+  const float nx = x * c + z * s;
+  const float nz = -x * s + z * c;
+  x = nx;
+  z = nz;
+}
 
+// Fixed-frame mode (Obj16, unchanged behavior): one render of the static
+// scene from the fixed orbit camera, PPM + byte-stable manifest.
+int runFixedFrame(openspore::VulkanRenderer &renderer,
+                  openspore::TextureHandle texId,
+                  const openspore::MaterialState &mat,
+                  const std::vector<Loaded> &loaded) {
   // Orbit camera -> view; perspective with [0,1] NDC depth; the product is
   // baked into every vertex (the renderer has no matrix uniforms).
   const Camera cam;
@@ -461,66 +428,36 @@ int main(int argc, char **argv) {
   const Mat4 proj = perspective(cam.fov, 1.0F, cam.near, cam.far);
   const Mat4 vp = mul(proj, view);
 
-  openspore::VulkanRenderer renderer;
-  if (!renderer.init(kViewport, kViewport)) {
-    std::fprintf(stderr, "[cell_stage] renderer init failed\n");
-    return 1;
-  }
-  std::printf("[cell_stage] device=%s\n", renderer.deviceName().c_str());
-
-  const openspore::TextureHandle texId =
-      texImage.pixels.empty() ? openspore::kInvalidTexture
-                              : renderer.createTexture(texImage);
-  check(texId != openspore::kInvalidTexture, "cell_stage: texture uploaded");
-
-  openspore::MaterialState mat;
-  mat.lightDir[0] = 0.0F;
-  mat.lightDir[1] = 0.7071F;
-  mat.lightDir[2] = 0.7071F;
-  mat.ambient = 0.35F;
-
   std::vector<openspore::MeshHandle> flat(kEntityCount,
                                           openspore::kInvalidMesh);
   std::vector<openspore::MeshHandle> tex(kEntityCount,
                                          openspore::kInvalidMesh);
   for (int e = 0; e < kEntityCount; ++e) {
     const Entity &ent = kEntities[e];
-    const Mesh &m = loaded[e].mesh;
-    const float cx = (m.bboxMin[0] + m.bboxMax[0]) * 0.5F;
-    const float cy = (m.bboxMin[1] + m.bboxMax[1]) * 0.5F;
-    const float cz = (m.bboxMin[2] + m.bboxMax[2]) * 0.5F;
-    const float spanX = m.bboxMax[0] - m.bboxMin[0];
-    const float spanY = m.bboxMax[1] - m.bboxMin[1];
-    const float maxSpan = spanX > spanY ? spanX : spanY;
-    const float s = maxSpan > 1e-6F ? ent.targetSpan / maxSpan : 1.0F;
+    const BakedMesh b = bakeEntity(loaded[e], ent);
     if (ent.textured) {
-      openspore::TexMesh tm = toRendererTexMesh(m);
-      for (auto &v : tm.vertices) {
-        float x = (v.pos[0] - cx) * s + ent.pos[0];
-        float y = (v.pos[1] - cy) * s + ent.pos[1];
-        float z = (v.pos[2] - cz) * s + ent.pos[2];
-        transformPoint(vp, x, y, z);
-        v.pos[0] = x;
-        v.pos[1] = y;
-        v.pos[2] = z;
+      std::vector<openspore::TexVertex> v = b.tex;
+      for (auto &tv : v) {
+        tv.pos[0] += ent.pos[0];
+        tv.pos[1] += ent.pos[1];
+        tv.pos[2] += ent.pos[2];
+        transformPoint(vp, tv.pos[0], tv.pos[1], tv.pos[2]);
       }
-      tex[e] = renderer.createTexMesh(tm.vertices.data(), tm.vertices.size(),
-                                      tm.indices.data(), tm.indices.size());
+      tex[e] = renderer.createTexMesh(v.data(), v.size(), b.indices.data(),
+                                      b.indices.size());
       check(tex[e] != openspore::kInvalidMesh, "cell_stage: tex mesh created");
     } else {
-      RendererMesh rm = toRendererMesh(m);
-      for (auto &v : rm.vertices) {
-        float x = (v.pos[0] - cx) * s + ent.pos[0];
-        float y = (v.pos[1] - cy) * s + ent.pos[1];
-        float z = (v.pos[2] - cz) * s + ent.pos[2];
-        transformPoint(vp, x, y, z);
-        v.pos[0] = x;
-        v.pos[1] = y;
-        v.pos[2] = z;
+      std::vector<openspore::Vertex> v = b.flat;
+      for (auto &pv : v) {
+        pv.pos[0] += ent.pos[0];
+        pv.pos[1] += ent.pos[1];
+        pv.pos[2] += ent.pos[2];
+        transformPoint(vp, pv.pos[0], pv.pos[1], pv.pos[2]);
       }
-      flat[e] = renderer.createMesh(rm.vertices.data(), rm.vertices.size(),
-                                    rm.indices.data(), rm.indices.size());
-      check(flat[e] != openspore::kInvalidMesh, "cell_stage: flat mesh created");
+      flat[e] = renderer.createMesh(v.data(), v.size(), b.indices.data(),
+                                    b.indices.size());
+      check(flat[e] != openspore::kInvalidMesh,
+            "cell_stage: flat mesh created");
     }
   }
 
@@ -592,4 +529,318 @@ int main(int argc, char **argv) {
   }
   std::printf("cell_stage: %d FAILURES\n", g_failures);
   return 1;
+}
+
+// Sim mode (Obj17): replays a scripted input through the deterministic
+// CellSim, re-rendering the scene every frame with the player at its sim
+// position (dead food culled) and the camera following it.
+int runSimMode(openspore::VulkanRenderer &renderer,
+               openspore::TextureHandle texId,
+               const openspore::MaterialState &mat,
+               const std::vector<Loaded> &loaded,
+               const std::string &inputPath) {
+  openspore::sim::ScriptedInputSource source(inputPath);
+  if (!source.ok()) {
+    std::fprintf(stderr, "[cell_stage] %s\n", source.error().c_str());
+    return 1;
+  }
+
+  std::vector<openspore::sim::Entity> ents;
+  for (const Entity &e : kEntities) {
+    if (std::strncmp(e.role, "backdrop_", 9) == 0) {
+      continue; // static environment, rendered as-is
+    }
+    openspore::sim::Entity se;
+    se.role = e.role;
+    se.group = e.group;
+    se.inst = e.inst;
+    se.pos[0] = e.pos[0];
+    se.pos[1] = e.pos[1];
+    se.pos[2] = e.pos[2];
+    se.targetSpan = e.targetSpan;
+    ents.push_back(se);
+  }
+  openspore::sim::CellSim sim(std::move(ents));
+  // Camera baseline: the Obj16 orbit angles, following the player.
+  sim.camera().yaw = 35.0F * (3.14159265358979F / 180.0F);
+  sim.camera().pitch = 15.0F * (3.14159265358979F / 180.0F);
+
+  std::vector<BakedMesh> baked(kEntityCount);
+  for (int e = 0; e < kEntityCount; ++e) {
+    baked[e] = bakeEntity(loaded[e], kEntities[e]);
+  }
+
+  const float kDeg = 3.14159265358979F / 180.0F;
+  const Mat4 proj = perspective(60.0F * kDeg, 1.0F, 0.5F, 100.0F);
+  const float up[3] = {0.0F, 1.0F, 0.0F};
+  const int totalFrames = static_cast<int>(source.frameCount());
+
+  for (int f = 0; f < totalFrames; ++f) {
+    sim.update(source.frame(f));
+    const openspore::sim::CameraState &cam = sim.camera();
+    const float eye[3] = {
+        cam.target[0] + cam.dist() * std::sin(cam.yaw) * std::cos(cam.pitch),
+        cam.target[1] + cam.dist() * std::sin(cam.pitch),
+        cam.target[2] + cam.dist() * std::cos(cam.yaw) * std::cos(cam.pitch)};
+    const Mat4 vp = mul(proj, lookAt(eye, cam.target, up));
+
+    // Per-frame meshes: create all first, draw inside the frame, destroy only
+    // after endFrame (the frame submits + waits, so the GPU is done with the
+    // buffers by then; freeing before submit would race the draw).
+    struct FrameDraw {
+      int entity = -1;
+      openspore::MeshHandle flat = openspore::kInvalidMesh;
+      openspore::MeshHandle tex = openspore::kInvalidMesh;
+    };
+    std::vector<FrameDraw> draws;
+    for (int e = 0; e < kEntityCount; ++e) {
+      const Entity &ent = kEntities[e];
+      float pos[3] = {ent.pos[0], ent.pos[1], ent.pos[2]};
+      float rot = 0.0F;
+      if (ent.textured) {
+        // backdrop: static.
+      } else if (std::strcmp(ent.role, "player_cell") == 0) {
+        const openspore::sim::PlayerState &p = sim.player();
+        pos[0] = p.pos[0];
+        pos[1] = p.pos[1];
+        pos[2] = p.pos[2];
+        rot = p.heading;
+      } else {
+        const openspore::sim::Entity *se = nullptr;
+        for (const auto &cand : sim.entities()) {
+          if (cand.role == ent.role) {
+            se = &cand;
+            break;
+          }
+        }
+        if (se == nullptr || !se->alive) {
+          continue; // culled (eaten)
+        }
+        pos[0] = se->pos[0];
+        pos[1] = se->pos[1];
+        pos[2] = se->pos[2];
+      }
+      FrameDraw d;
+      d.entity = e;
+      if (ent.textured) {
+        std::vector<openspore::TexVertex> v = baked[e].tex;
+        for (auto &tv : v) {
+          rotateY(rot, tv.pos[0], tv.pos[2]);
+          rotateY(rot, tv.normal[0], tv.normal[2]);
+          tv.pos[0] += pos[0];
+          tv.pos[1] += pos[1];
+          tv.pos[2] += pos[2];
+          transformPoint(vp, tv.pos[0], tv.pos[1], tv.pos[2]);
+        }
+        d.tex = renderer.createTexMesh(v.data(), v.size(),
+                                       baked[e].indices.data(),
+                                       baked[e].indices.size());
+      } else {
+        std::vector<openspore::Vertex> v = baked[e].flat;
+        for (auto &pv : v) {
+          rotateY(rot, pv.pos[0], pv.pos[2]);
+          pv.pos[0] += pos[0];
+          pv.pos[1] += pos[1];
+          pv.pos[2] += pos[2];
+          transformPoint(vp, pv.pos[0], pv.pos[1], pv.pos[2]);
+        }
+        d.flat = renderer.createMesh(v.data(), v.size(),
+                                     baked[e].indices.data(),
+                                     baked[e].indices.size());
+      }
+      if (d.flat != openspore::kInvalidMesh ||
+          d.tex != openspore::kInvalidMesh) {
+        draws.push_back(d);
+      }
+    }
+
+    renderer.beginFrame(kClearR, kClearG, kClearB, 1.0F);
+    for (const FrameDraw &d : draws) {
+      const Entity &ent = kEntities[d.entity];
+      if (ent.textured) {
+        renderer.drawTextured(d.tex, texId, mat);
+      } else {
+        renderer.drawMesh(d.flat);
+      }
+    }
+    renderer.endFrame();
+
+    for (const FrameDraw &d : draws) {
+      if (kEntities[d.entity].textured) {
+        renderer.destroyTexMesh(d.tex);
+      } else {
+        renderer.destroyMesh(d.flat);
+      }
+    }
+  }
+
+  const openspore::ImageRGBA img = renderer.readbackPixels();
+  writePpm("cell_stage.ppm", img);
+  const PixelStats st = stats(img);
+
+  // Deterministic sim manifest (the python oracle compares two runs).
+  std::printf("CELLSTAGE-SIMMANIFEST v1\n");
+  std::printf("frames=%d\n", totalFrames);
+  for (const auto &ev : sim.events()) {
+    std::printf("event frame=%d type=%s entity=%s\n", ev.frame, ev.type,
+                ev.entity.c_str());
+  }
+  const openspore::sim::PlayerState &p = sim.player();
+  std::printf("player pos=%.3f %.3f %.3f heading=%.4f vel=%.3f %.3f %.3f "
+              "growMeter=%d\n",
+              p.pos[0], p.pos[1], p.pos[2], p.heading, p.vel[0], p.vel[1],
+              p.vel[2], p.growMeter);
+  const openspore::sim::CameraState &cam = sim.camera();
+  std::printf("camera yaw=%.4f pitch=%.4f dist=%.3f target=%.3f %.3f %.3f\n",
+              cam.yaw, cam.pitch, cam.dist(), cam.target[0], cam.target[1],
+              cam.target[2]);
+  std::printf("clear r=%d g=%d b=%d\n",
+              static_cast<int>(kClearR * 255.0F + 0.5F),
+              static_cast<int>(kClearG * 255.0F + 0.5F),
+              static_cast<int>(kClearB * 255.0F + 0.5F));
+  const size_t content = st.total - st.clearish;
+  std::printf("pixels total=%zu non_black=%zu distinct=%zu content=%zu\n",
+              st.total, st.nonBlack, st.distinct, content);
+
+  // Sim-mode acceptance: the moving scene must show real content. The Obj16
+  // calibrated window applies only to the fixed frame.
+  check(content > 5000, "cell_stage sim: scene content drawn");
+  check(st.distinct > 4, "cell_stage sim: render has varied colors");
+
+  renderer.destroyTexture(texId);
+  renderer.shutdown();
+
+  if (g_failures == 0) {
+    std::printf("cell_stage: ALL PASS (sim, %d frames, %zu non-black px)\n",
+                totalFrames, st.nonBlack);
+    return 0;
+  }
+  std::printf("cell_stage: %d FAILURES\n", g_failures);
+  return 1;
+}
+
+} // namespace
+
+int main(int argc, char **argv) {
+  using namespace openspore::assets;
+  if (argc < 2) {
+    std::printf("usage: cell_stage <Spore_Content.package> [--input FILE]\n");
+    return 1;
+  }
+  std::string inputPath;
+  for (int i = 1; i < argc; ++i) {
+    if (std::string(argv[i]) == "--input" && i + 1 < argc) {
+      inputPath = argv[i + 1];
+      ++i;
+    }
+  }
+  const std::vector<uint8_t> pkg = readFile(argv[1]);
+  if (pkg.empty()) {
+    std::printf("SKIP: package not found at %s (SPORE/ absent)\n", argv[1]);
+    return 0;
+  }
+
+  std::string error;
+  std::vector<DbpfEntry> entries;
+  check(parseDbpfIndex(pkg.data(), pkg.size(), entries, error),
+        "cell_stage: package index parses");
+  if (g_failures > 0) {
+    return 1;
+  }
+
+  // Backdrop texture: the real 512x512 DXT5 raster of the patch family.
+  // CONFIRMED to be a near-black RGB alpha mask (Obj15); the lit pipeline's
+  // alpha blend composites it over the non-black clear so the patches stay
+  // visible (see docs/CELLSTAGE.md).
+  openspore::ImageRGBA texImage;
+  {
+    const int ti = findDbpfEntry(entries, kTypeRaster, kTexGroup, kTexInstance);
+    check(ti >= 0, "cell_stage: backdrop raster present");
+    if (ti >= 0) {
+      std::vector<uint8_t> blob;
+      if (extractDbpfRecord(pkg.data(), pkg.size(),
+                            entries[static_cast<size_t>(ti)], blob, error)) {
+        std::vector<openspore::ImageRGBA> mips;
+        RasterEnvelope env;
+        if (decodeRasterMips(blob.data(), blob.size(), mips, env, error) &&
+            !mips.empty()) {
+          texImage = mips[0];
+          const std::string h =
+              sha256Hex(texImage.pixels.data(), texImage.pixels.size());
+          check(h.compare(0, 16, kOracleSha16) == 0,
+                "cell_stage: backdrop raster sha256 matches Obj15 oracle");
+          check(texImage.width == 512 && texImage.height == 512,
+                "cell_stage: backdrop raster 512x512");
+        } else {
+          check(false, "cell_stage: backdrop raster decodes");
+        }
+      } else {
+        check(false, "cell_stage: backdrop raster extracts");
+      }
+    }
+  }
+
+  // Load every scene entity.
+  std::vector<Loaded> loaded(kEntityCount);
+  for (int e = 0; e < kEntityCount; ++e) {
+    const Entity &ent = kEntities[e];
+    const int ei = findDbpfEntry(entries, kTypeGmdl, ent.group, ent.inst);
+    char label[96];
+    std::snprintf(label, sizeof(label), "cell_stage: %s record present",
+                  ent.role);
+    check(ei >= 0, label);
+    if (ei < 0) {
+      continue;
+    }
+    std::vector<uint8_t> blob;
+    check(extractDbpfRecord(pkg.data(), pkg.size(),
+                            entries[static_cast<size_t>(ei)], blob, error),
+          "cell_stage: record extracts");
+    if (g_failures > 0) {
+      loaded[e].ok = false;
+      continue;
+    }
+    GmdlModel model;
+    check(parseGmdl(blob.data(), blob.size(), model, error),
+          "cell_stage: gmdl parses");
+    Mesh mesh;
+    check(meshFromGmdl(model, 0, mesh, error), "cell_stage: mesh converts");
+    if (g_failures > 0) {
+      loaded[e].ok = false;
+      continue;
+    }
+    std::snprintf(label, sizeof(label), "cell_stage: %s verts %zu", ent.role,
+                  mesh.positions.size());
+    check(mesh.positions.size() == ent.expectVerts, label);
+    loaded[e].mesh = std::move(mesh);
+    loaded[e].ok = g_failures == 0;
+  }
+
+  if (g_failures > 0) {
+    std::printf("cell_stage: %d FAILURES\n", g_failures);
+    return 1;
+  }
+
+  openspore::VulkanRenderer renderer;
+  if (!renderer.init(kViewport, kViewport)) {
+    std::fprintf(stderr, "[cell_stage] renderer init failed\n");
+    return 1;
+  }
+  std::printf("[cell_stage] device=%s\n", renderer.deviceName().c_str());
+
+  const openspore::TextureHandle texId =
+      texImage.pixels.empty() ? openspore::kInvalidTexture
+                              : renderer.createTexture(texImage);
+  check(texId != openspore::kInvalidTexture, "cell_stage: texture uploaded");
+
+  openspore::MaterialState mat;
+  mat.lightDir[0] = 0.0F;
+  mat.lightDir[1] = 0.7071F;
+  mat.lightDir[2] = 0.7071F;
+  mat.ambient = 0.35F;
+
+  if (inputPath.empty()) {
+    return runFixedFrame(renderer, texId, mat, loaded);
+  }
+  return runSimMode(renderer, texId, mat, loaded, inputPath);
 }

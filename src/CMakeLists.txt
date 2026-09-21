@@ -85,10 +85,12 @@ add_test(
 # deterministic scene manifest on stdout. Env-dependent (skips when SPORE/
 # is absent); the PPM lands in the build dir, never in git.
 add_executable(cell_stage apps/cell_stage.cpp)
-target_link_libraries(cell_stage PRIVATE openspore_assets openspore_renderer)
+target_link_libraries(cell_stage PRIVATE
+  openspore_assets openspore_renderer openspore_sim)
 add_test(
   NAME cell_stage
   COMMAND cell_stage ${PROJECT_SOURCE_DIR}/SPORE/Data/Spore_Content.package
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
 add_subdirectory(assets)
+add_subdirectory(sim)
