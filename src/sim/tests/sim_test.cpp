@@ -1,11 +1,17 @@
 // CTest unit checks for the deterministic cell simulation (Obj17 part A).
 // Pure C++: no SPORE/ package, no GPU — CI-safe.
+//
+// Obj35 fixture emitter: `sim_test --emit-fixtures <out.json>` freezes the
+// contract fixture file (tests/fixtures/cell/fixtures.json). The "expected"
+// values are exactly what the CURRENT CellSim produces — the provenance of
+// every expected number is this binary (docs/CELL-CONTRACT.md).
 #include <cmath>
 #include <cstdio>
 #include <fstream>
 #include <string>
 
 #include "Sim.hpp"
+#include "contract_scenarios.hpp"
 
 namespace {
 
@@ -65,8 +71,7 @@ void testForwardThrust() {
   }
   const auto &p = sim.player();
   check(p.pos[2] > 1.0F, "sim: forward thrust -> moves along +Z (heading 0)");
-  check(std::fabs(p.pos[0]) < 0.5F,
-        "sim: forward thrust -> no sideways drift");
+  check(std::fabs(p.pos[0]) < 0.5F, "sim: forward thrust -> no sideways drift");
   check(p.pos[1] == 0.0F, "sim: forward thrust -> stays on the swim plane");
   check(p.growMeter == 0, "sim: straight +Z path misses food_a");
 }
@@ -125,8 +130,8 @@ void testFlee() {
 }
 
 void testRayPlaneHit() {
-  using openspore::sim::rayPlaneHit;
   using openspore::sim::MovementPlane;
+  using openspore::sim::rayPlaneHit;
   MovementPlane plane; // default: y=0 plane, normal (0,1,0), point origin
   float hit[3];
   // Perpendicular ray from above the plane -> hits at the origin.
@@ -186,10 +191,10 @@ void testScriptedInput() {
   const char *path = "/tmp/opencode/sim_test_input.jsonl";
   std::ofstream f(path, std::ios::trunc);
   f << "{\"frame\": 0, \"keys\": [\"forward\"], \"yaw\": 0.6, "
-        "\"pitch\": 0.2, \"zoom\": 0.8}\n";
+       "\"pitch\": 0.2, \"zoom\": 0.8}\n";
   f << "{\"frame\": 1, \"keys\": [\"right\", \"boost\"]}\n";
   f << "{\"frame\": 2, \"mouse\": [0.5, 0.0], \"yaw\": 0.0, "
-        "\"pitch\": -0.3}\n";
+       "\"pitch\": -0.3}\n";
   f << "\n";
   f << "{\"keys\": [\"back\"]}\n";
   f.close();
@@ -211,8 +216,7 @@ void testScriptedInput() {
   const InputFrame f2 = src.frame(2);
   check(f2.hasMouse && std::fabs(f2.mouseX - 0.5F) < 1e-5F &&
             std::fabs(f2.mouseY) < 1e-5F && f2.hasCamera &&
-            std::fabs(f2.cameraPitch - (-0.3F)) < 1e-5F &&
-            !f2.thrustBack,
+            std::fabs(f2.cameraPitch - (-0.3F)) < 1e-5F && !f2.thrustBack,
         "sim: frame 2 mouse NDC + camera parsed");
   const InputFrame f3 = src.frame(3);
   check(f3.thrustBack, "sim: frameless line lands on the next frame");
@@ -222,9 +226,152 @@ void testScriptedInput() {
   check(!bad.ok(), "sim: missing input file reports an error");
 }
 
+// ---- Obj35: contract fixture emitter --------------------------------------
+// Emits the frozen fixture JSON. Floats are printed as %.9g — 9 significant
+// decimal digits round-trip binary32 exactly, so the contract test's strtof
+// parse recovers the emitted bits.
+
+std::string fnum(float v) {
+  char b[32];
+  std::snprintf(b, sizeof(b), "%.9g", v);
+  return b;
+}
+
+std::string fvec(const float v[3]) {
+  return "[" + fnum(v[0]) + ", " + fnum(v[1]) + ", " + fnum(v[2]) + "]";
+}
+
+void emitFixtures(const char *path, bool &ok) {
+  ok = false;
+  std::ofstream f(path, std::ios::trunc);
+  if (!f) {
+    std::printf("emit-fixtures: cannot open %s for writing\n", path);
+    return;
+  }
+  using openspore::sim::FrameSnapshot;
+  using openspore::sim::replay;
+  using openspore::sim::Scenario;
+  using openspore::sim::scenarios;
+  f << "{\n";
+  f << "  \"contract\": \"" << openspore::sim::kContractVersion << "\",\n";
+  f << "  \"dt\": " << fnum(openspore::sim::kDt) << ",\n";
+  f << "  \"floats\": \"binary32; %.9g decimal round-trips exactly\",\n";
+  f << "  \"params\": \"MovementParams struct defaults (pinned by "
+       "docs/CELL-CONTRACT.md)\",\n";
+  f << "  \"scenarios\": [\n";
+  const std::vector<Scenario> &all = scenarios();
+  for (std::size_t si = 0; si < all.size(); ++si) {
+    const Scenario &s = all[si];
+    f << "    {\n";
+    f << "      \"name\": \"" << s.name << "\",\n";
+    f << "      \"description\": \"" << s.description << "\",\n";
+    f << "      \"entities\": [";
+    for (size_t i = 0; i < s.entities.size(); ++i) {
+      const openspore::sim::Entity &e = s.entities[i];
+      if (i != 0) {
+        f << ", ";
+      }
+      f << "{\"role\": \"" << e.role << "\", \"pos\": " << fvec(e.pos) << "}";
+    }
+    f << "],\n";
+    f << "      \"camera\": {\"yaw\": " << fnum(s.camera.yaw)
+      << ", \"pitch\": " << fnum(s.camera.pitch)
+      << ", \"zoom\": " << fnum(s.camera.zoom)
+      << ", \"baseDist\": " << fnum(s.camera.baseDist)
+      << ", \"fov\": " << fnum(s.camera.fov) << "},\n";
+    f << "      \"plane\": {\"normal\": " << fvec(s.plane.normal)
+      << ", \"point\": " << fvec(s.plane.point) << "},\n";
+    f << "      \"frames\": [";
+    for (size_t i = 0; i < s.frames.size(); ++i) {
+      const openspore::sim::InputFrame &fr = s.frames[i];
+      if (i != 0) {
+        f << ", ";
+      }
+      std::vector<const char *> keys;
+      if (fr.thrustLeft) {
+        keys.push_back("left");
+      }
+      if (fr.thrustRight) {
+        keys.push_back("right");
+      }
+      if (fr.thrustForward) {
+        keys.push_back("forward");
+      }
+      if (fr.thrustBack) {
+        keys.push_back("back");
+      }
+      if (fr.boost) {
+        keys.push_back("boost");
+      }
+      f << "{\"keys\": [";
+      for (size_t k = 0; k < keys.size(); ++k) {
+        if (k != 0) {
+          f << ", ";
+        }
+        f << "\"" << keys[k] << "\"";
+      }
+      f << "]";
+      if (fr.hasCamera) {
+        f << ", \"camera\": {\"yaw\": " << fnum(fr.cameraYaw)
+          << ", \"pitch\": " << fnum(fr.cameraPitch)
+          << ", \"zoom\": " << fnum(fr.cameraZoom) << "}";
+      }
+      if (fr.hasMouse) {
+        f << ", \"mouse\": [" << fnum(fr.mouseX) << ", " << fnum(fr.mouseY)
+          << "]";
+      }
+      f << "}";
+    }
+    f << "],\n";
+    const std::vector<FrameSnapshot> snaps = replay(s);
+    f << "      \"expected\": {\"frames\": [";
+    for (size_t i = 0; i < snaps.size(); ++i) {
+      const FrameSnapshot &sn = snaps[i];
+      if (i != 0) {
+        f << ", ";
+      }
+      f << "{\"pos\": " << fvec(sn.pos) << ", \"heading\": " << fnum(sn.heading)
+        << ", \"vel\": " << fvec(sn.vel) << ", \"growMeter\": " << sn.growMeter
+        << ", \"events\": [";
+      for (size_t e = 0; e < sn.eventTypes.size(); ++e) {
+        if (e != 0) {
+          f << ", ";
+        }
+        f << "[\"" << sn.eventTypes[e] << "\", \"" << sn.eventEntities[e]
+          << "\"]";
+      }
+      f << "], \"alive\": [";
+      for (size_t a = 0; a < sn.alive.size(); ++a) {
+        if (a != 0) {
+          f << ", ";
+        }
+        f << (sn.alive[a] ? "true" : "false");
+      }
+      f << "]}";
+    }
+    f << "]}";
+    f << "\n    }" << (si + 1 < all.size() ? "," : "") << "\n";
+  }
+  f << "  ]\n";
+  f << "}\n";
+  f.close();
+  if (!f) {
+    std::printf("emit-fixtures: write to %s failed\n", path);
+    return;
+  }
+  ok = true;
+  std::printf("emit-fixtures: wrote %zu scenarios to %s (%s)\n", all.size(),
+              path, openspore::sim::kContractVersion);
+}
+
 } // namespace
 
-int main() {
+int main(int argc, char **argv) {
+  if (argc >= 3 && std::string(argv[1]) == "--emit-fixtures") {
+    bool ok = false;
+    emitFixtures(argv[2], ok);
+    return ok ? 0 : 1;
+  }
   testZeroInput();
   testForwardThrust();
   testDeterminism();

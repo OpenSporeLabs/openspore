@@ -11,3 +11,16 @@ add_test(
   NAME sim_test
   COMMAND sim_test
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+
+# Obj35: contract test. Replays the frozen fixtures and asserts the exact
+# per-frame oracle (docs/CELL-CONTRACT.md, cell-sim-contract/1). The fixture
+# path is baked in at configure time; regenerate it with
+# tools/gen_cell_fixtures.py (which calls `sim_test --emit-fixtures`).
+add_executable(sim_contract_test tests/sim_contract_test.cpp)
+target_link_libraries(sim_contract_test PRIVATE openspore_sim)
+target_compile_definitions(sim_contract_test PRIVATE
+  CELL_FIXTURES_PATH="${CMAKE_SOURCE_DIR}/tests/fixtures/cell/fixtures.json")
+add_test(
+  NAME sim_contract_test
+  COMMAND sim_contract_test
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
