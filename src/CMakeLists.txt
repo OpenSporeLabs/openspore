@@ -118,3 +118,4 @@ set_tests_properties(cell_stage_interactive_smoke PROPERTIES
 
 add_subdirectory(assets)
 add_subdirectory(sim)
+add_subdirectory(replace)

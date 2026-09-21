@@ -1,6 +1,6 @@
 {
   "$schema": "replacement-status-1",
-  "vocabulary": ["unknown", "hypothesis", "inferred", "supported", "verified", "approximated", "replaced-stub", "replaced-verified"],
+  "vocabulary": ["unknown", "hypothesis", "inferred", "supported", "verified", "approximated", "replaced-stub", "replaced-approx", "replaced-verified"],
   "note": "Evidence levels mirror docs/RECON-3.1.0.22.md appendix A; replaced-* means OpenSpore code reproduces the behavior behind a docs/BOUNDARIES.md seam. Seed for Objective 10 (knowledge graph).",
   "subsystems": [
     {
@@ -99,6 +99,16 @@
       "gate": "no differential oracle for cell movement (no headless trace of the original); stays replaced-stub",
       "note": "Obj33: the keyboard-thrust approximation is replaced by the evidence-backed steering model — MovePlayerToMousePosition (OBSERVED in decompilation) intersects the camera ray with the movement plane; the hit is the movement TARGET, OnKeyDown thrust is SECONDARY, and the player turns to face the travel direction. Keyboard-only input is retained as the fallback for frames without a mouse position. The movement PLANE normal/point (original constants DAT_015a7c40/44/48, DAT_016b3c28/2c/30) are APPROXIMATION — addresses OBSERVED, values never read (no cell-mode runtime trace); MovementPlane defaults are a horizontal swim plane through the origin. steerSpeed/steerStopRadius/keyboardSecondaryMul and camera fov are APPROXIMATION (no traced values). eat/flee rules INFERRED from Cell_eat_*/Cell_mov_* anim states; radii unobserved. No compatibility boundary: original cell dynamics unobserved (no trace).",
       "commits": ["cf7147a"]
+    },
+    {
+      "name": "cell-movement-mouse-steering",
+      "status": "replaced-approx",
+      "openspore_impl": "src/replace/Replace.cpp:replacement_MovePlayerToMousePosition (SCellGameView/Reference.cpp stand-ins; hook seam 5-byte jmp at 0x00e5b790 per tools/replace/synthetic, Obj36A)",
+      "boundary": "docs/REPLACEMENT-ABI.md section 5 (cdecl float deltaTime inherited across the jmp; reads only sCellGame fields + plane constants by address)",
+      "evidence": ["docs/REPLACEMENT-ABI.md", "tools/re/data/decompiled/MovePlayerToMousePosition.c", "docs/REPLACEMENT-DIFF.md", "src/replace/tests/diff_test.cpp (ctest:replace_diff_test)"],
+      "gate": "Wine cell-mode runtime trace of the original (INFERRED field offsets + APPROXIMATION plane constants to VERIFIED) — required to promote to replaced-verified",
+      "note": "Obj36C/36D: clean-room replacement of Simulator::Cell::MovePlayerToMousePosition (lock guard -> player fetch -> camera ray x movement plane -> target write + moving flag + travel orientation). Differential vs the DECOMPILED reference: 8 cases x 8 fields = 64/64 MATCH within 1e-6 (exact for the moving flag), 0 mismatches (docs/REPLACEMENT-DIFF.md). EVIDENCE BOUNDARY: this is NOT a live-runtime verification - cell mode is unreachable headless, so no live oracle exists; the reference is EVIDENCE-NOT-TRUTH. Status is replaced-approx, pending a Wine cell-mode trace.",
+      "commits": []
     },
     {
       "name": "interactive-presentation",
