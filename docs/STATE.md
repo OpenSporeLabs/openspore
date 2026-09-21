@@ -1,6 +1,6 @@
 # OpenSpore — Project State
 
-Current phase: **Obj 13–18 done — first interactive Cell Stage vertical slice** (see §2). Next milestone: §6.
+Current phase: **Obj 30–42 done — RE-Intelligence workflow + first in-process replacement** (see §2). The Cell Stage slice (Obj13–18) is now backed by an evidence pipeline (dossier → static Ghidra → runtime observatory → asset resolver → contract+fixtures → replace → record) and its movement is `replaced-approx` (differential-verified against a decompilation reference; live-runtime verification still gated on a Wine cell-mode trace). Next milestone: §6.
 Machine: **CachyOS / Arch** (use `pacman`, not `apt`).
 
 ## 1. Environment (Phase-0 table; ✅-verified rows re-checked 2026-09-21, rest carried over)
@@ -37,14 +37,28 @@ Machine: **CachyOS / Arch** (use `pacman`, not `apt`).
 - Obj 17a deterministic sim (`cf7147a`): `src/sim/` CellSim (movement, eat/flee, scripted `--input` replay, camera follow) + `cell_stage --input`.
 - Obj 17b interactive presentation (`8cedc60`): SDL3 + Vulkan live window (swapchain/vsync), keyboard-driven CellSim, follow camera, driver fallback.
 - Obj 18 validation + boundary review (`b939cb7`): `docs/CELLSTAGE-VALIDATION.md`, BOUNDARIES.md + replacement-status updates (no seam changes needed).
+- Obj 30 baseline (`—`): tree clean, 8/8 CTest, hygiene audit (git-ignored `SPORE/`/`*.ppm`/`build/`).
+- Obj 31 RE-Intelligence MVP (`d43e324`): `tools/re/dossier.py` + `docs/RE-DOSSIER-SCHEMA.md` (7-level evidence vocab) + first `cell-movement` dossier (ray-plane headline); 7 new Python tests.
+- Obj 32 runtime observation + address fix (`1c3035b`): 12 byte-verified cell probes; 9 bounded Wine runs → cell unreachable headless; `docs/analysis/CELL-RUNTIME-OBSERVATION.md`; corrected probe `rva`=linked-VA / `image_base 0x400000` convention.
+- Obj 33 evidence-backed steering (`1a3dd2c`): CellSim now camera-ray ∩ movement-plane, keyboard secondary; plane params labeled APPROXIMATION; +`testRayPlaneHit`, `testMouseSteer`.
+- Obj 34 sporemol resolver (`a4b5ac5`): `tools/spore/asset_resolver.py` + `groupnames.json` + extended `typenames.json` (31→40); **player-cell stand-in REJECTED** (it's a building); real cell GMDLs at groups 0x40616201/02; 19 tests.
+- Obj 35 canonical contract + fixtures (`6470cca`): `docs/CELL-CONTRACT.md` (`cell-sim-contract/1`) + `contract_scenarios.hpp` + `sim_contract_test` (bit-exact replay, double-run determinism, frame-count guard) + `tools/gen_cell_fixtures.py`.
+- Obj 36A/B synthetic hook + ABI (`9734cc3`): `tools/replace/synthetic/` proves 0xE9 rel32 + RWX mprotect patch (BEFORE 40× / AFTER `replacement_ran=1`); `docs/REPLACEMENT-ABI.md` for `Simulator::Cell::MovePlayerToMousePosition` (VA 0x00e5b790, `void(float)` cdecl, sCellGame@0x16b3c04).
+- Obj 36C/D replacement + differential (`b44e683`): `src/replace/` (SCellGameView + replacement impl) + `Reference.cpp` (decomp transcription) + `diff_test` → **64/64 MATCH** vs the decompilation reference; `docs/REPLACEMENT-DIFF.md`; status `replaced-approx` (NOT a live-runtime verification).
+- Obj 37/38 boundary + workflow docs (`cfd0da6`): `docs/replacement-boundaries.md` (18-subsystem status table + gates) + `docs/RE-WORKFLOW.md` (7-stage pipeline + evidence decision table + known limitations).
+- Obj 39/41/42 KG + devlog + roadmap (`ace8e1d`): KG 88→96 nodes / 102→115 edges / +3 test records; `docs/devlog/014-re-intelligence-and-first-replacement.md`; `docs/ASSET-IMPORT-ROADMAP.md`.
 
 ## 3. Architecture (current tree)
 ```
 src/apps/ (triangle, asset_view, material_smoke, cell_stage)  renderer/ (Renderer.hpp, VulkanRenderer + present mode, lit pipeline)
-assets/ (Dbpf, Gmdl, Mesh, Dxt5, Texture, Stream)  sim/ (Sim: CellSim, MovementParams, scripted input)  compat/ (B1–B3 seams)
-tools/spore/ (dbpf, rw4, gmdl, raster, dxt5, typescan oracles)  observatory/ (probe_tracer, observe.py, probes/)  ghidra/ (ImportSporeSDK, VtableDetect)
-tests/ (fixtures, test_formats, test_textures, test_sim, test_cellstage, diff_real.py opt-in)  knowledgegraph/ (kg.py, seed_sprint.py; spore.db git-ignored)
-docs/ (RECON-3.1.0.22, RENDERWARE-RESEARCH, RENDERER-DESIGN, ASSET-PATH, BOUNDARIES, KNOWLEDGE-GRAPH, MATERIALS-DESIGN, CELLSTAGE{,-RECON,-VALIDATION}, devlog/, replacement-status.json, analysis/vtables.json)
+assets/ (Dbpf, Gmdl, Mesh, Dxt5, Texture, Stream)  sim/ (Sim: CellSim, MovementPlane, ray→plane steer, scripted input)  compat/ (B1–B3 seams)
+replace/ (SCellGameView, replacement impl, decompilation reference, diff_test)   [Obj36]
+tools/spore/ (dbpf, rw4, gmdl, raster, dxt5, typescan oracles, asset_resolver + types/{typenames,groupnames})   [Obj34]
+tools/re/ (dossier.py + data/{ghidra_snapshot, decompiled/})   [Obj31/32]
+observatory/ (probe_tracer, observe.py, probes/)  ghidra/ (ImportSporeSDK, VtableDetect)
+tools/replace/synthetic/ (native 32-bit hook proof)   [Obj36A]  tools/gen_cell_fixtures.py   [Obj35]
+tests/ (fixtures/cell/, test_formats, test_textures, test_sim, test_cellstage, test_dossier, test_asset_resolver, diff_real.py opt-in)  knowledgegraph/ (kg.py, seed_sprint.py; spore.db git-ignored)
+docs/ (RECON-3.1.0.22, RENDERWARE-RESEARCH, RENDERER-DESIGN, ASSET-PATH, BOUNDARIES, KNOWLEDGE-GRAPH, MATERIALS-DESIGN, CELLSTAGE{,-RECON,-VALIDATION}, RE-DOSSIER-SCHEMA, CELL-CONTRACT, REPLACEMENT-ABI, REPLACEMENT-DIFF, replacement-boundaries, RE-WORKFLOW, ASSET-IMPORT-ROADMAP, devlog/, replacement-status.json, analysis/{vtables,dossiers/})
 ```
 
 ## 4. Validated capabilities (exact commands, repo root unless noted)
@@ -56,6 +70,11 @@ docs/ (RECON-3.1.0.22, RENDERWARE-RESEARCH, RENDERER-DESIGN, ASSET-PATH, BOUNDAR
 - Cell stage, fixed frame: `build/src/cell_stage SPORE/Data/Spore_Content.package` → 512×512 `cell_stage.ppm` + `CELLSTAGE-MANIFEST v1` on stdout; two runs print byte-identical manifests. Sim replay: `--input script.jsonl` (JSON-lines frames; `CELLSTAGE-SIMMANIFEST v1`, deterministic). Interactive: `--interactive [--frames N]` — live SDL3+Vulkan window at 60 fps on `:0` XWayland, keyboard-driven CellSim, follow camera; 0 KHRONOS validation-layer errors over 120 frames (SDL3 driver quirk → `default→wayland→x11` fallback, §5).
 - `material_smoke` (ctest): real mesh + real DXT5 raster through the lit pipeline → non-uniform colored pixels, frame-to-frame light change, checksum differs from the flat `asset_render` baseline.
 - `sim_test` (ctest, pure C++ — no GPU/package): movement, eat/flee rules, scripted input replay, determinism; `tests/test_sim.py` + `tests/test_cellstage.py` + `tests/test_textures.py` (DXT5/refCount-BE/raster oracles) run the binaries and skip without `SPORE/`.
+- `sim_contract_test` (Obj35): bit-exact replay of the frozen `tests/fixtures/cell/fixtures.json` (5 scenarios) + double-run determinism + frame-count guard — catches silent sim regressions.
+- `replace_diff_test` (Obj36D): 8 input cases × 8 output fields = **64/64 MATCH** between the decompilation-derived reference and the replacement (`docs/REPLACEMENT-DIFF.md`; NOT a live-runtime oracle).
+- Asset resolver (Obj34): `python3 -m tools.spore.asset_resolver` resolves a DBPF record → type/group/instance → sporemol name; `tests/test_asset_resolver.py` (19 tests) lock the type/group tables.
+- RE dossier (Obj31): `python3 tools/re/dossier.py cell-movement` regenerates `docs/analysis/dossiers/cell-movement.{md,json}` from the committed Ghidra snapshot + decompilation captures (idempotent; `tests/test_dossier.py`).
+- Synthetic hook proof (Obj36A): `cd tools/replace/synthetic && make && python3 test_hook.py` — BEFORE the original probe fires 40×; AFTER the patch the replacement runs and the probe is gone (0xE9 rel32 + RWX mprotect on native 32-bit).
 
 ## 5. Known limitations (evidence → impact)
 - No MSVC RTTI in SporeApp.exe; vtable pass labeled only 20 VTABs from 3081 candidates → class hierarchy stays partial; `this`-typing/hierarchy claims capped at INFERRED.
@@ -63,14 +82,17 @@ docs/ (RECON-3.1.0.22, RENDERWARE-RESEARCH, RENDERER-DESIGN, ASSET-PATH, BOUNDAR
 - PNG32 records (DBPF type `0x2f4e681b`, 1131 in Spore_Content) are **RW4 containers, not raw PNG** (60/60 sampled) → no PNG decoder / ZLIB dependency exists; decoding them needs the RW4 reader first.
 - GMDL walker accepts v8 + BE refCount, static, single-stream, trilist only; 32-bit indices and v9 are hard errors by design — **0 such records observed** across the 4209-record content population (1510 walk-fails = BE refCount + v9); v9 layout itself not decoded.
 - Raster envelope: 2 header fields semantically unresolved (0x10 = 8, 0x18 = 0x00040000, constant in every sample); decoder derives layer count from record size and never trusts them.
-- Player-cell asset identity **UNRESOLVED** — no name↔group map exists in the assets (creatures are sporemol block assemblies); scene uses a roundish stand-in gmdl `0x40637E02/0x067A0801`.
+- Player-cell asset identity **REJECTED as previously assumed**: the roundish stand-in `0x40637E02/0x067A0801` was resolved to a **building-category** GMDL, not a cell asset (Obj34). Real cell-stage GMDLs sit at groups `0x40616201`/`0x40616202`. No name↔instance map exists in the assets, so the exact player-cell record is still unidentified — see `docs/ASSET-IMPORT-ROADMAP.md` for the proposed manifest-driven path.
 - Scene placement is hard-coded: 1022 world-object records (`0x0f43029a`) confirmed to exist but undecoded; no scene/level files found.
 - Tracing needs a real X display (`DISPLAY=:0`); Xvfb/xdotool absent → no synthetic input, no menu-transition trace; `menu_transition.json` probes defined but never run. Obj18 retrace of `main_menu` attached cleanly (33.7 s) but recorded **0 events** (game never reached the menu in the window) — cell-mode traces never run (headless menu navigation impossible), so all camera/movement/interaction semantics stay INFERRED/APPROXIMATION.
 - SDL3 video-driver auto-probe fails with an empty error in some sessions even when a backend works → interactive path falls back `default→wayland→x11` and reports the driver that succeeded; no display → exit 0 with a notice (never crashes).
 - Headless GhidraMCP cannot open programs (needs GUI mode) → RVA cross-checks done via `objdump`/byte inspection instead.
 
 ## 6. Immediate next milestone
-Second vertical slice: **creature-creator block assembly** (sporemol XML → block gmdl placement) **OR a cell-mode runtime trace via Xvfb**; also **resolve player-cell identity** (no name↔group map exists in the assets — the stand-in `0x40637E02/0x067A0801` is a roundish-bbox pick, not a verified model). A trace session is the higher-leverage option: it gates `simulator-gameplay` (replacing all APPROXIMATION/INFERRED rows in `docs/CELLSTAGE-VALIDATION.md`) and can yield the player-cell identity at the same time; block assembly is the lower-risk path (sporemol XML + block gmdl groups already decode). Widen B1 to multi-package fetch only if the chosen slice needs it.
+Two gates, in priority order:
+1. **Runtime evidence (the single highest-leverage unblock).** A cell-mode trace is what promotes `cell-movement-mouse-steering` from `replaced-approx` → `replaced-verified` and fills the APPROXIMATION plane constants + movement/interaction semantics. It requires a real X display + `xdotool` (Xvfb/xdotool currently absent) to navigate main-menu → cell stage, then `tools/observatory/observe.py` under the byte-verified `cell_movement.json` probes. Until then the sim stays INFERRED/APPROXIMATION (documented, not fabricated).
+2. **Player-cell identity.** Resolve the real player-cell record (groups `0x40616201`/`02`) via the manifest-driven loader in `docs/ASSET-IMPORT-ROADMAP.md`, replacing the building stand-in.
+Lower-risk parallel: **creature-creator block assembly** (sporemol XML → block gmdl groups already decode). Widen B1 to multi-package fetch only if the chosen slice needs it.
 
 ## 7. Repo hygiene (enforced by `.gitignore`)
 - NEVER commit: `SPORE/` game assets (`SPORE/`, `*.package`), generated binaries (`build/`, `probe_tracer`, `test/m32target`), traces/logs (`*.log`, `out/`), `*.db` (`spore.db`); test PPMs land in build dir only.
@@ -84,4 +106,4 @@ All code is independent from-scratch authorship; no EA binaries, assets, or deco
 Trace the original under Wine (observatory) to pin behavior; draw a minimal seam in `src/compat/`;
 implement clean-room C++ behind it; differentially compare (bytes/pixels/event order) vs the original as oracle;
 mark `replaced-stub`/`replaced-verified` in `docs/replacement-status.json` (seams + gates: `docs/BOUNDARIES.md`).
-Live injection into SporeApp.exe is NOT the mechanism (static EXE, no engine DLLs) — substitution happens at link time in-tree.
+Live injection into SporeApp.exe is NOT the day-to-day mechanism (static EXE, no engine DLLs) — substitution happens at link time in-tree. The in-process inline-hook path *is* proven on a native 32-bit target (Obj36A: 5-byte `0xE9 rel32` + RWX `mprotect`; per-target contract in `docs/REPLACEMENT-ABI.md`), so patching the real EXE is a viable future step once a cell-mode runtime trace gates the semantics.
