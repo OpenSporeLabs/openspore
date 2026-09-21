@@ -7,19 +7,19 @@
 
 ## Evidence summary
 
-Cell-mode per-frame update is vtable-dispatched: App::cCellModeStrategy::Update (RVA 0xd80980, vtable @ 0x01485550, no static callers) delegates to the real update body FUN_00e806b0, which calls Simulator::Cell::MovePlayerToMousePosition (RVA 0xd5b790). Headline finding: the player is steered by a RAY-PLANE INTERSECTION — the camera ray (from the mouse position) is intersected with the movement plane, and the hit point becomes the player's target position and orientation-to-travel. SDK names are VERIFIED via the march2017 SDK import; the ray-plane structure is OBSERVED in decompilation (evidence, not truth); the plane normal/point constant addresses are OBSERVED but their values are INFERRED (unread); runtime was NOT OBTAINED (see runtime section).
+Cell-mode per-frame update is vtable-dispatched: App::cCellModeStrategy::Update (linked VA 0xe80980, vtable @ 0x1485550, no static callers) delegates to the real update body FUN_00e806b0 (linked VA 0xe806b0), which calls Simulator::Cell::MovePlayerToMousePosition (linked VA 0xe5b790). Headline finding: the player is steered by a RAY-PLANE INTERSECTION — the camera ray (from the mouse position) is intersected with the movement plane, and the hit point becomes the player's target position and orientation-to-travel. SDK names are VERIFIED via the march2017 SDK import; the ray-plane structure is OBSERVED in decompilation (evidence, not truth); the plane normal/point constant addresses are OBSERVED but their values are INFERRED (unread); runtime was NOT OBTAINED (see runtime section).
 
 ## Original functions
 
 | name | RVA | module | size (B) | dispatch / vtable | evidence |
 |---|---|---|---|---|---|
-| App::cCellModeStrategy::Update | 0xd80980 | SporeApp.exe | 28 | vtable (no static callers; called through cCellModeStrategy vtable @ 21517648) | VERIFIED (SDK name) / INFERRED (param meaning: frame delta; the 'fDelta2' is unused in body) |
-| FUN_00e806b0 | 0xd806b0 | SporeApp.exe | - | - | INFERRED (role) -- the MovePlayerToMousePosition call is OBSERVED in decompilation |
-| App::cCellModeStrategy::OnKeyDown | 0xd818f0 | SporeApp.exe | - | vtable (cCellModeStrategy vtable @ 21517648) | VERIFIED (SDK name) / INFERRED (key semantics) |
-| App::cCellModeStrategy::OnMouseMove | 0xd51010 | SporeApp.exe | 25 | vtable (cCellModeStrategy vtable @ 21517648) | VERIFIED (SDK name) / INFERRED (role) |
-| App::cCellModeStrategy::OnMouseWheel | 0xd7d660 | SporeApp.exe | - | vtable (cCellModeStrategy vtable @ 21517648) | VERIFIED (SDK name) / INFERRED (role) |
-| Simulator::Cell::MovePlayerToMousePosition | 0xd5b790 | SporeApp.exe | 625 | - | VERIFIED (SDK name + ray-plane intersection structure OBSERVED in decompilation); plane-normal/point constants = OBSERVED addresses, values INFERRED (need runtime to read) |
-| FUN_007c4900 | 0x6c4900 | SporeApp.exe | - | - | INFERRED |
+| App::cCellModeStrategy::Update | 0xa80980 | SporeApp.exe | 28 | vtable (no static callers; called through cCellModeStrategy vtable @ 21517648) | VERIFIED (SDK name) / INFERRED (param meaning: frame delta; the 'fDelta2' is unused in body) |
+| FUN_00e806b0 | 0xa806b0 | SporeApp.exe | - | - | INFERRED (role) -- the MovePlayerToMousePosition call is OBSERVED in decompilation |
+| App::cCellModeStrategy::OnKeyDown | 0xa818f0 | SporeApp.exe | - | vtable (cCellModeStrategy vtable @ 21517648) | VERIFIED (SDK name) / INFERRED (key semantics) |
+| App::cCellModeStrategy::OnMouseMove | 0xa51010 | SporeApp.exe | 25 | vtable (cCellModeStrategy vtable @ 21517648) | VERIFIED (SDK name) / INFERRED (role) |
+| App::cCellModeStrategy::OnMouseWheel | 0xa7d660 | SporeApp.exe | - | vtable (cCellModeStrategy vtable @ 21517648) | VERIFIED (SDK name) / INFERRED (role) |
+| Simulator::Cell::MovePlayerToMousePosition | 0xa5b790 | SporeApp.exe | 625 | - | VERIFIED (SDK name + ray-plane intersection structure OBSERVED in decompilation); plane-normal/point constants = OBSERVED addresses, values INFERRED (need runtime to read) |
+| FUN_007c4900 | 0x3c4900 | SporeApp.exe | - | - | INFERRED |
 | FUN_00b721d0 | 0x7721d0 | SporeApp.exe | - | - | INFERRED (structure OBSERVED) |
 | Simulator::cSpaceTrading::Get | - | SporeApp.exe | - | - | INFERRED |
 

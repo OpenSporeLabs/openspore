@@ -49,12 +49,14 @@ class TestDossier(unittest.TestCase):
     def test_key_functions_and_rvas(self):
         d = self._dossier()
         by = {f["name"]: f for f in d["functions"]}
+        # rva = linked VA (== SDK-XML address) - PE ImageBase 0x400000 (true PE file RVA).
+        # See docs/analysis/CELL-RUNTIME-OBSERVATION.md §2 for the verified mapping.
         self.assertIn("Simulator::Cell::MovePlayerToMousePosition", by)
         self.assertEqual(by["Simulator::Cell::MovePlayerToMousePosition"]["rva"],
-                         "0xd5b790")
+                         "0xa5b790")
         self.assertIn("App::cCellModeStrategy::Update", by)
         self.assertEqual(by["App::cCellModeStrategy::Update"]["rva"],
-                         "0xd80980")
+                         "0xa80980")
 
     def test_ray_plane_finding(self):
         md = self._md().lower()

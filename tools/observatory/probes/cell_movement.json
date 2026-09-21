@@ -1,0 +1,66 @@
+{
+  "description": "Obj 32/32A: cell-stage movement runtime observation (dossier docs/analysis/dossiers/cell-movement.md; runtime NOT OBTAINED until this runs). ALL rvas are PE-linked VAs at ImageBase 0x400000 (objdump -h: PE ImageBase=400000; vtable @ linked 0x1485550 entries == SDK XML addresses == Ghidra VAs; decompiled headers '@ 0x00e806b0'/'@ 0x006ffe00' confirm Ghidra project base = 0x400000, NOT the 0x01100000 the snapshot note claims -- its 'rva' column is address-0x100000, arithmetically inconsistent with that base). Probe rva = snapshot 'address' field = dossier RVA + 0x100000. Every entry below was byte-verified at file offset (linked - 0x400C00) in SPORE/SporeBin/SporeApp.exe (GOG 3.1.0.22): instruction-aligned clean prologue, and 3 bodies match decompiled dossier semantics (0x5158 lock flag, 0x411c player ref, sCellGame global 0x116b3c04, callee FUN_007c4730). Cell stage is UNREACHABLE headless (no Xvfb/xdotool; main menu only) -- these probes are expected to record 0 cell events; menu/bootstrap probes are the control.",
+  "image_base": "0x400000",
+  "probes": [
+    {
+      "rva": "0xe80980",
+      "name": "App::cCellModeStrategy::Update",
+      "note": "SDK name (march2017 XML) + vtable @ linked 0x1485550; 28B thunk, bytes 'fstps [esp+8]; sub esp,8' (thiscall float delta); calls update body 0xe806b0"
+    },
+    {
+      "rva": "0xe806b0",
+      "name": "cell_update_body_FUN_00e806b0",
+      "note": "Ghidra autogen; REAL per-frame cell update body: sub esp,0xC; call 0xe84bf0; reads sCellGame state +20960; active branch -> Simulator::Cell::MovePlayerToMousePosition(dt_ms); decompiled at tools/re/data/decompiled/FUN_00e806b0.c"
+    },
+    {
+      "rva": "0xe818f0",
+      "name": "App::cCellModeStrategy::OnKeyDown",
+      "note": "SDK name + vtable; bytes 'push ebx; mov ebx,[esp+0xC]' clean thiscall; toggles sCellUI+2359 on ESC; forwards GameInput"
+    },
+    {
+      "rva": "0xe51010",
+      "name": "App::cCellModeStrategy::OnMouseMove",
+      "note": "SDK name + vtable; 25B float-arg marshalling thunk; records mouse pos consumed by camera-ray -> move-plane projection"
+    },
+    {
+      "rva": "0xe7d660",
+      "name": "App::cCellModeStrategy::OnMouseWheel",
+      "note": "SDK name; 'fstps [esp+0xC]' float arg; zoom / camera distance (INFERRED)"
+    },
+    {
+      "rva": "0xe5b790",
+      "name": "Simulator::Cell::MovePlayerToMousePosition",
+      "note": "SDK name; 625B; RAY-PLANE INTERSECTION mover: mov eax,[0x116b3c04] (sCellGame); sub esp,0x38; cmp [eax+0x5158],0 (lock flag +20824) -- byte-matches decompilation; player pos <- camOrigin + camDir*t; sets moving flag"
+    },
+    {
+      "rva": "0xe5b2e0",
+      "name": "cell_per_frame_FUN_00e5b2e0",
+      "note": "Ghidra autogen; per-frame update callee of MovePlayerToMousePosition: mov eax,[0x116b3c04]; mov edx,[eax+0x411C] (+16668 player ref) -- byte-matches decompiled global offsets"
+    },
+    {
+      "rva": "0x7c4900",
+      "name": "cam_light_origin_FUN_007c4900",
+      "note": "Ghidra autogen; fills camera/lighting-world origin via ILightingManager::Get()->GetLightingWorld() then call 0x7c4730 (byte-verified rel32 target); the view ray source"
+    },
+    {
+      "rva": "0xb721d0",
+      "name": "player_getter_FUN_00b721d0",
+      "note": "Ghidra autogen; container-getter-by-index (push esi; mov esi,[esp+8]; test esi,esi; jz; xor eax,eax) returns player entity from collection at sCellGame+16668; snapshot 'rva' field (0x7721d0) is corrupted, address field 0x00b721d0 is authoritative"
+    },
+    {
+      "rva": "0xe4ce40",
+      "name": "cam_mode_getter_FUN_00e4ce40",
+      "note": "Ghidra autogen; camera-mode getter (+212) used by MovePlayerToMousePosition; mov eax,[esp+4]; mov ecx,[0x115a758C]"
+    },
+    {
+      "rva": "0x69b600",
+      "name": "face_travel_orient_FUN_0069b600",
+      "note": "Ghidra autogen; computes orientation (rotation) to face travel direction; clean thiscall prologue; result stored player+20..32"
+    },
+    {
+      "rva": "0x11e11a0",
+      "name": "entry (bootstrap control)",
+      "note": "CONTROL probe, identical to main_menu.json 'entry' (instruction-aligned call target; bytes 'e8 a3 03 00 00' CALL; fired Obj 6.1d at ~503-543ms alongside Init/Startup/InitPlugins). Expected to fire headless at main menu; cell-stage probes expected NOT to (cell stage unreachable without input injection)."
+    }
+  ]
+}

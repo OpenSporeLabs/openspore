@@ -40,9 +40,10 @@ TOPIC_NOTES = {
     "cell-movement": {
         "evidence_summary": (
             "Cell-mode per-frame update is vtable-dispatched: App::cCellModeStrategy::Update "
-            "(RVA 0xd80980, vtable @ 0x01485550, no static callers) delegates to the real "
-            "update body FUN_00e806b0, which calls Simulator::Cell::MovePlayerToMousePosition "
-            "(RVA 0xd5b790). Headline finding: the player is steered by a RAY-PLANE "
+            "(linked VA 0xe80980, vtable @ 0x1485550, no static callers) delegates to the real "
+            "update body FUN_00e806b0 (linked VA 0xe806b0), which calls "
+            "Simulator::Cell::MovePlayerToMousePosition "
+            "(linked VA 0xe5b790). Headline finding: the player is steered by a RAY-PLANE "
             "INTERSECTION — the camera ray (from the mouse position) is intersected with the "
             "movement plane, and the hit point becomes the player's target position and "
             "orientation-to-travel. SDK names are VERIFIED via the march2017 SDK import; the "
