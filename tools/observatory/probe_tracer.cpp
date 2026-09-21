@@ -376,9 +376,10 @@ static std::vector<pid_t> descendantsOf(pid_t root) {
 int main(int argc, char** argv) {
     const char* USAGE =
         "usage: %s <pid> <probe.json>... <out.jsonl>\n"
-        "       [--duration SEC] [--max-bps N] [--max-events N] [--module NAME]\n"
+        "       [--duration SEC] [--max-bps N] [--max-events N] [--module NAME] [--verbose]\n"
         "       %s --launch CMD [--launch-arg A]... <probe.json>... <out.jsonl>\n"
-        "           [--duration SEC] [--wait-module SEC] [--max-bps N] [--max-events N] [--module NAME]\n";
+        "           [--duration SEC] [--wait-module SEC] [--max-bps N] [--max-events N] [--module NAME] [--verbose]\n"
+        "(--verbose: dump every /proc/<pid>/maps mapping seen while waiting for the module)";
     if (argc < 3) {
         fprintf(stderr, USAGE, argv[0], argv[0]);
         return 2;
@@ -392,6 +393,7 @@ int main(int argc, char** argv) {
     int maxBps = 256;
     uint32_t maxEvents = 1000;
     std::string module = "SporeApp.exe";
+    bool verbose = false;
     std::vector<std::string> positional;
     for (int i = 1; i < argc; i++) {
         std::string a = argv[i];
@@ -407,6 +409,7 @@ int main(int argc, char** argv) {
         else if (a == "--max-bps") maxBps = atoi(argv[++i]);
         else if (a == "--max-events") maxEvents = (uint32_t)atoi(argv[++i]);
         else if (a == "--module") module = argv[++i];
+        else if (a == "--verbose") verbose = true;
         else if (a[0] == '-') {
             fprintf(stderr, "unknown option %s\n", a.c_str());
             return 2;
@@ -621,7 +624,7 @@ int main(int argc, char** argv) {
                         char key[1120];
                         snprintf(key, sizeof key, "%d:%s@%llx", pids[ti], p.c_str(),
                                  (unsigned long long)cm[k].start);
-                        if (!p.empty() && p[0] == '/' && logSeen.insert(key).second)
+                        if (verbose && !p.empty() && p[0] == '/' && logSeen.insert(key).second)
                             fprintf(stderr, "  [maps %d] %s 0x%llx-0x%llx %s\n", pids[ti],
                                     p.c_str(),
                                     (unsigned long long)cm[k].start,
@@ -647,7 +650,7 @@ int main(int argc, char** argv) {
             fprintf(stderr,
                     "error: module %s never appeared in the traced tree's maps "
                     "(root child pid %d) within %.0fs.\n"
-                    "       Observed mappings were logged above. Likely blockers:\n"
+                    "       (re-run with --verbose to log observed mappings). Likely blockers:\n"
                     "       - wine failed to start (check wine stderr / wineprefix)\n"
                     "       - the PE mapped under a wine-spawned loader pid outside the\n"
                     "         traced lineage (not covered by the child-maps poll)\n",

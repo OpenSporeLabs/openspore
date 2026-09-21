@@ -2,10 +2,11 @@
 """observe.py — one-command capture + analysis for a wine/game scenario (stdlib).
 
 Usage:
-    python3 tools/observatory/observe.py <scenario> [--duration SEC]
+    python3 tools/observatory/observe.py <scenario> [--duration SEC] [--out-dir DIR]
 
 Runs probe_tracer in --launch wine mode with probes/<scenario>.json, writes
-out/obs_<scenario>.jsonl, then runs analyze.py over it.
+<out-dir>/obs_<scenario>.jsonl (default: /tmp/openspore-observatory, disposable;
+keep the repo tree clean), then runs analyze.py over it.
 """
 import os
 import subprocess
@@ -27,6 +28,13 @@ def main(argv):
             print("error: --duration needs a value", file=sys.stderr)
             return 2
         duration = argv[i + 1]
+    outdir = "/tmp/openspore-observatory"
+    if "--out-dir" in argv:
+        i = argv.index("--out-dir")
+        if i + 1 >= len(argv):
+            print("error: --out-dir needs a value", file=sys.stderr)
+            return 2
+        outdir = argv[i + 1]
     probe = os.path.join(HERE, "probes", scenario + ".json")
     if not os.path.exists(probe):
         print(f"error: no probe file {probe}", file=sys.stderr)
@@ -35,7 +43,6 @@ def main(argv):
         print(f"error: tracer not built ({TRACER}); run: make -C tools/observatory",
               file=sys.stderr)
         return 1
-    outdir = os.path.join(HERE, "out")
     os.makedirs(outdir, exist_ok=True)
     out = os.path.join(outdir, f"obs_{scenario}.jsonl")
     # Module = PE name for wine targets (matched as a maps-path suffix).
