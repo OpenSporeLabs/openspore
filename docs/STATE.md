@@ -1,98 +1,72 @@
 # OpenSpore — Project State
 
-## Phase 0 (environment + tooling): COMPLETE
-
+Current phase: **Obj 5–10 done — vertical slices through asset→mesh→pixels** (see §2). Next milestone: §6.
 Machine: **CachyOS / Arch** (use `pacman`, not `apt`).
 
-### Installed / ready
+## 1. Environment (Phase-0 table; ✅-verified rows re-checked 2026-09-21, rest carried over)
 | Item | Status | Location |
 |------|--------|----------|
-| Ghidra 12.1.2 | ✅ | `/opt/ghidra` (profile `ghidra_12.1.2_DEV`) |
+| Ghidra 12.1.2 | ✅ verified (`ls /opt/ghidra` lists Ghidra) | `/opt/ghidra` (profile `ghidra_12.1.2_DEV`) |
 | Java 21 (OpenJDK) | ✅ | — |
 | Maven | ✅ | `/usr/bin/mvn` |
-| Wine 11.17 | ✅ | — |
+| Wine 11.17 | ✅ verified (`wine --version` → `wine-11.17`) | — |
 | radare2 6.2 | ✅ | `/usr/bin/radare2` |
 | gdb / lldb | ✅ | — |
 | CMake / Clang / GCC | ✅ | — |
 | SDL3 3.4.16 | ✅ | — |
-| Vulkan (radeon) | ✅ | — |
+| Vulkan (radeon/RADV) | ✅ verified (`vulkaninfo` present, Instance 1.4.357) | — |
 | Python + `uv` | ✅ | `uv` at `~/.local/bin/uv` |
-| codegraph 1.6.0 | ✅ | npm global; `~/.codegraph` per-repo `.codegraph/` |
+| codegraph 1.6.0 | ✅ | npm global; per-repo `.codegraph/` |
 | ghidra-mcp 7.0.0 | ✅ | `~/apps/ghidra-mcp` (uv venv); extension in `_DEV` profile |
 
-### Repo scaffolding (committed-ready)
-- `opencode.json` — MCP: `codegraph` + `ghidra` (stdio bridge → `127.0.0.1:8089`).
-- `.gitignore` (excludes `SPORE/`, assets, `.codegraph/`, `*.db`, logs).
-- `README.md`, `CONTRIBUTING.md`, `LICENSE` (MIT), `CODE_OF_CONDUCT.md`,
-  `.github/ISSUE_TEMPLATE.md`, `.github/PULL_REQUEST_TEMPLATE.md`, `AGENTS.md`.
-- `knowledgegraph/` — `schema.sql` + `kg.py` (tested: nodes/edges/test-results).
-- `docs/STATE.md` — this file.
+## 2. Completed objectives (SHAs from `git log --oneline`)
+- Phase 0 scaffold (`f6f850d`): opencode.json, .gitignore, README/CONTRIBUTING/LICENSE, AGENTS.md.
+- Defensive SDK import (`4927122`, `tools/ghidra/ImportSporeSDK.java`): 1670/1671 fns named, 1895 structs; GOG build uses `SporeGhidra_march2017.xml`. Project `~/ghidra-spore-project/SporeProject` (rebuilt 2026-09-20; broken backup in `/tmp/opencode/ghidra/`).
+- RenderWare research (`36e704a`, `docs/RENDERWARE-RESEARCH.md`): RW3 static-linked/D3D9, RW4 spec, gmdl layout, no runtime HLSL.
+- Asset tooling (`8a2caf5`, `tools/spore/`): DBPF+QFS / RW4 / GMDL stdlib-only Python oracles.
+- Fixtures + tests (`9f073dd`, `tests/`): synthetic fixtures, semantic snapshots, opt-in real-asset differential.
+- Vtable pass (`f138be7`, `tools/ghidra/VtableDetect.java`): 3081 candidates, 20 VTAB labels → `docs/analysis/vtables.json`.
+- Observatory (`e10ba0c` + Obj 6 `51d24ff` + Obj 6.1 `6a41c66`): ptrace tracer, main_menu RVAs, 1004-event startup trace (see §4).
+- Obj 7 renderer (`1a2e9a7`, `src/renderer/`): IRenderer + offscreen Vulkan backend, triangle smoke green.
+- Obj 8 asset path (`3a52600`, `src/assets/` + `src/apps/asset_view.cpp`): real gmdl 32v/20tris → 27,685 px (`docs/ASSET-PATH.md`).
+- Obj 9 boundaries (`bb2e6fd`): B1 `IResourceProvider` / B2 `IMeshSource` / B3 `IRenderer` seams (`src/compat/`) + `docs/BOUNDARIES.md`, `docs/replacement-status.json`.
+- Obj 10 knowledge loop (`f5ae618`): `knowledgegraph/seed_sprint.py` (60 nodes / 68 edges / 7 test rows), `docs/KNOWLEDGE-GRAPH.md`.
 
-### Verified end-to-end
-- codegraph: `codegraph index` → 19 nodes / 39 edges (will grow with C++).
-- Ghidra headless: imported `SPORE/SporeBin/SporeApp.exe` + SDK script → named
-  real Spore functions (e.g. `Terrain::cTerrainSphereQuad::RenderWater`).
-  Project: `~/ghidra-spore-project/SporeProject`.
+## 3. Architecture (current tree)
+```
+src/apps/ (triangle, asset_view)  renderer/ (Renderer.hpp, VulkanRenderer)  assets/ (Dbpf, Gmdl, Mesh)  compat/ (B1–B3 seams)
+tools/spore/ (dbpf, rw4, gmdl oracles)  observatory/ (probe_tracer, observe.py, probes/)  ghidra/ (ImportSporeSDK, VtableDetect)
+tests/ (fixtures, test_formats.py, diff_real.py opt-in)  knowledgegraph/ (kg.py, seed_sprint.py; spore.db git-ignored)
+docs/ (RECON-3.1.0.22, RENDERWARE-RESEARCH, RENDERER-DESIGN, ASSET-PATH, BOUNDARIES, KNOWLEDGE-GRAPH, replacement-status.json, analysis/vtables.json)
+```
 
-### Known issues
-- ~~`ImportSporeSDK.java` aborts at the first non-function address~~ — FIXED:
-  defensive import script at `/tmp/opencode/ghidra/scripts/ImportSporeSDK.java`
-  (try/catch around `processFunctionAddress`; arg from `getScriptArgs()`).
-  Result: 1670/1671 functions named, 1895 structures.
-- GOG = digital build → use `SporeGhidra_march2017.xml` (not `_disk.xml`).
-- Original headless project was corrupt (0-byte `.gpr`); backed up to
-  `/tmp/opencode/ghidra/SporeProject.broken-backup/` and rebuilt from scratch.
-- No MSVC RTTI in the binary → no class hierarchy; Ghidra vtable detection
-  never ran headless (0 vtable labels). See recon report §9.
+## 4. Validated capabilities (exact commands, repo root unless noted)
+- C++ build + tests: `cmake -S . -B build && cmake --build build -j && ctest --test-dir build -V` (`triangle_smoke`; `asset_render` needs `SPORE/`, else skips).
+- Python format tests: `python3 -m unittest discover -s tests -t . -v` (synthetic, CI-safe).
+- Real-asset differential (opt-in): `python3 tests/diff_real.py` (exit 0 with message when `SPORE/` absent).
+- Tracer self-test (no Wine): `cd tools/observatory && ./probe_tracer --launch ./test/m32target --launch-arg 400 test/probes_m32.json /tmp/obs_m32.jsonl --duration 3 --module m32target` (exit 0, ~1801 events) + `python3 analyze.py /tmp/obs_m32.jsonl`.
+- Game startup trace — **`wineserver -k` FIRST (mandatory: later boots on one wineserver generation stall in `ntsync_schedule` or exit silently)**, then: `timeout -s KILL 120 python3 tools/observatory/observe.py main_menu --duration 30` (1004 events: entry→InitPlugins/Init/Startup→`IAppSystem::Get`×1000 capped).
 
-### Runtime note (per session)
-The Ghidra MCP server runs **headless** (GhidraMCP jar), not from the GUI:
-`java -jar .../GhidraMCP-7.0.0.jar -projectPath /home/juanr/ghidra-spore-project -allowScripts`,
-then `curl 127.0.0.1:8089/check_connection`.
+## 5. Known limitations (evidence → impact)
+- No MSVC RTTI in SporeApp.exe; vtable pass labeled only 20 VTABs from 3081 candidates → class hierarchy stays partial; `this`-typing/hierarchy claims capped at INFERRED.
+- Renderer is offscreen-only: no swapchain/present, materials, lighting, textures (`docs/RENDERER-DESIGN.md` non-goals; status `replaced-stub`) → no visible game window yet.
+- GMDL walker accepts v8/static/single-stream/trilist only; RW4 decode, skins, v9, 32-bit indices are hard errors by design → most game models still unloadable.
+- Tracing needs a real X display (`DISPLAY=:0`); Xvfb/xdotool absent → no synthetic input, no menu-transition trace; `menu_transition.json` probes defined but never run.
+- Headless GhidraMCP cannot open programs (needs GUI mode) → RVA cross-checks done via `objdump`/byte inspection instead.
 
-### Recon (2026-09-20)
-Full binary recon report: `docs/RECON-3.1.0.22.md` — entry/bootstrap chain,
-namespace map, singletons (cAppSystem/cSimulatorSystem), DBPF v3, Pollinator
-service, knowledge gaps, Phase 1 priorities.
+## 6. Immediate next milestone
+Run `menu_transition` under the tracer (needs §5 rows 4–5 resolved or worked around), then widen B1 to multi-package fetch and B2 to a second mesh family (v9 or 32-bit-index) without interface change — gates in `docs/replacement-status.json`.
 
-### RenderWare / rendering research (2026-09-20): COMPLETE
-Report: `docs/RENDERWARE-RESEARCH.md` (17 sections) + `knowledgegraph/spore.db`
-entries. Headline findings:
-- RW3 is **statically linked** into SporeApp.exe (source-path strings prove it);
-  D3D9 backend behind a Maxis `Graphics::` device wrapper.
-- **RW4 container** spec fully decoded + validated on real assets (header/manifest/
-  sections/type codes incl. `0x2000b`/`0x7000b` still undocumented).
-- **gmdl (GameModelResource)** top-level layout decoded + validated (v8 heightfield
-  patches in FloraModels group).
-- **No runtime HLSL**: `d3dx9_27.dll` imported but zero call sites — shaders are
-  pre-compiled D3D9 bytecode in packages (groups `0x40212001`-`0x40212004`).
-- Draw path decompiled: active-shader vertex decl → per-stream rebind-on-change →
-  SetIndices scope check → DrawIndexedPrimitive.
-- Licenses: **librw = MIT (usable)**; re3/reVC = unlicensed (reference only);
-  Spore-ModAPI / SporeModder-FX = GPL (reference only).
-- Asset parsers live in `/tmp/opencode/spore/` (`dbpf.py` + QFS, `rw4.py`,
-  `typescan.py`) — promote to `tools/` in Phase 1.
+## 7. Repo hygiene (enforced by `.gitignore`)
+- NEVER commit: `SPORE/` game assets (`SPORE/`, `*.package`), generated binaries (`build/`, `probe_tracer`, `test/m32target`), traces/logs (`*.log`, `out/`), `*.db` (`spore.db`); test PPMs land in build dir only.
+- GPL reference stays out: ModAPI/SporeModder-FX are semantics-only (see §8); no `/tmp` oracle or third-party code copied in.
+- Working tree only — no commits unless asked. Devlog (`docs/devlog/`) is user-maintained: do not edit.
 
----
+## 8. Clean-room boundary
+All code is independent from-scratch authorship; no EA binaries, assets, or decompiled source in git. Ghidra/ModAPI give addresses + semantics only (ModAPI + SporeModder-FX are GPL → reference-only, never copied); `librw` (MIT) is the only usable external renderer reference — see `docs/RENDERWARE-RESEARCH.md` licenses.
 
-## Next step: Phase 1 — Foundation
-
-Build the first C++ engine skeleton + basic structures, compile clean, unit-test.
-Pre-step (recon §10): run a Ghidra vtable-detection pass on the project so class/vtable
-structure is labeled before any code-generation work relies on it.
-
-0. **Tooling**: promote `/tmp/opencode/spore/{dbpf,rw4,typescan}.py` into `tools/`
-   (asset reference parsers; differential oracles for later C++ ports).
-1. **Build system**: `CMakeLists.txt` (C++17, Clang/GCC, `clang-tidy`, `cppcheck`, `clang-format` modified-Google, `fmt`).
-2. **Core structures** (`src/core/`): `Vector3`, `Quaternion`, `Matrix4`, `Stream`
-   (binary read/write), `ResourceHandle` / `ResourceManager` stub.
-3. **Serialization**: define the Spore data schema for these types; make them
-   round-trip through `Stream` (serialize → deserialize → compare).
-4. **Tests**: unit tests (serialize/deserialize, math) with a runner wired into CMake.
-5. **Re-index** codegraph (`codegraph index`) once `src/` exists so the source graph
-   tracks the C++.
-6. **Acceptance**: `cmake .. && make -j` builds with zero warnings; unit tests pass;
-   `codegraph status` shows the C++ indexed.
-
-Deliverable: a compiling, tested `src/core` with `Vector3` + `Stream` proven by
-round-trip tests. Then Phase 2 (basic simulation / cell stage) can start.
+## 9. Replacement strategy (observe → bound → implement → compare → replace)
+Trace the original under Wine (observatory) to pin behavior; draw a minimal seam in `src/compat/`;
+implement clean-room C++ behind it; differentially compare (bytes/pixels/event order) vs the original as oracle;
+mark `replaced-stub`/`replaced-verified` in `docs/replacement-status.json` (seams + gates: `docs/BOUNDARIES.md`).
+Live injection into SporeApp.exe is NOT the mechanism (static EXE, no engine DLLs) — substitution happens at link time in-tree.

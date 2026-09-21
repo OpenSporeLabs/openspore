@@ -107,6 +107,9 @@ all 7 values lie in `.text` (`0x401000-0x13cbf2a`). Byte inspection:
 
 ## 4. Blocker (wine game process escapes the traced lineage)
 
+> RESOLVED in Obj 6.1d (2026-09-21): the attached-set scan finds the reparented
+> game pid — launch 6 captured 1004 events (see §6–§7). Below kept as history.
+
 `wine SporeApp.exe` → root child execs `start.exe /exec`, which spawns the
 game **reparented to PID 1/systemd** (observed untraced: game PPID = 845 =
 `systemd --user` while `start.exe /exec` is still alive). Under
