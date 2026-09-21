@@ -11,6 +11,8 @@
 #include "Dbpf.hpp"
 #include "Gmdl.hpp"
 #include "Mesh.hpp"
+#include "compat/MeshSource.hpp"
+#include "compat/ResourceProvider.hpp"
 
 namespace {
 
@@ -287,12 +289,76 @@ void testMeshBounds() {
 
 } // namespace
 
+// Null backend: proves IMeshSource feeds IRenderer with no GPU involved.
+class NullRenderer : public openspore::IRenderer {
+ public:
+  bool init(uint32_t, uint32_t) override { return true; }
+  void shutdown() override {}
+  openspore::MeshHandle createMesh(const openspore::Vertex *, size_t nv,
+                                   const uint32_t *, size_t ni) override {
+    verts = nv;
+    idx = ni;
+    return 1;
+  }
+  void destroyMesh(openspore::MeshHandle) override {}
+  void beginFrame(float, float, float, float) override {}
+  void drawMesh(openspore::MeshHandle) override { ++draws; }
+  void endFrame() override {}
+  openspore::ImageRGBA readbackPixels() override { return {}; }
+  size_t verts = 0, idx = 0, draws = 0;
+};
+
+namespace {
+
+// Boundary test: the same consumer code runs against the DBPF package side
+// and the in-memory original-side stub (substitutability), then stub ->
+// mesh -> null renderer exercises the render-submit seam.
+void testCompatBoundaries() {
+  using namespace openspore;
+  using namespace openspore::assets;
+  using namespace openspore::compat;
+  const std::vector<uint8_t> img = buildDbpf();
+  const std::vector<uint8_t> gmdl = buildGmdl();
+  DbpfResourceProvider dbpf(img.data(), img.size());
+  MemoryResourceProvider stub;
+  stub.store(0x11111111, 0x22222222, 0x33333333, {0xDE, 0xAD, 0xBE, 0xEF});
+  stub.store(0x00E6BCE5, 0x40637E03, 0x067A07F0, gmdl);
+  IResourceProvider *sides[2] = {&dbpf, &stub};
+  const std::vector<uint8_t> wantRaw = {0xDE, 0xAD, 0xBE, 0xEF};
+  for (IResourceProvider *p : sides) {
+    std::vector<uint8_t> out;
+    std::string error;
+    check(p->fetch(0x11111111, 0x22222222, 0x33333333, out, error),
+          "compat: same fetch via package and stub");
+    check(out == wantRaw, "compat: identical bytes from both sides");
+    check(!p->fetch(1, 2, 3, out, error),
+          "compat: missing identity fails on both sides");
+  }
+  GmdlModel model;
+  std::string error;
+  check(fetchGmdlModel(stub, 0x00E6BCE5, 0x40637E03, 0x067A07F0, model, error),
+        "compat: fetchGmdlModel via stub");
+  check(model.consumed == gmdl.size(), "compat: stub model fully consumed");
+  GmdlMeshSource source(std::move(model));
+  Mesh mesh;
+  check(source.loadMesh(0, mesh, error), "compat: IMeshSource loads mesh");
+  check(mesh.positions.size() == 3, "compat: triangle positions");
+  NullRenderer renderer;
+  check(submitMeshSource(renderer, source, 0, error),
+        "compat: mesh source submits to IRenderer");
+  check(renderer.draws == 1 && renderer.verts == 3 && renderer.idx == 3,
+        "compat: null backend saw one 3-vert draw");
+}
+
+} // namespace
+
 int main() {
   testDbpfIndex();
   testDbpfRejects();
   testQfs();
   testGmdlWalk();
   testMeshBounds();
+  testCompatBoundaries();
   if (g_failures == 0) {
     std::printf("assets synthetic: ALL PASS\n");
     return 0;
