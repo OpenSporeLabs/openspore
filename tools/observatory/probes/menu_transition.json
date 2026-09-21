@@ -1,0 +1,23 @@
+{
+  "name": "menu_transition",
+  "description": "Menu->next-screen transition path of SporeApp.exe 3.1.0.22 (GOG): UTFWin/editor UI dispatch, DBPF resource-load path, frame heartbeat. Values are LINKED addresses (= Ghidra VAs at base 0x400000; tracer plants at loadBase + (rva - image_base)), same convention as probes/main_menu.json. Sources: Spore-ModAPI SDK XML (~/apps/Spore-ModAPI/SDKtoGhidra/SporeGhidra_march2017.xml, <FUNCTION ADDRESS> are absolute VAs) and docs/RECON-3.1.0.22.md. Byte spot-checked 2026-09-21 via objdump (prologues marked ENTRY; SDK slot addresses that land mid-body are marked MID-BODY but kept: they are instruction-aligned and still fire when the routine executes). NOT live-Ghidra-verified and NOT yet run under the tracer (wine launch blocked, see tools/observatory/SCENARIO-main_menu.md).",
+  "image_base": "0x400000",
+  "probes": [
+    { "name": "UI::cEditor::HandleMessage", "rva": "0x591fa0",
+      "note": "ENTRY (arg fetch + big frame + thiscall). SDK Editors::cEditor::HandleMessage; RECON matches. UI message dispatch for the transition." },
+    { "name": "UI::cEditor::OnMouseDown", "rva": "0x588570",
+      "note": "Likely entry (xorps + stack frame, float-heavy UI code). SDK. Click path for menu interaction." },
+    { "name": "UI::cEditor::Update", "rva": "0x58be50",
+      "note": "ENTRY (big frame + thiscall). SDK. Per-frame editor update; rate ~ frame rate." },
+    { "name": "UI::MessagePump::PeekDispatch", "rva": "0x848210",
+      "note": "ENTRY (push ebp; mov ebp,esp; ...). RECON FUN_00848210 (unnamed there): PeekMessageW/TranslateMessage/DispatchMessageW loop, renders via vtable slot 0x5c. The pump every UI event flows through." },
+    { "name": "Res::cResourceManager::Initialize", "rva": "0x8de530",
+      "note": "ENTRY (push ebx/ebp; thiscall). SDK. Resource-manager bring-up; fires once per boot." },
+    { "name": "Res::DatabasePackedFile::Lock", "rva": "0x8d84f0",
+      "note": "MID-BODY SDK slot address (bytes start mid-opcode) but instruction-aligned; fires on DBPF package lock. DBPF = the .package load path." },
+    { "name": "Res::PFIndexModifiable::Read", "rva": "0x8dbcc0",
+      "note": "MID-BODY SDK slot address but instruction-aligned; fires on package-index read." },
+    { "name": "Frame::TimeAtStartOfFrame", "rva": "0xb63980",
+      "note": "Plausible entry (push esi; mov esi,ecx; ...). RECON Simulator::TimeAtStartOfFrame. Per-frame heartbeat for rate measurement. NOTE: no direct D3D Present exists in the EXE (RECON: d3d9 IAT present, zero call xrefs; D3D is driven inside statically-linked RenderWare), so frame timing goes through this + UI::cEditor::Update, not a swap-chain probe." }
+  ]
+}

@@ -330,6 +330,49 @@ static std::vector<pid_t> threadsOf(pid_t pid) {
 static const int OPTS = PTRACE_O_TRACESYSGOOD | PTRACE_O_TRACECLONE |
                         PTRACE_O_TRACEEXEC | PTRACE_O_TRACEFORK | PTRACE_O_TRACEVFORK;
 
+// Path-suffix match for module discovery (maps paths are absolute).
+static bool pathSuffix(const std::string& p, const std::string& mod) {
+    return p.size() >= mod.size() &&
+           p.compare(p.size() - mod.size(), mod.size(), mod) == 0;
+}
+
+// Pids whose ancestor chain passes through root (a /proc scan; reparented
+// orphans whose chain no longer leads to root are NOT included).
+static std::vector<pid_t> descendantsOf(pid_t root) {
+    std::map<pid_t, pid_t> ppid;
+    DIR* pd = opendir("/proc");
+    if (!pd) return std::vector<pid_t>();
+    struct dirent* e;
+    while ((e = readdir(pd)) != nullptr) {
+        if (e->d_name[0] < '0' || e->d_name[0] > '9') continue;
+        FILE* pf = fopen(("/proc/" + std::string(e->d_name) + "/stat").c_str(), "r");
+        if (!pf) continue;
+        char st[1024];
+        bool ok = (fgets(st, sizeof st, pf) != nullptr);
+        fclose(pf);
+        if (!ok) continue;
+        char* par = strrchr(st, ')');  // comm is parenthesized
+        if (!par || par[1] != ' ') continue;
+        char state;
+        long parent = 0;
+        if (sscanf(par + 2, "%c %ld", &state, &parent) == 2)
+            ppid[(pid_t)atoi(e->d_name)] = (pid_t)parent;
+    }
+    closedir(pd);
+    std::vector<pid_t> out;
+    for (std::map<pid_t, pid_t>::iterator kv = ppid.begin(); kv != ppid.end(); ++kv) {
+        pid_t p = kv->first, up = kv->second;
+        std::set<pid_t> visited;
+        while (up > 1 && visited.insert(up).second) {
+            if (up == root) { out.push_back(p); break; }
+            std::map<pid_t, pid_t>::iterator it = ppid.find(up);
+            if (it == ppid.end()) break;
+            up = it->second;
+        }
+    }
+    return out;
+}
+
 int main(int argc, char** argv) {
     const char* USAGE =
         "usage: %s <pid> <probe.json>... <out.jsonl>\n"
@@ -503,43 +546,86 @@ int main(int argc, char** argv) {
         // Let it run so the PE/ELF actually gets mapped.
         ptrace(PTRACE_CONT, target, 0, 0);
 
-        // Poll /maps every 500ms until --module appears (wine takes seconds).
+        // Poll the traced tree's maps until --module appears (wine needs seconds).
         uint64_t waitDeadline = nowNs() + (uint64_t)(waitModule * 1000000000.0);
         std::set<std::string> logSeen;
         int polls = 0;
         while (!baseFound && nowNs() < waitDeadline && !g_interrupted) {
             polls++;
-            int st;
-            pid_t w = waitpid(target, &st, __WALL | WNOHANG);
-            if (w == target && (WIFEXITED(st) || WIFSIGNALED(st))) {
-                fprintf(stderr, "error: target exited before module %s was mapped "
-                                "(child %d, status %d)\n",
-                        module.c_str(), target,
-                        WIFEXITED(st) ? WEXITSTATUS(st) : -WTERMSIG(st));
-                for (auto& t : attached) ptrace(PTRACE_DETACH, t, 0, 0);
-                return 1;
-            }
-            if (w == target && WIFSTOPPED(st)) {
-                // ptrace stop (exec/clone event in the wine chain): resume it,
-                // or the child stays frozen and the module never maps.
-                ptrace(PTRACE_CONT, target, 0, 0);
-            }
-            maps = parseMaps(target);
-            for (size_t k = 0; k < maps.size(); k++) {
-                const std::string& p = maps[k].path;
-                if (!p.empty() && p[0] == '/' && logSeen.insert(p).second)
-                    fprintf(stderr, "  [maps] %s 0x%llx-0x%llx %s\n", p.c_str(),
-                            (unsigned long long)maps[k].start,
-                            (unsigned long long)maps[k].end, maps[k].perms.c_str());
-            }
-            for (size_t k = 0; k < maps.size(); k++) {
-                const std::string& p = maps[k].path;
-                if (p.size() >= module.size() &&
-                    p.compare(p.size() - module.size(), module.size(), module) == 0) {
-                    if (!baseFound || maps[k].start < loadBase) {
-                        loadBase = maps[k].start;
-                        baseFound = true;
+            // Drain stops from ANY tracee, not just the main child. Wine's
+            // preloader clones helpers that are auto-attached AND stopped at
+            // birth (TRACECLONE); leaving them stopped wedges the preloader in
+            // kernel_clone (child DN, clone in ptrace_stop) so the module
+            // never maps. Resume every stopped tracee so the chain proceeds.
+            for (;;) {
+                int st;
+                pid_t w = waitpid(-1, &st, __WALL | WNOHANG);
+                if (w <= 0) break;  // 0: nothing pending; <0: EINTR/ECHILD
+                if (WIFEXITED(st) || WIFSIGNALED(st)) {
+                    if (w == target) {
+                        fprintf(stderr, "error: target exited before module %s was mapped "
+                                        "(child %d, status %d)\n",
+                                module.c_str(), target,
+                                WIFEXITED(st) ? WEXITSTATUS(st) : -WTERMSIG(st));
+                        for (auto& t : attached) ptrace(PTRACE_DETACH, t, 0, 0);
+                        return 1;
                     }
+                    attached.erase(w);
+                    continue;
+                }
+                if (!WIFSTOPPED(st)) continue;
+                int wst = WSTOPSIG(st);
+                int wev = (st >> 16) & 0xff;
+                if (w != target) attached.insert(w);
+                if (wst == SIGTRAP && (wev == PTRACE_EVENT_CLONE ||
+                                       wev == PTRACE_EVENT_FORK ||
+                                       wev == PTRACE_EVENT_VFORK)) {
+                    unsigned long msg = 0;
+                    ptrace(PTRACE_GETEVENTMSG, w, 0, &msg);
+                    if (msg) {
+                        attached.insert((pid_t)msg);
+                        ptrace(PTRACE_CONT, (pid_t)msg, 0, 0);
+                    }
+                    ptrace(PTRACE_CONT, w, 0, 0);
+                } else if (wst == SIGTRAP || wst == SIGSTOP) {
+                    // exec-event trap / plain trap / group-stop: resume
+                    // without re-delivering a signal.
+                    ptrace(PTRACE_CONT, w, 0, 0);
+                } else {
+                    // Real signal delivery stop (e.g. SIGSEGV in the loader):
+                    // deliver it so the child behaves as untraced.
+                    ptrace(PTRACE_CONT, w, 0, (void*)(intptr_t)wst);
+                }
+            }
+            // Tree scan: the PE header may appear in the loader child only
+            // transiently (a warm wineserver changes loader timing), while the
+            // game itself runs in a forked descendant. Scan every ~100ms; the
+            // stop-drain above still runs every 10ms so no tracee stays frozen.
+            if (polls % 10 == 1) {
+                std::vector<pid_t> pids = descendantsOf(target);
+                pids.push_back(target);
+                for (size_t ti = 0; ti < pids.size() && !baseFound; ti++) {
+                    std::vector<ModMap> cm = parseMaps(pids[ti]);
+                    bool hasMod = false;
+                    for (size_t k = 0; k < cm.size(); k++) {
+                        const std::string& p = cm[k].path;
+                        char key[1120];
+                        snprintf(key, sizeof key, "%d:%s@%llx", pids[ti], p.c_str(),
+                                 (unsigned long long)cm[k].start);
+                        if (!p.empty() && p[0] == '/' && logSeen.insert(key).second)
+                            fprintf(stderr, "  [maps %d] %s 0x%llx-0x%llx %s\n", pids[ti],
+                                    p.c_str(),
+                                    (unsigned long long)cm[k].start,
+                                    (unsigned long long)cm[k].end, cm[k].perms.c_str());
+                        if (pathSuffix(p, module)) {
+                            if (!baseFound || cm[k].start < loadBase) {
+                                loadBase = cm[k].start;
+                                baseFound = true;
+                            }
+                            hasMod = true;
+                        }
+                    }
+                    if (hasMod) maps.swap(cm);  // keep a snapshot with the module
                 }
             }
             if (polls % 50 == 0)
@@ -550,7 +636,8 @@ int main(int argc, char** argv) {
         }
         if (!baseFound) {
             fprintf(stderr,
-                    "error: module %s never appeared in maps of child pid %d within %.0fs.\n"
+                    "error: module %s never appeared in the traced tree's maps "
+                    "(root child pid %d) within %.0fs.\n"
                     "       Observed mappings were logged above. Likely blockers:\n"
                     "       - wine failed to start (check wine stderr / wineprefix)\n"
                     "       - the PE mapped under a wine-spawned loader pid outside the\n"
@@ -633,16 +720,155 @@ int main(int argc, char** argv) {
     }
     fprintf(stderr, "module base: 0x%llx\n", (unsigned long long)loadBase);
 
+    // Wine runs the game in a forked descendant, not in the loader child: the
+    // loader maps only the PE header page (rw-p), while the executable
+    // sections live ANONYMOUSLY (no file path), contiguous with the header, in
+    // the game process. Locate the pid hosting header + contiguous anon-x code
+    // and retarget memory/thread operations onto it (the event loop already
+    // covers every attached tracee via waitpid(-1)).
+    bool hostFound = !launchMode;
+    auto findModuleHost = [&]() -> void {
+        if (hostFound) return;
+        // Fast path: natively-mapped module (same-path executable section in
+        // the loader's own maps, e.g. ELF PIE test targets) needs no search.
+        for (size_t k = 0; k < maps.size(); k++)
+            if (pathSuffix(maps[k].path, module) &&
+                maps[k].perms.find('x') != std::string::npos) {
+                hostFound = true;
+                return;
+            }
+        pid_t loader = target;
+        std::vector<pid_t> tree = descendantsOf(loader);
+        tree.push_back(loader);
+        for (size_t ti = 0; ti < tree.size(); ti++) {
+            pid_t cand = tree[ti];
+            std::vector<ModMap> cm = parseMaps(cand);
+            uint64_t hdrStart = 0, hdrEnd = 0;
+            for (size_t k = 0; k < cm.size(); k++) {
+                if (!pathSuffix(cm[k].path, module)) continue;
+                if (hdrEnd == 0 || cm[k].start < hdrStart) {
+                    hdrStart = cm[k].start;
+                    hdrEnd = cm[k].end;
+                }
+            }
+            if (hdrEnd == 0) continue;
+            for (size_t k = 0; k < cm.size(); k++) {
+                if (cm[k].path.empty() &&
+                    cm[k].perms.find('x') != std::string::npos &&
+                    cm[k].start == hdrEnd) {
+                    fprintf(stderr, "module host: pid %d (loader %d), header 0x%llx, code 0x%llx-0x%llx\n",
+                            cand, loader,
+                            (unsigned long long)hdrStart,
+                            (unsigned long long)cm[k].start,
+                            (unsigned long long)cm[k].end);
+                    target = cand;
+                    maps.swap(cm);
+                    loadBase = hdrStart;
+                    attached.insert(cand);
+                    hostFound = true;
+                    return;
+                }
+            }
+        }
+    };
+    if (launchMode) {
+        findModuleHost();
+        if (!hostFound)
+            fprintf(stderr, "warn: game process not forked yet; will retry while "
+                            "waiting for executable sections\n");
+    }
+
+    // The first sighting of a Wine PE is often just the rw-p header page; the
+    // loader maps executable sections slightly later. Re-poll (bounded, still
+    // resuming every stopped tracee) until an x mapping of the module appears,
+    // so the executability check below sees the real layout instead of a stale
+    // header-only snapshot.
+    {
+        // Seed loadBase from every module mapping seen so far, then refresh.
+        for (size_t k = 0; k < maps.size(); k++) {
+            const std::string& p = maps[k].path;
+            if (p.size() >= module.size() &&
+                p.compare(p.size() - module.size(), module.size(), module) == 0 &&
+                maps[k].start < loadBase)
+                loadBase = maps[k].start;
+        }
+        uint64_t xdl = nowNs() + 10000000000ull;  // 10 s extra, bounded
+        for (;;) {
+            for (;;) {  // drain stops from any tracee (see poll loop above)
+                int st;
+                pid_t w = waitpid(-1, &st, __WALL | WNOHANG);
+                if (w <= 0) break;
+                if (WIFEXITED(st) || WIFSIGNALED(st)) {
+                    if (w == target) {
+                        fprintf(stderr, "error: target exited while waiting for "
+                                        "executable %s mapping\n", module.c_str());
+                        for (auto& t : attached) ptrace(PTRACE_DETACH, t, 0, 0);
+                        return 1;
+                    }
+                    attached.erase(w);
+                    continue;
+                }
+                if (!WIFSTOPPED(st)) continue;
+                int wst = WSTOPSIG(st);
+                int wev = (st >> 16) & 0xff;
+                if (w != target) attached.insert(w);
+                if (wst == SIGTRAP && (wev == PTRACE_EVENT_CLONE ||
+                                       wev == PTRACE_EVENT_FORK ||
+                                       wev == PTRACE_EVENT_VFORK)) {
+                    unsigned long msg = 0;
+                    ptrace(PTRACE_GETEVENTMSG, w, 0, &msg);
+                    if (msg) {
+                        attached.insert((pid_t)msg);
+                        ptrace(PTRACE_CONT, (pid_t)msg, 0, 0);
+                    }
+                    ptrace(PTRACE_CONT, w, 0, 0);
+                } else if (wst == SIGTRAP || wst == SIGSTOP) {
+                    ptrace(PTRACE_CONT, w, 0, 0);
+                } else {
+                    ptrace(PTRACE_CONT, w, 0, (void*)(intptr_t)wst);
+                }
+            }
+            if (!hostFound) findModuleHost();  // game may fork after header sighting
+            maps = parseMaps(target);
+            // Executable layout: same-path x mappings (normal) OR Wine's
+            // anonymous code section contiguous with the module header.
+            uint64_t hdrEnd = 0;
+            for (size_t k = 0; k < maps.size(); k++)
+                if (pathSuffix(maps[k].path, module) && maps[k].start == loadBase)
+                    hdrEnd = maps[k].end;
+            bool haveX = false;
+            for (size_t k = 0; k < maps.size(); k++) {
+                const std::string& p = maps[k].path;
+                bool sameMod = p.size() >= module.size() &&
+                               p.compare(p.size() - module.size(), module.size(), module) == 0;
+                bool anonCode = hdrEnd && p.empty() && maps[k].start == hdrEnd;
+                if ((sameMod || anonCode) &&
+                    maps[k].perms.find('x') != std::string::npos)
+                    haveX = true;
+                if (sameMod && maps[k].start < loadBase) loadBase = maps[k].start;
+            }
+            if (haveX || nowNs() >= xdl || g_interrupted) break;
+            usleep(20000);
+        }
+        fprintf(stderr, "module base (refreshed): 0x%llx\n", (unsigned long long)loadBase);
+    }
+
     // ---- resolve probe addresses; require an executable module mapping ----
+    // (Wine maps PE code sections anonymously, contiguous with the header page,
+    // so same-path-x alone would reject every probe on a Wine target.)
+    uint64_t hdrEnd = 0;
+    for (size_t k = 0; k < maps.size(); k++)
+        if (pathSuffix(maps[k].path, module) && maps[k].start == loadBase)
+            hdrEnd = maps[k].end;
     for (size_t i = 0; i < probes.size(); i++) {
         Probe& pr = probes[i];
         pr.addr = (uint32_t)loadBase + (pr.rva - pr.imageBase);
         bool inX = false;
         for (size_t k = 0; k < maps.size(); k++) {
             const std::string& p = maps[k].path;
-            bool sameMod = p.size() >= module.size() &&
-                           p.compare(p.size() - module.size(), module.size(), module) == 0;
-            if (sameMod && maps[k].perms.find('x') != std::string::npos &&
+            bool sameMod = pathSuffix(p, module);
+            bool anonCode = hdrEnd && p.empty() && maps[k].start == hdrEnd;
+            if ((sameMod || anonCode) && maps[k].perms.find('x') != std::string::npos &&
                 (uint64_t)pr.addr >= maps[k].start && (uint64_t)pr.addr < maps[k].end)
                 inX = true;
         }

@@ -31,11 +31,15 @@ probe_tracer --launch CMD --launch-arg A ... probes.json out.jsonl
    whole lineage (Wine preloader chain, thread pools) stays traced. New
    clone/fork/vfork children are auto-attached **and** auto-stopped at birth,
    so the tracer resumes each one (`PTRACE_CONT`) or it would leak stopped.
-2. **Module wait (launch mode).** Polls `/proc/<child>/maps` until a path
-   ending in `--module` appears (Wine needs seconds; native ELF maps
-   instantly). Bounded by `--wait-module` (default 60 s); each poll reaps the
-   child with `WNOHANG` — an already-exited child prints
-   `target exited before module mapped` and exits 1 promptly.
+2. **Module wait (launch mode).** Scans the traced tree's `/proc/*/maps`
+   every ~100 ms until a path ending in `--module` appears (Wine needs
+   seconds; native ELF maps instantly), while resuming every stopped tracee
+   every 10 ms. Bounded by `--wait-module` (default 60 s); an already-exited
+   root child prints `target exited before module mapped` and exits 1
+   promptly. After discovery, retargets onto the pid hosting the module
+   header + contiguous anonymous executable code (Wine maps PE sections
+   anonymously in the forked game process) and waits up to 10 s more for an
+   executable section before planting.
 3. **INT3 plant.** Probe `addr = module_base + (rva - image_base)` is checked
    against an executable mapping, the original byte is saved via
    `/proc/<pid>/mem` (`pread`/`pwrite`, unbuffered — see pitfalls), `0xCC` is
@@ -100,13 +104,20 @@ python3 tools/observatory/observe.py main_menu --duration 20
 `probes/main_menu.json` targets `SporeApp.exe` 3.1.0.22 startup RVAs
 (`image_base 0x400000`; see header comment for provenance).
 
-**Known wine blocker (2026-09-21):** under the tracer, the Wine preloader
-child wedges in `D`/`kernel_clone` with its first clone held in
-`ptrace_stop`, so `SporeApp.exe` never appears in the child's maps and the
-tracer exits 1 after `--wait-module`. Direct (untraced) `wine SporeApp.exe`
-runs fine — the issue is the seize-during-preloader interaction, not the
-prefix. Next step: resume non-main stopped tracees inside the maps-poll
-(currently only the main child pid is continued there).
+**Wine status (2026-09-21):** the original preloader wedge is FIXED — the
+maps-poll now drains stops from *every* tracee (`waitpid(-1)` + `CONT` on
+clone/fork/vfork/exec/SIGSTOP stops), so the game boots to renderer bring-up
+under trace (d3d/swapchain fixmes, 13 s event loop observed). Two Wine layout
+facts were handled along the way: the loader child maps only the PE header
+page, and the game process maps its code sections **anonymously**
+(`0x401000-0x13cc000 r-xp`, no file path), contiguous with the header.
+**Current blocker:** `wine SporeApp.exe` routes through `start.exe /exec`,
+which spawns the game reparented to init/systemd (PPID 845 observed untraced),
+outside the traced lineage — so `--module SporeApp.exe` never matches and the
+run exits 1 after `--wait-module`. Next lead: fork events survive reparenting,
+so scan `attached`-set pids' maps instead of just the ppid tree; or bypass
+`start.exe`. Full evidence: `SCENARIO-main_menu.md` §4. Native `-m32` targets
+remain the green path (1801-event self-test).
 
 ## Pitfalls found while building this (read before touching the code)
 
@@ -145,5 +156,5 @@ prefix. Next step: resume non-main stopped tracees inside the maps-poll
 * Call `depth` is a nesting heuristic, not a real stack unwind.
 * Function-entry probes only; hitting the per-function cap retires the
   breakpoint (later calls run unobserved, `dropped` counts the retiring hit).
-* Wine-preloader tracing wedges (see blocker above); native `-m32` targets
-  are the green path.
+* Wine game target blocked: `start.exe /exec` reparents the game out of the
+  traced lineage (see blocker above); native `-m32` targets are the green path.
