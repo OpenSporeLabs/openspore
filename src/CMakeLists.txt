@@ -45,3 +45,15 @@ add_test(
   NAME triangle_smoke
   COMMAND triangle
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+
+# Objective-8b vertical slice: renders the real chosen gmdl record through
+# the Vulkan backend and asserts pixel evidence. Env-dependent (skips when
+# SPORE/ is absent); the PPM lands in the build dir, never in git.
+add_executable(asset_view apps/asset_view.cpp)
+target_link_libraries(asset_view PRIVATE openspore_assets openspore_renderer)
+add_test(
+  NAME asset_render
+  COMMAND asset_view ${PROJECT_SOURCE_DIR}/SPORE/Data/Spore_Content.package
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+
+add_subdirectory(assets)
