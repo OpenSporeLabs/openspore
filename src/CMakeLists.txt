@@ -80,4 +80,15 @@ add_test(
   COMMAND material_smoke ${PROJECT_SOURCE_DIR}/SPORE/Data/Spore_Content.package
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
+# Obj16: minimal Cell Stage scene — backdrop patches (real DXT5 texture),
+# a stand-in player cell, and food/prey objects, offscreen PPM + a
+# deterministic scene manifest on stdout. Env-dependent (skips when SPORE/
+# is absent); the PPM lands in the build dir, never in git.
+add_executable(cell_stage apps/cell_stage.cpp)
+target_link_libraries(cell_stage PRIVATE openspore_assets openspore_renderer)
+add_test(
+  NAME cell_stage
+  COMMAND cell_stage ${PROJECT_SOURCE_DIR}/SPORE/Data/Spore_Content.package
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+
 add_subdirectory(assets)
