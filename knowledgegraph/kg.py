@@ -20,14 +20,138 @@ import os
 import sqlite3
 import sys
 
+import scale
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 DB = os.path.join(HERE, "spore.db")
 SCHEMA = os.path.join(HERE, "schema.sql")
+
+EV_LEVELS = scale.EV_ORDER
+
+
+NEW_NODE_COLS = ("id", "label", "name", "attrs_json", "confidence", "origin",
+                 "note", "created_at", "evidence_level", "updated_at",
+                 "binary_sha256")
+
+
+def _validate_evidence(value):
+    if value not in EV_LEVELS:
+        sys.exit(f"error: invalid evidence level {value!r}; expected one of: {', '.join(EV_LEVELS)}")
+
+
+_FIELD_TABLE = """CREATE TABLE IF NOT EXISTS field (
+  id            INTEGER PRIMARY KEY,
+  struct_id     INTEGER NOT NULL REFERENCES node(id) ON DELETE CASCADE,
+  offset        TEXT    NOT NULL,
+  role          TEXT    NOT NULL,
+  offset_evidence  TEXT NOT NULL DEFAULT 'UNKNOWN' CHECK (offset_evidence  IN ('UNKNOWN','APPROXIMATION','INFERRED','SUPPORTED','OBSERVED','CONFIRMED','VERIFIED')),
+  meaning_evidence TEXT NOT NULL DEFAULT 'UNKNOWN' CHECK (meaning_evidence IN ('UNKNOWN','APPROXIMATION','INFERRED','SUPPORTED','OBSERVED','CONFIRMED','VERIFIED')),
+  value         TEXT,
+  source        TEXT,
+  binary_sha256 TEXT,
+  created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at    TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE (struct_id, offset)
+)"""
+
+_TRACE_RUN_TABLE = """CREATE TABLE IF NOT EXISTS trace_run (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  binary_sha256 TEXT NOT NULL,
+  probes_sha256 TEXT,
+  wine_version  TEXT,
+  display_env   TEXT,
+  xdotool       TEXT,
+  captured_at   TEXT NOT NULL DEFAULT (datetime('now')),
+  events_total  INTEGER,
+  jsonl_path    TEXT,
+  screenshots_count           INTEGER,
+  screenshots_first           TEXT,
+  screenshots_last            TEXT,
+  screenshots_manifest_path   TEXT,
+  outcome     TEXT,
+  replayable  TEXT DEFAULT 'input-logged, stage-deterministic, non-bit-exact'
+)"""
+
+_INVESTIGATIONS_TABLE = """CREATE TABLE IF NOT EXISTS investigations (
+  id             TEXT PRIMARY KEY,
+  kind           TEXT NOT NULL,
+  va             TEXT, name         TEXT, subsystem     TEXT,
+  mode           TEXT NOT NULL,
+  why_interesting TEXT NOT NULL,
+  stage          TEXT NOT NULL,
+  status         TEXT NOT NULL,
+  block_reason   TEXT,
+  prerequisites  TEXT,
+  attempts       TEXT,
+  checkpoint     TEXT,
+  evidence_refs  TEXT,
+  implementer_id TEXT, adjudicator_id TEXT,
+  created_at TEXT, updated_at TEXT,
+  binary_sha256 TEXT NOT NULL
+)"""
+
+_INDEXES = (
+    "CREATE INDEX IF NOT EXISTS idx_node_label ON node(label)",
+    "CREATE INDEX IF NOT EXISTS idx_edge_src ON edge(src)",
+    "CREATE INDEX IF NOT EXISTS idx_edge_dst ON edge(dst)",
+    "CREATE INDEX IF NOT EXISTS idx_node_name ON node(name)",
+    "CREATE INDEX IF NOT EXISTS idx_node_evidence ON node(evidence_level)",
+    "CREATE INDEX IF NOT EXISTS idx_inv_status ON investigations(status, stage)",
+    "CREATE UNIQUE INDEX IF NOT EXISTS ix_inv_dedup ON investigations(kind, va, binary_sha256)",
+    "CREATE INDEX IF NOT EXISTS idx_field_struct ON field(struct_id)",
+    "CREATE INDEX IF NOT EXISTS idx_trace_run_sha ON trace_run(binary_sha256)",
+)
+
+
+_NODE_BODY = """id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    label       TEXT NOT NULL,
+    name        TEXT NOT NULL,
+    attrs_json  TEXT NOT NULL DEFAULT '{}',
+    confidence  REAL NOT NULL DEFAULT 0.0,
+    origin      TEXT NOT NULL DEFAULT 'unknown',
+    note        TEXT,
+    created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+    evidence_level TEXT NOT NULL DEFAULT 'UNKNOWN'
+        CHECK (evidence_level IN ('UNKNOWN','APPROXIMATION','INFERRED',
+            'SUPPORTED','OBSERVED','CONFIRMED','VERIFIED')),
+    updated_at  TEXT NOT NULL DEFAULT (datetime('now')),
+    binary_sha256 TEXT,
+    UNIQUE (label, name)"""
+
+
+def _migrate(c):
+    tables = {r[0] for r in c.execute(
+        "SELECT name FROM sqlite_master WHERE type='table'")}
+    if "node" not in tables:
+        return
+    have = {r[1] for r in c.execute("PRAGMA table_info(node)")}
+    if any(col not in have for col in ("evidence_level", "updated_at",
+                                       "binary_sha256")):
+        c.execute(f"CREATE TABLE node_new ({_NODE_BODY})")
+        select = [
+            "id", "label", "name", "attrs_json", "confidence", "origin",
+            "note", "created_at",
+            "COALESCE(evidence_level,'UNKNOWN')" if "evidence_level" in have else "'UNKNOWN'",
+            "COALESCE(updated_at, datetime('now'))" if "updated_at" in have else "datetime('now')",
+            "binary_sha256" if "binary_sha256" in have else "NULL",
+        ]
+        c.execute(
+            f"INSERT INTO node_new({', '.join(NEW_NODE_COLS)}) "
+            f"SELECT {', '.join(select)} FROM node")
+        c.execute("DROP TABLE node")
+        c.execute("ALTER TABLE node_new RENAME TO node")
+    for ddl in (_FIELD_TABLE, _TRACE_RUN_TABLE, _INVESTIGATIONS_TABLE):
+        c.execute(ddl)
+    for ddl in _INDEXES:
+        c.execute(ddl)
+    if c.execute("PRAGMA user_version").fetchone()[0] == 0:
+        c.execute("PRAGMA user_version = 1")
 
 
 def conn():
     c = sqlite3.connect(DB)
     c.row_factory = sqlite3.Row
+    _migrate(c)
     return c
 
 
@@ -53,11 +177,12 @@ def cmd_add_node(a):
         c.execute(
             """INSERT INTO node(label,name,attrs_json,confidence,origin,note)
                VALUES(?,?,?,?,?,?)
-               ON CONFLICT(label,name) DO UPDATE SET
-                 attrs_json=excluded.attrs_json,
-                 confidence=excluded.confidence,
-                 origin=excluded.origin,
-                 note=excluded.note""",
+                ON CONFLICT(label,name) DO UPDATE SET
+                  attrs_json=excluded.attrs_json,
+                  confidence=excluded.confidence,
+                  origin=excluded.origin,
+                  note=excluded.note,
+                  updated_at=datetime('now')""",
             (a.label, a.name, a.attrs or "{}", a.confidence, a.origin, a.note),
         )
     print(f"node: {a.label}/{a.name}")

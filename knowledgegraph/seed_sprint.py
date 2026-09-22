@@ -4,17 +4,8 @@
 Rebuild:  python3 knowledgegraph/kg.py init && python3 knowledgegraph/seed_sprint.py init
 Re-run:   python3 knowledgegraph/seed_sprint.py init   (idempotent, same counts)
 
-STATUS -> EVIDENCE MAPPING (1:1, docs/replacement-status.json vocabulary onto the
-graph's evidence levels UNKNOWN/HYPOTHESIS/INFERRED/SUPPORTED/VERIFIED):
-  unknown           -> UNKNOWN    (nothing measured; e.g. audio-havok-input)
-  hypothesis        -> HYPOTHESIS (named path, no trace; e.g. utfwin dispatch order)
-  inferred          -> INFERRED   (SDK/RECON structure, no runtime proof)
-  supported         -> SUPPORTED  (traced or byte-framed, not yet asserted in-tree)
-  verified          -> VERIFIED   (asserted against real bytes AND green in-tree)
-  replaced-stub     -> SUPPORTED  (code exists + in-tree substitutability shown,
-                                   gate test NOT yet passed; gate linked via gatedBy)
-  replaced-verified -> VERIFIED   (gate tests green on real bytes; gate linked via
-                                   verifiedBy to the Test nodes that verify it)
+STATUS -> EVIDENCE MAPPING: the canonical 7-level scale in knowledgegraph/scale.py
+(Map A over the docs/replacement-status.json vocabulary, 9 statuses -> 7 levels).
 Only measured bytes, passing tests, and planted-breakpoint traces count as
 evidence. Decompiler-guessing never promotes above INFERRED. AI inference is
 never VERIFIED.
@@ -37,17 +28,11 @@ import os
 import sqlite3
 import sys
 
+import scale
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 DB = os.path.join(HERE, "spore.db")
 SCHEMA = os.path.join(HERE, "schema.sql")
-
-CONF = {"UNKNOWN": 0.0, "HYPOTHESIS": 0.25, "INFERRED": 0.5,
-        "SUPPORTED": 0.75, "VERIFIED": 1.0}
-
-STATUS2EV = {"unknown": "UNKNOWN", "hypothesis": "HYPOTHESIS",
-             "inferred": "INFERRED", "supported": "SUPPORTED",
-             "verified": "VERIFIED", "replaced-stub": "SUPPORTED",
-             "replaced-verified": "VERIFIED"}
 
 # Pre-existing RenderWare-research entries (added manually 2026-09-20, before this
 # seed existed). Embedded verbatim so a fresh checkout rebuilds the FULL graph;
@@ -223,7 +208,7 @@ NODES = [
      "Vtable detection never ran headless before; class hierarchy still via SDK + vtables"),
 ]
 
-# 14 subsystems imported from docs/replacement-status.json (status->evidence via STATUS2EV)
+# 14 subsystems imported from docs/replacement-status.json (status->evidence via scale)
 SUBSYSTEMS = [
     ("sub:dbpf-index", "replaced-verified", "B1 src/compat/ResourceProvider.hpp",
      "src/assets/Dbpf.cpp:parseDbpfIndex"),
@@ -346,10 +331,10 @@ def main():
                    ON CONFLICT(label,name) DO UPDATE SET
                      attrs_json=excluded.attrs_json, confidence=excluded.confidence,
                      origin=excluded.origin, note=excluded.note""",
-                (label, name, json.dumps(attrs), CONF[ev], origin, note))
+                (label, name, json.dumps(attrs), scale.EV[ev], origin, note))
         for short, status, boundary, impl in SUBSYSTEMS:
-            attrs = {"status": status, "evidence": STATUS2EV[status],
-                     "src": "docs/replacement-status.json"}
+            attrs = {"status": status, "evidence": scale.evidence_for_status(status),
+                      "src": "docs/replacement-status.json"}
             if boundary:
                 attrs["boundary"] = boundary
             if impl:
@@ -360,8 +345,9 @@ def main():
                    ON CONFLICT(label,name) DO UPDATE SET
                      attrs_json=excluded.attrs_json, confidence=excluded.confidence,
                      origin=excluded.origin, note=excluded.note""",
-                ("Subsystem", short, json.dumps(attrs), CONF[STATUS2EV[status]],
-                 "manual", "imported from docs/replacement-status.json"))
+                ("Subsystem", short, json.dumps(attrs),
+                 scale.EV[scale.evidence_for_status(status)],
+                  "manual", "imported from docs/replacement-status.json"))
         ids = {r[0]: r[1] for r in
                c.execute("SELECT name,id FROM node").fetchall()}
         # _node_id parity with kg.py: names are globally unique by construction

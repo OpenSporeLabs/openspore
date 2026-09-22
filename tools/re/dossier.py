@@ -29,10 +29,12 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
 DEFAULT_OUT = os.path.join(ROOT, "docs", "analysis", "dossiers")
 
-EVIDENCE_VOCAB = [
-    "OBSERVED", "VERIFIED", "CONFIRMED", "SUPPORTED",
-    "INFERRED", "APPROXIMATION", "UNKNOWN",
-]
+sys.path.insert(0, os.path.join(ROOT, "knowledgegraph"))
+import scale
+
+EVIDENCE_VOCAB = [  # dossier display order; levels come from knowledgegraph/scale.py
+    l for l in ("OBSERVED", "VERIFIED", "CONFIRMED", "SUPPORTED",
+                "INFERRED", "APPROXIMATION", "UNKNOWN") if l in scale.EV]
 
 # Per-topic narrative content. Everything else is derived from the committed
 # snapshot / knowledge graph / traces; keep entries evidence-labeled.
