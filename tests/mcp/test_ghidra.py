@@ -527,6 +527,101 @@ class TestVtableLookup(GhidraTestBase):
         self.assertEqual(res["code"], "invalid_params")
 
 
+class TestVtableLookupSlimming(GhidraTestBase):
+    """slot projection / null stripping / bound / full-detail path."""
+
+    def _raw_candidates(self):
+        with open(os.path.join(ROOT, "docs", "analysis",
+                               "vtables.json")) as fh:
+            return json.load(fh).get("candidates", [])
+
+    def test_slots_projected_to_ptr_func_nulls_stripped(self):
+        res = gt.vtable_lookup({"namespace": "App"})
+        self.assertEqual(res["status"], "ok", res)
+        self.assertGreater(res["count"], 0, res)
+        for match in res["matches"]:
+            for slot in match.get("slots", []):
+                self.assertTrue(set(slot.keys()) <= {"ptr", "func"},
+                                slot)
+            # Null-valued keys are stripped from the match dict.
+            for key, value in match.items():
+                if key != "slots":
+                    self.assertIsNotNone(value, (key, match))
+        # The App namespace has slots whose func is null in the raw doc:
+        # they must surface as {ptr}-only slots (never inferred).
+        raw_by_addr = {c.get("address"): c
+                       for c in self._raw_candidates()}
+        ptr_only = 0
+        for match in res["matches"]:
+            raw = raw_by_addr.get(match.get("address"))
+            if not isinstance(raw, dict):
+                continue
+            raw_slots = raw.get("slots") or []
+            for slim, full in zip(match.get("slots", []), raw_slots):
+                if (isinstance(full, dict)
+                        and full.get("func") is None
+                        and set(slim.keys()) == {"ptr"}):
+                    ptr_only += 1
+                    self.assertEqual(slim["ptr"], full["ptr"])
+        self.assertGreater(ptr_only, 0, res)
+
+    def test_limit_bound_total_matches_truncated(self):
+        res = gt.vtable_lookup({"namespace": "Simulator"})
+        self.assertEqual(res["status"], "ok", res)
+        self.assertEqual(res["total_matches"], 61, res)
+        self.assertEqual(res["count"], 20, res)  # default limit
+        self.assertEqual(res["limit"], 20, res)
+        self.assertTrue(res["truncated"], res)
+        bounded = gt.vtable_lookup({"namespace": "Simulator", "limit": 5})
+        self.assertEqual(bounded["count"], 5, bounded)
+        self.assertTrue(bounded["truncated"], bounded)
+        unbounded = gt.vtable_lookup({"namespace": "Simulator",
+                                      "limit": 500})
+        self.assertEqual(unbounded["count"], 61, unbounded)
+        self.assertFalse(unbounded["truncated"], unbounded)
+
+    def test_full_detail_path(self):
+        slim = gt.vtable_lookup({"namespace": "App", "limit": 5})
+        full = gt.vtable_lookup({"namespace": "App", "limit": 5,
+                                 "detail": True})
+        alias = gt.vtable_lookup({"namespace": "App", "limit": 5,
+                                  "full_slots": True})
+        self.assertEqual(full, alias)  # full_slots is the alias
+        self.assertEqual(slim["total_matches"], full["total_matches"])
+        # Full slots keep the raw slot dicts (funcStart/inFunc/sdk...);
+        # the match dict is the raw projection (nulls allowed).
+        for match in full["matches"]:
+            if match.get("slots"):
+                self.assertTrue(any(
+                    set(slot.keys()) > {"ptr", "func"}
+                    for slot in match["slots"]
+                    if isinstance(slot, dict)))
+
+    def test_slim_smaller_than_detail_no_evidence_loss(self):
+        slim = gt.vtable_lookup({"namespace": "App", "limit": 20})
+        full = gt.vtable_lookup({"namespace": "App", "limit": 20,
+                                 "detail": True})
+        slim_size = len(json.dumps(slim, sort_keys=True))
+        full_size = len(json.dumps(full, sort_keys=True))
+        self.assertLess(slim_size, full_size)
+        # Zero evidence-field loss: slim is a strict projection of full.
+        self.assertEqual(len(slim["matches"]), len(full["matches"]))
+        for s_match, f_match in zip(slim["matches"], full["matches"]):
+            for key, value in s_match.items():
+                if key == "slots":
+                    for s_slot, f_slot in zip(value,
+                                               f_match.get("slots") or []):
+                        for k, v in s_slot.items():
+                            self.assertEqual(v, f_slot.get(k), s_slot)
+                else:
+                    self.assertEqual(value, f_match.get(key), s_match)
+
+    def test_deterministic_repeat(self):
+        first = gt.vtable_lookup({"namespace": "Simulator"})
+        second = gt.vtable_lookup({"namespace": "Simulator"})
+        self.assertEqual(first, second)
+
+
 class TestDossierRead(GhidraTestBase):
     def test_read_topic(self):
         res = gt.dossier_read({"topic": "cell-movement"})
@@ -558,6 +653,161 @@ class TestDossierRead(GhidraTestBase):
             res = gt.dossier_read({"topic": bad})
             self.assertEqual(res["status"], "error", bad)
             self.assertEqual(res["code"], "invalid_params", bad)
+
+
+class TestDossierReadSlimming(GhidraTestBase):
+    """section/keys projection, md opt-in, compaction flags (scope G)."""
+
+    def setUp(self):
+        super().setUp()
+        self._raw_path = os.path.join(ROOT, "docs", "analysis",
+                                      "dossiers", "cell-movement.json")
+        with open(self._raw_path) as fh:
+            self.raw = json.load(fh)
+
+    def _assert_compact_equals_raw(self, compact, raw, ref):
+        """Every non-flagged value in the compacted doc equals the raw.
+
+        A value that is a flagged compaction summary ({truncated:true,
+        ...}) must correspond to an over-limit raw blob, and its head
+        items must equal the raw head (compaction, not loss).
+        """
+        if isinstance(compact, dict):
+            if compact.get("truncated") is True and \
+                    isinstance(raw, list):
+                self.assertEqual(compact["kind"], "list")
+                self.assertEqual(compact["count"], len(raw))
+                self.assertEqual(len(compact["items"]),
+                                 min(len(raw), 100))
+                self.assertEqual(compact["items"][:len(raw)],
+                                 self._compact_head(raw))
+                self.assertEqual(compact["ref"], ref)
+                return
+            self.assertEqual(set(compact.keys()), set(raw.keys()), ref)
+            for key, value in compact.items():
+                self._assert_compact_equals_raw(
+                    value, raw[key], "%s.%s" % (ref, key))
+        elif isinstance(compact, list):
+            self.assertEqual(len(compact), len(raw), ref)
+            for i, (c_item, r_item) in enumerate(zip(compact, raw)):
+                self._assert_compact_equals_raw(
+                    c_item, r_item, "%s[%d]" % (ref, i))
+        else:
+            self.assertEqual(compact, raw, ref)
+
+    @staticmethod
+    def _compact_head(raw_list):
+        head = []
+        for item in raw_list[:100]:
+            if isinstance(item, dict):
+                head.append({k: v for k, v in item.items()
+                             if not isinstance(v, str)
+                             or len(v) <= 2000})
+            else:
+                head.append(item)
+        return head
+
+    def test_section_read_only_that_section(self):
+        res = gt.dossier_read({"topic": "cell-movement",
+                               "section": "functions"})
+        self.assertEqual(res["status"], "ok", res)
+        self.assertEqual(res["section"], "functions", res)
+        self.assertNotIn("dossier", res, res)
+        self.assertNotIn("markdown", res, res)
+        # No duplication of sibling payloads: strictly smaller than the
+        # whole-dossier read.
+        full = gt.dossier_read({"topic": "cell-movement"})
+        section_size = len(json.dumps(res, sort_keys=True))
+        full_size = len(json.dumps(full, sort_keys=True))
+        self.assertLess(section_size, full_size)
+        # The section value is the verbatim raw section (no over-limit
+        # blob inside 'functions'): zero evidence loss.
+        self.assertEqual(res["data"], self.raw["functions"], res)
+        # Sibling payload strings must not leak into the section read.
+        payload = json.dumps(res, sort_keys=True)
+        self.assertNotIn(json.dumps(self.raw["hypotheses"]), payload)
+
+    def test_keys_projection_dossier_order(self):
+        res = gt.dossier_read({"topic": "cell-movement",
+                               "keys": ["hypotheses", "functions"]})
+        self.assertEqual(res["status"], "ok", res)
+        self.assertEqual(res["keys"], ["functions", "hypotheses"], res)
+        # Projection keeps dossier file order, not request order.
+        self.assertEqual(list(res["dossier"].keys()),
+                         ["functions", "hypotheses"], res)
+        self.assertEqual(res["dossier"]["functions"],
+                         self.raw["functions"], res)
+        self.assertEqual(res["dossier"]["hypotheses"],
+                         self.raw["hypotheses"], res)
+        self.assertEqual(res["available_sections"],
+                         sorted(self.raw.keys()), res)
+
+    def test_md_opt_in(self):
+        default = gt.dossier_read({"topic": "cell-movement"})
+        self.assertNotIn("markdown", default, default)
+        md = gt.dossier_read({"topic": "cell-movement", "md": True})
+        self.assertIn("markdown", md, md)
+        self.assertIsInstance(md["markdown"], str, md)
+        self.assertTrue(md["markdown"].strip(), md)
+
+    def test_section_keys_mutually_exclusive(self):
+        res = gt.dossier_read({"topic": "cell-movement",
+                               "section": "functions",
+                               "keys": ["functions"]})
+        self.assertEqual(res["status"], "error", res)
+        self.assertEqual(res["code"], "invalid_params", res)
+        self.assertEqual(res["available_sections"],
+                         sorted(self.raw.keys()), res)
+
+    def test_unknown_key_no_section_with_available(self):
+        res = gt.dossier_read({"topic": "cell-movement",
+                               "keys": ["nope"]})
+        self.assertEqual(res["status"], "error", res)
+        self.assertEqual(res["code"], "no_section", res)
+        self.assertEqual(res["available_sections"],
+                         sorted(self.raw.keys()), res)
+        for bad in ([], ["functions", 3], "functions",
+                    ["functions", None]):
+            shape = gt.dossier_read({"topic": "cell-movement",
+                                     "keys": bad})
+            if isinstance(bad, str):
+                self.assertEqual(shape["status"], "ok", bad)
+            else:
+                self.assertEqual(shape["code"], "invalid_params", bad)
+                self.assertIn("available_sections", shape, bad)
+
+    def test_evidence_preserved_no_silent_truncation(self):
+        compact = gt.dossier_read({"topic": "cell-movement"})
+        expanded = gt.dossier_read({"topic": "cell-movement",
+                                    "expand": True})
+        alias = gt.dossier_read({"topic": "cell-movement",
+                                 "full": True})
+        self.assertEqual(expanded, alias)  # full is the alias
+        # expand=true is the verbatim evidence (nothing lost, nothing
+        # altered): byte-identical to the committed dossier.
+        self.assertEqual(expanded["dossier"], self.raw, expanded)
+        self.assertFalse(expanded["truncated"], expanded)
+        # Default read: every non-flagged value equals the raw exactly;
+        # flagged values are over-limit blobs with head + count + ref.
+        self._assert_compact_equals_raw(
+            compact["dossier"], self.raw,
+            "docs/analysis/dossiers/cell-movement.json#cell-movement")
+        self.assertTrue(compact["truncated"], compact)
+        self.assertTrue(compact["truncated_paths"], compact)
+        self.assertIn("expand_hint", compact, compact)
+        self.assertLess(len(json.dumps(compact, sort_keys=True)),
+                        len(json.dumps(expanded, sort_keys=True)))
+
+    def test_available_sections_on_every_ok_read(self):
+        for params in ({"topic": "cell-movement"},
+                       {"topic": "cell-movement",
+                        "section": "functions"},
+                       {"topic": "cell-movement",
+                        "keys": ["functions"]}):
+            res = gt.dossier_read(params)
+            self.assertEqual(res["status"], "ok", params)
+            self.assertEqual(res["available_sections"],
+                             sorted(self.raw.keys()), params)
 
 
 class TestDossierRegenerate(GhidraTestBase):

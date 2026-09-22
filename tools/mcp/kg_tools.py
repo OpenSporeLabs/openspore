@@ -128,9 +128,50 @@ def _node_dict(row):
     }
 
 
+def _node_brief(row):
+    # type: (sqlite3.Row) -> dict
+    """Slim node projection (S2.1 scope G): identity + evidence only.
+
+    Drops attrs/confidence/origin/note/id/binary_sha256/created_at/
+    updated_at -- the read payload must not repeat per-node timestamps
+    (the DB is authoritative) or the build identity per node. Full
+    details stay available via kg_query or kg_neighbors detail=true.
+    """
+    return {
+        "name": row["name"],
+        "label": row["label"],
+        "evidence_level": row["evidence_level"],
+    }
+
+
+def _is_true(value):
+    # type: (object) -> bool
+    """Deterministic truth flag for optional MCP booleans.
+
+    Accepts real JSON booleans/ints plus the common string spellings;
+    anything else (including the string "false") is False. Never raises.
+    """
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return value == 1
+    if isinstance(value, str):
+        return value.strip().lower() in ("1", "true", "yes", "on")
+    return False
+
+
 def _inv_dict(row):
     # type: (sqlite3.Row) -> dict
     return {key: row[key] for key in row.keys()}
+
+
+# kg_neighbors slimming (S2.1 scope G): brief default, bounded, flagged.
+# The node list is sliced after the deterministic (label, name) sort and
+# the cap is reported via limit/total_nodes/truncated. Edges stay
+# unfiltered (already minimal per-edge dicts); endpoints outside the
+# node cap remain resolvable via kg_query.
+_NEIGHBORS_DEFAULT_LIMIT = 100
+_NEIGHBORS_MAX_LIMIT = 500
 
 
 def _node_ids_by_name(conn, name):
@@ -205,6 +246,17 @@ def kg_query(params):
 
 # --------------------------------------------------------------------------- #
 # kg_neighbors: read-only 1-2 hop traversal around one node name.
+#
+# Context slimming (S2.1 scope G, deterministic only, no summarizer):
+#   * brief (default true): nodes are {name,label,evidence_level} --
+#     no per-node created_at/updated_at/binary_sha256 repetition (the
+#     DB is authoritative for timestamps; the build identity lives on
+#     write/cache paths, not on every read row);
+#   * detail=true (or brief=false): full _node_dict rows, same order;
+#   * limit (default 100, cap 500): bounds the node list (sliced after
+#     the deterministic sort); total_nodes/truncated report the cap, so
+#     nothing is silently truncated. Edges are already minimal and stay
+#     unfiltered.
 # --------------------------------------------------------------------------- #
 def kg_neighbors(params):
     # type: (dict) -> dict
@@ -222,6 +274,15 @@ def kg_neighbors(params):
         return _err("invalid_params",
                     "'depth' must be 1 or 2, got %r" % (params.get("depth"),))
     rel = params.get("rel")
+    try:
+        limit = int(params.get("limit", _NEIGHBORS_DEFAULT_LIMIT))
+    except (TypeError, ValueError):
+        return _err("invalid_params", "'limit' must be an integer")
+    if limit < 0:
+        return _err("invalid_params", "'limit' must be >= 0")
+    effective = min(limit, _NEIGHBORS_MAX_LIMIT)
+    detail = _is_true(params.get("detail", False)) or \
+        not _is_true(params.get("brief", True))
 
     try:
         conn = _connect()
@@ -284,8 +345,12 @@ def kg_neighbors(params):
     finally:
         conn.close()
 
-    nodes = sorted((_node_dict(r) for r in node_rows),
+    nodes = sorted(((_node_dict(r) if detail else _node_brief(r))
+                    for r in node_rows),
                    key=lambda n: (n["label"], n["name"]))
+    total_nodes = len(nodes)
+    truncated = total_nodes > effective
+    nodes = nodes[:effective]
     edges = [{"src": r["src_name"], "src_label": r["src_label"],
               "rel": r["rel"], "dst": r["dst_name"],
               "dst_label": r["dst_label"]} for r in edge_rows]
@@ -294,7 +359,9 @@ def kg_neighbors(params):
             "center": {"name": name, "label": center_label},
             "depth": depth,
             "nodes": nodes, "edges": edges,
-            "node_count": len(nodes), "edge_count": len(edges)}
+            "node_count": len(nodes), "edge_count": len(edges),
+            "total_nodes": total_nodes, "truncated": truncated,
+            "limit": effective, "detail": detail}
 
 
 # --------------------------------------------------------------------------- #

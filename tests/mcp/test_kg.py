@@ -229,6 +229,96 @@ class TestKgNeighbors(TempDBTestCase):
         self.assertEqual(missing["code"], "missing_param")
 
 
+class TestKgNeighborsSlimming(TempDBTestCase):
+    """brief default / detail restore / limit cap (S2.1 scope G)."""
+
+    FULL_ROW_KEYS = {"id", "label", "name", "attrs", "confidence",
+                     "origin", "note", "evidence_level", "binary_sha256",
+                     "created_at", "updated_at"}
+
+    def test_brief_default_shape(self):
+        result = registry.dispatch(
+            "kg_neighbors", {"name": "cls:00e5b790"})
+        self.assertEqual(result["status"], "ok", result)
+        self.assertFalse(result["detail"], result)
+        self.assertEqual(result["limit"], 100, result)
+        self.assertFalse(result["truncated"], result)
+        self.assertEqual(result["total_nodes"], len(result["nodes"]),
+                         result)
+        for node in result["nodes"]:
+            self.assertEqual(set(node.keys()),
+                             {"name", "label", "evidence_level"}, node)
+            # No per-node timestamps / build identity / attrs in brief.
+            for banned in ("created_at", "updated_at", "binary_sha256",
+                           "attrs", "confidence", "origin", "note", "id"):
+                self.assertNotIn(banned, node, node)
+
+    def test_detail_restores_full_rows(self):
+        full = registry.dispatch(
+            "kg_neighbors", {"name": "cls:00e5b790", "detail": True})
+        self.assertEqual(full["status"], "ok", full)
+        self.assertTrue(full["detail"], full)
+        for node in full["nodes"]:
+            self.assertEqual(set(node.keys()), self.FULL_ROW_KEYS, node)
+        # brief=false is the alias path; same rows, same order.
+        alias = registry.dispatch(
+            "kg_neighbors", {"name": "cls:00e5b790", "brief": False})
+        self.assertEqual(alias["detail"], True, alias)
+        self.assertEqual(alias["nodes"], full["nodes"], alias)
+        # brief values agree with the full rows on shared evidence keys.
+        brief = registry.dispatch(
+            "kg_neighbors", {"name": "cls:00e5b790"})
+        self.assertEqual(len(brief["nodes"]), len(full["nodes"]))
+        for b_node, f_node in zip(brief["nodes"], full["nodes"]):
+            self.assertEqual(b_node["name"], f_node["name"])
+            self.assertEqual(b_node["label"], f_node["label"])
+            self.assertEqual(b_node["evidence_level"],
+                             f_node["evidence_level"])
+
+    def test_limit_cap_and_truncated(self):
+        bounded = registry.dispatch(
+            "kg_neighbors", {"name": "cls:00e5b790", "limit": 2})
+        self.assertEqual(bounded["node_count"], 2, bounded)
+        self.assertEqual(bounded["total_nodes"], 3, bounded)
+        self.assertTrue(bounded["truncated"], bounded)
+        # Over-cap limits clamp to 500 (flag stays honest).
+        big = registry.dispatch(
+            "kg_neighbors", {"name": "cls:00e5b790", "limit": 9999})
+        self.assertEqual(big["limit"], 500, big)
+        self.assertFalse(big["truncated"], big)
+        self.assertEqual(big["total_nodes"], 3, big)
+        bad = registry.dispatch(
+            "kg_neighbors", {"name": "cls:00e5b790", "limit": "many"})
+        self.assertEqual(bad["code"], "invalid_params", bad)
+        neg = registry.dispatch(
+            "kg_neighbors", {"name": "cls:00e5b790", "limit": -1})
+        self.assertEqual(neg["code"], "invalid_params", neg)
+
+    def test_deterministic_order_and_repeat(self):
+        first = registry.dispatch(
+            "kg_neighbors", {"name": "fun:00e5b790", "depth": 2})
+        second = registry.dispatch(
+            "kg_neighbors", {"name": "fun:00e5b790", "depth": 2})
+        self.assertEqual(first, second)  # byte-stable across calls
+        keys = [(n["label"], n["name"]) for n in first["nodes"]]
+        self.assertEqual(keys, sorted(keys))
+
+    def test_brief_smaller_than_detail_no_evidence_loss(self):
+        brief = registry.dispatch(
+            "kg_neighbors", {"name": "fun:00e5b790", "depth": 2})
+        full = registry.dispatch(
+            "kg_neighbors",
+            {"name": "fun:00e5b790", "depth": 2, "detail": True})
+        brief_size = len(json.dumps(brief, sort_keys=True))
+        full_size = len(json.dumps(full, sort_keys=True))
+        self.assertLess(brief_size, full_size)
+        # Zero evidence-field loss: every brief value equals the full row.
+        self.assertEqual(len(brief["nodes"]), len(full["nodes"]))
+        for b_node, f_node in zip(brief["nodes"], full["nodes"]):
+            for key, value in b_node.items():
+                self.assertEqual(value, f_node[key])
+
+
 class TestKgRecord(TempDBTestCase):
     def test_batch_ok(self):
         before = self.node_count()
