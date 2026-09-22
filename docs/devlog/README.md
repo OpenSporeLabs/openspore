@@ -75,9 +75,14 @@ Then S1 of the RE-automation plan (chapter
 scale, a deterministic bare-clone-safe seed reproducing 96/115/14, and
 build-identity-based stale-state detection.
 
-**Next: S2** — the stdlib MCP surface over the KG spine (then S3–S6 toward the
-cell-mode trace and the `replaced-verified` promotion of
-`cell-movement-mouse-steering`).
+S2 (the stdlib MCP surface) and S2.1 (MCP hardening) landed on 09-22, and **S3 — the GUI
+automation shell** (chapter [016](016-gui-automation-shell.md)) landed the same day:
+`menu_walk.sh` + an Xlib AGENT DRIVING overlay + global stop key + input log + shot
+manifest + no-op ladder + dry-run, all fail-closed, with the single-machine `flock`
+serialization fixed. **Next: S4** — the one human-watched manual run answering the
+critical unknown (does wine accept `xdotool --window` XSendEvent under KWin/XWayland),
+then S5–S6 toward the cell-mode trace and the `replaced-verified` promotion of
+`cell-movement-mouse-steering`.
 
 ## Where are we now?
 
@@ -100,7 +105,7 @@ Note for future readers: `docs/STATE.md` was refreshed operationally (Obj 11,
 `460b599`, and again this sprint) and now tracks the same state as this index.
 Chapters [006](006-vtable-detection.md)–[012](012-roadmap.md) are referenced in the
 index below but not yet written to disk — do not create those numbers; the next free
-chapter is 016.
+chapter is 017.
 
 ## Chapters
 
@@ -122,6 +127,7 @@ chapter is 016.
 | 013 | [Cell stage slice](013-cell-stage-slice.md) | 2026-09-21 | Obj 13–18: sanitation, cell-stage recon (BE refCount, DXT5 envelope, PNG32=RW4), materials/textures, cell scene, deterministic sim + eat, live window, differential validation | Done |
  | 014 | [RE Intelligence and the first replacement](014-re-intelligence-and-first-replacement.md) | 2026-09-21 | Obj 31–38: dossier pipeline + evidence schema, ray-plane steering finding, stand-in identity REJECTED (a building), sim contract + fixtures, first in-process replacement (5-byte jmp, cdecl, 64/64 differential, `replaced-approx`), pipeline docs | Done |
  | 015 | [Knowledge-graph spine](015-knowledge-graph-spine.md) | 2026-09-22 | S1: KG schema patch (field/trace_run/investigations + provenance), canonical 7-level evidence scale (stale STATUS2EV bug fixed), deterministic canonical seed (96/115/14, bare-clone-safe), binary-identity stale-state detection | Done |
+ | 016 | [GUI automation shell](016-gui-automation-shell.md) | 2026-09-22 | S3: `menu_walk.sh` + Xlib AGENT DRIVING overlay + global Ctrl+Alt+Backspace stop + input log + shot manifest + no-op ladder + dry-run, all fail-closed; `flock` machine-lock serialization fixed (CLOEXEC-at-exec); 13 failure modes CLOSED | Done |
 
 ## Maintenance protocol
 

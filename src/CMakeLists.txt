@@ -51,13 +51,18 @@ target_include_directories(openspore_renderer PUBLIC
   ${GENERATED_DIR})
 target_link_libraries(openspore_renderer PUBLIC Vulkan::Vulkan)
 
+# Shared machine lock (flock /tmp/openspore-machine.lock; body via
+# tools/observatory/lock.py; same prefix as the MCP runtime tools and
+# menu_walk.sh): display/GPU work serializes with agent trace runs.
+set(MACHINE_LOCK ${PROJECT_SOURCE_DIR}/tools/observatory/machine_lock.sh)
+
 add_executable(triangle apps/triangle.cpp)
 target_link_libraries(triangle PRIVATE openspore_renderer)
 
 # Smoke test: the app itself checks pixels and exits non-zero on FAIL.
 add_test(
   NAME triangle_smoke
-  COMMAND triangle
+  COMMAND sh ${MACHINE_LOCK} triangle
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
 # Objective-8b vertical slice: renders the real chosen gmdl record through
@@ -67,7 +72,7 @@ add_executable(asset_view apps/asset_view.cpp)
 target_link_libraries(asset_view PRIVATE openspore_assets openspore_renderer)
 add_test(
   NAME asset_render
-  COMMAND asset_view ${PROJECT_SOURCE_DIR}/SPORE/Data/Spore_Content.package
+  COMMAND sh ${MACHINE_LOCK} asset_view ${PROJECT_SOURCE_DIR}/SPORE/Data/Spore_Content.package
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
 # Obj15: renders the real mesh through the normal-lit textured path with its
@@ -77,7 +82,7 @@ add_executable(material_smoke apps/material_smoke.cpp)
 target_link_libraries(material_smoke PRIVATE openspore_assets openspore_renderer)
 add_test(
   NAME material_smoke
-  COMMAND material_smoke ${PROJECT_SOURCE_DIR}/SPORE/Data/Spore_Content.package
+  COMMAND sh ${MACHINE_LOCK} material_smoke ${PROJECT_SOURCE_DIR}/SPORE/Data/Spore_Content.package
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
 # Obj16: minimal Cell Stage scene — backdrop patches (real DXT5 texture),
@@ -110,7 +115,7 @@ add_test(
 # fail.
 add_test(
   NAME cell_stage_interactive_smoke
-  COMMAND bash -c "env -u XDG_SESSION_TYPE DISPLAY=:99 WAYLAND_DISPLAY=invalid-socket-xyz ./cell_stage ${PROJECT_SOURCE_DIR}/SPORE/Data/Spore_Content.package --interactive 2>&1 | grep -q 'cell_stage: interactive:'"
+  COMMAND bash -c "env -u XDG_SESSION_TYPE DISPLAY=:99 WAYLAND_DISPLAY=invalid-socket-xyz sh ${MACHINE_LOCK} ./cell_stage ${PROJECT_SOURCE_DIR}/SPORE/Data/Spore_Content.package --interactive 2>&1 | grep -q 'cell_stage: interactive:'"
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 set_tests_properties(cell_stage_interactive_smoke PROPERTIES
   TIMEOUT 20

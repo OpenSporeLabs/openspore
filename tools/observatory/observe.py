@@ -8,12 +8,14 @@ Runs probe_tracer in --launch wine mode with probes/<scenario>.json, writes
 <out-dir>/obs_<scenario>.jsonl (default: /tmp/openspore-observatory, disposable;
 keep the repo tree clean), then runs analyze.py over it.
 """
+import importlib.util
 import os
 import subprocess
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TRACER = os.path.join(HERE, "probe_tracer")
+LOCK = os.path.join(HERE, "lock.py")
 
 
 def main(argv):
@@ -43,6 +45,25 @@ def main(argv):
         print(f"error: tracer not built ({TRACER}); run: make -C tools/observatory",
               file=sys.stderr)
         return 1
+    # Shared machine lock (flock; same file + prefix as tools/mcp/runtime_tools.py
+    # and menu_walk.sh): a held lock means the display/GPU is busy, so park
+    # fail-closed instead of burning an attempt.
+    spec = importlib.util.spec_from_file_location("openspore_lock", LOCK)
+    lock = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(lock)
+    try:
+        lock_fh = lock.acquire("observe:%s" % scenario, task_id=scenario)
+    except lock.MachineLocked as exc:
+        print("machine_locked: %s held; park, no attempt burn" % lock.lock_path(),
+              file=sys.stderr)
+        return 5
+    try:
+        return _run_tracer(scenario, duration, outdir, probe)
+    finally:
+        lock.release(lock_fh)
+
+
+def _run_tracer(scenario, duration, outdir, probe):
     os.makedirs(outdir, exist_ok=True)
     out = os.path.join(outdir, f"obs_{scenario}.jsonl")
     # Module = PE name for wine targets (matched as a maps-path suffix).
