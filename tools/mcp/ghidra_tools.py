@@ -12,10 +12,15 @@ Conventions (mirror docs/analysis/MCP-DESIGN.md §§C/D/F, never reinvented):
   * image base ``0x00400000``; an ``rva`` hex value gets ``+image_base``
     for the VA sent to REST; a value >= image base is treated as a VA;
     anything else is a symbol name resolved via ``/search_functions``;
-  * every result carries explicit binary/program identity
+  * every result carries the uniform envelope: ``mode`` in
+    {live,cache,snapshot,offline,unavailable} + ``provenance`` (stable
+    string: REST endpoint / disk-cache key / committed path; None only
+    when no source was consulted) + binary/program identity
     (``binary_sha256`` of ``SPORE/SporeBin/SporeApp.exe`` or
     ``"unknown"`` + ``no_spo`` note when absent, ``program`` name,
-    ``image_base``);
+    ``image_base`` where applicable). Legacy ``cached``/``cache`` keys
+    are kept verbatim; stored cache metas live under
+    ``provenance_detail``;
   * decompilation is EVIDENCE, NOT TRUTH (``evidence_note`` on every
     decompile result);
   * domain failures are in-band ``{"status": "error", "code": ...}``
@@ -46,6 +51,31 @@ EVIDENCE_NOTE = ("decompiler output = evidence, not truth; "
 _TOPIC_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
 _PROGRAM_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
 _SNAPSHOT_SCHEMA = "ghidra-function-snapshot-1"
+
+# Uniform result envelope (S2.1 scope A): every handler result carries
+# ``mode`` (exactly one of the five below) + ``provenance`` (a stable
+# source string: REST endpoint, disk-cache key, or committed path;
+# None only when no source was consulted, never a guess) alongside the
+# pre-existing keys. ``cached``/``cache`` (hit/miss/hit-offline-fallback)
+# stay verbatim; stored cache metas move to ``provenance_detail``.
+# Mode map: live = REST ok; cache = disk hit; snapshot = committed
+# tools/re/data/*.json; offline = bridge down (ghidra_offline);
+# unavailable = no_spo / missing file / unvalidated params.
+_MODE_LIVE = "live"
+_MODE_CACHE = "cache"
+_MODE_SNAPSHOT = "snapshot"
+_MODE_OFFLINE = "offline"
+_MODE_UNAVAILABLE = "unavailable"
+_MODES = frozenset([_MODE_LIVE, _MODE_CACHE, _MODE_SNAPSHOT,
+                    _MODE_OFFLINE, _MODE_UNAVAILABLE])
+
+_SNAPSHOT_REL = "tools/re/data/ghidra_snapshot_cell_movement.json"
+_SNAPSHOT_PROVENANCE = _SNAPSHOT_REL + " (committed)"
+_VTABLES_REL = "docs/analysis/vtables.json"
+_VTABLES_PROVENANCE = _VTABLES_REL + " (committed)"
+
+_DECOMPILED_REF_RE = re.compile(
+    r"^\s*See\s+(tools/re/data/decompiled/\S+\.c)\b")
 
 # In-session memos only (pure reads; disposable like tools/mcp/cache/).
 _FUNCTION_MEMO = {}
@@ -78,6 +108,185 @@ def _get_client():
                                        % (type(exc).__name__, exc)}
                 return _fail
         return _Dead()
+
+
+# --------------------------------------------------------------------------- #
+# Uniform envelope + shared name resolution (S2.1 scopes A/B).
+# --------------------------------------------------------------------------- #
+def _repo_rel(path):
+    # type: (str) -> str
+    """Repo-relative path string for stable provenance. Never raises."""
+    try:
+        rel = os.path.relpath(str(path), config.OPENSPORE_ROOT)
+    except (OSError, ValueError):
+        return str(path)
+    return rel.replace(os.sep, "/")
+
+
+def _rest_provenance(client, endpoint):
+    # type: (object, str) -> str
+    """Stable REST source string (endpoint + bridge base). Never raises."""
+    try:
+        base = getattr(client, "base", None) or "unknown"
+    except Exception:
+        base = "unknown"
+    return "GhidraMCP REST %s @ %s" % (endpoint, base)
+
+
+def _cache_provenance_str(meta, c_path):
+    # type: (dict, str) -> str
+    """Stable disk-cache source string from a stored meta. Never raises."""
+    key = meta.get("key", {}) if isinstance(meta, dict) else {}
+    if not isinstance(key, dict):
+        key = {}
+    return "disk cache %s (key binary_sha256=%s rva=%s ghidra_version=%s program=%s)" % (
+        _repo_rel(c_path or "unknown"),
+        key.get("binary_sha256", "?"), key.get("rva", "?"),
+        key.get("ghidra_version", "?"), key.get("program", "?"))
+
+
+def _ok_envelope(identity, mode, provenance, def_program, base, **fields):
+    # type: (dict, str, str, str, int, object) -> dict
+    """Attach the uniform ok-envelope. Additive: keeps all old keys."""
+    result = dict(fields)
+    result["mode"] = mode
+    result["provenance"] = provenance
+    result.setdefault("program", def_program)
+    result.setdefault("image_base", "0x%x" % base)
+    result.update(identity)
+    return result
+
+
+def _error_envelope(code, message, mode, provenance, identity, **extra):
+    # type: (str, str, str, str, dict, object) -> dict
+    """Attach the uniform error-envelope. Additive: keeps all old keys."""
+    result = _err(code, message, mode=mode, provenance=provenance,
+                  **extra)
+    result.update(identity)
+    return result
+
+
+def _name_failure_provenance(client, code):
+    # type: (object, str) -> str
+    """Explicit consulted-sources string for a failed name lookup."""
+    rest = _rest_provenance(client, "/search_functions")
+    state = "unreachable" if code == "ghidra_offline" else "no match"
+    return "%s (%s) + %s (no row)" % (rest, state, _SNAPSHOT_PROVENANCE)
+
+
+def _name_failure_mode(code):
+    # type: (str) -> str
+    return _MODE_OFFLINE if code == "ghidra_offline" else _MODE_LIVE
+
+
+def _snapshot_row_by_name(name):
+    # type: (str) -> dict | None
+    """Exact-name row from the committed snapshot. Never raises."""
+    for row in _committed_snapshot_functions():
+        if isinstance(row, dict) and row.get("name") == name:
+            return row
+    return None
+
+
+def _snapshot_names(limit=20):
+    # type: (int) -> list
+    """Sorted committed-snapshot function names (for candidates)."""
+    names = set()
+    for row in _committed_snapshot_functions():
+        if isinstance(row, dict) and row.get("name"):
+            names.add(row["name"])
+    return sorted(names)[:limit]
+
+
+def _snapshot_candidates(name, limit=8):
+    # type: (str, int) -> list
+    """Substring name hints from the committed snapshot. Never raises."""
+    needle = str(name).lower()
+    return [n for n in _snapshot_names(100) if needle in n.lower()][:limit]
+
+
+def _resolve_with_fallback(client, target, image_base=IMAGE_BASE):
+    # type: (object, dict, int) -> dict
+    """Shared name resolver with committed-snapshot fallback (scope B).
+
+    ``target`` is a ``_target_from_params``/``resolve_target`` dict.
+    Address targets pass through untouched (``via="live"``: nothing to
+    resolve). Name-only targets resolve via REST ``/search_functions``;
+    when that fails, via the committed snapshot by exact name.
+    Returns ``{"ok": True, "target": ..., "via": "live"|"snapshot"}`` or
+    ``{"error": ..., "code": "not_found"|"ghidra_offline",
+    "candidates": [...], "snapshot_names": [...]}`` -- symmetric codes
+    for every caller, never a masquerading empty ok. Never raises.
+    """
+    if not isinstance(target, dict) or target.get("va") is not None \
+            or not target.get("name"):
+        return {"ok": True, "target": target, "via": "live"}
+    name = target["name"]
+    try:
+        resolved = _resolve_name_to_va(client, name)
+    except Exception as exc:
+        resolved = {"error": "ghidra_offline: resolver raised %s: %s"
+                             % (type(exc).__name__, exc)}
+    if "ok" in resolved:
+        return {"ok": True, "target": resolved, "via": "live"}
+    row = _snapshot_row_by_name(name)
+    if row is not None:
+        addr = row.get("address")
+        if isinstance(addr, str):
+            routed = resolve_target(addr, image_base)
+        else:
+            routed = {"error": "snapshot row %r has no VA address"
+                               % (name,)}
+        if "ok" in routed:
+            routed["name"] = row.get("name") or name
+            return {"ok": True, "target": routed, "via": "snapshot"}
+    msg = resolved.get("error", "cannot resolve name %r" % (name,))
+    code = "ghidra_offline" if msg.startswith("ghidra_offline") \
+        else "not_found"
+    return {"error": msg, "code": code,
+            "candidates": _snapshot_candidates(name),
+            "snapshot_names": _snapshot_names()}
+
+
+def _snapshot_decompiled(va, rva, name):
+    # type: (str, str, str) -> tuple
+    """Committed-snapshot C evidence for a target. Never raises.
+
+    Returns ``(text, provenance_str)`` or ``(None, None)`` when no row
+    covers the target. A ``See tools/re/data/decompiled/<F>.c`` pointer
+    is followed to the committed ``.c`` file when readable, else the
+    row text is served as-is (source always labelled).
+    """
+    want_va = str(va or "").lower()
+    want_rva = decompile_cache.normalize_rva(rva) if rva else None
+    for row in _committed_snapshot_functions():
+        if not isinstance(row, dict):
+            continue
+        match = bool(want_va) and \
+            str(row.get("address", "")).lower() == want_va
+        if not match and want_rva and isinstance(row.get("rva"), str):
+            match = decompile_cache.normalize_rva(row["rva"]) == want_rva
+        if not match and name:
+            match = row.get("name") == name
+        if not match:
+            continue
+        ev = row.get("decompiled_evidence")
+        if not isinstance(ev, str) or not ev.strip():
+            continue
+        who = row.get("name") or va
+        found = _DECOMPILED_REF_RE.match(ev)
+        if found:
+            rel = found.group(1)
+            try:
+                with open(config.resolve(*rel.split("/"))) as fh:
+                    text = fh.read()
+            except (OSError, ValueError):
+                text = ""
+            if text.strip():
+                return text, "%s (committed; snapshot row %s)" % (rel, who)
+        return ev, "%s (committed; snapshot row %s)" % (_SNAPSHOT_REL,
+                                                       who)
+    return None, None
 
 
 # --------------------------------------------------------------------------- #
@@ -314,12 +523,14 @@ def _cache_fallback_scan(binary_sha256, rva, program):
         except OSError:
             continue
         candidates.append((str(stored.get("binary_sha256", "")),
-                           str(stored.get("ghidra_version", "")), text, meta))
+                           str(stored.get("ghidra_version", "")), text, meta,
+                           c_path))
     if not candidates:
         return {"hit": False, "reason": "no_entry"}
     candidates.sort()
-    _sha, _ver, text, meta = candidates[0]
-    return {"hit": True, "text": text, "meta": meta, "fallback": True}
+    _sha, _ver, text, meta, c_path = candidates[0]
+    return {"hit": True, "text": text, "meta": meta, "fallback": True,
+            "c_path": c_path}
 
 
 def ghidra_decompile(params):
@@ -331,20 +542,25 @@ def ghidra_decompile(params):
     force = bool(params.get("force", False))
     target = _target_from_params(params, base)
     if "error" in target and "ok" not in target:
-        return _err("invalid_params", target["error"])
+        return _error_envelope("invalid_params", target["error"],
+                               _MODE_UNAVAILABLE, None, identity,
+                               tool="ghidra_decompile", program=program,
+                               image_base="0x%x" % base,
+                               evidence_note=EVIDENCE_NOTE)
     client = _get_client()
     if target.get("name") and target.get("va") is None:
-        resolved = _resolve_name_to_va(client, target["name"])
-        if "error" in resolved and "ok" not in resolved:
-            msg = resolved["error"]
-            code = "ghidra_offline" if msg.startswith("ghidra_offline") \
-                else "not_found"
-            result = _err(code, msg, tool="ghidra_decompile",
-                          program=program, image_base="0x%x" % base,
-                          evidence_note=EVIDENCE_NOTE)
-            result.update(identity)
-            return result
-        target = resolved
+        res = _resolve_with_fallback(client, target, base)
+        if "ok" not in res:
+            return _error_envelope(
+                res["code"], res["error"],
+                _name_failure_mode(res["code"]),
+                _name_failure_provenance(client, res["code"]),
+                identity, tool="ghidra_decompile",
+                program=program, image_base="0x%x" % base,
+                candidates=res.get("candidates", []),
+                snapshot_names=res.get("snapshot_names", []),
+                evidence_note=EVIDENCE_NOTE)
+        target = res["target"]
     rva, va = target["rva"], target["va"]
 
     version = params.get("ghidra_version")
@@ -358,74 +574,122 @@ def ghidra_decompile(params):
     if not force:
         hit = decompile_cache.lookup(sha, rva, version, program)
         if hit["hit"]:
-            result = {"status": "ok", "tool": "ghidra_decompile",
-                      "va": va, "rva": decompile_cache.normalize_rva(rva),
-                      "program": program, "image_base": "0x%x" % base,
-                      "ghidra_version": hit["meta"].get(
-                          "key", {}).get("ghidra_version", version),
-                      "cached": True, "cache": "hit",
-                      "decompiled": hit["text"],
-                      "provenance": hit["meta"],
-                      "evidence_note": EVIDENCE_NOTE}
-            result.update(identity)
-            return result
+            return _ok_envelope(
+                identity, _MODE_CACHE,
+                _cache_provenance_str(hit["meta"], hit.get("c_path")),
+                program, base, status="ok", tool="ghidra_decompile",
+                va=va, rva=decompile_cache.normalize_rva(rva),
+                program=program, image_base="0x%x" % base,
+                ghidra_version=hit["meta"].get(
+                    "key", {}).get("ghidra_version", version),
+                cached=True, cache="hit",
+                decompiled=hit["text"],
+                provenance_detail=hit["meta"],
+                evidence_note=EVIDENCE_NOTE)
         if version == "unknown":
             # Offline: live version unknowable, serve any stored version
             # for (binary?, rva, program) with provenance intact.
             fallback = _cache_fallback_scan(sha, rva, program)
             if fallback["hit"]:
-                result = {
-                    "status": "ok", "tool": "ghidra_decompile",
-                    "va": va,
-                    "rva": decompile_cache.normalize_rva(rva),
-                    "program": program, "image_base": "0x%x" % base,
-                    "ghidra_version": fallback["meta"].get(
+                return _ok_envelope(
+                    identity, _MODE_CACHE,
+                    _cache_provenance_str(fallback["meta"],
+                                          fallback.get("c_path")),
+                    program, base, status="ok", tool="ghidra_decompile",
+                    va=va,
+                    rva=decompile_cache.normalize_rva(rva),
+                    program=program, image_base="0x%x" % base,
+                    ghidra_version=fallback["meta"].get(
                         "key", {}).get("ghidra_version", "unknown"),
-                    "cached": True, "cache": "hit-offline-fallback",
-                    "decompiled": fallback["text"],
-                    "provenance": fallback["meta"],
-                    "evidence_note": EVIDENCE_NOTE,
-                    "note": "Ghidra offline; served from disk cache "
-                            "(stored key retained in provenance)"}
-                result.update(identity)
-                return result
+                    cached=True, cache="hit-offline-fallback",
+                    decompiled=fallback["text"],
+                    provenance_detail=fallback["meta"],
+                    evidence_note=EVIDENCE_NOTE,
+                    note="Ghidra offline; served from disk cache "
+                         "(stored key retained in provenance_detail)")
+    live_code, live_msg, live_hint = None, None, None
     try:
         resp = client.decompile(va)
     except Exception as exc:
-        return _err("ghidra_offline",
-                    "GhidraMCP request failed: %s: %s"
-                    % (type(exc).__name__, exc),
-                    tool="ghidra_decompile", va=va, rva=rva,
-                    program=program, **identity)
-    if not isinstance(resp, dict) or resp.get("status") != "ok":
-        code = resp.get("code", "ghidra_offline") \
-            if isinstance(resp, dict) else "ghidra_offline"
-        detail = resp.get("message", "no detail") \
-            if isinstance(resp, dict) else "no detail"
-        return _err(code, "decompile %s failed: %s" % (va, detail),
-                    tool="ghidra_decompile", va=va, rva=rva,
-                    program=program,
-                    hint=resp.get("hint") if isinstance(resp, dict)
-                    else None, **identity)
-    code_text = _extract_code(resp)
-    if not code_text:
-        return _err("empty_decompile",
-                    "Ghidra returned no decompilation text for %s" % va,
-                    tool="ghidra_decompile", va=va, rva=rva,
-                    program=program, **identity)
+        resp = None
+        live_code, live_msg = (
+            "ghidra_offline",
+            "GhidraMCP request failed: %s: %s"
+            % (type(exc).__name__, exc))
+    if live_code is None:
+        if not isinstance(resp, dict) or resp.get("status") != "ok":
+            live_code = resp.get("code", "ghidra_offline") \
+                if isinstance(resp, dict) else "ghidra_offline"
+            detail = resp.get("message", "no detail") \
+                if isinstance(resp, dict) else "no detail"
+            live_msg = "decompile %s failed: %s" % (va, detail)
+            live_hint = resp.get("hint") if isinstance(resp, dict) \
+                else None
+    code_text = _extract_code(resp) if live_code is None else None
+    if live_code is None and not code_text:
+        live_code, live_msg = (
+            "empty_decompile",
+            "Ghidra returned no decompilation text for %s" % va)
+    if live_code is not None:
+        # Live failed: committed fallbacks before admitting failure
+        # (symmetric with ghidra_function's snapshot card): disk scan
+        # when the live version is unknowable (unless force bypasses
+        # the cache), then the snapshot row.
+        if version == "unknown" and not force:
+            fallback = _cache_fallback_scan(sha, rva, program)
+            if fallback["hit"]:
+                return _ok_envelope(
+                    identity, _MODE_CACHE,
+                    _cache_provenance_str(fallback["meta"],
+                                          fallback.get("c_path")),
+                    program, base, status="ok", tool="ghidra_decompile",
+                    va=va,
+                    rva=decompile_cache.normalize_rva(rva),
+                    program=program, image_base="0x%x" % base,
+                    ghidra_version=fallback["meta"].get(
+                        "key", {}).get("ghidra_version", "unknown"),
+                    cached=True, cache="hit-offline-fallback",
+                    decompiled=fallback["text"],
+                    provenance_detail=fallback["meta"],
+                    evidence_note=EVIDENCE_NOTE,
+                    note="Ghidra offline; served from disk cache "
+                         "(stored key retained in provenance_detail)")
+        snap_text, snap_prov = _snapshot_decompiled(
+            va, rva, target.get("name"))
+        if snap_text:
+            return _ok_envelope(
+                identity, _MODE_SNAPSHOT, snap_prov, program, base,
+                status="ok", tool="ghidra_decompile",
+                va=va, rva=decompile_cache.normalize_rva(rva),
+                program=program, image_base="0x%x" % base,
+                ghidra_version=version,
+                cached=False, cache="snapshot-fallback",
+                decompiled=snap_text,
+                evidence_note=EVIDENCE_NOTE,
+                note="Ghidra decompile failed (%s); served from "
+                     "committed snapshot" % live_code)
+        return _error_envelope(
+            live_code, live_msg,
+            _MODE_OFFLINE if live_code == "ghidra_offline"
+            else _MODE_LIVE,
+            _rest_provenance(client, "/decompile_function"),
+            identity, tool="ghidra_decompile", va=va, rva=rva,
+            program=program, image_base="0x%x" % base,
+            hint=live_hint)
     stored = decompile_cache.store(
         sha, rva, version, program, code_text,
         extra={"va": va, "image_base": "0x%x" % base})
-    result = {"status": "ok", "tool": "ghidra_decompile",
-              "va": va, "rva": decompile_cache.normalize_rva(rva),
-              "program": program, "image_base": "0x%x" % base,
-              "ghidra_version": version,
-              "cached": False, "cache": "miss",
-              "decompiled": code_text,
-              "cache_store": stored.get("stored", False),
-              "evidence_note": EVIDENCE_NOTE}
-    result.update(identity)
-    return result
+    return _ok_envelope(
+        identity, _MODE_LIVE,
+        _rest_provenance(client, "/decompile_function"), program, base,
+        status="ok", tool="ghidra_decompile",
+        va=va, rva=decompile_cache.normalize_rva(rva),
+        program=program, image_base="0x%x" % base,
+        ghidra_version=version,
+        cached=False, cache="miss",
+        decompiled=code_text,
+        cache_store=stored.get("stored", False),
+        evidence_note=EVIDENCE_NOTE)
 
 
 # --------------------------------------------------------------------------- #
@@ -500,18 +764,31 @@ def ghidra_function(params):
     base = _image_base(params)
     target = _target_from_params(params, base)
     if "error" in target and "ok" not in target:
-        return _err("invalid_params", target["error"])
+        return _error_envelope("invalid_params", target["error"],
+                               _MODE_UNAVAILABLE, None, identity,
+                               tool="ghidra_function", program=program,
+                               image_base="0x%x" % base,
+                               evidence_note=EVIDENCE_NOTE)
     client = _get_client()
     if target.get("name") and target.get("va") is None:
-        resolved = _resolve_name_to_va(client, target["name"])
-        if "error" not in resolved or "ok" in resolved:
-            target = resolved
-        else:
-            target = {"ok": True, "name": params.get("name"),
-                      "va": None, "rva": None}
+        res = _resolve_with_fallback(client, target, base)
+        if "ok" not in res:
+            return _error_envelope(
+                res["code"], res["error"],
+                _name_failure_mode(res["code"]),
+                _name_failure_provenance(client, res["code"]),
+                identity, tool="ghidra_function",
+                program=program, image_base="0x%x" % base,
+                candidates=res.get("candidates", []),
+                snapshot_names=res.get("snapshot_names", []),
+                evidence_note=EVIDENCE_NOTE)
+        target = res["target"]
     va = target.get("va")
     if va is not None and va in _FUNCTION_MEMO:
         card = dict(_FUNCTION_MEMO[va])
+        card["mode"] = _MODE_CACHE
+        card["provenance"] = "in-session memo (originally: %s)" % (
+            card.get("provenance", "unknown"),)
         card.update(identity)
         return card
 
@@ -543,28 +820,32 @@ def ghidra_function(params):
             if not match and name:
                 match = row.get("name") == name
             if match:
-                card = {"status": "ok", "tool": "ghidra_function",
-                        "va": row.get("address"), "rva": row.get("rva"),
-                        "name": row.get("name"), "program": program,
-                        "image_base": "0x%x" % base,
-                        "size_bytes": row.get("size_bytes"),
-                        "namespace": row.get("namespace"),
-                        "signature": row.get("signature"),
-                        "dispatch": row.get("dispatch"),
-                        "callers": row.get("callers"),
-                        "callees": row.get("callees"),
-                        "sdk_name": None, "sdk_type": None,
-                        "subsystem": None,
-                        "provenance": "tools/re/data/"
-                                      "ghidra_snapshot_cell_movement.json "
-                                      "(committed; Ghidra offline)",
-                        "evidence_note": EVIDENCE_NOTE}
-                card.update(identity)
-                return card
-        return _err("ghidra_offline",
-                    "Ghidra unreachable and no committed snapshot covers "
-                    "%r" % (va or target.get("name"),),
-                    tool="ghidra_function", program=program, **identity)
+                return _ok_envelope(
+                    identity, _MODE_SNAPSHOT, _SNAPSHOT_PROVENANCE,
+                    program, base, status="ok", tool="ghidra_function",
+                    va=row.get("address"), rva=row.get("rva"),
+                    name=row.get("name"), program=program,
+                    image_base="0x%x" % base,
+                    size_bytes=row.get("size_bytes"),
+                    namespace=row.get("namespace"),
+                    signature=row.get("signature"),
+                    dispatch=row.get("dispatch"),
+                    callers=row.get("callers"),
+                    callees=row.get("callees"),
+                    sdk_name=None, sdk_type=None,
+                    subsystem=None,
+                    evidence_note=EVIDENCE_NOTE,
+                    note="served from committed snapshot; Ghidra "
+                         "offline or no live data for target")
+        return _error_envelope(
+            "ghidra_offline",
+            "Ghidra unreachable and no committed snapshot covers "
+            "%r" % (va or target.get("name"),),
+            _MODE_OFFLINE,
+            _rest_provenance(client, "/get_function_by_address")
+            + " (unreachable) + " + _SNAPSHOT_PROVENANCE + " (no row)",
+            identity, tool="ghidra_function", program=program,
+            image_base="0x%x" % base)
 
     merged = dict(info_d)
     for key, value in analysis_d.items():
@@ -573,22 +854,25 @@ def ghidra_function(params):
     join = _vtable_join(va_int) if va_int is not None else \
         {"vtable_at": [], "referenced_by_vtables": [],
          "sdk_associations": []}
-    card = {"status": "ok", "tool": "ghidra_function",
-            "va": va, "rva": target.get("rva"),
-            "name": merged.get("name") or target.get("name"),
-            "program": program, "image_base": "0x%x" % base,
-            "size_bytes": merged.get("size_bytes", merged.get("size")),
-            "namespace": merged.get("namespace"),
-            "signature": merged.get("signature"),
-            "dispatch": merged.get("dispatch"),
-            "callers": merged.get("callers"),
-            "callees": merged.get("callees"),
-            "sdk_name": merged.get("sdk_name"),
-            "sdk_type": merged.get("sdk_type"),
-            "subsystem": merged.get("subsystem"),
-            "vtables": join,
-            "evidence_note": EVIDENCE_NOTE}
-    card.update(identity)
+    card = _ok_envelope(
+        identity, _MODE_LIVE,
+        _rest_provenance(client, "/get_function_by_address + "
+                                 "/analyze_function_complete"),
+        program, base, status="ok", tool="ghidra_function",
+        va=va, rva=target.get("rva"),
+        name=merged.get("name") or target.get("name"),
+        program=program, image_base="0x%x" % base,
+        size_bytes=merged.get("size_bytes", merged.get("size")),
+        namespace=merged.get("namespace"),
+        signature=merged.get("signature"),
+        dispatch=merged.get("dispatch"),
+        callers=merged.get("callers"),
+        callees=merged.get("callees"),
+        sdk_name=merged.get("sdk_name"),
+        sdk_type=merged.get("sdk_type"),
+        subsystem=merged.get("subsystem"),
+        vtables=join,
+        evidence_note=EVIDENCE_NOTE)
     if va is not None:
         _FUNCTION_MEMO[va] = {k: v for k, v in card.items()
                               if k not in identity}
@@ -596,46 +880,88 @@ def ghidra_function(params):
 
 
 # --------------------------------------------------------------------------- #
-# ghidra_search: name-pattern search.
+# ghidra_search: name-pattern search (S2.1 scope C: search_status + truncated).
+#
+# search_status values (exactly these four; no second index exists, the
+# bridge answers substring matches only, and bridge failure is already
+# the ghidra_offline/ghidra_no_endpoint code family):
+#   * "matched" -- live index consulted, >= 1 hit;
+#   * "matched_zero" -- live index consulted, 0 hits (ok with count 0;
+#     carries a hint with an SDK-prefix suggestion);
+#   * "offline_no_index" -- bridge down (ghidra_offline error path);
+#   * "invalid_query" -- invalid_params error path (empty/too-long
+#     pattern, non-integer limit).
+# "truncated" is True when the live index returned more rows than
+# ``limit`` (matches are then the first ``limit`` after the deterministic
+# sort). Additive keys only: count/status/mode/provenance shapes stay.
 # --------------------------------------------------------------------------- #
+_SEARCH_ZERO_HINT = (
+    "live index consulted, 0 hits; try an SDK-prefixed substring "
+    "(e.g. 'App::', 'cCell', 'FUN_') or check the pattern spelling")
 def ghidra_search(params):
     # type: (dict) -> dict
     identity = _binary_identity()
     program = _program_name(params)
+    base = _image_base(params)
     pattern = params.get("pattern", params.get("query", ""))
     if not isinstance(pattern, str) or not pattern.strip():
-        return _err("invalid_params",
-                    "'pattern' (name substring) is required and non-empty",
-                    tool="ghidra_search", program=program, **identity)
+        return _error_envelope(
+            "invalid_params",
+            "'pattern' (name substring) is required and non-empty",
+            _MODE_UNAVAILABLE, None, identity,
+            tool="ghidra_search", program=program,
+            image_base="0x%x" % base,
+            search_status="invalid_query")
     pattern = pattern.strip()
     if len(pattern) > 256:
-        return _err("invalid_params", "'pattern' too long (max 256 chars)",
-                    tool="ghidra_search", program=program, **identity)
+        return _error_envelope(
+            "invalid_params", "'pattern' too long (max 256 chars)",
+            _MODE_UNAVAILABLE, None, identity,
+            tool="ghidra_search", program=program,
+            image_base="0x%x" % base,
+            search_status="invalid_query")
     try:
         limit = int(params.get("limit", 50))
     except (TypeError, ValueError):
-        return _err("invalid_params", "'limit' must be an integer",
-                    tool="ghidra_search", program=program, **identity)
+        return _error_envelope(
+            "invalid_params", "'limit' must be an integer",
+            _MODE_UNAVAILABLE, None, identity,
+            tool="ghidra_search", program=program,
+            image_base="0x%x" % base,
+            search_status="invalid_query")
     limit = max(1, min(limit, 500))
     client = _get_client()
     try:
         resp = client.search_functions(pattern, limit)
     except Exception as exc:
-        return _err("ghidra_offline",
-                    "GhidraMCP request failed: %s: %s"
-                    % (type(exc).__name__, exc),
-                    tool="ghidra_search", pattern=pattern,
-                    program=program, **identity)
+        return _error_envelope(
+            "ghidra_offline",
+            "GhidraMCP request failed: %s: %s"
+            % (type(exc).__name__, exc),
+            _MODE_OFFLINE,
+            _rest_provenance(client, "/search_functions")
+            + " (unreachable)",
+            identity, tool="ghidra_search", pattern=pattern,
+            program=program, image_base="0x%x" % base,
+            search_status="offline_no_index")
     if not isinstance(resp, dict) or resp.get("status") != "ok":
         code = resp.get("code", "ghidra_offline") \
             if isinstance(resp, dict) else "ghidra_offline"
-        return _err(code, resp.get("message", "search failed")
-                    if isinstance(resp, dict) else "search failed",
-                    tool="ghidra_search", pattern=pattern,
-                    program=program,
-                    hint=resp.get("hint") if isinstance(resp, dict)
-                    else None, **identity)
+        extra_status = "offline_no_index" \
+            if code == "ghidra_offline" else None
+        return _error_envelope(
+            code, resp.get("message", "search failed")
+            if isinstance(resp, dict) else "search failed",
+            _MODE_OFFLINE if code == "ghidra_offline" else _MODE_LIVE,
+            _rest_provenance(client, "/search_functions"),
+            identity, tool="ghidra_search", pattern=pattern,
+            program=program, image_base="0x%x" % base,
+            hint=resp.get("hint") if isinstance(resp, dict)
+            else None,
+            **({"search_status": extra_status}
+               if extra_status is not None else {}))
     items = _as_list(resp)
+    truncated = len(items) > limit
     matches = []
     for item in items[:limit]:
         if isinstance(item, dict):
@@ -737,11 +1063,13 @@ def ghidra_snapshot_save(params):
     base = _image_base(params)
     topic = params.get("topic", params.get("label", ""))
     if not isinstance(topic, str) or not _TOPIC_RE.match(topic):
-        return _err("invalid_params",
-                    "'topic' (or 'label') is required: "
-                    "[A-Za-z0-9][A-Za-z0-9_-]*",
-                    tool="ghidra_snapshot_save", program=program,
-                    **identity)
+        return _error_envelope(
+            "invalid_params",
+            "'topic' (or 'label') is required: "
+            "[A-Za-z0-9][A-Za-z0-9_-]*",
+            _MODE_UNAVAILABLE, None, identity,
+            tool="ghidra_snapshot_save", program=program,
+            image_base="0x%x" % base)
     client = _get_client()
     try:
         version = client.version()
@@ -752,25 +1080,32 @@ def ghidra_snapshot_save(params):
     rows, offline = _snapshot_functions(params, client, sha, program,
                                         base, version)
     if not rows:
-        return _err("blocked_no_functions",
-                    "snapshot %r has no function list and no committed "
-                    "snapshot to default from; pass 'functions' "
-                    "(addresses/names). Upstream capture script "
-                    "tools/re/ghidra_snapshot.py does not exist "
-                    "(RE-AUTOMATION-ARCHITECTURE.md §2 weakness 2), so "
-                    "new topics cannot be enumerated from Ghidra here."
-                    % topic,
-                    tool="ghidra_snapshot_save", topic=topic,
-                    program=program, **identity)
+        return _error_envelope(
+            "blocked_no_functions",
+            "snapshot %r has no function list and no committed "
+            "snapshot to default from; pass 'functions' "
+            "(addresses/names). Upstream capture script "
+            "tools/re/ghidra_snapshot.py does not exist "
+            "(RE-AUTOMATION-ARCHITECTURE.md §2 weakness 2), so "
+            "new topics cannot be enumerated from Ghidra here."
+            % topic,
+            _MODE_UNAVAILABLE,
+            _SNAPSHOT_PROVENANCE + " (no default rows)",
+            identity, tool="ghidra_snapshot_save", topic=topic,
+            program=program, image_base="0x%x" % base)
     if offline and offline == len(rows):
-        return _err("ghidra_offline",
-                    "Ghidra unreachable and no cached decompilation for "
-                    "any of the %d function(s); snapshot %r blocked "
-                    "(not written). Populate tools/mcp/cache/ while "
-                    "online, or work from the committed snapshot."
-                    % (len(rows), topic),
-                    tool="ghidra_snapshot_save", topic=topic,
-                    program=program, **identity)
+        return _error_envelope(
+            "ghidra_offline",
+            "Ghidra unreachable and no cached decompilation for "
+            "any of the %d function(s); snapshot %r blocked "
+            "(not written). Populate tools/mcp/cache/ while "
+            "online, or work from the committed snapshot."
+            % (len(rows), topic),
+            _MODE_OFFLINE,
+            _rest_provenance(client, "/decompile_function")
+            + " (unreachable); disk cache empty for target(s)",
+            identity, tool="ghidra_snapshot_save", topic=topic,
+            program=program, image_base="0x%x" % base)
     doc = {"$schema": _SNAPSHOT_SCHEMA,
            "source": "Ghidra 12.1.2 headless (%s, via GhidraMCP REST; "
                      "saved by tools/mcp/ghidra_tools.py "
@@ -788,39 +1123,88 @@ def ghidra_snapshot_save(params):
     out_dir = config.resolve("tools", "re", "data")
     out_path = os.path.join(out_dir, "ghidra_snapshot_%s.json" % topic)
     digest = hashlib.sha256(text.encode("utf-8")).hexdigest()
+    save_mode = _MODE_LIVE if version != "unknown" else _MODE_CACHE
+    save_prov = _repo_rel(out_path) + " (written)"
     try:
         os.makedirs(out_dir, exist_ok=True)
         if os.path.exists(out_path):
             with open(out_path) as fh:
                 previous = fh.read()
             if previous == text:
-                result = {"status": "ok", "tool": "ghidra_snapshot_save",
-                          "topic": topic, "path": out_path,
-                          "outcome": "unchanged", "sha256": digest,
-                          "functions": len(rows),
-                          "offline_functions": offline,
-                          "program": program}
-                result.update(identity)
-                return result
+                return _ok_envelope(
+                    identity, save_mode, save_prov, program, base,
+                    status="ok", tool="ghidra_snapshot_save",
+                    topic=topic, path=out_path,
+                    outcome="unchanged", sha256=digest,
+                    functions=len(rows),
+                    offline_functions=offline, program=program,
+                    image_base="0x%x" % base)
             outcome = "changed"
         else:
             outcome = "created"
         with open(out_path, "w") as fh:
             fh.write(text)
     except OSError as exc:
-        return _err("write_failed", "cannot write snapshot: %s" % exc,
-                    tool="ghidra_snapshot_save", topic=topic,
-                    program=program, **identity)
-    result = {"status": "ok", "tool": "ghidra_snapshot_save",
-              "topic": topic, "path": out_path, "outcome": outcome,
-              "sha256": digest, "functions": len(rows),
-              "offline_functions": offline, "program": program}
-    result.update(identity)
-    return result
+        return _error_envelope(
+            "write_failed", "cannot write snapshot: %s" % exc,
+            _MODE_UNAVAILABLE, save_prov, identity,
+            tool="ghidra_snapshot_save", topic=topic,
+            program=program, image_base="0x%x" % base)
+    return _ok_envelope(
+        identity, save_mode, save_prov, program, base,
+        status="ok", tool="ghidra_snapshot_save",
+        topic=topic, path=out_path, outcome=outcome,
+        sha256=digest, functions=len(rows),
+        offline_functions=offline, program=program,
+        image_base="0x%x" % base)
+
+
+def _is_true(value):
+    # type: (object) -> bool
+    """Deterministic truth flag for optional MCP booleans.
+
+    Accepts real JSON booleans/ints plus the common string spellings;
+    anything else (including the string "false") is False. Never raises.
+    """
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return value == 1
+    if isinstance(value, str):
+        return value.strip().lower() in ("1", "true", "yes", "on")
+    return False
+
+
+def _strip_nones(mapping):
+    # type: (dict) -> dict
+    """Drop None/null-valued keys deterministically. Never infers."""
+    return {k: v for k, v in mapping.items() if v is not None}
+
+
+def _slim_slot(slot):
+    # type: (object) -> dict
+    """Project one vtable slot to its {ptr, func} identity pair.
+
+    Non-dict entries carry no func identity: they become a ptr-only
+    dict (never inferred). None-valued keys are stripped.
+    """
+    if isinstance(slot, dict):
+        return _strip_nones({"ptr": slot.get("ptr"),
+                             "func": slot.get("func")})
+    return {"ptr": slot}
 
 
 # --------------------------------------------------------------------------- #
 # vtable_lookup: read-only over docs/analysis/vtables.json.
+#
+# Context slimming (S2.1 scope G, deterministic only, no summarizer):
+#   * slots project to {ptr, func} pairs; None-valued match keys are
+#     stripped (never inferred); null/empty slot arrays are omitted;
+#   * default limit is 20 (cap stays 500); total_matches + truncated
+#     always report the bound, so nothing is silently truncated;
+#   * detail=true (alias full_slots=true) returns the full slot dicts
+#     and un-stripped match dicts, still bounded by limit.
+# Envelope identity (mode/provenance/binary_sha256/image_base) stays.
 # --------------------------------------------------------------------------- #
 def _load_vtables():
     # type: () -> dict

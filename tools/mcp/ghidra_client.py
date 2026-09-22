@@ -3,8 +3,11 @@
 
 Speaks to the headless GhidraMCP bridge over plain ``http.client``.
 Never raises on transport failure: every method returns a plain dict
-that is either ``{"status": "ok", ...}`` or the structured offline
-error ``{"status": "error", "code": "ghidra_offline", ...}``.
+that is either ``{"status": "ok", ...}``, the structured offline
+error ``{"status": "error", "code": "ghidra_offline", ...}``, or a
+bridge-level rejection ``{"status": "error",
+"code": "ghidra_rest_error", ...}`` (the bridge answered but refused
+the query, e.g. an empty search term).
 
 Configuration (env, read per call so tests need no restart):
   * ``OPENSPORE_GHIDRA_HOST`` (default ``127.0.0.1``)
@@ -148,6 +151,14 @@ class GhidraClient(object):
                     "endpoint": path, "raw": text}
         if isinstance(data, dict) and "status" in data:
             return data
+        if isinstance(data, dict) and "error" in data:
+            # Bridge-level rejection (Response.err shape: {"error": ...}
+            # with no "status"): a real answer, not a transport failure,
+            # so it is an in-band ghidra_rest_error, never a wrapped ok.
+            return {"status": "error", "ok": False,
+                    "code": "ghidra_rest_error",
+                    "message": str(data.get("error")),
+                    "endpoint": path, "data": data}
         return {"status": "ok", "tool": "ghidra_rest",
                 "endpoint": path, "data": data}
 
@@ -173,8 +184,11 @@ class GhidraClient(object):
 
     def search_functions(self, pattern, limit=50):
         # type: (str, int) -> dict
+        # The headless bridge binds `name_pattern` (and `limit`) from the
+        # query string only; body-only params are ignored, so both go in
+        # the query (verified against the live GhidraMCP contract).
         return self.request("/search_functions",
-                            {"pattern": pattern, "limit": limit})
+                            {"name_pattern": pattern, "limit": limit})
 
     def get_metadata(self):
         # type: () -> dict

@@ -3,9 +3,11 @@
 Covers: decompile disk-cache key behaviour (same key hits; changed
 binary/rva/version/program miss), provenance retention, malformed
 cache failing safe, graceful offline ``ghidra_offline`` (never raises),
-RVA handling, dossier/vtable reads, deterministic writers, registry
-wiring, and no-arbitrary-exec (params can never become shell commands
-or escape the repo/tool dirs).
+RVA handling, uniform mode/provenance envelope on every result,
+resolver parity between ghidra_decompile/ghidra_function
+({VA,RVA,bare name,namespaced,missing} x {live,offline}), dossier/vtable
+reads, deterministic writers, registry wiring, and no-arbitrary-exec
+(params can never become shell commands or escape the repo/tool dirs).
 
 Run from the repo root:
     python3 -m unittest tests.mcp.test_ghidra -v
@@ -293,6 +295,21 @@ class TestRvaHandling(GhidraTestBase):
 
     def test_decompile_accepts_name_param(self):
         res = gt.ghidra_decompile({"name": "FUN_00e806b0"})
+        self.assertEqual(res["status"], "ok", res)
+        self.assertIn("va", res)
+
+    def test_function_accepts_rva_param(self):
+        # ghidra_function shares _target_from_params: the explicit rva
+        # forces +image_base exactly like ghidra_decompile.
+        res = gt.ghidra_function({"rva": "0xa806b0"})
+        self.assertEqual(res["status"], "ok", res)
+        self.assertEqual(res["va"], "0x00e806b0")
+        self.assertEqual(res["rva"], "0xa806b0")
+        self.assertEqual(res["image_base"], "0x400000")
+        self.assertEqual(res["mode"], "live")
+
+    def test_function_accepts_name_param(self):
+        res = gt.ghidra_function({"name": "FUN_00e806b0"})
         self.assertEqual(res["status"], "ok", res)
         self.assertIn("va", res)
 
