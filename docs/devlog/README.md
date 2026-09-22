@@ -69,10 +69,15 @@ fixtures, and the **first in-process replacement** of original code
 (`MovePlayerToMousePosition`: 5-byte `jmp` hook, cdecl contract, 64/64 differential
 vs the decompilation reference — `replaced-approx`, gated on a Wine cell-mode trace).
 
-**Next: close the runtime gate** — a display with synthetic input so the armed
-probes can fire inside cell mode and promote the first replacement to
-`replaced-verified` — then the next replacement target from the dossier and
-sporemol composition decoding for the default player cell.
+Then S1 of the RE-automation plan (chapter
+[015](015-knowledge-graph-spine.md)): the KG became canonical — schema patch
+(`field`/`trace_run`/`investigations` + provenance columns), one 7-level evidence
+scale, a deterministic bare-clone-safe seed reproducing 96/115/14, and
+build-identity-based stale-state detection.
+
+**Next: S2** — the stdlib MCP surface over the KG spine (then S3–S6 toward the
+cell-mode trace and the `replaced-verified` promotion of
+`cell-movement-mouse-steering`).
 
 ## Where are we now?
 
@@ -85,13 +90,17 @@ identity, contract, and the first in-process replacement — landed between 20:3
 23:40 the same day (`d43e324` → `cfd0da6`, chapter
 [014](014-re-intelligence-and-first-replacement.md)). The journal currently ends at
 the first replacement: `replaced-approx`, 64/64 differential vs the decompilation
-reference, gated on a Wine cell-mode trace.
+reference, gated on a Wine cell-mode trace. On 09-22 the RE-automation architecture
+(`docs/RE-AUTOMATION-ARCHITECTURE.md`) was synthesized from six analyses and S1
+landed the same day: the knowledge-graph spine (schema + canonical 7-level scale +
+deterministic seed, chapter [015](015-knowledge-graph-spine.md)) — the KG is now
+reproducible from a fresh clone.
 
 Note for future readers: `docs/STATE.md` was refreshed operationally (Obj 11,
 `460b599`, and again this sprint) and now tracks the same state as this index.
 Chapters [006](006-vtable-detection.md)–[012](012-roadmap.md) are referenced in the
 index below but not yet written to disk — do not create those numbers; the next free
-chapter is 015.
+chapter is 016.
 
 ## Chapters
 
@@ -111,7 +120,8 @@ chapter is 015.
 | 011 | [Vulkan skeleton](011-vulkan-skeleton.md) | 2026-09-21 | First C++: IRenderer, Vulkan backend, offscreen triangle, green smoke test | Done |
 | 012 | [Roadmap](012-roadmap.md) | 2026-09-21 | Obj 8–12 as *planned* work: first real asset end-to-end, replacement boundaries, final verification | Planned |
 | 013 | [Cell stage slice](013-cell-stage-slice.md) | 2026-09-21 | Obj 13–18: sanitation, cell-stage recon (BE refCount, DXT5 envelope, PNG32=RW4), materials/textures, cell scene, deterministic sim + eat, live window, differential validation | Done |
-| 014 | [RE Intelligence and the first replacement](014-re-intelligence-and-first-replacement.md) | 2026-09-21 | Obj 31–38: dossier pipeline + evidence schema, ray-plane steering finding, stand-in identity REJECTED (a building), sim contract + fixtures, first in-process replacement (5-byte jmp, cdecl, 64/64 differential, `replaced-approx`), pipeline docs | Done |
+ | 014 | [RE Intelligence and the first replacement](014-re-intelligence-and-first-replacement.md) | 2026-09-21 | Obj 31–38: dossier pipeline + evidence schema, ray-plane steering finding, stand-in identity REJECTED (a building), sim contract + fixtures, first in-process replacement (5-byte jmp, cdecl, 64/64 differential, `replaced-approx`), pipeline docs | Done |
+ | 015 | [Knowledge-graph spine](015-knowledge-graph-spine.md) | 2026-09-22 | S1: KG schema patch (field/trace_run/investigations + provenance), canonical 7-level evidence scale (stale STATUS2EV bug fixed), deterministic canonical seed (96/115/14, bare-clone-safe), binary-identity stale-state detection | Done |
 
 ## Maintenance protocol
 

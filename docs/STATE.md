@@ -30,7 +30,7 @@ Machine: **CachyOS / Arch** (use `pacman`, not `apt`).
 - Obj 7 renderer (`1a2e9a7`, `src/renderer/`): IRenderer + offscreen Vulkan backend, triangle smoke green.
 - Obj 8 asset path (`3a52600`, `src/assets/` + `src/apps/asset_view.cpp`): real gmdl 32v/20tris → 27,685 px (`docs/ASSET-PATH.md`).
 - Obj 9 boundaries (`bb2e6fd`): B1 `IResourceProvider` / B2 `IMeshSource` / B3 `IRenderer` seams (`src/compat/`) + `docs/BOUNDARIES.md`, `docs/replacement-status.json`.
-- Obj 10 knowledge loop (`f5ae618`): `knowledgegraph/seed_sprint.py` (60 nodes / 68 edges / 7 test rows), `docs/KNOWLEDGE-GRAPH.md`.
+- Obj 10 knowledge loop (`f5ae618`): `knowledgegraph/seed_sprint.py` (60 nodes / 68 edges / 7 test rows), `docs/KNOWLEDGE-GRAPH.md`. Superseded by S1: canonical seed `knowledgegraph/seed.py` + `seed-literals.json` (96 / 115 / 14; 18 subsystems) — `seed_sprint.py` is a deprecation shim.
 - Obj 13 sanitation (`e0d6230`): verbose-gated maps logging, traces default to `/tmp`, ignore `*.ppm`.
 - Obj 15 materials/textures + recon (`855254b`): GMDL refCount-BE fix, raster 32B envelope + DXT5 decode, lit pipeline + Vulkan texture/sampler, `material_smoke`; `docs/CELLSTAGE-RECON.md`, `docs/MATERIALS-DESIGN.md`.
 - Obj 16 cell stage scene (`b5e96f0`): `src/apps/cell_stage.cpp` — real gmdl + real DXT5 backdrop, stand-in player cell, food/prey, orbit camera, soup clear (`docs/CELLSTAGE.md`).
@@ -57,7 +57,7 @@ tools/spore/ (dbpf, rw4, gmdl, raster, dxt5, typescan oracles, asset_resolver + 
 tools/re/ (dossier.py + data/{ghidra_snapshot, decompiled/})   [Obj31/32]
 observatory/ (probe_tracer, observe.py, probes/)  ghidra/ (ImportSporeSDK, VtableDetect)
 tools/replace/synthetic/ (native 32-bit hook proof)   [Obj36A]  tools/gen_cell_fixtures.py   [Obj35]
-tests/ (fixtures/cell/, test_formats, test_textures, test_sim, test_cellstage, test_dossier, test_asset_resolver, diff_real.py opt-in)  knowledgegraph/ (kg.py, seed_sprint.py; spore.db git-ignored)
+tests/ (fixtures/cell/, test_formats, test_textures, test_sim, test_cellstage, test_dossier, test_asset_resolver, test_kg_{schema,scale,seed}, diff_real.py opt-in)  knowledgegraph/ (kg.py, scale.py, seed.py, seed-literals.json; seed_sprint.py deprecation shim; spore.db git-ignored)
 docs/ (RECON-3.1.0.22, RENDERWARE-RESEARCH, RENDERER-DESIGN, ASSET-PATH, BOUNDARIES, KNOWLEDGE-GRAPH, MATERIALS-DESIGN, CELLSTAGE{,-RECON,-VALIDATION}, RE-DOSSIER-SCHEMA, CELL-CONTRACT, REPLACEMENT-ABI, REPLACEMENT-DIFF, replacement-boundaries, RE-WORKFLOW, ASSET-IMPORT-ROADMAP, devlog/, replacement-status.json, analysis/{vtables,dossiers/})
 ```
 
@@ -109,7 +109,15 @@ mark `replaced-stub`/`replaced-verified` in `docs/replacement-status.json` (seam
 Live injection into SporeApp.exe is NOT the day-to-day mechanism (static EXE, no engine DLLs) — substitution happens at link time in-tree. The in-process inline-hook path *is* proven on a native 32-bit target (Obj36A: 5-byte `0xE9 rel32` + RWX `mprotect`; per-target contract in `docs/REPLACEMENT-ABI.md`), so patching the real EXE is a viable future step once a cell-mode runtime trace gates the semantics.
 
 ## 10. RE automation platform (6 analyses → one build plan, 2026-09-22)
-Six sub-agent analyses landed in `docs/analysis/{SCALABILITY,MCP-DESIGN,ORCHESTRATOR,SCHEMA-DELTA,VIEWER,GUI-BOUNDARY}.md`; their synthesis is `docs/RE-AUTOMATION-ARCHITECTURE.md` (16 sections: 21-tool stdlib MCP surface, KG schema delta with `field`/`trace_run`/`investigations` + canonical 7-level evidence scale, orchestrator lifecycle with no-self-verification invariant, read-only :8787 viewer, single-script GUI boundary with 7 safety boundaries, NOW/LATER/EXPERIMENTAL/MANUAL/AUTONOMOUS classification, S0–S6 sprint plan with verification gates). Nothing is implemented yet. The sprint's goal is the cell-stage trace → adjudication → `replaced-verified` promotion of `cell-movement-mouse-steering`.
+Six sub-agent analyses landed in `docs/analysis/{SCALABILITY,MCP-DESIGN,ORCHESTRATOR,SCHEMA-DELTA,VIEWER,GUI-BOUNDARY}.md`; their synthesis is `docs/RE-AUTOMATION-ARCHITECTURE.md` (16 sections: 21-tool stdlib MCP surface, KG schema delta with `field`/`trace_run`/`investigations` + canonical 7-level evidence scale, orchestrator lifecycle with no-self-verification invariant, read-only :8787 viewer, single-script GUI boundary with 7 safety boundaries, NOW/LATER/EXPERIMENTAL/MANUAL/AUTONOMOUS classification, S0–S6 sprint plan with verification gates). **S1 (KG spine) is implemented and verified** — see below; S2–S6 not started. The sprint's goal is the cell-stage trace → adjudication → `replaced-verified` promotion of `cell-movement-mouse-steering`.
+
+### S1 — KG spine (done 2026-09-22; commits `9e72a57`, `d304c70`)
+- **Schema** (`knowledgegraph/schema.sql` + `kg.py:_migrate`): `node` + `evidence_level` (7-level CHECK) / `updated_at` / `binary_sha256`; new tables `field`, `trace_run`, `investigations` (+ `UNIQUE(kind,va,binary_sha256)`); 6 new indexes. Additive-only, idempotent migration (copy-then-rename node rebuild; `user_version` 0→1 once).
+- **Canonical scale** (`knowledgegraph/scale.py`): 7 levels `UNKNOWN 0.0 < APPROXIMATION 0.3 < INFERRED 0.5 < SUPPORTED 0.75 < OBSERVED 0.85 < CONFIRMED 0.9 < VERIFIED 1.0`; 9-status `STATUS2EV`; 5-level legacy map is read-only compat. Sole code definition (dossier vocab derives from it); stale 7-key `STATUS2EV` KeyError fixed + regression test.
+- **Canonical seed** (`knowledgegraph/seed.py` + `seed-literals.json`, verbatim 96/115/14): deterministic, idempotent, bare-clone-safe; optional machine inputs (SDK XML) via flags, gracefully skipped; `seed_sprint.py` is a deprecation shim (no data). Rebuild: `python3 knowledgegraph/kg.py init && python3 knowledgegraph/seed.py [--binary-sha256 <sha> | --build-agnostic]`.
+- **Stale-state**: re-seed under a new `binary_sha256` preserves old rows (parked, queryable `!= current`, never dropped).
+- **Verified** (independent review from committed tree, fresh worktrees): Python suite 77/77 OK ×3; seed → 96 nodes / 115 edges / 14 test rows, 18 `Subsystem` nodes, 19 investigations (18 sub + 1 done/RECORDED cell), 15 `field` rows; two worktrees seed byte-identical dumps; C++ from scratch with `-Werror` zero warnings, ctest 10/10; clean-room audit of all S1 commits: text-only, no blobs.
+- **Tests added**: `tests/test_kg_schema.py` (6), `test_kg_scale.py` (7), `test_kg_seed.py` (12).
 
 - **The single critical unknown** (S4, answered by one human-watched manual run): does wine accept `xdotool --window` XSendEvent synthetic input under KWin/XWayland on `:0`? If rejected twice (incl. `windowactivate`+send fallback), the negative result is recorded as the deliverable and the trace parks — the sprint ends at S3 with the evidence, no bluffing.
-- **Next action:** execute the NOW set — sprint steps S0–S6 in `docs/RE-AUTOMATION-ARCHITECTURE.md` §11 (classification table §10; build order §11; risks §13; rollback/safety §14).
+- **Next action:** **S2** — stdlib MCP surface over the KG spine (`docs/RE-AUTOMATION-ARCHITECTURE.md` §7). Do not start S2 until S1 is fully merged (it is: see above).
