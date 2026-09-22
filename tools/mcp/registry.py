@@ -58,10 +58,20 @@ def _make_stub(name, note=_STUB_NOTE):
     return _handler
 
 
-def _schema(name, description, properties, required=None):
-    # type: (str, str, Dict[str, Any], object) -> Dict[str, Any]
-    """Build one tool schema entry (MCP-style inputSchema naming)."""
-    return {
+def _schema(name, description, properties, required=None,
+            required_one_of=None):
+    # type: (str, str, Dict[str, Any], object, object) -> Dict[str, Any]
+    """Build one tool schema entry (MCP-style inputSchema naming).
+
+    ``required`` is conjunctive (JSON-Schema semantics): every listed
+    field must be present. Conditional "one-of" requirements (e.g. one
+    of function/address/rva/name) are NOT forced into ``required``;
+    they are documented in the description prose plus the additive
+    ``required_one_of`` note (a list of alias groups, each group a
+    list of which at least one must be supplied). Unknown extra
+    fields are always accepted (``additionalProperties`` True).
+    """
+    entry = {
         "name": name,
         "description": description,
         "inputSchema": {
@@ -70,11 +80,18 @@ def _schema(name, description, properties, required=None):
             "required": list(required or []),
             "additionalProperties": True,
         },
-    }
+    }  # type: Dict[str, Any]
+    if required_one_of:
+        entry["required_one_of"] = [list(group)
+                                    for group in required_one_of]
+    return entry
 
 
-# The 21 tools (exact names). Properties for the KG-spine tools document
-# the real kg_tools.py params; stub tools keep provisional properties.
+# The 21 tools (exact names). Properties document the real handler
+# params, including every accepted alias (e.g. pattern/query,
+# topic/path, function/address/rva/name); conjunctive requirements
+# live in inputSchema.required while conditional one-of requirements
+# live in the additive required_one_of note + description prose.
 # Names are stable: implementing subagents may extend properties but must
 # keep the names.
 TOOL_SCHEMAS = [
@@ -84,7 +101,8 @@ TOOL_SCHEMAS = [
     _schema("target_select",
             "Select the active analysis target (binary, address, or symbol).",
             {"target": {"type": "string"},
-             "limit": {"type": "integer"}}),
+              "limit": {"type": "integer"},
+              "status": {"type": "string"}}),
     _schema("kg_query",
             "Query the knowledge-graph sidecar for nodes by label/name.",
             {"query": {"type": "string"},
@@ -95,85 +113,200 @@ TOOL_SCHEMAS = [
               "limit": {"type": "integer"},
               "offset": {"type": "integer"}}),
     _schema("kg_neighbors",
-            "List neighbours/edges of a knowledge-graph node.",
+            "List neighbours/edges of a knowledge-graph node. "
+            "brief (default true): nodes carry {name,label,"
+            "evidence_level} only; detail=true (or brief=false) "
+            "restores full node rows. limit (default 100, cap 500) "
+            "bounds the node list; total_nodes/truncated report it.",
             {"name": {"type": "string"},
               "rel": {"type": "string"},
-              "depth": {"type": "integer"}},
+              "depth": {"type": "integer"},
+              "brief": {"type": "boolean"},
+              "detail": {"type": "boolean"},
+              "limit": {"type": "integer"}},
             required=["name"]),
     _schema("kg_record",
             "Record a cross-tool result (test outcome, decision, mapping).",
-            {"kind": {"type": "string"},
+             {"kind": {"type": "string"},
               "payload": {"type": "object"},
               "reason": {"type": "string"},
               "nodes": {"type": "array"},
               "edges": {"type": "array"},
               "tests": {"type": "array"},
+              "test_rows": {"type": "array"},
               "binary_sha256": {"type": "string"}},
             required=["reason"]),
     _schema("dossier_read",
-            "Read a dossier file or section for a target.",
-            {"path": {"type": "string"},
-             "section": {"type": "string"}}),
+            "Read a dossier file or section for a target. "
+            "One of 'topic'/'path' is required (aliases). "
+            "'section' (one top-level key) and 'keys' (alias "
+            "'selection'; a top-level key name or array of top-level "
+            "key names) are mutually exclusive; large "
+            "evidence blobs are compacted by default (flagged via "
+            "truncated/truncated_paths) and restored verbatim with "
+            "expand=true (alias full=true). md=true also returns the "
+            "markdown rendering.",
+            {"topic": {"type": "string"},
+              "path": {"type": "string"},
+              "section": {"type": "string"},
+              "keys": {"type": "array", "items": {"type": "string"}},
+              "selection": {"type": ["string", "array"],
+                            "items": {"type": "string"}},
+              "expand": {"type": "boolean"},
+              "full": {"type": "boolean"},
+              "md": {"type": "boolean"}},
+            required_one_of=[["topic", "path"]]),
     _schema("dossier_regenerate",
-            "Regenerate a dossier from current analysis state.",
-            {"path": {"type": "string"}}),
+            "Regenerate a dossier from current analysis state. "
+            "One of 'topic'/'path' is required (aliases).",
+            {"topic": {"type": "string"},
+             "path": {"type": "string"},
+             "snapshot": {"type": "string"},
+             "out_dir": {"type": "string"}},
+            required_one_of=[["topic", "path"]]),
     _schema("ghidra_decompile",
-            "Decompile one function via the Ghidra bridge.",
-            {"function": {"type": "string"}}),
+            "Decompile one function via the Ghidra bridge. "
+            "One of 'function'/'address'/'rva'/'name' is required.",
+            {"function": {"type": "string"},
+             "address": {"type": "string"},
+             "rva": {"type": "string"},
+             "name": {"type": "string"},
+             "program": {"type": "string"},
+             "image_base": {"type": "string"},
+             "ghidra_version": {"type": "string"},
+             "force": {"type": "boolean"}},
+            required_one_of=[["function", "address", "rva", "name"]]),
     _schema("ghidra_function",
-            "Fetch function metadata (address, signature, xrefs).",
-            {"address": {"type": "string"},
-             "name": {"type": "string"}}),
+            "Fetch function metadata (address, signature, xrefs). "
+            "One of 'function'/'address'/'rva'/'name' is required.",
+            {"function": {"type": "string"},
+             "address": {"type": "string"},
+             "rva": {"type": "string"},
+             "name": {"type": "string"},
+             "program": {"type": "string"},
+             "image_base": {"type": "string"}},
+            required_one_of=[["function", "address", "rva", "name"]]),
     _schema("ghidra_search",
-            "Search functions/symbols by name pattern.",
+            "Search functions/symbols by name pattern. "
+            "One of 'pattern'/'query' is required (aliases).",
             {"pattern": {"type": "string"},
-             "limit": {"type": "integer"}}),
+             "query": {"type": "string"},
+             "limit": {"type": "integer"},
+             "program": {"type": "string"},
+             "image_base": {"type": "string"}},
+            required_one_of=[["pattern", "query"]]),
     _schema("ghidra_snapshot_save",
-            "Save the current Ghidra program state snapshot.",
-            {"label": {"type": "string"}}),
+            "Save the current Ghidra program state snapshot. "
+            "One of 'topic'/'label' is required (aliases).",
+            {"topic": {"type": "string"},
+             "label": {"type": "string"},
+             "functions": {"type": "array"},
+             "addresses": {"type": "array"},
+             "program": {"type": "string"},
+             "image_base": {"type": "string"}},
+            required_one_of=[["topic", "label"]]),
     _schema("asset_resolve",
-            "Resolve an asset record to type/group/instance identity.",
-            {"record": {"type": "string"},
-             "type": {"type": "string"}}),
+            "Resolve an asset record to type/group/instance identity. "
+            "'package' is required; one of 'record' (T:G:I) / 'type' "
+            "(+ optional 'group', 'instance') is required.",
+            {"package": {"type": "string"},
+             "record": {"type": "string"},
+             "type": {"type": "string"},
+             "type_id": {"type": "string"},
+             "group": {"type": "string"},
+             "group_id": {"type": "string"},
+             "instance": {"type": "string"},
+             "instance_id": {"type": "string"},
+             "limit": {"type": "integer"}},
+            required=["package"],
+            required_one_of=[["record", "type", "type_id"]]),
     _schema("asset_scan",
-            "Scan a package for asset records.",
-            {"package": {"type": "string"}}),
+            "Scan a package for asset records ('package' omitted = "
+            "SPORE/ inventory mode).",
+            {"package": {"type": "string"},
+             "limit": {"type": "integer"}}),
     _schema("vtable_lookup",
-            "Look up vtable / class-hierarchy info for a class or address.",
+            "Look up vtable / class-hierarchy info. One of "
+            "'class'/'class_name'/'address'/'namespace'/'subsystem' "
+            "is required. Slots are projected to {ptr,func} by default "
+            "(null-valued keys stripped); detail=true (alias "
+            "full_slots=true) returns the full slot dicts. limit "
+            "(default 20, cap 500) bounds the match list; "
+            "total_matches/truncated report it.",
             {"class": {"type": "string"},
-             "address": {"type": "string"}}),
+              "class_name": {"type": "string"},
+              "address": {"type": "string"},
+              "namespace": {"type": "string"},
+              "subsystem": {"type": "string"},
+              "limit": {"type": "integer"},
+              "detail": {"type": "boolean"},
+              "full_slots": {"type": "boolean"}},
+            required_one_of=[["class", "class_name", "address",
+                               "namespace", "subsystem"]]),
     _schema("trace_run",
-            "Run a differential trace scenario under Wine (gated).",
-            {"scenario": {"type": "string"}}),
+            "Run a differential trace scenario under Wine (gated: "
+            "re-call with approve=true under OPENSPORE_MCP_TRUSTED=1). "
+            "'scenario' is required once approved.",
+            {"scenario": {"type": "string"},
+             "duration": {"type": "integer"},
+             "timeout": {"type": "integer"},
+             "out_dir": {"type": "string"},
+             "approve": {"type": "boolean"}}),
     _schema("trace_analyze",
-            "Analyze a captured trace run.",
+            "Analyze a captured trace run. One of 'run_id'/'scenario' "
+            "/'path' is required.",
             {"run_id": {"type": "string"},
-             "path": {"type": "string"}}),
+             "scenario": {"type": "string"},
+             "path": {"type": "string"}},
+            required_one_of=[["run_id", "scenario", "path"]]),
     _schema("trace_status",
-            "Report status of a trace run.",
-            {"run_id": {"type": "string"}}),
+            "Report status of trace runs (read-only listing).",
+            {"out_dir": {"type": "string"},
+             "examples_dir": {"type": "string"}}),
     _schema("test_run",
             "Run the repo test suite or a selector subset.",
-            {"selector": {"type": "string"}}),
+            {"selector": {"type": "string"},
+             "test": {"type": "string"},
+             "timeout": {"type": "integer"}}),
     _schema("status_update",
-            "Append a status/progress update to shared state.",
-            {"text": {"type": "string"}}),
+            "Promote/demote one subsystem entry in "
+            "docs/replacement-status.json (gated: re-call with "
+            "approve=true under OPENSPORE_MCP_TRUSTED=1). 'subsystem' "
+            "(alias 'name') and 'status' are required once approved.",
+            {"text": {"type": "string"},
+             "subsystem": {"type": "string"},
+             "name": {"type": "string"},
+             "status": {"type": "string"},
+             "evidence": {"type": "array"},
+             "trace_manifest": {"type": "string"},
+             "approve": {"type": "boolean"}}),
     _schema("fixture_check",
-            "Verify synthetic fixtures reproduce byte-identically.",
-            {"name": {"type": "string"}}),
+            "Verify synthetic fixtures reproduce byte-identically "
+            "(identity mode read-only; rebuild=true is gated).",
+            {"name": {"type": "string"},
+             "rebuild": {"type": "boolean"},
+             "fixtures_path": {"type": "string"}}),
     _schema("queue_op",
             "Enqueue a gated/background operation for later approval.",
-            {"op": {"type": "string"},
-             "payload": {"type": "object"},
-             "id": {"type": "string"},
-             "kind": {"type": "string"},
-             "va": {"type": "string"},
-             "name": {"type": "string"},
-             "subsystem": {"type": "string"},
-             "mode": {"type": "string"},
-             "why_interesting": {"type": "string"},
-             "stage": {"type": "string"},
+             {"op": {"type": "string"},
+              "payload": {"type": "object"},
+              "id": {"type": "string"},
+              "kind": {"type": "string"},
+              "va": {"type": "string"},
+              "name": {"type": "string"},
+              "subsystem": {"type": "string"},
+              "mode": {"type": "string"},
+              "why_interesting": {"type": "string"},
+              "stage": {"type": "string"},
               "status": {"type": "string"},
+              "disposition": {"type": "string"},
+              "block_reason": {"type": "string"},
+              "prerequisites": {"type": "string"},
+              "attempts": {"type": "string"},
+              "checkpoint": {"type": "string"},
+              "evidence_refs": {"type": "string"},
+              "implementer_id": {"type": "string"},
+              "adjudicator_id": {"type": "string"},
               "binary_sha256": {"type": "string"},
               "limit": {"type": "integer"}},
             required=["op"]),
@@ -233,6 +366,18 @@ def dispatch(tool_name, params=None):
     Raises ToolUnknown for unregistered names and InvalidParams when
     ``params`` is not a dict. Handler exceptions propagate to the caller
     (server.py maps them to a -32603 error, never a crash).
+
+    Error-code split (JSON-RPC -32602 vs in-band codes): InvalidParams
+    here (and -32602 in server.py) is reserved for a malformed
+    envelope -- params/arguments that are not an object, or a missing
+    / non-string tool name. Domain validation (a well-formed object
+    that names a missing/invalid field) NEVER raises here; handlers
+    return an in-band ``{"status": "error", "code": ..., "message":
+    ...}`` dict instead (``invalid_params`` for bad values, the
+    legacy ``missing_param``/``missing_reason`` codes -- each carrying
+    an additive ``field`` key naming the missing field -- for absent
+    ones). Moving domain errors to -32602 would break the opencode
+    retry loop and the GRACEFUL_CODES contract.
     """
     if tool_name not in HANDLERS:
         raise ToolUnknown("unknown tool: %r" % (tool_name,))

@@ -974,11 +974,22 @@ def ghidra_search(params):
                             "namespace": None})
     matches.sort(key=lambda m: (str(m.get("name")),
                                 str(m.get("address"))))
-    result = {"status": "ok", "tool": "ghidra_search",
-              "pattern": pattern, "program": program,
-              "matches": matches, "count": len(matches)}
-    result.update(identity)
-    return result
+    if matches:
+        return _ok_envelope(
+            identity, _MODE_LIVE,
+            _rest_provenance(client, "/search_functions"), program, base,
+            status="ok", tool="ghidra_search",
+            pattern=pattern, program=program, image_base="0x%x" % base,
+            matches=matches, count=len(matches),
+            truncated=truncated, search_status="matched")
+    return _ok_envelope(
+        identity, _MODE_LIVE,
+        _rest_provenance(client, "/search_functions"), program, base,
+        status="ok", tool="ghidra_search",
+        pattern=pattern, program=program, image_base="0x%x" % base,
+        matches=[], count=0,
+        truncated=truncated, search_status="matched_zero",
+        hint=_SEARCH_ZERO_HINT)
 
 
 # --------------------------------------------------------------------------- #
@@ -1225,34 +1236,43 @@ def _load_vtables():
 
 def vtable_lookup(params):
     # type: (dict) -> dict
+    identity = _binary_identity()
     doc = _load_vtables()
     if not doc:
-        return _err("no_vtables",
-                    "docs/analysis/vtables.json missing or unparseable",
-                    tool="vtable_lookup")
+        return _error_envelope(
+            "no_vtables",
+            "docs/analysis/vtables.json missing or unparseable",
+            _MODE_UNAVAILABLE, _VTABLES_REL + " (missing or unparseable)",
+            identity, tool="vtable_lookup")
     klass = params.get("class", params.get("class_name", ""))
     address = params.get("address", "")
     namespace = params.get("namespace", "")
     subsystem = params.get("subsystem", "")
     try:
-        limit = int(params.get("limit", 50))
+        limit = int(params.get("limit", 20))
     except (TypeError, ValueError):
-        return _err("invalid_params", "'limit' must be an integer",
-                    tool="vtable_lookup")
+        return _error_envelope(
+            "invalid_params", "'limit' must be an integer",
+            _MODE_UNAVAILABLE, None, identity,
+            tool="vtable_lookup")
     limit = max(1, min(limit, 500))
     if not any(isinstance(v, str) and v.strip()
                for v in (klass, address, namespace, subsystem)):
-        return _err("invalid_params",
-                    "one of 'class'/'address'/'namespace'/'subsystem' "
-                    "is required",
-                    tool="vtable_lookup")
+        return _error_envelope(
+            "invalid_params",
+            "one of 'class'/'address'/'namespace'/'subsystem' "
+            "is required",
+            _MODE_UNAVAILABLE, None, identity,
+            tool="vtable_lookup")
     addr_norm = None
     if isinstance(address, str) and address.strip():
         addr_int = _parse_int(address.strip())
         if addr_int is None:
-            return _err("invalid_params",
-                        "'address' must be hex, got %r" % (address,),
-                        tool="vtable_lookup")
+            return _error_envelope(
+                "invalid_params",
+                "'address' must be hex, got %r" % (address,),
+                _MODE_UNAVAILABLE, None, identity,
+                tool="vtable_lookup")
         addr_norm = "0x%08x" % addr_int
     candidates = doc.get("candidates", [])
     if not isinstance(candidates, list):
@@ -1291,26 +1311,111 @@ def vtable_lookup(params):
                  if isinstance(s, dict)]).lower()
             keep = needle in hay
         if keep:
-            matches.append({
-                "address": cand.get("address"),
-                "slots": cand.get("slots"),
-                "confidence": cand.get("confidence"),
-                "namespace": cand.get("namespace"),
-                "firstSlotFunc": cand.get("firstSlotFunc")})
+            slots = cand.get("slots")
+            if _is_true(params.get("detail", False)) or \
+                    _is_true(params.get("full_slots", False)):
+                match = {
+                    "address": cand.get("address"),
+                    "slots": slots,
+                    "confidence": cand.get("confidence"),
+                    "namespace": cand.get("namespace"),
+                    "firstSlotFunc": cand.get("firstSlotFunc")}
+            else:
+                match = _strip_nones({
+                    "address": cand.get("address"),
+                    "confidence": cand.get("confidence"),
+                    "namespace": cand.get("namespace"),
+                    "firstSlotFunc": cand.get("firstSlotFunc")})
+                if isinstance(slots, list) and slots:
+                    match["slots"] = [_slim_slot(s) for s in slots]
+            matches.append(match)
     matches.sort(key=lambda m: str(m.get("address")))
     meta = doc.get("meta", {}) if isinstance(doc.get("meta"), dict) \
         else {}
-    return {"status": "ok", "tool": "vtable_lookup",
-            "source": "docs/analysis/vtables.json",
-            "image_base": meta.get("image_base"),
-            "total_candidates": len(candidates),
-            "matches": matches[:limit], "count": len(matches)}
+    total_matches = len(matches)
+    truncated = total_matches > limit
+    result = {"status": "ok", "tool": "vtable_lookup",
+              "mode": _MODE_SNAPSHOT, "provenance": _VTABLES_PROVENANCE,
+              "source": "docs/analysis/vtables.json",
+              "image_base": meta.get("image_base"),
+              "total_candidates": len(candidates),
+              "matches": matches[:limit], "count": min(total_matches,
+                                                       limit),
+              "total_matches": total_matches, "truncated": truncated,
+              "limit": limit}
+    result.update(identity)
+    return result
 
 
 # --------------------------------------------------------------------------- #
 # dossier_read / dossier_regenerate: read-only + deterministic writers over
 # docs/analysis/dossiers/ (constrained paths, no shell).
+#
+# Context slimming (S2.1 scope G, deterministic only, no summarizer):
+#   * markdown stays opt-in (md=true); the default read carries the JSON
+#     dossier only;
+#   * section selects one top-level key; keys[] projects a deterministic
+#     subset of top-level keys (dossier file order, echo sorted);
+#     section and keys are mutually exclusive;
+#   * large evidence blobs are compacted by default -- long strings and
+#     long lists become {truncated:true, kind, length/count, preview/
+#     items head, ref} -- and restored verbatim with expand=true;
+#     compaction is always flagged (truncated + truncated_paths +
+#     expand_hint), never silent; evidence is never destroyed;
+#   * focused section reads carry only that section (no duplication of
+#     sibling decompile/caller/callee payloads); every success lists
+#     available_sections.
+# Envelope identity (mode/provenance/binary_sha256/path) stays.
 # --------------------------------------------------------------------------- #
+_DOSSIER_STR_BLOB_LIMIT = 2000
+_DOSSIER_LIST_BLOB_LIMIT = 100
+_DOSSIER_PREVIEW_CHARS = 200
+_DOSSIER_EXPAND_HINT = ("truncated: re-call dossier_read with the same "
+                        "topic/section/keys plus expand=true for the "
+                        "full evidence")
+
+
+def _compact_dossier_value(value, ref, expand, truncated_paths):
+    # type: (object, str, bool, list) -> object
+    """Compact one dossier value deterministically. Never raises.
+
+    Strings longer than _DOSSIER_STR_BLOB_LIMIT and lists longer than
+    _DOSSIER_LIST_BLOB_LIMIT become compact summaries (head +
+    length/count + ref) unless expand is true. Dicts recurse with
+    extended refs. Every compaction appends its ref to
+    truncated_paths. With expand=true the value passes through
+    untouched (full evidence path).
+    """
+    if expand:
+        return value
+    if isinstance(value, str):
+        if len(value) > _DOSSIER_STR_BLOB_LIMIT:
+            truncated_paths.append(ref)
+            return {"truncated": True, "kind": "text",
+                    "length": len(value),
+                    "preview": value[:_DOSSIER_PREVIEW_CHARS],
+                    "ref": ref}
+        return value
+    if isinstance(value, list):
+        if len(value) > _DOSSIER_LIST_BLOB_LIMIT:
+            truncated_paths.append(ref)
+            head = [_compact_dossier_value(
+                item, "%s[%d]" % (ref, i), expand, truncated_paths)
+                for i, item in enumerate(
+                    value[:_DOSSIER_LIST_BLOB_LIMIT])]
+            return {"truncated": True, "kind": "list",
+                    "count": len(value), "items": head,
+                    "ref": ref}
+        return [_compact_dossier_value(
+            item, "%s[%d]" % (ref, i), expand, truncated_paths)
+            for i, item in enumerate(value)]
+    if isinstance(value, dict):
+        return {k: _compact_dossier_value(
+            v, "%s.%s" % (ref, k), expand, truncated_paths)
+            for k, v in value.items()}
+    return value
+
+
 def _dossier_dir():
     # type: () -> str
     return config.resolve("docs", "analysis", "dossiers")
@@ -1347,44 +1452,117 @@ def _available_topics():
 
 def dossier_read(params):
     # type: (dict) -> dict
+    identity = _binary_identity()
     topic = _dossier_topic(params)
     if topic is None:
-        return _err("invalid_params",
-                    "'topic' (or 'path') must name a dossier "
-                    "([A-Za-z0-9][A-Za-z0-9_-]*); no directories, "
-                    "no shell",
-                    tool="dossier_read",
-                    available_topics=_available_topics())
+        return _error_envelope(
+            "invalid_params",
+            "'topic' (or 'path') must name a dossier "
+            "([A-Za-z0-9][A-Za-z0-9_-]*); no directories, "
+            "no shell",
+            _MODE_UNAVAILABLE, None, identity,
+            tool="dossier_read",
+            available_topics=_available_topics())
     path = os.path.join(_dossier_dir(), topic + ".json")
+    rel = _repo_rel(path)
     try:
         with open(path) as fh:
             doc = json.load(fh)
     except IOError:
-        return _err("not_found", "no dossier for topic %r" % topic,
-                    tool="dossier_read",
-                    available_topics=_available_topics())
+        return _error_envelope(
+            "not_found", "no dossier for topic %r" % topic,
+            _MODE_UNAVAILABLE, rel + " (missing)", identity,
+            tool="dossier_read",
+            available_topics=_available_topics())
     except ValueError as exc:
-        return _err("corrupt_dossier",
-                    "dossier %r is not valid JSON: %s" % (topic, exc),
-                    tool="dossier_read", topic=topic)
+        return _error_envelope(
+            "corrupt_dossier",
+            "dossier %r is not valid JSON: %s" % (topic, exc),
+            _MODE_UNAVAILABLE, rel + " (unparseable)", identity,
+            tool="dossier_read", topic=topic)
     if not isinstance(doc, dict):
-        return _err("corrupt_dossier",
-                    "dossier %r is not a JSON object" % topic,
-                    tool="dossier_read", topic=topic)
+        return _error_envelope(
+            "corrupt_dossier",
+            "dossier %r is not a JSON object" % topic,
+            _MODE_UNAVAILABLE, rel + " (unparseable)", identity,
+            tool="dossier_read", topic=topic)
     section = params.get("section")
+    keys = params.get("keys", params.get("selection"))
+    expand = _is_true(params.get("expand", False)) or \
+        _is_true(params.get("full", False))
+    if section is not None and keys is not None:
+        return _error_envelope(
+            "invalid_params",
+            "'section' and 'keys' are mutually exclusive: pass one "
+            "focused selector (or neither for the whole dossier)",
+            _MODE_SNAPSHOT, rel + " (committed)", identity,
+            tool="dossier_read", topic=topic,
+            available_sections=sorted(doc.keys()))
+    base_ref = rel + "#" + topic
+    truncated_paths = []  # type: list
     if section is not None:
         if not isinstance(section, str) or section not in doc:
-            return _err("no_section",
-                        "dossier %r has no section %r" % (topic, section),
-                        tool="dossier_read", topic=topic,
-                        available_sections=sorted(doc.keys()))
+            return _error_envelope(
+                "no_section",
+                "dossier %r has no section %r" % (topic, section),
+                _MODE_SNAPSHOT, rel + " (committed)", identity,
+                tool="dossier_read", topic=topic,
+                available_sections=sorted(doc.keys()))
+        data = _compact_dossier_value(doc[section],
+                                      base_ref + "." + section,
+                                      expand, truncated_paths)
         result = {"status": "ok", "tool": "dossier_read", "topic": topic,
+                  "mode": _MODE_SNAPSHOT,
+                  "provenance": rel + " (committed)",
                   "path": path, "section": section,
-                  "data": doc[section]}
-    else:
+                  "data": data,
+                  "available_sections": sorted(doc.keys())}
+    elif keys is not None:
+        if isinstance(keys, str):
+            keys = [keys]
+        if not isinstance(keys, list) or not keys or not all(
+                isinstance(k, str) for k in keys):
+            return _error_envelope(
+                "invalid_params",
+                "'keys' must be a non-empty array of top-level "
+                "dossier key names",
+                _MODE_SNAPSHOT, rel + " (committed)", identity,
+                tool="dossier_read", topic=topic,
+                available_sections=sorted(doc.keys()))
+        unknown = [k for k in keys if k not in doc]
+        if unknown:
+            return _error_envelope(
+                "no_section",
+                "dossier %r has no key(s) %s" % (topic, sorted(unknown)),
+                _MODE_SNAPSHOT, rel + " (committed)", identity,
+                tool="dossier_read", topic=topic,
+                available_sections=sorted(doc.keys()))
+        wanted = set(keys)
+        projected = {k: _compact_dossier_value(doc[k], base_ref + "." + k,
+                                               expand, truncated_paths)
+                     for k in doc if k in wanted}
         result = {"status": "ok", "tool": "dossier_read", "topic": topic,
-                  "path": path, "dossier": doc}
-    if params.get("md"):
+                  "mode": _MODE_SNAPSHOT,
+                  "provenance": rel + " (committed)",
+                  "path": path, "keys": sorted(wanted),
+                  "dossier": projected,
+                  "available_sections": sorted(doc.keys())}
+    else:
+        dossier = {k: _compact_dossier_value(doc[k], base_ref + "." + k,
+                                             expand, truncated_paths)
+                   for k in doc}
+        result = {"status": "ok", "tool": "dossier_read", "topic": topic,
+                  "mode": _MODE_SNAPSHOT,
+                  "provenance": rel + " (committed)",
+                  "path": path, "dossier": dossier,
+                  "available_sections": sorted(doc.keys())}
+    truncated = bool(truncated_paths)
+    result["truncated"] = truncated
+    if truncated:
+        result["truncated_paths"] = sorted(truncated_paths)
+        result["expand_hint"] = _DOSSIER_EXPAND_HINT
+    result.update(identity)
+    if _is_true(params.get("md", False)):
         md_path = os.path.join(_dossier_dir(), topic + ".md")
         try:
             with open(md_path) as fh:

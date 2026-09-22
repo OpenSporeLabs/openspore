@@ -211,7 +211,8 @@ def kg_neighbors(params):
     name = params.get("name")
     if not isinstance(name, str) or not name:
         return _err("missing_param",
-                    "'name' (node name) is required and must be non-empty")
+                    "'name' (node name) is required and must be non-empty",
+                    field="name")
     depth = params.get("depth", 1)
     try:
         depth = int(depth)
@@ -404,7 +405,8 @@ def kg_record(params):
     if not isinstance(reason, str) or not reason.strip():
         return _err("missing_reason",
                     "kg_record requires a non-empty 'reason' "
-                    "(why this cross-tool result is recorded)")
+                    "(why this cross-tool result is recorded)",
+                    field="reason")
     raw_nodes = params.get("nodes", [])
     raw_edges = params.get("edges", [])
     raw_tests = params.get("tests", params.get("test_rows", []))
@@ -580,7 +582,8 @@ def _queue_get(conn, params):
     inv_id = params.get("id")
     if not inv_id:
         return _err("missing_param",
-                    "queue_op get requires 'id'")
+                    "queue_op get requires 'id'",
+                    field="id")
     row = conn.execute(
         "SELECT * FROM investigations WHERE id=?", (inv_id,)).fetchone()
     if row is None:
@@ -602,7 +605,8 @@ def _queue_insert(conn, params):
         return _err("missing_param",
                     "queue_op insert requires 'binary_sha256' "
                     "(build identity; stale identities are preserved, "
-                    "never overwritten)")
+                    "never overwritten)",
+                    field="binary_sha256")
     status = params.get("status", "queued")
     if status not in _INVESTIGATION_STATUSES:
         return _err("invalid_status",
@@ -646,7 +650,8 @@ def _queue_update(conn, params):
     # type: (sqlite3.Connection, dict) -> dict
     inv_id = params.get("id")
     if not inv_id:
-        return _err("missing_param", "queue_op update requires 'id'")
+        return _err("missing_param", "queue_op update requires 'id'",
+                    field="id")
     updates = {k: params[k] for k in _QUEUE_WRITABLE if k in params}
     unknown = [k for k in params
                if k not in _QUEUE_WRITABLE and k not in ("op", "id")]
@@ -692,7 +697,8 @@ def _queue_close(conn, params):
     # type: (sqlite3.Connection, dict) -> dict
     inv_id = params.get("id")
     if not inv_id:
-        return _err("missing_param", "queue_op close requires 'id'")
+        return _err("missing_param", "queue_op close requires 'id'",
+                    field="id")
     disposition = params.get("status", params.get("disposition", "done"))
     if disposition not in _TERMINAL_STATUSES:
         return _err("invalid_params",
@@ -807,17 +813,68 @@ def _dossier_inventory():
 
 
 # --------------------------------------------------------------------------- #
-# target_select: read-only ranking over open investigations.
+# target_select: read-only ranking over open investigations (S2.1 scope D).
+#
+# Rank order is frozen: active > queued > blocked, then ORDER BY
+# stage, id (never a scoring engine). Each candidate carries
+# ``why_ranked`` (its status-priority + stage, i.e. exactly the keys the
+# ORDER BY ranks on). Candidate rows are slim --
+# {id,kind,va,name,subsystem,mode,stage,status,why_ranked} -- and the
+# candidate list is bounded by ``limit`` (default 10, cap 100) with a
+# ``truncated`` flag; the full row stays available via
+# ``queue_op`` op=get. The optional ``status`` filter narrows the ranked
+# pool to one of active|queued|blocked. Selection is actionable: a hit
+# returns select_status "selected" (+ score/filters/next_action), a miss
+# returns selected None + select_status "not_found" + a hint pointing at
+# ``queue_op`` op=list, and a no-target call returns select_status
+# "no_target" with guidance instead of a bare selected:null.
 # --------------------------------------------------------------------------- #
+_TARGET_SLIM_KEYS = ("id", "kind", "va", "name", "subsystem", "mode",
+                     "stage", "status")
+_TARGET_STATUS_ORDER = {"active": 0, "queued": 1, "blocked": 2}
+_TARGET_OPEN_STATUSES = ("active", "queued", "blocked")
+
+
+def _target_why_ranked(row):
+    # type: (object) -> str
+    status = row["status"] if "status" in row.keys() else None
+    stage = row["stage"] if "stage" in row.keys() else None
+    prio = _TARGET_STATUS_ORDER.get(status, "?")
+    return ("status-priority %s=%s (active=0 < queued=1 < blocked=2) + "
+            "stage %s; rank ORDER BY status-priority, stage, id"
+            % (status, prio, stage))
+
+
+def _target_slim(row):
+    # type: (sqlite3.Row) -> dict
+    slim = {key: row[key] for key in _TARGET_SLIM_KEYS}
+    slim["why_ranked"] = _target_why_ranked(row)
+    return slim
+
+
+def _target_score(row):
+    # type: (object) -> int | None
+    status = row["status"] if "status" in row.keys() else None
+    return _TARGET_STATUS_ORDER.get(status)
+
+
 def target_select(params):
     # type: (dict) -> dict
     target = params.get("target")
+    status_filter = params.get("status")
+    if status_filter is not None and \
+            status_filter not in _TARGET_OPEN_STATUSES:
+        return _err("invalid_params",
+                    "'status' must be one of %s, got %r "
+                    "(target_select only ranks open investigations)"
+                    % ("/".join(_TARGET_OPEN_STATUSES), status_filter))
     try:
         limit = int(params.get("limit", 10))
     except (TypeError, ValueError):
         return _err("invalid_params", "'limit' must be an integer")
     if limit < 0:
         return _err("invalid_params", "'limit' must be >= 0")
+    effective = min(limit, 100)
     try:
         conn = _connect()
     except sqlite3.Error as exc:
@@ -826,14 +883,21 @@ def target_select(params):
         if _missing_table(conn, "investigations"):
             return _err("empty_database",
                         "KG database has no investigations table")
+        clauses = ["status IN ('active','queued','blocked')"]
+        args = []
+        if status_filter is not None:
+            clauses.append("status=?")
+            args.append(status_filter)
+        where = "WHERE " + " AND ".join(clauses)
+        # Fetch one extra row to report truncation without dumping.
         rows = conn.execute(
             "SELECT id, kind, va, name, subsystem, mode, stage, status "
             "FROM investigations "
-            "WHERE status IN ('active','queued','blocked') "
+            "%s "
             "ORDER BY CASE status "
             "WHEN 'active' THEN 0 WHEN 'queued' THEN 1 ELSE 2 END, "
-            "stage, id LIMIT ?",
-            (min(limit, 100),)).fetchall()
+            "stage, id LIMIT ?" % where,
+            args + [effective + 1]).fetchall()
         selected = None
         if target:
             match = conn.execute(
@@ -842,15 +906,58 @@ def target_select(params):
                 "WHERE id=? OR name=? OR va=? ORDER BY id LIMIT 1",
                 (target, target, target)).fetchone()
             if match is not None:
-                selected = _inv_dict(match)
+                selected = _target_slim(match)
     except sqlite3.Error as exc:
         return _err("db_error", "target_select failed: %s" % exc)
     finally:
         conn.close()
-    candidates = [_inv_dict(row) for row in rows]
+    truncated = len(rows) > effective
+    candidates = [_target_slim(row) for row in rows[:effective]]
+    filters = {"status": status_filter}
     result = {"status": "ok", "tool": "target_select",
-              "candidates": candidates, "count": len(candidates)}
+              "candidates": candidates, "count": len(candidates),
+              "truncated": truncated, "filters": filters}
     if target is not None:
         result["target"] = target
+    if selected is not None:
         result["selected"] = selected
+        result["select_status"] = "selected"
+        result["score"] = _target_score(selected)
+        result["reason"] = ("target %r resolved to investigation %r "
+                            "(status %s, stage %s)"
+                            % (target, selected["id"],
+                               selected["status"], selected["stage"]))
+        result["next_action"] = (
+            "queue_op op=get id=%r for the full row" % (selected["id"],))
+    elif target is not None:
+        result["selected"] = None
+        result["select_status"] = "not_found"
+        result["score"] = None
+        result["reason"] = ("target %r matches no investigation "
+                            "(searched id, name, va)" % (target,))
+        result["hint"] = ("call queue_op op=list to browse available "
+                          "targets, then retry target_select with an "
+                          "id, name, or va from that list")
+        result["next_action"] = result["hint"]
+    else:
+        result["selected"] = None
+        result["select_status"] = "no_target"
+        result["score"] = None
+        top = candidates[0]["id"] if candidates else None
+        result["reason"] = (
+            "no target given; showing top-%d ranked open "
+            "investigation(s)%s" % (
+                len(candidates),
+                (" (status filter: %s)" % status_filter)
+                if status_filter is not None else ""))
+        result["hint"] = (
+            "pass 'target' (an id, name, or va%s) or call queue_op "
+            "op=list to browse; full rows via queue_op op=get" % (
+                " matching status=%s" % status_filter
+                if status_filter is not None else
+                " from the candidates above",))
+        result["next_action"] = (
+            "target_select target=%r to select the top-ranked candidate"
+            % (top,) if top is not None else
+            "queue_op op=list to browse; queue_op op=insert to add work")
     return result

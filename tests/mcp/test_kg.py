@@ -469,6 +469,76 @@ class TestPipelineAndTarget(TempDBTestCase):
         self.assertIsNone(missed["selected"])
         self.assertEqual(self.inv_count(), before)  # read-only
 
+    def test_target_select_hit(self):
+        picked = registry.dispatch(
+            "target_select", {"target": "fun:00e5b790:Move"})
+        self.assertEqual(picked["status"], "ok", picked)
+        self.assertEqual(picked["select_status"], "selected", picked)
+        self.assertEqual(picked["selected"]["id"],
+                         "fun:00e5b790:Move", picked)
+        self.assertEqual(picked["selected"]["va"], "00e5b790", picked)
+        self.assertIn("reason", picked, picked)
+        self.assertIn("next_action", picked, picked)
+        self.assertIsNotNone(picked.get("score"), picked)
+
+    def test_target_select_miss(self):
+        missed = registry.dispatch("target_select", {"target": "ghost"})
+        self.assertEqual(missed["status"], "ok", missed)
+        self.assertIsNone(missed["selected"], missed)
+        self.assertEqual(missed["select_status"], "not_found", missed)
+        self.assertIn("queue_op", missed.get("hint", ""), missed)
+        self.assertIn("list", missed.get("hint", ""), missed)
+        self.assertIn("next_action", missed, missed)
+
+    def test_target_select_no_target_actionable(self):
+        result = registry.dispatch("target_select", {})
+        self.assertEqual(result["status"], "ok", result)
+        self.assertIsNone(result["selected"], result)
+        self.assertEqual(result["select_status"], "no_target", result)
+        # Guidance, not a bare selected:null.
+        self.assertTrue(result.get("reason"), result)
+        self.assertTrue(result.get("hint"), result)
+        self.assertTrue(result.get("next_action"), result)
+        self.assertGreater(len(result["candidates"]), 0, result)
+
+    def test_target_select_status_filter(self):
+        only_active = registry.dispatch(
+            "target_select", {"status": "active"})
+        self.assertEqual(only_active["status"], "ok", only_active)
+        self.assertEqual(only_active["filters"], {"status": "active"},
+                         only_active)
+        self.assertTrue(only_active["candidates"], only_active)
+        for cand in only_active["candidates"]:
+            self.assertEqual(cand["status"], "active", cand)
+        # Rank order unchanged within the filtered pool.
+        only_queued = registry.dispatch(
+            "target_select", {"status": "queued"})
+        self.assertEqual(
+            [c["id"] for c in only_queued["candidates"]],
+            ["fun:00e5b790:Move"], only_queued)
+        bad = registry.dispatch("target_select", {"status": "done"})
+        self.assertEqual(bad["status"], "error", bad)
+        self.assertEqual(bad["code"], "invalid_params", bad)
+
+    def test_target_select_slim_bounded_truncated(self):
+        slim_keys = {"id", "kind", "va", "name", "subsystem", "mode",
+                     "stage", "status", "why_ranked"}
+        full = registry.dispatch("target_select", {})
+        self.assertEqual(full["status"], "ok", full)
+        self.assertFalse(full["truncated"], full)
+        for cand in full["candidates"]:
+            self.assertEqual(set(cand.keys()), slim_keys, cand)
+            self.assertIn("status-priority", cand["why_ranked"], cand)
+            self.assertIn("stage", cand["why_ranked"], cand)
+        bounded = registry.dispatch("target_select", {"limit": 1})
+        self.assertEqual(bounded["status"], "ok", bounded)
+        self.assertEqual(len(bounded["candidates"]), 1, bounded)
+        self.assertEqual(bounded["count"], 1, bounded)
+        self.assertTrue(bounded["truncated"], bounded)
+        # Top-ranked row survives the bound (active first).
+        self.assertEqual(bounded["candidates"][0]["status"], "active",
+                         bounded)
+
 
 class TestWiring(unittest.TestCase):
     def test_real_handlers_registered(self):

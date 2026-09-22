@@ -29,11 +29,30 @@ EXPECTED_TOOLS = [
 
 # Tools whose handlers unconditionally require these input fields
 # (declared in inputSchema.required; everything else is optional,
-# conditional, or alias-accepted and documented in the description).
+# conditional, or alias-accepted and documented in the description +
+# the additive required_one_of note). JSON-Schema required is
+# conjunctive, so one-of groups (function/address/rva/name, ...) are
+# never forced into required.
 EXPECTED_REQUIRED = {
     "kg_neighbors": ["name"],
     "kg_record": ["reason"],
     "queue_op": ["op"],
+    "asset_resolve": ["package"],
+}
+
+# Conditional one-of requirements: at least one alias per group must be
+# supplied (documented in description prose + required_one_of note).
+EXPECTED_ONE_OF = {
+    "dossier_read": [["topic", "path"]],
+    "dossier_regenerate": [["topic", "path"]],
+    "ghidra_decompile": [["function", "address", "rva", "name"]],
+    "ghidra_function": [["function", "address", "rva", "name"]],
+    "ghidra_search": [["pattern", "query"]],
+    "ghidra_snapshot_save": [["topic", "label"]],
+    "asset_resolve": [["record", "type", "type_id"]],
+    "vtable_lookup": [["class", "class_name", "address",
+                       "namespace", "subsystem"]],
+    "trace_analyze": [["run_id", "scenario", "path"]],
 }
 
 
@@ -59,6 +78,33 @@ class TestToolContract(unittest.TestCase):
         for name, required in EXPECTED_REQUIRED.items():
             self.assertEqual(by_name[name]["inputSchema"]["required"],
                              required)
+        # No other tool may smuggle conjunctive requirements past the
+        # contract: required is exactly [] outside EXPECTED_REQUIRED.
+        for name in EXPECTED_TOOLS:
+            if name not in EXPECTED_REQUIRED:
+                self.assertEqual(
+                    by_name[name]["inputSchema"]["required"], [],
+                    "tool %r has undeclared conjunctive required" % name)
+
+    def test_every_required_field_present_in_properties(self):
+        for tool in registry.list_tools():
+            props = tool["inputSchema"]["properties"]
+            for field in tool["inputSchema"]["required"]:
+                self.assertIn(field, props,
+                              "tool %r requires undeclared field %r"
+                              % (tool["name"], field))
+
+    def test_one_of_notes_reference_declared_properties(self):
+        by_name = {t["name"]: t for t in registry.list_tools()}
+        for name, groups in EXPECTED_ONE_OF.items():
+            self.assertEqual(by_name[name].get("required_one_of"), groups,
+                             "tool %r required_one_of drift" % name)
+            props = by_name[name]["inputSchema"]["properties"]
+            for group in groups:
+                for field in group:
+                    self.assertIn(field, props,
+                                  "tool %r one-of field %r not in "
+                                  "properties" % (name, field))
 
     def test_handlers_cover_all_tools(self):
         for name in EXPECTED_TOOLS:

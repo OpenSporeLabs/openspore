@@ -204,6 +204,16 @@ class Server(object):
 
     def _on_tools_call(self, req_id, params):
         # type: (object, object) -> dict
+        """Dispatch one tools/call request.
+
+        -32602 (invalid params) is reserved for a malformed envelope
+        only: params not an object, 'name' missing/not a string, or
+        'arguments' not an object. A well-formed call whose arguments
+        fail domain validation (missing/invalid field) is answered
+        with a normal result carrying the handler's in-band error
+        dict (status=error, ok=False, code, message) -- never -32602.
+        Unknown tools are -32601; handler crashes are -32603.
+        """
         if params is None:
             params = {}
         if not isinstance(params, dict):
