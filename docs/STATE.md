@@ -1,6 +1,6 @@
 # OpenSpore — Project State
 
-Current phase: **Obj 30–42 done — RE-Intelligence workflow + first in-process replacement** (see §2). The Cell Stage slice (Obj13–18) is now backed by an evidence pipeline (dossier → static Ghidra → runtime observatory → asset resolver → contract+fixtures → replace → record) and its movement is `replaced-approx` (differential-verified against a decompilation reference; live-runtime verification still gated on a Wine cell-mode trace). Next milestone: §6.
+Current phase: **Obj 30–42 done — RE-Intelligence workflow + first in-process replacement** (see §2). The Cell Stage slice (Obj13–18) is now backed by an evidence pipeline (dossier → static Ghidra → runtime observatory → asset resolver → contract+fixtures → replace → record) and its movement is `replaced-approx` (differential-verified against a decompilation reference; live-runtime verification still gated on a Wine cell-mode trace). Next milestone: §6. The cell-stage completion campaign (32 targets, 5 waves, all static-evidence based) is documented in `docs/analysis/campaigns/cell-stage-campaign.md`; execution starts at CS-01 (pin plane constants from the static binary).
 Machine: **CachyOS / Arch** (use `pacman`, not `apt`).
 
 ## 1. Environment (Phase-0 table; ✅-verified rows re-checked 2026-09-21, rest carried over)
@@ -89,7 +89,7 @@ docs/ (RECON-3.1.0.22, RENDERWARE-RESEARCH, RENDERER-DESIGN, ASSET-PATH, BOUNDAR
 - Headless GhidraMCP cannot open programs (needs GUI mode) → RVA cross-checks done via `objdump`/byte inspection instead.
 
 ## 6. Immediate next milestone
-S4 is complete with fallback; S5 is gated and remains the next milestone. Two gates remain, in priority order:
+S4 is complete with fallback; S5 is gated and remains the next milestone. The execution plan for cell-stage completion is `docs/analysis/campaigns/cell-stage-campaign.md` (32 targets / 5 waves; CS-01–CS-04 are the static decode unblockers and do not need S5). Two gates remain, in priority order:
 1. **S5 runtime evidence (separately approved and human-watched; not started).** A cell-mode trace is what promotes `cell-movement-mouse-steering` from `replaced-approx` → `replaced-verified` and fills the APPROXIMATION plane constants + movement/interaction semantics. It requires a separate approval and human-watched run on a real X display + `xdotool` (`xdotool`/`maim`/`xorg-xwininfo` now **installed** via S3; Xvfb intentionally absent — it is a trap, GUI-BOUNDARY.md) to navigate main-menu → cell stage, then `tools/observatory/observe.py` under the byte-verified `cell_movement.json` probes. Do not start S5 in this task. Until then the sim stays INFERRED/APPROXIMATION (documented, not fabricated).
 2. **Player-cell identity.** Resolve the real player-cell record (groups `0x40616201`/`02`) via the manifest-driven loader in `docs/ASSET-IMPORT-ROADMAP.md`, replacing the building stand-in.
 Lower-risk parallel: **creature-creator block assembly** (sporemol XML → block gmdl groups already decode). Widen B1 to multi-package fetch only if the chosen slice needs it.

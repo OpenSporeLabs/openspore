@@ -119,8 +119,8 @@ std::vector<SimEvent> CellSim::update(const InputFrame &input) {
   // camera ray (from the recorded mouse position) is intersected with the
   // movement plane; the hit point becomes the player's target and the
   // orientation-to-travel. The ray origin/dir come from the camera; the
-  // plane normal/point are named parameters (APPROXIMATION defaults — the
-  // original's constant values were never read, no runtime trace exists).
+  // plane normal/point are named parameters (defaults read from the original
+  // binary: normal {0,0,1} VERIFIED, point {0,0,0} BSS load-time value).
   bool steer = false;
   float target[3] = {0.0F, 0.0F, 0.0F};
   if (input.hasMouse) {

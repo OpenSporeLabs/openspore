@@ -1,4 +1,10 @@
-# Cell simulation contract — `cell-sim-contract/1`
+# Cell simulation contract — `cell-sim-contract/2`
+
+> `/2` (2026-09-23, CS-01): `MovementPlane` defaults pinned to the values read
+> from the original binary — normal `{0,0,1}` (VERIFIED, `.data` at image
+> `0x015a7c40/44/48`), point `{0,0,0}` (BSS load-time value; the point's
+> addresses are runtime-written, per-world). The mouse-steering fixture values
+> changed accordingly; fixtures regenerated with the double-run discipline.
 
 Canonical, stable contract for the OpenSpore Cell simulation (`src/sim`),
 with a frozen deterministic fixture set (`tests/fixtures/cell/fixtures.json`).
@@ -16,7 +22,8 @@ In scope: player-cell movement, camera, mouse steering, keyboard fallback,
 one eat interaction, one flee interaction — everything in `CellSim::update`.
 Out of scope (known boundaries of v1): the original's pause/lock flag
 (`sCellGame+20824`, not modeled), any RNG/time (none exist here), and the
-unread movement-plane constants (APPROXIMATION defaults, §6).
+runtime (per-world) movement-plane point value (the static binary gives the
+load-time default; a live read is missing — §3).
 
 ## 2. Pinned invariants
 
@@ -41,9 +48,14 @@ version bump.
   the player), `fov` (vertical, 60° — APPROXIMATION). Eye:
   `target + dist*(sin yaw·cos pitch, sin pitch, cos yaw·cos pitch)` —
   INFERRED from `cCameraManager::SetViewer`.
-- `MovementPlane` — `normal=(0,1,0)`, `point=(0,0,0)` — **APPROXIMATION**
-  (the original reads them from `DAT_015a7c40/44/48` and `DAT_016b3c28/2c/30`;
-  addresses OBSERVED, values INFERRED — never read, no runtime trace).
+- `MovementPlane` — `normal=(0,0,1)`, `point=(0,0,0)` — **VERIFIED / pinned
+  from the static binary (CS-01, 2026-09-23)**: the original reads the normal
+  from `DAT_015a7c40/44/48` (section `.data`, file offset `0x11a6640`:
+  `0.0f, 0.0f, 1.0f` — the swim plane is the horizontal `z=0` plane, z up)
+  and the point from `DAT_016b3c28/2c/30`, whose addresses sit in BSS (zero in
+  the static image, written at runtime, per-world) — load-time `{0,0,0}`.
+  A live runtime read of the point is still missing (the per-world value is
+  UNREAD), but the load-time default is now the binary's own.
 - `InputFrame` — `thrustLeft/Right/Forward/Back`, `boost`, `hasCamera` +
   `cameraYaw/Pitch/Zoom`, `hasMouse` + `mouseX/mouseY` (NDC, x right, y up,
   −1..1). `hasMouse=false` → keyboard-only path.
@@ -117,7 +129,7 @@ Per frame, the contract test compares the live replay against
 Plus two cross-cutting checks, per fixture: two fresh replays of the same
 fixture produce identical `stateString()` and identical `events()` (the
 determinism guarantee), and the fixture `contract` field equals
-`cell-sim-contract/1` (bump ⇒ regenerate ⇒ commit together).
+`cell-sim-contract/2` (bump ⇒ regenerate ⇒ commit together).
 
 ## 7. Change procedure
 

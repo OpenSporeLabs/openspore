@@ -12,9 +12,12 @@
 //     SECONDARY. Keyboard-only input is kept as the fallback for frames
 //     without a mouse position.
 //   - movement plane normal/point: the original reads them from constants at
-//     DAT_015a7c40/44/48 and DAT_016b3c28/2c/30 — addresses OBSERVED, values
-//     INFERRED (unread; no runtime trace exists). The MovementPlane defaults
-//     below are APPROXIMATION pending a runtime read.
+//     DAT_015a7c40/44/48 and DAT_016b3c28/2c/30 — addresses OBSERVED. Values
+//     READ from the static binary (CS-01, 2026-09-23): the normal is
+//     VERIFIED = {0,0,1} (section .data, file offset 0x11a6640: 0.0f, 0.0f,
+//     1.0f); the point's addresses sit in BSS (zero in the image, written at
+//     runtime — per-world), so its load-time value is {0,0,0}. The
+//     MovementPlane defaults below are the read values.
 //   - camera: INFERRED orbit/follow/zoom from cCameraManager::SetViewer;
 //   - eat/flee rules: INFERRED from anim states Cell_eat_* / Cell_mov_*.
 #pragma once
@@ -100,13 +103,14 @@ struct CameraState {
 
 // The movement plane the camera ray is intersected with
 // (docs/analysis/dossiers/cell-movement.md). The original reads the normal
-// from DAT_015a7c40/44/48 and the point from DAT_016b3c28/2c/30 — addresses
-// OBSERVED, values INFERRED (never read; no cell-mode runtime trace).
-// The defaults below are APPROXIMATION: a horizontal swim plane through the
-// origin. Replace them once the constants are read at runtime.
+// from DAT_015a7c40/44/48 and the point from DAT_016b3c28/2c/30.
+// CS-01 (2026-09-23) read the static binary (SporeApp.exe 3.1.0.22, PE .data
+// section, file offset 0x11a6640): normal = {0,0,1} — VERIFIED. The point's
+// addresses are BSS (zero in the image; written at runtime, per-world):
+// load-time {0,0,0}. The swim plane is therefore the horizontal z=0 plane.
 struct MovementPlane {
-  float normal[3] = {0.0F, 1.0F, 0.0F}; // APPROXIMATION
-  float point[3] = {0.0F, 0.0F, 0.0F};  // APPROXIMATION
+  float normal[3] = {0.0F, 0.0F, 1.0F}; // VERIFIED (binary read, .data)
+  float point[3] = {0.0F, 0.0F, 0.0F};  // BSS: zero at load, runtime-written
 };
 
 // Intersect a ray with a plane (the decompiled t = dot(n, p-o)/dot(n, d)
@@ -190,8 +194,8 @@ struct SimEvent {
 // Deterministic fixed-dt simulation of the player cell.
 class CellSim {
 public:
-  // plane: the movement plane for mouse steering (APPROXIMATION defaults —
-  // see MovementPlane; replace once the original constants are read).
+  // plane: the movement plane for mouse steering (defaults are the values
+  // read from the original binary — see MovementPlane).
   CellSim(std::vector<Entity> entities, MovementParams params = {},
           MovementPlane plane = {});
 

@@ -7,7 +7,7 @@
 
 ## Evidence summary
 
-Cell-mode per-frame update is vtable-dispatched: App::cCellModeStrategy::Update (linked VA 0xe80980, vtable @ 0x1485550, no static callers) delegates to the real update body FUN_00e806b0 (linked VA 0xe806b0), which calls Simulator::Cell::MovePlayerToMousePosition (linked VA 0xe5b790). Headline finding: the player is steered by a RAY-PLANE INTERSECTION — the camera ray (from the mouse position) is intersected with the movement plane, and the hit point becomes the player's target position and orientation-to-travel. SDK names are VERIFIED via the march2017 SDK import; the ray-plane structure is OBSERVED in decompilation (evidence, not truth); the plane normal/point constant addresses are OBSERVED but their values are INFERRED (unread); runtime was NOT OBTAINED (see runtime section).
+Cell-mode per-frame update is vtable-dispatched: App::cCellModeStrategy::Update (linked VA 0xe80980, vtable @ 0x1485550, no static callers) delegates to the real update body FUN_00e806b0 (linked VA 0xe806b0), which calls Simulator::Cell::MovePlayerToMousePosition (linked VA 0xe5b790). Headline finding: the player is steered by a RAY-PLANE INTERSECTION — the camera ray (from the mouse position) is intersected with the movement plane, and the hit point becomes the player's target position and orientation-to-travel. SDK names are VERIFIED via the march2017 SDK import; the ray-plane structure is OBSERVED in decompilation (evidence, not truth); the plane normal/point constant addresses are OBSERVED; the normal VALUES are now VERIFIED by a static binary read (CS-01: {0,0,1}, section .data, file 0x11a6640) and the point's load-time value is {0,0,0} (BSS, zero in the image, written at runtime per-world — the live per-world value is UNREAD); runtime was NOT OBTAINED (see runtime section).
 
 ## Original functions
 
@@ -18,7 +18,7 @@ Cell-mode per-frame update is vtable-dispatched: App::cCellModeStrategy::Update 
 | App::cCellModeStrategy::OnKeyDown | 0xa818f0 | SporeApp.exe | - | vtable (cCellModeStrategy vtable @ 21517648) | VERIFIED (SDK name) / INFERRED (key semantics) |
 | App::cCellModeStrategy::OnMouseMove | 0xa51010 | SporeApp.exe | 25 | vtable (cCellModeStrategy vtable @ 21517648) | VERIFIED (SDK name) / INFERRED (role) |
 | App::cCellModeStrategy::OnMouseWheel | 0xa7d660 | SporeApp.exe | - | vtable (cCellModeStrategy vtable @ 21517648) | VERIFIED (SDK name) / INFERRED (role) |
-| Simulator::Cell::MovePlayerToMousePosition | 0xa5b790 | SporeApp.exe | 625 | - | VERIFIED (SDK name + ray-plane intersection structure OBSERVED in decompilation); plane-normal/point constants = OBSERVED addresses, values INFERRED (need runtime to read) |
+| Simulator::Cell::MovePlayerToMousePosition | 0xa5b790 | SporeApp.exe | 625 | - | VERIFIED (SDK name + ray-plane intersection structure OBSERVED in decompilation); plane-normal value VERIFIED by static read (CS-01: {0,0,1}); plane-point load-time {0,0,0} (BSS), runtime per-world value UNREAD |
 | FUN_007c4900 | 0x3c4900 | SporeApp.exe | - | - | INFERRED |
 | FUN_00b721d0 | 0x7721d0 | SporeApp.exe | - | - | INFERRED (structure OBSERVED) |
 | Simulator::cSpaceTrading::Get | - | SporeApp.exe | - | - | INFERRED |
@@ -46,10 +46,10 @@ Cell-mode per-frame update is vtable-dispatched: App::cCellModeStrategy::Update 
 ### Simulator::Cell::MovePlayerToMousePosition
 - signature: `void Simulator::Cell::MovePlayerToMousePosition(float deltaTime)`
 - decompiled evidence (EVIDENCE, NOT TRUTH): Guard: return if sCellGame+20824 != 0 (a lock/paused flag). Player = FUN_00b721d0(* (sCellGame+16668)) (container-getter-by-index); if 0 return. FUN_00e5b2e0(dt) (per-frame update). Camera mode = FUN_00e4ce40()[+212]. Camera origin+dir fetched (FUN_007c4900 fills origin via ILightingWorld; direction is the view ray). Compute t = dot(dir, planeNormal) inverse; if valid and t>=0 set player pos (player+8/12/16) = origin + dir*t (RAY-PLANE INTERSECTION on the movement plane). Then targetDelta = -(newPos - curPos) using curPos at player+76/80/84; FUN_0069b600(...) computes orientation (rotation) to face travel; stored at player+20..32. Sets sCellGame+20880+224 = 1 ('moving' flag).
-- constant `DAT_015a7c40` = plane normal X (movement plane) (address OBSERVED; value INFERRED)
-- constant `DAT_015a7c44` = plane normal Y (address OBSERVED; value INFERRED)
-- constant `DAT_015a7c48` = plane normal Z (address OBSERVED; value INFERRED)
-- constant `DAT_016b3c28/2c/30` = plane point (origin offset) X/Y/Z (address OBSERVED; value INFERRED)
+- constant `DAT_015a7c40` = plane normal X (movement plane) (address OBSERVED; value VERIFIED = 0.0f — read from the static binary, CS-01)
+- constant `DAT_015a7c44` = plane normal Y (address OBSERVED; value VERIFIED = 0.0f)
+- constant `DAT_015a7c48` = plane normal Z (address OBSERVED; value VERIFIED = 1.0f — the swim plane is the horizontal z=0 plane)
+- constant `DAT_016b3c28/2c/30` = plane point (origin offset) X/Y/Z (address OBSERVED; addresses sit in BSS: zero in the static image, written at runtime per-world; load-time value {0,0,0}, runtime value UNREAD)
 
 ### FUN_007c4900
 - role (INFERRED): Returns camera / lighting-world origin (fills caller buffer via ILightingManager::Get()->GetLightingWorld() then FUN_007c4730).
@@ -89,10 +89,10 @@ Cell-mode per-frame update is vtable-dispatched: App::cCellModeStrategy::Update 
 
 | address | in function | meaning | evidence |
 |---|---|---|---|
-| DAT_015a7c40 | Simulator::Cell::MovePlayerToMousePosition | plane normal X (movement plane) | address OBSERVED / value INFERRED |
-| DAT_015a7c44 | Simulator::Cell::MovePlayerToMousePosition | plane normal Y | address OBSERVED / value INFERRED |
-| DAT_015a7c48 | Simulator::Cell::MovePlayerToMousePosition | plane normal Z | address OBSERVED / value INFERRED |
-| DAT_016b3c28/2c/30 | Simulator::Cell::MovePlayerToMousePosition | plane point (origin offset) X/Y/Z | address OBSERVED / value INFERRED |
+| DAT_015a7c40 | Simulator::Cell::MovePlayerToMousePosition | plane normal X (movement plane) | address OBSERVED / value VERIFIED 0.0f (CS-01 static read) |
+| DAT_015a7c44 | Simulator::Cell::MovePlayerToMousePosition | plane normal Y | address OBSERVED / value VERIFIED 0.0f |
+| DAT_015a7c48 | Simulator::Cell::MovePlayerToMousePosition | plane normal Z | address OBSERVED / value VERIFIED 1.0f |
+| DAT_016b3c28/2c/30 | Simulator::Cell::MovePlayerToMousePosition | plane point (origin offset) X/Y/Z | address OBSERVED (BSS) / value {0,0,0} load-time, runtime UNREAD |
 
 Globals referenced: `Simulator::Cell::sCellGame` (singleton cell-game state block; fields at +16652..+20953 decode state (player ref +16668, moving flag +20880+224, lock +20824, mode +20960)); `Simulator::Cell::sCellUI` (cell UI state; +36/+38 selection flags, +2359 toggle)
 
@@ -124,7 +124,7 @@ Checked against the DBPF index of SPORE/Data/Spore_Content.package (17119 record
 
 ## Hypotheses
 
-- The movement plane is a fixed plane at constant depth: normal at DAT_015a7c40/44/48, point at DAT_016b3c28/2c/30 (addresses OBSERVED; values INFERRED until read at runtime).
+- The movement plane is the horizontal z=0 plane (z up): normal VERIFIED {0,0,1} (CS-01 static read of DAT_015a7c40/44/48); point at DAT_016b3c28/2c/30 (BSS; {0,0,0} at load, advected per-world at runtime — the live value is UNREAD).
 - sCellGame+0x5158 is a lock/pause flag: movement is skipped while non-zero (INFERRED from the observed `!= 0 → return` guard).
 - sCellGame+0x5190+0xe0 is a 'moving' flag, set to 1 when the ray-plane hit succeeds (INFERRED from the observed store; meaning from decompilation context).
 - Thrust-style keys (OnKeyDown) are secondary: the movement TARGET is set by the mouse via the camera ray, not by the keys (INFERRED from the OnKeyDown decompilation note).
@@ -132,7 +132,7 @@ Checked against the DBPF index of SPORE/Data/Spore_Content.package (17119 record
 
 ## Known unknowns
 
-- Plane normal / plane point constant VALUES — addresses OBSERVED, values unread; a runtime read is required.
+- Plane point runtime (per-world) VALUE — the static image is BSS zero ({0,0,0}); a live runtime read is required to capture the advected per-world value. (The normal value is no longer unknown — VERIFIED {0,0,1} in CS-01.)
 - Semantics of the camera-mode word at +0xd4 (which camera modes allow steering).
 - Meaning of the state word at sCellGame+0x51e0 that branches the update body.
 - Player entity field semantics at +0x4c..+0x58 (current position) — offsets OBSERVED, semantics INFERRED.
@@ -148,5 +148,5 @@ Checked against the DBPF index of SPORE/Data/Spore_Content.package (17119 record
 
 - status: **approximated**
 - gate: Replace keyboard-thrust movement with camera-ray → movement-plane steering in CellSim; then a differential check against a Wine cell-mode trace (currently absent). See docs/BOUNDARIES.md / docs/replacement-status.json (cell-sim-movement-interaction).
-- missing evidence: runtime trace of cell mode (Xvfb absent; headless menu navigation impossible); plane normal/point constant values; camera-mode word semantics
+- missing evidence: runtime trace of cell mode (Xvfb absent; headless menu navigation impossible); plane point runtime per-world value (normal value is now VERIFIED via CS-01 static read); camera-mode word semantics
 

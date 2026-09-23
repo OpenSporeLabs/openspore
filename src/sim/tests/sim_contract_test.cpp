@@ -1,5 +1,5 @@
 // Contract test for the canonical Cell simulation (Obj35,
-// docs/CELL-CONTRACT.md, version cell-sim-contract/1).
+// docs/CELL-CONTRACT.md, version cell-sim-contract/2).
 //
 // Replays every FROZEN fixture from tests/fixtures/cell/fixtures.json through
 // CellSim and asserts, per frame:

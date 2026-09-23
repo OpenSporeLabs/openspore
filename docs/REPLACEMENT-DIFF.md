@@ -17,9 +17,11 @@ replacement: `src/replace/Replace.cpp`.
   live-runtime verification. A green run only proves the replacement
   reproduces the decompilation reference within tolerance.
 - Field offsets (VERIFIED from decompilation), field meanings (INFERRED),
-  plane constant values (APPROXIMATION, never read), quaternion layout
-  (INFERRED stand-in) — see `docs/REPLACEMENT-ABI.md` and
-  `src/replace/CellGameView.hpp`.
+  plane constants (normal VERIFIED by static binary read in CS-01:
+  `{0,0,1}` at `.data` image `0x015a7c40/44/48`; point `{0,0,0}` BSS
+  load-time value, runtime-written per-world — the per-world value is
+  UNREAD), quaternion layout (INFERRED stand-in) — see
+  `docs/REPLACEMENT-ABI.md` and `src/replace/CellGameView.hpp`.
 
 ## Method
 
@@ -111,4 +113,8 @@ The replacement reproduces the decompilation reference **within tolerance
 (1e-6 / exact)**. This is **NOT a live-runtime verification** (cell mode is
 unreachable headless — no Wine cell-mode trace exists): status is
 **replaced-approx**, pending a Wine cell-mode trace to promote the INFERRED
-field offsets and APPROXIMATION plane constants to VERIFIED.
+field offsets to VERIFIED. (CS-01, 2026-09-23: the plane constants are no
+longer an open item — the normal was read from the static binary,
+`{0,0,1}` VERIFIED; only the runtime per-world point value remains unread.)
+The test itself passes explicit planes to both sides, so the pinned
+`MovementPlane` defaults in `src/sim/Sim.hpp` do not change this table.

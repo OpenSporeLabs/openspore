@@ -16,9 +16,12 @@
 
 namespace openspore::sim {
 
-// Pinned contract version (Obj35). The frozen fixture file
+// Pinned contract version. The frozen fixture file
 // tests/fixtures/cell/fixtures.json records this exact string.
-constexpr const char *kContractVersion = "cell-sim-contract/1";
+// /2 (2026-09-23, CS-01): MovementPlane defaults pinned to the values read
+// from the original binary (normal {0,0,1}, point {0,0,0}) — the mouse-
+// steering fixture values changed accordingly.
+constexpr const char *kContractVersion = "cell-sim-contract/2";
 
 // One named, fully-specified replay: entities + initial camera + movement
 // plane + ordered input frames. MovementParams are the struct defaults

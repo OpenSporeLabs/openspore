@@ -132,11 +132,11 @@ void testFlee() {
 void testRayPlaneHit() {
   using openspore::sim::MovementPlane;
   using openspore::sim::rayPlaneHit;
-  MovementPlane plane; // default: y=0 plane, normal (0,1,0), point origin
+  MovementPlane plane; // pinned (CS-01): z=0 plane, normal (0,0,1), point origin
   float hit[3];
   // Perpendicular ray from above the plane -> hits at the origin.
-  const float o1[3] = {0.0F, 5.0F, 0.0F};
-  const float d1[3] = {0.0F, -1.0F, 0.0F};
+  const float o1[3] = {0.0F, 0.0F, 5.0F};
+  const float d1[3] = {0.0F, 0.0F, -1.0F};
   check(rayPlaneHit(o1, d1, plane, hit) && std::fabs(hit[0]) < 1e-5F &&
             std::fabs(hit[1]) < 1e-5F && std::fabs(hit[2]) < 1e-5F,
         "sim: rayPlaneHit perpendicular ray -> origin");
@@ -146,15 +146,16 @@ void testRayPlaneHit() {
   check(!rayPlaneHit(o2, d2, plane, hit),
         "sim: rayPlaneHit parallel ray -> none");
   // Ray pointing away from the plane (t < 0) -> no hit.
-  const float o3[3] = {0.0F, -5.0F, 0.0F};
-  const float d3[3] = {0.0F, -1.0F, 0.0F};
+  const float o3[3] = {0.0F, 0.0F, -5.0F};
+  const float d3[3] = {0.0F, 0.0F, -1.0F};
   check(!rayPlaneHit(o3, d3, plane, hit),
         "sim: rayPlaneHit ray behind plane -> none");
 }
 
 // Mouse steering (Obj33): with the camera pitched down, the view ray hits the
-// y=0 swim plane. NDC (0,0) targets the player's own position -> no movement;
-// NDC (0.5,0) targets a point ahead on +X -> the player swims toward +X.
+// z=0 swim plane (pinned from the binary, CS-01). NDC (0,0) targets the
+// player's own position -> no movement; NDC (0.5,0) targets a point ahead on
+// +X -> the player swims toward +X.
 void testMouseSteer() {
   CellSim sim(std::vector<Entity>{});
   InputFrame in;
