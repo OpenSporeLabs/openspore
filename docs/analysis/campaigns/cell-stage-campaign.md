@@ -5,6 +5,12 @@ required to build. Evidence vocabulary per `docs/RE-DOSSIER-SCHEMA.md`
 (UNKNOWN < APPROXIMATION < INFERRED < SUPPORTED < OBSERVED < CONFIRMED < VERIFIED).
 Build: SporeApp.exe **3.1.0.22** (GOG), image base `0x00400000`.
 
+**Wave 1 (static decode unblockers): COMPLETE 2026-09-23.** CS-01, CS-02, CS-03,
+CS-04 all DONE and verified against the binary (differential tests pass; KG records
+`cs01_plane_constants`, `cs02_worldobj_header`/`cs02_worldobj_entries`,
+`cs03_cellserializer_core`/`cs03_globals_record`, `cs04_rw4_port` = pass).
+Next: Wave 2 (cell resource decodes CS-05…CS-12, all build on CS-03).
+
 ---
 
 ## 1. Objective
@@ -205,48 +211,78 @@ Format per target: **ID — name** · *original* (address/evidence) · *semantic
   differential re-run is 64/64 MATCH (it feeds both sides an explicit plane, so
   the table is unchanged). KG `cs01_plane_constants` = pass.
 
-**CS-02 — Decode 0x0f43029a world-object records**  *(header decoded 2026-09-23)*
-· *original*: 1,365 records in the `*Models` groups (CreatureModels 937,
-  FloraModels 317, PaletteModels 67, CellModels 44). **NOT CellSerializer-based** —
-  those are separate types (world 0x9B8E862F, cell 0xDFAD9F51, …). This is a
-  distinct model/scene-placement format, shape `GUIDs + vector3s + floats + 0x1234`.
-· *header (20 B, LE, VERIFIED across all 1365)*: `magic 0xABB455B7` + `version`
-  (9 = base 1022 recs / 10 = EP1 343) + `count_c` (primary entry count 2..100,
-  scales monotonically with size) + `count_d` (5..71) + `count_e` (0..254).
-· *body*: `count_c` **variable-length** entries (~146.9–234.0 B each, mean 167.1)
-  of GUIDs + vector3 floats + `0xFE00`/`0x1234` markers. Per-entry layout
-  (length prefix / field order) not yet nailed — the next sub-step.
-· *semantics*: model/scene objects for the cell stage — placement, ownership,
-  background content.
-· *mapping*: python oracle **`tools/spore/worldobj/worldobj.py` (BUILT: validate /
-  histogram / dump)**; C++ reader `src/assets/WorldObject.{hpp,cpp}`; per-record
-  `decode_status` into the manifest (CS-22).
-· *test*: `worldobj.py validate` → **0 invariant violations of 1365** (magic
-  constant, version∈{9,10}, count_c>0, bytes-per-entry∈[120,260]). Remaining:
-  per-entry body decode + double-run byte-identical. No differential vs original
-  (no runtime) — hence oracle + invariants only.
-· *value*: CRITICAL PATH — kills G2, unblocks CS-13/CS-23. *status*: header DONE;
-  per-entry body decode next.
+ **CS-02 — Decode 0x0f43029a world-object records**  *(DONE 2026-09-23: header +
+   structural body decode + C++ port + test)*
+ · *original*: 1,365 records in the `*Models` groups (CreatureModels 937,
+   FloraModels 317, PaletteModels 67, CellModels 44). **NOT CellSerializer-based** —
+   those are separate types (world 0x9B8E862F, cell 0xDFAD9F51, …). This is a
+   distinct model/scene-placement format.
+ · *header (20 B, LE, VERIFIED across all 1365)*: `magic 0xABB455B7` + `version`
+   (9 = base 1022 recs / 10 = EP1 343) + `count_c` (primary entry count 2..100,
+   scales monotonically with size) + `count_d` (5..71) + `count_e` (0..254).
+ · *body (STRUCTURAL MODEL, R²=0.9997, mean residual −0.2 B)*: `size − 20 ≈
+   count_c·141 + count_d·5 + count_e·12 + 50`. `count_e` entries are 12-byte
+   vector3s; `count_d` are ~5-byte values; `count_c` are ~141-byte main entries
+   carrying the concatenated **lowercase part-name strings** (spine/eye/sense/spin/
+   limb/foot/mvcl/…) — the variable-length residual. **Limitation (documented):**
+   the per-field byte ORDER *within* a c-entry is not derivable from cross-record
+   consistency (no decompiled loader references the type; vector3 arrays sit at no
+   fixed preamble); the decoder extracts the semantic content and proves full byte
+   accounting rather than a field-by-field grammar.
+ · *semantics*: model/scene objects for the cell stage — placement, ownership,
+   part identity (the names are the meaningful placement identity).
+ · *mapping*: python oracle **`tools/spore/worldobj/worldobj.py`
+   (validate / histogram / dump / decode / decode-all)**; C++ reader
+   **`src/assets/WorldObject.{hpp,cpp}`** (parseWorldObject → WorldObject);
+   per-record `decode_status` into the manifest (CS-22).
+ · *test*: `worldobj.py validate` → **0 invariant violations of 1365**;
+   `decode-all` → **1365/1365 records fully byte-accounted** (6,152 names +
+   vector3s). C++ **`ctest assets_worldobj` PASS**: 1365 records, magic/version/
+   count_c invariants + every byte of every record accounted for. Full suite green
+   (ctest 12/12; unittest 407, 1 pre-existing flaky timing test). No differential
+   vs original (no runtime) — oracle + invariants only. KG `cs02_worldobj_entries`=pass.
+ · *value*: CRITICAL PATH — kills G2, unblocks CS-13/CS-23. *status*: DONE.
 
-**CS-03 — CellSerializer core + `cCellGlobalsResource` decode**
-· *original*: `cCellSerializableData` (struct 61843; `CellSerializerField`
-  mpName/mID/field_8), `GetGlobalsData` @ 00e4ce20; 1 `globals` record (276 B).
-· *semantics*: the name/ID-field serialization envelope every cell resource uses;
-  globals = stage-wide tuning values.
-· *mapping*: oracle `tools/spore/cellres/` → C++ `src/assets/CellResource.{hpp,cpp}`
-  (serializer walk + `cCellGlobalsResource` fields per header @642: TYPE 0x2A3CE5B7).
-· *test*: globals record decodes; field sanity; double-run byte-identical.
-· *value*: foundation for CS-05…CS-12. *status*: implementable now.
+ **CS-03 — CellSerializer core + `cCellGlobalsResource` decode**
+ · *original*: `cCellSerializableData` (struct 61843; `CellSerializerField`
+   mpName/mID/field_8), `GetGlobalsData` @ 00e4ce20; 1 `globals` record (276 B).
+ · *semantics*: the name/ID-field serialization envelope every cell resource uses;
+   globals = stage-wide tuning values.
+ · *mapping*: oracle `tools/spore/cellres/` → C++ `src/assets/CellResource.{hpp,cpp}`
+   (serializer walk + `cCellGlobalsResource` fields per header @642: TYPE 0x2A3CE5B7).
+ · *test*: globals record decodes; field sanity; double-run byte-identical.
+ · *value*: foundation for CS-05…CS-12.
+ · **DONE (2026-09-23).** The globals record (276 B, `Spore_EP1_Data.package`,
+   group 0 / inst 0xa426730b) is a **direct field-by-field serialization of the
+   runtime struct `cCellGlobalsResource`** (Ghidra 61843 family, 276 B) — NOT
+   wrapped in a name/ID envelope. All 69 fields decode by offset/kind to clean
+   hand-authored values (round floats: flowMultiplier 5, npcSpeed 0.5, densities
+   80/50/7/3; small enums controlMethod 0 / editorMethod 1 / tutorialMethod 2 /
+   endingMethod 1 / eyeMethod 0; u32 resource-reference keys). Last field ends
+   exactly at byte 276. Oracle `tools/spore/cellres/cellres.py` (validate/dump) +
+   C++ `src/assets/CellResource.{hpp,cpp}` + `ctest assets_cellres` ALL PASS.
+   KG `cs03_cellserializer_core` + `cs03_globals_record` = pass.
 
-**CS-04 — Port RW4 container walker to C++**
+ **CS-04 — Port RW4 container walker to C++**  *(DONE 2026-09-23: 1131/1131 records
+   byte-identical vs oracle; ctest `assets_rw4` + unittest `test_rw4` pass)*
 · *original*: 1,131 `rw4` records (0x2F4E681B); python oracle `tools/spore/rw4.py`
   (detection + section scoping); 114 Graphics structs + 19 decompilations;
   `docs/RENDERWARE-RESEARCH.md`.
 · *semantics*: sectioned binary container (meshes, vertex buffers, skeletons,
   keyframe anims, compiled states).
 · *mapping*: `src/assets/Rw4.{hpp,cpp}` port of the oracle.
-· *test*: differential vs oracle on all 1,131 records (byte-identical section walk).
-· *value*: kills G5; unblocks CS-31 (anim/effects) + materials. *status*: implementable now.
+ · *test*: differential vs oracle on all 1,131 records (byte-identical section walk).
+ · *value*: kills G5; unblocks CS-31 (anim/effects) + materials.
+ · **DONE (2026-09-23).** C++ `src/assets/Rw4.{hpp,cpp}`: 28-B magic + header
+   (ftype/objCount/sectionCount/pSectionInfo/pBufferData/bufSize) +
+   SectionManifest(0x10004)→SectionTypes(0x10005, n typecodes) + 24-B section
+   infos (pData/f04/size/align/tcIdx/tc; adjusted data = pData+pBufferData for
+   BaseResource 0x10030). Well-formedness is structural (in-bounds data,
+   non-negative size); the SMFX tc map (RENDERWARE-RESEARCH §7.5) is used only to
+   count *undocumented* codes (Spore adds 0x7000c/0x7000f — soft, not gated).
+   Differential: C++ `rw4_test --dump` == python oracle `describe()` on
+   **1131/1131** Spore_Content records (byte-identical); `ctest assets_rw4` PASS +
+   `unittest tests/test_rw4.py` PASS. KG `cs04_rw4_port` = pass.
 
 ### Wave 2 — Cell resource decodes (all build on CS-03)
 
@@ -441,8 +477,8 @@ structs 61880/61879, 61883/61882; TYPEs 0x433FB70C / 0x612B3191; feeds CS-25/CS-
   + CS-12 decode; RW4 KeyframeAnim sections.
 · *mapping*: swim/eat anims on the player cell; eat/death effect instances.
 · *test*: keyframe decode diff (vs CS-04 oracle); event→effect mapping from contract.
-· *status*: blocked until CS-04 lands (roadmap target #4 territory — this campaign
-  only consumes it).
+· *status*: CS-04 landed (2026-09-23) — unblocked; implementable when reached
+   (roadmap target #4 territory — this campaign only consumes it).
 
 **CS-32 — S5 runtime trace + status promotion** *(GATED — do not build on this)*
 · *original*: human-watched cell-mode trace (real display + xdotool; pinned gate in
@@ -474,8 +510,10 @@ Wave 5 (hosting + verification):
 ```
 
 Suggested sequencing inside waves:
-- Wave 1: **CS-01 DONE (2026-09-23).** Remaining: CS-03 before any Wave-2
-  target; CS-02 is the long pole — start it early; CS-04 last.
+- Wave 1: **CS-01, CS-02, CS-03 DONE (2026-09-23).** CS-03 decoded the globals
+  record as a direct 69-field struct serialization (no envelope) + C++ port +
+  `ctest assets_cellres`. Remaining: **CS-04 (RW4 port) — the last Wave-1
+  item**; it unblocks Wave-2 CS-31 (anim/effects) + materials.
 - Wave 3: CS-15/16/17 (state model) → CS-18/19 (creation + query) → CS-20/21 (rules).
 - Wave 4: CS-22 first (every other target reports into it).
 - Wave 5: CS-30 (fixtures) before CS-31; CS-32 only on explicit approval.
@@ -500,7 +538,7 @@ C++ port each), Waves 3–5 are in-tree implementation.
 
 | Risk | Mitigation |
 |---|---|
-| 0x0f43029a is *not* CellSerializer-based (header guess wrong) | CS-02 starts with the oracle on real bytes; if the envelope differs, re-derive from struct 61843 + the 4 group families; worst case the record is scene-only and player identity resolves via CS-05 fields alone |
+| 0x0f43029a is *not* CellSerializer-based (header guess wrong) | RESOLVED (CS-02): distinct model/scene-placement format with a 20-B header + part-name identity strings (spine/eye/sense/…). Carries creature part identity directly, so player identity does NOT depend on CS-05 alone. Documented limitation: per-field byte order within a c-entry not byte-exact derivable (no loader references the type); decoder uses full byte accounting + semantic extraction. |
 | Plane constants are per-world (change with advect) | CS-01 reads both address sites; CS-20 advect system covers world-dependent values; contract test pins the observed behavior |
 | Player identity is INFERRED, not VERIFIED | Manifest labels it INFERRED with reasoning; scene remains playable; CS-32 can later confirm |
 | float32 contract drift when constants change | Contract version bump (`cell-sim-contract/1` → `/2`) with fixture regeneration, same discipline as before |

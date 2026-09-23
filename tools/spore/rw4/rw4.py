@@ -15,6 +15,36 @@ def i32(b, o):
     return struct.unpack_from('<i', b, o)[0]
 
 
+def _hex_nopad(v):
+    return "0x%x" % (v & 0xffffffff)
+
+
+def _hex_plain(v):
+    return "%x" % (v & 0xffffffff)
+
+
+# Canonical one-line section-walk summary. Mirrors C++ Rw4::describe() exactly
+# so the differential test (tests/test_rw4.py) can diff the two walkers.
+def describe(b):
+    ftype = u32(b, 0x1C)
+    objCount = u32(b, 0x20)
+    sectionCount = u32(b, 0x24)
+    pSectionInfo = u32(b, 0x30)
+    pBufferData = u32(b, 0x44)
+    bufSize = u32(b, 0x4C)
+    line = "%s obj=%d sec=%d buf=%d" % (_hex_nopad(ftype), objCount, sectionCount, bufSize)
+    for i in range(sectionCount):
+        o = pSectionInfo + 24 * i
+        if o + 24 > len(b):
+            break
+        pData = u32(b, o)
+        size = i32(b, o + 8)
+        tc = i32(b, o + 0x14)
+        ap = pData + pBufferData if tc == 0x10030 else pData
+        line += " | %s d=%s s=%d" % (_hex_plain(tc), _hex_nopad(ap), size)
+    return line
+
+
 TYPES = {0x10030: 'BaseResource', 0x10031: '?', 0x10032: '?', 0x10010: '?', 0x10004: 'SectionManifest',
          0x10005: 'SectionTypes', 0x10006: 'SectionExternalArenas', 0x10007: 'SectionSubReferences',
          0x10008: 'SectionAtoms', 0x20003: 'Raster', 0x20001: 'VertexDescription', 0x20002: 'VertexBuffer',
