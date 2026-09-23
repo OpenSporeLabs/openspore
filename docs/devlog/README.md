@@ -79,10 +79,21 @@ S2 (the stdlib MCP surface) and S2.1 (MCP hardening) landed on 09-22, and **S3 �
 automation shell** (chapter [016](016-gui-automation-shell.md)) landed the same day:
 `menu_walk.sh` + an Xlib AGENT DRIVING overlay + global stop key + input log + shot
 manifest + no-op ladder + dry-run, all fail-closed, with the single-machine `flock`
-serialization fixed. **Next: S4** — the one human-watched manual run answering the
-critical unknown (does wine accept `xdotool --window` XSendEvent under KWin/XWayland),
-then S5–S6 toward the cell-mode trace and the `replaced-verified` promotion of
-`cell-movement-mouse-steering`.
+serialization fixed. S4 (chapter [017](017-s4-x11-input-feasibility.md)) completed with
+fallback (primary XSendEvent inconclusive); S5 (chapter [018](018-s5-cell-runtime-evidence.md))
+was then run — 3 human-watched runs — and recorded **NEGATIVE**: `SporeApp.exe` self-exits
+under Wine before Cell Stage (run #1 reached the menu, then the process tree exited clean
+~12.7 s in; run #2 never booted). The cell-mode trace is blocked on a Wine boot-stability
+diagnostic, not on the automation.
+
+Then the **reconstruction phase** (chapter [019](019-reconstruction-phase-cell-campaign.md),
+2026-09-23): strategic direction switched to *fast reconstruction by reuse* — the local
+community Ghidra project (58,757 functions, 1,666 SDK-named, 2,035 structures, 478
+decompilations, 3,081 vtables) was exported, ingested into the KG (65,461 nodes,
+provenance per row), and used to run the **cell-stage campaign**: 32 targets in 5 waves,
+31 DONE + CS-32 PARTIAL (trace-gated verification only). `cell_stage` now runs the
+original Cell-Stage pipeline end-to-end on real GOG assets (decode → sim → gfx →
+declarative scene → render + HUD; deterministic raster; ctest 36/36).
 
 ## Where are we now?
 
@@ -101,11 +112,15 @@ landed the same day: the knowledge-graph spine (schema + canonical 7-level scale
 deterministic seed, chapter [015](015-knowledge-graph-spine.md)) — the KG is now
 reproducible from a fresh clone.
 
+On 09-23 the reconstruction phase (chapter [019](019-reconstruction-phase-cell-campaign.md))
+landed the first full campaign: community Ghidra exports → KG index → 32-target cell
+campaign → a `cell_stage` binary that runs the original cell pipeline on real GOG
+assets, with the whole slice reviewer-verified (8 PASS / 1 PARTIAL / 1 FAIL-on-docs,
+fixed).
+
 Note for future readers: `docs/STATE.md` was refreshed operationally (Obj 11,
-`460b599`, and again this sprint) and now tracks the same state as this index.
-Chapters [006](006-vtable-detection.md)–[012](012-roadmap.md) are referenced in the
-index below but not yet written to disk — do not create those numbers; the next free
-chapter is 017.
+`460b599`, and again each sprint) and now tracks the same state as this index.
+The next free chapter number is 020.
 
 ## Chapters
 
@@ -128,6 +143,9 @@ chapter is 017.
  | 014 | [RE Intelligence and the first replacement](014-re-intelligence-and-first-replacement.md) | 2026-09-21 | Obj 31–38: dossier pipeline + evidence schema, ray-plane steering finding, stand-in identity REJECTED (a building), sim contract + fixtures, first in-process replacement (5-byte jmp, cdecl, 64/64 differential, `replaced-approx`), pipeline docs | Done |
  | 015 | [Knowledge-graph spine](015-knowledge-graph-spine.md) | 2026-09-22 | S1: KG schema patch (field/trace_run/investigations + provenance), canonical 7-level evidence scale (stale STATUS2EV bug fixed), deterministic canonical seed (96/115/14, bare-clone-safe), binary-identity stale-state detection | Done |
  | 016 | [GUI automation shell](016-gui-automation-shell.md) | 2026-09-22 | S3: `menu_walk.sh` + Xlib AGENT DRIVING overlay + global Ctrl+Alt+Backspace stop + input log + shot manifest + no-op ladder + dry-run, all fail-closed; `flock` machine-lock serialization fixed (CLOEXEC-at-exec); 13 failure modes CLOSED | Done |
+ | 017 | [S4 X11 input feasibility](017-s4-x11-input-feasibility.md) | 2026-09-22 | S4: focused-window path via `xdotool windowactivate` + `key --clearmodifiers` (fallback; XSendEvent primary inconclusive); allowlist-locked, bounded | Done |
+ | 018 | [S5 cell runtime evidence](018-s5-cell-runtime-evidence.md) | 2026-09-22 | S5: 3 human-watched runs of `SporeApp.exe` under trace → NEGATIVE (self-exits under Wine before Cell Stage; run #1 booted to menu then tree exited clean ~12.7 s; run #2 never booted); recorded as a first-class negative deliverable | Done (negative) |
+ | 019 | [Reconstruction phase: cell campaign](019-reconstruction-phase-cell-campaign.md) | 2026-09-23 | Community Ghidra reuse (exports → KG 65,461 nodes) + 32-target cell campaign (31 DONE / CS-32 PARTIAL trace-gated) → `cell_stage` runs the original cell pipeline on real GOG assets end-to-end; reviewer-verified; Wine boot-stability diagnostic is the next runtime gate | Done |
 
 ## Maintenance protocol
 

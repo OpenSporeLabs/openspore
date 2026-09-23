@@ -1,15 +1,19 @@
 # Cell Stage Completion — Reconstruction Campaign
 
-**Status: PROPOSAL.** Generated from static evidence only; no runtime trace is
-required to build. Evidence vocabulary per `docs/RE-DOSSIER-SCHEMA.md`
+**Status: COMPLETE (2026-09-23).** Generated from static evidence only; no runtime
+trace was required to build. Evidence vocabulary per `docs/RE-DOSSIER-SCHEMA.md`
 (UNKNOWN < APPROXIMATION < INFERRED < SUPPORTED < OBSERVED < CONFIRMED < VERIFIED).
 Build: SporeApp.exe **3.1.0.22** (GOG), image base `0x00400000`.
 
-**Wave 1 (static decode unblockers): COMPLETE 2026-09-23.** CS-01, CS-02, CS-03,
-CS-04 all DONE and verified against the binary (differential tests pass; KG records
-`cs01_plane_constants`, `cs02_worldobj_header`/`cs02_worldobj_entries`,
-`cs03_cellserializer_core`/`cs03_globals_record`, `cs04_rw4_port` = pass).
-Next: Wave 2 (cell resource decodes CS-05…CS-12, all build on CS-03).
+**All 5 waves executed 2026-09-23: 31 targets DONE, CS-32 PARTIAL** (its
+trace-dependent sub-part BLOCKED — S5 cell-mode trace; S5 ran 2026-09-22 and was
+recorded NEGATIVE, see devlog 018). The `cell_stage` binary now runs the original
+cell-stage pipeline end-to-end on real GOG assets (deterministic raster output;
+ctest 36/36). Wave-by-wave results: Wave 1 CS-01…CS-04 (plane constants pinned;
+worldobj + CellSerializer cores; RW4 C++ port byte-identical on 1,131 records);
+Wave 2 CS-05…CS-13 (8 resource decoders + player-cell identity); Wave 3 CS-14…CS-22
+(sim core + scene/assets); Wave 4 CS-23…CS-27 (cCellGFX + cCellUI); Wave 5
+CS-28…CS-31 (lifecycle/input/contract/animation) + CS-32 partial.
 
 ---
 
