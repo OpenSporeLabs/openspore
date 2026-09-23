@@ -230,6 +230,136 @@ inline const std::vector<Scenario> &scenarios() {
       v.push_back(s);
     }
 
+    {
+      // (f) Background-world switch: the swim plane is per-world (the original
+      // writes the plane point per world at runtime). Switch to a non-default
+      // plane (point {0,0,-50}) and mouse-steer: the ray-plane target lands on
+      // the z=-50 plane, so the player swims +X and -Z (onto the new world's
+      // swim plane), not the z=0 plane of the default world.
+      Scenario s;
+      s.name = "background_world_plane_switch";
+      s.description = "plane point {0,0,-50} (a per-world swim plane); camera "
+                      "pitch -0.3; 10 frames mouse at NDC center, then 40 "
+                      "frames at NDC (0.5, 0): the ray-plane target lands on "
+                      "the z=-50 plane, the player swims toward +X and -Z";
+      s.plane.normal[0] = 0.0F;
+      s.plane.normal[1] = 0.0F;
+      s.plane.normal[2] = 1.0F;
+      s.plane.point[0] = 0.0F;
+      s.plane.point[1] = 0.0F;
+      s.plane.point[2] = -50.0F;
+      CameraState c;
+      c.pitch = -0.3F;
+      s.camera = c;
+      for (int i = 0; i < 10; ++i) {
+        s.frames.push_back(contract_detail::mouseFrame(0.0F, 0.0F, -0.3F));
+      }
+      for (int i = 0; i < 40; ++i) {
+        s.frames.push_back(contract_detail::mouseFrame(0.5F, 0.0F, -0.3F));
+      }
+      v.push_back(s);
+    }
+
+    {
+      // (g) Advect / velocity settle: thrust forward 20 frames (velocity builds
+      // toward forwardSpeed), then 40 empty frames (release): the velocity damps
+      // exponentially toward zero; position drifts a short distance then
+      // settles. Demonstrates the damping (advect) term of the update.
+      Scenario s;
+      s.name = "advect_velocity_settle";
+      s.description = "20 frames thrust-forward (vel builds), then 40 empty "
+                      "frames: vel damps exponentially toward zero, pos drifts "
+                      "then settles; no events, growMeter 0";
+      for (int i = 0; i < 20; ++i) {
+        InputFrame f;
+        f.thrustForward = true;
+        s.frames.push_back(f);
+      }
+      for (int i = 0; i < 40; ++i) {
+        s.frames.push_back(InputFrame{});
+      }
+      v.push_back(s);
+    }
+
+    {
+      // (h) Multi-cell combat (flee): three prey inside fleeRadius of the
+      // origin. Empty frames: flee events fire for the threats, the player
+      // faces away and boosts. Demonstrates the multi-threat combat response.
+      Scenario s;
+      s.name = "multi_cell_combat_flee";
+      s.description = "3 prey inside fleeRadius 4.0 of the origin at "
+                      "(2,0,-2), (3,1,-3), (1,-1,-2); 30 empty frames: flee "
+                      "events while prey are in range, player faces away + "
+                      "boosts";
+      {
+        Entity p;
+        p.role = "prey_a";
+        p.pos[0] = 2.0F;
+        p.pos[1] = 0.0F;
+        p.pos[2] = -2.0F;
+        s.entities.push_back(p);
+      }
+      {
+        Entity p;
+        p.role = "prey_b";
+        p.pos[0] = 3.0F;
+        p.pos[1] = 1.0F;
+        p.pos[2] = -3.0F;
+        s.entities.push_back(p);
+      }
+      {
+        Entity p;
+        p.role = "prey_c";
+        p.pos[0] = 1.0F;
+        p.pos[1] = -1.0F;
+        p.pos[2] = -2.0F;
+        s.entities.push_back(p);
+      }
+      for (int i = 0; i < 30; ++i) {
+        s.frames.push_back(InputFrame{});
+      }
+      v.push_back(s);
+    }
+
+    {
+      // (i) Camera-zoom scale: steer to NDC (0.5,0) with the camera pitched
+      // -0.3. First 20 frames at zoom 1.0, then 20 frames at zoom 2.0. Zooming
+      // in shortens the camera distance, moves the eye, and shifts the
+      // ray-plane target, so the steer point changes with scale. Demonstrates
+      // the zoom (scale) effect on mouse steering.
+      Scenario s;
+      s.name = "camera_zoom_scale";
+      s.description = "camera pitch -0.3; 20 frames mouse NDC (0.5,0) at zoom "
+                      "1.0, then 20 frames at zoom 2.0: the zoomed-in eye "
+                      "shifts the ray-plane target, changing the steer point";
+      CameraState c;
+      c.pitch = -0.3F;
+      s.camera = c;
+      for (int i = 0; i < 20; ++i) {
+        InputFrame f;
+        f.hasCamera = true;
+        f.cameraYaw = 0.0F;
+        f.cameraPitch = -0.3F;
+        f.cameraZoom = 1.0F;
+        f.hasMouse = true;
+        f.mouseX = 0.5F;
+        f.mouseY = 0.0F;
+        s.frames.push_back(f);
+      }
+      for (int i = 0; i < 20; ++i) {
+        InputFrame f;
+        f.hasCamera = true;
+        f.cameraYaw = 0.0F;
+        f.cameraPitch = -0.3F;
+        f.cameraZoom = 2.0F;
+        f.hasMouse = true;
+        f.mouseX = 0.5F;
+        f.mouseY = 0.0F;
+        s.frames.push_back(f);
+      }
+      v.push_back(s);
+    }
+
     return v;
   }();
   return all;

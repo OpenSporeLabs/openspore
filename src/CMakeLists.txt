@@ -92,7 +92,8 @@ add_test(
 # CS-23: the scene is declarative (apps/scene.json) — SceneConfig loads it.
 # CS-26: CellGfx mirrors the cCellGFX preload path (worlds + preloaded records).
 add_executable(cell_stage apps/cell_stage.cpp apps/SceneConfig.cpp
-  apps/CellGfx.cpp apps/CellUI.cpp)
+  apps/CellGfx.cpp apps/CellUI.cpp apps/CellInput.cpp
+  apps/CellModeStrategy.cpp apps/CellAnim.cpp)
 target_compile_definitions(cell_stage PRIVATE
   SPORE_CELLSTAGE_SCENE="${CMAKE_CURRENT_SOURCE_DIR}/apps/scene.json")
 target_link_libraries(cell_stage PRIVATE
@@ -133,6 +134,33 @@ add_executable(cellui_test apps/cellui_test.cpp apps/CellUI.cpp)
 add_test(
   NAME cellui
   COMMAND cellui_test
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+
+# CS-28: cCellModeStrategy lifecycle (vtable slots 6/7/8/9/11/17) +
+# cGameModeManager switching (OnExit old, OnEnter new, reject OOB index).
+add_executable(cellmode_test apps/cellmode_test.cpp apps/CellModeStrategy.cpp
+  apps/CellGfx.cpp apps/CellUI.cpp)
+add_test(
+  NAME cellmode
+  COMMAND cellmode_test
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+
+# CS-29: table-driven key->action (the app's scancode mapping + the
+# virtualKey==2 health-toggle special case).
+add_executable(cellinput_test apps/cellinput_test.cpp apps/CellInput.cpp)
+add_test(
+  NAME cellinput
+  COMMAND cellinput_test
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+
+# CS-31: cell animation blend state machine (PlayAnimation @ 00e6d200) +
+# event->effect mapping (InstanceEffectOnCell @ 00e66840, LoadEffectMap
+# @ 00e63560 3-slot selection). The keyframe decode diff is the existing
+# rw4_test (CS-04).
+add_executable(cellanim_test apps/cellanim_test.cpp apps/CellAnim.cpp)
+add_test(
+  NAME cellanim
+  COMMAND cellanim_test
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
 # Obj17 part B smoke: interactive mode with no display must fail gracefully

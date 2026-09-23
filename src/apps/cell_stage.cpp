@@ -41,6 +41,8 @@
 
 #include "CellGfx.hpp"
 #include "CellUI.hpp"
+#include "CellInput.hpp"
+#include "CellModeStrategy.hpp"
 #include "SceneConfig.hpp"
 #include "CellResource.hpp"
 #include "Dbpf.hpp"
@@ -484,9 +486,13 @@ void rotateY(float h, float &x, float &z) {
 int runFixedFrame(openspore::VulkanRenderer &renderer,
                   openspore::TextureHandle texId,
                   const openspore::MaterialState &mat,
-                  const std::vector<Loaded> &loaded) {
+                  const std::vector<Loaded> &loaded,
+                  openspore::gamemode::CellModeStrategy *stage) {
   // Orbit camera -> view; perspective with [0,1] NDC depth; the product is
   // baked into every vertex (the renderer has no matrix uniforms).
+  if (stage) {
+    stage->update(1.0f / 60.0f);
+  }
   const Camera cam;
   const float eye[3] = {
       cam.target[0] + cam.dist * std::sin(cam.yaw) * std::cos(cam.pitch),
@@ -717,10 +723,11 @@ void buildFrameDraws(openspore::VulkanRenderer &renderer,
 // CellSim, re-rendering the scene every frame with the player at its sim
 // position (dead food culled) and the camera following it.
 int runSimMode(openspore::VulkanRenderer &renderer,
-               openspore::TextureHandle texId,
-               const openspore::MaterialState &mat,
-               const std::vector<Loaded> &loaded,
-               const std::string &inputPath) {
+                openspore::TextureHandle texId,
+                const openspore::MaterialState &mat,
+                const std::vector<Loaded> &loaded,
+                const std::string &inputPath,
+                openspore::gamemode::CellModeStrategy *stage) {
   openspore::sim::ScriptedInputSource source(inputPath);
   if (!source.ok()) {
     std::fprintf(stderr, "[cell_stage] %s\n", source.error().c_str());
@@ -759,6 +766,9 @@ int runSimMode(openspore::VulkanRenderer &renderer,
 
   for (int f = 0; f < totalFrames; ++f) {
     sim.update(source.frame(f));
+    if (stage) {
+      stage->update(1.0f / 60.0f);
+    }
     const openspore::sim::CameraState &cam = sim.camera();
     const float eye[3] = {
         cam.target[0] + cam.dist() * std::sin(cam.yaw) * std::cos(cam.pitch),
@@ -852,9 +862,10 @@ int runSimMode(openspore::VulkanRenderer &renderer,
 // With --frames N the loop exits after N frames (bounded evidence runs).
 // Exits 0 (graceful) when no display is available or the build lacks SDL3.
 int runInteractive(openspore::VulkanRenderer &renderer,
-                   const openspore::ImageRGBA &texImage,
-                   const openspore::MaterialState &mat,
-                   const std::vector<Loaded> &loaded, int maxFrames) {
+                    const openspore::ImageRGBA &texImage,
+                    const openspore::MaterialState &mat,
+                    const std::vector<Loaded> &loaded, int maxFrames,
+                    openspore::gamemode::CellModeStrategy *stage) {
 #if defined(SPORE_HAS_SDL3)
   // SDL's default video-driver auto-probe can fail (with an empty error) in
   // some sessions even though an explicit backend works. Try the default
@@ -1025,22 +1036,61 @@ int runInteractive(openspore::VulkanRenderer &renderer,
 
     // SDL_GetKeyboardState returns an array indexed by SCANCODE (0..479),
     // not by keycode. Index by SDL_SCANCODE_* (layout-stable).
+    // CS-29: the key->action table. SDL scancodes (layout-stable) map onto the
+    // CellInput keys; the table then drives thrust/boost + camera direction.
     const bool *keys = SDL_GetKeyboardState(nullptr);
+    openspore::cellinput::CellInput cin;
+    {
+      using openspore::cellinput::Key;
+      auto mapKey = [&cin](int scancode) {
+        switch (scancode) {
+          case SDL_SCANCODE_W:
+            cin.press(Key::kW);
+            break;
+          case SDL_SCANCODE_S:
+            cin.press(Key::kS);
+            break;
+          case SDL_SCANCODE_A:
+            cin.press(Key::kA);
+            break;
+          case SDL_SCANCODE_D:
+            cin.press(Key::kD);
+            break;
+          case SDL_SCANCODE_LSHIFT:
+          case SDL_SCANCODE_RSHIFT:
+            cin.press(Key::kShift);
+            break;
+          case SDL_SCANCODE_LEFT:
+            cin.press(Key::kLeft);
+            break;
+          case SDL_SCANCODE_RIGHT:
+            cin.press(Key::kRight);
+            break;
+          case SDL_SCANCODE_UP:
+            cin.press(Key::kUp);
+            break;
+          case SDL_SCANCODE_DOWN:
+            cin.press(Key::kDown);
+            break;
+          default:
+            break;
+        }
+      };
+      for (int sc = 0; sc < 512; ++sc) {
+        if (keys[sc]) {
+          mapKey(sc);
+        }
+      }
+    }
+
     openspore::sim::InputFrame input;
-    if (keys[SDL_SCANCODE_W]) {
-      input.thrustForward = true;
-    }
-    if (keys[SDL_SCANCODE_S]) {
-      input.thrustBack = true;
-    }
-    if (keys[SDL_SCANCODE_A]) {
-      input.thrustLeft = true;
-    }
-    if (keys[SDL_SCANCODE_D]) {
-      input.thrustRight = true;
-    }
-    if (keys[SDL_SCANCODE_LSHIFT] || keys[SDL_SCANCODE_RSHIFT]) {
-      input.boost = true;
+    {
+      const auto f = cin.frame();
+      input.thrustForward = f.thrustForward;
+      input.thrustBack = f.thrustBack;
+      input.thrustLeft = f.thrustLeft;
+      input.thrustRight = f.thrustRight;
+      input.boost = f.boost;
     }
 
     if (mouseActive) {
@@ -1050,21 +1100,24 @@ int runInteractive(openspore::VulkanRenderer &renderer,
     }
 
     bool camChanged = false;
-    if (keys[SDL_SCANCODE_LEFT]) {
-      camYaw += kYawStep;
-      camChanged = true;
-    }
-    if (keys[SDL_SCANCODE_RIGHT]) {
-      camYaw -= kYawStep;
-      camChanged = true;
-    }
-    if (keys[SDL_SCANCODE_UP]) {
-      camPitch = std::min(85.0F * kDeg, camPitch + kPitchStep);
-      camChanged = true;
-    }
-    if (keys[SDL_SCANCODE_DOWN]) {
-      camPitch = std::max(-80.0F * kDeg, camPitch - kPitchStep);
-      camChanged = true;
+    {
+      const auto dirs = cin.camera();
+      if (dirs.left) {
+        camYaw += kYawStep;
+        camChanged = true;
+      }
+      if (dirs.right) {
+        camYaw -= kYawStep;
+        camChanged = true;
+      }
+      if (dirs.up) {
+        camPitch = std::min(85.0F * kDeg, camPitch + kPitchStep);
+        camChanged = true;
+      }
+      if (dirs.down) {
+        camPitch = std::max(-80.0F * kDeg, camPitch - kPitchStep);
+        camChanged = true;
+      }
     }
     if (wheel != 0) {
       camChanged = true;
@@ -1077,6 +1130,9 @@ int runInteractive(openspore::VulkanRenderer &renderer,
     }
 
     sim.update(input);
+    if (stage) {
+      stage->update(1.0f / 60.0f);
+    }
 
     const openspore::sim::CameraState &cam = sim.camera();
     const float up[3] = {0.0F, 1.0F, 0.0F};
@@ -1273,24 +1329,39 @@ int main(int argc, char **argv) {
     }
   }
 
-  // CS-26: mirror the cCellGFX preload path — build the world-handle table,
-  // register the scene's real model records, and start the display. The scene
-  // cells render into the main-model world (kCellModelWorldID 0x1010020).
+  // CS-26/CS-28: the cell-stage game mode. Initialize (vtable [6]) allocates
+  // the owned sCellGFX/sCellUI and builds the world table; preload registers the
+  // scene's real model records; OnEnter (vtable [8]) starts the display. The
+  // scene cells render into the main-model world (kCellModelWorldID 0x1010020).
+  // The strategy is driven through its slots: onEnter here, update per-frame in
+  // the run* paths, onExit + dispose at shutdown.
+  openspore::gamemode::CellModeStrategy stage;
+  stage.initialize();
   {
-    openspore::cellgfx::CellGfx gfx;
-    gfx.initialize();
     std::vector<std::pair<std::uint32_t, std::uint32_t>> models;
     for (const Entity &ent : g_scene) {
       models.push_back({ent.group, ent.inst});
     }
-    gfx.preloadResources(std::move(models), {});
-    gfx.startDisplay();
-    check(gfx.displayActive, "cell_stage: cCellGFX display active");
-    const openspore::cellgfx::CellGfx::WorldSlot *model = gfx.modelWorld();
+    stage.mGfx.preloadResources(std::move(models), {});
+  }
+  stage.onEnter();
+  check(stage.mGfx.displayActive, "cell_stage: cCellGFX display active");
+  {
+    const openspore::cellgfx::CellGfx::WorldSlot *model = stage.mGfx.modelWorld();
     check(model != nullptr && model->worldId == 0x1010020u,
           "cell_stage: scene cells bound to main-model world 0x1010020");
-    check(!gfx.preloadedModels.empty(), "cell_stage: model records preloaded");
   }
+  check(!stage.mGfx.preloadedModels.empty(), "cell_stage: model records preloaded");
+  // CS-28: OnExit (vtable [9]) resets the bg-clear globals + disables the mode;
+  // Dispose (vtable [7]) frees the pool + GFX + world. Both fire on every exit
+  // path below (failure returns included).
+  struct StageTeardown {
+    openspore::gamemode::CellModeStrategy *s;
+    ~StageTeardown() {
+      s->onExit();
+      s->dispose();
+    }
+  } stageTeardown{&stage};
 
   // Load every scene entity.
   std::vector<Loaded> loaded(entityCount());
@@ -1344,7 +1415,7 @@ int main(int argc, char **argv) {
   if (interactive) {
     // Present path: the renderer creates its instance/device against the SDL
     // surface (initPresent), so the offscreen init() is not called here.
-    return runInteractive(renderer, texImage, mat, loaded, maxFrames);
+    return runInteractive(renderer, texImage, mat, loaded, maxFrames, &stage);
   }
 
   if (!renderer.init(kViewport, kViewport)) {
@@ -1359,7 +1430,7 @@ int main(int argc, char **argv) {
   check(texId != openspore::kInvalidTexture, "cell_stage: texture uploaded");
 
   if (inputPath.empty()) {
-    return runFixedFrame(renderer, texId, mat, loaded);
+    return runFixedFrame(renderer, texId, mat, loaded, &stage);
   }
-  return runSimMode(renderer, texId, mat, loaded, inputPath);
+  return runSimMode(renderer, texId, mat, loaded, inputPath, &stage);
 }

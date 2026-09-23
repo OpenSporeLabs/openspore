@@ -478,6 +478,7 @@ structs 61880/61879, 61883/61882; TYPEs 0x433FB70C / 0x612B3191; feeds CS-25/CS-
   pattern.
 · *test*: lifecycle ordering test; state cleanup assertions after OnExit.
 
+· *status*: **DONE (2026-09-23).** cCellModeStrategy (12B, 27-slot vtable; 10 resolved slots) + cGameModeManager (52B, mnActiveIndex @40). IGameMode base (init/dispose/onEnter/onExit/onKeyDown/move/down/up/wheel/update at documented slots). CellModeStrategy owns CellGfx+CellUI; Initialize builds world+UI, OnEnter starts display+enables, OnExit resets bg-clear globals+disables, Update ticks frame, Dispose frees pool+world+displays+clears flags. Manager setActiveModeAt OnExits old/OnEnters new, rejects OOB. Wired into cell_stage main (RAII teardown -> onExit+dispose on every path; update() per-frame in fixed/sim/interactive). cellmode_test 30 checks. ctest 34/34.
 **CS-29 — Input mapping**
 · *original*: `OnKeyDown` @ 00e818f0 (182 B), `OnMouseDown` @ 00e6c860 (397 B),
   `OnMouseMove` @ 00e51010 (26 B), `OnMouseUp` @ 00e5c0f0 (161 B),
@@ -485,6 +486,7 @@ structs 61880/61879, 61883/61882; TYPEs 0x433FB70C / 0x612B3191; feeds CS-25/CS-
 · *mapping*: key→action table in the cell_stage app (thrust keys already in sim).
 · *test*: table-driven key→action test.
 
+· *status*: **DONE (2026-09-23).** CellInput (src/apps/CellInput.{hpp,cpp}): table-driven key->action. Original OnKeyDown 00e818f0 calls FUN_00e82900 (30B lookup) + special-cases virtualKey==2 to toggle sCellUI+0x937 (health display); thrust actions are the sim's InputFrame (thrust L/R/F/B + boost). Table: W->forward, S->back, A->left, D->right, Shift->boost, ESC->quit, arrows->camDirs, kToggleHealth->healthDisplay (the code-2 special case, edge-triggered). CellInput: press/release/isDown, frame() -> thrust/boost, camera() -> held dirs (app applies own kYawStep=0.06/kPitchStep=0.05 + clamps), wantsQuit(), takeToggleHealth() consumed-on-read. Wired into cell_stage interactive path: SDL scancodes -> CellInput keys; thrust/boost from frame(), cam dirs applied with app steps. cellinput_test 30 checks. ctest 35/35.
 **CS-30 — Contract fixture expansion + determinism**
 · *original*: `tests/fixtures/cell/fixtures.json` (frozen); contract version
   `cell-sim-contract/1` (bump when behavior changes intentionally).
@@ -492,13 +494,14 @@ structs 61880/61879, 61883/61882; TYPEs 0x433FB70C / 0x612B3191; feeds CS-25/CS-
   scale change; keep float32 exact + byte-identical PPMs.
 · *test*: `sim_contract_test` replay; double-run determinism.
 
+· *status*: **DONE (2026-09-23).** Contract fixture expansion + determinism: added 4 scenarios to contract_scenarios.hpp (background_world_plane_switch -> per-world swim plane z=-50, advect_velocity_settle -> exponential vel damp, multi_cell_combat_flee -> 3 prey flee events, camera_zoom_scale -> zoom shifts ray-plane target); regenerated fixtures.json via sim_test --emit-fixtures (9 scenarios, byte-identical double-run, float32-exact); contract stays cell-sim-contract/2 (no behavior change); sim_contract_test replays all 9 + per-scenario double-run determinism; ctest 35/35 green.
 **CS-31 — Animation + effects** *(depends on CS-04)*
 · *original*: `PlayAnimation` @ 00e6d200 (317 B); `cCellAnimDefinition` (61888);
   `InstanceEffectOnCell` @ 00e66840 (314 B) + `LoadEffectMap` @ 00e63560 (1,114 B)
   + CS-12 decode; RW4 KeyframeAnim sections.
 · *mapping*: swim/eat anims on the player cell; eat/death effect instances.
 · *test*: keyframe decode diff (vs CS-04 oracle); event→effect mapping from contract.
-· *status*: CS-04 landed (2026-09-23) — unblocked; implementable when reached
+· *status*: **DONE (2026-09-23).** Animation + effects (src/apps/CellAnim.{hpp,cpp}): CellAnim enum (SDK anim indices); animBlend(current,target,scale) reimpl of PlayAnimation @00e6d200 blend state machine (base 0.2/0.2; current IdleBig/IdleBlink1Big->out 0.1; current EatProbRetractTrgt/TakeDmgElecNpc/TakeDmgPoisonNpc->out 0.0; target EatProbRetractTrgt->in 0.0; all scaled by the cell anim-time factor); selectEffectMapSlot (LoadEffectMap @00e63560 switch: type 0/2->slot0,1/3->slot1,4->slot2); effectIDForEvent (contract eat->1, flee/death->2); instanceEffect (InstanceEffectOnCell @00e66840: copies 9-dword DAT_016b3dac record, overrides words 0-2 with the per-world swim-plane point (CS-01), word3=1.0f sentinel, placed at cell transform). cellanim_test 24 checks; wired CellAnim.cpp into cell_stage. Keyframe decode diff = existing rw4_test (CS-04, consumed). ctest 36/36.
    (roadmap target #4 territory — this campaign only consumes it).
 
 **CS-32 — S5 runtime trace + status promotion** *(GATED — do not build on this)*
@@ -509,6 +512,7 @@ structs 61880/61879, 61883/61882; TYPEs 0x433FB70C / 0x612B3191; feeds CS-25/CS-
   `replaced-approx` → `replaced-verified` in `docs/replacement-status.json`.
 · *value*: verification only — the campaign is complete without it.
 
+· *status*: **PARTIAL (2026-09-23).** S5 runtime trace + status promotion. STATIC portion confirmed: docs/replacement-status.json present (6 replaced-verified, 3 replaced-approx) — the 3 replaced-approx entries are ready to promote to replaced-verified. Trace-dependent sub-part BLOCKED (blocker: 'S5 trace gated, human-watched'): the human-watched cell-mode trace (real display + xdotool, pinned gate in docs/RE-DOSSIER-SCHEMA.md / roadmap SS5) was NOT run (no Wine/runtime per instruction); on approval it pins sCellGame field semantics beyond decompilation, records KG trace_run artifacts, and promotes the 3 replaced-approx -> replaced-verified. Verification-only; the campaign is complete without it.
 ---
 
 ## 6. Wave plan and dependencies
