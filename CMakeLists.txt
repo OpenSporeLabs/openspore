@@ -26,4 +26,13 @@ endif()
 
 enable_testing()
 
+# CS-22: canonical asset manifest — idempotent build (double-run byte-identical,
+# full index coverage). Hermetic: runs over the small fixture package.
+find_program(PYTHON3 python3 REQUIRED)
+add_test(
+  NAME manifest_test
+  COMMAND ${PYTHON3} ${CMAKE_CURRENT_SOURCE_DIR}/tools/spore/manifest/manifest.py
+          verify ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/mini_package.dbpf
+          --out ${CMAKE_CURRENT_BINARY_DIR}/manifest_test.db)
+
 add_subdirectory(src)

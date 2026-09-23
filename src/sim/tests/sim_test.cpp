@@ -188,6 +188,50 @@ void testMouseSteer() {
         "sim: mouse steering stays on the swim plane (no y drift)");
 }
 
+// CS-17: the cCellObjectData superset on Entity — original predicates
+// (IsPlayer/IsCreature) and the GetPosition accessor. The superset fields must
+// be inert to the deterministic contract: a run with the superset left at its
+// defaults produces byte-identical state to a run that never touches them.
+void testCellObjectLayout() {
+  Entity player;
+  player.role = "player_cell";
+  player.pos[0] = 1.0F;
+  player.pos[1] = 2.0F;
+  player.pos[2] = 3.0F;
+  check(player.IsPlayer(), "entity: player_cell IsPlayer()");
+  check(player.IsCreature(), "entity: player_cell IsCreature()");
+  const float *gp = player.GetPosition();
+  check(gp[0] == 1.0F && gp[1] == 2.0F && gp[2] == 3.0F,
+        "entity: GetPosition() returns the contract-visible pos");
+
+  Entity prey;
+  prey.role = "prey_c";
+  check(prey.IsCreature() && !prey.IsPlayer(),
+        "entity: prey IsCreature() but not IsPlayer()");
+  Entity food;
+  food.role = "food_a";
+  check(!food.IsCreature() && !food.IsPlayer(),
+        "entity: food is neither creature nor player");
+
+  // Superset fields (mTargetPosition/opacity/size/speed) default to identity
+  // values and do not perturb the sim: two identical runs stay byte-identical.
+  Entity a;
+  a.role = "player_cell";
+  Entity b;
+  b.role = "player_cell";
+  b.mTargetPosition[0] = 9.0F;  // superset write; must not change the contract
+  CellSim sa(std::vector<Entity>{a});
+  CellSim sb(std::vector<Entity>{b});
+  InputFrame in;
+  in.thrustForward = true;
+  for (int i = 0; i < 40; ++i) {
+    sa.update(in);
+    sb.update(in);
+  }
+  check(sa.stateString() == sb.stateString(),
+        "entity: superset fields inert to the deterministic contract");
+}
+
 void testScriptedInput() {
   const char *path = "/tmp/opencode/sim_test_input.jsonl";
   std::ofstream f(path, std::ios::trunc);
@@ -380,6 +424,7 @@ int main(int argc, char **argv) {
   testFlee();
   testRayPlaneHit();
   testMouseSteer();
+  testCellObjectLayout();
   testScriptedInput();
   if (g_failures == 0) {
     std::printf("sim_test: ALL PASS\n");

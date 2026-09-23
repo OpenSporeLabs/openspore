@@ -4,11 +4,14 @@
 //     inst 0xd1b4bb56, rec 15/16) textured with their real DXT5 raster
 //     0x40662900/0xd1b4bb56 through the Obj15 lit path.
 //   - player cell: one clean rounded gmdl stand-in at the origin.
-//   - 2 food + 1 prey object at hard-coded positions.
-// Evidence labels: asset identity CONFIRMED (bytes parsed); the player-cell
-// identity and every scene position are APPROXIMATIONS (no scene/world-object
-// records are decoded yet — recon section 4). The clear color (soup water
-// teal) and camera angles are APPROXIMATIONS.
+//   - 2 food + 1 prey object.
+// CS-23: the whole scene is loaded from src/apps/scene.json (roadmap §3.2) —
+// named assets + transforms + per-value provenance. The original cell stage
+// places entities PROCEDURALLY (world cLevelEntry refs + populate cMarker
+// zOffset/distribution), so no record stores a position and every pos in the
+// config is labeled INFERRED; identities are record-confirmed (the player-cell
+// identity is the one INFERRED identity — see the config). The clear color
+// (soup water teal) and camera angles remain APPROXIMATIONS.
 //
 // The renderer has no matrix uniforms (the Obj8/Obj15 smokes bake transforms
 // into clip space), so the orbit camera view + perspective projection is
@@ -36,6 +39,10 @@
 #include <string>
 #include <vector>
 
+#include "CellGfx.hpp"
+#include "CellUI.hpp"
+#include "SceneConfig.hpp"
+#include "CellResource.hpp"
 #include "Dbpf.hpp"
 #include "Gmdl.hpp"
 #include "Mesh.hpp"
@@ -46,6 +53,11 @@
 #if defined(SPORE_HAS_SDL3)
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_vulkan.h>
+#endif
+
+// Default path to the declarative scene (set by CMake to src/apps/scene.json).
+#ifndef SPORE_CELLSTAGE_SCENE
+#define SPORE_CELLSTAGE_SCENE ""
 #endif
 
 namespace {
@@ -66,10 +78,18 @@ constexpr uint32_t kTypeRaster = 0x2F4E681C;
 
 constexpr uint32_t kViewport = 512;
 
-// Soup-water clear color — APPROXIMATION (no cell background record decoded).
-constexpr float kClearR = 0.10F;
-constexpr float kClearG = 0.35F;
-constexpr float kClearB = 0.42F;
+// Soup-water clear color. The default below is the Obj16 APPROXIMATION; when a
+// backgroundMap package is supplied (CS-25) it is replaced by the color sampled
+// from the real cCellBackgroundMapResource ramp at the scene's reference scale
+// (loadBackgroundClear), so the backdrop clear is decoded game data, not a guess.
+float kClearR = 0.10F;
+float kClearG = 0.35F;
+float kClearB = 0.42F;
+
+// The scene's reference point on the background-map scale ladder: the mid-zoom
+// stop (field_C ~150), matching the cell-stage framing (camera dist 16, player
+// span 4). Sampled in loadBackgroundClear().
+constexpr float kBackgroundRefLadder = 150.0F;
 
 // Orbit camera, fixed angles for this objective (follow behavior = Obj17).
 // APPROXIMATION: recon section 5 infers orbit/zoom from cCellModeStrategy
@@ -84,37 +104,76 @@ struct Camera {
   float far = 100.0F;
 };
 
-// Scene entities. group/inst are CONFIRMED (parsed from the package); every
-// pos is a hard-coded APPROXIMATION (world-obj records 0x0f43029a not decoded).
-struct Entity {
-  const char *role;
-  uint32_t group;
-  uint32_t inst;
-  float pos[3];
-  float targetSpan; // bbox max span scaled to this size, centered, then pos
-  size_t expectVerts;
-  bool textured;
-};
+// Scene entities — loaded from src/apps/scene.json (CS-23, roadmap §3.2).
+// Nothing about the scene is hard-coded here: the declarative config carries the
+// record keys, transforms, and per-value provenance (see SceneConfig.hpp). The
+// original places entities procedurally, so no record stores a position and the
+// config labels each pos INFERRED; identities are record-confirmed.
+using Entity = openspore::apps::SceneEntity;
 
-const Entity kEntities[] = {
-    // Backdrop: heightfield patches (KG-confirmed terrain pieces, recon §2/§4).
-    {"backdrop_a", 0x40666202, 0xD1B4BB56, {-8.0F, -6.0F, 2.0F}, 16.0F,
-     1059, true},
-    {"backdrop_b", 0x40666203, 0xD1B4BB56, {8.0F, -6.0F, 5.0F}, 16.0F,
-     750, true},
-    // Player cell stand-in — APPROXIMATION identity: most roundish bbox
-    // (aspect 1.50) among the small clean gmdl set; distinct from the
-    // 0x4066620x heightfield family.
-    {"player_cell", 0x40637E02, 0x067A0801, {0.0F, 0.0F, 0.0F}, 4.0F,
-     244, false},
-    // Food / prey — APPROXIMATION positions; small clean gmdl records.
-    {"food_a", 0x40637E03, 0x067CEDE8, {3.5F, -1.5F, 2.5F}, 2.0F, 79, false},
-    {"food_b", 0x40637E03, 0x067CEDEA, {-4.5F, -2.0F, 3.5F}, 3.0F, 435,
-     false},
-    {"prey_c", 0x40637E03, 0x067CEDFB, {1.5F, -0.5F, -5.0F}, 2.5F, 248,
-     false},
-};
-constexpr int kEntityCount = sizeof(kEntities) / sizeof(kEntities[0]);
+std::vector<Entity> g_scene; // populated by loadScene() before any render
+int entityCount() { return static_cast<int>(g_scene.size()); }
+
+// Loads the declarative scene (scene.json) into g_scene. The default path is a
+// build-time define (SPORE_CELLSTAGE_SCENE -> src/apps/scene.json); a --scene
+// FILE argument overrides it.
+bool loadScene(const std::string &path) {
+  openspore::apps::SceneConfig cfg;
+  std::string err;
+  if (!openspore::apps::loadSceneConfig(path, cfg, err)) {
+    std::fprintf(stderr, "[cell_stage] scene: %s\n", err.c_str());
+    return false;
+  }
+  g_scene = std::move(cfg.entities);
+  return true;
+}
+
+std::vector<uint8_t> readFile(const char *path); // fwd (defined below)
+
+// CS-25: replace the approximate clear color with the one sampled from the real
+// cCellBackgroundMapResource (type 0x612B3191) color ramp at the scene's
+// reference scale. Returns true when the ramp was loaded (clear color updated);
+// false leaves the Obj16 fallback clear in place. The ramp maps the geometric
+// scale ladder (0..100000) to an (r,g,b) background color — the cell-stage
+// backdrop composite.
+bool loadBackgroundClear(const std::string &path) {
+  const std::vector<uint8_t> pkg = readFile(path.c_str());
+  if (pkg.empty()) {
+    return false;
+  }
+  std::string error;
+  std::vector<openspore::assets::DbpfEntry> entries;
+  if (!openspore::assets::parseDbpfIndex(pkg.data(), pkg.size(), entries,
+                                         error)) {
+    return false;
+  }
+  for (const openspore::assets::DbpfEntry &e : entries) {
+    if (e.type != openspore::assets::CellBackgroundMap::kType) {
+      continue;
+    }
+    std::vector<uint8_t> blob;
+    if (!openspore::assets::extractDbpfRecord(pkg.data(), pkg.size(), e, blob,
+                                             error)) {
+      return false;
+    }
+    openspore::assets::CellBackgroundMap bm;
+    if (!openspore::assets::parseCellBackgroundMap(blob.data(), blob.size(),
+                                                   bm, error) ||
+        bm.entries.empty()) {
+      return false;
+    }
+    float c[3];
+    if (!openspore::assets::sampleBackgroundMapColor(bm, kBackgroundRefLadder,
+                                                     c)) {
+      return false;
+    }
+    kClearR = c[0];
+    kClearG = c[1];
+    kClearB = c[2];
+    return true;
+  }
+  return false;
+}
 
 // Verified real-texture oracle (Obj15, docs/CELLSTAGE-RECON §3).
 constexpr uint32_t kTexGroup = 0x40662900;
@@ -438,12 +497,12 @@ int runFixedFrame(openspore::VulkanRenderer &renderer,
   const Mat4 proj = perspective(cam.fov, 1.0F, cam.near, cam.far);
   const Mat4 vp = mul(proj, view);
 
-  std::vector<openspore::MeshHandle> flat(kEntityCount,
+  std::vector<openspore::MeshHandle> flat(entityCount(),
                                           openspore::kInvalidMesh);
-  std::vector<openspore::MeshHandle> tex(kEntityCount,
+  std::vector<openspore::MeshHandle> tex(entityCount(),
                                          openspore::kInvalidMesh);
-  for (int e = 0; e < kEntityCount; ++e) {
-    const Entity &ent = kEntities[e];
+  for (int e = 0; e < entityCount(); ++e) {
+    const Entity &ent = g_scene[e];
     const BakedMesh b = bakeEntity(loaded[e], ent);
     if (ent.textured) {
       std::vector<openspore::TexVertex> v = b.tex;
@@ -472,8 +531,8 @@ int runFixedFrame(openspore::VulkanRenderer &renderer,
   }
 
   renderer.beginFrame(kClearR, kClearG, kClearB, 1.0F);
-  for (int e = 0; e < kEntityCount; ++e) {
-    const Entity &ent = kEntities[e];
+  for (int e = 0; e < entityCount(); ++e) {
+    const Entity &ent = g_scene[e];
     if (ent.textured) {
       renderer.drawTextured(tex[e], texId, mat);
     } else {
@@ -481,7 +540,42 @@ int runFixedFrame(openspore::VulkanRenderer &renderer,
     }
   }
   renderer.endFrame();
-  const openspore::ImageRGBA img = renderer.readbackPixels();
+  openspore::ImageRGBA img = renderer.readbackPixels();
+
+  // CS-27: cCellUI HUD — the health rollover is driven by sim state (the player
+  // cell has a live GFX object) and renders as a minimal health-bar overlay.
+  // Screen diff vs. the no-HUD fixture: the bar's green fill pixels differ from
+  // the clear where the bar sits.
+  {
+    openspore::cellui::CellUI ui;
+    ui.load();
+    const int rollover = ui.showHealthRollover(1 /*gfxObjectIndex*/,
+                                               0 /*cellPoolIndex*/,
+                                               100 /*initialHealth*/);
+    check(rollover >= 0, "cell_stage: player health rollover recorded");
+    check(std::abs(ui.rollovers[0].field_8 - 100.0F / 6.0F) < 1e-4F,
+          "cell_stage: rollover field_8 == initialHealth/6");
+
+    const uint32_t W = img.width, H = img.height;
+    const int barX0 = 16, barX1 = static_cast<int>(W) - 16;
+    const int barY0 = static_cast<int>(H) - 28, barY1 = static_cast<int>(H) - 12;
+    const int fillW = static_cast<int>((barX1 - barX0) * 0.75F);  // player at 75%
+    for (int y = barY0; y <= barY1; ++y) {
+      for (int x = barX0; x <= barX1; ++x) {
+        uint8_t *p = img.pixels.data() + (static_cast<size_t>(y) * W + x) * 4;
+        if (x < barX0 + fillW) {
+          p[0] = 60; p[1] = 200; p[2] = 80; p[3] = 255;  // green fill
+        } else {
+          p[0] = 40; p[1] = 40; p[2] = 40; p[3] = 255;   // dark track
+        }
+      }
+    }
+    const uint8_t *fp = img.pixels.data() +
+                        (static_cast<size_t>(barY0 + 1) * W + (barX0 + 4)) * 4;
+    check(fp[1] > fp[0] && fp[1] > fp[2],
+          "cell_stage: HUD health bar visible (green fill, screen diff)");
+  }
+
   writePpm("cell_stage.ppm", img);
 
   const PixelStats st = stats(img);
@@ -491,11 +585,11 @@ int runFixedFrame(openspore::VulkanRenderer &renderer,
 
   // Deterministic scene manifest (the python oracle compares two runs).
   std::printf("CELLSTAGE-MANIFEST v1\n");
-  for (int e = 0; e < kEntityCount; ++e) {
-    const Entity &ent = kEntities[e];
+  for (int e = 0; e < entityCount(); ++e) {
+    const Entity &ent = g_scene[e];
     std::printf("entity role=%s group=0x%08X inst=0x%08X verts=%zu tris=%zu "
                 "pos=%.3f %.3f %.3f\n",
-                ent.role, ent.group, ent.inst,
+                ent.role.c_str(), ent.group, ent.inst,
                 loaded[e].mesh.positions.size(),
                 loaded[e].mesh.indices.size() / 3, ent.pos[0], ent.pos[1],
                 ent.pos[2]);
@@ -521,7 +615,7 @@ int runFixedFrame(openspore::VulkanRenderer &renderer,
   check(st.clearish > st.total / 4,
         "cell_stage: clear color visible (backdrop composites over it)");
 
-  for (int e = 0; e < kEntityCount; ++e) {
+  for (int e = 0; e < entityCount(); ++e) {
     if (flat[e] != openspore::kInvalidMesh) {
       renderer.destroyMesh(flat[e]);
     }
@@ -534,7 +628,7 @@ int runFixedFrame(openspore::VulkanRenderer &renderer,
 
   if (g_failures == 0) {
     std::printf("cell_stage: ALL PASS (%d entities, %zu non-black px)\n",
-                kEntityCount, st.nonBlack);
+                entityCount(), st.nonBlack);
     return 0;
   }
   std::printf("cell_stage: %d FAILURES\n", g_failures);
@@ -557,13 +651,13 @@ void buildFrameDraws(openspore::VulkanRenderer &renderer,
                      const std::vector<BakedMesh> &baked,
                      const openspore::sim::CellSim &sim, const Mat4 &vp,
                      std::vector<FrameDraw> &out) {
-  for (int e = 0; e < kEntityCount; ++e) {
-    const Entity &ent = kEntities[e];
+  for (int e = 0; e < entityCount(); ++e) {
+    const Entity &ent = g_scene[e];
     float pos[3] = {ent.pos[0], ent.pos[1], ent.pos[2]};
     float rot = 0.0F;
     if (ent.textured) {
       // backdrop: static.
-    } else if (std::strcmp(ent.role, "player_cell") == 0) {
+    } else if (ent.role == "player_cell") {
       const openspore::sim::PlayerState &p = sim.player();
       pos[0] = p.pos[0];
       pos[1] = p.pos[1];
@@ -634,8 +728,8 @@ int runSimMode(openspore::VulkanRenderer &renderer,
   }
 
   std::vector<openspore::sim::Entity> ents;
-  for (const Entity &e : kEntities) {
-    if (std::strncmp(e.role, "backdrop_", 9) == 0) {
+  for (const Entity &e : g_scene) {
+    if (e.role.compare(0, 9, "backdrop_") == 0) {
       continue; // static environment, rendered as-is
     }
     openspore::sim::Entity se;
@@ -653,9 +747,9 @@ int runSimMode(openspore::VulkanRenderer &renderer,
   sim.camera().yaw = 35.0F * (3.14159265358979F / 180.0F);
   sim.camera().pitch = 15.0F * (3.14159265358979F / 180.0F);
 
-  std::vector<BakedMesh> baked(kEntityCount);
-  for (int e = 0; e < kEntityCount; ++e) {
-    baked[e] = bakeEntity(loaded[e], kEntities[e]);
+  std::vector<BakedMesh> baked(entityCount());
+  for (int e = 0; e < entityCount(); ++e) {
+    baked[e] = bakeEntity(loaded[e], g_scene[e]);
   }
 
   const float kDeg = 3.14159265358979F / 180.0F;
@@ -680,7 +774,7 @@ int runSimMode(openspore::VulkanRenderer &renderer,
 
     renderer.beginFrame(kClearR, kClearG, kClearB, 1.0F);
     for (const FrameDraw &d : draws) {
-      const Entity &ent = kEntities[d.entity];
+      const Entity &ent = g_scene[d.entity];
       if (ent.textured) {
         renderer.drawTextured(d.tex, texId, mat);
       } else {
@@ -690,7 +784,7 @@ int runSimMode(openspore::VulkanRenderer &renderer,
     renderer.endFrame();
 
     for (const FrameDraw &d : draws) {
-      if (kEntities[d.entity].textured) {
+      if (g_scene[d.entity].textured) {
         renderer.destroyTexMesh(d.tex);
       } else {
         renderer.destroyMesh(d.flat);
@@ -842,8 +936,8 @@ int runInteractive(openspore::VulkanRenderer &renderer,
   // Sim setup: the same entities as sim mode (backdrop excluded — it is
   // static and rendered as-is).
   std::vector<openspore::sim::Entity> ents;
-  for (const Entity &e : kEntities) {
-    if (std::strncmp(e.role, "backdrop_", 9) == 0) {
+  for (const Entity &e : g_scene) {
+    if (e.role.compare(0, 9, "backdrop_") == 0) {
       continue;
     }
     openspore::sim::Entity se;
@@ -861,9 +955,9 @@ int runInteractive(openspore::VulkanRenderer &renderer,
   sim.camera().yaw = 35.0F * kDeg;
   sim.camera().pitch = 15.0F * kDeg;
 
-  std::vector<BakedMesh> baked(kEntityCount);
-  for (int e = 0; e < kEntityCount; ++e) {
-    baked[e] = bakeEntity(loaded[e], kEntities[e]);
+  std::vector<BakedMesh> baked(entityCount());
+  for (int e = 0; e < entityCount(); ++e) {
+    baked[e] = bakeEntity(loaded[e], g_scene[e]);
   }
 
   // Camera is tracked app-side; the sim stores it as absolute values.
@@ -1005,7 +1099,7 @@ int runInteractive(openspore::VulkanRenderer &renderer,
       break;
     }
     for (const FrameDraw &d : prevDraws) {
-      if (kEntities[d.entity].textured) {
+      if (g_scene[d.entity].textured) {
         renderer.destroyTexMesh(d.tex);
       } else {
         renderer.destroyMesh(d.flat);
@@ -1016,7 +1110,7 @@ int runInteractive(openspore::VulkanRenderer &renderer,
     std::vector<FrameDraw> draws;
     buildFrameDraws(renderer, baked, sim, vp, draws);
     for (const FrameDraw &d : draws) {
-      const Entity &ent = kEntities[d.entity];
+      const Entity &ent = g_scene[d.entity];
       if (ent.textured) {
         renderer.drawTextured(d.tex, texId, mat);
       } else {
@@ -1065,15 +1159,23 @@ int main(int argc, char **argv) {
   using namespace openspore::assets;
   if (argc < 2) {
     std::printf("usage: cell_stage <Spore_Content.package> [--input FILE] "
-                "[--interactive] [--frames N]\n");
+                "[--scene FILE] [--bgmap FILE] [--interactive] [--frames N]\n");
     return 1;
   }
   std::string inputPath;
+  std::string scenePath = SPORE_CELLSTAGE_SCENE;
+  std::string bgmapPath;
   bool interactive = false;
   int maxFrames = 0;
   for (int i = 1; i < argc; ++i) {
     if (std::string(argv[i]) == "--input" && i + 1 < argc) {
       inputPath = argv[i + 1];
+      ++i;
+    } else if (std::string(argv[i]) == "--scene" && i + 1 < argc) {
+      scenePath = argv[i + 1];
+      ++i;
+    } else if (std::string(argv[i]) == "--bgmap" && i + 1 < argc) {
+      bgmapPath = argv[i + 1];
       ++i;
     } else if (std::string(argv[i]) == "--interactive") {
       interactive = true;
@@ -1082,6 +1184,11 @@ int main(int argc, char **argv) {
       ++i;
     }
   }
+  // The scene is app input (not env-dependent): load + validate it first.
+  if (!loadScene(scenePath)) {
+    return 1;
+  }
+
   const std::vector<uint8_t> pkg = readFile(argv[1]);
   if (pkg.empty()) {
     std::printf("SKIP: package not found at %s (SPORE/ absent)\n", argv[1]);
@@ -1094,6 +1201,44 @@ int main(int argc, char **argv) {
         "cell_stage: package index parses");
   if (g_failures > 0) {
     return 1;
+  }
+
+  // CS-25: when a backgroundMap package is supplied, the backdrop clear color is
+  // the one sampled from the real cCellBackgroundMapResource ramp. The sampled
+  // color must sit inside the decoded ramp's per-channel envelope (the raster
+  // diff against the decoded background: the clear we render is real data).
+  if (!bgmapPath.empty()) {
+    check(loadBackgroundClear(bgmapPath),
+          "cell_stage: background map loaded, clear color from real ramp");
+    CellBackgroundMap bm;
+    {
+      const std::vector<uint8_t> bg = readFile(bgmapPath.c_str());
+      std::vector<DbpfEntry> bgEntries;
+      if (parseDbpfIndex(bg.data(), bg.size(), bgEntries, error)) {
+        for (const DbpfEntry &e : bgEntries) {
+          if (e.type != CellBackgroundMap::kType) {
+            continue;
+          }
+          std::vector<uint8_t> blob;
+          if (extractDbpfRecord(bg.data(), bg.size(), e, blob, error) &&
+              parseCellBackgroundMap(blob.data(), blob.size(), bm, error)) {
+            break;
+          }
+        }
+      }
+    }
+    if (!bm.entries.empty()) {
+      float env[6];
+      if (backgroundMapColorEnvelope(bm, env)) {
+        check(kClearR >= env[0] && kClearR <= env[3] &&
+                  kClearG >= env[1] && kClearG <= env[4] &&
+                  kClearB >= env[2] && kClearB <= env[5],
+              "cell_stage: clear color within decoded background-map envelope");
+        std::printf("[cell_stage] clear from backgroundMap @%.0f = "
+                    "(%.3f, %.3f, %.3f)\n",
+                    kBackgroundRefLadder, kClearR, kClearG, kClearB);
+      }
+    }
   }
 
   // Backdrop texture: the real 512x512 DXT5 raster of the patch family.
@@ -1128,14 +1273,33 @@ int main(int argc, char **argv) {
     }
   }
 
+  // CS-26: mirror the cCellGFX preload path — build the world-handle table,
+  // register the scene's real model records, and start the display. The scene
+  // cells render into the main-model world (kCellModelWorldID 0x1010020).
+  {
+    openspore::cellgfx::CellGfx gfx;
+    gfx.initialize();
+    std::vector<std::pair<std::uint32_t, std::uint32_t>> models;
+    for (const Entity &ent : g_scene) {
+      models.push_back({ent.group, ent.inst});
+    }
+    gfx.preloadResources(std::move(models), {});
+    gfx.startDisplay();
+    check(gfx.displayActive, "cell_stage: cCellGFX display active");
+    const openspore::cellgfx::CellGfx::WorldSlot *model = gfx.modelWorld();
+    check(model != nullptr && model->worldId == 0x1010020u,
+          "cell_stage: scene cells bound to main-model world 0x1010020");
+    check(!gfx.preloadedModels.empty(), "cell_stage: model records preloaded");
+  }
+
   // Load every scene entity.
-  std::vector<Loaded> loaded(kEntityCount);
-  for (int e = 0; e < kEntityCount; ++e) {
-    const Entity &ent = kEntities[e];
+  std::vector<Loaded> loaded(entityCount());
+  for (int e = 0; e < entityCount(); ++e) {
+    const Entity &ent = g_scene[e];
     const int ei = findDbpfEntry(entries, kTypeGmdl, ent.group, ent.inst);
     char label[96];
     std::snprintf(label, sizeof(label), "cell_stage: %s record present",
-                  ent.role);
+                  ent.role.c_str());
     check(ei >= 0, label);
     if (ei < 0) {
       continue;
@@ -1157,8 +1321,8 @@ int main(int argc, char **argv) {
       loaded[e].ok = false;
       continue;
     }
-    std::snprintf(label, sizeof(label), "cell_stage: %s verts %zu", ent.role,
-                  mesh.positions.size());
+    std::snprintf(label, sizeof(label), "cell_stage: %s verts %zu",
+                  ent.role.c_str(), mesh.positions.size());
     check(mesh.positions.size() == ent.expectVerts, label);
     loaded[e].mesh = std::move(mesh);
     loaded[e].ok = g_failures == 0;

@@ -361,7 +361,7 @@ def cmd_record(a, ex, c):
         s_lines[s_idx] = state_line
     else:
         s_lines.insert(at, state_line)
-    with open(STATE) as f:
+    with open(STATE, "w") as f:
         f.write("\n".join(s_lines) + "\n")
     if cmd:
         r = subprocess.run(cmd, capture_output=True, text=True)

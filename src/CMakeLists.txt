@@ -89,7 +89,12 @@ add_test(
 # a stand-in player cell, and food/prey objects, offscreen PPM + a
 # deterministic scene manifest on stdout. Env-dependent (skips when SPORE/
 # is absent); the PPM lands in the build dir, never in git.
-add_executable(cell_stage apps/cell_stage.cpp)
+# CS-23: the scene is declarative (apps/scene.json) — SceneConfig loads it.
+# CS-26: CellGfx mirrors the cCellGFX preload path (worlds + preloaded records).
+add_executable(cell_stage apps/cell_stage.cpp apps/SceneConfig.cpp
+  apps/CellGfx.cpp apps/CellUI.cpp)
+target_compile_definitions(cell_stage PRIVATE
+  SPORE_CELLSTAGE_SCENE="${CMAKE_CURRENT_SOURCE_DIR}/apps/scene.json")
 target_link_libraries(cell_stage PRIVATE
   openspore_assets openspore_renderer openspore_sim)
 # Obj17 part B: interactive mode needs SDL3 (window + WSI surface). When the
@@ -102,9 +107,32 @@ elseif(PkgConfig_FOUND AND PkgConfig::SDL3)
   target_link_libraries(cell_stage PRIVATE PkgConfig::SDL3)
   target_compile_definitions(cell_stage PRIVATE SPORE_HAS_SDL3=1)
 endif()
+ add_test(
+   NAME cell_stage
+   COMMAND cell_stage ${PROJECT_SOURCE_DIR}/SPORE/Data/Spore_Content.package
+     --bgmap ${PROJECT_SOURCE_DIR}/SPORE/Data/Spore_Game.package
+   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+
+# CS-23: declarative scene config — hermetic (no GPU, no SPORE/). Loads
+# apps/scene.json and asserts the entities + provenance labels round-trip.
+add_executable(scene_config_test apps/scene_config_test.cpp apps/SceneConfig.cpp)
 add_test(
-  NAME cell_stage
-  COMMAND cell_stage ${PROJECT_SOURCE_DIR}/SPORE/Data/Spore_Content.package
+  NAME scene_config
+  COMMAND scene_config_test ${CMAKE_CURRENT_SOURCE_DIR}/apps/scene.json
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+
+# CS-26: cCellGFX preload path — world-handle table + preloaded record keys.
+add_executable(cellgfx_test apps/cellgfx_test.cpp apps/CellGfx.cpp)
+add_test(
+  NAME cellgfx
+  COMMAND cellgfx_test
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+
+# CS-27: cCellUI HUD — Load constants + ShowHealthRollover formula.
+add_executable(cellui_test apps/cellui_test.cpp apps/CellUI.cpp)
+add_test(
+  NAME cellui
+  COMMAND cellui_test
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
 # Obj17 part B smoke: interactive mode with no display must fail gracefully

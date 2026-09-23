@@ -242,8 +242,11 @@ void testGmdlWalk() {
             model.vertexBuffers[0].vertexCount == 3,
         "gmdl: 3-vertex buffer");
   check(gmdlVertexStride(model.descriptors[0]) == 12, "gmdl: stride 12");
-  // Truncation must fail, not parse short.
-  std::vector<uint8_t> cut(blob.begin(), blob.end() - 4);
+  // Truncation must fail, not parse short. Cut into the geometry (the index
+  // buffer, whose header begins at byte 0x2C); the strict geometry walk
+  // rejects it. The trailer is accepted best-effort, so truncating the trailer
+  // alone is no longer the probe — geometry truncation is the unambiguous case.
+  std::vector<uint8_t> cut(blob.begin(), blob.begin() + 48);
   GmdlModel bad;
   check(!parseGmdl(cut.data(), cut.size(), bad, error),
         "gmdl: truncated record rejected");

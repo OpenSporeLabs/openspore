@@ -90,11 +90,11 @@ bool meshFromGmdl(const GmdlModel &model, uint32_t meshIndex, Mesh &out,
     } else if (e.declUsage == kUseTexcoord && e.declType == kFloat2 &&
                uvEl == nullptr) {
       uvEl = &e;
-    } else {
-      return fail(error, "mesh: unsupported vertex element type=" +
-                             std::to_string(e.declType) +
-                             " usage=" + std::to_string(e.declUsage));
     }
+    // Any other element (COLOR, MATID, TANGENT, extra TEXCOORDs, ...) is not
+    // consumed by this renderer and is ignored. Its on-disk size is still
+    // validated by gmdlVertexStride below (an undocumented declType yields a
+    // zero stride and fails there), so silently skipping is safe.
   }
   if (posEl == nullptr) {
     return fail(error, "mesh: descriptor has no POSITION/FLOAT3");

@@ -1,12 +1,14 @@
 // Minimal Spore GMDL (GameModel, type 0x00E6BCE5) record walker.
 //
-// Independently authored for OpenSpore. Walks exactly the version-8 record
-// layout needed for static single-mesh assets: header + bounds, one index
-// buffer, vertex descriptors/buffers, mesh refs, material IDs, then the
-// material-info / bone-range / anim-data trailer (parsed just far enough to
-// validate the end offset). Anything outside that path — version 9+ records,
-// undocumented shader-data IDs, 32-bit indices beyond the 16-bit path — is a
-// hard error, not a silent skip.
+// Independently authored for OpenSpore. Walks the version-8 record layout
+// needed for static single-mesh assets: header + bounds, index buffers, vertex
+// descriptors/buffers, mesh refs, material IDs, and the material-info section.
+// That renderable prefix is validated strictly (truncation is a hard error).
+// The trailing bone-range / anim-data / baked-deform / resource-key block is
+// animation data this path never consumes and has two on-disk variants, so it
+// is accepted as an opaque trailer. Anything outside that path — version 9+
+// records, undocumented shader-data IDs, 32-bit indices beyond the 16-bit path
+// — is a hard error, not a silent skip.
 #pragma once
 
 #include <array>

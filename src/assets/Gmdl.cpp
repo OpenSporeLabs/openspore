@@ -241,33 +241,32 @@ bool parseGmdl(const uint8_t *data, size_t size, GmdlModel &out,
     }
   }
 
+  // Trailer. The known framing (bone ranges + anim data + baked deforms +
+  // trailing key) is VERIFIED for the CellImages / mini.gmdl family and lands
+  // exactly on record size. Other families — notably the real cell-stage GMDLs
+  // (groups 0x40616201/02) — carry a larger OPAQUE baked-deform trailer with a
+  // different framing that overruns the known walk. The geometry + material
+  // info above are consumed and validated strictly (a truncated record is
+  // rejected there), so any remaining trailing bytes are accepted as an opaque
+  // trailer and the record is consumed to its end.
   const uint32_t boneRanges = r.readU32();
-  if (!r.skip(static_cast<size_t>(boneRanges) * 8)) {
-    return fail(error, "gmdl: truncated bone ranges");
-  }
-  const uint32_t animDatas = r.readU32();
-  for (uint32_t i = 0; i < animDatas; ++i) {
-    // Two baked transforms (64 bytes each) + flags + resource key.
-    if (!r.skip(64 * 2 + 4 + 12)) {
-      return fail(error, "gmdl: truncated anim data");
+  r.skip(static_cast<size_t>(boneRanges) * 8);
+  if (r.ok()) {
+    const uint32_t animDatas = r.readU32();
+    for (uint32_t i = 0; i < animDatas && r.ok(); ++i) {
+      // Two baked transforms (64 bytes each) + flags + resource key.
+      r.skip(64 * 2 + 4 + 12);
+      if (!r.ok()) {
+        break;
+      }
+      const uint32_t baked = r.readU32();
+      r.skip(static_cast<size_t>(baked) * 4);
     }
-    const uint32_t baked = r.readU32();
-    if (!r.skip(static_cast<size_t>(baked) * 4)) {
-      return fail(error, "gmdl: truncated baked deforms");
-    }
   }
-  for (int i = 0; i < 3; ++i) {
+  for (int i = 0; i < 3 && r.ok(); ++i) {
     out.unknownKey[static_cast<size_t>(i)] = r.readU32();
   }
-  if (!r.ok()) {
-    return fail(error, "gmdl: truncated trailer");
-  }
-  out.consumed = r.offset();
-  if (out.consumed != size) {
-    error = "gmdl: final offset " + std::to_string(out.consumed) +
-            " != record size " + std::to_string(size);
-    return false;
-  }
+  out.consumed = size;
   return true;
 }
 

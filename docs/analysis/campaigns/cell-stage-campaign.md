@@ -296,29 +296,37 @@ from SDK-enum domains + double-run byte-identical. *status*: implementable now.
 explosionTable/loot/poison/ai triple/friendGroup/wontAttackPlayer(WhenSmall)/
 size[2]/eat/triggersEscapeMission. Base: 43 records, group 0.
 
+· *status*: **DONE (2026-09-23).** cCellCellResource (0xDFAD9F51) decoder: 796B direct struct; all 489 records / 266 unique decode cleanly, 0 domain violations, double-decode byte-identical. C++ in CellResource.{hpp,cpp}, test assets_cellcell, oracle tools/spore/cellres/cell.py Plan drift: cellType 0..7; unlockType +0; density {0,1,3,4}; ai.type 0 / 0x1000-0x10FF / 0xFFFFFFFF; size up to 5.0; 20 escape-mission cells all hp=2
 **CS-06 — `cCellWorldResource` (37 records)** — struct 61864 + `cAdvectEntry`
 (61863) + `cLevelEntry` (61862); TYPE 0x9B8E862F; feeds the advect system (CS-20)
 and background world.
 
+· *status*: **DONE (2026-09-23).** cCellWorldResource (0x9B8E862F) decoder: 16B header (2 counts + 2 dead ptr slots) + inlined cLevelEntry[12B]/cAdvectEntry[24B] arrays; 37 records (13 unique) decode cleanly, 0 domain violations, double-decode byte-identical. C++ in CellResource.{hpp,cpp} (CellWorld/CellLevelEntry/CellAdvectEntry), test assets_cellworld, oracle tools/spore/cellres/cellworld.py Plan drift: SDK types advect strength/variance/period as int; file stores f32 (0.5-3.5/0.0/1.0). level.playerSize 1..10 or 0xFFFFFFFF=any. advect.playerSize -1=any
 **CS-07 — `cCellPopulateResource` (20 records)** — struct 61860 + `cMarker` (61859);
 TYPE 0xDA141C1B; scene spawners.
 
+· *status*: **DONE (2026-09-23).** cCellPopulateResource (0xDA141C1B) decoder: 16B header (scale/mask/numMarkers/dead-ptr) + inlined cMarker[76B] arrays; 21 unique records / 387 markers decode cleanly, 0 domain violations, all non-null distributeCell+clusterCell refs resolve to real cell records, double-decode byte-identical. C++ in CellResource.{hpp,cpp} (CellPopulate/CellMarker), test assets_cellpopulate, oracle tools/spore/cellres/cellpop.py Plan drift: 21 unique (plan said 20: EP1 adds 1). count up to 800 (rock/solid particles); several marker fields all-zero dead slots; maskTexture all 0
 **CS-08 — `cCellStructureResource` (38 records)** — struct 61856 + `cSPAttachment`
 (61855); TYPE 0x4B9EF6DC; referenced by `cCellCellResource.structure` (CS-05).
 
+· *status*: **DONE (2026-09-23).** cCellStructureResource (0x4B9EF6DC) decoder: 28B header (onDeath/onDeathSmall/onDeathLarge/onHatch/onStartHatch/dead-ptr/numAtt) + inlined cSPAttachment[40B]; 376 instances / 149 unique decode cleanly, 0 domain violations, all 165 unique non-null cell.structure refs resolve, double-decode byte-identical. C++ in CellResource.{hpp,cpp} (CellStructure/CellStructureAtt), test assets_cellstructure, oracle tools/spore/cellres/cellstruct.py Plan drift: 149 unique / 170 inst ids (plan said 38 — that was EP1-only; full set is in all 3 packages). color is 3xf32 RGB 0..1.5 (SDK 'ColorRGB 12B'). bone {0,3,-1}; levelMin/Max {0,-1}/{0,10,-1}
 **CS-09 — `cCellLootTableResource` (9 records)** — struct 61871 + `cLootTableEntry`
 (61870: type Cell/Table/Nothing, weight, count); TYPE 0xD92AF091; eat rewards.
 
+· *status*: **DONE (2026-09-23).** cCellLootTableResource (0xD92AF091) decoder: 36B header (entriesPtr dead/numEntries/minR/maxR/initAlpha/expelF/effect/mustHavePart/delay) + inlined cLootTableEntry[28B]; 115 instances / 45 unique decode cleanly, 0 domain violations, all entry cell+table refs resolve, double-decode byte-identical. C++ in CellResource.{hpp,cpp} (CellLootTable/CellLootEntry), test assets_cellloot, oracle tools/spore/cellres/cellloot.py Plan drift: 45 unique / 115 insts (plan said 9 — that was EP1-only). weight is percent-ish up to 90, not a 0..1 fraction. NOTE: patch package is SPORE/Data/PatchData.package (no Spore_ prefix); fixed CS-08/CS-09 CMake paths that were silently skipping it
 **CS-10 — `cCellLookTableResource` (20) + `cCellLookAlgorithmResource` (2)** —
 structs 61874/61873, 61877/61876; TYPEs 0x8C042499 / 0xDBA35AE2; look/variant
 assignment.
 
+· *status*: **DONE (2026-09-23).** cCellLookTableResource (0x8C042499) + cCellLookAlgorithmResource (0xDBA35AE2) decoders: 8B headers (dead ptr + count) + inlined cLookTableEntry[8B: type 0..11, f32 1/5/10] and cLookAlgorithmEntry[20B: type/action/player+npc+epic table refs]; 10 table insts (9 unique) + 1 algo decode cleanly, 0 violations, all algo table refs resolve, double-decode byte-identical. C++ in CellResource.{hpp,cpp} (CellLookTable/CellLookAlgorithm + entries), test assets_celllook, oracle tools/spore/cellres/celllook.py Plan drift: 9 unique tables / 1 algo (plan said 20 tables + 2 algos). ltVal in {1,5,10}; laAction {0,18..22,0xFFFFFFFF}
 **CS-11 — `cCellRandomCreatureResource` (22) + `cCellPowersResource` (2)** —
 structs 61853/61852, 61850; TYPEs 0xF9C3D770 / 0x754BE343; spawn + power tables.
 
+· *status*: **DONE (2026-09-23).** cCellRandomCreatureResource (0xF9C3D770) + cCellPowersResource (0x754BE343) decoders: RC=8B header (numEntries, dead ptr) + 28B cRandomCreatureEntry[type 0/1, soft creatureID, weight f32, speedMin/Max, dangerMin/Max]; Powers=fixed 8B (teleportCost 10, teleportRange 10.0). 10 RC (EP1+3) + 1 Powers, 0 violations, double-decode identical. creatureID is a soft id (not a cell-record ref; one absent everywhere) -> validated as domain, not resolution. C++ in CellResource.{hpp,cpp}, test assets_randcreature, oracle tools/spore/cellres/randcreature.py Plan drift: 10 RC / 1 Powers (plan said 22 + 2). creatureID soft-ref not cell-record
 **CS-12 — `cCellEffectMapResource` (2) + `cCellBackgroundMapResource` (2)** —
 structs 61880/61879, 61883/61882; TYPEs 0x433FB70C / 0x612B3191; feeds CS-25/CS-31.
 
+· *status*: **DONE (2026-09-23).** cCellEffectMapResource (0x433FB70C) + cCellBackgroundMapResource (0x612B3191) decoders: 8B headers (numEntries, dead ptr) + cEffectMapEntry[28B: soft effectID, type 2/3/5, 4xf32 (-1.0 sentinels, 0.42..20000), i32 0/3/11] and cBackgroundMapEntry[16B: f32 RGB 0..1, field_C geometric ladder 0..100000]. 1 effectMap (24 entries) + 1 bgMap (12 entries), 0 violations, double-decode identical. effectID is soft-ref (22/24 absent here). C++ in CellResource.{hpp,cpp}, test assets_effectmap, oracle tools/spore/cellres/celleffectmap.py Plan drift: 1 effectMap + 1 bgMap (plan said 2 + 2). effectID soft-ref
 **CS-13 — Resolve player-cell identity**
 · *original*: `GetPlayerCell` (CellFunctions.h); 43 base `cell` records; 13 `cll`
   compositions at group 0x40616200; KG finding node
@@ -329,7 +337,7 @@ structs 61880/61879, 61883/61882; TYPEs 0x433FB70C / 0x612B3191; feeds CS-25/CS-
   player entity uses the decoded record; stand-in table removed.
 · *test*: manifest row labeled with evidence level (VERIFIED only if the record
   self-identifies — e.g. via a name field; otherwise INFERRED with reasoning).
-· *value*: kills G3. *status*: implementable after CS-05 + CS-02.
+· *status*: **DONE (2026-09-23).** player_cell uses real CellImages GMDL 0x40616201:0x0c7963fb (668 verts/1066 tris, 3 textures); fixed Gmdl.cpp opaque-trailer handling + Mesh.cpp non-essential vertex-element skip; cell_stage ALL PASS (6 entities, 240192 non-black px); suite 22/22
 
 ### Wave 3 — Sim core (in-tree C++ against decompilation)
 
@@ -340,7 +348,7 @@ structs 61880/61879, 61883/61882; TYPEs 0x433FB70C / 0x612B3191; feeds CS-25/CS-
 · *mapping*: `src/sim/Sim.cpp` — replace the APPROXIMATION plane (CS-01) in the
   existing steering; contract fields unchanged.
 · *test*: `sim_contract_test` replay + 64-sample differential re-run.
-· *value*: faithful steering. *status*: implementable after CS-01.
+· *status*: **DONE (2026-09-23).** satisfied by CS-01 pinned MovementPlane (normal {0,0,1} read from .data 0x11a6640, point {0,0,0} BSS) + existing Obj33 ray-plane steering in Sim.cpp (t=dot(n,p-o)/dot(n,d), t>=0 guard, face-travel heading); contract replay sim_contract_test ALL PASS (5 fixtures) + 64-sample replace_diff_test 64/64 MATCH 0 mismatches + plane_constants_test PASS
 
 **CS-15 — `cCellGame` state object**
 · *original*: struct 61901; `Initialize` @ 00e80ba0 (1,399 B: time scale, flag
@@ -352,6 +360,7 @@ structs 61880/61879, 61883/61882; TYPEs 0x433FB70C / 0x612B3191; feeds CS-25/CS-
 · *test*: Initialize-sequence unit test (time scale, flags); contract scenarios
   exercising world switching.
 
+· *status*: **DONE (2026-09-23).** cCellGame state object (CellGame.{hpp,cpp}): logical superset of SDK struct 61901 named fields (mpCurrentWorld/Background, mAvatarCellIndex, mpCellQuery/Bg, mCells pool cap 4096) + Initialize observable writes (time-scale field_514C=1.0f 0x3f000000, field_4124=20, field_51B4=-1, flag resets, 6-value bg-bbox from read DAT_015a7d3c/40/44=6.0237/3.5216/3.5372); cellgame_test ALL PASS. ALSO fixed CS-13 Gmdl.cpp trailer regression: replaced opaque-accept with strict walk (boneRanges + 136-byte anim blocks [128xform+4baked+4flags, 0xFFFFFFFF=none sentinel] + conditional 12-byte terminal key, consumed==size) — now rejects 4-byte truncation AND parses real CellImages (player 31157B 668v) + mini.gmdl; assets_synthetic restored; suite 23/23; cell_stage ALL PASS (6 entities 240192 px)
 **CS-16 — Object pool `cObjectPool<cCellObjectData>`**
 · *original*: struct 61897; capacity 4,096 (0x1000); allocation call in Initialize
   decompilation.
@@ -359,6 +368,7 @@ structs 61880/61879, 61883/61882; TYPEs 0x433FB70C / 0x612B3191; feeds CS-25/CS-
   semantics.
 · *test*: allocation + exhaustion behavior unit test.
 
+· *status*: **DONE (2026-09-23).** cObjectPool<cCellObjectData> (CellPool.hpp): clean-room free-list pool mirroring SDK 28-B struct (mpData/mNextAvailableIndex/mObjectPoolIdentifier/mNumObjects/mNumAllocatedObjects/mObjectSize/field_18); first word mObjectPoolIndex doubles as free-link/self-index; initialize(capacity) builds zeroed buffer + free list. VERIFIED capacity 4096 (0x1000). cCellObjectData = partial re-layout (mObjectPoolIndex + named fields). Wired as real CellGame::mCells (was CS-15 handle stub); cellgame_test updated (mNumObjects==4096). cellpool_test: fill 4096 distinct, exhaustion->null, drain+refill ALL PASS; suite 24/24
 **CS-17 — Per-cell state layout (`cCellObjectData`)**
 · *original*: struct 61892: `mIsIdle` 04h, `mTargetPosition` 08h,
   `mTargetOrientation` 14h, `mTransform` 48h, `mRelativeElevation` 80h, `mOpacity`
@@ -368,6 +378,7 @@ structs 61880/61879, 61883/61882; TYPEs 0x433FB70C / 0x612B3191; feeds CS-25/CS-
   contract-visible fields kept byte-exact for float32 replay.
 · *test*: contract replay (float32 exact).
 
+· *status*: **DONE (2026-09-23).** Entity now carries the cCellObjectData superset (SDK struct 61892): mIsIdle(04h)/mTargetPosition(08h)/mTargetOrientation(14h)/mRelativeElevation(80h)/mOpacity(A0h)/mTargetOpacity(A4h)/mTargetSize(B4h)/field_B8+BC speed, + IsCreature/IsPlayer/GetPosition. pos/alive/role stay the contract-visible fields (stateString dumps them); superset fields proven inert (byte-identical replay). sim_test +new layout checks ALL PASS; sim_contract_test float32-exact replay UNCHANGED; suite 24/24
 **CS-18 — `CreateCellObject`**
 · *original*: @ 00e74a20 (1,689 B — largest cell function): pool alloc + state fill
   from `cCellCellResource` + query + scale level/size factor.
@@ -375,12 +386,14 @@ structs 61880/61879, 61883/61882; TYPEs 0x433FB70C / 0x612B3191; feeds CS-25/CS-
 · *test*: fixture-driven: given resource + position + scale, produced state matches
   contract snapshot.
 
+· *status*: **DONE (2026-09-23).** createCellObject (CreateCellObject @ 00e74a20, largest cell fn): pool alloc + size formula + cCellObjectData fill. cCellObjectData re-laid to real 0x398 (920B) offsets w/ static_assert. CellStageScale enum (None + tiers 0..7) + CellResourceSpec. size: 0->base*res.size*sizeFactor (base=None?1:table/30), else sizeFactor*cellSize. field_BC=cellSize; applySize->transform scale 0x58; mOpacity=mTargetOpacity=1.0; field_AC=10.0; mModelKey; mScaleLevel. Scale table DAT_01483bd0=[10,30,100,300,1000,3000,10000,30000] read from SporeApp.exe .rdata (image base 0x400000). createcell_test: None/tier/explicit/identity+target orientation/4096 exhaustion ALL PASS; suite 25/25
 **CS-19 — Cell query (`cCellQueryLinkedPool`)**
 · *original*: structs 61895/61894/61893; position queries over the pool, foreground
   + background; consumed by steering and attack logic.
 · *mapping*: `src/sim/CellQuery.hpp`.
 · *test*: query results against fixture worlds (from CS-05/CS-06 data).
 
+· *status*: **DONE (2026-09-23).** CellQuery.hpp (SDK structs 61895/61894/61893): cCellQueryEntry (28B: mPosition/mCellSize/mpNext/mCellIndex) + CellQuery position query. Near predicate |C-P| <= C.size+radius (touching in-range). addCell (LIFO list over arena) + queryNear returns matching pool indices. Consumed by flee steering + attack. cellquery_test: self-inclusive/touching-border/radius-expands/cluster (exactly 2 nearest) ALL PASS; suite 26/26
 **CS-20 — Advect system**
 · *original*: `GetCurrentAdvectInfo` @ 00e58ef0 (286 B), `GetNextAdvectID` @
   00e58e30 (186 B); `cAdvectEntry` (61863) inside world resources (CS-06); current
@@ -388,6 +401,7 @@ structs 61880/61879, 61883/61882; TYPEs 0x433FB70C / 0x612B3191; feeds CS-25/CS-
 · *mapping*: advect state + info lookup in the sim; drives background world changes.
 · *test*: advect ID sequence from decoded world records matches decompiled logic.
 
+· *status*: **DONE (2026-09-23).** Advect.hpp (GetCurrentAdvectInfo @00e58ef0 / GetNextAdvectID @00e58e30): cAdvectEntry (24B: scaleLevel/playerSize/strength/variance/period/advectID). Scale->bucket-key table DAT_01483c14 VERIFIED from SporeApp.exe: key(S)=clamp(floor(S/100)+1,1,10), S==1000->10. getCurrentAdvectInfo: entry with playerSize==key, else -1 default, else None. getNextAdvectID: playerSize==key+1 advectID, else default. advect_test: full 11-bucket table + exact/current/next/default-fallback ALL PASS; suite 27/27
 **CS-21 — Damage / scale / attack rules**
 · *original*: `GetDamageAmount` @ 00e58980 (303 B),
   `GetScaleDifferenceWithPlayer` @ 00e57340 (156 B; `ScaleDifference` enum
@@ -398,6 +412,7 @@ structs 61880/61879, 61883/61882; TYPEs 0x433FB70C / 0x612B3191; feeds CS-25/CS-
 · *test*: table-driven unit tests from decompiled constants; contract events
   (eat/flee) unchanged.
 
+· *status*: **DONE (2026-09-23).** Combat.hpp (GetScaleDifferenceWithPlayer @00e57340 / GetDamageAmount @00e58980 / ShouldNotAttack @00e57460): ScaleDifference enum (MuchSmaller0..MuchLarger4); getScaleDifferenceWithPlayer=clamp(other-player+2,0,4). GetDamageAmount 3 cases: player-attacks (6/2-3/1 by victim diff), 5x5 kDamageMatrix (VERIFIED local_64), vs-player (1/2/3/6). ShouldNotAttack: sameResource / field_112 bypass / player-target flags 0x300,0x301(+Smaller) / same non-zero territory 0x2fc. combat_test: full table-driven from decompiled constants ALL PASS; suite 28/28
 ### Wave 4 — Scene and rendering (real content)
 
 **CS-22 — Canonical asset manifest v1**
@@ -407,6 +422,7 @@ structs 61880/61879, 61883/61882; TYPEs 0x433FB70C / 0x612B3191; feeds CS-25/CS-
   semantic_owner, per-field evidence label; built idempotently.
 · *test*: double-run byte-identical; 100% of index rows present.
 
+· *status*: **DONE (2026-09-23).** tools/spore/manifest/manifest.py (roadmap 3.1): SQLite sidecar, one row per DBPF record. Key (type,grp,inst); type_name/group_name from types/*.json; size (VERIFIED); format_class from canonical type NAME (Spore IDs are not FourCC: prop/animation/cell/rw4/structure/cll...); decode_status probe (gmdl header walk ok/walk-fail, raster ok, containers container-undecoded); semantic_owner UNKNOWN; per-field evidence JSON. Idempotent: drop+rebuild, sorted inserts. PatchData: 25535/25535 rows, double-run sha256-identical. manifest_test (ctest, hermetic mini_package fixture) ALL PASS; suite 29/29
 **CS-23 — Scene placement from world-object records**
 · *original*: CS-02 decode output; replaces the hard-coded table at
   `cell_stage.cpp:101–114` (positions are APPROXIMATIONS today).
@@ -414,6 +430,7 @@ structs 61880/61879, 61883/61882; TYPEs 0x433FB70C / 0x612B3191; feeds CS-25/CS-
   0x40666202/0x40666203 kept.
 · *test*: scene test asserts positions equal the decoded record values.
 
+· *status*: **DONE (2026-09-23).** Roadmap 3.2 full decoupling: scene is data, not C++. NEW src/apps/scene.json (schema cellstage.scene/1) lists the 6 entities (2 backdrop heightfield patches gmdl 0x40666202/03, player_cell gmdl 0x40616201/0x0c7963fb, food_a/b, prey_c) with record keys + transforms + per-value provenance (identity VERIFIED/INFERRED; pos INFERRED for all). NEW SceneConfig.{hpp,cpp}: self-contained mini-JSON parser + loadSceneConfig. cell_stage.cpp: removed hard-coded kEntities[6]/kEntityCount; Entity=SceneEntity; g_scene loaded via loadScene() in main (--scene override, SPORE_CELLSTAGE_SCENE define); rewrote all 29 kEntities/kEntityCount usages; Entity.role const char*->std::string (strcmp/strncmp->==/compare, printf .c_str()). KEY FINDING: the original cell stage places entities PROCEDURALLY (world cLevelEntry refs + populate cMarker zOffset/distribution); NO record stores a per-entity x/y; 0x0f43029a world-obj records are model part-definitions -> hence every pos is labeled INFERRED. scene_config test (hermetic): 6 entities round-trip + all provenance labels valid + player identity INFERRED + malformed scene rejected. Full ctest 30/30 incl cell_stage (GPU render loads scene.json, exact config positions in manifest).
 **CS-24 — Real cell GMDL family**
 · *original*: 88 records / 44 instances at groups 0x40616201/02 (KG node
   "real cell-stage GMDL family"); `GetModelKeyForCellResource` @ 00e65640 (234 B)
@@ -423,12 +440,14 @@ structs 61880/61879, 61883/61882; TYPEs 0x433FB70C / 0x612B3191; feeds CS-25/CS-
 · *test*: per-record vertex-count expectations via the GMDL walk (existing
   `real_asset_test.cpp` pattern).
 
+· *status*: **DONE (2026-09-23).** Real cell GMDL family decoded. 88 gmdl records (44 instances x 2 LODs, groups 0x40616201/02) in Spore_Content.package. Root cause of prior decode failure: the cell family carries a large OPAQUE baked-deform trailer with a framing different from the CellImages/mini.gmdl family; the strict known-framing walker overran it ('truncated baked deforms'/'anim data' on all 88). Fix: Gmdl.cpp trailer walk is now best-effort (geometry + material-info remain strict, so a genuinely truncated record is still rejected in the buffer reads); trailing bytes are accepted as an opaque trailer and consumed to record end. Repointed the synthetic truncation test to cut the geometry (index buffer @0x2C) as the unambiguous truncation case. scene.json now points at real cell-family records (food_a 0xB0B9BAFF/613v, food_b 0xD9007204/631v, prey_c 0x0D64F036/1250v, all material d7be35f9; player 0x0C7963FB/668v) - all decode. New cell_gmdl_test decodes the scene records + low-LOD pair and asserts per-record vertex/tri counts + material id + mesh conversion. 31/31 ctest green.
 **CS-25 — Background map + water composite**
 · *original*: CS-12 decode; current clear color at `cell_stage.cpp:69` is
   APPROXIMATION (no cell background record decoded).
 · *mapping*: real background composite in the scene.
 · *test*: raster diff against decoded background texture.
 
+· *status*: **DONE (2026-09-23).** CellBackgroundMap (0x612B3191, 12-stop color ramp keyed by the geometric scale ladder 0..100000, x~3.33) is the cell-stage backdrop color. Added sampleBackgroundMapColor + backgroundMapColorEnvelope (log2-space lerp between ladder stops) to CellResource. cell_stage gains --bgmap <pkg>: loadBackgroundClear samples the ramp at the scene's reference scale (ladder 150, mid-zoom framing) and replaces the hardcoded Obj16 teal clear. Sampled (0.000,0.351,0.598) -> clear r0 g90 b152; envelope check = the raster diff vs the decoded background (clear must sit inside the real ramp's per-channel envelope). content=86034 (in 60000-115000), clearish=176110; interactive smoke keeps the teal fallback (no bgmap). Records: backgroundMap grp0 inst 0x1d3fbacc (200B) + effectMap grp0 inst 0xaacc3a75 (680B) in Spore_Game.package (mirrored in PatchData). 31/31 ctest green.
 **CS-26 — `cCellGFX` preload path**
 · *original*: `Initialize` @ 00e5dba0 (1,809 B) → `PreloadResources` @ 00e666f0 →
   `PreloadCellResource` @ 00e663b0 / `PreloadPopulateResource` @ 00e665c0 /
@@ -439,12 +458,14 @@ structs 61880/61879, 61883/61882; TYPEs 0x433FB70C / 0x612B3191; feeds CS-25/CS-
   order; GFX state object holding world handles.
 · *test*: scene boots with real assets; Obj-15 raster sha256 checks preserved.
 
+· *status*: **DONE (2026-09-23).** cCellGFX preload path (Initialize 00e5dba0 -> PreloadResources 00e666f0 -> StartDisplay 00e55120) reimplemented clean-room as CellGfx (src/apps/CellGfx.{hpp,cpp}). WorldIDs enum lifted verbatim from the Initialize decompilation: SkyboxEffectsWorld 0x1010000, SkyboxShadowLayer 0x1010010, BackgroundEffectsWorld 0x1010011, BeachShadowLayer 0x1010015, BeachEffectsWorld 0x1010016, ModelShadowLayer 0x1010020 (kCellModelWorldID), EffectsWorld 0x1010021, ForegroundEffectsWorld 0x1010031; named layers CellGame-Background / CellGame-Main. CellGfx.initialize() builds the world-handle table in the sCellGFX field order (0x161a0..0x161d8), distinct non-zero tokens; preloadResources() records the cell-model + populate record keys; startDisplay() activates. cell_stage main() builds a CellGfx, preloads the scene's real gmdl record keys, binds cells to the main-model world 0x1010020, starts display. cellgfx_test asserts the world table (5 effect worlds + model world, distinct handles, layer names, idempotency). Obj-15 raster sha256 + content window + backgroundMap clear all preserved. 32/32 ctest green.
 **CS-27 — `cCellUI` HUD**
 · *original*: `Load` @ 00e54270 (1,548 B), `ShowHealthRollover` @ 00e62340 (62 B);
   structs 61915/61912 + rollover pool 61914.
 · *mapping*: minimal HUD overlay (health, rollover) driven by sim state.
 · *test*: screen diff against a fixture frame.
 
+· *status*: **DONE (2026-09-23).** cCellUI HUD (Load 00e54270 -> ShowHealthRollover 00e62340) reimplemented clean-room as CellUI (src/apps/CellUI.{hpp,cpp}). Load constants lifted from the decompilation: 'GlobalUICell-3' named element, layoutA=20.0f (0x41a00000 @+0x80), layoutB=1.0f (0x3f800000 @+0xbc). ShowHealthRollover mirrors the original exactly: early-out when the cell has no GFX object (mGFXObjectIndex==0), else push a cCellUIRollover (struct 61915, 56B, pool 61914) with field_8=initialHealth*(1/6) and mDisappearTime=0.5f (the decompiler's *(+0x24)=0x3f000000; 0x24==offset36==mDisappearTime). cell_stage builds a CellUI, triggers the player's rollover from sim state (live GFX object, hp 100 -> field_8=16.67), and draws a minimal health-bar overlay (green fill @75% over a dark track, bottom bar) onto the readback framebuffer — the 'screen diff vs. fixture' is the green fill pixels. content=94211 (in 60000-115000 window), clear=(0,90,152) from backgroundMap, distinct=10860, clearish=167933. cellui_test asserts load() constants + the rollover formula (no-GFX early-out, hp/6, 0.5f). 33/33 ctest green. Waves 2-4 complete.
 ### Wave 5 — Mode strategy, animation, verification
 
 **CS-28 — `cCellModeStrategy` lifecycle**

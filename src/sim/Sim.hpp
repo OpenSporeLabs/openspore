@@ -37,16 +37,44 @@ constexpr float kDt = 1.0F / 60.0F;
 // A scene entity. role/group/inst identify the record; pos is world space;
 // targetSpan scales the mesh bbox max span. alive flips to false when the
 // entity is eaten (or culled); the stage skips dead entities.
+//
+// CS-17: pos/alive/role are the CONTRACT-VISIBLE fields (stateString dumps
+// them; float32-exact in the contract replay). The struct also carries the
+// original cCellObjectData per-cell field set (SDK struct 61892) as a
+// superset — mTargetPosition/mTargetOrientation/mRelativeElevation/mOpacity/
+// mTargetOpacity/mTargetSize + the field_B8/BC speed words — with the SDK
+// offsets named. Those superset fields are inert to the deterministic update
+// (only pos/alive/role feed update() + stateString), so the float32-exact
+// contract replay is preserved.
 struct Entity {
   std::string role;
   uint32_t group = 0;
   uint32_t inst = 0;
+
+  // Contract-visible world position (== original mTransform translation).
   float pos[3] = {0.0F, 0.0F, 0.0F};
+
+  // cCellObjectData superset (SDK struct 61892; offsets named, not byte-layout).
+  bool mIsIdle = false;                              // 0x04 idle flag (== !alive)
+  float mTargetPosition[3] = {0.0F, 0.0F, 0.0F};     // 0x08
+  float mTargetOrientation[4] = {0.0F, 0.0F, 0.0F, 1.0F}; // 0x14 quaternion
+  float mRelativeElevation = 0.0F;                   // 0x80
+  float mOpacity = 1.0F;                             // 0xA0
+  float mTargetOpacity = 1.0F;                       // 0xA4
+  float mTargetSize = 1.0F;                          // 0xB4
+  float field_B8 = 0.0F;                             // speed (XZ), 0xB8
+  float field_BC = 0.0F;                             // speed (Y), 0xBC
+
   float targetSpan = 1.0F;
   bool alive = true;
 
   bool isFood() const { return role.compare(0, 5, "food_") == 0; }
   bool isPrey() const { return role.compare(0, 5, "prey_") == 0; }
+
+  // Original per-cell predicates / accessors (CS-17).
+  bool IsCreature() const { return isPrey() || role == "player_cell"; }
+  bool IsPlayer() const { return role == "player_cell"; }
+  const float *GetPosition() const { return pos; }
 };
 
 // Player state. heading is yaw in radians; forward = (sin h, 0, cos h),

@@ -21,7 +21,7 @@ food/prey objects, from one fixed orbit camera.
 |-------------|--------------------|-------|-------|
 | backdrop_a  | 0x40666202 / 0xD1B4BB56 | 1059 | textured |
 | backdrop_b  | 0x40666203 / 0xD1B4BB56 | 750  | textured |
-| player_cell | 0x40637E02 / 0x067A0801 | 244  | flat stand-in (APPROXIMATION) |
+| player_cell | 0x40616201 / 0x0C7963FB | 668  | real CellImages gmdl (VERIFIED asset; player identity INFERRED, see CS-13) |
 | food_a      | 0x40637E03 / 0x067CEDE8 | 79   | flat |
 | food_b      | 0x40637E03 / 0x067CEDEA | 435  | flat |
 | prey_c      | 0x40637E03 / 0x067CEDFB | 248  | flat |
