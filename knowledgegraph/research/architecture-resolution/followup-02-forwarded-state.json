@@ -1,0 +1,419 @@
+{
+  "$schema": "openspore-architecture-resolution-followup-02-forwarded-state-1",
+  "artifact": {
+    "name": "followup-02-forwarded-state",
+    "track": "followup-02",
+    "analysis_only": true,
+    "read_only_ghidra": true,
+    "program": "SporeApp.exe",
+    "binary": "GOG 3.1.0.22",
+    "architecture": "x86:LE:32:windows",
+    "image_base": "0x00400000",
+    "mutation_performed": false,
+    "runtime_performed": false,
+    "implementation_performed": false,
+    "historical_edits_performed": false,
+    "excluded_sources": ["SPORE/", "spore.db"]
+  },
+  "target": {
+    "root": "0x00b5b800",
+    "receiver_global": "DAT_0167eaec",
+    "field": "receiver+0x20",
+    "reader": "0x00a42730",
+    "absent_result": "0xffffffff",
+    "requested_token_range": "0x01654c00..0x01654c06"
+  },
+  "question": "What is statically recoverable about the writers, receiver allocation/type, caller use, and exact token set of 0x00b5b800?",
+  "observed_program": {
+    "explicit_program": "SporeApp.exe",
+    "function_count": 59245,
+    "language": "x86:LE:32:default",
+    "compiler": "windows",
+    "image_base": "0x00400000",
+    "target_segment": ".data",
+    "target_segment_range": "0x0150c000..0x0171e763",
+    "target_segment_writable": true
+  },
+  "root_contract": {
+    "body": [
+      "0x00b5b800: CALL 0x00b3d320",
+      "0x00b5b805: TEST EAX,EAX",
+      "0x00b5b807: JZ 0x00b5b810",
+      "0x00b5b809: MOV ECX,EAX",
+      "0x00b5b80b: JMP 0x00a42730",
+      "0x00b5b810: OR EAX,0xffffffff",
+      "0x00b5b813: RET"
+    ],
+    "receiver_source": "0x00b3d320 returns the raw 32-bit word at DAT_0167eaec",
+    "field_reader": "0x00a42730 is exactly MOV EAX,[ECX+0x20]; RET",
+    "normal_result": "raw 32-bit value read from receiver+0x20",
+    "absent_receiver_result": "0xffffffff before the +0x20 read",
+    "root_operations": ["read global", "null test", "read receiver+0x20"],
+    "root_does_not_perform": ["allocation", "mutation", "locking", "AddRef", "Release", "retention", "ownership transfer"],
+    "pcode": {
+      "0x00b3d320": "LOAD from persistent ram offset 0x0167eaec followed by RETURN",
+      "0x00a42730": "INT_ADD receiver+0x20, LOAD, COPY, RETURN",
+      "0x00b5b800": "CALL b3d320; INT_NOTEQUAL; CBRANCH; CALL a42730 or COPY 0xffffffff"
+    }
+  },
+  "publication_and_lifecycle": {
+    "direct_writers": [],
+    "direct_readers": [
+      {
+        "address": "0x00b3d320",
+        "instruction": "MOV EAX,[0x0167eaec]",
+        "type": "READ"
+      }
+    ],
+    "direct_xref_to_slot": {
+      "count": 1,
+      "reference": "0x00b3d320 READ"
+    },
+    "xrefs_from_slot": [],
+    "literal_address_evidence": {
+      "instruction_address_operand_scan": "one occurrence, 0x00b3d320 MOV EAX,[0x0167eaec]",
+      "exact_little_endian_byte_pattern": "one hit, 0x00b3d321, the operand bytes of that read",
+      "direct_write": false
+    },
+    "loaded_memory": {
+      "queried_range": "0x0167eae0..0x0167eaff",
+      "bytes": "all zero in the queried range",
+      "target_slot": "zero at 0x0167eaec in the loaded Ghidra image",
+      "runtime_meaning": "not established; this is not a runtime observation"
+    },
+    "global_audit": {
+      "name": "DAT_0167eaec",
+      "ghidra_type": "undefined4",
+      "length": 4,
+      "xref_count": 1,
+      "status": "untyped, generic name, no plate comment"
+    },
+    "constructor_allocation_clear_teardown": {
+      "status": "not_recovered",
+      "constructor": "none connected by direct xref or literal address evidence",
+      "allocation": "none connected",
+      "first_writer": "none statically recovered",
+      "first_plus_0x20_writer": "none connected to this receiver",
+      "clear": "none connected",
+      "teardown": "none connected",
+      "publication": "none connected",
+      "indirect_publication_sites": [],
+      "bound": "A computed, bulk, runtime-populated, or otherwise indirect publication path remains possible; it is not recovered by the direct Ghidra xref/literal-address surface."
+    },
+    "adjacent_slot_control": {
+      "observations": [
+        "0x00b3d300 reads DAT_0167eae0",
+        "0x00b3d310 reads DAT_0167eae8",
+        "0x00b3d330 reads DAT_0167eaf0 and is named cSimulatorSystem::Get",
+        "0x00b3d350 reads DAT_0167eaf8 and is named cGameInputManager::Get"
+      ],
+      "conclusion": "The target slot is distinct from the named simulator and input-manager slots; adjacency and co-callers do not establish aliasing or ownership."
+    }
+  },
+  "receiver_and_field": {
+    "receiver": {
+      "storage": "DAT_0167eaec",
+      "physical_ghidra_type": "undefined4",
+      "size_bytes": 4,
+      "alignment": 4,
+      "loaded_value": "zero in the queried Ghidra image",
+      "use": "nonzero value is copied to ECX and used as the base for a +0x20 load",
+      "allocation": "unresolved",
+      "constructor": "unresolved",
+      "publication": "unresolved; no direct or indirect site statically recovered",
+      "teardown": "unresolved",
+      "physical_semantics": "unknown 32-bit receiver word; a pointer is mechanically possible but not established"
+    },
+    "receiver_plus_0x20": {
+      "read_site": "0x00a42730",
+      "read_instruction": "MOV EAX,dword ptr [ECX+0x20]; RET",
+      "read_size": 4,
+      "field_type": "unknown raw 32-bit value",
+      "vtable_status": "not a vtable load",
+      "first_writer": "unresolved",
+      "writer_attribution": "No store is statically connected to DAT_0167eaec or to a uniquely identified receiver type.",
+      "teardown": "unresolved"
+    }
+  },
+  "direct_caller_census": {
+    "method": "Read-only full-listing flow scan for direct CALL instructions to 0x00b5b800, followed by a conservative 24-instruction straight-line live-EAX alias check; manual review of apparent pointer-like cases.",
+    "direct_callsites": 843,
+    "unique_caller_identities": 460,
+    "ghidra_get_function_callers_records": 459,
+    "caller_identity_note": "The full instruction-flow inventory includes call sites with no containing function identity; the function-call endpoint returned 459 function records.",
+    "raw_local_classifier": {
+      "scalar_compare_branch_copy_or_pass": 829,
+      "apparent_pointer_like_patterns": 6,
+      "return_only": 1,
+      "ambiguous_within_window": 7
+    },
+    "manual_review_of_apparent_pointer_like_patterns": {
+      "count": 6,
+      "addresses": ["0x00b5ca73", "0x00c0b220", "0x00c0b273", "0x00c0b2f0", "0x00e02062", "0x00e19dd3"],
+      "classification": "switch normalization, range/index arithmetic, or LEA/table indexing; not a dereference of the returned value as a pointer",
+      "examples": [
+        "0x00c0b273 and 0x00c0b2f0 use LEA/index arithmetic to normalize the result before a table access",
+        "0x00e02062 and 0x00e19dd3 copy EAX to EDI/ESI and compute a switch index",
+        "0x00b5ca73 compares against -1 and computes a normalized switch index",
+        "0x00c0b220 performs a range check around the token family"
+      ]
+    },
+    "strict_pointer_dereference_observed": 0,
+    "bounded_result": "No direct caller was observed to use the returned EAX as a memory base, indirect-call target, or indirect-jump target. The defensible bound from this method is 0 observed and 7 unresolved call sites; deeper branch/phi/stack propagation is not claimed.",
+    "only_compare_branch_copy_return": "Supported for the observed 829 scalar sites, the 6 non-pointer normalization sites, and the 1 return-only site; seven sites remain unresolved by the bounded local method.",
+    "selected_independent_consumers": [
+      {
+        "function": "0x00ad12a0",
+        "use": "0x00b5b800 result is compared with 0x01654c04 at 0x00ad1f68; the subsequent +0x5fc write targets a separately obtained object",
+        "pointer_deref": "not observed"
+      },
+      {
+        "function": "0x00b3d2c0",
+        "use": "dispatches on the result, including C05/C02/C04 and other values; a later path uses DAT_0167eae4 through a separate flow",
+        "pointer_deref": "not observed"
+      },
+      {
+        "function": "Simulator::cCreatureGameData::SetAbilityMode",
+        "address": "0x00d2e4a0",
+        "use": "compares the result with 0x01654c01, then obtains a separate object from 0x00d37cb0 and dispatches its vtable",
+        "pointer_deref": "not observed"
+      },
+      {
+        "function": "Simulator::cCreatureGameData::AfterGlideFinish",
+        "address": "0x00d2e580",
+        "use": "compares the result with 0x01654c10, then operates on an object obtained through 0x00b1fdb0",
+        "pointer_deref": "not observed"
+      },
+      {
+        "function": "Simulator::cCreatureGameData::AddEvolutionPoints",
+        "address": "0x00d2e8a0",
+        "use": "compares the result with 0x01654c10, then obtains separate objects through 0x00d38840 and 0x00b1fdb0",
+        "pointer_deref": "not observed"
+      },
+      {
+        "function": "0x00c099e0",
+        "use": "compares the result with 0x01654c01 or 0x01654c02 before separate editor/object operations",
+        "pointer_deref": "not observed"
+      }
+    ]
+  },
+  "token_census": {
+    "whole_program_exact_scalar_operand_occurrences": {
+      "C00_0x01654c00": 66,
+      "C01_0x01654c01": 147,
+      "C02_0x01654c02": 153,
+      "C03_0x01654c03": 0,
+      "C04_0x01654c04": 167,
+      "C05_0x01654c05": 329,
+      "C06_0x01654c06": 20
+    },
+    "whole_program_exact_byte_pattern_result": "C00, C01, C02, C04, C05, and C06 have exact little-endian byte-pattern matches; C03 has no match.",
+    "direct_b5_result_comparison_or_subtraction_counts": {
+      "method": "24-instruction live-EAX window after each direct CALL 0x00b5b800; counts only CMP/SUB of the returned value or a conservative register copy with an exact C00..C06 immediate",
+      "C00_0x01654c00": 27,
+      "C01_0x01654c01": 89,
+      "C02_0x01654c02": 89,
+      "C03_0x01654c03": 0,
+      "C04_0x01654c04": 110,
+      "C05_0x01654c05": 260,
+      "C06_0x01654c06": 2
+    },
+    "c03_result": {
+      "exact_scalar_operand_count": 0,
+      "exact_little_endian_byte_pattern_count": 0,
+      "two_complement_equivalent_scalar_0xfe9ab3fd_count": 0,
+      "interpretation": "C03 is not observed as an exact token in the current static instruction/data scan. Range checks or equivalent arithmetic may cover its value, so absence is not proof that the value is impossible."
+    },
+    "outside_requested_range": "0x01654c10 and 0x02ccd1d2 are also compared in 0x00b3d2c0 and other consumers; the requested C00..C06 set is not a complete proven 32-bit domain."
+  },
+  "hypotheses": [
+    {
+      "id": "H1",
+      "name": "normal_receiver_pointer",
+      "statement": "DAT_0167eaec is a normal object pointer and receiver+0x20 is a pointer or interface field.",
+      "predictions": [
+        "A constructor/allocation and a direct or indirect publication to DAT_0167eaec should be recoverable.",
+        "A typed +0x20 store and a matching clear/teardown should be recoverable.",
+        "Callers should dereference, virtual-dispatch, retain, release, or pass the returned value as the same object identity."
+      ],
+      "evidence_for": [
+        "The nonzero receiver is used as ECX and is read at +0x20.",
+        "DAT_0167eaec is a writable four-byte slot in .data."
+      ],
+      "evidence_against": [
+        "Ghidra has no direct writer, address-taken publisher, constructor, allocation, or teardown for the slot.",
+        "The field access is a plain load, not a vtable load.",
+        "The full direct-call inventory has zero observed strict pointer dereferences of the returned value; six apparent cases are normalization/indexing, and seven remain bounded-ambiguous.",
+        "Selected consumers use the result as a branch discriminator and use separately acquired objects downstream."
+      ],
+      "status": "not_established; unsafe_as_a_default_type"
+    },
+    {
+      "id": "H2",
+      "name": "opaque_shandle_or_state",
+      "statement": "The returned value is an opaque 32-bit state/handle/token contract, while the unknown receiver is only a storage vehicle for the +0x20 word.",
+      "predictions": [
+        "Callers should compare, branch, normalize, copy, index, or return the value without dereferencing it as an object.",
+        "The root should preserve a distinct absent-receiver result of 0xffffffff.",
+        "C00..C06 should appear as separate comparison tokens, with C03 possibly absent or covered by range normalization."
+      ],
+      "evidence_for": [
+        "The root is a null-safe two-level forwarding read with no ownership operation.",
+        "829 direct-call sites have bounded scalar compare/branch/copy/pass behavior; the six remaining apparent pointer-like sites are index/offset normalization.",
+        "The direct-call token census observes C00, C01, C02, C04, C05, and C06, and no C03 exact token.",
+        "The target global has no direct writer and is untyped undefined4."
+      ],
+      "evidence_against": [
+        "The token values are address-like, so a pointer-shaped or tagged representation remains formally possible.",
+        "The receiver is dereferenced as a base inside the root, so the storage may be pointer-backed even if the returned field value is scalar-like.",
+        "Indirect publication and the +0x20 first writer are unresolved."
+      ],
+      "status": "supported_bounded_static_contract; physical_representation_unresolved"
+    },
+    {
+      "id": "H3",
+      "name": "current_mode_id",
+      "statement": "The returned word is a current game/input mode identifier or a mode-manager field value.",
+      "predictions": [
+        "The result should flow into a cGameInputManager, cGameModeManager, or matching mode accessor.",
+        "The receiver or +0x20 field should match a named mode-manager layout.",
+        "Mode transitions should populate the same typed storage used by the mode manager."
+      ],
+      "evidence_for": [
+        "The target is adjacent to named cSimulatorSystem and cGameInputManager accessor slots.",
+        "Several consumers are in Simulator/gameplay/mode-like regions and use the result in mode-routing branches."
+      ],
+      "evidence_against": [
+        "DAT_0167eaec is distinct from DAT_0167eaf0 and DAT_0167eaf8, which are the named simulator and input-manager accessor globals.",
+        "No b5-result-to-named-mode-manager dataflow or matching field-owner store is observed.",
+        "The receiver is untyped and the +0x20 field has no recovered writer.",
+        "C03 is not observed as an exact token, and the token range is not a complete mode domain."
+      ],
+      "status": "not_established"
+    },
+    {
+      "id": "H4",
+      "name": "strategy_or_interface_pointer",
+      "statement": "The receiver is an ISimulatorStrategy/cStrategy-like object and +0x20 is a strategy/interface field.",
+      "predictions": [
+        "A constructor/vtable owner, strategy method, interface call, AddRef, or Release should be connected to the receiver.",
+        "Callers should use the result as a strategy receiver or object identity.",
+        "The +0x20 access should be explained by a matching strategy layout rather than only a generic field load."
+      ],
+      "evidence_for": [
+        "The +0x20 access and Simulator-adjacent address region are compatible with a strategy-family hypothesis.",
+        "The target root is a shared service-like accessor with many callers."
+      ],
+      "evidence_against": [
+        "No concrete receiver class, vtable owner, constructor, field map, strategy call, AddRef, or Release is connected.",
+        "The +0x20 operation is a field load, not a strategy vtable operation.",
+        "Direct callers overwhelmingly use the returned word as a scalar discriminator; no strict pointer dereference is observed."
+      ],
+      "status": "low_confidence_family_hypothesis_only"
+    },
+    {
+      "id": "H5",
+      "name": "recoverable_publication_and_teardown_chain",
+      "statement": "A first writer allocates the receiver, publishes it in DAT_0167eaec, writes receiver+0x20, and later clears or tears it down.",
+      "predictions": [
+        "A direct, address-taken, bulk, or constructor-mediated write to DAT_0167eaec should be present.",
+        "A matching +0x20 store should be attributable to the same receiver.",
+        "A clear, replacement, or teardown path should be connected to the receiver lifetime."
+      ],
+      "evidence_for": [
+        "The writable .data placement and accessor pattern make runtime publication plausible."
+      ],
+      "evidence_against": [
+        "Direct xref inventory: one READ and zero xrefs from the slot.",
+        "Exact address-byte search: one hit, 0x00b3d321, belonging to the read instruction.",
+        "Loaded image memory at the slot and nearby bytes is zero.",
+        "No constructor, allocation, +0x20 writer, clear, or teardown chain is statically connected."
+      ],
+      "status": "unresolved_indirect_publication_possible"
+    },
+    {
+      "id": "H6",
+      "name": "one_enum_including_absent_minus_one",
+      "statement": "0xffffffff and C00..C06 are members of one confirmed mode/state enum.",
+      "predictions": [
+        "A typed writer should populate both absent-owner -1 and the C00..C06 values under one storage contract.",
+        "The root should return a member of the same enum when the receiver is absent.",
+        "All token consumers should share one confirmed enum interpretation."
+      ],
+      "evidence_for": [
+        "All observed values are 32-bit words used in branch logic around the same accessor family."
+      ],
+      "evidence_against": [
+        "0xffffffff is generated before any receiver+0x20 read.",
+        "C00..C06 are observed after the forwarded read and are used as separate discriminators.",
+        "C03 is absent from the exact static token scan.",
+        "No typed first writer unifies the domains."
+      ],
+      "status": "not_established"
+    }
+  ],
+  "smallest_remaining_separator": {
+    "direct_writer_separator": {
+      "performed": true,
+      "result": "complete negative within direct Ghidra xref, literal-address, byte-pattern, and memory surfaces",
+      "queries": [
+        "get_xrefs_to(0x0167eaec): one READ at 0x00b3d320",
+        "get_xrefs_from(0x0167eaec): none",
+        "full instruction address-operand scan: one read, no write",
+        "exact little-endian address-byte search: one hit at 0x00b3d321",
+        "audit_global: undefined4, untyped, one xref",
+        "loaded memory around 0x0167eaec: zero"
+      ]
+    },
+    "smallest_remaining_static_observation": "Trace computed or address-taken provenance to 0x0167eaec from candidate constructor/publisher/copy helpers; if such a site is found, follow its first write to [receiver+0x20] and its clear/replacement/teardown path. No direct site remains to separate without first recovering that indirect provenance.",
+    "status": "not_performed_to_completion; indirect and bulk publication cannot be excluded"
+  },
+  "static_contract_freeze": {
+    "read_through": "Return the raw 32-bit word read from the published receiver at +0x20.",
+    "absent_receiver": "Return exactly 0xffffffff before the field read.",
+    "ownership": "Borrowed read-through; no allocation, mutation, lock, AddRef, Release, or ownership transfer is present in the root.",
+    "type_boundary": "Keep the returned value opaque uint32-sized; do not authorize pointer, mode ID, strategy pointer, or enum identity from this observation alone.",
+    "token_boundary": "Keep C00, C01, C02, C04, C05, and C06 as distinct observed scalar tokens; C03 has no exact static observation; do not normalize them to null or -1."
+  },
+  "limitations": [
+    "All findings are static Ghidra observations against explicit program SporeApp.exe.",
+    "No Ghidra program, function, data, symbol, or project mutation was requested or performed.",
+    "No runtime, Wine, SPORE/, or spore.db evidence was used.",
+    "The receiver type, allocation, indirect publication, first +0x20 writer, replacement, clear, and teardown remain unresolved.",
+    "The caller census uses a bounded 24-instruction straight-line alias analysis; seven sites remain ambiguous and deeper branch/phi/stack propagation is not claimed.",
+    "The token census counts exact scalar and byte-pattern occurrences; equivalent arithmetic or dynamic construction of C03 cannot be excluded.",
+    "Ghidra's undefined4 and unnamed-function results are not native type or class identity proofs."
+  ],
+  "citations": [
+    {
+      "source": "Ghidra SporeApp.exe",
+      "address": "0x00b5b800-0x00b5b813",
+      "use": "root forwarding, null branch, and absent result"
+    },
+    {
+      "source": "Ghidra SporeApp.exe",
+      "address": "0x00b3d320-0x00b3d325",
+      "use": "DAT_0167eaec receiver read"
+    },
+    {
+      "source": "Ghidra SporeApp.exe",
+      "address": "0x00a42730-0x00a42733",
+      "use": "receiver+0x20 field read"
+    },
+    {
+      "source": "Ghidra SporeApp.exe",
+      "address": "0x00ad12a0, 0x00b3d2c0, 0x00d2e4a0, 0x00d2e580, 0x00d2e8a0, 0x00c099e0",
+      "use": "selected independent direct consumers and downstream object separation"
+    },
+    {
+      "source": "Ghidra SporeApp.exe",
+      "address": "0x0167eaec",
+      "use": "xref, address-operand, byte-pattern, memory, segment, and global-audit observations"
+    },
+    {
+      "source": "Ghidra SporeApp.exe full listing scan",
+      "addresses": "0x01654c00..0x01654c06",
+      "use": "exact scalar and byte-pattern token census, including zero C03"
+    }
+  ]
+}

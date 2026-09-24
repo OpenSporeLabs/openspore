@@ -1,0 +1,488 @@
+{
+  "$schema": "openspore-followup-06-persistence-observation-1",
+  "artifact": {
+    "name": "followup-06-persistence",
+    "title": "Focused static observation: persistence architecture and framing",
+    "research_date": "2026-09-24",
+    "program": "SporeApp.exe",
+    "program_path_in_ghidra": "/SporeApp.exe",
+    "analysis_only": true,
+    "read_only": true,
+    "runtime_executed": false,
+    "runtime_claimed": false,
+    "ghidra_mutation_requested": false,
+    "ghidra_mutation_observed": false,
+    "implementation_modified": false,
+    "historical_artifacts_modified": false,
+    "spore_filesystem_accessed": false,
+    "knowledgegraph_database_accessed": false,
+    "historical_artifacts_read": true,
+    "clean_room_rule": "Addresses, layouts, call paths, and bounded control-flow observations are evidence only. No proprietary source, decompiled listing, asset, or binary payload is reproduced."
+  },
+  "scope": {
+    "target": "SporeApp.exe 3.1.0.22, x86:LE:32 PE, image base 0x00400000",
+    "included": [
+      "cGamePersistenceManager service and vtable boundary",
+      "concrete save and load orchestration candidates",
+      "cSavedGameHeader construction, class serialization, and validation/probe paths",
+      "outer save path, database stream setup, close, replacement, and recovery markers",
+      "outer .spo and .prop naming evidence",
+      "COM class-name evidence and its distinction from a binary envelope",
+      "ClassSerializer class/attribute framing and callback dispatch",
+      "object identity lookup and deferred object restoration evidence",
+      "cCellSerializableData/CellSaveGame vtable and field-emission wrappers",
+      "CRC/compression separation",
+      "hypotheses, predictions, evidence against, and redesign triggers"
+    ],
+    "excluded": [
+      "SPORE/ filesystem inspection",
+      "spore.db inspection",
+      "original-process execution or runtime tracing",
+      "Ghidra mutation, re-analysis, or save",
+      "exact save payload reconstruction",
+      "implementation changes"
+    ]
+  },
+  "method": {
+    "primary_evidence": "Read-only Ghidra decompilation, disassembly, xrefs, function-boundary queries, vtable/data reads, data-region inspection, string xrefs, and type/vtable layout queries against explicit program SporeApp.exe.",
+    "secondary_evidence": "Committed persistence research and SDK/layout artifacts were read for context only and were not treated as independent binary confirmation.",
+    "authority_rule": "Direct control flow and concrete allocations outrank imported names. A declaration or string is not treated as proof of runtime member binding or wire semantics.",
+    "timeout_rule": "Broad searches that timed out were not counted as negative evidence; exact string anchors and bounded address queries were used instead."
+  },
+  "resolution_status": "PARTIALLY_RESOLVED",
+  "overall_conclusion": "The static binary supports a persistence spine of class/attribute serializer callbacks wrapped by a database/stream abstraction, with a versioned cSavedGameHeader-like object, a distinct 0xEC Cell save object, and a bounded temp/backup/replacement lifecycle. The strongest concrete save body is FUN_00b28ec0 and the strongest concrete load body is FUN_00b279e0. Their attribution to cGamePersistenceManager members is architecture-level inference, not confirmed vtable binding. The outer .spo/.prop bytes, complete COM/database envelope, CRC placement, exact object-reference wire table, and universal crash atomicity remain unproved.",
+  "confirmed_binary_framing": [
+    {
+      "id": "BF01",
+      "subject": "cSavedGameHeader allocation and class identity",
+      "addresses": ["0x00b274e0", "0x0145faa8", "0x0145fb0c"],
+      "observation": "A concrete factory body allocates 0x68 bytes, passes the class-name string SP_Simulator/cSavedGameHeader/COM, installs vtable data at 0x0145faa8, and initializes a self/container pointer plus zeroed fields.",
+      "certainty": "CONFIRMED_BINARY_FRAMING",
+      "semantic_limit": "The allocation and class metadata are confirmed; the exact persistent field meanings and wire order are not."
+    },
+    {
+      "id": "BF02",
+      "subject": "cSavedGameHeader serializer write/read wrappers",
+      "addresses": ["0x00b26800", "0x00b26840", "0x00b268a0", "0x00b268e0", "0x01568ac8", "0x01568b08"],
+      "observation": "The vtable-adjacent bodies at 0x00b26800 and 0x00b26840 pass descriptor 0x01568ac8 and class ID 0x01a80d26 into ClassSerializer setup, then call 0x00692900 or 0x00693e10. Separate bodies at 0x00b268a0 and 0x00b268e0 use descriptor 0x01568b08 with the same class ID and the same write/read pair.",
+      "certainty": "CONFIRMED_BINARY_FRAMING",
+      "semantic_limit": "This confirms callback-serialized header handling, not raw 0x68-byte file placement or a complete field table."
+    },
+    {
+      "id": "BF03",
+      "subject": "Header version and state materialization",
+      "addresses": ["0x00b28ec0", "0x00b294c0", "0x00bb4ba0"],
+      "observation": "FUN_00b28ec0 constructs a header-shaped stack object, writes adjacent version values 3 and 0x25, fills a nine-word local time array, records current mode, snapshot state, and a three-word current-planet-like value, and serializes it through the header helper. FUN_00bb4ba0 also materializes packed 0x250003 and a nine-word timestamp in the stars database writer.",
+      "certainty": "CONFIRMED_BINARY_FRAMING",
+      "semantic_limit": "The numeric values and call order are confirmed. Labels for major/minor order and the meaning of every header field are partly SDK-supported or inferred."
+    },
+    {
+      "id": "BF04",
+      "subject": "Database/stream lifecycle around serialization",
+      "addresses": ["0x00693d60", "0x00693cd0", "0x00693aa0", "0x006939b0", "0x00693900", "0x00b28ec0", "0x00b279e0"],
+      "observation": "Write setup 0x00693d60 constructs a stream context and calls the write-open callback path 0x00693aa0. Read setup 0x00693cd0 calls 0x006939b0. 0x00693900 closes/releases the context. Both concrete save/load orchestration bodies use these paths around ClassSerializer operations.",
+      "certainty": "CONFIRMED_BINARY_FRAMING",
+      "semantic_limit": "The database abstraction and stream lifecycle are confirmed; the concrete file header, record envelope, compression, and checksum bytes are not."
+    },
+    {
+      "id": "BF05",
+      "subject": "ClassSerializer framing and callback dispatch",
+      "addresses": ["0x00692880", "0x00692900", "0x00693e10", "0x00e0e9f0"],
+      "observation": "Setup 0x00692880 builds up to 0x80 attribute entries with a 0x14-byte stride from a descriptor table. Write 0x00692900 emits framing words, iterates attribute callbacks, records per-attribute success/size state, and performs a final status operation. Read 0x00693e10 consumes framing words, checks the stored class identity/count, resolves attribute IDs through 0x00e0e9f0, invokes callbacks, and rejects mismatch or callback failure.",
+      "certainty": "CONFIRMED_BINARY_FRAMING",
+      "semantic_limit": "The class/attribute callback architecture is confirmed; exact byte order of every field and the complete object-reference table are not."
+    },
+    {
+      "id": "BF06",
+      "subject": "Stable identity and deferred object association",
+      "addresses": ["0x00695140", "0x00695b40", "0x00695770", "0x00693e10"],
+      "observation": "FUN_00695140 performs an identity-map lookup, allocates a 0x74-byte association/object record when absent, and stores it in manager-owned vectors. FUN_00695b40 initializes ClassSerializer state and dispatches the resolved object's attributes. The reader resolves stored attribute/object identities before callback invocation.",
+      "certainty": "CONFIRMED_CONTROL_FLOW",
+      "semantic_limit": "Stable-ID/deferred-association architecture is supported. The exact serialized object table, cycle representation, and whether every object field uses this path remain unknown."
+    },
+    {
+      "id": "BF07",
+      "subject": "0xEC Cell save object and serializer vtable",
+      "addresses": ["0x00e61550", "0x00e61a50", "0x01485598", "0x014188c0", "0x00e51300", "0x00e51370"],
+      "observation": "The 0xEC constructor path installs vtable data at 0x01485598 and a secondary reference-count vtable at 0x014188c0. A separate concrete factory body at 0x00e61a50 allocates 0xEC bytes with SP_Simulator/CellSaveGame/COM and installs the same vtable pair. Vtable slots resolve to 0x00e51300 and 0x00e51370.",
+      "certainty": "CONFIRMED_BINARY_FRAMING",
+      "semantic_limit": "The Cell save object and vtable slots are confirmed. The vtable's adjacent class-name strings are not used here as proof of every field's meaning."
+    },
+    {
+      "id": "BF08",
+      "subject": "Cell field-emission wrappers",
+      "addresses": ["0x00e51300", "0x00e51370", "0x00e51250", "0x015a7e38", "0x015a7d48"],
+      "observation": "0x00e51300 and 0x00e51370 pass class ID 0x01a80d26 and descriptor/table address 0x015a7e38 to ClassSerializer write/read. A nearby 0x00e51250 body uses class ID 0x01a80d26 with 0x015a7d48 and iterates six serializer emissions.",
+      "certainty": "CONFIRMED_BINARY_FRAMING",
+      "semantic_limit": "The wrapper/vtable path is confirmed. Descriptor contents are runtime-populated/zero in the static image, so exact Cell field IDs, names, and order are not recovered here."
+    },
+    {
+      "id": "BF09",
+      "subject": "Save replacement and recovery markers",
+      "addresses": ["0x00b28ec0", "0x006891f0", "0x00b289e0", "0x00b28070", "0x00b282e0", "0x00b28750"],
+      "observation": "The save body builds a temporary path, opens it, serializes, closes the stream, and calls 0x006891f0. The replacement helper constructs an old path, moves/copies the target and temporary paths, and removes the old path. Recovery code checks old/complete and old/valid markers, creates dbreadinitiated/dbreadcompleted markers, enumerates *.spo, and checks planetRecords.pkp, planetscripts.pld, stars.db, GGEUserData.dat, and valid.",
+      "certainty": "CONFIRMED_BINARY_FRAMING",
+      "semantic_limit": "A bounded backup/replacement and marker-based recovery protocol is confirmed. Universal crash atomicity and the semantics of every marker are not."
+    },
+    {
+      "id": "BF10",
+      "subject": "Secondary stars database transaction",
+      "addresses": ["0x00bb4ba0", "0x00bb66f0", "0x006891f0"],
+      "observation": "FUN_00bb4ba0 opens stars.db.tmp, writes header/class records with packed version 0x250003, closes the database stream, and replaces stars.db. FUN_00bb66f0 sets a branch flag and delegates to the same writer.",
+      "certainty": "CONFIRMED_BINARY_FRAMING",
+      "semantic_limit": "A second artifact is confirmed to use a separate temp/replace lifecycle. Cross-artifact ordering and atomicity are not proven."
+    }
+  ],
+  "concrete_functions": {
+    "save_candidate": {
+      "address": "0x00b28ec0",
+      "name": "FUN_00b28ec0",
+      "role": "Strongest concrete save orchestration body in the persistence subsystem.",
+      "observations": [
+        "Uses the first path argument and a second mode/snapshot argument.",
+        "Builds a header-shaped object with version words 3 and 0x25, timestamp words, mode, snapshot flag, and a three-word current-planet-like value.",
+        "Opens a temporary save path, initializes a write database context, serializes the header through 0x00b268a0, dispatches a service vtable operation, optionally serializes Cell mode state, closes the context, and invokes replacement helper 0x006891f0.",
+        "Branches to stars.db writing through 0x00bb4ba0 or 0x00bb66f0."
+      ],
+      "manager_membership": "INFERRED_NOT_CONFIRMED",
+      "why": "The imported cGamePersistenceManager type and adjacent persistence subsystem support the role, but the body does not take an explicit cGamePersistenceManager this pointer in the recovered prototype and no concrete manager vtable instance was recovered."
+    },
+    "load_candidate": {
+      "address": "0x00b279e0",
+      "name": "FUN_00b279e0",
+      "role": "Strongest concrete load orchestration body in the persistence subsystem.",
+      "observations": [
+        "Calls 0x00b275a0 as a preliminary file/header probe.",
+        "Builds a read database context, initializes the header class serializer with descriptor 0x01568b08 and class ID 0x01a80d26, reads the header, combines two read values into a mode/version value, and dispatches a service vtable operation.",
+        "Passes the save path to a service vtable operation and conditionally invokes Cell save-state handling for the Cell mode marker.",
+        "Closes the database context after the load path."
+      ],
+      "manager_membership": "INFERRED_NOT_CONFIRMED",
+      "why": "The function is called by the mode wrapper 0x00b28990 and uses the same persistence globals/streams, but the explicit cGamePersistenceManager vtable slot was not bound in static evidence."
+    },
+    "header_probe_candidate": {
+      "address": "0x00b275a0",
+      "name": "FUN_00b275a0",
+      "role": "Header/file probe or validation candidate used before load.",
+      "observations": [
+        "Builds a path, attempts a file operation, opens a read database context on the nonzero branch, reads a cSavedGameHeader-like class object through ClassSerializer, closes the context, and returns a comparison of consumed/available state against 0x20.",
+        "The exact intended operation name is not proven by the binary symbol; the function is not called SaveGame or LoadGame in Ghidra."
+      ]
+    },
+    "header_factory": {
+      "address": "0x00b274e0",
+      "name": "unresolved containing body at 0x00b274e0",
+      "role": "Concrete cSavedGameHeader allocation/factory body observed by disassembly.",
+      "observations": [
+        "Pushes SP_Simulator/cSavedGameHeader/COM and size 0x68 before allocation.",
+        "Installs the 0x0145faa8 vtable and initializes self/container and zeroed fields."
+      ]
+    },
+    "cell_factory": {
+      "addresses": ["0x00e61550", "0x00e61a50"],
+      "role": "0xEC Cell save object construction paths.",
+      "observations": [
+        "Both paths install the 0x01485598/0x014188c0 vtable pair.",
+        "0x00e61a50 passes SP_Simulator/CellSaveGame/COM and size 0xec to allocation."
+      ]
+    }
+  },
+  "manager_boundary": {
+    "confirmed": [
+      "cGamePersistenceManager__vftable is a 0x24-byte imported type with slots for virtual destruction, HandleMessage, AddRef, Release, LoadGame at +0x10, and three later opaque slots.",
+      "cGamePersistenceManager::Get at 0x00b3d440 is a two-instruction stub returning DAT_0167eb34.",
+      "DAT_0167eb34 is zero in the static image and has only the Get read xref in this focused pass."
+    ],
+    "not_confirmed": [
+      "A concrete cGamePersistenceManager instance address.",
+      "A vtable data reference that binds FUN_00b28ec0 or FUN_00b279e0 to a named manager member.",
+      "A recovered SaveGame symbol/body separate from FUN_00b28ec0.",
+      "A complete LoadGame vtable dispatch to FUN_00b279e0."
+    ],
+    "consequence": "The implementation-facing architecture may treat these as persistence service operations, but the research record must not call them confirmed cGamePersistenceManager members until a vtable or this-relative binding is observed."
+  },
+  "framing_assessment": {
+    "spo": {
+      "status": "PARTIALLY_CONFIRMED",
+      "confirmed": [
+        ".spo and *.spo strings are present and xref to save enumeration/path helpers.",
+        "FUN_00b28ec0 accepts a save path, creates a .tmp path, writes a database-backed stream, closes it, and replaces the target.",
+        "FUN_00b282e0 enumerates *.spo and checks related files plus a valid marker."
+      ],
+      "not_confirmed": [
+        "The first bytes of an actual .spo file.",
+        "Whether .spo is a direct ClassSerializer stream, a database record container, or a wrapper around both.",
+        "Whether COM is a type registry name or an outer record marker in the file."
+      ]
+    },
+    "prop": {
+      "status": "NAME_ONLY_FOR_PERSISTENCE_PASS",
+      "confirmed": [
+        "The binary contains .prop filename templates and concrete callers that create property-style filenames from resource identities.",
+        "PropertyList and Property stream methods exist in the broader serializer subsystem, but this pass did not recover a direct .prop write/read call from the .spo save body."
+      ],
+      "not_confirmed": [
+        "A direct .prop outer envelope in the save transaction.",
+        "A relationship between .prop records and the .spo database stream."
+      ]
+    },
+    "database": {
+      "status": "CONFIRMED_ABSTRACTION",
+      "confirmed": [
+        "Write/read stream contexts are constructed and closed around ClassSerializer operations.",
+        "The same database abstraction is used by the main save path and stars.db path."
+      ],
+      "not_confirmed": [
+        "The database's concrete record header/index layout.",
+        "Whether the stream is uncompressed, compressed, or wrapped by a higher-level container."
+      ]
+    },
+    "com": {
+      "status": "TYPE_METADATA_CONFIRMED_ENVELOPE_NOT_CONFIRMED",
+      "confirmed": [
+        "SP_Simulator/cSavedGameHeader/COM and SP_Simulator/CellSaveGame/COM are passed as allocation/class-name strings.",
+        "ClassSerializer receives class IDs and descriptor/table addresses separately."
+      ],
+      "not_confirmed": [
+        "A standalone COM byte header.",
+        "The complete COM object table or field schema."
+      ]
+    },
+    "crc": {
+      "status": "NOT_CONFIRMED_FOR_SAVE",
+      "confirmed": [
+        "The strings header crc mismatch and CRC error are referenced by generic compression/deflate code at 0x00868e90 and 0x008732d0.",
+        "Those functions are not in the recovered call path of FUN_00b28ec0 or FUN_00b279e0."
+      ],
+      "not_confirmed": [
+        "A save-file CRC field, algorithm, placement, or coverage.",
+        "A save-file compression wrapper."
+      ]
+    }
+  },
+  "transaction_assessment": {
+    "confirmed_lifecycle": [
+      "Temporary path construction with .tmp in the primary save body.",
+      "Serializer/database context close before replacement.",
+      "Old-path construction and target/temp move or copy through 0x006891f0.",
+      "Independent stars.db.tmp to stars.db replacement.",
+      "Recovery marker paths including old/complete, old/valid, dbreadinitiated, dbreadcompleted, and valid."
+    ],
+    "not_proven": [
+      "Atomic replacement across the .spo and stars.db artifacts.",
+      "A journal or manifest covering all artifacts.",
+      "Rollback of partially written data if a serializer callback fails.",
+      "Crash behavior at each move/remove boundary.",
+      "Whether every .spo variant uses the same lifecycle."
+    ],
+    "failure_observation": "ClassSerializer reader and callback paths short-circuit on class/attribute/callback failure. The primary save body does not expose a general rollback state machine; the observed guarantee is bounded replacement and marker-based recovery, not universal transactionality."
+  },
+  "reference_restoration_assessment": {
+    "confirmed": [
+      "Identity lookup and allocation path at 0x00695140.",
+      "Manager-owned vector associations and back-reference vectors.",
+      "ClassSerializer attribute ID resolution before read callbacks.",
+      "Deferred callback/object dispatch through 0x00695b40 and 0x00695770."
+    ],
+    "inferred": [
+      "The architecture should serialize stable IDs and resolve pointers after object creation rather than serializing host addresses.",
+      "Forward, backward, and cyclic references are probably mediated by the association vectors."
+    ],
+    "unknown": [
+      "Exact object table record size and order.",
+      "Whether IDs are global, class-local, or table-local in every context.",
+      "Duplicate, missing, and cycle failure behavior.",
+      "Which Cell fields use object references versus primitive values."
+    ]
+  },
+  "cell_serializer_assessment": {
+    "object": "0xEC object constructed by 0x00e61550 and named CellSaveGame/COM by 0x00e61a50",
+    "vtable_data": "0x01485598",
+    "vtable_slots": {
+      "write_slot": "0x00e51300",
+      "read_slot": "0x00e51370",
+      "supporting_slots": ["0x00c6a960", "0x007b86e0", "0x00630030", "0x00e5cac0", "0x00b1fbf0", "0x00b7d400", "0x00e5cad0"]
+    },
+    "emission": "Both slots initialize ClassSerializer with class ID 0x01a80d26 and table/descriptor address 0x015a7e38, then call the common writer/reader. The nearby 0x00e51250 body uses 0x015a7d48 and six iterations.",
+    "confirmed": "Vtable dispatch, class ID, descriptor address, and common writer/reader calls.",
+    "unknown": "The descriptor table's runtime-populated field IDs, names, offsets, and emission order; static bytes at 0x015a7e38 are zero in the image."
+  },
+  "hypotheses": [
+    {
+      "id": "H01",
+      "claim": "The primary .spo path is a database/stream container carrying ClassSerializer records, not a raw cSavedGameHeader struct followed by opaque memory.",
+      "predictions": [
+        "The save path should open a database/stream context before header serialization.",
+        "The load path should use the matching read context and ClassSerializer reader.",
+        "A raw 0x68-byte header block would not explain the ClassSerializer calls and callback table."
+      ],
+      "evidence_for": ["BF02", "BF04", "BF05", "BF09"],
+      "evidence_against": ["The actual outer bytes and database record header were not observed."],
+      "status": "SUPPORTED_AS_BINARY_ARCHITECTURE_WITH_OUTER_LIMIT"
+    },
+    {
+      "id": "H02",
+      "claim": "cSavedGameHeader is a logical 0x68-byte class object serialized through a descriptor/attribute callback layer.",
+      "predictions": [
+        "A 0x68 allocation and cSavedGameHeader vtable should exist.",
+        "Write/read should use the same class ID and descriptor/table.",
+        "Version/time/mode fields should be materialized before callback serialization."
+      ],
+      "evidence_for": ["BF01", "BF02", "BF03"],
+      "evidence_against": ["No complete runtime-populated descriptor table or captured field order was recovered."],
+      "status": "SUPPORTED_AS_CLASS_SERIALIZER_HEADER"
+    },
+    {
+      "id": "H03",
+      "claim": "The COM strings are class metadata/type names, not proof of a standalone outer COM byte envelope.",
+      "predictions": [
+        "The strings should be passed to allocation/class registration code.",
+        "ClassSerializer should separately receive a class ID and descriptor/table address.",
+        "No direct fixed COM marker should be required by the class-object wrapper."
+      ],
+      "evidence_for": ["BF01", "BF02", "BF07"],
+      "evidence_against": ["The complete class metadata registration and possible outer COM record were not recovered."],
+      "status": "CONFIRMED_TYPE_METADATA_ENVELOPE_UNRESOLVED"
+    },
+    {
+      "id": "H04",
+      "claim": "Reference restoration is ID-mediated and deferred rather than raw host-pointer persistence.",
+      "predictions": [
+        "A manager should look up stable identities before dispatching object attributes.",
+        "Read should resolve stored IDs before callbacks.",
+        "The association object should own vectors/back-references for object lifetime."
+      ],
+      "evidence_for": ["BF05", "BF06"],
+      "evidence_against": ["Exact pointer-table bytes and cycle behavior are not observed."],
+      "status": "SUPPORTED_AS_CONTROL_FLOW_NOT_WIRE_COMPLETE"
+    },
+    {
+      "id": "H05",
+      "claim": "The primary save uses a bounded temp/close/old/replace transaction and a secondary stars.db transaction.",
+      "predictions": [
+        "The main path should create a .tmp path and close the stream before replacement.",
+        "The replacement helper should create an old path and move/copy files.",
+        "The stars database should have its own .tmp path and replacement."
+      ],
+      "evidence_for": ["BF09", "BF10"],
+      "evidence_against": ["No cross-file manifest, journal, or crash trace proves atomicity."],
+      "status": "SUPPORTED_FOR_BOUNDED_REPLACEMENT_NOT_UNIVERSAL_ATOMICITY"
+    },
+    {
+      "id": "H06",
+      "claim": "Recovery markers are a compatibility/recovery protocol around the old path rather than a complete transaction log.",
+      "predictions": [
+        "Load/recovery code should inspect old/complete, old/valid, and dbread markers.",
+        "The code should enumerate .spo and related databases when deciding validity."
+      ],
+      "evidence_for": ["BF09"],
+      "evidence_against": ["Marker creation/removal ordering and crash semantics are not fully closed."],
+      "status": "SUPPORTED_AS_BOUNDED_RECOVERY_SURFACE"
+    },
+    {
+      "id": "H07",
+      "claim": "CRC strings in the binary belong to generic compression/deflate handling and should not be assigned to .spo without a call-path link.",
+      "predictions": [
+        "CRC error strings should be near compression state machines.",
+        "The primary save/load call path should not reach those functions if save framing is uncompressed or separately handled."
+      ],
+      "evidence_for": ["BF04", "BF09"],
+      "evidence_against": ["A higher-level database wrapper could still add an unobserved checksum."],
+      "status": "CRC_NOT_CONFIRMED_FOR_PERSISTENCE"
+    },
+    {
+      "id": "H08",
+      "claim": "The 0xEC Cell save object has a concrete vtable write/read pair and uses the common ClassSerializer.",
+      "predictions": [
+        "A 0xEC allocation should install a stable vtable pair.",
+        "The vtable should resolve to write/read wrappers.",
+        "Those wrappers should pass a Cell class ID and descriptor/table to ClassSerializer."
+      ],
+      "evidence_for": ["BF07", "BF08"],
+      "evidence_against": ["The descriptor table is runtime-populated, so exact field coverage is not proven."],
+      "status": "SUPPORTED_AS_VTABLE_AND_CODEC_BOUNDARY"
+    },
+    {
+      "id": "H09",
+      "claim": "FUN_00b28ec0 and FUN_00b279e0 are the concrete save/load operation bodies associated with the persistence manager subsystem.",
+      "predictions": [
+        "Save should construct a header and call write/close/replace paths.",
+        "Load should read/validate a header and dispatch mode/state restoration.",
+        "Adjacent wrappers should call these bodies during mode/snapshot operations."
+      ],
+      "evidence_for": ["BF03", "BF04", "BF09", "BF10"],
+      "evidence_against": ["The explicit cGamePersistenceManager vtable instance and this-pointer binding were not recovered."],
+      "status": "STRONG_OPERATION_CANDIDATE_MANAGER_MEMBERSHIP_UNCONFIRMED"
+    },
+    {
+      "id": "H10",
+      "claim": "A cGamePersistenceManager vtable instance, if recovered, would bind the operation candidates and settle whether SaveGame is a distinct member or an internal free function.",
+      "predictions": [
+        "A data reference from a cGamePersistenceManager vtable should point to the load slot and related persistence methods.",
+        "A manager this pointer should be observable in the operation body or an immediate wrapper."
+      ],
+      "evidence_for": ["The imported cGamePersistenceManager vtable declares LoadGame at +0x10."],
+      "evidence_against": ["The Get global is zero in the static image and no concrete manager vtable instance was found in this pass."],
+      "status": "OPEN_BINDING_REDESIGN_TRIGGER"
+    }
+  ],
+  "smallest_observations_that_could_force_major_redesign": [
+    {
+      "id": "R01",
+      "observation": "One user-provided .spo byte prefix plus the first serialized record boundary.",
+      "current_uncertainty": "The outer envelope, database record header, compression, and checksum placement.",
+      "redesign_pressure": "If the prefix is a fixed raw header or a distinct COM/container header, replace the current stream-first model with an explicit outer-envelope parser."
+    },
+    {
+      "id": "R02",
+      "observation": "One recovered cGamePersistenceManager vtable instance or a direct call to its LoadGame slot.",
+      "current_uncertainty": "Whether the operation candidates are manager members or subsystem helpers.",
+      "redesign_pressure": "If the vtable binds different functions, separate service orchestration from the current save/load bodies and revise ownership/API boundaries."
+    },
+    {
+      "id": "R03",
+      "observation": "Runtime-populated contents and field IDs of 0x01568ac8, 0x01568b08, and 0x015a7e38.",
+      "current_uncertainty": "Exact header and Cell field coverage, names, offsets, and emission order.",
+      "redesign_pressure": "If descriptors contain nested object tables or version-conditional fields, adopt a schema registry with explicit migration branches rather than a fixed DTO."
+    },
+    {
+      "id": "R04",
+      "observation": "A single failure-path trace from ClassSerializer callback failure through temp cleanup or replacement.",
+      "current_uncertainty": "Rollback and commit point for a partially written save.",
+      "redesign_pressure": "If replacement occurs before a complete success check, the implementation must add staging validation, journal/manifest, and recovery; if rollback deletes the temp, document that guarantee separately."
+    },
+    {
+      "id": "R05",
+      "observation": "A serialized object table with forward, backward, or cyclic IDs.",
+      "current_uncertainty": "Reference table ordering, cycle handling, and duplicate/missing ID behavior.",
+      "redesign_pressure": "If raw addresses or non-ID links appear, host-pointer persistence is invalid and a graph/object-table design is required."
+    },
+    {
+      "id": "R06",
+      "observation": "A call from the save/load database stream into a CRC or compression routine.",
+      "current_uncertainty": "Whether save payloads are compressed or checksummed above ClassSerializer.",
+      "redesign_pressure": "If such a wrapper exists, add a separate compression/checksum layer and change stream framing before implementing byte compatibility."
+    },
+    {
+      "id": "R07",
+      "observation": "The relative order and commit status of .spo, stars.db, planetRecords.pkp, planetscripts.pld, and GGEUserData.dat writes.",
+      "current_uncertainty": "Cross-artifact transaction scope and recovery consistency.",
+      "redesign_pressure": "If multiple artifacts are committed independently without a manifest, replace the current single-commit assumption with a multi-file transaction protocol."
+    }
+  ],
+  "open_observations": [
+    "Exact first bytes and record boundaries of .spo and .prop artifacts.",
+    "Concrete cGamePersistenceManager vtable instance and named SaveGame/LoadGame member binding.",
+    "Runtime-populated descriptor/attribute tables and complete field emission order for cSavedGameHeader and CellSaveGame.",
+    "Complete object/reference table encoding and cycle/error behavior.",
+    "Save-specific CRC, compression, and any encryption layer.",
+    "Failure-path behavior and crash boundaries for temp/old replacement.",
+    "Migration/downgrade behavior for version 3/0x25 and other class IDs."
+  ],
+  "citations": [
+    "SporeApp.exe read-only Ghidra queries: 0x00b28ec0, 0x00b279e0, 0x00b275a0, 0x00b274e0, 0x00b26800, 0x00b26840, 0x00b268a0, 0x00b268e0, 0x00692880, 0x00692900, 0x00693e10, 0x00e0e9f0, 0x00695140, 0x00695b40, 0x00695770, 0x00693d60, 0x00693cd0, 0x00693aa0, 0x006939b0, 0x00693900, 0x006891f0, 0x00e61550, 0x00e61a50, 0x01485598, 0x014188c0, 0x00e51300, 0x00e51370, 0x00e51250, 0x00b282e0, 0x00b28070, 0x00b289e0, 0x00b28750, 0x00bb4ba0, 0x00bb66f0.",
+    "Imported type/vtable queries: cGamePersistenceManager__vftable (0x24), cSavedGameHeader, cCellSerializableData, and class-serialization descriptor data types.",
+    "String/xref anchors: .spo, *.spo, snapshot.spo, SP_Simulator/cSavedGameHeader/COM, SP_Simulator/CellSaveGame/COM, old/complete, old/valid, dbreadinitiated, dbreadcompleted, valid, header crc mismatch, CRC error, and .prop filename templates.",
+    "Historical context only: knowledgegraph/research/architecture-resolution/track-04-persistence.{json,md}, knowledgegraph/research/data-model/09-save-load-persistence.json, and knowledgegraph/research/data-model/17-persistence-synthesis.json."
+  ]
+}

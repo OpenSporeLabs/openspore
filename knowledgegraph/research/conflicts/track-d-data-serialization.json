@@ -1,0 +1,1166 @@
+{
+  "$schema": "openspore-track-d-data-serialization-conflict-adjudication-1",
+  "artifact": {
+    "analysis_only": true,
+    "ghidra_persisted_mutation": false,
+    "ghidra_transient_state_mutation": "Temporary unsaved disassembly was requested at 0x00630030, 0x00e51300, 0x00e51370, and 0x00e5cad0 while inspecting cCellSerializableData vtable targets; no Ghidra project save was performed.",
+    "historical_artifacts_modified": false,
+    "implementation_modified": false,
+    "name": "track-d-data-serialization",
+    "output": "knowledgegraph/research/conflicts/track-d-data-serialization.json",
+    "spore_modified": false,
+    "spore_read": false
+  },
+  "cross_campaign_convergence": [
+    {
+      "artifact": "knowledgegraph/research/data-model/01-dbpf-resource-formats.json",
+      "finding": "DBPF identity is type/group/instance while the imported ResourceKey memory layout is instanceID/typeID/groupID; the conceptual key and storage order are separate dimensions.",
+      "use": "ResourceKey and DBPF record boundary"
+    },
+    {
+      "artifact": "knowledgegraph/research/data-model/09-save-load-persistence.json",
+      "finding": "PropertyList, ClassSerializer, cSavedGameHeader, GameLoadParameters, cGamePersistenceManager, and cCellSerializableData are static architecture/layout evidence; exact .prop/.spo framing and write/read order remain unresolved.",
+      "use": "save/load boundary and persistent-versus-transient classification"
+    },
+    {
+      "artifact": "knowledgegraph/research/data-model/10-serialization.json",
+      "finding": "Direct Cell records are TypeID-specific content schemas; cCellDataReference and cCellResource are runtime linkage; cCellSerializableData is a separate save candidate.",
+      "use": "content/runtime/save layer separation"
+    },
+    {
+      "artifact": "knowledgegraph/research/data-model/12-asset-registry.json",
+      "finding": "Cross-campaign resource archaeology records full ResourceKey-to-DBPF identity, cCellDataReference lazy caching by instance plus serializer, and original manager/factory/cache boundaries.",
+      "use": "resource identity and cache ownership"
+    },
+    {
+      "artifact": "knowledgegraph/research/gameplay-data-model.json",
+      "finding": "The normalized graph explicitly keeps content, typed-resource cache, runtime state, presentation, and save state as separate nodes and records unresolved PROP/SPO/pointer-table/migration questions.",
+      "use": "data-model conflict priority and preservation policy"
+    },
+    {
+      "artifact": "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json",
+      "finding": "Cell Initialize creates the 0xEC serializable-data object and stores it at cCellGame+0x5190; live pools, worlds, and presentation are separate state holders and no Cell save transaction is established.",
+      "use": "Cell initialization and save-state boundary"
+    }
+  ],
+  "determinism": {
+    "array_order": "Records are sorted by ascending conflict_id; evidence and dependency arrays are sorted by stable evidence_id, address, or path as applicable.",
+    "key_order": "Every JSON object is emitted with lexicographically sorted keys.",
+    "runtime_timestamps": false,
+    "unordered_sets": false
+  },
+  "evidence_policy": {
+    "authority_order": [
+      "Pinned binary bytes and direct Ghidra control-flow/data-flow evidence",
+      "Read-only Ghidra structure layouts, xrefs, disassembly, and decompilation",
+      "SDK declarations as bounded reference semantics",
+      "Cross-campaign pinned research artifacts",
+      "Current OpenSpore source and tests as comparison-only evidence"
+    ],
+    "binary_format_rule": "A direct read/write helper, fixed span, or exact index parse can establish a bounded binary layout. SDK template declarations alone do not establish original wire bytes.",
+    "runtime_rule": "No positive original-process save/load or Cell runtime trace is available; static control flow is not promoted to runtime observation.",
+    "semantic_model_rule": "Names, fields, vtable ownership, cache linkage, and state meaning remain bounded by the direct evidence and are not inferred from wire shape alone.",
+    "tool_state": "Direct Ghidra queries were performed against the open SporeApp.exe program; no runtime execution, asset write, or implementation change was performed."
+  },
+  "records": [
+    {
+      "competing_hypotheses": [
+        {
+          "claim": "Conceptual resource identity and the DBPF index use type/group/instance; ResourceKey memory storage is instanceID/typeID/groupID; the SDK serializer declaration reads and writes groupID/typeID/instanceID.",
+          "evidence_ids": [
+            "TD-DATA-001-E01",
+            "TD-DATA-001-E02",
+            "TD-DATA-001-E03",
+            "TD-DATA-001-E04"
+          ],
+          "hypothesis_id": "TD-DATA-001-H1",
+          "status": "preferred_bounded_reconciliation"
+        },
+        {
+          "claim": "One universal order governs DBPF rows, ResourceKey memory, and every serializer wire path.",
+          "evidence_ids": [
+            "TD-DATA-001-E01",
+            "TD-DATA-001-E02",
+            "TD-DATA-001-E03"
+          ],
+          "hypothesis_id": "TD-DATA-001-H2",
+          "status": "rejected_as_unsafe_conflation"
+        }
+      ],
+      "confidence": {
+        "level": "SUPPORTED",
+        "scope": "Conceptual identity, DBPF row order, and memory layout are directly pinned; concrete ResourceKey wire order is not independently recovered.",
+        "score": 0.99
+      },
+      "conflict_id": "TD-DATA-001",
+      "cross_campaign_convergence": [
+        "knowledgegraph/research/data-model/01-dbpf-resource-formats.json:188-234",
+        "knowledgegraph/research/data-model/10-serialization.json:507-521 and 836-848",
+        "knowledgegraph/research/data-model/12-asset-registry.json:475-499 and 661-667",
+        "knowledgegraph/research/gameplay-data-model.json:R001 and R002"
+      ],
+      "dependent_functions_structures_packages": {
+        "functions": [
+          "0x008da3d0",
+          "0x00e82420",
+          "0x00e823a0",
+          "0x00e4ace0",
+          "0x00e4cde0"
+        ],
+        "packages": [
+          "PKG-03-RESOURCE-IO",
+          "PKG-05-CELL-CONTENT",
+          "PKG-11-PERSISTENCE"
+        ],
+        "structures": [
+          "ResourceKey",
+          "DbpfEntry",
+          "cCellResource",
+          "cCellDataReference_"
+        ]
+      },
+      "evidence": [
+        {
+          "address": null,
+          "evidence_id": "TD-DATA-001-E01",
+          "level": "VERIFIED_CURRENT",
+          "observation": "The current DBPF parser reads each index row as type, group, instance, offset, stored size, memory size, compression, saved flag, and padding; findDbpfEntry compares all three identity fields.",
+          "path": "src/assets/Dbpf.cpp:81-98,226-235"
+        },
+        {
+          "address": null,
+          "evidence_id": "TD-DATA-001-E02",
+          "level": "VERIFIED_CURRENT",
+          "observation": "DbpfEntry documents the bounded conceptual row as type/group/instance plus stored and decompressed extents.",
+          "path": "src/assets/Dbpf.hpp:16-26"
+        },
+        {
+          "address": null,
+          "evidence_id": "TD-DATA-001-E03",
+          "level": "VERIFIED_GHIDRA",
+          "observation": "The live structure query returns a 12-byte ResourceKey with instanceID at +0x00, typeID at +0x04, and groupID at +0x08.",
+          "path": "ghidra:SporeApp.exe::get_struct_layout(ResourceKey)"
+        },
+        {
+          "address": null,
+          "evidence_id": "TD-DATA-001-E04",
+          "level": "SDK_DECLARATION",
+          "observation": "The SDK SerializedType<ResourceKey> reads and writes groupID, typeID, then instanceID; this is a declared serializer contract, not a direct concrete-body proof.",
+          "path": "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/SerializationTypes.h:205-219"
+        },
+        {
+          "address": "0x008da3d0",
+          "evidence_id": "TD-DATA-001-E05",
+          "level": "VERIFIED_STATIC",
+          "observation": "The database body passes the ResourceKey argument to the index virtual at +0x28, copies three record-info words when requested, and then dispatches record creation/read helpers; the lookup boundary receives a full key object rather than a serialized field sequence.",
+          "path": "ghidra:SporeApp.exe@0x008da3d0"
+        },
+        {
+          "address": "0x00e82420",
+          "evidence_id": "TD-DATA-001-E06",
+          "level": "VERIFIED_STATIC",
+          "observation": "The Cell lazy-reference cache compares instanceID and CellSerializer pointer, demonstrating that the cache key is a narrower runtime key than the conceptual DBPF triple.",
+          "path": "ghidra:SporeApp.exe@0x00e82420"
+        }
+      ],
+      "priority": 1,
+      "recommended_next_action": "Read-only decompile the concrete serializer ResourceKey read/write helpers and correlate their three IO calls with a committed stream fixture; retain the SDK order as a declaration until the concrete body or an approved read-only oracle closes it.",
+      "resolution_taxonomy": {
+        "binary_format_certainty": {
+          "dbpf_index": "CONFIRMED_CURRENT_BOUNDED",
+          "resource_key_memory": "CONFIRMED",
+          "resource_key_wire": "SDK_DECLARED_ONLY"
+        },
+        "classification": "identity_representation_boundary",
+        "current_safe_rule": "Use the full type/group/instance tuple for conceptual lookup; convert explicitly to ResourceKey memory fields; never infer wire order from memory offsets.",
+        "merge_decision": "separate_by_scope",
+        "preservation_rule": "Keep DBPF row order, ResourceKey memory order, SDK serializer order, and Cell cache key as distinct observations.",
+        "status": "partially_reconciled",
+        "taxonomy": "separate_by_scope"
+      },
+      "severity": "critical",
+      "subject": "ResourceKey, DBPF identity, and serializer field order",
+      "unresolved_reason": [
+        "The concrete original ResourceKey serializer body and stream mode are not directly identified.",
+        "The SDK write order is reference-only and cannot by itself establish original bytes."
+      ]
+    },
+    {
+      "competing_hypotheses": [
+        {
+          "claim": "The runtime Property value object is a 20-byte union-plus-flags/type record; the imported 4-byte Ghidra Property describes only the tail metadata view.",
+          "evidence_ids": [
+            "TD-DATA-002-E01",
+            "TD-DATA-002-E02",
+            "TD-DATA-002-E03",
+            "TD-DATA-002-E04"
+          ],
+          "hypothesis_id": "TD-DATA-002-H1",
+          "status": "preferred"
+        },
+        {
+          "claim": "The runtime Property is only 4 bytes and the SDK 0x14-byte record is a declaration defect or unrelated wrapper.",
+          "evidence_ids": [
+            "TD-DATA-002-E02",
+            "TD-DATA-002-E03",
+            "TD-DATA-002-E04"
+          ],
+          "hypothesis_id": "TD-DATA-002-H2",
+          "status": "rejected_by_inline_control_flow"
+        }
+      ],
+      "confidence": {
+        "level": "SUPPORTED",
+        "scope": "Inline runtime layout and direct codec access are strongly supported; full coverage of every Property type and array encoding remains incomplete.",
+        "score": 0.98
+      },
+      "conflict_id": "TD-DATA-002",
+      "cross_campaign_convergence": [
+        "knowledgegraph/research/types/08-persistence-serialization.json:300-320 and 900-910",
+        "knowledgegraph/research/data-model/09-save-load-persistence.json:397-418",
+        "knowledgegraph/research/data-model/10-serialization.json:524-556 and 1817-1830",
+        "knowledgegraph/research/gameplay-data-model.json:417-443"
+      ],
+      "dependent_functions_structures_packages": {
+        "functions": [
+          "0x006a1540",
+          "0x006a2f60",
+          "0x00693390",
+          "0x00694440",
+          "0x00422e20",
+          "0x00422eb0",
+          "0x00422f40",
+          "0x006a3890",
+          "0x006a0f70",
+          "0x006a3510"
+        ],
+        "packages": [
+          "PKG-03-PROPERTY-CONFIG",
+          "PKG-11-PERSISTENCE",
+          "PKG-13-SIM-CREATURE-TRIBECIV"
+        ],
+        "structures": [
+          "Property",
+          "PropertyList",
+          "DirectPropertyList"
+        ]
+      },
+      "evidence": [
+        {
+          "address": null,
+          "evidence_id": "TD-DATA-002-E01",
+          "level": "SDK_LAYOUT",
+          "observation": "The SDK Property contract describes a 0x14-byte value object with a 0x10-byte value union, flags at +0x10, and type at +0x12.",
+          "path": "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/App/Property.h:100-123 and 139-217"
+        },
+        {
+          "address": "0x006a1540",
+          "evidence_id": "TD-DATA-002-E02",
+          "level": "VERIFIED_STATIC",
+          "observation": "PropertyList::Write uses a 0x18-byte map-element stride, writes each 0x18-byte entry, and passes entry+4 to the typed Property writer; the value begins four bytes after the map key.",
+          "path": "ghidra:SporeApp.exe::disassemble_function(0x006a1540), especially 0x006a15a4-0x006a15d5"
+        },
+        {
+          "address": "0x00422eb0",
+          "evidence_id": "TD-DATA-002-E03",
+          "level": "VERIFIED_STATIC",
+          "observation": "SetValueInt32 writes the scalar into the first word of the value object and writes the type and flags through the fifth word, demonstrating inline value storage followed by the tail metadata.",
+          "path": "ghidra:SporeApp.exe@0x00422eb0"
+        },
+        {
+          "address": "0x006a3890",
+          "evidence_id": "TD-DATA-002-E04",
+          "level": "VERIFIED_STATIC",
+          "observation": "GetValueFlags reads the type at value+0x12, tests pointer flags in the fifth word, and returns the value base for non-pointer data; the 4-byte Ghidra layout cannot represent this access path.",
+          "path": "ghidra:SporeApp.exe@0x006a3890"
+        },
+        {
+          "address": "0x00693390",
+          "evidence_id": "TD-DATA-002-E05",
+          "level": "VERIFIED_STATIC",
+          "observation": "The typed Property writer first emits the type word, then the flags word, then dispatches the type-specific payload; array/pointer flags alter the payload branch.",
+          "path": "ghidra:SporeApp.exe@0x00693390"
+        },
+        {
+          "address": "0x0093aa70",
+          "evidence_id": "TD-DATA-002-E06",
+          "level": "VERIFIED_STATIC",
+          "observation": "The 32-bit stream helper byte-swaps by default and writes raw little-endian words only in mode 1; PropertyList Write supplies mode 0 for count and property IDs.",
+          "path": "ghidra:SporeApp.exe@0x0093aa70"
+        },
+        {
+          "address": null,
+          "evidence_id": "TD-DATA-002-E07",
+          "level": "VERIFIED_GHIDRA",
+          "observation": "The live imported Property structure is 4 bytes with mnFlags at +0 and mnType at +2, which is narrower than the SDK 0x14-byte declaration.",
+          "path": "ghidra:SporeApp.exe::get_struct_layout(Property)"
+        }
+      ],
+      "priority": 2,
+      "recommended_next_action": "Freeze the 20-byte runtime Property representation as the bounded binary-layout hypothesis, then decompile the concrete 16-bit writer and all type-specific payload helpers to close the remaining value and array encodings.",
+      "resolution_taxonomy": {
+        "binary_format_certainty": {
+          "all_property_type_payloads": "PARTIAL",
+          "entry_framing": "COUNT_ID_THEN_TYPED_VALUE_CONFIRMED",
+          "inline_property_layout": "STRONGLY_CONFIRMED"
+        },
+        "classification": "layout_alias_corrected_with_wire_limits",
+        "current_safe_rule": "Treat the 4-byte Ghidra Property as a tail view of the 20-byte runtime value; do not use it to size a map entry or encode a Property payload.",
+        "merge_decision": "preferred_claim_with_limit",
+        "preservation_rule": "Retain the SDK 0x14 layout, the Ghidra 4-byte view, and the direct inline access evidence with their separate scopes.",
+        "status": "preferred_claim_with_limit",
+        "taxonomy": "preferred_claim_with_limit"
+      },
+      "severity": "critical",
+      "subject": "Property 4-byte versus 20-byte layout and typed value codec",
+      "unresolved_reason": [
+        "Unknown Property type payloads and array/pointer encodings are not all directly recovered.",
+        "The outer PROP record and migration behavior remain separate unresolved questions."
+      ]
+    },
+    {
+      "competing_hypotheses": [
+        {
+          "claim": "PropertyList wire data is a local count followed by property ID plus typed value entries; a negative count selects a three-word parent-reference branch before local entries are read.",
+          "evidence_ids": [
+            "TD-DATA-003-E01",
+            "TD-DATA-003-E02",
+            "TD-DATA-003-E03",
+            "TD-DATA-003-E04"
+          ],
+          "hypothesis_id": "TD-DATA-003-H1",
+          "status": "preferred_bounded_control_flow"
+        },
+        {
+          "claim": "PropertyList Write serializes the entire recursive parent graph as ordinary local entries.",
+          "evidence_ids": [
+            "TD-DATA-003-E02",
+            "TD-DATA-003-E03",
+            "TD-DATA-003-E05"
+          ],
+          "hypothesis_id": "TD-DATA-003-H2",
+          "status": "rejected_for_current_read_write_bodies"
+        }
+      ],
+      "confidence": {
+        "level": "SUPPORTED",
+        "scope": "Read/write call order, local map stride, parent branch, and lookup overlay are directly visible; outer PROP framing and failure atomicity are not.",
+        "score": 0.96
+      },
+      "conflict_id": "TD-DATA-003",
+      "cross_campaign_convergence": [
+        "knowledgegraph/research/data-model/09-save-load-persistence.json:385-395 and 561-596",
+        "knowledgegraph/research/data-model/10-serialization.json:562-583 and 1297-1311",
+        "knowledgegraph/research/types/08-persistence-serialization.json:141-171 and 775-781",
+        "knowledgegraph/research/gameplay-data-model.json:1034-1057"
+      ],
+      "dependent_functions_structures_packages": {
+        "functions": [
+          "0x006a1540",
+          "0x006a2f60",
+          "0x006a2e20",
+          "0x006a2530",
+          "0x006a2b80",
+          "0x006a2c50",
+          "0x00694440"
+        ],
+        "packages": [
+          "PKG-03-PROPERTY-CONFIG",
+          "PKG-11-PERSISTENCE",
+          "PKG-13-SIM-CREATURE-TRIBECIV",
+          "PKG-14-CROSS-MODE-OBJECT"
+        ],
+        "structures": [
+          "PropertyList",
+          "DirectPropertyList",
+          "Property"
+        ]
+      },
+      "evidence": [
+        {
+          "address": "0x006a1540",
+          "evidence_id": "TD-DATA-003-E01",
+          "level": "VERIFIED_STATIC",
+          "observation": "Write computes the local property count from the vector-map span, writes the count first, then loops entries, writes each uint32 property ID, and calls the typed Property writer at entry+4.",
+          "path": "ghidra:SporeApp.exe::disassemble_function(0x006a1540), 0x006a154a-0x006a15f3"
+        },
+        {
+          "address": "0x006a2f60",
+          "evidence_id": "TD-DATA-003-E02",
+          "level": "VERIFIED_STATIC",
+          "observation": "Read first reads one 32-bit count. If the count is negative, it reads three 32-bit words, releases any existing parent, and calls a manager virtual to install a parent before using the absolute count to resize the local map.",
+          "path": "ghidra:SporeApp.exe::disassemble_function(0x006a2f60), 0x006a2f78-0x006a2fe9"
+        },
+        {
+          "address": "0x006a2f60",
+          "evidence_id": "TD-DATA-003-E03",
+          "level": "VERIFIED_STATIC",
+          "observation": "For the normal branch, Read loops over the resized local map, reads each property ID, then calls the typed Property reader at entry+4; any false result stops the loop and returns false.",
+          "path": "ghidra:SporeApp.exe::disassemble_function(0x006a2f60), 0x006a2fe9-0x006a306a"
+        },
+        {
+          "address": "0x006a2530",
+          "evidence_id": "TD-DATA-003-E04",
+          "level": "VERIFIED_STATIC",
+          "observation": "GetProperty searches the local sorted map and falls back through the intrusive parent pointer; SetProperty increments the operation counter after insertion or update.",
+          "path": "ghidra:SporeApp.exe@0x006a2530 and 0x006a2e20"
+        },
+        {
+          "address": "0x006a2b80",
+          "evidence_id": "TD-DATA-003-E05",
+          "level": "VERIFIED_STATIC",
+          "observation": "PropertyList map resizing and insertion use a 0x18-byte element stride, confirming that the local runtime entry contains a 4-byte ID plus a 20-byte inline Property value.",
+          "path": "ghidra:SporeApp.exe@0x006a2b80 and 0x006a2c50"
+        },
+        {
+          "address": null,
+          "evidence_id": "TD-DATA-003-E06",
+          "level": "SDK_SEMANTICS",
+          "observation": "The SDK states that PropertyList is a uint32-ID map with recursive parent lookup and declares Read/Write as PROP boundaries.",
+          "path": "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/App/PropertyList.h:34-46 and 141-179"
+        }
+      ],
+      "priority": 3,
+      "recommended_next_action": "Decompile FUN_0067de30 and the manager virtual at 0x006a2fda-0x006a2fe3 to identify the three-word parent reference exactly, then correlate a committed PropertyList stream fixture with the normal and negative-count branches.",
+      "resolution_taxonomy": {
+        "binary_format_certainty": {
+          "normal_local_entries": "CONFIRMED_STATIC",
+          "outer_prop_envelope": "UNKNOWN",
+          "parent_branch": "CONFIRMED_CONTROL_FLOW_EXACT_SEMANTICS_OPEN"
+        },
+        "classification": "property_stream_boundary_with_parent_reference",
+        "current_safe_rule": "Model local PropertyList entries as count plus ID/value pairs; treat parent handling as a distinct negative-count reference path, not as inherited-property copying.",
+        "merge_decision": "separate_layers",
+        "preservation_rule": "Keep local map, parent overlay, operation counter, temporary/fast-access state, and stream framing as separate dimensions.",
+        "status": "preferred_claim_with_limit",
+        "taxonomy": "preferred_claim_with_limit"
+      },
+      "severity": "high",
+      "subject": "PropertyList local transfer, parent reference, and PROP framing",
+      "unresolved_reason": [
+        "The exact three-word parent identity and its manager-side construction are not fully identified.",
+        "Outer record envelope, version negotiation, compression, and atomic rollback are not established by the selected bodies."
+      ]
+    },
+    {
+      "competing_hypotheses": [
+        {
+          "claim": "The live functions at 0x00692880 and 0x00693dd0 are the concrete ClassSerializer Write and Read implementations named by the SDK anchors.",
+          "evidence_ids": [
+            "TD-DATA-004-E01",
+            "TD-DATA-004-E02",
+            "TD-DATA-004-E03"
+          ],
+          "hypothesis_id": "TD-DATA-004-H1",
+          "status": "rejected_by_function_boundary_evidence"
+        },
+        {
+          "claim": "0x00692880 is the ClassSerializer constructor/build routine and 0x00693dd0 is a buffer-teardown routine; the SDK Write/Read addresses are interior anchors rather than function entries.",
+          "evidence_ids": [
+            "TD-DATA-004-E01",
+            "TD-DATA-004-E02",
+            "TD-DATA-004-E03",
+            "TD-DATA-004-E04"
+          ],
+          "hypothesis_id": "TD-DATA-004-H2",
+          "status": "preferred_boundary_correction"
+        },
+        {
+          "claim": "ClassSerializer's 128 AttributePointer table, count fields, ID, object pointer, and callbacks are a concrete binary serializer schema.",
+          "evidence_ids": [
+            "TD-DATA-004-E04",
+            "TD-DATA-004-E05"
+          ],
+          "hypothesis_id": "TD-DATA-004-H3",
+          "status": "rejected_without_wire_body"
+        }
+      ],
+      "confidence": {
+        "level": "SUPPORTED",
+        "scope": "Function-boundary correction and ClassSerializer layout are strong; concrete ClassSerializer Read/Write wire behavior is unresolved.",
+        "score": 0.99
+      },
+      "conflict_id": "TD-DATA-004",
+      "cross_campaign_convergence": [
+        "knowledgegraph/research/data-model/09-save-load-persistence.json:420-449 and 750-768",
+        "knowledgegraph/research/data-model/10-serialization.json:604-641 and 1441-1463",
+        "knowledgegraph/research/types/08-persistence-serialization.json:265-283 and 471-489",
+        "knowledgegraph/research/conflicts/00-corpus-inventory.json:593-602"
+      ],
+      "dependent_functions_structures_packages": {
+        "functions": [
+          "0x00692880",
+          "0x00692f90",
+          "0x00695b40",
+          "0x00693dd0",
+          "0x0120d030"
+        ],
+        "packages": [
+          "PKG-11-PERSISTENCE",
+          "PKG-01-SHARED-STATE-ROOTS",
+          "PKG-20-GAMEGLOBAL"
+        ],
+        "structures": [
+          "ClassSerializer",
+          "Attribute",
+          "AttributePointer"
+        ]
+      },
+      "evidence": [
+        {
+          "address": "0x00692880",
+          "evidence_id": "TD-DATA-004-E01",
+          "level": "VERIFIED_STATIC",
+          "observation": "The live function stores pObject at +0xA0C, pAttributes at +0xA10, zeroes count/countSerialized, stores the class ID at +0xA08, and copies up to 128 20-byte AttributePointer records while the source attribute list is nonempty.",
+          "path": "ghidra:SporeApp.exe::disassemble_function(0x00692880), 0x00692880-0x006928f5"
+        },
+        {
+          "address": "0x006928c0",
+          "evidence_id": "TD-DATA-004-E02",
+          "level": "VERIFIED_STATIC",
+          "observation": "The SDK Write anchor 0x006928C0 lands inside the constructor loop at CMP count,0x80, not at a function entry; the next instructions copy AttributePointer metadata.",
+          "path": "ghidra:SporeApp.exe::disassemble_function(0x00692880), 0x006928bb-0x006928f0"
+        },
+        {
+          "address": "0x00693dd0",
+          "evidence_id": "TD-DATA-004-E03",
+          "level": "VERIFIED_STATIC",
+          "observation": "The live function reads two buffers at +0x50 and +0x40, checks span and nonzero pointers, and calls FUN_00f47380 on each; this is teardown/free mechanics, not a deserializer body.",
+          "path": "ghidra:SporeApp.exe::disassemble_function(0x00693dd0), 0x00693dd0-0x00693e06"
+        },
+        {
+          "address": "0x00693de0",
+          "evidence_id": "TD-DATA-004-E04",
+          "level": "VERIFIED_STATIC",
+          "observation": "The SDK Read anchor 0x00693DE0 is the TEST EAX,EAX branch inside the first buffer-release sequence, not a Read function entry.",
+          "path": "ghidra:SporeApp.exe::disassemble_function(0x00693dd0), 0x00693ddb-0x00693dea"
+        },
+        {
+          "address": "0x00695b40",
+          "evidence_id": "TD-DATA-004-E05",
+          "level": "VERIFIED_STATIC",
+          "observation": "The caller constructs a ClassSerializer with the SDK default class ID 0x1A80D26, then registers the resulting serializer-related object through helper calls; this supports descriptor construction/registry semantics but not wire order.",
+          "path": "ghidra:SporeApp.exe@0x00695b40"
+        },
+        {
+          "address": null,
+          "evidence_id": "TD-DATA-004-E06",
+          "level": "SDK_LAYOUT",
+          "observation": "The SDK declares ClassSerializer size 0xA14, 128 AttributePointer entries, count/countSerialized, class ID, object pointer, and binary/text callback-bearing Attribute records.",
+          "path": "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/Serialization.h:147-201"
+        }
+      ],
+      "priority": 4,
+      "recommended_next_action": "Locate the actual ClassSerializer Read/Write function entries from constructor call sites and the Attribute callback dispatch, then map the concrete serializer database/streams; do not cite 0x006928C0 or 0x00693DE0 as function bodies until their owning entries are recovered.",
+      "resolution_taxonomy": {
+        "binary_format_certainty": {
+          "attribute_pointer_memory_layout": "CONFIRMED",
+          "class_serializer_wire": "UNKNOWN",
+          "sdk_address_mapping": "CONTRADICTED_BY_LIVE_BOUNDARIES"
+        },
+        "classification": "sdk_address_boundary_conflict",
+        "current_safe_rule": "Use the live constructor/teardown contracts for those addresses and retain the SDK method names only as unresolved anchors until exact entries are found.",
+        "merge_decision": "correct_boundary_preserve_wire_unknown",
+        "preservation_rule": "Keep SDK address aliases, live function boundaries, descriptor layout, and unknown wire schema as separate evidence classes.",
+        "status": "partially_reconciled",
+        "taxonomy": "preferred_claim_with_limit"
+      },
+      "severity": "critical",
+      "subject": "ClassSerializer SDK Write/Read anchors versus live constructor and teardown functions",
+      "unresolved_reason": [
+        "The actual ClassSerializer Read/Write entry points are not identified in the selected live function inventory.",
+        "Attribute callback order, stream framing, object-pointer table encoding, and migration behavior are not directly recovered."
+      ]
+    },
+    {
+      "competing_hypotheses": [
+        {
+          "claim": "Direct Cell records are generic CellSerializer name/ID envelopes containing a shared field descriptor table.",
+          "evidence_ids": [
+            "TD-DATA-005-E01",
+            "TD-DATA-005-E02"
+          ],
+          "hypothesis_id": "TD-DATA-005-H1",
+          "status": "rejected_for_recovered_record_families"
+        },
+        {
+          "claim": "Direct Cell records are TypeID-specific content templates; cCellDataReference/cCellResource are runtime acquisition layers; cCellSerializableData is a separate runtime serializable-state candidate.",
+          "evidence_ids": [
+            "TD-DATA-005-E01",
+            "TD-DATA-005-E02",
+            "TD-DATA-005-E03",
+            "TD-DATA-005-E04",
+            "TD-DATA-005-E05"
+          ],
+          "hypothesis_id": "TD-DATA-005-H2",
+          "status": "preferred_layered_model"
+        },
+        {
+          "claim": "Because cCellResource stores a CellSerializer pointer, every direct Cell record necessarily carries a CellSerializer wire envelope.",
+          "evidence_ids": [
+            "TD-DATA-005-E02",
+            "TD-DATA-005-E03"
+          ],
+          "hypothesis_id": "TD-DATA-005-H3",
+          "status": "rejected_structural_pointer_is_not_wire_envelope"
+        }
+      ],
+      "confidence": {
+        "level": "SUPPORTED",
+        "scope": "Content/runtime/save layer separation and direct Cell layouts are strong; emitted cCellSerializableData fields and generic CellSerializer wire behavior remain unknown.",
+        "score": 0.99
+      },
+      "conflict_id": "TD-DATA-005",
+      "cross_campaign_convergence": [
+        "knowledgegraph/research/data-model/10-serialization.json:140-505 and 1297-1597",
+        "knowledgegraph/research/data-model/09-save-load-persistence.json:339-383 and 452-496",
+        "knowledgegraph/research/data-model/12-asset-registry.json:286-417 and 679-695",
+        "knowledgegraph/research/gameplay-data-model.json:R002-R004 and R012"
+      ],
+      "dependent_functions_structures_packages": {
+        "functions": [
+          "0x00e4ace0",
+          "0x00e4cde0",
+          "0x00e823a0",
+          "0x00e80ba0",
+          "0x00e7fc00",
+          "0x00e81f30"
+        ],
+        "packages": [
+          "PKG-05-CELL-CONTENT",
+          "PKG-06-CELL-STATE",
+          "PKG-09-CELL-PRESENTATION",
+          "PKG-11-PERSISTENCE"
+        ],
+        "structures": [
+          "cCellResource",
+          "CellSerializer",
+          "CellSerializerField",
+          "cCellDataReference_",
+          "cCellGame",
+          "cCellSerializableData"
+        ]
+      },
+      "evidence": [
+        {
+          "address": null,
+          "evidence_id": "TD-DATA-005-E01",
+          "level": "VERIFIED_CURRENT",
+          "observation": "The current Cell decoder documents direct TypeID-specific fixed and count-driven records and explicitly rejects a CellSerializer name/ID envelope for the recovered families.",
+          "path": "src/assets/CellResource.hpp:1-7,124-181,210-240 and 366-480"
+        },
+        {
+          "address": null,
+          "evidence_id": "TD-DATA-005-E02",
+          "level": "VERIFIED_GHIDRA",
+          "observation": "cCellResource is a 32-byte runtime wrapper with mNameKey, mpData, mDataSize, and mDataSerializer; the serializer pointer is adjacent runtime metadata, not a field in the record payload.",
+          "path": "ghidra:SporeApp.exe::get_struct_layout(cCellResource)"
+        },
+        {
+          "address": "0x00e4cde0",
+          "evidence_id": "TD-DATA-005-E03",
+          "level": "VERIFIED_STATIC",
+          "observation": "The Cell bootstrap creates a table of cCellDataReference objects by passing an instance value and serializer pointer to Create; the static table does not serialize a name/ID envelope into Cell content bytes.",
+          "path": "ghidra:SporeApp.exe@0x00e4cde0"
+        },
+        {
+          "address": "0x00e4ace0",
+          "evidence_id": "TD-DATA-005-E04",
+          "level": "VERIFIED_STATIC",
+          "observation": "When walking a Cell resource reference descriptor, the type-3 path calls cCellDataReference::Create with the referenced instance and the descriptor's serializer pointer, establishing a runtime reference path distinct from the content record byte layout.",
+          "path": "ghidra:SporeApp.exe@0x00e4ace0"
+        },
+        {
+          "address": "0x00e80ba0",
+          "evidence_id": "TD-DATA-005-E05",
+          "level": "VERIFIED_STATIC",
+          "observation": "cCellGame::Initialize writes the cCellSerializableData pointer at +0x5190, initializes the serializable-data object, and initializes live Cell pools/world/GFX state; the body is not a direct Cell record writer.",
+          "path": "ghidra:SporeApp.exe::disassemble_function(0x00e80ba0), 0x00e80d45-0x00e80f9f"
+        },
+        {
+          "address": "0x00e7fc00",
+          "evidence_id": "TD-DATA-005-E06",
+          "level": "VERIFIED_STATIC",
+          "observation": "Cell mode OnExit drains/cleans active Cell state and presentation handles but contains no direct ClassSerializer or persistence-manager write call; teardown is not evidence of save serialization.",
+          "path": "ghidra:SporeApp.exe@0x00e7fc00"
+        }
+      ],
+      "priority": 5,
+      "recommended_next_action": "Decompile the actual cCellSerializableData Read/Write vtable targets and a concrete ClassSerializer serializer entry, then build a field-emission matrix keyed by mode and owner; keep direct Cell decoders in the content package.",
+      "resolution_taxonomy": {
+        "binary_format_certainty": {
+          "cell_save_wire": "UNKNOWN",
+          "cell_serializer_envelope": "NOT_DEMONSTRATED_FOR_RECOVERED_RECORDS",
+          "direct_cell_records": "CONFIRMED_CURRENT_BOUNDED"
+        },
+        "classification": "content_runtime_save_layer_boundary",
+        "current_safe_rule": "Keep DBPF/Cell content bytes, cCellResource runtime materialization, cCellDataReference cache linkage, cCellGame live state, and cCellSerializableData save candidates separate.",
+        "merge_decision": "separate_entities",
+        "preservation_rule": "Do not turn a runtime serializer pointer, a serializable vtable, or a Cell content layout into proof of a universal CellSerializer envelope or save schema.",
+        "status": "preferred_claim_with_limit",
+        "taxonomy": "preferred_claim_with_limit"
+      },
+      "severity": "critical",
+      "subject": "Direct Cell records, CellSerializer metadata, cCellDataReference, cCellGame, and cCellSerializableData",
+      "unresolved_reason": [
+        "Actual cCellSerializableData field emission order and class/object pointer remapping are not recovered.",
+        "No original-process save/load trace or byte-level .spo oracle is available."
+      ]
+    },
+    {
+      "competing_hypotheses": [
+        {
+          "claim": "cCellDataReference_ is the authoritative full ResourceKey record object and its mInstanceID/serializer pair is merely a convenience cache index.",
+          "evidence_ids": [
+            "TD-DATA-006-E01",
+            "TD-DATA-006-E02"
+          ],
+          "hypothesis_id": "TD-DATA-006-H1",
+          "status": "rejected_by_layout_and_loaders"
+        },
+        {
+          "claim": "DBPF payload bytes are the source content artifact; cCellResource is the materialized authoritative runtime record view; cCellDataReference_ is a lazy cache/lease keyed by instance plus CellSerializer; its resource pointer and counter are transient linkage state.",
+          "evidence_ids": [
+            "TD-DATA-006-E01",
+            "TD-DATA-006-E02",
+            "TD-DATA-006-E03",
+            "TD-DATA-006-E04",
+            "TD-DATA-006-E05"
+          ],
+          "hypothesis_id": "TD-DATA-006-H2",
+          "status": "preferred_layered_model"
+        }
+      ],
+      "confidence": {
+        "level": "SUPPORTED",
+        "scope": "Cache key, lazy-load control flow, ownership release, and materialized resource layout are directly supported; the exact serializer-to-type/group mapping and collision policy remain open.",
+        "score": 0.98
+      },
+      "conflict_id": "TD-DATA-006",
+      "cross_campaign_convergence": [
+        "knowledgegraph/research/data-model/10-serialization.json:709-733 and 1315-1330",
+        "knowledgegraph/research/data-model/12-asset-registry.json:475-499 and 679-695",
+        "knowledgegraph/research/data-model/14-openspore-cross-map.json:285-345",
+        "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json:340-420"
+      ],
+      "dependent_functions_structures_packages": {
+        "functions": [
+          "0x00e82420",
+          "0x00e82340",
+          "0x00e823a0",
+          "0x00e822c0",
+          "0x00e821d0",
+          "0x00e824d0",
+          "0x00e82280"
+        ],
+        "packages": [
+          "PKG-03-RESOURCE-IO",
+          "PKG-05-CELL-CONTENT",
+          "PKG-06-CELL-STATE",
+          "PKG-09-CELL-PRESENTATION"
+        ],
+        "structures": [
+          "cCellDataReference_",
+          "cCellResource",
+          "CellSerializer",
+          "cCellGame"
+        ]
+      },
+      "evidence": [
+        {
+          "address": "0x00e82420",
+          "evidence_id": "TD-DATA-006-E01",
+          "level": "VERIFIED_STATIC",
+          "observation": "Create scans DAT_016b44f0 by node+0x08 instanceID and node+0x0C CellSerializer pointer, allocates a 0x18-byte node, and links it into the cache; it does not compare groupID or typeID fields.",
+          "path": "ghidra:SporeApp.exe::disassemble_function(0x00e82420), 0x00e82432-0x00e82486"
+        },
+        {
+          "address": "0x00e823a0",
+          "evidence_id": "TD-DATA-006-E02",
+          "level": "VERIFIED_STATIC",
+          "observation": "The resolver increments the use counter, calls the loader only when mpResource is null, then calls the loaded resource virtual at +0x0C with 0x2269ed1 and returns the resource+0x14 data-size word.",
+          "path": "ghidra:SporeApp.exe::disassemble_function(0x00e823a0), 0x00e823a9-0x00e823da"
+        },
+        {
+          "address": "0x00e822c0",
+          "evidence_id": "TD-DATA-006-E03",
+          "level": "VERIFIED_STATIC",
+          "observation": "The lazy loader releases any existing resource pointer, calls FUN_00e821d0 to obtain a new resource, reports a typed load error on failure, and releases the failed pointer.",
+          "path": "ghidra:SporeApp.exe@0x00e822c0"
+        },
+        {
+          "address": "0x00e824d0",
+          "evidence_id": "TD-DATA-006-E04",
+          "level": "VERIFIED_STATIC",
+          "observation": "Cache teardown first clears loaded resource pointers, then tears down the reference registry node and frees it; this is ownership cleanup, not serialization.",
+          "path": "ghidra:SporeApp.exe@0x00e824d0 and 0x00e82280"
+        },
+        {
+          "address": null,
+          "evidence_id": "TD-DATA-006-E05",
+          "level": "VERIFIED_GHIDRA",
+          "observation": "The cCellResource layout contains a full ResourceKey, data pointer, data size, and CellSerializer pointer; the cCellDataReference layout contains only instanceID, serializer, resource pointer, and counter.",
+          "path": "ghidra:SporeApp.exe::get_struct_layout(cCellResource) and get_struct_layout(cCellDataReference_)"
+        },
+        {
+          "address": null,
+          "evidence_id": "TD-DATA-006-E06",
+          "level": "VERIFIED_CURRENT",
+          "observation": "The current provider returns owned record bytes by full type/group/instance and deliberately does not implement original manager cache, reload, or multi-package behavior.",
+          "path": "src/compat/ResourceProvider.hpp:24-59"
+        }
+      ],
+      "priority": 6,
+      "recommended_next_action": "Trace one CellSerializer descriptor from its static table entry through the resource-manager lookup and record factory, recording the type/group resolution that replaces the cache's missing key fields; separately verify one collision/instance reuse case if an approved static or read-only oracle exists.",
+      "resolution_taxonomy": {
+        "binary_format_certainty": {
+          "c_cell_data_reference_fields": "CONFIRMED_RUNTIME_ONLY",
+          "c_cell_resource_wire": "UNKNOWN",
+          "dbpf_record_bytes": "CONFIRMED_CURRENT_BOUNDED"
+        },
+        "classification": "cache_lease_versus_authoritative_content",
+        "current_safe_rule": "Treat DBPF bytes as source content, cCellResource as the materialized runtime view, and cCellDataReference as cache/lease state; do not serialize cache pointers, counters, or host addresses.",
+        "merge_decision": "separate_layers",
+        "preservation_rule": "Keep the full ResourceKey, narrowed cache key, serializer pointer, resource pointer, and counter as distinct identity/ownership dimensions.",
+        "status": "preferred_claim_with_limit",
+        "taxonomy": "preferred_claim_with_limit"
+      },
+      "severity": "high",
+      "subject": "cCellDataReference cache versus full ResourceKey and cCellResource authority",
+      "unresolved_reason": [
+        "The exact role of 0x2269ed1 in the resource virtual call and the serializer's type/group mapping are not fully identified.",
+        "Collision behavior when the same instance ID is used with different resource identities is not established."
+      ]
+    },
+    {
+      "competing_hypotheses": [
+        {
+          "claim": "The cGamePersistenceManager mode-transition calls prove that Get, the cSavedGameHeader, and GameLoadParameters are immediately followed by a concrete save/load transaction.",
+          "evidence_ids": [
+            "TD-DATA-007-E01",
+            "TD-DATA-007-E02",
+            "TD-DATA-007-E03"
+          ],
+          "hypothesis_id": "TD-DATA-007-H1",
+          "status": "rejected_by_call_shape"
+        },
+        {
+          "claim": "The manager is a service/state-reset boundary; cSavedGameHeader and GameLoadParameters are declared load/save context layouts, but the actual LoadGame/serialization call order and wire framing are not recovered.",
+          "evidence_ids": [
+            "TD-DATA-007-E01",
+            "TD-DATA-007-E02",
+            "TD-DATA-007-E03",
+            "TD-DATA-007-E04",
+            "TD-DATA-007-E05"
+          ],
+          "hypothesis_id": "TD-DATA-007-H2",
+          "status": "preferred_bounded_model"
+        }
+      ],
+      "confidence": {
+        "level": "SUPPORTED",
+        "scope": "Manager accessor, layout, and reset call shape are direct; save/load transaction and .spo framing remain unknown.",
+        "score": 0.97
+      },
+      "conflict_id": "TD-DATA-007",
+      "cross_campaign_convergence": [
+        "knowledgegraph/research/data-model/09-save-load-persistence.json:278-304 and 650-678",
+        "knowledgegraph/research/data-model/10-serialization.json:803-845 and 1383-1413",
+        "knowledgegraph/research/types/08-persistence-serialization.json:147-171 and 769-801",
+        "knowledgegraph/research/conflicts/00-corpus-inventory.json:593-602"
+      ],
+      "dependent_functions_structures_packages": {
+        "functions": [
+          "0x00b3d440",
+          "0x00b0c190",
+          "0x00b0c520",
+          "0x00b32b20",
+          "0x00b32ce0",
+          "0x00b32e80",
+          "0x00b33030",
+          "0x00b33130",
+          "0x00b33350",
+          "0x00b33540"
+        ],
+        "packages": [
+          "PKG-11-PERSISTENCE",
+          "PKG-12-SIM-SPACE",
+          "PKG-13-SIM-CREATURE-TRIBECIV",
+          "PKG-20-GAMEGLOBAL"
+        ],
+        "structures": [
+          "cGamePersistenceManager",
+          "cSavedGameHeader",
+          "GameLoadParameters",
+          "ISerializerDatabase",
+          "ISerializerReadStream",
+          "ISerializerWriteStream"
+        ]
+      },
+      "evidence": [
+        {
+          "address": "0x00b3d440",
+          "evidence_id": "TD-DATA-007-E01",
+          "level": "VERIFIED_STATIC",
+          "observation": "The named accessor simply returns DAT_0167eb34 and performs no load, save, stream, or serialization operation in its body.",
+          "path": "ghidra:SporeApp.exe@0x00b3d440"
+        },
+        {
+          "address": "0x00b3d440",
+          "evidence_id": "TD-DATA-007-E02",
+          "level": "VERIFIED_XREF",
+          "observation": "The live function has 37 recorded direct callers, including mode-transition and gameplay-support callers; the call count establishes reachability of the manager accessor, not save/load semantics.",
+          "path": "ghidra:SporeApp.exe::get_function_callers(0x00b3d440)"
+        },
+        {
+          "address": "0x00b32b20",
+          "evidence_id": "TD-DATA-007-E03",
+          "level": "VERIFIED_STATIC",
+          "observation": "This caller obtains the persistence manager and then calls FUN_00b0c190 with a boolean after a broad mode teardown/initialization sequence; it does not call a named serializer or pass a GameLoadParameters object in the recovered body.",
+          "path": "ghidra:SporeApp.exe@0x00b32b20"
+        },
+        {
+          "address": "0x00b0c190",
+          "evidence_id": "TD-DATA-007-E04",
+          "level": "VERIFIED_STATIC",
+          "observation": "The helper clears manager-owned vectors, maps, flags, and mode-state fields and optionally releases a large runtime array; the observed mechanics are reset/teardown, not byte emission.",
+          "path": "ghidra:SporeApp.exe@0x00b0c190"
+        },
+        {
+          "address": "0x00b0c520",
+          "evidence_id": "TD-DATA-007-E05",
+          "level": "VERIFIED_STATIC",
+          "observation": "The mode helper compares a mode/state word, calls a setup helper, and on a new state calls FUN_00b0c190 before storing the new mode value; this is mode-state transition mechanics.",
+          "path": "ghidra:SporeApp.exe@0x00b0c520"
+        },
+        {
+          "address": null,
+          "evidence_id": "TD-DATA-007-E06",
+          "level": "SDK_SEMANTICS",
+          "observation": "The SDK declares LoadGame on cGamePersistenceManager and a serializer database with OpenReadStream/OpenWriteStream, LoadClassObjects, SaveClassObjects, and version/progress operations; these interfaces do not establish the concrete implementation body.",
+          "path": "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/SubSystem/GamePersistenceManager.h:33-47 and /home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/Serialization.h:26-113"
+        },
+        {
+          "address": null,
+          "evidence_id": "TD-DATA-007-E07",
+          "level": "SDK_LAYOUT",
+          "observation": "cSavedGameHeader is a 0x68 in-memory layout with version, object-count map, timestamp, mode, snapshot flag, and current planet key; GameLoadParameters is a 0xB4 in-memory context with names, keys, species, star, difficulty, and mode.",
+          "path": "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/SubSystem/cSavedGameHeader.h:7-22 and /home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/SubSystem/GamePersistenceManager.h:12-31"
+        }
+      ],
+      "priority": 7,
+      "recommended_next_action": "Recover the concrete cGamePersistenceManager vtable entry for LoadGame and the write-side vtable or strategy path, then trace one call from manager state into serializer stream open, class-object load/save, and object Read/Write; do not infer .spo bytes from the in-memory layouts.",
+      "resolution_taxonomy": {
+        "binary_format_certainty": {
+          "game_load_parameter_bytes": "IN_MEMORY_LAYOUT_ONLY",
+          "manager_reset_state": "CONFIRMED_STATIC",
+          "save_load_wire": "UNKNOWN",
+          "saved_game_header_bytes": "UNKNOWN"
+        },
+        "classification": "service_boundary_with_unknown_transaction",
+        "current_safe_rule": "Model cGamePersistenceManager as an orchestration/state-reset service and keep header/load parameters as semantic candidates until a concrete stream path proves serialization.",
+        "merge_decision": "separate_service_from_wire",
+        "preservation_rule": "Keep manager access, mode reset, declared LoadGame, header layout, load context, serializer interfaces, and unknown archive framing separate.",
+        "status": "partially_reconciled",
+        "taxonomy": "separate_by_scope"
+      },
+      "severity": "critical",
+      "subject": "cGamePersistenceManager access, save/load semantics, and save-state boundaries",
+      "unresolved_reason": [
+        "The concrete LoadGame body and save writer are not recovered in the selected live function inventory.",
+        "No positive .spo save/load trace, record ordering, checksum/encryption, slot/profile behavior, or migration evidence is available."
+      ]
+    },
+    {
+      "competing_hypotheses": [
+        {
+          "claim": "Every cCellSerializableData field and every cCellGame field is persistent save state because the serializable object is attached to cCellGame+0x5190.",
+          "evidence_ids": [
+            "TD-DATA-008-E01",
+            "TD-DATA-008-E02"
+          ],
+          "hypothesis_id": "TD-DATA-008-H1",
+          "status": "rejected_by_layer_and_lifecycle_evidence"
+        },
+        {
+          "claim": "cCellSerializableData is a 0xEC runtime serializable-state candidate with progression and telemetry-like fields; cCellGame pools, queries, worlds, GFX handles, cCellDataReference resources, and cache counters are transient unless a writer is found.",
+          "evidence_ids": [
+            "TD-DATA-008-E01",
+            "TD-DATA-008-E02",
+            "TD-DATA-008-E03",
+            "TD-DATA-008-E04",
+            "TD-DATA-008-E05"
+          ],
+          "hypothesis_id": "TD-DATA-008-H2",
+          "status": "preferred_bounded_classification"
+        },
+        {
+          "claim": "The mAddedStartTelemetry and other telemetry-like fields are proven persistent because they are members of the serializable object.",
+          "evidence_ids": [
+            "TD-DATA-008-E01",
+            "TD-DATA-008-E04"
+          ],
+          "hypothesis_id": "TD-DATA-008-H3",
+          "status": "unresolved_semantic_subset"
+        }
+      ],
+      "confidence": {
+        "level": "SUPPORTED",
+        "scope": "Object layout, constructor initialization, owner pointer, and teardown separation are directly supported; emitted-field classification is deliberately not promoted beyond candidates.",
+        "score": 0.97
+      },
+      "conflict_id": "TD-DATA-008",
+      "cross_campaign_convergence": [
+        "knowledgegraph/research/data-model/09-save-load-persistence.json:339-383 and 650-678",
+        "knowledgegraph/research/data-model/10-serialization.json:1511-1530 and 1827-1877",
+        "knowledgegraph/research/data-model/12-asset-registry.json:332-345 and 489-499",
+        "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json:227-261 and 340-420"
+      ],
+      "dependent_functions_structures_packages": {
+        "functions": [
+          "0x00e61550",
+          "0x00e61630",
+          "0x00e80ba0",
+          "0x00e7fc00",
+          "0x00e81f30",
+          "0x01485598"
+        ],
+        "packages": [
+          "PKG-06-CELL-STATE",
+          "PKG-05-CELL-CONTENT",
+          "PKG-09-CELL-PRESENTATION",
+          "PKG-11-PERSISTENCE",
+          "PKG-13-SIM-CREATURE-TRIBECIV"
+        ],
+        "structures": [
+          "cCellSerializableData",
+          "cCellGame",
+          "cCellDataReference_",
+          "cCellResource",
+          "ISimulatorSerializable"
+        ]
+      },
+      "evidence": [
+        {
+          "address": null,
+          "evidence_id": "TD-DATA-008-E01",
+          "level": "VERIFIED_GHIDRA",
+          "observation": "cCellSerializableData is 0xEC bytes and contains the serializable vtable, refcount vtable, reference count, game mode, player ResourceKey, progression counters, 13 unlocked-part values, counters, game identity, difficulty, six missions, and telemetry-like flags.",
+          "path": "ghidra:SporeApp.exe::get_struct_layout(cCellSerializableData)"
+        },
+        {
+          "address": "0x00e61550",
+          "evidence_id": "TD-DATA-008-E02",
+          "level": "VERIFIED_STATIC",
+          "observation": "The constructor allocates exactly 0xEC bytes, installs the serializable and refcount vtable pointers, initializes reference/state fields, initializes mission/flag/progression areas, and clears the mAddedStartTelemetry flag at +0xE9; this proves runtime initialization, not write emission.",
+          "path": "ghidra:SporeApp.exe@0x00e61550"
+        },
+        {
+          "address": "0x00e80ba0",
+          "evidence_id": "TD-DATA-008-E03",
+          "level": "VERIFIED_STATIC",
+          "observation": "cCellGame::Initialize conditionally creates or replaces the intrusive cCellSerializableData pointer at +0x5190, then initializes live world and gameplay state; the body does not call a named serializer writer.",
+          "path": "ghidra:SporeApp.exe::disassemble_function(0x00e80ba0), 0x00e80d45-0x00e80e17"
+        },
+        {
+          "address": "0x00e81f30",
+          "evidence_id": "TD-DATA-008-E04",
+          "level": "VERIFIED_STATIC",
+          "observation": "Cell mode Dispose releases the global cCellGame, cCellGFX, and cCellUI objects after stage cleanup; it is a release path, not evidence that serializable fields are emitted to storage.",
+          "path": "ghidra:SporeApp.exe@0x00e81f30"
+        },
+        {
+          "address": "0x00e823a0",
+          "evidence_id": "TD-DATA-008-E05",
+          "level": "VERIFIED_STATIC",
+          "observation": "Cell resource resolution increments and releases a cache counter and loads a resource pointer on null; those are transient ownership/cache operations and are structurally separate from cCellSerializableData fields.",
+          "path": "ghidra:SporeApp.exe@0x00e823a0,0x00e82280,0x00e824d0"
+        },
+        {
+          "address": "0x01485598",
+          "evidence_id": "TD-DATA-008-E06",
+          "level": "STRUCTURAL_ONLY",
+          "observation": "The constructor stores a vtable pointer at 0x01485598; raw table targets include AddRef-like, teardown-like, and return-self code, but the selected inventory does not provide trustworthy names for the Read/Write slots.",
+          "path": "ghidra:SporeApp.exe::read_memory(0x01485598,64) and cCellSerializableData constructor"
+        },
+        {
+          "address": null,
+          "evidence_id": "TD-DATA-008-E07",
+          "level": "SDK_SEMANTICS",
+          "observation": "ISimulatorSerializable declares Write, Read, an unknown virtual, WriteToXML, and GetNounID; this establishes eligibility/interface semantics, not which cCellSerializableData fields are written.",
+          "path": "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/ISimulatorSerializable.h:30-43"
+        }
+      ],
+      "priority": 8,
+      "recommended_next_action": "Recover the actual cCellSerializableData Read/Write vtable entries and map each offset read/written to an ISimulatorSerializable stream operation; until then classify fields as persistence candidates, transient runtime state, or semantic unknowns rather than persistent facts.",
+      "resolution_taxonomy": {
+        "binary_format_certainty": {
+          "constructor_initialization": "CONFIRMED_STATIC",
+          "emitted_save_field_set": "UNKNOWN",
+          "object_memory_layout": "CONFIRMED"
+        },
+        "classification": "persistent_candidate_versus_transient_runtime_state",
+        "current_safe_rule": "Only fields actually consumed by a recovered serializer Read/Write body can be marked persistent; constructor writes, vtable membership, and semantic names are insufficient.",
+        "merge_decision": "separate_persistent_candidates_from_transient_state",
+        "preservation_rule": "Keep mGameMode, player key, progression, counters, missions, telemetry-like flags, and unresolved field_30 as individual candidates; keep cCellGame pool/query/world/GFX and cCellDataReference cache state transient by default.",
+        "status": "preferred_claim_with_limit",
+        "taxonomy": "preferred_claim_with_limit"
+      },
+      "severity": "high",
+      "subject": "cCellSerializableData persistence candidates versus cCellGame and cache transient state",
+      "unresolved_reason": [
+        "The actual cCellSerializableData Read/Write vtable targets and field order are not identified.",
+        "Cross-stage handoff, reset semantics, telemetry persistence, and synchronization with creature/space progression remain unresolved."
+      ]
+    }
+  ],
+  "scope": {
+      "binary": {
+        "architecture": "x86:LE:32:windows",
+        "image_base": "0x00400000",
+        "name": "SporeApp.exe",
+        "sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+        "version": "3.1.0.22"
+      },
+      "excluded": [
+        "SPORE/ filesystem contents or modification",
+        "Original-process save/load execution",
+        "Historical artifact modification",
+        "Implementation changes",
+        "Unrelated renderer, gameplay, editor, and message semantics"
+      ],
+      "included": [
+        "ResourceKey and DBPF identity representations",
+        "Property and PropertyList read/write boundaries",
+        "ClassSerializer SDK anchors and live function boundaries",
+        "Cell direct object records and cCellResource/cell-data-reference linkage",
+        "cCellGame and cCellSerializableData initialization and teardown",
+        "cGamePersistenceManager, cSavedGameHeader, and GameLoadParameters boundaries",
+        "Persistent-versus-transient classification and cache-versus-authoritative-state separation"
+      ],
+    "output_policy": "Only knowledgegraph/research/conflicts/track-d-data-serialization.json is created.",
+    "program": "SporeApp.exe",
+    "repository": "/home/juanr/Proyectos/OpenSpore"
+  },
+  "summary": {
+    "highest_impact_data_conclusions": [
+      "ResourceKey conceptual identity is the full type/group/instance tuple, but DBPF row order, ResourceKey memory order, and SDK serializer order are distinct representations.",
+      "The runtime Property value is 20 bytes; the 4-byte imported Ghidra Property is a tail-metadata view, not a complete object.",
+      "Direct Cell records are content schemas; cCellDataReference and cCellResource are runtime acquisition/cache layers; cCellSerializableData is a separate save candidate.",
+      "The live 0x00692880/0x00693DD0 functions are constructor/teardown mechanics, so the SDK ClassSerializer Write/Read anchors must not be used as concrete bodies."
+    ],
+    "resolved_boundaries": [
+      "DBPF record bytes versus Cell content decoding versus runtime Cell resource/cache state.",
+      "PropertyList normal local-entry framing versus its negative-count parent-reference branch.",
+      "cCellDataReference cache key and counter versus cCellResource materialized content view.",
+      "cCellGame mode teardown versus save/load transaction claims."
+    ],
+    "selected_record_count": 8,
+    "unresolved_boundaries": [
+      "Exact ResourceKey wire order in the concrete original serializer body.",
+      "Outer PROP record framing, parent identity semantics, failure atomicity, and migration.",
+      "Actual ClassSerializer Read/Write entries, attribute callback order, and pointer-table framing.",
+      "cCellSerializableData emitted field set, cross-stage handoff, and concrete .spo save/load transaction order."
+    ]
+  }
+}

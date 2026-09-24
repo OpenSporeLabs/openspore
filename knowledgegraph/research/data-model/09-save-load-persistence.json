@@ -1,0 +1,1587 @@
+{
+  "schema_version": "openspore.save-load-persistence.v1",
+  "track": {
+    "id": "save-load-persistence",
+    "title": "Save, load, persistence, and state-boundary archaeology",
+    "research_date": "2026-09-24",
+    "status": "STATIC_ARCHAEOLOGY_ONLY",
+    "runtime_validation": false,
+    "implementation_modified": false,
+    "knowledgegraph_written": false,
+    "ghidra_mutated": false,
+    "spore_filesystem_inspected": false,
+    "clean_room_rule": "No decompiled code, proprietary source, assets, or binaries are reproduced. Ghidra output is evidence, not truth; SDK names and layouts are reference-only provenance."
+  },
+  "scope": {
+    "repository": "/home/juanr/Proyectos/OpenSpore",
+    "target": "SporeApp.exe 3.1.0.22, GOG x86:LE:32 PE",
+    "image_base": "0x00400000",
+    "covered_domains": [
+      "Cell runtime and Cell resource records",
+      "world, planet, star, empire, and space economy state",
+      "editor lifecycle, edit history, and asset save boundary",
+      "creature, tribe, mission, and progression state",
+      "configuration and ArgScript/property configuration",
+      "generic Property, PropertyList, ClassSerializer, and resource/database persistence",
+      "game-mode transitions and level/stage boundaries",
+      "OpenSpore current source comparison"
+    ],
+    "not_covered": [
+      "proprietary file payload inspection",
+      "SPORE/ filesystem inspection or mutation",
+      "patching, injection, or replacement installation",
+      "original-process save/load execution or runtime tracing",
+      "Ghidra mutation, re-analysis, or save operations",
+      "exact .prop or .spo byte reconstruction"
+    ],
+    "original_runtime_status": "No original-process save/load, profile, slot, or editor-runtime oracle exists in the evidence set. The committed Cell runtime record is negative for reaching Cell Stage under tested Wine/input conditions."
+  },
+  "evidence_base": [
+    {
+      "id": "binary-baseline",
+      "kind": "pinned_binary_identity",
+      "path": "docs/RECON-3.1.0.22.md:1-24",
+      "evidence": "OBSERVED",
+      "details": "SporeApp.exe 3.1.0.22, x86:LE:32, image base 0x00400000, SHA-256 25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e."
+    },
+    {
+      "id": "kg-persistence-types",
+      "kind": "kg_research",
+      "path": "knowledgegraph/research/types/08-persistence-serialization.json:1-1060",
+      "evidence": "SUPPORTED",
+      "details": "Static persistence/serialization claims, SDK layouts, PropertyList, ClassSerializer, saved-game header, GameLoadParameters, Cell serializable state, current OpenSpore comparison, and unresolved wire-format questions."
+    },
+    {
+      "id": "kg-engine-boundaries",
+      "kind": "kg_research",
+      "path": "knowledgegraph/research/global-campaign-2026/track-k-engine-boundaries.json:1-850",
+      "evidence": "SUPPORTED",
+      "details": "B-K-01 through B-K-11 identify application/mode lifecycle, service roots, Cell state, resource identity, presentation, property/configuration, and shared-state boundaries."
+    },
+    {
+      "id": "kg-cell-state",
+      "kind": "kg_research",
+      "path": "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json:1-978",
+      "evidence": "SUPPORTED",
+      "details": "CellGame, cCellSerializableData pointer, mode lifecycle, Cell resource/runtime separation, current OpenSpore projection, and lifecycle state boundaries."
+    },
+    {
+      "id": "kg-editor-state",
+      "kind": "kg_research",
+      "path": "knowledgegraph/research/global-campaign-2026/track-g-editor-ui-input.json:1-766",
+      "evidence": "SUPPORTED",
+      "details": "Editor lifecycle, input/message boundaries, animation/model state, UTFWin, and current OpenSpore editor/UI gap."
+    },
+    {
+      "id": "kg-empire-economy",
+      "kind": "kg_research",
+      "path": "knowledgegraph/research/global-campaign-2026/track-f-empire-economy.json:1-700",
+      "evidence": "SUPPORTED",
+      "details": "cEmpire, cStarRecord, cPlanetRecord, cMission, cMissionManager, cSpaceTrading, IDs, versioning, ownership, property relations, and OpenSpore comparison."
+    },
+    {
+      "id": "shared-state-interface",
+      "kind": "committed_research",
+      "path": "docs/analysis/simulator-shared-state-interface.md:1-323",
+      "evidence": "SUPPORTED",
+      "details": "SpacePlayerData, cEmpire lazy cache, empire registry, mode/input roots, direct state accessors, map lower-bound mechanics, and contradictory unnamed roots."
+    },
+    {
+      "id": "source-cell-runtime",
+      "kind": "current_source",
+      "path": "src/sim/CellGame.cpp:22-152; src/sim/Sim.hpp:49-260; src/sim/Sim.cpp:99-356",
+      "evidence": "OBSERVED_CURRENT_SOURCE",
+      "details": "Current OpenSpore CellGame, CellSim, entity/player/camera state, fixed-step update, and event recording behavior; not original semantics."
+    },
+    {
+      "id": "source-cell-mode",
+      "kind": "current_source",
+      "path": "src/apps/CellModeStrategy.hpp:45-97; src/apps/CellModeStrategy.cpp:7-91; src/apps/IGameMode.hpp:19-52",
+      "evidence": "OBSERVED_CURRENT_SOURCE",
+      "details": "Current mode lifecycle, in-process GameModeManager, and Cell-owned GFX/UI state."
+    },
+    {
+      "id": "source-cell-records",
+      "kind": "current_source",
+      "path": "src/assets/CellResource.hpp:1-500; src/assets/CellResource.cpp:1050-1124",
+      "evidence": "OBSERVED_CURRENT_SOURCE",
+      "details": "Typed, direct Cell record decoders with fixed type IDs, fixed sizes, variable count layouts, and explicit domain checks."
+    },
+    {
+      "id": "source-resource-provider",
+      "kind": "current_source",
+      "path": "src/compat/ResourceProvider.hpp:21-90",
+      "evidence": "OBSERVED_CURRENT_SOURCE",
+      "details": "Current B1 identity-to-record-byte seam, one borrowed DBPF package image, and in-memory provider; not original resource-manager or save-game behavior."
+    },
+    {
+      "id": "ghidra-read-only",
+      "kind": "ghidra_mcp",
+      "query": "read-only function search/decompile/structure queries against SporeApp.exe",
+      "program": "SporeApp.exe",
+      "evidence": "OBSERVED_STATIC_QUERY",
+      "details": "Direct queries confirmed named accessors, PropertyList read/write, CellGame/GFX/UI roots, cGamePersistenceManager layout, and cGameModeManager layout. No Ghidra writes were requested."
+    },
+    {
+      "id": "sdk-reference",
+      "kind": "sdk_layout_and_names",
+      "path": "knowledgegraph/research/types/08-persistence-serialization.json:121-151; /home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/",
+      "evidence": "SUPPORTED",
+      "details": "Reference-only SDK declarations for cSavedGameHeader, GameLoadParameters, ClassSerializer, Attribute, ISimulatorSerializable, cCellSerializableData, and Property types."
+    },
+    {
+      "id": "runtime-negative",
+      "kind": "committed_runtime_artifact",
+      "path": "docs/STATE.md:3-4,94-98; docs/devlog/018-s5-cell-runtime-evidence.md:1-8",
+      "evidence": "OBSERVED_NEGATIVE",
+      "details": "No successful original Cell Stage trace; S5 was recorded negative. No save/load runtime evidence is present."
+    }
+  ],
+  "asset_types": [
+    {
+      "id": "spo-saved-game",
+      "kind": "container",
+      "identity": ".spo game name in GameLoadParameters and cSavedGameHeader metadata",
+      "schema": "cSavedGameHeader plus serialized simulator state",
+      "evidence": "SUPPORTED",
+      "runtime_survival": "Declared/architectural only; no captured container or restore trace.",
+      "provenance": ["kg-persistence-types:147-171", "kg-empire-economy:505-533"]
+    },
+    {
+      "id": "prop-property-list",
+      "kind": "property-record",
+      "identity": "App::PropertyList with uint32 property IDs and typed App::Property values",
+      "schema": "count/framing and property entries are not fully known",
+      "evidence": "SUPPORTED",
+      "runtime_survival": "PropertyList has parent overlay, operation counter, and stream Read/Write; actual byte round trip is unknown.",
+      "provenance": ["kg-persistence-types:252-263,680-691,776-781", "ghidra:App::PropertyList::Read,App::PropertyList::Write"]
+    },
+    {
+      "id": "dbpf-record",
+      "kind": "resource-container-record",
+      "identity": "ResourceKey {typeID, groupID, instanceID}",
+      "schema": "DBPF v3 package header/index plus record extents and optional QFS compression in current OpenSpore; original manager orchestration unresolved",
+      "evidence": "SUPPORTED",
+      "runtime_survival": "Record bytes are fetchable by identity; no original multi-package priority/cache/save-write semantics established.",
+      "provenance": ["kg-persistence-types:266-272,643-679", "source-resource-provider:21-90", "docs/RECON-3.1.0.22.md:113-119"]
+    },
+    {
+      "id": "cell-globals-resource",
+      "kind": "cell-content-record",
+      "type_id": "0x2A3CE5B7",
+      "size_bytes": 276,
+      "field_count": 69,
+      "identity": "DBPF record, direct field-by-field runtime content record",
+      "evidence": "SUPPORTED",
+      "runtime_survival": "Asset/content input; distinct from cCellSerializableData and not proof of save-game state.",
+      "provenance": ["source-cell-records:1-11,32-53", "kg-cell-state:334-337"]
+    },
+    {
+      "id": "cell-cell-resource",
+      "kind": "cell-content-record",
+      "type_id": "0xDFAD9F51",
+      "size_bytes": 796,
+      "identity": "Direct cell record with name, health, AI blocks, references, and flags",
+      "evidence": "SUPPORTED",
+      "runtime_survival": "Content/schema record, not player progression save state.",
+      "provenance": ["source-cell-records:124-163", "kg-persistence-types:173-182"]
+    },
+    {
+      "id": "cell-world-resource",
+      "kind": "cell-content-record",
+      "type_id": "0x9B8E862F",
+      "identity": "16-byte header plus populate entries and advect entries",
+      "evidence": "SUPPORTED",
+      "runtime_survival": "World/population/advection content; no save/load semantics attached to record bytes.",
+      "provenance": ["source-cell-records:183-197", "source-cell-records:486-500"]
+    },
+    {
+      "id": "cell-populate-resource",
+      "kind": "cell-content-record",
+      "type_id": "0xDA141C1B",
+      "identity": "16-byte header plus 76-byte marker entries",
+      "evidence": "SUPPORTED",
+      "runtime_survival": "Population/spawn content; original placement execution is incomplete.",
+      "provenance": ["source-cell-records:442-485", "kg-engine-boundaries:367-436"]
+    },
+    {
+      "id": "cell-effect-background-resource",
+      "kind": "cell-content-records",
+      "type_ids": ["0x433FB70C", "0x612B3191"],
+      "identity": "Variable count records with dead pointer slot and typed entries",
+      "evidence": "SUPPORTED",
+      "runtime_survival": "Presentation/content records; not persistent gameplay state.",
+      "provenance": ["source-cell-records:199-240"]
+    },
+    {
+      "id": "cell-loot-structure-resource",
+      "kind": "cell-content-records",
+      "type_ids": ["0xD92AF091", "0x4B9EF6DC"],
+      "identity": "Variable header plus loot entries or structure attachments",
+      "evidence": "SUPPORTED",
+      "runtime_survival": "Stage content and resource references; not profile or slot data.",
+      "provenance": ["source-cell-records:366-440"]
+    },
+    {
+      "id": "scenario-resource",
+      "kind": "simulator-resource",
+      "size_bytes": 11432,
+      "identity": "cScenarioResource with embedded PropertyList, scenario data, markers, and mVersion",
+      "evidence": "SUPPORTED",
+      "runtime_survival": "Scenario data has embedded properties and version field; exact persistence/read-write behavior is not observed.",
+      "provenance": ["ghidra:cScenarioResource layout", "ghidra:Simulator::cScenarioResource::Write @ 0x00f25e00"]
+    },
+    {
+      "id": "resource-key",
+      "kind": "identity-record",
+      "size_bytes": 12,
+      "fields": ["typeID", "groupID", "instanceID"],
+      "evidence": "SUPPORTED",
+      "runtime_survival": "Used across content, inventory, missions, planets, empires, and serialized properties; exact serializer order is declared but not runtime-validated.",
+      "provenance": ["kg-persistence-types:529-533,632-641", "kg-empire-economy:617-627"]
+    }
+  ],
+  "schemas": {
+    "cSavedGameHeader": {
+      "size_bytes": 104,
+      "evidence": "SUPPORTED",
+      "fields": [
+        {"offset": "0x0C", "name": "mFileVersionMajor", "type": "uint32_t", "role": "file major version"},
+        {"offset": "0x10", "name": "mFileVersionMinor", "type": "uint32_t", "role": "file minor version"},
+        {"offset": "0x14", "name": "mObjectCountMap", "type": "map<uint32_t,int>", "role": "object counts by class/object ID"},
+        {"offset": "0x30", "name": "mTimeStamp", "type": "int[9]", "role": "timestamp fields"},
+        {"offset": "0x54", "name": "mGameMode", "type": "uint32_t", "role": "saved game mode"},
+        {"offset": "0x58", "name": "mbSnapshot", "type": "bool", "role": "snapshot versus normal save distinction"},
+        {"offset": "0x5C", "name": "mCurrentPlanetKey", "type": "ResourceKey", "role": "current planet identity"}
+      ],
+      "provenance": ["kg-persistence-types:147-160,522-536", "sdk-reference"],
+      "unknowns": ["actual serialized placement of the header", "checksum/encryption", "object-count key names", "migration behavior"]
+    },
+    "GameLoadParameters": {
+      "size_bytes": 180,
+      "size_confidence": "MEDIUM; SDK marks size uncertain",
+      "evidence": "SUPPORTED",
+      "fields": [
+        {"offset": "0x00", "name": "mGameName", "type": "string16", "role": ".spo game name"},
+        {"offset": "0x10", "name": "mStarName", "type": "string16", "role": "star/load name"},
+        {"offset": "0x48", "name": "mpCreatureSpecies", "type": "cSpeciesProfile*", "role": "creature/profile reference"},
+        {"offset": "0x4C", "name": "mCreatureKey", "type": "ResourceKey", "role": "creature identity"},
+        {"offset": "0x58", "name": "field_58", "type": "ResourceKey", "role": "unresolved load reference"},
+        {"offset": "0x7C", "name": "mStarID", "type": "StarID", "role": "star identity"},
+        {"offset": "0xA0", "name": "mDifficulty", "type": "Difficulty", "role": "difficulty"},
+        {"offset": "0xA4", "name": "mGameMode", "type": "TechLevel", "role": "load mode/level"},
+        {"offset": "0xB0", "name": "field_B0", "type": "int", "role": "unresolved"}
+      ],
+      "provenance": ["kg-persistence-types:161-171,539-556", "sdk-reference"],
+      "unknowns": ["which field resolves profile/account state", "relationship between mGameMode and cSavedGameHeader.mGameMode", "failure and fallback path"]
+    },
+    "cGamePersistenceManager": {
+      "size_bytes": 76,
+      "evidence": "SUPPORTED",
+      "fields": [
+        {"offset": "0x00", "name": "_vftable0", "type": "cGamePersistenceManager__vftable *", "role": "persistence vtable"},
+        {"offset": "0x04", "name": "_vftable1", "type": "ISimulatorStrategy__vftable *", "role": "strategy relation"},
+        {"offset": "0x08", "name": "_vftable2", "type": "IVirtual__vftable *", "role": "virtual object relation"},
+        {"offset": "0x0C", "name": "mnRefCount", "type": "int", "role": "reference count"},
+        {"offset": "0x10", "name": "mLastGameMode", "type": "uint32_t", "role": "previous mode marker"},
+        {"offset": "0x14", "name": "mCurrentGameMode", "type": "uint32_t", "role": "current mode marker"},
+        {"offset": "0x18", "name": "field_18", "type": "int", "role": "unresolved state"},
+        {"offset": "0x1C", "name": "field_1C", "type": "int", "role": "unresolved state"},
+        {"offset": "0x20", "name": "field_20", "type": "int", "role": "unresolved state"},
+        {"offset": "0x24", "name": "field_24", "type": "int", "role": "unresolved state"},
+        {"offset": "0x28", "name": "field_28", "type": "int", "role": "unresolved state"},
+        {"offset": "0x2C", "name": "field_2C", "type": "int", "role": "unresolved state"},
+        {"offset": "0x30", "name": "field_30", "type": "int", "role": "unresolved state"},
+        {"offset": "0x34", "name": "field_34", "type": "string16", "role": "unresolved string; possible path/name/label"},
+        {"offset": "0x44", "name": "field_44", "type": "bool", "role": "unresolved state"},
+        {"offset": "0x45", "name": "field_45", "type": "bool", "role": "unresolved state"},
+        {"offset": "0x46", "name": "field_46", "type": "bool", "role": "unresolved state"},
+        {"offset": "0x47", "name": "field_47", "type": "bool", "role": "unresolved state"},
+        {"offset": "0x48", "name": "field_48", "type": "int", "role": "unresolved state"}
+      ],
+      "provenance": ["ghidra:SporeApp.exe@cGamePersistenceManager layout", "ghidra:Simulator::cGamePersistenceManager::Get @ 0x00b3d440"],
+      "unknowns": ["LoadGame body", "SaveGame body", "slot enumeration", "profile path", "atomicity", "version migration"]
+    },
+    "cStarRecord": {
+      "size_bytes": 176,
+      "evidence": "SUPPORTED",
+      "persistent_candidates": [
+        {"offset": "0x10", "name": "mSavedGameVersionMajor", "type": "int", "role": "saved-game major version"},
+        {"offset": "0x14", "name": "mSavedGameVersionMinor", "type": "int", "role": "saved-game minor version"},
+        {"offset": "0x18", "name": "mSavedGameTimeStamp", "type": "TimeStamp", "role": "saved-game timestamp"},
+        {"offset": "0x54", "name": "mEmpireID", "type": "uint32_t", "role": "owning empire ID"},
+        {"offset": "0x58", "name": "mStarterWorldID", "type": "uint32_t", "role": "starter world ID"},
+        {"offset": "0x70", "name": "mKey", "type": "StarID", "role": "star identity"},
+        {"offset": "0x74", "name": "mCitizenSpeciesKey", "type": "ResourceKey", "role": "species identity"},
+        {"offset": "0x84", "name": "mPlanets", "type": "vector<intrusive_ptr<cPlanetRecord>>", "role": "planet records"}
+      ],
+      "provenance": ["ghidra:SporeApp.exe@cStarRecord layout", "kg-empire-economy:415-424"],
+      "unknowns": ["whether every field is written on save", "version migration dispatch", "saved-record ordering"]
+    },
+    "cStarManager": {
+      "size_bytes": 556,
+      "evidence": "SUPPORTED",
+      "persistent_candidates": [
+        {"offset": "0xF0", "name": "mSavedGameStarRecords", "type": "vector<intrusive_ptr<cStarRecord>>", "role": "saved-game star records"},
+        {"offset": "0x150", "name": "mEmpireHomeStarRecords", "type": "map<uint32_t,intrusive_ptr<cStarRecord>>", "role": "empire-to-home-star registry"},
+        {"offset": "0x16C", "name": "mEmpireNamesInUse", "type": "vector<string16>", "role": "allocated empire names"},
+        {"offset": "0x184", "name": "mAdventureIDs", "type": "map<PlanetID,uint32_t>", "role": "planet-to-adventure ID mapping"},
+        {"offset": "0x1A0", "name": "mpSolarSystemPropList", "type": "intrusive_ptr<PropertyList>", "role": "solar-system properties"},
+        {"offset": "0x1A4", "name": "mpGalacticConstantsPropList", "type": "intrusive_ptr<PropertyList>", "role": "galactic constants"},
+        {"offset": "0x1D4", "name": "mNextPoliticalID", "type": "int", "role": "next political ID"},
+        {"offset": "0x220", "name": "mpGlobalCLGItems", "type": "intrusive_ptr<cCollectableItems>", "role": "global collectables"},
+        {"offset": "0x224", "name": "mpPlanetRecordsTempDatabase", "type": "intrusive_ptr<Database>", "role": "temporary planet record database"},
+        {"offset": "0x228", "name": "mpPlanetRecordsDatabase", "type": "intrusive_ptr<Database>", "role": "planet record database"}
+      ],
+      "provenance": ["ghidra:SporeApp.exe@cStarManager layout", "kg-empire-economy:384-424"],
+      "unknowns": ["database ownership and save flush", "which records survive a transition", "multi-package precedence"]
+    },
+    "cCellSerializableData": {
+      "size_bytes": 236,
+      "evidence": "SUPPORTED",
+      "persistent_candidates": [
+        {"offset": "0x0C", "name": "mGameMode", "type": "int", "role": "Cell game mode"},
+        {"offset": "0x10", "name": "mPlayerCreatureKey", "type": "ResourceKey", "role": "player creature identity"},
+        {"offset": "0x1C", "name": "mFoodProgression", "type": "int", "role": "food progression"},
+        {"offset": "0x20", "name": "mPlantFoodProgression", "type": "int", "role": "plant-food progression"},
+        {"offset": "0x24", "name": "mOverPlantFoodProgression", "type": "int", "role": "over-plant-food progression"},
+        {"offset": "0x28", "name": "mOverAnimalFoodProgression", "type": "int", "role": "over-animal-food progression"},
+        {"offset": "0x2C", "name": "mEvolutionPointsSpent", "type": "int", "role": "spent progression"},
+        {"offset": "0x34", "name": "mUnlockedParts", "type": "int[13]", "role": "unlocked part state"},
+        {"offset": "0x6C", "name": "mKillCount", "type": "int", "role": "kill counter"},
+        {"offset": "0x70", "name": "mDeathCount", "type": "int", "role": "death counter"},
+        {"offset": "0x74", "name": "gameTimeMS", "type": "int", "role": "elapsed game time"},
+        {"offset": "0x78", "name": "gameID", "type": "uint32_t", "role": "game ID"},
+        {"offset": "0x7C", "name": "difficulty", "type": "int", "role": "difficulty"},
+        {"offset": "0x80", "name": "missions", "type": "cCellMission[6]", "role": "Cell mission state"},
+        {"offset": "0xE0", "name": "playerHasMoved", "type": "bool", "role": "telemetry/progression flag"},
+        {"offset": "0xE1", "name": "playerHasEaten", "type": "bool", "role": "telemetry/progression flag"},
+        {"offset": "0xE2", "name": "mFirstEditorEntry", "type": "bool", "role": "editor-entry progression flag"},
+        {"offset": "0xE4", "name": "mNanites", "type": "int", "role": "nanite state"},
+        {"offset": "0xE8", "name": "mNanovirusActive", "type": "bool", "role": "nanovirus state"},
+        {"offset": "0xE9", "name": "mAddedStartTelemetry", "type": "bool", "role": "telemetry flag"}
+      ],
+      "provenance": ["kg-persistence-types:301-304,600-629", "kg-cell-state:340-347"],
+      "unknowns": ["actual Write/Read order", "whether all fields are serialized", "interaction with global progression records"]
+    },
+    "cCellGame": {
+      "size_bytes": 20964,
+      "evidence": "SUPPORTED",
+      "persistent_boundary": [
+        {"offset": "0x0000", "name": "mpCurrentAdvectionMap", "type": "intrusive_ptr<cAdvectResource>", "role": "current world/advection state"},
+        {"offset": "0x001C", "name": "mCells", "type": "cObjectPool<cCellObjectData>", "role": "live Cell pool"},
+        {"offset": "0x40FC", "name": "mpCellQuery", "type": "cCellQueryLinkedPool*", "role": "foreground spatial query"},
+        {"offset": "0x4100", "name": "mpCellQueryBackground", "type": "cCellQueryLinkedPool*", "role": "background spatial query"},
+        {"offset": "0x4114", "name": "mpCurrentWorld", "type": "cCellWorldResource reference", "role": "current world"},
+        {"offset": "0x4118", "name": "mpCurrentWorldBackground", "type": "cCellWorldResource reference", "role": "background world"},
+        {"offset": "0x411C", "name": "mAvatarCellIndex", "type": "cObjectPoolIndex", "role": "player pool index"},
+        {"offset": "0x5190", "name": "mpSerializableData", "type": "intrusive_ptr<cCellSerializableData>", "role": "Cell runtime serializable state"},
+        {"offset": "0x51E0", "name": "field_51E0", "type": "int", "role": "per-frame/state gate; meaning unresolved"}
+      ],
+      "lifecycle": "Initialize resets flags/pool and initializes serializable state; OnEnter starts display; Update calls the real per-frame body; OnExit restores display/global side effects; Dispose releases stage state. Static body evidence only.",
+      "provenance": ["ghidra:SporeApp.exe@cCellGame layout", "kg-cell-state:103-121,227-261,356-420"],
+      "unknowns": ["which fields are captured by cCellSerializableData", "reset versus save semantics", "mode-exit handoff to other stages"]
+    },
+    "App::PropertyList": {
+      "size_bytes": 56,
+      "evidence": "SUPPORTED",
+      "fields": [
+        {"offset": "0x18", "name": "mProperties", "type": "vector_map<uint32_t,Property>", "role": "local sorted property map"},
+        {"offset": "0x30", "name": "mpParent", "type": "PropertyListPtr", "role": "parent overlay/lookup chain"},
+        {"offset": "0x34", "name": "mnOperationsDone", "type": "int", "role": "operation counter; semantic meaning unresolved"}
+      ],
+      "operations": ["SetProperty", "GetProperty", "HasProperty", "RemoveProperty", "Clear", "AddPropertiesFrom", "CopyFrom", "Read", "Write"],
+      "provenance": ["ghidra:SporeApp.exe@PropertyList layout and Read/Write", "kg-persistence-types:507-520"],
+      "unknowns": ["wire ordering", "parent serialization", "property-list ownership during save"]
+    },
+    "App::Property": {
+      "evidence": "SUPPORTED_WITH_CONTRADICTION",
+      "type_ids": {
+        "Bool": 1,
+        "Int32": 9,
+        "UInt32": 10,
+        "Float": 13,
+        "String8": 18,
+        "String16": 19,
+        "Key": 32,
+        "Text": 34,
+        "Vector2": 48,
+        "Vector3": 49,
+        "ColorRGB": 50,
+        "Vector4": 51,
+        "ColorRGBA": 52,
+        "Transform": 56,
+        "BBox": 57
+      },
+      "layout_contradiction": "SDK header asserts size 0x14 with flags at 0x10 and type at 0x12; imported Ghidra XML models size 0x4 with flags at 0 and type at 2.",
+      "provenance": ["kg-persistence-types:286-320,900-909", "ghidra:App::Property getter/setter family"],
+      "unknowns": ["authoritative runtime layout", "array encodings", "unknown type IDs"]
+    },
+    "Simulator::ClassSerializer": {
+      "size_bytes": 2580,
+      "evidence": "SUPPORTED",
+      "fields": [
+        {"offset": "0x00", "name": "attributes[128]", "type": "AttributePointer", "role": "ordered binary-searchable attribute table"},
+        {"offset": "0xA00", "name": "count", "type": "int", "role": "attribute count"},
+        {"offset": "0xA04", "name": "countSerialized", "type": "int", "role": "serialized count"},
+        {"offset": "0xA08", "name": "id", "type": "uint32_t", "role": "class/object ID"},
+        {"offset": "0xA0C", "name": "pObject", "type": "void*", "role": "current object"},
+        {"offset": "0xA10", "name": "pAttributes", "type": "Attribute*", "role": "attribute storage"}
+      ],
+      "provenance": ["kg-persistence-types:557-579,694-718", "kg-persistence-types:325-327"],
+      "unknowns": ["concrete class registry", "binary pointer table", "version gates", "text/XML equivalence"]
+    },
+    "Simulator::Attribute": {
+      "size_bytes": 60,
+      "evidence": "SUPPORTED",
+      "fields": [
+        {"offset": "0x00", "name": "name", "type": "const char*"},
+        {"offset": "0x04", "name": "id", "type": "uint32_t"},
+        {"offset": "0x08", "name": "offset", "type": "size_t"},
+        {"offset": "0x18", "name": "pCurrentObject", "type": "void*"},
+        {"offset": "0x20", "name": "offsetFunction", "type": "offset callback"},
+        {"offset": "0x24", "name": "readFunction", "type": "binary read callback"},
+        {"offset": "0x28", "name": "writeFunction", "type": "binary write callback"},
+        {"offset": "0x2C", "name": "readTextFunction", "type": "text read callback"},
+        {"offset": "0x30", "name": "writeTextFunction", "type": "text write callback"}
+      ],
+      "provenance": ["kg-persistence-types:580-597,694-718"],
+      "unknowns": ["attribute IDs and names used by concrete classes", "serialized flag semantics"]
+    }
+  },
+  "relationships": [
+    {
+      "id": "R-001",
+      "from": "cGamePersistenceManager",
+      "to": "Resource::Database / IRecord",
+      "kind": "architectural_handoff",
+      "evidence": "SUPPORTED",
+      "statement": "The persistence manager is the named orchestration root for saved-game work, while Resource Database/IRecord expose keyed record streams. Exact call path and stream ownership are not observed.",
+      "provenance": ["kg-persistence-types:236-249,505-533", "ghidra:Simulator::cGamePersistenceManager::Get @ 0x00b3d440"]
+    },
+    {
+      "id": "R-002",
+      "from": "cSavedGameHeader",
+      "to": "serialized simulator objects",
+      "kind": "header_to_state",
+      "evidence": "INFERRED",
+      "statement": "The header's object-count map, game mode, snapshot flag, and current planet key plausibly address saved simulator state and restoration context; no body or trace confirms order.",
+      "provenance": ["kg-persistence-types:147-171,522-536"]
+    },
+    {
+      "id": "R-003",
+      "from": "cGamePersistenceManager",
+      "to": "GameLoadParameters",
+      "kind": "load_context",
+      "evidence": "SUPPORTED_AS_SDK_RELATIONSHIP",
+      "statement": "SDK declarations place .spo game name, star, creature/profile, difficulty, and mode in load parameters. The exact function that consumes each field is not established.",
+      "provenance": ["kg-persistence-types:161-171,539-556", "sdk-reference"]
+    },
+    {
+      "id": "R-004",
+      "from": "ClassSerializer",
+      "to": "ISimulatorSerializable",
+      "kind": "object_serialization",
+      "evidence": "SUPPORTED_AS_SDK_RELATIONSHIP",
+      "statement": "Serializable objects expose Write/Read and related slots; ClassSerializer supplies class attributes and binary/text callbacks. Concrete dispatch is unresolved.",
+      "provenance": ["kg-persistence-types:265-272,557-597,694-718"]
+    },
+    {
+      "id": "R-005",
+      "from": "cCellGame",
+      "to": "cCellSerializableData",
+      "kind": "runtime_state_holder",
+      "evidence": "SUPPORTED",
+      "statement": "cCellGame at +0x5190 holds an intrusive pointer to cCellSerializableData; CellGame::Initialize initializes the CellGame object and serializable-data path, while CellGame::OnExit/Dispose tears down stage state.",
+      "provenance": ["ghidra:SporeApp.exe@cCellGame layout", "kg-cell-state:227-261,356-420", "ghidra:Simulator::Cell::cCellGame::Initialize @ 0x00e80ba0"]
+    },
+    {
+      "id": "R-006",
+      "from": "cStarRecord",
+      "to": "cPlanetRecord",
+      "kind": "world_ownership",
+      "evidence": "SUPPORTED_AS_LAYOUT",
+      "statement": "cStarRecord owns vectors of intrusive cPlanetRecord references and carries saved-game versions/timestamp; cPlanetRecord carries PlanetID, species, commodity, civ, tribe, and generated-terrain identities.",
+      "provenance": ["ghidra:SporeApp.exe@cStarRecord layout", "ghidra:SporeApp.exe@cPlanetRecord layout", "kg-empire-economy:384-424"]
+    },
+    {
+      "id": "R-007",
+      "from": "cStarManager",
+      "to": "cEmpire",
+      "kind": "identity_registry",
+      "evidence": "SUPPORTED",
+      "statement": "cStarManager contains mEmpires keyed by uint32 and mEmpireHomeStarRecords; cEmpire carries mPoliticalID at +0x84. The current-player accessor validates sSpacePlayerData+0x18 against cached cEmpire+0x84 and refreshes via the empire map.",
+      "provenance": ["ghidra:SporeApp.exe@cStarManager layout", "ghidra:Simulator::FUN_01021300", "shared-state-interface:143-156,188-201"]
+    },
+    {
+      "id": "R-008",
+      "from": "cEmpire",
+      "to": "cStarRecord / cPlanet / ResourceKey / PropertyList",
+      "kind": "composite_empire_state",
+      "evidence": "SUPPORTED_AS_LAYOUT",
+      "statement": "cEmpire owns name, current mode, flags, trait, archetype, enemy/allied vectors, political ID, star/home-planet IDs, UFO/captain ResourceKeys, money, culture, timers, and adventure list; it is serializable by its first vtable slot.",
+      "provenance": ["ghidra:SporeApp.exe@cEmpire layout", "kg-empire-economy:201-236,505-521"]
+    },
+    {
+      "id": "R-009",
+      "from": "cMission",
+      "to": "cEmpire / cPlanet / PropertyList / ResourceKey",
+      "kind": "mission_state_composition",
+      "evidence": "SUPPORTED_AS_LAYOUT",
+      "statement": "cMission stores owner/target empire and planet references, reward money/tool, unlock tool keys, progress event ID, costs, accept rewards, and an intrusive PropertyList pointer.",
+      "provenance": ["ghidra:SporeApp.exe@cMission layout", "kg-empire-economy:351-381,505-521"]
+    },
+    {
+      "id": "R-010",
+      "from": "cMissionManager",
+      "to": "PropertyList / cMission",
+      "kind": "progression_manager_state",
+      "evidence": "SUPPORTED_AS_LAYOUT",
+      "statement": "cMissionManager has tutorial mission-state map, generator/config PropertyLists, tracked missions, recent mission lists, mission gaps, default icons, and teaching mission vectors. Mission state values are declared but transition ordering is not fully recovered.",
+      "provenance": ["ghidra:SporeApp.exe@cMissionManager layout", "kg-empire-economy:351-381,473-480"]
+    },
+    {
+      "id": "R-011",
+      "from": "cSpaceTrading",
+      "to": "ResourceKey / fixed_vector<cNPCStore> / maps",
+      "kind": "economy_state",
+      "evidence": "SUPPORTED_AS_LAYOUT",
+      "statement": "cSpaceTrading owns spices, NPC stores, rare map/groups, last NPC store, and newly available commodities. It is not an observed PropertyList owner in the imported layout.",
+      "provenance": ["ghidra:SporeApp.exe@cSpaceTrading layout", "kg-empire-economy:263-312,515-522"]
+    },
+    {
+      "id": "R-012",
+      "from": "cCreatureGameData",
+      "to": "cCellSerializableData",
+      "kind": "progression_state_split",
+      "evidence": "SUPPORTED_AS_LAYOUT_WITH_UNRESOLVED_HANDOFF",
+      "statement": "cCreatureGameData stores current brain level, evolution points, learned abilities, and ability mode; cCellSerializableData separately stores Cell progression and evolution-points-spent fields. Their synchronization across stage transitions is not established.",
+      "provenance": ["kg-empire-economy:313-327", "kg-persistence-types:600-629"]
+    },
+    {
+      "id": "R-013",
+      "from": "cEditor",
+      "to": "cEditorAnimWorld / edit history / asset metadata",
+      "kind": "editor_asset_operation",
+      "evidence": "SUPPORTED_AS_STATIC_BODY",
+      "statement": "Editor lifecycle and mouse/key handlers route through tools, edit history, animation world, and asset metadata. Editor_Save constructs metadata and submits/saves an asset boundary, but it is not evidence of profile or save-slot persistence.",
+      "provenance": ["kg-editor-state:163-192,253-277,416-421", "ghidra:Editor_Save @ 0x00577650"]
+    },
+    {
+      "id": "R-014",
+      "from": "IConfigManager",
+      "to": "configuration/property data",
+      "kind": "configuration_boundary",
+      "evidence": "SUPPORTED_AS_NAMED_ROOT",
+      "statement": "IConfigManager::Get returns a global config manager; ArgScript and Config/ConfigManager.txt are documented configuration inputs. The config manager body, schema, and migration behavior are not recovered.",
+      "provenance": ["ghidra:App::IConfigManager::Get @ 0x0067dcf0", "ghidra:Simulator::cCollectableItems::LoadConfig @ 0x00599440", "docs/RECON-3.1.0.22.md:113-119"]
+    },
+    {
+      "id": "R-015",
+      "from": "App::PropertyList",
+      "to": "parent PropertyList / property IDs",
+      "kind": "runtime_overlay",
+      "evidence": "SUPPORTED",
+      "statement": "Property lookup first searches local entries and falls back to a parent PropertyList; SetProperty updates/inserts by property ID and increments the operation counter. Parent persistence is not established.",
+      "provenance": ["ghidra:App::PropertyList::GetProperty", "ghidra:App::PropertyList::SetProperty", "kg-persistence-types:507-520"]
+    },
+    {
+      "id": "R-016",
+      "from": "IGameModeManager",
+      "to": "IGameMode lifecycle",
+      "kind": "stage_transition",
+      "evidence": "SUPPORTED_AS_STATIC_BODY",
+      "statement": "cGameModeManager stores mode entries, active index, camera manager, and viewer. SetActiveModeAt exits the current mode when different, updates active state, and enters the selected mode. Live ordering is not observed.",
+      "provenance": ["ghidra:SporeApp.exe@cGameModeManager layout", "ghidra:App::cGameModeManager::SetActiveModeAt @ 0x007d8d40", "kg-empire-economy:433-442"]
+    }
+  ],
+  "functions": [
+    {
+      "id": "F-001",
+      "address": "0x0067DCC0",
+      "name": "App::IAppSystem::Get",
+      "domain": "application_lifecycle",
+      "role": "returns global DAT_015fd890",
+      "evidence": "OBSERVED_STATIC_QUERY",
+      "persistence_relevance": "Host/service root; does not itself serialize state.",
+      "provenance": ["ghidra:SporeApp.exe@0x0067dcc0", "kg-engine-boundaries:78-106"]
+    },
+    {
+      "id": "F-002",
+      "address": "0x007D8D40",
+      "name": "App::cGameModeManager::SetActiveModeAt",
+      "domain": "level/game_mode_transition",
+      "role": "exit current mode, select mode, enter next mode",
+      "evidence": "SUPPORTED_STATIC_BODY",
+      "survival_boundary": "Only transition ordering is evidenced; no claim is made that any particular state survives the transition.",
+      "provenance": ["ghidra:SporeApp.exe@0x007d8d40", "kg-empire-economy:433-442", "source-cell-mode:79-97"]
+    },
+    {
+      "id": "F-003",
+      "address": "0x00E80BA0",
+      "name": "Simulator::Cell::cCellGame::Initialize",
+      "domain": "cell_state_initialization",
+      "role": "reset CellGame fields, initialize 4096-cell pool, time scale, serializable state, collectable side state, and background bounds",
+      "evidence": "SUPPORTED_STATIC_BODY",
+      "survival_boundary": "Initialization is a reset/bring-up boundary, not a save-load operation. The serializable-data pointer is initialized here, but exact contents are not read here.",
+      "provenance": ["ghidra:SporeApp.exe@0x00e80ba0", "kg-cell-state:103-121,482-491", "source-cell-runtime:src/sim/CellGame.cpp:22-80"]
+    },
+    {
+      "id": "F-004",
+      "address": "0x00E7FC00",
+      "name": "App::cCellModeStrategy::OnExit",
+      "domain": "cell_mode_transition",
+      "role": "exit Cell mode and restore global/display side effects",
+      "evidence": "SUPPORTED_STATIC_BODY",
+      "survival_boundary": "Static body shows teardown/restoration effects; no evidence that live Cell objects or cCellSerializableData are serialized during exit.",
+      "provenance": ["ghidra:SporeApp.exe@0x00e7fc00", "kg-cell-state:356-420", "kg-engine-boundaries:118-142"]
+    },
+    {
+      "id": "F-005",
+      "address": "0x00E81F30",
+      "name": "App::cCellModeStrategy::Dispose",
+      "domain": "cell_mode_teardown",
+      "role": "release stage objects and reset lifecycle state",
+      "evidence": "SUPPORTED_STATIC_BODY",
+      "survival_boundary": "Dispose is a release boundary; persistence handoff is unresolved.",
+      "provenance": ["ghidra:SporeApp.exe@0x00e81f30", "kg-cell-state:406-411", "source-cell-mode:45-77"]
+    },
+    {
+      "id": "F-006",
+      "address": "0x00B3D440",
+      "name": "Simulator::cGamePersistenceManager::Get",
+      "domain": "save_load_entry_point",
+      "role": "returns global DAT_0167eb34",
+      "evidence": "OBSERVED_STATIC_QUERY",
+      "survival_boundary": "Named persistence root; no direct body establishes save, load, slot, profile, or atomicity semantics.",
+      "provenance": ["ghidra:SporeApp.exe@0x00b3d440", "kg-persistence-types:460-468,817-845"]
+    },
+    {
+      "id": "F-007",
+      "address": "SDK_declaration_only",
+      "name": "Simulator::cGamePersistenceManager::LoadGame",
+      "domain": "save_load_entry_point",
+      "role": "SDK-declared load operation associated with cGamePersistenceManager",
+      "evidence": "SUPPORTED_AS_SDK_DECLARATION",
+      "survival_boundary": "Body, call order, slot enumeration, and failure behavior are unknown.",
+      "provenance": ["kg-persistence-types:141-149,460-468", "ghidra:data-type search cGamePersistenceManager/LoadGame"]
+    },
+    {
+      "id": "F-008",
+      "address": "SDK_declaration_only",
+      "name": "Simulator::cGamePersistenceManager::SaveGame",
+      "domain": "save_load_entry_point",
+      "role": "no SaveGame function was found in the read-only function-name search",
+      "evidence": "UNKNOWN_OR_NOT_NAMED",
+      "survival_boundary": "Do not infer absence of saving from absent symbol; the writer may be an unnamed vtable method, strategy method, or serializer path.",
+      "provenance": ["ghidra:read-only search SaveGame returned no function", "kg-persistence-types:505-533"]
+    },
+    {
+      "id": "F-009",
+      "address": "0x006A2F60",
+      "name": "App::PropertyList::Read",
+      "domain": "generic_property_persistence",
+      "role": "read property-list framing and entries through IStream/property helpers",
+      "evidence": "SUPPORTED_STATIC_BODY",
+      "survival_boundary": "Read path is present; exact wire format, parent handling, version negotiation, and failure atomicity remain unknown.",
+      "provenance": ["ghidra:SporeApp.exe@0x006a2f60", "kg-persistence-types:252-263,776-781,991-996"]
+    },
+    {
+      "id": "F-010",
+      "address": "0x006A1540",
+      "name": "App::PropertyList::Write",
+      "domain": "generic_property_persistence",
+      "role": "write entry count followed by property ID/value entries through stream/property helpers",
+      "evidence": "SUPPORTED_STATIC_BODY",
+      "survival_boundary": "Write path is present; exact byte order, compression, transaction grouping, and database flush are unknown.",
+      "provenance": ["ghidra:SporeApp.exe@0x006a1540", "kg-persistence-types:252-263,776-781,991-996"]
+    },
+    {
+      "id": "F-011",
+      "address": "0x006A3170",
+      "name": "App::DirectPropertyList::Read",
+      "domain": "generic_property_persistence",
+      "role": "forwards to PropertyList::Read",
+      "evidence": "OBSERVED_STATIC_QUERY",
+      "survival_boundary": "Inheritance/forwarding is evidenced; no separate format is implied.",
+      "provenance": ["ghidra:SporeApp.exe@0x006a3170"]
+    },
+    {
+      "id": "F-012",
+      "address": "0x006A1640",
+      "name": "App::DirectPropertyList::Write",
+      "domain": "generic_property_persistence",
+      "role": "direct property-list write path observed separately from base symbol",
+      "evidence": "OBSERVED_STATIC_QUERY",
+      "survival_boundary": "The direct list is a runtime specialization; exact divergence from base Write is not fully characterized.",
+      "provenance": ["ghidra:SporeApp.exe@0x006a1640", "ghidra:App::PropertyList::Write @ 0x006a1540"]
+    },
+    {
+      "id": "F-013",
+      "address": "0x006A2E20",
+      "name": "App::PropertyList::SetProperty",
+      "domain": "property_mutation",
+      "role": "insert/update property by uint32 ID and increment operation counter",
+      "evidence": "SUPPORTED_STATIC_BODY",
+      "survival_boundary": "Runtime mutation boundary; no claim that every mutation is persisted automatically.",
+      "provenance": ["ghidra:SporeApp.exe@0x006a2e20", "kg-persistence-types:511-513"]
+    },
+    {
+      "id": "F-014",
+      "address": "0x006A2530",
+      "name": "App::PropertyList::GetProperty",
+      "domain": "property_resolution",
+      "role": "local property lookup then parent-list fallback",
+      "evidence": "SUPPORTED_STATIC_BODY",
+      "survival_boundary": "Reference resolution is explicit for properties; parent overlay is runtime lookup unless independently serialized.",
+      "provenance": ["ghidra:SporeApp.exe@0x006a2530", "kg-persistence-types:511-513"]
+    },
+    {
+      "id": "F-015",
+      "address": "0x006A3310",
+      "name": "App::cPropManager::GetGlobalPropertyList",
+      "domain": "property_registry",
+      "role": "obtain a global PropertyList by instance ID through property-manager virtual lookup",
+      "evidence": "SUPPORTED_STATIC_BODY",
+      "survival_boundary": "A global property registry exists structurally; registry persistence and profile scope are unknown.",
+      "provenance": ["ghidra:SporeApp.exe@0x006a3310", "kg-persistence-types:505-520"]
+    },
+    {
+      "id": "F-016",
+      "address": "0x00692880",
+      "name": "Simulator::ClassSerializer::Write",
+      "domain": "simulator_serialization",
+      "role": "class/object attribute serializer write boundary",
+      "evidence": "CONFIRMED_SDK_NAME; body unavailable in committed ledger",
+      "survival_boundary": "Static callers establish the serializer surface, not field order or transaction behavior.",
+      "provenance": ["kg-persistence-types:325-327,460-479,632-641", "ghidra:function inventory/search"]
+    },
+    {
+      "id": "F-017",
+      "address": "0x00693DD0",
+      "name": "Simulator::ClassSerializer::Read",
+      "domain": "simulator_serialization",
+      "role": "class/object attribute serializer read boundary",
+      "evidence": "CONFIRMED_SDK_NAME; body unavailable in committed ledger",
+      "survival_boundary": "Static caller edge is recorded; restoration order and failure semantics are unknown.",
+      "provenance": ["kg-persistence-types:325-327,460-489", "ghidra:function inventory/search"]
+    },
+    {
+      "id": "F-018",
+      "address": "0x00692F90",
+      "name": "FUN_00692F90",
+      "domain": "simulator_serialization_caller",
+      "role": "direct caller of ClassSerializer::Write at callsite 0x00692F9F",
+      "evidence": "OBSERVED_STATIC_EDGE",
+      "survival_boundary": "Caller purpose and ordering are not established.",
+      "provenance": ["kg-persistence-types:329-335,783-795"]
+    },
+    {
+      "id": "F-019",
+      "address": "0x00695B40",
+      "name": "FUN_00695B40",
+      "domain": "simulator_serialization_caller",
+      "role": "direct caller of ClassSerializer::Write at callsite 0x00695BA1",
+      "evidence": "OBSERVED_STATIC_EDGE",
+      "survival_boundary": "Caller purpose and ordering are not established.",
+      "provenance": ["kg-persistence-types:329-335,783-795"]
+    },
+    {
+      "id": "F-020",
+      "address": "0x0120D030",
+      "name": "Unwind@0120D030",
+      "domain": "simulator_serialization_caller",
+      "role": "recorded direct caller edge to ClassSerializer::Read at 0x0120D033",
+      "evidence": "OBSERVED_STATIC_EDGE",
+      "survival_boundary": "Unwind context prevents promotion to gameplay load order.",
+      "provenance": ["kg-persistence-types:329-335,807-815"]
+    },
+    {
+      "id": "F-021",
+      "address": "0x00577650",
+      "name": "Editor_Save",
+      "domain": "editor_asset_save",
+      "role": "constructs asset metadata, routes asset/resource operations, and submits an asset through editor/Pollinator boundary",
+      "evidence": "SUPPORTED_STATIC_BODY",
+      "survival_boundary": "This is an asset-save/metadata boundary, not evidence of profile, save-slot, or game-state persistence.",
+      "provenance": ["ghidra:SporeApp.exe@0x00577650", "kg-persistence-types:94-101", "kg-editor-state:163-192"]
+    },
+    {
+      "id": "F-022",
+      "address": "0x00584300",
+      "name": "Editors::cEditor::Initialize",
+      "domain": "editor_lifecycle",
+      "role": "editor initialization and service/tool setup",
+      "evidence": "SUPPORTED_SDK_AND_STATIC_BODY",
+      "survival_boundary": "No claim that editor working state survives editor dispose or process restart.",
+      "provenance": ["ghidra:SporeApp.exe@0x00584300", "kg-editor-state:71-79,194-225"]
+    },
+    {
+      "id": "F-023",
+      "address": "0x00576C50",
+      "name": "Editors::cEditor::Dispose",
+      "domain": "editor_lifecycle",
+      "role": "editor teardown",
+      "evidence": "SUPPORTED_SDK_AND_STATIC_BODY",
+      "survival_boundary": "Static release boundary; save-before-dispose is not established.",
+      "provenance": ["ghidra:SporeApp.exe@0x00576c50", "kg-editor-state:194-225"]
+    },
+    {
+      "id": "F-024",
+      "address": "0x00587A20",
+      "name": "Editors::cEditor::OnExit",
+      "domain": "editor_lifecycle",
+      "role": "editor mode exit",
+      "evidence": "SUPPORTED_SDK_AND_STATIC_BODY",
+      "survival_boundary": "No runtime trace establishes whether active edit history is saved on exit.",
+      "provenance": ["ghidra:SporeApp.exe@0x00587a20", "kg-editor-state:253-277"]
+    },
+    {
+      "id": "F-025",
+      "address": "0x00587270",
+      "name": "Editors::cEditor::SetActiveMode",
+      "domain": "editor_mode_transition",
+      "role": "tear down prior editor mode, update animation world/creature controller state, enter new mode, emit event",
+      "evidence": "SUPPORTED_SDK_AND_STATIC_BODY",
+      "survival_boundary": "Mode transition is evidenced; persistence of model/pose state across mode changes is not.",
+      "provenance": ["ghidra:SporeApp.exe@0x00587270", "kg-editor-state:71-79,253-277,305-334"]
+    },
+    {
+      "id": "F-026",
+      "address": "0x00599440",
+      "name": "Simulator::cCollectableItems::LoadConfig",
+      "domain": "configuration",
+      "role": "stores config instance ID and delegates config-group loading",
+      "evidence": "SUPPORTED_STATIC_BODY",
+      "survival_boundary": "Configuration load boundary is present; no version/default/migration semantics are observed.",
+      "provenance": ["ghidra:SporeApp.exe@0x00599440", "docs/RECON-3.1.0.22.md:113-119"]
+    },
+    {
+      "id": "F-027",
+      "address": "0x00D2E350",
+      "name": "Simulator::cCreatureGameData::GetEvolutionPoints",
+      "domain": "progression",
+      "role": "read current evolution points",
+      "evidence": "SUPPORTED_STATIC_BODY",
+      "survival_boundary": "Progression field is evidenced; save/load inclusion is unresolved and must not be assumed from the field alone.",
+      "provenance": ["kg-empire-economy:313-327,459-470"]
+    },
+    {
+      "id": "F-028",
+      "address": "0x00D2E480",
+      "name": "Simulator::cCreatureGameData::SetEvolutionPoints",
+      "domain": "progression",
+      "role": "write current evolution points",
+      "evidence": "SUPPORTED_STATIC_BODY",
+      "survival_boundary": "Mutation is evidenced; automatic persistence is not.",
+      "provenance": ["kg-empire-economy:313-327,459-470"]
+    },
+    {
+      "id": "F-029",
+      "address": "0x00D2E8A0",
+      "name": "Simulator::cCreatureGameData::AddEvolutionPoints",
+      "domain": "progression",
+      "role": "add evolution points, clamp, update related state, conditionally dispatch creature-mode action",
+      "evidence": "SUPPORTED_STATIC_BODY",
+      "survival_boundary": "No automatic level transition or save write is established.",
+      "provenance": ["kg-empire-economy:313-327,459-470"]
+    },
+    {
+      "id": "F-030",
+      "address": "0x00BA6300",
+      "name": "Simulator::cPlanetRecord::Create",
+      "domain": "planet_generation",
+      "role": "planet record construction boundary",
+      "evidence": "CONFIRMED_SDK_NAME",
+      "survival_boundary": "Generated planet data and its persistence path are not established from the constructor alone.",
+      "provenance": ["ghidra:function search cPlanetRecord", "kg-empire-economy:420-424"]
+    },
+    {
+      "id": "F-031",
+      "address": "0x00BB5B50",
+      "name": "Simulator::cStarManager::RecordToPlanet",
+      "domain": "space_world_reference_resolution",
+      "role": "star-to-planet record relationship boundary",
+      "evidence": "CONFIRMED_SDK_NAME",
+      "survival_boundary": "Reference ownership and save ordering across star/planet records are not established.",
+      "provenance": ["ghidra:function search cStarManager", "ghidra:SporeApp.exe@cStarManager layout"]
+    },
+    {
+      "id": "F-032",
+      "address": "0x00BBA900",
+      "name": "Simulator::cStarRecord::GetPlanetRecords",
+      "domain": "space_world_reference_resolution",
+      "role": "return/access cStarRecord planet records",
+      "evidence": "CONFIRMED_SDK_NAME",
+      "survival_boundary": "The relation is structural; serialization order is unknown.",
+      "provenance": ["ghidra:function search cStarRecord", "ghidra:SporeApp.exe@cStarRecord layout"]
+    },
+    {
+      "id": "F-033",
+      "address": "0x00FEE310",
+      "name": "Simulator::cMissionManager::GetMissionByID",
+      "domain": "progression_reference_resolution",
+      "role": "mission ID lookup",
+      "evidence": "CONFIRMED_SDK_NAME",
+      "survival_boundary": "Mission ID resolution exists; save/load object-count mapping is not established.",
+      "provenance": ["ghidra:function search cMissionManager", "ghidra:SporeApp.exe@cMissionManager layout"]
+    },
+    {
+      "id": "F-034",
+      "address": "0x006A2800",
+      "name": "App::DirectPropertyList::GetPropertyObject",
+      "domain": "property_reference_resolution",
+      "role": "property object lookup specialization",
+      "evidence": "SUPPORTED_SDK_AND_STATIC_BODY",
+      "survival_boundary": "Object-valued property resolution is distinct from primitive typed getters; serialized object references are not established.",
+      "provenance": ["ghidra:SporeApp.exe@0x006a2800", "ghidra:App::Property getter/setter family"]
+    }
+  ],
+  "lifecycle": [
+    {
+      "id": "L-001",
+      "boundary": "application_bootstrap",
+      "from": "process entry",
+      "to": "AppSystem initialization and plugin initialization",
+      "evidence": "SUPPORTED_HISTORICAL_STATIC",
+      "survival": "Only process/application state is evidenced; no save state is claimed.",
+      "provenance": ["docs/RECON-3.1.0.22.md:25-44", "ghidra:App::cAppSystem::InitPlugins @ 0x007e93d0"]
+    },
+    {
+      "id": "L-002",
+      "boundary": "resource_manager_initialization",
+      "from": "resource subsystem start",
+      "to": "resource names/indexes available",
+      "evidence": "SUPPORTED_SDK_AND_STATIC",
+      "survival": "Resource registry/cache behavior and persistence write order remain unresolved.",
+      "provenance": ["ghidra:Resource::cResourceManager::Initialize @ 0x008de530", "kg-engine-boundaries:295-364"]
+    },
+    {
+      "id": "L-003",
+      "boundary": "property_list_runtime",
+      "from": "empty/local PropertyList",
+      "to": "typed property set with parent fallback",
+      "evidence": "SUPPORTED_STATIC_BODY",
+      "survival": "Set/Get/parent lookup are evidenced; persistence is explicit through Read/Write or unknown higher-level orchestration, not automatic by implication.",
+      "provenance": ["ghidra:App::PropertyList::SetProperty", "ghidra:App::PropertyList::GetProperty", "ghidra:App::PropertyList::Read/Write"]
+    },
+    {
+      "id": "L-004",
+      "boundary": "cell_mode_initialize",
+      "from": "Cell mode not initialized",
+      "to": "sCellGame, sCellGFX, sCellUI and Cell pools/resources initialized",
+      "evidence": "SUPPORTED_STATIC_BODY",
+      "survival": "cCellSerializableData pointer is initialized, but its values and save relationship are not directly observed in this path.",
+      "provenance": ["ghidra:0x00e81cf0", "ghidra:0x00e80ba0", "kg-cell-state:103-133"]
+    },
+    {
+      "id": "L-005",
+      "boundary": "cell_mode_enter",
+      "from": "initialized but inactive Cell mode",
+      "to": "display/UI/world activation",
+      "evidence": "SUPPORTED_STATIC_BODY",
+      "survival": "No save or cross-stage handoff is claimed.",
+      "provenance": ["ghidra:0x00e552f0", "kg-cell-state:135-145"]
+    },
+    {
+      "id": "L-006",
+      "boundary": "cell_simulation_update",
+      "from": "active Cell state",
+      "to": "movement, interactions, service updates, and state writes",
+      "evidence": "SUPPORTED_STATIC_BODY",
+      "survival": "Per-frame state is mutable; no checkpoint or autosave behavior is evidenced.",
+      "provenance": ["ghidra:0x00e80980", "ghidra:0x00e806b0", "kg-cell-state:147-165,374-379"]
+    },
+    {
+      "id": "L-007",
+      "boundary": "cell_mode_exit",
+      "from": "active Cell mode",
+      "to": "stage display/global teardown/restoration",
+      "evidence": "SUPPORTED_STATIC_BODY",
+      "survival": "Exit effects are evidenced, but no automatic write of cCellSerializableData is established.",
+      "provenance": ["ghidra:0x00e7fc00", "kg-cell-state:406-411"]
+    },
+    {
+      "id": "L-008",
+      "boundary": "cell_mode_dispose",
+      "from": "Cell mode state",
+      "to": "stage objects released",
+      "evidence": "SUPPORTED_STATIC_BODY",
+      "survival": "Dispose is a release boundary; persistence must occur before it only if a higher-level caller does so, which is unknown.",
+      "provenance": ["ghidra:0x00e81f30", "source-cell-mode:67-77"]
+    },
+    {
+      "id": "L-009",
+      "boundary": "game_mode_transition",
+      "from": "active mode A",
+      "to": "mode B OnExit then OnEnter",
+      "evidence": "SUPPORTED_STATIC_BODY",
+      "survival": "The transition order is supported; exact persistent handoff of mode-specific state is not established.",
+      "provenance": ["ghidra:0x007d8d40", "source-cell-mode:91-97", "kg-empire-economy:433-442"]
+    },
+    {
+      "id": "L-010",
+      "boundary": "editor_initialize_dispose",
+      "from": "editor absent",
+      "to": "editor/tool/animation world state",
+      "evidence": "SUPPORTED_SDK_AND_STATIC_BODY",
+      "survival": "Editor state ownership is local/static; save before dispose is not evidenced.",
+      "provenance": ["ghidra:0x00584300", "ghidra:0x00576c50", "kg-editor-state:194-225"]
+    },
+    {
+      "id": "L-011",
+      "boundary": "editor_operation_commit",
+      "from": "selection/drag/tool state",
+      "to": "edit-history/model/animation-world mutation",
+      "evidence": "SUPPORTED_STATIC_BODY",
+      "survival": "Edit-history mutation is evidenced; process/save persistence is not.",
+      "provenance": ["kg-editor-state:253-277,388-393", "ghidra:Editor_Save @ 0x00577650"]
+    },
+    {
+      "id": "L-012",
+      "boundary": "configuration_load",
+      "from": "configuration identifier",
+      "to": "config/property data",
+      "evidence": "SUPPORTED_STATIC_BODY_FOR_IDENTIFIERS",
+      "survival": "No schema version, defaults, migration, or atomic replacement is established.",
+      "provenance": ["ghidra:0x0067dcf0", "ghidra:0x00599440", "docs/RECON-3.1.0.22.md:113-119"]
+    },
+    {
+      "id": "L-013",
+      "boundary": "save_load_orchestration",
+      "from": "game/save request or load context",
+      "to": "serialized records and restored simulator state",
+      "evidence": "INFERRED_ONLY",
+      "survival": "Likely ordering is ResourceKey/record -> serializer streams -> class objects -> serializable objects -> header/property state, but no original function body or runtime trace confirms it.",
+      "provenance": ["kg-persistence-types:769-781,973-987", "ghidra:cGamePersistenceManager::Get,ClassSerializer::Read/Write"]
+    },
+    {
+      "id": "L-014",
+      "boundary": "simulation_reset",
+      "from": "existing simulation objects",
+      "to": "fresh object/pool/state",
+      "evidence": "SUPPORTED_FOR_CELL_INITIALIZATION",
+      "survival": "cCellGame::Initialize resets the stage object and pool; OpenSpore CellSim starts from constructor state. Generic reset versus save/load is unresolved.",
+      "provenance": ["ghidra:0x00e80ba0", "source-cell-runtime:src/sim/Sim.hpp:222-260", "source-cell-runtime:src/sim/CellGame.cpp:22-80"]
+    }
+  ],
+  "persistence": {
+    "state_survival_matrix": [
+      {
+        "boundary": "level_or_stage_transition",
+        "state": "game mode identity",
+        "survives": "UNKNOWN",
+        "evidence": "cGameModeManager stores active index and mode entries; SetActiveModeAt changes active mode. No serialization of active mode is directly observed.",
+        "provenance": ["ghidra:cGameModeManager layout", "ghidra:0x007d8d40"]
+      },
+      {
+        "boundary": "level_or_stage_transition",
+        "state": "current planet",
+        "survives": "SUPPORTED_AS_HEADER_METADATA_ONLY",
+        "evidence": "cSavedGameHeader has mCurrentPlanetKey; no transition body shows write/read ordering.",
+        "provenance": ["kg-persistence-types:522-536"]
+      },
+      {
+        "boundary": "level_or_stage_transition",
+        "state": "Cell serializable state",
+        "survives": "UNKNOWN",
+        "evidence": "cCellGame holds cCellSerializableData and CellGame::Initialize initializes the path, but no cross-stage handoff or save write is shown.",
+        "provenance": ["ghidra:cCellGame layout", "ghidra:0x00e80ba0", "kg-cell-state:340-347"]
+      },
+      {
+        "boundary": "save_load",
+        "state": "cStarRecord version and timestamp",
+        "survives": "SUPPORTED_AS_PERSISTENT_FIELD_CLUES",
+        "evidence": "cStarRecord has saved-game major/minor versions and timestamp fields; actual write/read inclusion is unobserved.",
+        "provenance": ["ghidra:cStarRecord layout", "kg-empire-economy:415-424"]
+      },
+      {
+        "boundary": "save_load",
+        "state": "object counts and saved-game header",
+        "survives": "SUPPORTED_AS_HEADER_SCHEMA",
+        "evidence": "cSavedGameHeader declares mObjectCountMap, file versions, timestamp, mode, snapshot, current planet key.",
+        "provenance": ["kg-persistence-types:522-536"]
+      },
+      {
+        "boundary": "save_load",
+        "state": "property values",
+        "survives": "SUPPORTED_AS_EXPLICIT_CODEC_PATH",
+        "evidence": "PropertyList::Read/Write are explicit stream operations; exact record round trip is unknown.",
+        "provenance": ["ghidra:0x006a2f60", "ghidra:0x006a1540"]
+      },
+      {
+        "boundary": "save_load",
+        "state": "class/object attributes",
+        "survives": "SUPPORTED_AS_SERIALIZER_ARCHITECTURE",
+        "evidence": "ClassSerializer, Attribute, and ISimulatorSerializable expose serialization contracts; concrete bodies and object pointer encoding are unknown.",
+        "provenance": ["kg-persistence-types:265-272,557-597,694-718"]
+      },
+      {
+        "boundary": "save_load",
+        "state": "profile/account/save slot",
+        "survives": "UNKNOWN",
+        "evidence": "No named Profile, Slot, SaveGame, or profile file entry point was found; GameLoadParameters has game/star/profile-like references but not a profile schema.",
+        "provenance": ["ghidra:read-only function searches Profile,Slot,SaveGame returned no matching save/profile roots", "kg-persistence-types:539-556"]
+      },
+      {
+        "boundary": "editor_operations",
+        "state": "edit history/model/animation world",
+        "survives": "UNKNOWN",
+        "evidence": "Editor handlers mutate edit history and animation-world state; no save-before-dispose or persisted editor document schema is established.",
+        "provenance": ["kg-editor-state:253-277,388-393", "ghidra:Editor_Save @ 0x00577650"]
+      },
+      {
+        "boundary": "editor_operations",
+        "state": "saved asset metadata",
+        "survives": "SUPPORTED_AS_ASSET_BOUNDARY",
+        "evidence": "Editor_Save routes asset metadata and resource/Pollinator operations; this is not a game profile or slot save.",
+        "provenance": ["ghidra:Editor_Save @ 0x00577650"]
+      },
+      {
+        "boundary": "simulation_reset",
+        "state": "Cell pool/query/display state",
+        "survives": "NO_FOR_CURRENT_RESET",
+        "evidence": "cCellGame::Initialize resets fields and initializes a 4096-cell pool; current CellSim constructor starts fresh in-memory state.",
+        "provenance": ["ghidra:0x00e80ba0", "source-cell-runtime:src/sim/Sim.hpp:222-260"]
+      },
+      {
+        "boundary": "game_mode_transition",
+        "state": "mode-specific object ownership",
+        "survives": "UNKNOWN",
+        "evidence": "Mode manager changes lifecycle state; cGamePersistenceManager and cCellGame structures imply state domains, but no universal handoff schema is observed.",
+        "provenance": ["ghidra:0x007d8d40", "ghidra:cGamePersistenceManager layout", "ghidra:cCellGame layout"]
+      }
+    ],
+    "ids_and_reference_resolution": [
+      {
+        "id_system": "ResourceKey",
+        "fields": ["typeID", "groupID", "instanceID"],
+        "resolution": "Used as the common content identity and property Key type; current OpenSpore B1 fetches records by the triple.",
+        "evidence": "SUPPORTED",
+        "provenance": ["kg-persistence-types:529-533,632-641", "source-resource-provider:24-59"]
+      },
+      {
+        "id_system": "political IDs",
+        "fields": ["cEmpire.mPoliticalID +0x84", "cStarManager.mNextPoliticalID +0x1D4"],
+        "resolution": "cStarManager owns an empire map keyed by uint32; current-player cache validates cEmpire+0x84 against sSpacePlayerData+0x18 and refreshes through map lookup.",
+        "evidence": "SUPPORTED",
+        "provenance": ["ghidra:cEmpire layout", "ghidra:cStarManager layout", "shared-state-interface:143-156,188-201"]
+      },
+      {
+        "id_system": "planet/star IDs",
+        "fields": ["PlanetID", "StarID", "mCurrentPlanetKey", "mAdventureIDs map<PlanetID,uint32_t>"],
+        "resolution": "StarRecord owns planet record vectors; PlanetRecord stores mKey; saved header stores current planet ResourceKey.",
+        "evidence": "SUPPORTED_AS_LAYOUT",
+        "provenance": ["ghidra:cStarRecord layout", "ghidra:cPlanetRecord layout", "kg-empire-economy:384-424"]
+      },
+      {
+        "id_system": "mission IDs",
+        "fields": ["mMissionID", "mProgressEventID", "mission state map", "mission manager GetMissionByID"],
+        "resolution": "Mission manager lookup by ID is named; object-count mapping and cross-save ID remapping are not recovered.",
+        "evidence": "SUPPORTED_AS_NAMED_BOUNDARY",
+        "provenance": ["ghidra:cMission layout", "ghidra:cMissionManager layout", "ghidra:0x00fee310"]
+      },
+      {
+        "id_system": "property IDs",
+        "fields": ["uint32 property ID", "parent PropertyList fallback", "Property type tag"],
+        "resolution": "Local sorted map first, parent overlay second; property definition names/group IDs are managed by IPropManager but exact mapping is not recovered.",
+        "evidence": "SUPPORTED",
+        "provenance": ["ghidra:PropertyList::GetProperty", "kg-persistence-types:507-520,694-718"]
+      },
+      {
+        "id_system": "mode message IDs",
+        "fields": ["0x00E11333 SetGameModeByName", "0x0212D3E7 OnModeExit", "0x022D1ADC OnModeEnter"],
+        "resolution": "Message IDs are recorded as transition clues; exact payload schemas and queue order are not reconstructed.",
+        "evidence": "INFERRED_AS_MESSAGE_CLUES",
+        "provenance": ["kg-empire-economy:433-442"]
+      }
+    ],
+    "versioning_and_migration": {
+      "observed_version_fields": [
+        {"owner": "cSavedGameHeader", "fields": ["mFileVersionMajor", "mFileVersionMinor"], "evidence": "SUPPORTED_AS_SDK_LAYOUT"},
+        {"owner": "cStarRecord", "fields": ["mSavedGameVersionMajor", "mSavedGameVersionMinor"], "evidence": "OBSERVED_STATIC_LAYOUT"},
+        {"owner": "cScenarioResource", "fields": ["mVersion", "mMarkerPositioningVersion"], "evidence": "OBSERVED_STATIC_LAYOUT"},
+        {"owner": "cCellResource", "fields": ["fixed record sizes/counts and explicit format type IDs"], "evidence": "SUPPORTED_AS_CONTENT_SCHEMA"},
+        {"owner": "GMDL", "fields": ["version 8 tested path"], "evidence": "SUPPORTED_FOR_TESTED_CURRENT_PARSER"}
+      ],
+      "migration_clues": [
+        {"clue": "cScenarioResource retains mClassesOld and mInitialPosseMemberKeysDEPRECATED beside current fields", "evidence": "SUPPORTED_AS_LAYOUT", "interpretation": "Deprecation/old-field coexistence is a migration clue only; migration code is not observed."},
+        {"clue": "cStarRecord stores saved-game major/minor version and timestamp", "evidence": "SUPPORTED_AS_LAYOUT", "interpretation": "Version gate is likely attached to star/save restoration, but consumer logic is unknown."},
+        {"clue": "PropertyList has no visible version field in the imported layout", "evidence": "SUPPORTED_AS_LAYOUT", "interpretation": "Version may be in stream/header or higher-level serializer; do not assume absent versioning."},
+        {"clue": "ISerializer streams declare serialization-version operations", "evidence": "SUPPORTED_AS_SDK_RELATIONSHIP", "interpretation": "Higher-level version handling is architecturally possible; exact values and migration branches are unknown."}
+      ],
+      "conclusion": "Version carriers are present, but no migration branch, compatibility matrix, downgrade behavior, or atomic migration was observed."
+    },
+    "ownership_and_lifetimes": [
+      {"owner": "cGamePersistenceManager", "kind": "singleton/service", "evidence": "SUPPORTED_AS_NAMED_GLOBAL", "details": "Global DAT_0167eb34; structure is 76 bytes with vtables, refcount, mode fields, unresolved integers, one string, and flags."},
+      {"owner": "cStarManager", "kind": "manager/registry", "evidence": "SUPPORTED_AS_LAYOUT", "details": "Owns star grids, saved-game star records, empire registries, home-star map, property lists, relationship manager, trade route manager, and planet databases."},
+      {"owner": "cCellGame", "kind": "stage singleton", "evidence": "SUPPORTED_AS_LAYOUT", "details": "Owns Cell pools, query pools, world references, avatar index, serializable-data pointer, and stage state."},
+      {"owner": "App::PropertyList", "kind": "intrusive property object", "evidence": "SUPPORTED_AS_SDK_AND_STATIC_BODY", "details": "Has local property map, parent pointer, and operation counter; parent is a lookup overlay candidate, not proven serialized relation."},
+      {"owner": "Resource::Database/IRecord", "kind": "record/stream", "evidence": "SUPPORTED_AS_SDK_ARCHITECTURE", "details": "Database owns record access and streams; IRecord carries ResourceKey and stream lifecycle."},
+      {"owner": "cMission", "kind": "intrusive game-data object", "evidence": "SUPPORTED_AS_LAYOUT", "details": "Holds intrusive references to owner/target empires, planets, parent mission, PropertyList, and communication event."},
+      {"owner": "cEmpire/cStarRecord/cMissionManager", "kind": "serializable/strategy objects", "evidence": "SUPPORTED_AS_SDK_VTABLE_RELATION", "details": "Their vtable/layout relationships declare serialization or simulator strategy behavior; concrete writer ownership remains unresolved."}
+    ],
+    "atomicity_and_transaction_clues": [
+      {"clue": "Resource::RecordInfo has isSaved", "evidence": "SUPPORTED_AS_SDK_LAYOUT", "interpretation": "Record state can be marked saved, but the write/flush transaction is not characterized."},
+      {"clue": "PFRecordWrite::Flush and PFIndexModifiable::Write exist as named infrastructure", "evidence": "SUPPORTED_AS_SDK_NAME", "interpretation": "Database writes likely have a flush/index update boundary; no ordering, rollback, or crash consistency is evidenced."},
+      {"clue": "PropertyList::Write returns bool and stops on failed stream/property writes", "evidence": "SUPPORTED_STATIC_BODY", "interpretation": "Failure is detectable at the property-list operation boundary; whole-save rollback is not established."},
+      {"clue": "No temporary-file, rename, checksum, or migration transaction was recovered", "evidence": "UNKNOWN", "interpretation": "Atomicity beyond local boolean return and named record flush is unsupported."}
+    ],
+    "save_slots_and_profiles": {
+      "status": "UNKNOWN",
+      "evidence": [
+        "No SaveGame, Profile, Slot, or user-profile function names were found by read-only Ghidra searches.",
+        "GameLoadParameters has mGameName, mStarName, creature/species references, star ID, difficulty, and mode.",
+        "cSavedGameHeader has game mode, snapshot flag, current planet key, versions, and object counts.",
+        "The evidence set contains no save-slot enumeration, profile directory, account schema, or profile lock boundary."
+      ],
+      "supported_inferences": [
+        "The .spo game name is a load/archive identity clue.",
+        "The saved header and load parameters cross stage/profile-like context boundaries.",
+        "cStarRecord stores version and timestamp fields suitable for saved-game validation."
+      ],
+      "unsupported_assumptions": [
+        "A fixed number of save slots",
+        "A single local profile/account file",
+        "Autosave on every mode transition",
+        "A checksummed or encrypted .spo container",
+        "Atomic replacement of a profile or save file",
+        "Migration behavior for older major/minor versions"
+      ],
+      "provenance": ["kg-persistence-types:147-171,522-556,687-692", "ghidra:read-only searches SaveGame/Profile/Slot", "docs/BOUNDARIES.md:137-146"]
+    }
+  },
+  "openspore_comparison": {
+    "summary": "OpenSpore has deterministic Cell runtime/content decoding and a narrow resource-byte seam, but no original PropertyList, ClassSerializer, cGamePersistenceManager, save-slot, profile, or .prop/.spo implementation. Current source observations are never treated as original-game evidence.",
+    "areas": [
+      {
+        "area": "Cell simulation state",
+        "original": "cCellGame is a 20,964-byte stage singleton with pools, world references, avatar pool index, and cCellSerializableData pointer at +0x5190.",
+        "openspore": ["src/sim/CellGame.cpp:22-152", "src/sim/Sim.hpp:49-260", "src/sim/Sim.cpp:99-356"],
+        "assessment": "PARTIAL_PROJECTION",
+        "unsupported_assumption": "Do not treat CellSim player/entity state, growMeter, or frame counter as the original cCellSerializableData save schema."
+      },
+      {
+        "area": "Cell mode lifecycle",
+        "original": "IGameMode/cGameModeManager with exit/enter ordering and mode entries.",
+        "openspore": ["src/apps/CellModeStrategy.hpp:79-97", "src/apps/CellModeStrategy.cpp:80-91", "src/apps/IGameMode.hpp:19-52"],
+        "assessment": "PARTIAL_LIFECYCLE_MATCH",
+        "unsupported_assumption": "Do not assume the current one-mode process model represents original mode IDs, names, camera ownership, or cross-stage persistence."
+      },
+      {
+        "area": "Cell content records",
+        "original": "Direct field-by-field Cell resource records with fixed TypeIDs and record-specific layouts.",
+        "openspore": ["src/assets/CellResource.hpp:32-500", "src/assets/CellResource.cpp:1050-1124"],
+        "assessment": "CONTENT_SCHEMA_SUPPORTED",
+        "unsupported_assumption": "Do not serialize cCellSerializableData as a Cell resource or treat Cell records as profile/save data."
+      },
+      {
+        "area": "Resource identity",
+        "original": "ResourceKey type/group/instance and Resource Database/IRecord stream architecture.",
+        "openspore": ["src/compat/ResourceProvider.hpp:24-59", "src/assets/Dbpf.cpp:37-235"],
+        "assessment": "BOUNDARY_MATCH",
+        "unsupported_assumption": "B1's one-package linear fetch is not original multi-package priority, cache, directory, or save-write behavior."
+      },
+      {
+        "area": "Property system",
+        "original": "PropertyList parent overlay, typed Property IDs/types, Read/Write streams, and IPropManager registry.",
+        "openspore": ["No current implementation", "docs/BOUNDARIES.md:137-146"],
+        "assessment": "NOT_IMPLEMENTED",
+        "unsupported_assumption": "No JSON or generic map in current code should be labeled .prop-compatible."
+      },
+      {
+        "area": "Simulator serialization",
+        "original": "ClassSerializer, Attribute, ISimulatorSerializable, cSavedGameHeader, GameLoadParameters, and cGamePersistenceManager.",
+        "openspore": ["No current source correspondence"],
+        "assessment": "NOT_EQUIVALENT",
+        "unsupported_assumption": "No current local serialization should be promoted to original .spo behavior."
+      },
+      {
+        "area": "Editor",
+        "original": "cEditor lifecycle, edit history, tool/animation world, Editor_Save asset metadata boundary.",
+        "openspore": ["No editor implementation", "src/apps/CellModeStrategy.hpp:45-77"],
+        "assessment": "OUT_OF_SCOPE_OR_UNMODELED",
+        "unsupported_assumption": "Do not map Cell input/mode events to editor persistence or asset-save semantics."
+      },
+      {
+        "area": "Progression/economy",
+        "original": "cEmpire money/home/relationships, cStarManager empire registry, cMission rewards/costs, cSpaceTrading commodities, cCreatureGameData evolution points.",
+        "openspore": ["CellSim growMeter and CellUI health only", "No economy/progression manager"],
+        "assessment": "NOT_EQUIVALENT",
+        "unsupported_assumption": "growMeter is not mEmpireMoney or mEvolutionPoints; no automatic persistence is implemented."
+      }
+    ],
+    "current_state_boundaries": {
+      "simulation_reset": "CellSim is constructed from an in-memory entity vector and fixed parameters; no checkpoint, save, or load API exists in the current source.",
+      "level_transition": "Current GameModeManager stores IGameMode pointers in process memory and switches by OnExit/OnEnter; it has no persistence handoff.",
+      "editor_operation": "Current tree has no editor operation implementation; Cell events and UI rollover state are local and not serialized.",
+      "save_load": "Current tree has no general save/load implementation, PropertyList codec, ClassSerializer, or .spo reader/writer."
+    }
+  },
+  "gaps": [
+    {
+      "id": "G-001",
+      "topic": "Original cGamePersistenceManager implementation",
+      "status": "UNKNOWN",
+      "impact": "No exact save/load entry sequence, mode gating, profile/slot selection, or error behavior can be recovered.",
+      "needed_evidence": "Read-only decompilation of the concrete vtable methods and their callers, especially any LoadGame/SaveGame implementations."
+    },
+    {
+      "id": "G-002",
+      "topic": "PROP wire format",
+      "status": "UNKNOWN",
+      "impact": "Blocks exact property serialization, parent handling, arrays, and round-trip validation.",
+      "needed_evidence": "PropertyList/Property/stream decompilation plus a bounded original .prop record."
+    },
+    {
+      "id": "G-003",
+      "topic": "SPO container and saved-game framing",
+      "status": "UNKNOWN",
+      "impact": "Blocks exact archive parsing, checksum/encryption, record ordering, and atomic file handling.",
+      "needed_evidence": "A bounded original .spo capture and serializer/header consumer bodies."
+    },
+    {
+      "id": "G-004",
+      "topic": "ClassSerializer and object-pointer tables",
+      "status": "UNKNOWN",
+      "impact": "Blocks class/object ID remapping and deterministic restoration of intrusive references.",
+      "needed_evidence": "ClassSerializer Read/Write bodies, concrete serializer implementation, and object stream traces."
+    },
+    {
+      "id": "G-005",
+      "topic": "Save slots and profiles",
+      "status": "UNKNOWN",
+      "impact": "No evidence supports slot count, profile/account ownership, user-visible boundaries, or lock semantics.",
+      "needed_evidence": "Named slot/profile roots, directory/path strings, and a controlled menu save/load trace."
+    },
+    {
+      "id": "G-006",
+      "topic": "Cross-stage persistence handoff",
+      "status": "UNKNOWN",
+      "impact": "Cannot state what survives Cell -> creature -> planet -> space transitions beyond header and object-layout candidates.",
+      "needed_evidence": "Correlated mode-manager, persistence-manager, and serializable-object call sequence across a real transition."
+    },
+    {
+      "id": "G-007",
+      "topic": "Editor persistence",
+      "status": "UNKNOWN",
+      "impact": "Cannot state whether edit history, pose, model, or asset metadata survives editor exit/dispose.",
+      "needed_evidence": "Editor commit/dispose/save bodies and before/after editor document snapshots."
+    },
+    {
+      "id": "G-008",
+      "topic": "Configuration versioning",
+      "status": "UNKNOWN",
+      "impact": "Cannot state config defaults, migration, or whether configuration is separate from save/profile state.",
+      "needed_evidence": "IConfigManager methods, ArgScript config schema, and config load/reset transition."
+    },
+    {
+      "id": "G-009",
+      "topic": "Economy and progression write coverage",
+      "status": "UNKNOWN",
+      "impact": "Field presence does not prove that money, missions, trade inventory, evolution points, or relationship state is serialized.",
+      "needed_evidence": "Serializable-object registry, mutation-to-write call paths, and save/load differential."
+    },
+    {
+      "id": "G-010",
+      "topic": "Reference resolution after load",
+      "status": "UNKNOWN",
+      "impact": "ResourceKey IDs, political IDs, planet IDs, mission IDs, and intrusive object pointers may require remapping or restoration ordering that is not visible.",
+      "needed_evidence": "Object-count map consumers, pointer serializer behavior, and post-load identity trace."
+    }
+  ],
+  "contradictions": [
+    {
+      "id": "X-001",
+      "topic": "Property layout",
+      "observations": [
+        {"evidence": "SUPPORTED_AS_SDK", "observation": "SDK header asserts Property size 0x14 with flags at 0x10 and type at 0x12."},
+        {"evidence": "OBSERVED_IMPORT", "observation": "Imported Ghidra XML models Property size 0x4 with flags at 0 and type at 2."}
+      ],
+      "resolution": "UNRESOLVED",
+      "rule": "Do not use either layout as a binary serialization contract without direct body/field evidence."
+    },
+    {
+      "id": "X-002",
+      "topic": "cGamePersistenceManager address",
+      "observations": [
+        {"evidence": "SUPPORTED_AS_SDK_COMMENT", "observation": "SDK reference lists 0x00B3D2A0 and 0x00B3D440 in persistence context."},
+        {"evidence": "OBSERVED_READ_ONLY_QUERY", "observation": "Live SporeApp.exe named function is Simulator::cGamePersistenceManager::Get at 0x00B3D440 and returns DAT_0167EB34."}
+      ],
+      "resolution": "RESOLVED_FOR_CURRENT_GOG_PROGRAM; SDK_ALTERNATE_RETAINED",
+      "rule": "Use 0x00B3D440 for this pinned program; retain the SDK alternate as provenance, not as a competing entry point."
+    },
+    {
+      "id": "X-003",
+      "topic": "Cell resource versus Cell runtime state",
+      "observations": [
+        {"evidence": "SUPPORTED_AS_LAYOUT", "observation": "cCellGame+0x5190 points to cCellSerializableData."},
+        {"evidence": "SUPPORTED_AS_CONTENT_SCHEMA", "observation": "Cell resource records are direct field records with their own TypeIDs and sizes, without a CellSerializer name/ID envelope."}
+      ],
+      "resolution": "RESOLVED_AS_DIFFERENT_LAYERS",
+      "rule": "Never map a Cell content record to the runtime serializable state or assume one save format for both."
+    },
+    {
+      "id": "X-004",
+      "topic": "cAdvectEntry field types",
+      "observations": [
+        {"evidence": "SUPPORTED_AS_FILE_EVIDENCE", "observation": "strength, variance, and period decode as float32 in the current Cell record oracle."},
+        {"evidence": "SUPPORTED_AS_SDK_DECLARATION", "observation": "Corresponding SDK declarations are integer-like."}
+      ],
+      "resolution": "UNRESOLVED",
+      "rule": "Prefer direct record evidence for file decoding; retain the declaration mismatch and do not generalize."
+    },
+    {
+      "id": "X-005",
+      "topic": "No SaveGame symbol versus save capability",
+      "observations": [
+        {"evidence": "OBSERVED_READ_ONLY_QUERY", "observation": "Function-name searches for SaveGame, Profile, and Slot returned no matching named save/profile functions."},
+        {"evidence": "SUPPORTED_ARCHITECTURE", "observation": "cGamePersistenceManager, cSavedGameHeader, serializer interfaces, and PropertyList Read/Write establish a persistence architecture."}
+      ],
+      "resolution": "NO_SYMBOL_IS_NOT_ABSENCE",
+      "rule": "Do not conclude that saving is absent; unnamed vtable, strategy, or generic database paths remain possible."
+    },
+    {
+      "id": "X-006",
+      "topic": "Static lifecycle versus runtime survival",
+      "observations": [
+        {"evidence": "SUPPORTED_STATIC_BODY", "observation": "Mode OnExit/Dispose and CellGame initialization/teardown have observable writes/releases."},
+        {"evidence": "OBSERVED_NEGATIVE_RUNTIME", "observation": "No successful original Cell or save/load runtime trace is available."}
+      ],
+      "resolution": "STATIC_ONLY",
+      "rule": "Do not promote any survival statement beyond explicit fields, explicit codecs, and supported static relationships."
+    }
+  ],
+  "reconstruction_packages": [
+    {
+      "id": "PKG-PERSIST-01",
+      "name": "property-codec",
+      "priority": 1,
+      "anchors": ["0x006A2F60", "0x006A1540", "0x006A3170", "0x006A1640", "PropertyList", "Property", "IPropManager"],
+      "deliverables": ["versioned property record interface", "typed property value model", "parent-overlay semantics separated from wire persistence", "deterministic encode/decode tests"],
+      "stop_condition": "Do not claim .prop compatibility without body evidence and a round-trip oracle.",
+      "evidence": "SUPPORTED_ARCHITECTURE; WIRE_UNKNOWN",
+      "provenance": ["kg-persistence-types:252-320,680-718", "ghidra:PropertyList Read/Write"]
+    },
+    {
+      "id": "PKG-PERSIST-02",
+      "name": "saved-game-header-and-load-context",
+      "priority": 2,
+      "anchors": ["cSavedGameHeader", "GameLoadParameters", "cGamePersistenceManager::Get @ 0x00B3D440", "cStarRecord saved-game version fields"],
+      "deliverables": ["typed header model", "load-context identity model", "version mismatch result type", "current-planet and object-count map semantics"],
+      "stop_condition": "Do not implement a .spo reader/writer or migration policy until header framing and manager consumers are evidenced.",
+      "evidence": "SUPPORTED_LAYOUT; ORCHESTRATION_INFERRED",
+      "provenance": ["kg-persistence-types:147-171,522-556", "ghidra:cGamePersistenceManager layout"]
+    },
+    {
+      "id": "PKG-PERSIST-03",
+      "name": "serializable-object-registry",
+      "priority": 3,
+      "anchors": ["ClassSerializer", "Attribute", "ISimulatorSerializable", "cEmpire", "cStarRecord", "cMissionManager", "cCellSerializableData", "cSpaceTrading"],
+      "deliverables": ["class/object ID registry", "attribute field descriptors", "object-pointer restoration contract", "binary/text serializer separation"],
+      "stop_condition": "Do not claim object reference resolution or migration until concrete serializer bodies and a load trace identify the selected class and pointer path.",
+      "evidence": "SUPPORTED_SDK_ARCHITECTURE; CONCRETE_DISPATCH_UNKNOWN",
+      "provenance": ["kg-persistence-types:265-272,557-597,694-718", "ghidra:ClassSerializer names"]
+    },
+    {
+      "id": "PKG-PERSIST-04",
+      "name": "cell-runtime-state-boundary",
+      "priority": 4,
+      "anchors": ["cCellGame", "cCellSerializableData", "cCellModeStrategy Initialize/OnExit/Dispose", "CellGame::Initialize @ 0x00E80BA0"],
+      "deliverables": ["Cell state ownership table", "reset versus save/load distinction", "stage-transition handoff contract", "progression field mapping"],
+      "stop_condition": "Do not map current CellSim state to original saved state without field-by-field save/load evidence.",
+      "evidence": "SUPPORTED_LAYOUT; CROSS_STAGE_HANDOFF_UNKNOWN",
+      "provenance": ["kg-cell-state:227-261,356-420", "ghidra:cCellGame layout"]
+    },
+    {
+      "id": "PKG-PERSIST-05",
+      "name": "space-empire-mission-progression",
+      "priority": 5,
+      "anchors": ["cStarManager", "cStarRecord", "cPlanetRecord", "cEmpire", "cMission", "cMissionManager", "cSpaceTrading", "cCreatureGameData"],
+      "deliverables": ["identity and intrusive-reference graph", "ownership/lifetime table", "per-stage persistence candidate matrix", "economy/progression mutation-to-save evidence queue"],
+      "stop_condition": "Do not treat layout fields as serialized or money/evolution mutations as saved without concrete write/read paths.",
+      "evidence": "SUPPORTED_AS_LAYOUT; WRITE_COVERAGE_UNKNOWN",
+      "provenance": ["kg-empire-economy:201-424,505-627", "ghidra:structure layouts"]
+    },
+    {
+      "id": "PKG-PERSIST-06",
+      "name": "mode-and-editor-boundaries",
+      "priority": 6,
+      "anchors": ["cGameModeManager::SetActiveModeAt @ 0x007D8D40", "cEditor::Initialize/Dispose/OnExit/SetActiveMode", "Editor_Save @ 0x00577650"],
+      "deliverables": ["lifecycle ordering contract", "mode-entry/exit persistence hooks", "editor asset-save versus game-save distinction", "edit-history ownership rules"],
+      "stop_condition": "Do not infer autosave, profile save, or editor document persistence from lifecycle or asset metadata code.",
+      "evidence": "SUPPORTED_STATIC_LIFECYCLE; RUNTIME_UNRESOLVED",
+      "provenance": ["kg-engine-boundaries:76-148,559-614", "kg-editor-state:194-277,395-421"]
+    },
+    {
+      "id": "PKG-PERSIST-07",
+      "name": "configuration-boundary",
+      "priority": 7,
+      "anchors": ["IConfigManager::Get @ 0x0067DCF0", "cCollectableItems::LoadConfig @ 0x00599440", "ArgScript FormatParser names", "Config/ConfigManager.txt"],
+      "deliverables": ["configuration namespace/profile boundary", "config/property import mapping", "defaults and reset behavior", "version/migration evidence queue"],
+      "stop_condition": "Do not fold configuration state into .prop or .spo without a demonstrated shared codec and ownership path.",
+      "evidence": "SUPPORTED_AS_NAMED_CONFIG_BOUNDARY; SCHEMA_UNKNOWN",
+      "provenance": ["ghidra:config roots", "docs/RECON-3.1.0.22.md:113-119", "kg-engine-boundaries:617-672"]
+    }
+  ],
+  "provenance": {
+    "generated_by": "save/load/persistence archaeology worker",
+    "artifact_path": "knowledgegraph/research/data-model/09-save-load-persistence.json",
+    "method": [
+      "Read current repository source and tests where they define OpenSpore behavior.",
+      "Read committed KG/research/docs and pinned analysis artifacts.",
+      "Used only read-only Ghidra function search, decompilation, structure layout, and type queries against SporeApp.exe.",
+      "Did not inspect or modify SPORE/ filesystem content.",
+      "Did not patch, inject, mutate, save, or re-analyze Ghidra.",
+      "Separated original-game evidence from current OpenSpore behavior and preserved contradictions/gaps."
+    ],
+    "binary": {
+      "name": "SporeApp.exe",
+      "version": "3.1.0.22",
+      "image_base": "0x00400000",
+      "sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+      "program": "SporeApp.exe",
+      "language": "x86:LE:32:windows"
+    },
+    "source_precedence": [
+      "pinned binary/SDK/layout and direct read-only Ghidra static queries",
+      "committed KG/research and dossiers",
+      "committed docs and reports",
+      "current OpenSpore source and tests",
+      "bounded hypotheses are explicitly labeled and not promoted"
+    ],
+    "evidence_vocabulary": {
+      "OBSERVED_STATIC_QUERY": "Direct result of a read-only Ghidra query in this artifact.",
+      "OBSERVED_CURRENT_SOURCE": "Direct current OpenSpore source behavior, not original-game evidence.",
+      "SUPPORTED": "Multiple static artifacts agree, but no original runtime oracle confirms the claim.",
+      "INFERRED": "Bounded interpretation from structure/SDK/decompilation; not an observed runtime fact.",
+      "UNKNOWN": "Evidence is insufficient; no unsupported assumption is filled in.",
+      "OBSERVED_NEGATIVE": "A committed negative result or absence of runtime events, retained without promotion."
+    },
+    "ghidra_queries": [
+      "read-only function searches for Save, Load, Serial, Persist, Property, Config, Profile, Slot, Migrate, Checkpoint, Initialize, Dispose, OnExit, SetActiveMode, LoadGame, SaveGame, cMission, cEmpire, cStarRecord, cPlanetRecord",
+      "read-only decompilation of App::PropertyList::Read/Write, DirectPropertyList::Read/Write, cGamePersistenceManager::Get, cGameModeManager::SetActiveModeAt, CellGame::Initialize, Cell GFX preload/load roots, Editor_Save, config roots, progression roots",
+      "read-only structure layouts for cGamePersistenceManager, cStarRecord, cPlanetRecord, cEmpire, cMission, cMissionManager, cSpaceTrading, cStarManager, cGameModeManager, cCellGame, PropertyList, Property, ClassSerializer, Attribute, cScenarioResource",
+      "read-only class-member and data-type searches for cGamePersistenceManager, cMissionManager, cStarManager, cEmpire, cPlanetRecord, PropertyList, DirectPropertyList, cScenarioResource"
+    ],
+    "limitations": [
+      "No original save/load trace.",
+      "No original .prop or .spo payload inspection.",
+      "No original editor runtime trace.",
+      "No concrete cGamePersistenceManager LoadGame/SaveGame body recovered.",
+      "No concrete ClassSerializer body recovered.",
+      "No exact profile/slot boundary recovered.",
+      "Ghidra has no MSVC RTTI; vtable/SDK class relations remain structural evidence.",
+      "Current OpenSpore deterministic replay and asset parsers do not establish original persistence fidelity."
+    ],
+    "non_claims": [
+      "No fixed save-slot count is claimed.",
+      "No profile/account file format is claimed.",
+      "No autosave trigger is claimed.",
+      "No atomic or crash-safe save transaction is claimed.",
+      "No version migration matrix is claimed.",
+      "No exact .prop/.spo byte format is claimed.",
+      "No cross-stage survival claim is made without a field, codec, or runtime relationship."
+    ]
+  }
+}

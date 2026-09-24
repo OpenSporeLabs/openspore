@@ -1,0 +1,1053 @@
+{
+  "$schema": "openspore-track-04-persistence-resolution-1",
+  "artifact": {
+    "name": "track-04-persistence-codec",
+    "title": "CONFLICT-PROPERTY-PERSISTENCE-CODEC",
+    "track": "Track 4",
+    "scope": "App::Property and PropertyList; the listed codec/serializer addresses; ClassSerializer; ISimulatorSerializable; cCellSerializableData; cGamePersistenceManager; save headers; envelopes; transactions; references; versions; migration; atomicity; nested serialization; and mode-transition persistence.",
+    "research_date": "2026-09-24",
+    "analysis_only": true,
+    "implementation_modified": false,
+    "ghidra_mutation_requested": false,
+    "ghidra_program": "SporeApp.exe",
+    "historical_artifacts_modified": false,
+    "spore_filesystem_accessed": false,
+    "knowledgegraph_database_accessed": false,
+    "source_implementation_accessed": false,
+    "clean_room_rule": "Ghidra output, SDK declarations, and historical research are evidence, not original source or runtime truth; no proprietary bytes or implementation are reproduced."
+  },
+  "resolution_status": "PARTIALLY_RESOLVED",
+  "campaign_classification": "profile/save persistent",
+  "overall_conclusion": "The minimum original persistence architecture is now statically bounded: a typed property codec, an attribute-driven object serializer with class/field identity and nested object references, a cSavedGameHeader wrapper, a database/stream coordinator, and an explicit mode-specific cCellSerializableData save candidate. The exact outer .spo/.prop envelope, all value payloads, object-pointer tables, migration policy, field survival, and complete failure atomicity remain unresolved.",
+  "allowed_classifications": [
+    "static asset/template",
+    "profile/save persistent",
+    "runtime transient",
+    "unknown"
+  ],
+  "allowed_taxonomy": [
+    "static asset/template",
+    "profile/save persistent",
+    "runtime transient",
+    "unknown"
+  ],
+  "nine_step_schema": {
+    "version": "track-04-adversarial-nine-step-v1",
+    "count": 9,
+    "required_fields": [
+      "step",
+      "name",
+      "question",
+      "prediction",
+      "method",
+      "result",
+      "separator_result"
+    ],
+    "step_order": [1, 2, 3, 4, 5, 6, 7, 8, 9],
+    "scope_note": "The nine entries in adversarial_steps are the authoritative application of this schema."
+  },
+  "framing_assessment": {
+    "spo": {
+      "status": "PARTIALLY_CONFIRMED",
+      "confirmed": [
+        "The binary contains .spo, *.spo, and snapshot.spo strings referenced by save/path/enumeration helpers.",
+        "FUN_00B28EC0 accepts a save path, creates a .tmp path, writes through a database-backed stream, closes it, and invokes replacement.",
+        "FUN_00B282E0 enumerates *.spo and checks related files plus a validity marker."
+      ],
+      "unconfirmed": [
+        "The first bytes and record boundary of an actual .spo file.",
+        "Whether .spo is a direct ClassSerializer stream, a database record container, or a wrapper around both.",
+        "Whether the COM suffix is an outer record marker or only class metadata."
+      ]
+    },
+    "prop": {
+      "status": "NAME_ONLY_FOR_PERSISTENCE_PASS",
+      "confirmed": [
+        "The binary contains .prop filename templates and property-style path generation.",
+        "PropertyList and Property stream methods exist in the broader serializer subsystem."
+      ],
+      "unconfirmed": [
+        "A direct .prop write/read call from the recovered .spo save body.",
+        "The relationship between .prop records and the .spo database stream.",
+        "A direct outer .prop envelope in this save path."
+      ]
+    },
+    "database": {
+      "status": "CONFIRMED_ABSTRACTION",
+      "confirmed": [
+        "Write/read database and stream contexts are constructed and closed around ClassSerializer operations.",
+        "The same abstraction is used by the main save candidate and the stars.db candidate."
+      ],
+      "unconfirmed": [
+        "Concrete database record header/index layout.",
+        "Whether the stream is compressed, checksummed, or wrapped by a higher-level container."
+      ]
+    },
+    "com": {
+      "status": "TYPE_METADATA_CONFIRMED_ENVELOPE_NOT_CONFIRMED",
+      "confirmed": [
+        "SP_Simulator/cSavedGameHeader/COM and SP_Simulator/CellSaveGame/COM are passed as allocation/class-name strings.",
+        "ClassSerializer receives class IDs and descriptor/table addresses separately."
+      ],
+      "unconfirmed": [
+        "A standalone COM byte header.",
+        "The complete COM object table or field schema.",
+        "Any outer COM record envelope."
+      ]
+    },
+    "crc": {
+      "status": "NOT_CONFIRMED_FOR_SAVE",
+      "confirmed": [
+        "header crc mismatch and CRC error strings are referenced by generic compression/deflate code at 0x00868E90 and 0x008732D0."
+      ],
+      "unconfirmed": [
+        "A save-file CRC field, algorithm, placement, or coverage.",
+        "A save-file compression wrapper.",
+        "A call edge from the recovered save/load bodies into those generic routines."
+      ]
+    }
+  },
+  "save_load_operations": {
+    "save_candidate": {
+      "address": "0x00B28EC0",
+      "status": "STRONG_OPERATION_CANDIDATE_MANAGER_MEMBERSHIP_UNCONFIRMED",
+      "confirmed": [
+        "Accepts a save path and a second mode/snapshot argument through a RET 0x8 boundary.",
+        "Builds a header-shaped object with adjacent values 3 and 0x25, a nine-word timestamp, mode, snapshot state, and a three-word current-planet-like value.",
+        "Builds a .tmp path, opens a write database context, serializes the header, dispatches service operations, conditionally serializes Cell mode state, closes the context, and invokes replacement helper 0x006891F0.",
+        "Branches to stars.db writing through 0x00BB4BA0 or 0x00BB66F0."
+      ],
+      "unconfirmed": [
+        "Explicit cGamePersistenceManager this-pointer binding or vtable membership.",
+        "A distinct named SaveGame member body.",
+        "The exact outer record bytes and cross-artifact commit order."
+      ]
+    },
+    "load_candidate": {
+      "address": "0x00B279E0",
+      "status": "STRONG_OPERATION_CANDIDATE_MANAGER_MEMBERSHIP_UNCONFIRMED",
+      "confirmed": [
+        "Calls 0x00B275A0 as a preliminary file/header probe.",
+        "Builds a read database context, initializes a header ClassSerializer with descriptor 0x01568B08 and class ID 0x01A80D26, reads the header, combines read values into a mode/version value, and dispatches service operations.",
+        "Passes the save path to a service operation and conditionally invokes Cell save-state handling for the Cell mode marker.",
+        "Closes the database context after the load path."
+      ],
+      "unconfirmed": [
+        "Explicit cGamePersistenceManager vtable binding or this-relative membership.",
+        "A direct named LoadGame member binding.",
+        "Complete load ordering and field survival for every Cell field."
+      ]
+    },
+    "header_probe_candidate": {
+      "address": "0x00B275A0",
+      "status": "HEADER_FILE_PROBE_OR_VALIDATION_CANDIDATE",
+      "confirmed": [
+        "Builds a path, performs a file operation, opens a read database context on the nonzero branch, reads a cSavedGameHeader-like class object through ClassSerializer, closes the context, and compares consumed/available state with 0x20."
+      ],
+      "unconfirmed": [
+        "The intended operation name.",
+        "Whether the 0x20 comparison is a complete validity contract."
+      ]
+    },
+    "manager_membership": "INFERRED_NOT_CONFIRMED",
+    "manager_boundary_note": "The imported cGamePersistenceManager vtable and Get stub are confirmed, but a concrete manager instance and binding of 0x00B28EC0/0x00B279E0 to named manager members were not recovered."
+  },
+  "reference_restoration_assessment": {
+    "confirmed": [
+      "Identity lookup/allocation path at 0x00695140, including a 0x74-byte association/object record when absent.",
+      "Manager-owned vector associations and back-reference vectors.",
+      "ClassSerializer attribute ID resolution before read callbacks at 0x00693E10.",
+      "Deferred callback/object dispatch through 0x00695B40 and 0x00695770."
+    ],
+    "supported_architecture": "Stable-ID and deferred-association restoration is supported; host-pointer persistence is rejected as an architecture assumption.",
+    "unconfirmed": [
+      "Exact object-table record size and order.",
+      "Whether IDs are global, class-local, or table-local in every context.",
+      "Duplicate, missing, and cyclic reference behavior.",
+      "Which Cell fields use object references versus primitive values."
+    ]
+  },
+  "cell_serializer_assessment": {
+    "object": "0xEC object constructed by 0x00E61550 and named CellSaveGame/COM by the separate factory body at 0x00E61A50.",
+    "vtable_data": ["0x01485598", "0x014188C0"],
+    "vtable_slots": {
+      "write_slot": "0x00E51300",
+      "read_slot": "0x00E51370",
+      "supporting_slots": ["0x00C6A960", "0x007B86E0", "0x00630030", "0x00E5CAC0", "0x00B1FBF0", "0x00B7D400", "0x00E5CAD0"]
+    },
+    "emission": "Both slots initialize ClassSerializer with class ID 0x01A80D26 and table/descriptor address 0x015A7E38, then call the common writer/reader. Nearby 0x00E51250 uses 0x015A7D48 and iterates six serializer emissions.",
+    "confirmed": "0xEC allocation, vtable pair, class name, write/read slot dispatch, class ID, descriptor address, and common writer/reader calls.",
+    "unconfirmed": "Runtime-populated descriptor contents, exact Cell field IDs, names, offsets, and emission order; static bytes at 0x015A7E38 are zero in the image."
+  },
+  "transaction_assessment": {
+    "confirmed_lifecycle": [
+      "Temporary path construction with .tmp in the primary save candidate.",
+      "Serializer/database context close before replacement.",
+      "Old-path construction and target/temp move or copy through 0x006891F0.",
+      "Independent stars.db.tmp to stars.db replacement through 0x00BB4BA0/0x00BB66F0.",
+      "Recovery marker paths including old/complete, old/valid, dbreadinitiated, dbreadcompleted, and valid.",
+      "Recovery enumeration/checks for *.spo, planetRecords.pkp, planetscripts.pld, stars.db, and GGEUserData.dat."
+    ],
+    "not_proven": [
+      "Atomic replacement across .spo and stars.db or all related artifacts.",
+      "A journal or manifest covering all artifacts.",
+      "Rollback after a serializer callback failure.",
+      "Crash behavior at each move/remove boundary.",
+      "Whether every .spo variant uses the same lifecycle."
+    ],
+    "failure_observation": "ClassSerializer reader and callback paths short-circuit on class/attribute/callback failure. The primary save candidate exposes no general rollback state machine; the defensible guarantee is bounded replacement and marker-based recovery, not universal transactionality."
+  },
+  "parallel_evidence_streams": {
+    "subagent_interface": "No subagent interface was available in this session; independent evidence streams were queried in parallel where independent.",
+    "streams": [
+      {
+        "id": "S1",
+        "name": "direct Ghidra binary/static",
+        "independence": "Direct read-only disassembly, decompilation, xrefs, vtable data, and structure layouts against SporeApp.exe.",
+        "scope": "Exact addresses, field accesses, call order, stream helper behavior, and object ownership."
+      },
+      {
+        "id": "S2",
+        "name": "SDK/community declarations",
+        "independence": "Spore-ModAPI headers and serialization declarations; reference semantics and declared layouts only.",
+        "scope": "Names, interface slots, field declarations, serializer architecture, and version surfaces."
+      },
+      {
+        "id": "S3",
+        "name": "committed historical research",
+        "independence": "Existing project dossiers, state-machine records, data-model reports, and conflict records; not counted as independent when they repeat S1/S2.",
+        "scope": "Prior bounded conclusions, lifecycle boundaries, negative runtime evidence, and unresolved alternatives."
+      },
+      {
+        "id": "S4",
+        "name": "historical runtime/community evidence",
+        "independence": "Committed original-process attempt records and their limitations; no new runtime run was needed for the architecture decision.",
+        "scope": "Runtime reachability and absence of a positive save/load oracle."
+      }
+    ],
+    "assumption_repeating_evidence": [
+      {
+        "claim": "ClassSerializer has an attribute table and binary callbacks.",
+        "sources": ["S1", "S2", "S3"],
+        "independent": false,
+        "reason": "S3 repeats earlier S1/S2 evidence; it adds provenance and scope limits, not a new binary observation."
+      },
+      {
+        "claim": "cCellSerializableData is a persistence candidate.",
+        "sources": ["S1", "S2", "S3"],
+        "independent": false,
+        "reason": "The historical synthesis repeats the same cCellGame+0x5190 ownership and interface evidence."
+      },
+      {
+        "claim": "cGamePersistenceManager has a LoadGame operation.",
+        "sources": ["S2", "S3"],
+        "independent": false,
+        "reason": "Both are declaration/synthesis evidence; no concrete LoadGame body was recovered."
+      }
+    ]
+  },
+  "adversarial_steps": [
+    {
+      "step": 1,
+      "name": "authority and mutation firewall",
+      "question": "Could imported names, decompiler output, or project state be mistaken for original behavior?",
+      "prediction": "Direct binary access and call shape outrank SDK names; no Ghidra mutation or filesystem/runtime access is needed to answer the architecture question.",
+      "method": "Queried only explicit program SporeApp.exe with read-only decompile, disassemble, xref, vtable, and structure operations; read historical artifacts and SDK declarations separately.",
+      "result": "No mutation or runtime execution was performed. Static and semantic certainty are separated below.",
+      "separator_result": "The distinction between direct binary evidence and declaration-only evidence is the smallest authority separator; it was performed."
+    },
+    {
+      "step": 2,
+      "name": "address and body disambiguation",
+      "question": "Do the listed SDK/anchor addresses name the claimed methods?",
+      "prediction": "If 0x00692880/0x006928C0 and 0x00693DD0/0x00693DE0 are aliases, the same containing body will be returned; actual Write/Read should show stream operations and attribute callbacks.",
+      "method": "Compared get_function_by_address, callers, disassembly, and decompilation for both address pairs; traced 0x00692900, 0x00693E10, 0x00695B40, cSavedGameHeader wrappers, and cCell wrappers.",
+      "result": "0x00692880/0x006928C0 resolve to the same setup/constructor body; 0x00693DD0/0x00693DE0 resolve to the same teardown body. Actual attribute Write/Read are 0x00692900 and 0x00693E10.",
+      "separator_result": "The smallest separator is exact entry-point identity plus one stream/callback operation; it was performed and rejects the address-name conflation."
+    },
+    {
+      "step": 3,
+      "name": "layout versus semantic attack",
+      "question": "Does a field offset prove what the field means or survives a save?",
+      "prediction": "A runtime offset can be certain while its label, persistence role, and wire meaning remain unknown; imported 4-byte Property metadata must not override direct +0x10/+0x12 accesses.",
+      "method": "Compared direct Property getter/setter/copy code, PropertyList map stride, SDK declarations, and imported structure layouts.",
+      "result": "The 20-byte inline Property representation is strongly confirmed as a runtime layout; exact type semantics and all payload encodings remain bounded. cGamePersistenceManager's 0x4c SDK view is demonstrably incomplete relative to direct this-relative accesses.",
+      "separator_result": "The smallest separator is a direct field access beyond the imported structure; it was performed at 0x006A3890, 0x00693390, 0x00B0C190, and 0x00B0C520."
+    },
+    {
+      "step": 4,
+      "name": "writer/reader symmetry attack",
+      "question": "Do the write and read paths have matching local framing and failure behavior?",
+      "prediction": "A symmetric codec writes/reads the same type/flags/payload sequence; failure should short-circuit rather than silently continue.",
+      "method": "Compared 0x006A1540 with 0x006A2F60, 0x00693390 with 0x00694440, 0x00692900 with 0x00693E10, and cCell methods at 0x00E51300/0x00E51370.",
+      "result": "PropertyList count/ID/typed-value symmetry, Property type/flags symmetry, array count/size symmetry, and ClassSerializer class/attribute checks are supported. cSavedGameHeader uses matching ClassSerializer wrappers. Exact object envelope labels remain bounded.",
+      "separator_result": "The smallest separator is one matching field order observed on both sides; it was performed for all four codec pairs."
+    },
+    {
+      "step": 5,
+      "name": "framing, envelope, and nesting attack",
+      "question": "Is a structure itself the file record, or is it wrapped by a serializer envelope?",
+      "prediction": "A cSavedGameHeader allocation of 0x68 and a cCellSerializableData allocation of 0xec should not be copied raw if their concrete methods construct ClassSerializer state and call attribute dispatchers.",
+      "method": "Traced cSavedGameHeader vtable/factory at 0x00B274E0, wrappers at 0x00B26800/0x00B26840, cCell vtable construction at 0x00E61550, and nested serializer calls at 0x00E51300/0x00E51370.",
+      "result": "Both are ISimulatorSerializable/ClassSerializer-backed objects, not proven raw fixed-size payloads. Nested serializable objects use class/attribute callbacks and identity tables; raw host pointers are not an allowed persistence representation.",
+      "separator_result": "The smallest separator is a concrete wrapper-to-ClassSerializer call; it was performed for both header and Cell state."
+    },
+    {
+      "step": 6,
+      "name": "reference and identity attack",
+      "question": "Are pointers, parent lists, object references, and class identities being conflated with host addresses?",
+      "prediction": "PropertyList parent installation should use a manager lookup and three words rather than recursively copying parent pointers; ClassSerializer read should resolve stored IDs before callbacks; mode handoff should copy an in-memory object rather than serialize a pointer.",
+      "method": "Inspected 0x006A2F60, 0x00693E10, 0x00695140, 0x00695B40, ResourceKey declarations, and 0x00E627A0/0x00E63D10.",
+      "result": "Property parent data is a three-word external reference branch with unresolved field order; ClassSerializer resolves class/attribute identity before callbacks; Cell handoff is an in-memory object replacement/copy. Exact ResourceKey wire order and pointer-table bytes remain unresolved.",
+      "separator_result": "The smallest separator is a manager/identity lookup versus a direct pointer write; it was performed at 0x006A2F60 and 0x00693E10."
+    },
+    {
+      "step": 7,
+      "name": "version and migration attack",
+      "question": "Are version fields, compatibility gates, and migration semantics being inferred from names alone?",
+      "prediction": "The save path should materialize major/minor header values and the reader should consume them, but a complete migration matrix requires a concrete branch or runtime fixture.",
+      "method": "Inspected cSavedGameHeader layout/vtable, save orchestration at 0x00B28EC0 and 0x00BB4BA0, serializer version interfaces, and historical version reports.",
+      "result": "Header version carriers and a writer value consistent with major 3/minor 0x25 are supported. Version callbacks and class-object load/save surfaces exist, but no complete downgrade/upgrade/migration policy is proven.",
+      "separator_result": "The smallest separator is an actual version-bearing field/store or branch; it was performed for cSavedGameHeader and serializer version surfaces, not for an assumed migration matrix."
+    },
+    {
+      "step": 8,
+      "name": "failure, atomicity, and recovery attack",
+      "question": "Does a successful-looking path imply rollback, journaling, or crash atomicity?",
+      "prediction": "Codec callbacks short-circuit on failure; file paths use temporary/backup replacement, but that is weaker than a single atomic transaction across all save artifacts.",
+      "method": "Inspected Property/ClassSerializer false paths, 0x00693D60/0x00693CD0 stream setup, 0x00693900 teardown, 0x006891F0 replacement, and save writers 0x00B28EC0/0x00BB4BA0.",
+      "result": "No codec rollback is present in the local read/write paths. Temp/.old/rename handling is directly visible for identified save artifacts; complete .spo transaction atomicity, crash recovery, and cross-file consistency are not proven.",
+      "separator_result": "The smallest separator is a post-close temp/backup replacement call; it was performed. It supports replacement, not universal crash atomicity."
+    },
+    {
+      "step": 9,
+      "name": "architecture decision and runtime narrowing",
+      "question": "Can the minimum OpenSpore persistence architecture be decided without another runtime run?",
+      "prediction": "The codec, class envelope, stream lifecycle, header, and Cell handoff boundaries are already sufficient to choose interfaces; runtime is needed only for exact wire bytes, migration, and save/load ordering.",
+      "method": "Synthesized direct static evidence, SDK declarations, historical boundaries, and the existing negative runtime record; no new runtime run was launched.",
+      "result": "Architecture is decided at the minimum-semantics level. Runtime is required for atomicity/failure behavior, migration validation, and field-survival/round-trip evidence; it is not required merely to decide that the outer wire bytes remain open. Wire-byte closure is separated from runtime-dependent semantic closure below.",
+      "separator_result": "The smallest architecture separator is stream/header/serializer ownership versus live mode state; it was performed statically. Runtime was not narrowed further."
+    }
+  ],
+  "hypotheses": [
+    {
+      "id": "H01",
+      "subject": "Property runtime layout",
+      "claim": "The runtime Property is an inline 0x14-byte value carrier with flags at +0x10 and type at +0x12; the imported 4-byte Ghidra structure is a narrow tail/metadata view.",
+      "predictions": [
+        "A Property getter or setter must access the value before the +0x10/+0x12 tail.",
+        "A PropertyList map entry must have a 0x18-byte stride with a four-byte ID followed by the 0x14-byte Property.",
+        "A type/flags-aware wire codec must not use the 4-byte structure as the entry size."
+      ],
+      "evidence_for": [
+        {"evidence_id": "E01", "observation": "0x00422EB0 accesses the tail metadata and copies the scalar into the value body before setting Int32 type/flags."},
+        {"evidence_id": "E02", "observation": "0x006A3890 reads type at +0x12 and tests flags at +0x10, including pointer/array flag behavior."},
+        {"evidence_id": "E03", "observation": "0x00693390 reads type at +0x12 and flags at +0x10 before dispatching payload."},
+        {"evidence_id": "E05", "observation": "0x006A1540 writes each 0x18-byte map element and passes element+4 to the typed Property writer."},
+        {"evidence_id": "E19", "observation": "SDK Property declares a 0x14-byte value-plus-flags/type layout."}
+      ],
+      "evidence_against": [
+        {"evidence_id": "E20", "observation": "The imported Ghidra Property structure is 4 bytes with flags/type at +0/+2; this is retained as a conflicting representation, not silently discarded."},
+        {"evidence_id": "E21", "observation": "Not every type-specific payload and unknown type branch is directly decoded in this pass."}
+      ],
+      "independence": "Direct getter, setter, typed writer, and map-stride accesses are separate binary paths; SDK support is corroborating but not independent of the imported layout.",
+      "repetition": "The same +0x10/+0x12 pattern recurs in setter, getter, writer, and reader; recurrence is direct control-flow evidence, not a runtime round trip.",
+      "separator_result": "Direct +0x10/+0x12 accesses and 0x18 map stride reject the 4-byte entry model for runtime object layout.",
+      "resolution_status": "PREFERRED_CLAIM_WITH_LIMIT",
+      "architecture_dependency": "Freeze the 0x14 runtime value carrier and 0x18 map element; defer full payload semantics."
+    },
+    {
+      "id": "H02",
+      "subject": "PropertyList stream framing",
+      "claim": "PropertyList Read/Write use a signed 32-bit count followed by local uint32 property IDs and typed Property values; a negative count selects a three-word parent-reference branch before local entries are read.",
+      "predictions": [
+        "Write must emit count before each ID/value pair.",
+        "Read must resize the local map from the absolute count and stop on the first ID or Property failure.",
+        "The negative branch must install a parent through a manager virtual rather than recursively copy the parent map."
+      ],
+      "evidence_for": [
+        {"evidence_id": "E05", "observation": "0x006A1540 computes local count from the 0x18-stride map, writes count, then writes each ID and calls 0x00693390 at element+4."},
+        {"evidence_id": "E06", "observation": "0x006A2F60 reads one count, branches negative, reads three 32-bit words, calls the manager virtual at +0x2c, then resizes and reads entries."},
+        {"evidence_id": "E07", "observation": "The 32-bit writer 0x0093AA70 and reader 0x0093A780 byte-swap in the mode used by PropertyList; the separate 16-bit writer/reader pair is 0x0093A9D0/0x0093A700."}
+      ],
+      "evidence_against": [
+        {"evidence_id": "E20", "observation": "The outer PROP record envelope and compression are not covered by these local methods."},
+        {"evidence_id": "E21", "observation": "The semantic order and use of all three parent words remain unresolved."}
+      ],
+      "independence": "Write and Read are independent direct bodies with matching local framing; the parent manager call is a separate identity-resolution path.",
+      "repetition": "The count-first shape is repeated in both methods and in the typed entry loop; it is not inferred from the SDK comment.",
+      "separator_result": "Direct count/ID/value and negative-parent control flow supports the bounded local framing claim; it does not close the outer envelope.",
+      "resolution_status": "SUPPORTED_AS_BINARY_CODEC",
+      "architecture_dependency": "Persist local entries and references, not the parent pointer or operation counter."
+    },
+    {
+      "id": "H03",
+      "subject": "Property typed-value wire shape",
+      "claim": "The typed Property wire payload begins with 16-bit type then 16-bit flags; array/pointer flags are followed by 32-bit element count and element size before typed elements, while the default branch uses a fixed 0x10-byte raw payload.",
+      "predictions": [
+        "Writer and reader must use the same type/flags order.",
+        "Array/pointer flags must gate a count/size prefix and element loop.",
+        "The normal mode must byte-swap 16-bit and 32-bit integer words."
+      ],
+      "evidence_for": [
+        {"evidence_id": "E03", "observation": "0x00693390 writes type at +0x12, then flags at +0x10, then branches on flags 0x30/0x40 and writes count/size before elements."},
+        {"evidence_id": "E04", "observation": "0x00694440 reads type then flags, allocates count*size storage, and dispatches each element."},
+        {"evidence_id": "E07", "observation": "0x0093A9D0/0x0093A700 are the 16-bit writer/reader pair; 0x0093AA70/0x0093A780 are the 32-bit writer/reader pair. Both byte-swap when mode 0 is used."},
+        {"evidence_id": "E19", "observation": "SDK SerializationTypes declares typed primitive and container codecs, consistent with the bounded branches."}
+      ],
+      "evidence_against": [
+        {"evidence_id": "E21", "observation": "Unknown/default types, string edge cases, and all pointer/object semantics are not closed."},
+        {"evidence_id": "E20", "observation": "The 4-byte imported Property layout does not describe the wire payload safely."}
+      ],
+      "independence": "The writer, reader, and primitive helpers are separate direct bodies; SDK declarations corroborate types but do not prove original wire bytes.",
+      "repetition": "Type/flags order recurs in both codec directions; count/size ordering is independently visible in writer and reader branches.",
+      "separator_result": "The smallest separator is the type/flags read/write sequence plus array count/size branch; it was performed.",
+      "resolution_status": "SUPPORTED_AS_PARTIAL_WIRE_CODEC",
+      "architecture_dependency": "Freeze only the proven envelope and dispatch shape; keep unknown type payloads behind adapters."
+    },
+    {
+      "id": "H04",
+      "subject": "ClassSerializer address identity",
+      "claim": "0x00692880/0x006928C0 are the same ClassSerializer setup/constructor body, 0x00693DD0/0x00693DE0 are the same teardown body, and the actual attribute Write/Read bodies are 0x00692900 and 0x00693E10.",
+      "predictions": [
+        "A setup body should initialize pObject, pAttributes, counts, class ID, and up to 128 attribute pointers.",
+        "A teardown body should release attribute storage and not read/write a stream.",
+        "A true Write/Read body should call stream primitives and attribute callbacks."
+      ],
+      "evidence_for": [
+        {"evidence_id": "E08", "observation": "Ghidra resolves both 0x00692880 and 0x006928C0 to FUN_00692880; the body initializes ClassSerializer fields and copies attribute metadata."},
+        {"evidence_id": "E08", "observation": "Ghidra resolves both 0x00693DD0 and 0x00693DE0 to FUN_00693DD0; the body releases two attribute arrays."},
+        {"evidence_id": "E09", "observation": "0x00692900 writes class/stream framing, invokes attribute write callbacks, records sizes, and finalizes through stream status."},
+        {"evidence_id": "E10", "observation": "0x00693E10 reads class/stream framing, validates class ID/count, resolves attribute IDs, invokes read callbacks, and returns false on mismatch/failure."}
+      ],
+      "evidence_against": [
+        {"evidence_id": "E19", "observation": "SDK XML/legacy anchors label the interior addresses as Write/Read; those labels conflict with the direct body identity and are retained as historical alternatives."},
+        {"evidence_id": "E20", "observation": "The old decomp-gap ledger recorded calls at 0x00692F9F and 0x00693D033 but did not identify the correct containing bodies."}
+      ],
+      "independence": "Exact function-boundary queries, direct caller edges, and disassembly are independent of SDK labels.",
+      "repetition": "The same alias resolution occurs independently for both address pairs; the actual writer/reader are then confirmed by stream/callback operations.",
+      "separator_result": "The smallest separator is whether the body touches stream/attribute callbacks; setup/teardown do not, while 0x00692900/0x00693E10 do.",
+      "resolution_status": "RESOLVED_FOR_ADDRESS_BODY_CONFLICT",
+      "architecture_dependency": "Use 0x00692900/0x00693E10 as the concrete ClassSerializer codec boundary; retain setup/teardown aliases as non-codec operations."
+    },
+    {
+      "id": "H05",
+      "subject": "ClassSerializer object envelope and nesting",
+      "claim": "ClassSerializer uses a class ID and an attribute-descriptor pass before/around callback payloads; reads validate class identity and resolve attribute IDs before invoking callbacks, supporting nested serializable objects and object-reference indirection.",
+      "predictions": [
+        "Write should reserve or emit descriptor metadata before callback payloads and record per-attribute sizes.",
+        "Read should reject a class ID mismatch and resolve each stored attribute ID through the descriptor table.",
+        "Nested objects should be handled by serializer callbacks or object identity helpers, not raw host pointer writes."
+      ],
+      "evidence_for": [
+        {"evidence_id": "E09", "observation": "0x00692900 performs a first framing/metadata pass, invokes attribute write callbacks, records sizes, then emits descriptor-sized tables and final stream status."},
+        {"evidence_id": "E10", "observation": "0x00693E10 reads framing, compares the stored class ID with +0xA08, reads descriptor pairs, resolves IDs through 0x00E0E9F0, and invokes read callbacks."},
+        {"evidence_id": "E11", "observation": "0x00695B40 constructs a ClassSerializer, calls 0x00695770 to dispatch attributes, and uses object/list helpers for identity bookkeeping."},
+        {"evidence_id": "E12", "observation": "The SDK declares object-pointer operations, class-object load/save, and nested ISimulatorSerializable interfaces."}
+      ],
+      "evidence_against": [
+        {"evidence_id": "E21", "observation": "The exact outer database/COM envelope, CRC bytes, pointer table encoding, and all class IDs are not directly recovered."},
+        {"evidence_id": "E20", "observation": "The prior synthesis explicitly retained the object-pointer table and wire order as unknown."}
+      ],
+      "independence": "Direct writer/reader bodies and the object-dispatch helper are separate paths; SDK interface declarations are supporting architecture evidence.",
+      "repetition": "Class ID and attribute identity checks occur on both write metadata and read resolution paths; the same helper is reused for nested objects.",
+      "separator_result": "The smallest separator is class-ID/attribute-ID resolution before callback invocation; it was performed.",
+      "resolution_status": "SUPPORTED_AS_ARCHITECTURE_WITH_WIRE_LIMITS",
+      "architecture_dependency": "Implement a class/attribute registry, nested object references, and deferred pointer tables; do not serialize host pointers."
+    },
+    {
+      "id": "H06",
+      "subject": "cSavedGameHeader representation",
+      "claim": "cSavedGameHeader is a 0x68-byte ISimulatorSerializable wrapper whose concrete Write/Read methods use ClassSerializer, not a raw 0x68-byte file block.",
+      "predictions": [
+        "A constructor/factory should allocate 0x68 and initialize a map/header state.",
+        "The concrete vtable should route Write/Read to 0x00692900/0x00693E10 through 0x00B26800/0x00B26840.",
+        "Header fields should be callback-serialized rather than copied as one struct."
+      ],
+      "evidence_for": [
+        {"evidence_id": "E17", "observation": "0x00B274E0 allocates 0x68, installs cSavedGameHeader vtables, and initializes the object-count map."},
+        {"evidence_id": "E17", "observation": "0x00B26800 constructs ClassSerializer state and calls 0x00692900; 0x00B26840 constructs the same state and calls 0x00693E10."},
+        {"evidence_id": "E17", "observation": "The vtable includes the cSavedGameHeader name/type surface and the header object is referenced by SP_Simulator/cSavedGameHeader/COM."},
+        {"evidence_id": "E19", "observation": "SDK cSavedGameHeader declares major/minor version, object-count map, timestamp, mode, snapshot, and current planet key at the expected offsets."}
+      ],
+      "evidence_against": [
+        {"evidence_id": "E20", "observation": "No raw header bytes or complete callback attribute table are available; exact field emission order is not proven."},
+        {"evidence_id": "E21", "observation": "The actual file placement of the header inside the outer .spo envelope remains unresolved."}
+      ],
+      "independence": "Direct allocation/vtable/call-chain evidence is independent of SDK field declarations; SDK confirms names and offsets only.",
+      "repetition": "Write and Read wrappers independently call the two ClassSerializer bodies with the same header attribute descriptor.",
+      "separator_result": "The smallest separator is the concrete header Write/Read wrapper's ClassSerializer call; it was performed.",
+      "resolution_status": "SUPPORTED_AS_CLASS_SERIALIZER_HEADER",
+      "architecture_dependency": "Use a versioned header object and callback/schema registry, not a raw struct writer."
+    },
+    {
+      "id": "H07",
+      "subject": "cCellSerializableData ownership and mode handoff",
+      "claim": "cCellSerializableData is a 0xec ISimulatorSerializable state object held at cCellGame+0x5190; mode-transition paths allocate/copy/re-adopt it in memory, which is a persistence candidate but not evidence of automatic disk save.",
+      "predictions": [
+        "The constructor should allocate exactly 0xec and install serializable/refcount vtables.",
+        "Write/Read methods should call ClassSerializer with the Cell class descriptor and a class ID.",
+        "Mode handoff should copy fields and publish/adopt a pointer without an I/O stream call."
+      ],
+      "evidence_for": [
+        {"evidence_id": "E12", "observation": "0x00E61550 allocates 0xec, installs cCellSerializableData vtables, initializes fields, missions, and flags."},
+        {"evidence_id": "E13", "observation": "0x00E51300/0x00E51370 contain concrete write/read sequences: a 32-bit stream word followed by ClassSerializer setup and 0x00692900/0x00693E10."},
+        {"evidence_id": "E14", "observation": "0x00E627A0 copies the serializable state fields and 0x00E63D10 replaces the global handoff object without a stream call."},
+        {"evidence_id": "E15", "observation": "0x00E80BA0 adopts the global serializable-data object at cCellGame+0x5190, marks the handoff, and clears the global slot."},
+        {"evidence_id": "E19", "observation": "The SDK declares cCellSerializableData as ISimulatorSerializable with progression, mission, key, counter, and flag fields."}
+      ],
+      "evidence_against": [
+        {"evidence_id": "E20", "observation": "Historical research retained exact per-field write coverage, defaults, and cross-stage handoff as unknown."},
+        {"evidence_id": "E21", "observation": "No positive original-process save/load trace or captured .spo/.prop round trip exists."}
+      ],
+      "independence": "Constructor, concrete write/read disassembly, copy helper, and CellGame adoption are distinct direct paths; historical reports repeat but do not add independence.",
+      "repetition": "The same 0xec allocation and +0x5190 ownership recur in constructor, initialization, and historical structure evidence; write/read methods independently establish codec eligibility.",
+      "separator_result": "The smallest separator is an I/O stream call versus an in-memory pointer/copy path; it was performed. The handoff is transient transfer, not disk persistence.",
+      "resolution_status": "SUPPORTED_AS_PERSISTENCE_CANDIDATE",
+      "architecture_dependency": "Persist an explicit Cell state DTO through the object serializer; keep live pools, queries, GFX, UI, and display state transient."
+    },
+    {
+      "id": "H08",
+      "subject": "cGamePersistenceManager size and role",
+      "claim": "cGamePersistenceManager::Get returns a runtime service pointer; 0x00B0C190 and 0x00B0C520 are this-relative service lifecycle/mode methods on a much larger object than the SDK 0x4c view, not standalone save codecs.",
+      "predictions": [
+        "Callers should load the Get result into ECX before calling 0x00B0C190/0x00B0C520.",
+        "The methods should access fields beyond the SDK structure if the object is larger.",
+        "Their bodies should orchestrate mode/reset/service state rather than directly encode Property or ClassSerializer bytes."
+      ],
+      "evidence_for": [
+        {"evidence_id": "E16", "observation": "0x00B3D440 returns DAT_0167EB34; callers at 0x00B32B20/0x00B32CE0/0x00B32E80/0x00B33030/0x00B33130/0x00B33540 move the result into ECX before calling 0x00B0C190 or 0x00B0C520."},
+        {"evidence_id": "E16", "observation": "0x00B0C190 accesses this-relative fields at +0x1B8F2C, +0x1BA18C, +0x1E5F0 and performs subsystem cleanup/reset; 0x00B0C520 stores a mode/event value at +0x1B8F2C and conditionally invokes 0x00B0C190."},
+        {"evidence_id": "E20", "observation": "The imported 0x4c structure and SDK declaration are retained as a narrow/base view rather than the complete runtime object."}
+      ],
+      "evidence_against": [
+        {"evidence_id": "E19", "observation": "SDK labels cGamePersistenceManager as a 0x4c class and declares LoadGame at vtable +0x10; the declaration does not explain the direct large-object accesses."},
+        {"evidence_id": "E21", "observation": "No concrete SaveGame/LoadGame body or vtable dispatch repair was recovered in this pass."}
+      ],
+      "independence": "Get-to-call register flow and direct large this-relative offsets are independent of the SDK size declaration; the SDK is a conflicting reference.",
+      "repetition": "The Get-result-to-ECX pattern repeats across multiple callers; the large offsets repeat in both service methods.",
+      "separator_result": "The smallest separator is the direct caller register transfer and field offset beyond 0x4c; it was performed.",
+      "resolution_status": "RESOLVED_AS_RUNTIME_SERVICE_WITH_INCOMPLETE_DECLARATION",
+      "architecture_dependency": "Model persistence as a coordinator/service with a separate schema/stream layer; do not use the SDK 0x4c layout as the runtime object size."
+    },
+    {
+      "id": "H09",
+      "subject": "transaction framing and atomicity",
+      "claim": "The observed save path writes temporary files, closes serializer streams, and uses backup/old plus replacement; this supports a bounded replacement transaction for identified artifacts, not universal crash atomicity.",
+      "predictions": [
+        "A save writer should create a .tmp path and close the serializer before replacement.",
+        "Failure in a Property/ClassSerializer callback should short-circuit and return false rather than roll back prior writes.",
+        "A complete save may involve multiple files, so one replacement helper cannot prove cross-file atomicity."
+      ],
+      "evidence_for": [
+        {"evidence_id": "E18", "observation": "0x00B28EC0 constructs a temporary save path, initializes a serializer context, writes cSavedGameHeader, closes at 0x00693900, and invokes 0x006891F0 for replacement."},
+        {"evidence_id": "E18", "observation": "0x00BB4BA0 writes stars.db.tmp, serializes header/class records, closes, and calls 0x006891F0 with stars.db.tmp and stars.db."},
+        {"evidence_id": "E18", "observation": "0x00693D60/0x00693CD0 initialize write/read database contexts; 0x00693900 closes active streams and releases context objects."},
+        {"evidence_id": "E18", "observation": "0x006891F0 constructs .old, removes/moves existing paths, installs the new path, and removes the old backup path."}
+      ],
+      "evidence_against": [
+        {"evidence_id": "E20", "observation": "The historical report explicitly limits stars.db replacement from proving complete .spo atomicity."},
+        {"evidence_id": "E21", "observation": "No crash injection, interrupted write, or recovery trace is available."}
+      ],
+      "independence": "Direct file-lifecycle code and direct codec failure paths are separate; historical state-machine claims are treated as repeating evidence.",
+      "repetition": "The temp/close/replace sequence appears in both general save orchestration and stars.db writer; this repetition is direct code evidence for the bounded pattern.",
+      "separator_result": "The smallest separator is a post-close replacement call; it was performed. Universal atomicity remains unresolved.",
+      "resolution_status": "SUPPORTED_FOR_BOUNDED_REPLACEMENT_NOT_FULL_ATOMICITY",
+      "architecture_dependency": "Use a temp-file commit boundary, explicit close/check, journal or manifest for multi-artifact saves, and recovery tests before claiming crash atomicity."
+    },
+    {
+      "id": "H10",
+      "subject": "versioning and migration",
+      "claim": "Version carriers are explicit, including cSavedGameHeader major/minor and serializer version operations; the observed writer materializes a value consistent with major 3/minor 0x25, but migration policy is not recovered.",
+      "predictions": [
+        "A save writer should populate version fields before serializing the header.",
+        "A reader should consume the header version through the class/object serializer and use version-gated class loading.",
+        "A complete migration claim requires explicit branches/defaults or a runtime old-save fixture."
+      ],
+      "evidence_for": [
+        {"evidence_id": "E17", "observation": "cSavedGameHeader layout has mFileVersionMajor at +0x0c and mFileVersionMinor at +0x10."},
+        {"evidence_id": "E18", "observation": "0x00B28EC0 initializes adjacent header words to 3 and 0x25; 0x00BB4BA0 materializes packed 0x250003 in a save path."},
+        {"evidence_id": "E19", "observation": "SDK serializer interfaces expose serialization-version get/set and class-object load/save with version parameters."}
+      ],
+      "evidence_against": [
+        {"evidence_id": "E20", "observation": "Historical research found version carriers but no compatibility matrix, downgrade policy, or migration branch."},
+        {"evidence_id": "E21", "observation": "No old save fixture or positive original load trace is available."}
+      ],
+      "independence": "Direct header stores, SDK version interfaces, and historical unresolved reports are separate evidence classes; the historical report does not independently prove the exact version semantics.",
+      "repetition": "The packed 0x250003 value and version fields recur in independent save paths, but field-name mapping remains partly declaration-derived.",
+      "separator_result": "The smallest separator is a concrete version store/read rather than a version-named structure; it was performed for the header and save writer.",
+      "resolution_status": "SUPPORTED_VERSION_CARRIERS_MIGRATION_UNKNOWN",
+      "architecture_dependency": "Add explicit schema version, unknown-field policy, migration registry, and fail-closed incompatible-version behavior to OpenSpore."
+    },
+    {
+      "id": "H11",
+      "subject": "outer PROP/.spo envelope",
+      "claim": "The outer PROP/.spo container, database record envelope, CRC, and complete object pointer table are not closed by the local codecs.",
+      "predictions": [
+        "Local Property/ClassSerializer Read/Write success does not prove an outer record is valid.",
+        "A missing database/COM implementation cannot be replaced by a raw struct serializer.",
+        "A runtime or captured original file is required to close remaining bytes."
+      ],
+      "evidence_for": [
+        {"evidence_id": "E05", "observation": "PropertyList methods operate on an already-open stream and contain no outer PROP envelope."},
+        {"evidence_id": "E09", "observation": "ClassSerializer methods operate through a serializer context and do not expose the complete database record envelope."},
+        {"evidence_id": "E21", "observation": "The available runtime evidence is negative for Cell reachability and contains no save/load capture."}
+      ],
+      "evidence_against": [
+        {"evidence_id": "E19", "observation": "SDK serializer/database declarations show OpenRead/OpenWrite, class objects, and CRC-related architecture, but not original bytes."},
+        {"evidence_id": "E20", "observation": "Prior research explicitly retained .prop/.spo framing, CRC, pointer-table, and migration questions as unresolved."}
+      ],
+      "independence": "The absence of outer framing in the local bodies is independent of SDK interface declarations; the SDK adds architectural dependency but not byte proof.",
+      "repetition": "Multiple local codec and orchestration bodies stop at stream/database boundaries, consistently leaving the outer envelope open.",
+      "separator_result": "The smallest separator is an open database/stream boundary before a concrete record writer; no such concrete writer was recovered.",
+      "resolution_status": "UNRESOLVED",
+      "architecture_dependency": "Keep an explicit outer container/record adapter and do not expose guessed PROP/.spo bytes as original-compatible."
+    },
+    {
+      "id": "H12",
+      "subject": "save/load operation candidates and manager membership",
+      "claim": "0x00B28EC0 is the strongest concrete save candidate and 0x00B279E0 is the strongest concrete load candidate; both are persistence-subsystem operations, but their membership in a named cGamePersistenceManager vtable is not confirmed.",
+      "predictions": [
+        "Save should construct a header, open a write context, serialize, close, and replace a temporary path.",
+        "Load should probe/read a header through a read context and dispatch restoration operations.",
+        "A manager-vtable claim requires a concrete vtable instance or direct this-relative binding, not only adjacent persistence globals."
+      ],
+      "evidence_for": [
+        {"evidence_id": "E18", "observation": "0x00B28EC0 and 0x00BB4BA0 show concrete save-side header/stream/temp/replace mechanics."},
+        {"evidence_id": "E22", "observation": "Follow-up 06 confirms 0x00B28EC0 as the strongest save candidate and 0x00B279E0 as the strongest load candidate."},
+        {"evidence_id": "E22", "observation": "0x00B275A0 is a header/file probe candidate; 0x00B28990/0x00B294C0 are mode/save wrappers."}
+      ],
+      "evidence_against": [
+        {"evidence_id": "E19", "observation": "SDK declares LoadGame on the manager vtable, but the declaration alone does not bind either candidate."},
+        {"evidence_id": "E22", "observation": "The static manager global is zero and no concrete cGamePersistenceManager vtable instance was recovered."}
+      ],
+      "independence": "Direct save/load body behavior is independent of the SDK slot declaration; the manager-membership conclusion is deliberately unconfirmed.",
+      "repetition": "The operation candidates share the same database/header/ClassSerializer spine, but they are separate save and load bodies and are not treated as duplicate evidence.",
+      "separator_result": "The smallest separator is a concrete vtable instance or this-relative call binding; it was not available, so manager membership remains unconfirmed.",
+      "resolution_status": "STRONG_OPERATION_CANDIDATES_MANAGER_MEMBERSHIP_UNCONFIRMED",
+      "architecture_dependency": "Use the candidates as service-layer operation seams; keep ownership behind a manager interface until a vtable binding is recovered."
+    }
+  ],
+  "layout_vs_semantic_matrix": [
+    {
+      "subject": "App::Property",
+      "binary_layout": "0x14-byte runtime carrier: inline value/body at +0x00..+0x0f, flags at +0x10, type at +0x12; map entry stride 0x18 with ID at +0 and Property at +4.",
+      "binary_layout_certainty": "STRONGLY_CONFIRMED_STATIC",
+      "semantic_certainty": "Type IDs and pointer/array flags are supported; all type-specific payload and default-type meaning remain bounded.",
+      "semantic_claim": "The 4-byte imported structure is a tail/metadata view, not a safe complete runtime object.",
+      "classification": "unknown",
+      "citations": ["E01", "E02", "E03", "E05", "E19"]
+    },
+    {
+      "subject": "App::PropertyList",
+      "binary_layout": "0x38 object with local 0x18-stride vector map at +0x18, parent pointer at +0x30, operation counter at +0x34; stream count is signed 32-bit.",
+      "binary_layout_certainty": "CONFIRMED_STATIC",
+      "semantic_certainty": "Local map and parent fallback are supported; parent wire identity, recursive persistence, and operation-counter meaning are unresolved.",
+      "semantic_claim": "Only local entries are safe persistence candidates; parent pointer/counter are runtime state unless an explicit codec says otherwise.",
+      "classification": "unknown",
+      "citations": ["E05", "E06", "E07", "E20"]
+    },
+    {
+      "subject": "ClassSerializer",
+      "binary_layout": "0xA14 descriptor object: 128 attribute pointers at +0, count +0xA00, serialized count +0xA04, class ID +0xA08, object +0xA0C, attributes +0xA10.",
+      "binary_layout_certainty": "CONFIRMED_STATIC_WITH_ADDRESS_CORRECTION",
+      "semantic_certainty": "Attribute callback architecture and class/attribute identity checks are supported; exact field IDs and wire table labels remain bounded.",
+      "semantic_claim": "ClassSerializer is a runtime schema/dispatch authority, not itself a saved profile record.",
+      "classification": "runtime transient",
+      "citations": ["E08", "E09", "E10", "E11", "E19"]
+    },
+    {
+      "subject": "ISimulatorSerializable",
+      "binary_layout": "Interface slots declared for Write, Read, opaque operation, WriteToXML, and GetNounID; concrete vtable dispatch is visible for cCellSerializableData.",
+      "binary_layout_certainty": "SUPPORTED_INTERFACE",
+      "semantic_certainty": "Eligibility and nested dispatch are supported; complete subtype coverage is not.",
+      "semantic_claim": "The interface proves an object can participate in serialization, not that every field is written.",
+      "classification": "unknown",
+      "citations": ["E12", "E13", "E19"]
+    },
+    {
+      "subject": "cSavedGameHeader",
+      "binary_layout": "0x68 object; vtable/refcount then major +0x0c, minor +0x10, object-count map +0x14, timestamp +0x30, mode +0x54, snapshot +0x58, current planet key +0x5c.",
+      "binary_layout_certainty": "CONFIRMED_STATIC",
+      "semantic_certainty": "Header field roles are strongly supported; exact callback order and file placement are unresolved.",
+      "semantic_claim": "The header is ClassSerializer-backed and versioned, not a raw fixed-size block.",
+      "classification": "profile/save persistent",
+      "citations": ["E17", "E18", "E19"]
+    },
+    {
+      "subject": "cGamePersistenceManager",
+      "binary_layout": "Imported/SDK view is 0x4c, but direct this-relative accesses reach at least +0x1B8F2C, +0x1BA18C, and +0x1E5F0; 0x4c is not the complete runtime object view.",
+      "binary_layout_certainty": "INCOMPLETE_DECLARATION",
+      "semantic_certainty": "Get and service lifecycle/mode methods are supported; concrete LoadGame/SaveGame transaction body is not.",
+      "semantic_claim": "Manager state is runtime service state, not a persisted record.",
+      "classification": "runtime transient",
+      "citations": ["E16", "E19", "E20"]
+    },
+    {
+      "subject": "cCellSerializableData",
+      "binary_layout": "0xec serializable object held through cCellGame+0x5190; named field candidates include mode, player key, progression, parts, counters, game time/ID/difficulty, six missions, and flags.",
+      "binary_layout_certainty": "CONFIRMED_OBJECT_AND_OWNER; FIELD_COVERAGE_PARTIAL",
+      "semantic_certainty": "Confirmed 0xec object/layout, concrete serializer vtable/write/read eligibility, cCellGame+0x5190 ownership, and save-candidate semantics; exact per-field write coverage, field survival, and automatic mode-transition persistence are unconfirmed.",
+      "semantic_claim": "The profile/save persistent classification applies only to the confirmed 0xec CellSaveGame object as a save candidate, not to every named field or the live cCellGame state. Field emission remains a runtime/callback-coverage question.",
+      "classification": "profile/save persistent",
+      "field_emission_status": "UNCONFIRMED; do not treat the SDK-named fields as an emitted schema.",
+      "citations": ["E12", "E13", "E14", "E15", "E19", "E20", "E22"]
+    },
+    {
+      "subject": "Transaction boundary",
+      "binary_layout": "Temporary path, serializer open/close, .old backup path, replacement/removal sequence.",
+      "binary_layout_certainty": "CONFIRMED_FOR_IDENTIFIED_SAVE_PATHS",
+      "semantic_certainty": "Replacement semantics are supported; crash atomicity, journaling, and cross-file consistency are not.",
+      "semantic_claim": "Implement commit boundaries per artifact and a higher-level manifest/journal for complete saves.",
+      "classification": "runtime transient",
+      "citations": ["E18", "E20", "E21"]
+    }
+  ],
+  "persistent_transient_boundaries": {
+    "persistent_candidates": [
+      {
+        "item": "cSavedGameHeader",
+        "boundary": "saved-game header",
+        "minimum_semantics": "major/minor version, object-count map, timestamp, game mode, snapshot flag, current planet key; callback/field order still bounded.",
+        "certainty": "SUPPORTED_CLASS_SERIALIZER_PERSISTENCE"
+      },
+      {
+        "item": "cCellSerializableData",
+        "boundary": "Cell mode serializable state",
+        "minimum_semantics": "Confirmed 0xec object/layout, CellSaveGame vtable/write-read eligibility, and cCellGame+0x5190 ownership. Named progression/mission/flag fields are candidate semantics only until callback emission or a round trip proves survival.",
+        "certainty": "CONFIRMED_LAYOUT_AND_SAVE_CANDIDATE_SEMANTICS",
+        "field_emission": "UNCONFIRMED"
+      },
+      {
+        "item": "PropertyList local entries",
+        "boundary": "property stream",
+        "minimum_semantics": "signed count, uint32 property IDs, typed Property values, and external parent reference when the negative branch is used.",
+        "certainty": "SUPPORTED_AS_BINARY_CODEC"
+      },
+      {
+        "item": "Class/object field values",
+        "boundary": "ClassSerializer attribute callbacks",
+        "minimum_semantics": "class identity, attribute identity, field sizes, nested serializable values, and object references; exact field table and pointer bytes unresolved.",
+        "certainty": "SUPPORTED_AS_ARCHITECTURE"
+      },
+      {
+        "item": "ResourceKey identity",
+        "boundary": "object/property reference",
+        "minimum_semantics": "stable type/group/instance identity; memory field order and serializer order must remain separate dimensions.",
+        "certainty": "SUPPORTED_IDENTITY_ARCHITECTURE"
+      }
+    ],
+    "transient_boundaries": [
+      {
+        "item": "PropertyList parent pointer and operation counter",
+        "reason": "The parent is a runtime lookup/reference branch and the counter changes on mutation; no direct emission of the pointer or counter is shown."
+      },
+      {
+        "item": "DirectPropertyList fast-access values and temporary Property",
+        "reason": "These are specialization/runtime fields; the direct list forwards the same local property codec."
+      },
+      {
+        "item": "ClassSerializer and Attribute descriptors",
+        "reason": "They are runtime schema/dispatch state used to encode/decode persistent objects, not saved profile data themselves."
+      },
+      {
+        "item": "cGamePersistenceManager fields and service lifecycle",
+        "reason": "Direct methods mutate mode/reset/service state; no direct field-to-wire relationship is shown."
+      },
+      {
+        "item": "cCellGame live pool, queries, world references, avatar index, GFX/UI/display state",
+        "reason": "These are Cell mode runtime holders; cCellSerializableData is the separate explicit candidate."
+      },
+      {
+        "item": "host pointers, intrusive_ptr storage, resolved resource pointers, and use counters",
+        "reason": "They are ownership/linkage state; persistence requires stable IDs and a reconstruction table."
+      },
+      {
+        "item": "temporary files and backup paths during a transaction",
+        "reason": "They are commit-operation artifacts; only the committed record/manifest should survive as persistent state."
+      }
+    ]
+  },
+  "runtime_requirement_matrix": {
+    "wire_byte_only_questions": {
+      "runtime_required": false,
+      "questions": [
+        "Exact first bytes and record boundaries of .spo/.prop",
+        "Concrete database record header/index layout",
+        "Whether a separate compression or checksum wrapper is present"
+      ],
+      "smallest_separator": "A read-only original artifact prefix/record boundary or a direct concrete database parser/call edge; runtime execution is not inherently required."
+    },
+    "field_survival_questions": {
+      "runtime_required": true,
+      "questions": [
+        "Which cCellSerializableData fields are actually emitted and restored",
+        "Whether header/cell fields survive a complete save/load round trip",
+        "Whether mode-specific state is automatically persisted on transition"
+      ],
+      "smallest_separator": "A runtime-populated descriptor plus callback trace can close the field list statically, but survival and automatic-save behavior require a save/load or mode-transition oracle."
+    },
+    "atomicity_and_recovery_questions": {
+      "runtime_required": true,
+      "questions": [
+        "Rollback or cleanup after a callback failure",
+        "Crash behavior at temp/old/replace boundaries",
+        "Cross-artifact commit and recovery ordering"
+      ],
+      "smallest_separator": "A controlled interrupted/failing write followed by artifact and marker inspection; static replacement code alone is insufficient."
+    },
+    "migration_questions": {
+      "runtime_required": true,
+      "questions": [
+        "Upgrade/downgrade behavior for version 3/0x25 and other class IDs",
+        "Defaults for absent fields and unknown descriptors",
+        "Whether a version branch is a compatibility migration or merely mode handling"
+      ],
+      "smallest_separator": "A concrete migration branch/callback body can resolve the implementation statically; an old-save fixture and load trace are required to validate behavior and defaults."
+    },
+    "reference_graph_questions": {
+      "runtime_required": false,
+      "architecture_runtime_required_for_behavior": true,
+      "questions": [
+        "Exact object-table record order and ID scope",
+        "Forward/backward/cyclic reference handling",
+        "Duplicate and missing ID failure behavior"
+      ],
+      "smallest_separator": "A concrete serialized object table or serializer failure path can resolve the wire architecture statically; runtime is needed only to validate observed graph behavior."
+    },
+    "manager_membership_questions": {
+      "runtime_required": false,
+      "questions": [
+        "Whether 0x00B28EC0/0x00B279E0 are named cGamePersistenceManager members",
+        "Whether a distinct SaveGame body exists"
+      ],
+      "smallest_separator": "A concrete cGamePersistenceManager vtable instance or direct slot call; this is a static binding question, not a wire-byte question."
+    }
+  },
+  "minimum_openspore_persistence_architecture": {
+    "required_components": [
+      {
+        "id": "M1",
+        "decision": "Use a typed record/stream boundary with explicit open, good-state check, close, and release ownership.",
+        "reason": "Direct 0x00693D60/0x00693CD0/0x00693900 paths show database/stream setup, truncation on write, close, and release boundaries."
+      },
+      {
+        "id": "M2",
+        "decision": "Represent Property as a 0x14 runtime carrier and serialize type/flags before type-specific payload; use a 0x18 local map entry with uint32 ID.",
+        "reason": "Direct 0x00422EB0, 0x006A3890, 0x00693390, 0x00694440, and 0x006A1540/0x006A2F60 evidence."
+      },
+      {
+        "id": "M3",
+        "decision": "Implement local PropertyList framing separately from parent/reference resolution; never persist host parent pointers.",
+        "reason": "Negative-count read branch reads three words and calls a manager; local map iteration is direct."
+      },
+      {
+        "id": "M4",
+        "decision": "Implement a schema registry keyed by class ID and attribute ID, with explicit field sizes and binary callbacks.",
+        "reason": "0x00692880 setup, 0x00692900 write, and 0x00693E10 read/identity resolution."
+      },
+      {
+        "id": "M5",
+        "decision": "Implement nested serializable-object registration and a stable object-reference table with deferred resolution; never serialize host addresses.",
+        "reason": "0x00695B40/0x00695770 object dispatch and SDK ISimulatorSerializable/ICOMSerializer contracts."
+      },
+      {
+        "id": "M6",
+        "decision": "Use cSavedGameHeader as a versioned header object and cCellSerializableData only as a confirmed 0xec Cell save-candidate envelope; keep field schema/emission and live mode state separate until proven.",
+        "reason": "0x00B26800/0x00B26840, 0x00E61550, 0x00E51300/0x00E51370, and cCellGame+0x5190 ownership."
+      },
+      {
+        "id": "M7",
+        "decision": "Commit through temp path, close/check, and replacement; add a manifest/journal and recovery policy before claiming multi-artifact crash atomicity.",
+        "reason": "0x00B28EC0, 0x00BB4BA0, and 0x006891F0 prove bounded replacement, not universal atomicity."
+      },
+      {
+        "id": "M8",
+        "decision": "Version every schema and reject or migrate unsupported versions explicitly; preserve unknown fields only under a declared policy.",
+        "reason": "Header version carriers and serializer version operations exist, but no original migration matrix is known."
+      }
+    ],
+    "minimum_semantics": [
+      "A save is a versioned set of named records, not a raw dump of runtime structures.",
+      "A property entry is a stable ID plus typed value, with array count/size and parent identity separated from local data.",
+      "An object envelope carries class identity and attribute metadata before callback payloads.",
+      "References are stable IDs resolved after object/attribute restoration.",
+      "A header carries version, object counts, timestamp, mode/snapshot, and current context identity.",
+      "A mode transition may hand off an in-memory state object, but only an explicit save transaction makes it persistent.",
+      "A successful local codec call does not imply a valid outer container or crash-safe commit."
+    ]
+  },
+  "exact_architecture_decisions": [
+    {
+      "id": "D1",
+      "decision": "Freeze Property runtime layout as 0x14 and map stride as 0x18; retain the 4-byte Ghidra Property as a tail view only.",
+      "status": "FREEZE",
+      "addresses": ["0x00422EB0", "0x006A3890", "0x00693390", "0x00694440", "0x006A1540"]
+    },
+    {
+      "id": "D2",
+      "decision": "Freeze PropertyList local stream shape as signed count, uint32 ID, typed value; negative count is a parent-reference branch, not recursive parent serialization.",
+      "status": "FREEZE_WITH_UNKNOWN_PARENT_ORDER",
+      "addresses": ["0x006A1540", "0x006A2F60", "0x0093AA70", "0x0093A780"]
+    },
+    {
+      "id": "D3",
+      "decision": "Use 0x00692900 and 0x00693E10 as concrete ClassSerializer Write/Read; treat 0x00692880/0x006928C0 as setup and 0x00693DD0/0x00693DE0 as teardown.",
+      "status": "FREEZE",
+      "addresses": ["0x00692880", "0x006928C0", "0x00692900", "0x00693DD0", "0x00693DE0", "0x00693E10"]
+    },
+    {
+      "id": "D4",
+      "decision": "Represent cSavedGameHeader as a ClassSerializer-backed versioned object, not a raw 0x68 record.",
+      "status": "FREEZE",
+      "addresses": ["0x00B26800", "0x00B26840", "0x00B274E0"]
+    },
+    {
+      "id": "D5",
+      "decision": "Represent cCellSerializableData as the explicit Cell persistence candidate and model cCellGame live state as transient; model mode handoff as in-memory copy/re-adoption.",
+      "status": "FREEZE",
+      "addresses": ["0x00E51300", "0x00E51370", "0x00E61550", "0x00E627A0", "0x00E63D10", "0x00E80BA0"]
+    },
+    {
+      "id": "D6",
+      "decision": "Do not use the 0x4c cGamePersistenceManager SDK layout as total runtime size; model Get/B0C190/B0C520 as service/mode lifecycle boundaries.",
+      "status": "FREEZE_BOUNDARY",
+      "addresses": ["0x00B3D440", "0x00B0C190", "0x00B0C520"]
+    },
+    {
+      "id": "D7",
+      "decision": "Implement a temp/close/replace commit boundary with explicit recovery metadata; do not claim original universal atomicity.",
+      "status": "FREEZE_BOUNDARY",
+      "addresses": ["0x00B28EC0", "0x00BB4BA0", "0x00693D60", "0x00693CD0", "0x00693900", "0x006891F0"]
+    },
+    {
+      "id": "D8",
+      "decision": "Use 0x00B28EC0 and 0x00B279E0 as concrete persistence-subsystem save/load operation seams, but keep cGamePersistenceManager vtable membership unconfirmed until a concrete vtable/this binding is recovered.",
+      "status": "FREEZE_BOUNDARY",
+      "addresses": ["0x00B28EC0", "0x00B279E0", "0x00B275A0", "0x00B28990", "0x00B294C0", "0x00B3D440"]
+    }
+  ],
+  "freeze_list": [
+    "20-byte runtime Property carrier and 0x18 map entry stride",
+    "PropertyList count/ID/typed-value local framing",
+    "Property type/flags order and array count/size branch",
+    "0x00692900/0x00693E10 as concrete ClassSerializer Write/Read",
+    "ClassSerializer class/attribute identity and callback architecture",
+    "cSavedGameHeader 0x68 object plus ClassSerializer wrapper",
+    "cCellSerializableData 0xec object and cCellGame+0x5190 ownership",
+    "cGamePersistenceManager as runtime service with incomplete SDK size view",
+    "in-memory Cell state handoff as distinct from disk persistence",
+    "0x00B28EC0/0x00B279E0 save/load operation candidates with manager membership unconfirmed",
+    "temp/close/replace pattern for identified save paths"
+  ],
+  "defer_list": [
+    "Outer PROP/.spo record envelope and exact database/COM framing",
+    "All unknown Property type payloads and default raw-type semantics",
+    "Exact three-word PropertyList parent reference field order",
+    "ClassSerializer attribute IDs, names, sizes, and exact metadata table labels",
+    "Object pointer/reference table byte encoding, cycle handling, and remapping",
+    "Concrete cGamePersistenceManager LoadGame/SaveGame body and field semantics",
+    "Complete cCellSerializableData per-field write coverage and defaults",
+    "Version migration, downgrade, unknown-field, and incompatibility policy",
+    "Universal crash atomicity, journaling, and cross-file recovery",
+    "Automatic persistence on mode exit or transition",
+    "Original runtime ordering of header, class objects, objects, properties, and references"
+  ],
+  "blockers": [
+    {
+      "id": "BL1",
+      "blocker": "No positive original-process save/load trace or captured original .prop/.spo round trip.",
+      "impact": "Exact outer framing, migration, runtime ordering, and field survival remain unknown.",
+      "smallest_separator": "One original save plus one load under an approved read-only oracle, if runtime access is later authorized.",
+      "runtime_needed": true
+    },
+    {
+      "id": "BL2",
+      "blocker": "Concrete database/COM serializer implementation and CRC body are not identified in this scope.",
+      "impact": "Object reference table, class-object record framing, and integrity bytes remain unknown.",
+      "smallest_separator": "Read-only recovery of the serializer database/COM vtable bodies and one stream fixture.",
+      "runtime_needed": false
+    },
+    {
+      "id": "BL3",
+      "blocker": "The three-word parent branch and ResourceKey serializer order are not semantically named by direct code.",
+      "impact": "Parent/reference restoration cannot be byte-compatible yet.",
+      "smallest_separator": "Inspect the manager virtual called by 0x006A2F60 and its key constructor/lookup body.",
+      "runtime_needed": false
+    },
+    {
+      "id": "BL4",
+      "blocker": "The complete attribute descriptor tables and per-class callback bodies are not all recovered.",
+      "impact": "Nested object field order and version migration cannot be closed.",
+      "smallest_separator": "Enumerate the attribute tables at the cSavedGameHeader/cCell descriptor pointers and decompile their callbacks.",
+      "runtime_needed": false
+    },
+    {
+      "id": "BL5",
+      "blocker": "The original process did not reach Cell in the available historical runtime evidence.",
+      "impact": "Mode-transition runtime ordering and automatic save behavior cannot be validated.",
+      "smallest_separator": "A stable original-process Cell reachability run with save/load instrumentation; not required for the minimum architecture.",
+      "runtime_needed": true
+    }
+  ],
+  "architecture_dependencies": [
+    {
+      "dependency": "Resource/database stream lifecycle",
+      "reason": "PropertyList and ClassSerializer operate on already-open streams; persistence requires open/good/close/release semantics.",
+      "addresses": ["0x00693D60", "0x00693CD0", "0x00693900"]
+    },
+    {
+      "dependency": "Stable identity/reference registry",
+      "reason": "Parent lists, object pointers, class IDs, and attribute IDs are references/identities, not host addresses.",
+      "addresses": ["0x006A2F60", "0x00693E10", "0x00695B40"]
+    },
+    {
+      "dependency": "Versioned schema/callback registry",
+      "reason": "ClassSerializer, header, and Cell state use descriptor callbacks and version carriers rather than raw struct copies.",
+      "addresses": ["0x00692880", "0x00692900", "0x00693E10", "0x00B26800", "0x00E51300"]
+    },
+    {
+      "dependency": "Transaction/recovery layer",
+      "reason": "Temp/old/replace is visible for selected files, while complete atomicity is not.",
+      "addresses": ["0x00B28EC0", "0x00BB4BA0", "0x006891F0"]
+    },
+    {
+      "dependency": "Mode-state ownership boundary",
+      "reason": "cCellGame live state and cCellSerializableData persistence candidate must remain separate across mode transitions.",
+      "addresses": ["0x00E63D10", "0x00E80BA0", "0x00E7FC00", "0x00E81F30"]
+    }
+  ],
+  "citations": [
+    {"evidence_id": "E01", "kind": "direct_ghidra", "address": "0x00422EB0", "path_or_query": "SporeApp.exe::App::Property::SetValueInt32", "claim": "Inline value access and tail type/flags access."},
+    {"evidence_id": "E02", "kind": "direct_ghidra", "address": "0x006A3890", "path_or_query": "SporeApp.exe::App::Property::GetValueFlags", "claim": "Type at +0x12 and pointer/array flag behavior."},
+    {"evidence_id": "E03", "kind": "direct_ghidra", "address": "0x00693390", "path_or_query": "SporeApp.exe::FUN_00693390", "claim": "Typed Property writer, type/flags order, array count/size branch."},
+    {"evidence_id": "E04", "kind": "direct_ghidra", "address": "0x00694440", "path_or_query": "SporeApp.exe::FUN_00694440", "claim": "Typed Property reader and allocation/array branch."},
+    {"evidence_id": "E05", "kind": "direct_ghidra", "address": "0x006A1540", "path_or_query": "SporeApp.exe::App::PropertyList::Write", "claim": "Count, local ID, and typed value transfer with 0x18 stride."},
+    {"evidence_id": "E06", "kind": "direct_ghidra", "address": "0x006A2F60", "path_or_query": "SporeApp.exe::App::PropertyList::Read", "claim": "Signed count, negative parent branch, resize, ID/value read, first-failure stop."},
+    {"evidence_id": "E07", "kind": "direct_ghidra", "address": "0x0093A9D0, 0x0093A700, 0x0093AA70, 0x0093A780", "path_or_query": "SporeApp.exe::FUN_0093A9D0/FUN_0093A700/FUN_0093AA70/FUN_0093A780", "claim": "The 16-bit pair is 0x0093A9D0/0x0093A700 and the 32-bit pair is 0x0093AA70/0x0093A780; both byte-swap in mode 0 and check stream state."},
+    {"evidence_id": "E08", "kind": "direct_ghidra", "address": "0x00692880, 0x006928C0, 0x00693DD0, 0x00693DE0", "path_or_query": "SporeApp.exe::get_function_by_address, callers, disassembly", "claim": "Address pairs resolve to setup/teardown bodies, not Write/Read."},
+    {"evidence_id": "E09", "kind": "direct_ghidra", "address": "0x00692900", "path_or_query": "SporeApp.exe::FUN_00692900", "claim": "ClassSerializer attribute write dispatcher, metadata pass, callbacks, sizes, stream finalization."},
+    {"evidence_id": "E10", "kind": "direct_ghidra", "address": "0x00693E10", "path_or_query": "SporeApp.exe::FUN_00693E10", "claim": "ClassSerializer attribute read dispatcher, class/count/identity checks, callbacks, failure return."},
+    {"evidence_id": "E11", "kind": "direct_ghidra", "address": "0x00695B40", "path_or_query": "SporeApp.exe::FUN_00695B40 and 0x00695770", "claim": "Object/class serializer setup, attribute dispatch, and identity bookkeeping."},
+    {"evidence_id": "E12", "kind": "direct_ghidra", "address": "0x00E61550", "path_or_query": "SporeApp.exe::FUN_00E61550 and vtable data", "claim": "0xec allocation, serializable/refcount vtables, field initialization."},
+    {"evidence_id": "E13", "kind": "direct_ghidra", "address": "0x00E51300, 0x00E51370", "path_or_query": "SporeApp.exe::disassemble_bytes", "claim": "cCellSerializableData write/read stream words and ClassSerializer calls."},
+    {"evidence_id": "E14", "kind": "direct_ghidra", "address": "0x00E627A0, 0x00E63D10", "path_or_query": "SporeApp.exe::FUN_00E627A0/FUN_00E63D10", "claim": "In-memory cCell state copy and handoff object replacement."},
+    {"evidence_id": "E15", "kind": "direct_ghidra", "address": "0x00E80BA0", "path_or_query": "SporeApp.exe::Simulator::Cell::cCellGame::Initialize", "claim": "Adoption of serializable-data pointer at cCellGame+0x5190 and global handoff clear."},
+    {"evidence_id": "E16", "kind": "direct_ghidra", "address": "0x00B3D440, 0x00B0C190, 0x00B0C520", "path_or_query": "SporeApp.exe::Get and service method callers/disassembly", "claim": "Get result passed as this; large runtime service offsets; mode/reset behavior."},
+    {"evidence_id": "E17", "kind": "direct_ghidra", "address": "0x00B26800, 0x00B26840, 0x00B274E0", "path_or_query": "SporeApp.exe::cSavedGameHeader vtable/factory/disassembly", "claim": "0x68 header allocation and ClassSerializer-backed concrete Write/Read."},
+    {"evidence_id": "E18", "kind": "direct_ghidra", "address": "0x00B28EC0, 0x00BB4BA0, 0x00693D60, 0x00693CD0, 0x00693900, 0x006891F0", "path_or_query": "SporeApp.exe::save orchestration and serializer lifecycle", "claim": "Header write, stream setup/close, temp/.old/replace transaction boundary."},
+    {"evidence_id": "E22", "kind": "followup_static", "address": "0x00B28EC0, 0x00B279E0, 0x00B275A0, 0x00B28990, 0x00B294C0, 0x00B282E0, 0x00B28070, 0x00B28750, 0x00B289E0, 0x00BB66F0, 0x00E61A50, 0x00E51250", "path_or_query": "knowledgegraph/research/architecture-resolution/followup-06-persistence.json; knowledgegraph/research/architecture-resolution/followup-06-persistence.md", "claim": "Confirmed/unconfirmed framing, save/load candidates, recovery markers, manager-membership limit, CellSaveGame factory/vtable facts, and field-emission uncertainty."},
+    {"evidence_id": "E19", "kind": "sdk_community", "address": null, "path_or_query": "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/ISimulatorSerializable.h; Serialization.h; SerializationTypes.h; SubSystem/GamePersistenceManager.h; SubSystem/cSavedGameHeader.h; App/Property.h; App/PropertyList.h", "claim": "Reference interfaces, declared layouts, version surfaces, and typed serializer contracts."},
+    {"evidence_id": "E20", "kind": "historical_research", "address": null, "path_or_query": "knowledgegraph/research/types/08-persistence-serialization.md; knowledgegraph/research/data-model/09-save-load-persistence.json; knowledgegraph/research/data-model/10-serialization.json; knowledgegraph/research/state-machines/persistence.json; knowledgegraph/research/conflicts/track-d-data-serialization.json", "claim": "Prior bounded persistence synthesis, conflict retention, lifecycle, and unresolved wire questions."},
+    {"evidence_id": "E21", "kind": "historical_runtime", "address": null, "path_or_query": "docs/devlog/018-s5-cell-runtime-evidence.md; docs/analysis/CELL-RUNTIME-OBSERVATION.md", "claim": "No positive original Cell-stage or save/load runtime oracle; historical attempts are negative and do not prove absence."}
+  ],
+  "limitations": [
+    "Ghidra decompilation has unknown calling conventions and incomplete type propagation in several bodies; assembly-level observations outrank decompiler labels where they differ.",
+    "SDK names, sizes, offsets, and vtable slots are reference declarations and do not independently prove original runtime behavior.",
+    "Historical reports that repeat prior Ghidra/SDK claims were not counted as independent confirmation.",
+    "No original .prop/.spo file, runtime save/load trace, crash injection, or positive Cell-stage run was available in scope.",
+    "The outer database/COM record envelope, CRC bytes, complete object-reference table, all property type payloads, and migration policy remain open.",
+    "No source implementation, SPORE/ filesystem, or knowledgegraph/spore.db was accessed or modified.",
+    "The report describes the minimum OpenSpore architecture, not an implementation authorization or a claim of byte-perfect original compatibility."
+  ]
+}

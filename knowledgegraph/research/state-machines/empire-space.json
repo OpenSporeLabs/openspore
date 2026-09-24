@@ -1,0 +1,3004 @@
+{
+  "$schema": "state-machine-research-1",
+  "callbacks": [
+    {
+      "address": "App::cCameraManager active-camera interface +0x00/+0x04",
+      "consumers": [
+        "App::cGameModeManager",
+        "space navigation and presentation code"
+      ],
+      "evidence": [
+        {
+          "address": "0x007c6750",
+          "claim": "SDK names SetActiveCameraByID at this address, but the recovered receiver use does not consistently match cCameraManager fields, so the setter body is not promoted as exact original behavior.",
+          "kind": "sdk_name_and_decompilation_conflict",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x007c6750"
+        },
+        {
+          "address": "0x007c61a0",
+          "claim": "body reads index +0xa8 and returns mpCameras[index] when nonnegative, or null otherwise; this behavior matches GetActiveCamera even though the SDK import names SetViewer at the same address.",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "Ghidra MCP read-only disassembly of SporeApp.exe@0x007c61a0"
+        }
+      ],
+      "name": "App::cCameraManager::GetActiveCamera/SetActiveCamera callbacks",
+      "parameters": [
+        "camera manager this",
+        "camera index or camera ID for setter requests"
+      ],
+      "returns": "ICamera* for the resolved getter; bool for SDK-declared setters",
+      "semantics": "Active-camera query mechanics are direct; selection ordering and failure behavior remain interface-only until the receiver identity is repaired.",
+      "status": "partially_resolved"
+    },
+    {
+      "address": "0x006a1540",
+      "consumers": [
+        "serializable resource and save-property writers"
+      ],
+      "evidence": [
+        {
+          "address": "0x006a1540",
+          "claim": "writes an entry count and then each property ID/value through stream helpers, stopping on the first failed operation.",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x006a1540"
+        }
+      ],
+      "name": "App::PropertyList::Write",
+      "parameters": [
+        "this",
+        "IStream* output"
+      ],
+      "returns": "bool success flag",
+      "semantics": "Bounded persistence callback for local PropertyList entries; parent-list serialization is not established.",
+      "status": "resolved_static_mechanics"
+    },
+    {
+      "address": "0x006a2f60",
+      "consumers": [
+        "serializable resource and save-property readers"
+      ],
+      "evidence": [
+        {
+          "address": "0x006a2f60",
+          "claim": "reads framing, conditionally resolves a parent list, resizes local entries, and reads each property ID/value, stopping on failure.",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x006a2f60"
+        }
+      ],
+      "name": "App::PropertyList::Read",
+      "parameters": [
+        "this",
+        "IStream* input"
+      ],
+      "returns": "bool success flag",
+      "semantics": "Bounded persistence callback; exact bytes, version negotiation, rollback, and parent ownership remain unresolved.",
+      "status": "resolved_static_mechanics"
+    },
+    {
+      "address": "0x006928c0 / 0x00693de0",
+      "consumers": [
+        "ClassSerializer users"
+      ],
+      "evidence": [
+        {
+          "address": "0x006928c0",
+          "claim": "SDK imports ClassSerializer::Write inside a larger function beginning at 0x00692880; recovered body initializes serializer attribute metadata rather than proving the complete write algorithm.",
+          "kind": "sdk_boundary_decompilation_conflict",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x006928c0"
+        },
+        {
+          "address": "0x00693de0",
+          "claim": "SDK imports ClassSerializer::Read inside a destructor-like function beginning at 0x00693dd0; complete restore behavior is not established.",
+          "kind": "sdk_boundary_decompilation_conflict",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00693de0"
+        }
+      ],
+      "name": "Simulator::ClassSerializer::Write/Read",
+      "parameters": [
+        "serializer this",
+        "object/stream context whose exact prototype is unresolved"
+      ],
+      "returns": "unresolved",
+      "semantics": "Serializable class callback surface exists, but these imported addresses are not used as full binary read/write-state evidence.",
+      "status": "sdk_interface_only"
+    },
+    {
+      "address": "0x00b1db60",
+      "consumers": [
+        "Simulator::cGameModeManager transition-effect path"
+      ],
+      "evidence": [
+        {
+          "address": "0x00b1db60",
+          "claim": "resolved cGameModeManager vtable slot +0x14 toggles transition-effect and application-manager callback state; it does not directly commit cStrategy mode identifiers.",
+          "kind": "disassembly",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/state-machines/simulator-core.json"
+        }
+      ],
+      "name": "Simulator::cGameModeManager::OnModeExited",
+      "parameters": [
+        "this"
+      ],
+      "returns": "void",
+      "semantics": "Mode-exit side-effect callback, not proof of the App game-mode registry transition writer.",
+      "status": "resolved_static_callback"
+    },
+    {
+      "address": "0x00b1dbd0",
+      "consumers": [
+        "Simulator::cGameModeManager transition-effect path"
+      ],
+      "evidence": [
+        {
+          "address": "0x00b1dbd0",
+          "claim": "resolved cGameModeManager vtable slot +0x18 toggles transition-effect and application-manager callback state; it does not directly commit cStrategy mode identifiers.",
+          "kind": "disassembly",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/state-machines/simulator-core.json"
+        }
+      ],
+      "name": "Simulator::cGameModeManager::OnModeEntered",
+      "parameters": [
+        "this"
+      ],
+      "returns": "void",
+      "semantics": "Mode-entry side-effect callback, not proof of the App game-mode registry transition writer.",
+      "status": "resolved_static_callback"
+    },
+    {
+      "address": "0x007d8d40",
+      "consumers": [
+        "App::cGameModeManager interface",
+        "mode switch callers"
+      ],
+      "evidence": [
+        {
+          "address": "0x007d8d40",
+          "claim": "SDK and imported symbol identify SetActiveModeAt, but the current recovered body mutates a temporary multi-vtable object and does not directly read mEntries or mnActiveIndex at the SDK offsets.",
+          "kind": "sdk_name_decompilation_conflict",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation/disassembly of SporeApp.exe@0x007d8d40"
+        },
+        {
+          "address": "0x007d8d40",
+          "claim": "SDK declares the contract as selecting an indexed mode from the registered ModeEntry vector.",
+          "kind": "sdk_name_only",
+          "level": "CONFIRMED",
+          "source": "Spore ModAPI App/cGameModeManager.h"
+        }
+      ],
+      "name": "App::cGameModeManager::SetActiveModeAt",
+      "parameters": [
+        "this",
+        "size_t index"
+      ],
+      "returns": "bool",
+      "semantics": "The mode-switch interface is established, but exact exit/update/enter ordering in this binary is not promoted from the conflicting address body.",
+      "status": "interface_only_until_boundary_repair"
+    },
+    {
+      "address": "0x00b3d440",
+      "consumers": [
+        "52 static call sites recovered by Ghidra xrefs"
+      ],
+      "evidence": [
+        {
+          "address": "0x00b3d440",
+          "claim": "six-byte getter returns the global manager slot at 0x0167eb34.",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00b3d440"
+        }
+      ],
+      "name": "Simulator::cGamePersistenceManager::Get",
+      "parameters": [],
+      "returns": "cGamePersistenceManager*",
+      "semantics": "Named persistence-service accessor; it does not itself save or load state.",
+      "status": "resolved_static_mechanics"
+    },
+    {
+      "address": "cGamePersistenceManager vtable +0x10",
+      "consumers": [
+        "simulator service initialization and load orchestration"
+      ],
+      "evidence": [
+        {
+          "address": null,
+          "claim": "SDK declares bool LoadGame(const GameLoadParameters&) at primary vtable slot +0x10 and instructs callers to ensure the player noun first.",
+          "kind": "sdk_name_only",
+          "level": "CONFIRMED",
+          "source": "Spore ModAPI Simulator/SubSystem/GamePersistenceManager.h"
+        }
+      ],
+      "name": "Simulator::cGamePersistenceManager::LoadGame",
+      "parameters": [
+        "this",
+        "GameLoadParameters const&"
+      ],
+      "returns": "bool",
+      "semantics": "Load entry callback surface; concrete vtable target, file access, restore order, failure behavior, and object graph are unresolved.",
+      "status": "sdk_interface_only"
+    },
+    {
+      "address": "0x010027b0",
+      "consumers": [
+        "space session construction and context-sensitive presentation"
+      ],
+      "evidence": [
+        {
+          "address": "0x01002a70",
+          "claim": "committed SDK-boundary adjudication maps cSimulatorSpaceGame::Get to the interior of a function beginning at 0x010027b0, not to a standalone getter.",
+          "kind": "sdk_boundary_repair",
+          "level": "CONFIRMED",
+          "source": "knowledgegraph/triage/sdk-boundary-repairs-2540f2ca.json"
+        },
+        {
+          "address": "0x010027b0",
+          "claim": "containing body resolves current-player/empire data, creates or selects an object through 0x0102b1d0, and branches on Planet, SolarSystem, and Galaxy context values.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x010027b0"
+        }
+      ],
+      "name": "Simulator::cSimulatorSpaceGame::Get-associated body",
+      "parameters": [
+        "receiver-like object",
+        "requested entity/empire ID",
+        "boolean presentation flag"
+      ],
+      "returns": "borrowed or newly constructed object pointer",
+      "semantics": "The body is strongly space-session-related but is not promoted to the exact SDK getter; complete cSimulatorSpaceGame enter/exit/load lifecycle is unresolved.",
+      "status": "contained_sdk_identity"
+    },
+    {
+      "address": "0x00c8d060",
+      "consumers": [
+        "capture/ownership interaction path"
+      ],
+      "evidence": [
+        {
+          "address": "0x00c8d190",
+          "claim": "SDK imports cEmpire::CaptureSystem into the body beginning at 0x00c8d060.",
+          "kind": "sdk_boundary_repair",
+          "level": "CONFIRMED",
+          "source": "knowledgegraph/triage/sdk-boundary-repairs-2540f2ca.json"
+        },
+        {
+          "address": "0x00c8d060",
+          "claim": "body scans loaded systems and planets, rejects inconsistent ownership candidates, and may dispatch UI, mission, destruction, and ownership-update paths.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00c8d060"
+        }
+      ],
+      "name": "Simulator::cEmpire::CaptureSystem-associated body",
+      "parameters": [
+        "resolved from decompiler ABI"
+      ],
+      "returns": "void",
+      "semantics": "Capture eligibility and dispatch are static; the exact SDK prototype and all ownership write ordering are not claimed.",
+      "status": "contained_sdk_identity"
+    },
+    {
+      "address": "0x00c34ee0 / 0x00c341a0",
+      "consumers": [
+        "0x00c35240 capture/ownership update pipeline"
+      ],
+      "evidence": [
+        {
+          "address": "0x00c34ee0",
+          "claim": "removes a matching cStarRecord pointer from cEmpire.mStars, sets empire flag bit 0x10, emits 0x55bd8f7, and performs home-star/home-planet cleanup when required.",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00c34ee0"
+        },
+        {
+          "address": "0x00c341a0",
+          "claim": "if absent, AddRefs and appends a cStarRecord to cEmpire.mStars, releases the temporary reference, sets flag bit 0x10, updates home state when required, and emits 0x55bd8f7.",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00c341a0"
+        }
+      ],
+      "name": "cEmpire star-membership remove/add callbacks",
+      "parameters": [
+        "cEmpire this",
+        "cStarRecord* star"
+      ],
+      "returns": "bool for remove helper; void for add helper",
+      "semantics": "Exact intrusive membership mechanics; labels AddStarOwnership/RemoveStarOwnership are SDK-contract interpretations, not repaired standalone function names.",
+      "status": "resolved_static_mechanics"
+    },
+    {
+      "address": "0x00ca6630",
+      "consumers": [
+        "vehicle creation/loading paths"
+      ],
+      "evidence": [
+        {
+          "address": "0x00ca67c0",
+          "claim": "SDK imports cVehicle::Load into this body; boundary adjudication maps it to 0x00ca6630.",
+          "kind": "sdk_boundary_repair",
+          "level": "CONFIRMED",
+          "source": "knowledgegraph/triage/sdk-boundary-repairs-2540f2ca.json"
+        },
+        {
+          "address": "0x00ca6630",
+          "claim": "body writes the two SDK configuration arguments to cVehicle+0xb20 and +0xb1c, loads model/behavior resources, updates tool/owner state, and releases temporaries.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00ca6630"
+        }
+      ],
+      "name": "Simulator::cVehicle::Load-associated body",
+      "parameters": [
+        "cVehicle this",
+        "VehicleLocomotion locomotion",
+        "VehiclePurpose purpose",
+        "ResourceKey name"
+      ],
+      "returns": "void",
+      "semantics": "Vehicle configuration/load lifecycle is supported; the containing-function identity is not claimed to be the exact SDK entry.",
+      "status": "contained_sdk_identity"
+    },
+    {
+      "address": "0x00d038e0 / 0x00d065a0 / 0x00d06920 / 0x00d01e30",
+      "consumers": [
+        "cEmpire and cCivilization interaction state",
+        "player relationship message listeners"
+      ],
+      "evidence": [
+        {
+          "address": "0x00d038e0",
+          "claim": "clears relationship flag bit 0 in one or both directed entries when at war and runs empire/player update paths.",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00d038e0"
+        },
+        {
+          "address": "0x00d065a0",
+          "claim": "sets relationship flag bit 0, clears bit 1, applies relationship deltas, and updates empire/player paths when not already at war.",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00d065a0"
+        },
+        {
+          "address": "0x00d06920",
+          "claim": "runs the peace path, sets bit 1 in one or both directed entries, and emits 0x04445d43 when the player is involved.",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00d06920"
+        },
+        {
+          "address": "0x00d01e30",
+          "claim": "clears bit 1 in one or both directed entries and emits 0x04445d44 when the player is involved.",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00d01e30"
+        }
+      ],
+      "name": "Simulator::cRelationshipManager interaction callbacks",
+      "parameters": [
+        "manager this",
+        "cEmpire* actor",
+        "cEmpire* target"
+      ],
+      "returns": "void",
+      "semantics": "Direct war/alliance/peace flag and player-message lifecycle for one political-ID pair.",
+      "status": "resolved_static_mechanics"
+    },
+    {
+      "address": "0x01021960",
+      "consumers": [
+        "space navigation and active-reference writers"
+      ],
+      "evidence": [
+        {
+          "address": "0x01021960",
+          "claim": "stores the requested SpaceContext and invokes 0x01001360 only after a changed Galaxy value when active-star and companion pointers are non-null.",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x01021960"
+        }
+      ],
+      "name": "SpacePlayerData context setter",
+      "parameters": [
+        "SpaceContext requested"
+      ],
+      "returns": "void",
+      "semantics": "Direct navigation-context state writer with a Galaxy-only follow-up.",
+      "status": "resolved_static_mechanics"
+    },
+    {
+      "address": "0x01021300",
+      "consumers": [
+        "empire, diplomacy, mission, space, culture, city, and noun consumers"
+      ],
+      "evidence": [
+        {
+          "address": "0x01021300",
+          "claim": "returns null for player ID -1; otherwise refreshes a null or ID-mismatched cache through the cStarManager-compatible registry and performs AddRef/store/Release replacement.",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x01021300"
+        }
+      ],
+      "name": "current-player cEmpire cache accessor",
+      "parameters": [],
+      "returns": "borrowed cEmpire*",
+      "semantics": "Lazy identity-keyed cache with exact reference-replacement ordering.",
+      "status": "resolved_static_mechanics"
+    },
+    {
+      "address": "0x00c38b10",
+      "consumers": [
+        "UFO gameplay callers"
+      ],
+      "evidence": [
+        {
+          "address": "0x00c38b50",
+          "claim": "SDK imports cGameDataUFO::ChangeEnergy into the body beginning at 0x00c38b10, but the recovered body clears +0x7a8 and releases that pointer rather than directly changing mEnergy at +0x7f4.",
+          "kind": "sdk_boundary_decompilation_conflict",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00c38b10 and knowledgegraph/triage/sdk-boundary-repairs-2540f2ca.json"
+        }
+      ],
+      "name": "Simulator::cGameDataUFO::ChangeEnergy-associated body",
+      "parameters": [
+        "resolved from decompiler ABI"
+      ],
+      "returns": "unresolved",
+      "semantics": "The exact energy mutation is not recovered; only the containing-body cleanup mechanics and conflicting SDK association are retained.",
+      "status": "identity_conflict"
+    }
+  ],
+  "domain": "Empire and Space",
+  "events": [
+    {
+      "consumers": [
+        "SpacePlayerData context setter"
+      ],
+      "evidence": [
+        {
+          "address": "0x01021960",
+          "claim": "direct changed-value branch writes all SDK SpaceContext values and runs the value-2 follow-up after the store.",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x01021960"
+        }
+      ],
+      "id": "active_space_context_requested",
+      "kind": "analytical_event",
+      "producers": [
+        "0x00b32b20",
+        "0x00b32ce0",
+        "0x00b33350",
+        "0x00fda9f0",
+        "0x00fdf5f0",
+        "0x01003490",
+        "0x01003690",
+        "0x01003a50",
+        "0x0100a960"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "consumers": [
+        "App::cCameraManager",
+        "cViewer and renderer"
+      ],
+      "evidence": [
+        {
+          "address": "0x007c61a0",
+          "claim": "active-camera read uses mnActiveIndex and mpCameras, returning null for a negative index.",
+          "kind": "disassembly",
+          "level": "CONFIRMED",
+          "source": "Ghidra MCP read-only disassembly of SporeApp.exe@0x007c61a0"
+        }
+      ],
+      "id": "active_camera_requested",
+      "kind": "interface_and_analytical_event",
+      "producers": [
+        "App::cGameModeManager and space navigation callers"
+      ],
+      "status": "getter_mechanics_confirmed_setter_body_unresolved"
+    },
+    {
+      "consumers": [
+        "current-player cEmpire cache accessor"
+      ],
+      "evidence": [
+        {
+          "address": "0x01021300",
+          "claim": "lookup and AddRef/store/Release occur only on a null or stale cache.",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x01021300"
+        }
+      ],
+      "id": "current_empire_cache_refreshed",
+      "kind": "analytical_event",
+      "producers": [
+        "0x00b3d2a0",
+        "0x00ba9370"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "consumers": [
+        "galaxy generation subsystem"
+      ],
+      "evidence": [
+        {
+          "address": null,
+          "claim": "SDK enumerates typed galaxy generation messages for core, star colors, binaries, protoplanetary disks, and black holes.",
+          "kind": "sdk_name_only",
+          "level": "CONFIRMED",
+          "source": "Spore ModAPI Simulator/SimulatorMessages.h"
+        }
+      ],
+      "id": "galaxy_generation_message",
+      "kind": "sdk_event_family",
+      "producers": [
+        "galaxy generation effect"
+      ],
+      "status": "sdk_interface_only"
+    },
+    {
+      "consumers": [
+        "cGamePersistenceManager::LoadGame surface"
+      ],
+      "evidence": [
+        {
+          "address": "0x00b3d440",
+          "claim": "named persistence service accessor exists, but no concrete load target or restored object order is recovered.",
+          "kind": "decompilation_and_sdk_interface",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP and Spore ModAPI Simulator/SubSystem/GamePersistenceManager.h"
+        }
+      ],
+      "id": "load_game_message",
+      "kind": "sdk_message",
+      "producers": [
+        "load-game UI or orchestration"
+      ],
+      "status": "sdk_interface_only"
+    },
+    {
+      "consumers": [
+        "cEmpire mStars",
+        "cStarRecord ownership and presentation state"
+      ],
+      "evidence": [
+        {
+          "address": "0x00c34ee0",
+          "claim": "star removal path emits 0x55bd8f7.",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00c34ee0"
+        },
+        {
+          "address": "0x00c341a0",
+          "claim": "star addition path emits 0x55bd8f7.",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00c341a0"
+        }
+      ],
+      "id": "star_ownership_changed",
+      "kind": "sdk_message_and_analytical_event",
+      "producers": [
+        "cEmpire star-membership helpers"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "consumers": [
+        "cRelationshipManager",
+        "cEmpire interaction state"
+      ],
+      "evidence": [
+        {
+          "address": "0x00d06920",
+          "claim": "player alliance path emits 0x04445d43.",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00d06920"
+        },
+        {
+          "address": "0x00d01e30",
+          "claim": "player lost-alliance path emits 0x04445d44.",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00d01e30"
+        }
+      ],
+      "id": "player_empire_relationship_changed",
+      "kind": "sdk_message_and_analytical_event",
+      "producers": [
+        "DeclareAlliance",
+        "BreakAlliance"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "consumers": [
+        "cRelationshipManager"
+      ],
+      "evidence": [
+        {
+          "address": "0x00d05830",
+          "claim": "finds or creates a relationship record and clears score/event state to the bounded reset form.",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00d05830"
+        }
+      ],
+      "id": "relationship_reset",
+      "kind": "sdk_callback",
+      "producers": [
+        "cRelationshipManager::ResetRelationship"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "consumers": [
+        "cRelationshipManager"
+      ],
+      "evidence": [
+        {
+          "address": "0x00d06270",
+          "claim": "applies signed relationship events and clamped score deltas without directly changing the two named war/alliance bits.",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00d06270"
+        }
+      ],
+      "id": "relationship_score_event_applied",
+      "kind": "sdk_callback",
+      "producers": [
+        "cRelationshipManager::ApplyRelationship"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "consumers": [
+        "App::cGameModeManager and simulator mode consumers"
+      ],
+      "evidence": [
+        {
+          "address": null,
+          "claim": "SDK defines kMsgSwitchGameMode as 0x0212d3e7.",
+          "kind": "sdk_name_only",
+          "level": "CONFIRMED",
+          "source": "Spore ModAPI Simulator/SimulatorMessages.h"
+        }
+      ],
+      "id": "switch_game_mode_message",
+      "kind": "sdk_message",
+      "producers": [
+        "mode-switch UI and orchestration"
+      ],
+      "status": "sdk_interface_only"
+    },
+    {
+      "consumers": [
+        "cVehicle configuration/load body"
+      ],
+      "evidence": [
+        {
+          "address": "0x00ca6630",
+          "claim": "first actions store the SDK locomotion and purpose arguments at +0xb1c and +0xb20 before resource-dependent setup.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00ca6630"
+        }
+      ],
+      "id": "vehicle_load_requested",
+      "kind": "sdk_callback_and_analytical_event",
+      "producers": [
+        "vehicle creation and noun loading paths"
+      ],
+      "status": "contained_sdk_identity"
+    },
+    {
+      "consumers": [
+        "cGamePersistenceManager and serialization callbacks"
+      ],
+      "evidence": [
+        {
+          "address": null,
+          "claim": "SDK defines kMsgSaveGame as 0x01cd20f0 and documents pause/dialog behavior at the application layer.",
+          "kind": "sdk_name_only",
+          "level": "CONFIRMED",
+          "source": "Spore ModAPI Simulator/SimulatorMessages.h"
+        }
+      ],
+      "id": "save_game_message",
+      "kind": "sdk_message",
+      "producers": [
+        "save-game UI or orchestration"
+      ],
+      "status": "sdk_interface_only"
+    }
+  ],
+  "scope": {
+    "binary": {
+      "architecture": "x86:LE:32:windows",
+      "build": "SporeApp.exe 3.1.0.22",
+      "image_base": "0x00400000",
+      "name": "SporeApp.exe",
+      "sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e"
+    },
+    "boundaries": [
+      "No binary, source implementation, SPORE file, or historical triage artifact is modified.",
+      "No game-state, property-list, or save-container bytes are inspected.",
+      "SDK names establish interface shape only; contained/interior imports do not become exact method identities without matching mechanics.",
+      "Numeric values are named only when an SDK enum, structure field, or observed boolean/bit contract supplies the semantic name.",
+      "No runtime trace reaches empire or space gameplay, so gameplay reachability is not promoted to OBSERVED or VERIFIED.",
+      "Planet ownership is not reduced to a single owner field without a direct body tying star ownership, cPlanet.mPoliticalID, and colony records together."
+    ],
+    "evidence_policy": {
+      "confidence_scale": [
+        "high",
+        "medium",
+        "low",
+        "unresolved"
+      ],
+      "levels": [
+        "APPROXIMATION",
+        "CONFIRMED",
+        "INFERRED",
+        "OBSERVED",
+        "SUPPORTED",
+        "UNKNOWN",
+        "VERIFIED"
+      ],
+      "precedence": [
+        "pinned binary identity and direct read-only Ghidra bodies/disassembly",
+        "committed knowledgegraph and boundary-repair records",
+        "SDK names, enums, layouts, and vtable declarations",
+        "existing research dossiers",
+        "static inference"
+      ],
+      "sdk_rule": "SDK names and enum values may name supported states, but do not prove undocumented writers, transition order, or runtime reachability.",
+      "state_rule": "Opaque raw values remain raw; analytical phases are labeled only as call-control phases and are not promoted to game semantics."
+    },
+    "inputs": [
+      "Spore ModAPI SDK headers and pinned SDK export",
+      "committed knowledgegraph/spore.db nodes",
+      "committed state-machine, data-model, lifecycle, root-closure, and decomp-gap research",
+      "read-only Ghidra MCP decompilation, disassembly, structures, data-reference queries, and function-boundary metadata"
+    ],
+    "method": [
+      "Identify authoritative state fields and SDK enum domains before collecting transitions.",
+      "Use committed KG records to separate SDK imports from repaired containing functions.",
+      "Decompile targeted state writers, relationship callbacks, ownership helpers, vehicle load, context/cache roots, and serialization callbacks.",
+      "Use disassembly where current decompiler prototypes conflict with the SDK layout.",
+      "Model only bounded control phases and raw state guards; record unsupported lifecycle surfaces as unresolved."
+    ],
+    "mutations": {
+      "ghidra_program": false,
+      "historical_artifacts": false,
+      "implementation": false,
+      "knowledgegraph_database": false,
+      "spore_directory": false
+    },
+    "runtime_evidence": {
+      "level": "OBSERVED",
+      "status": "NOT_AVAILABLE_FOR_EMPIRE_SPACE",
+      "summary": "Committed runtime artifacts contain no successful empire/space stage trace, save round trip, camera switch, ownership capture, or diplomacy interaction."
+    },
+    "sdk": {
+      "commit": "cbf9206b9a823f0911cd9be0217104a49d72380b",
+      "name": "Spore ModAPI / SporeGhidra_march2017",
+      "sha256": "5d894677c1835082da0392e8b794f3c93a0251733898c3c5b81cf7945f458f09"
+    }
+  },
+  "state_machines": [
+    {
+      "confidence": {
+        "level": "medium",
+        "reason": "The registry, callbacks, and SDK contract are clear, but the live body at the imported SetActiveModeAt address does not match the SDK receiver layout, so transition ordering is interface-level rather than confirmed instruction-level behavior."
+      },
+      "consumers": [
+        "App::cGameModeManager",
+        "Simulator::cStrategy mode routing",
+        "camera and viewer presentation"
+      ],
+      "entry_actions": [
+        {
+          "action": "IGameMode::OnEnter is the SDK-defined selected-mode entry callback.",
+          "conditions": [
+            "a registered active mode is selected"
+          ],
+          "evidence": "App/IGameModeManager.h and App/cGameModeManager.h"
+        }
+      ],
+      "events": [
+        "switch_game_mode_message"
+      ],
+      "evidence": [
+        {
+          "address": "0x007d8d40",
+          "claim": "SDK imports SetActiveModeAt at this address.",
+          "kind": "sdk_name_only",
+          "level": "CONFIRMED",
+          "source": "Spore ModAPI App/cGameModeManager.h and .spore-analysis/ghidra-exports/sdk_functions.tsv"
+        },
+        {
+          "address": "0x007d8d40",
+          "claim": "current body conflicts with cGameModeManager field access and therefore is not used to assert exact transition order.",
+          "kind": "decompilation_conflict",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x007d8d40"
+        },
+        {
+          "address": "0x00b1db60",
+          "claim": "OnModeExited callback exists and operates on transition-effect state.",
+          "kind": "disassembly",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/state-machines/simulator-core.json"
+        },
+        {
+          "address": "0x00b1dbd0",
+          "claim": "OnModeEntered callback exists and operates on transition-effect state.",
+          "kind": "disassembly",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/state-machines/simulator-core.json"
+        }
+      ],
+      "exact_events": [
+        "switch_game_mode_message"
+      ],
+      "exit_actions": [
+        {
+          "action": "IGameMode::OnExit is the SDK-defined prior-mode exit callback.",
+          "conditions": [
+            "the selected mode differs from the current mode"
+          ],
+          "evidence": "App/IGameModeManager.h and committed mode-manager research"
+        }
+      ],
+      "generated_events": [
+        "app_mode_entry_requested",
+        "app_mode_exit_requested"
+      ],
+      "guards": [
+        "mnActiveIndex is meaningful only within mEntries",
+        "ModeEntry.mModeID is an opaque registered uint32_t; SDK GameModeIDs are known candidates, not the finite domain",
+        "the exact live body must not be used while the imported function identity conflicts"
+      ],
+      "name": "app_game_mode_active_entry",
+      "producers": [
+        "SetActiveMode",
+        "SetActiveModeAt",
+        "SetActiveModeByName",
+        "ClearActiveMode"
+      ],
+      "relevant_functions": [
+        "0x007d8cf0 SDK SetActiveMode",
+        "0x007d8d40 SDK SetActiveModeAt",
+        "0x007d8530 SDK ClearActiveMode",
+        "0x00b1db60 Simulator::cGameModeManager::OnModeExited",
+        "0x00b1dbd0 Simulator::cGameModeManager::OnModeEntered"
+      ],
+      "relevant_structures": [
+        "App::cGameModeManager",
+        "App::cGameModeManager::ModeEntry",
+        "App::IGameMode",
+        "Simulator::cGameModeManager"
+      ],
+      "side_effects": [
+        "updates the active registry index",
+        "may invoke mode exit and entry callbacks",
+        "may replace transition-effect and viewer state",
+        "does not establish persistence of active mode state across save/load"
+      ],
+      "supported_states": [
+        {
+          "actions": [
+            "no SDK active-mode entry is selected"
+          ],
+          "guards": [
+            "mnActiveIndex is negative or otherwise designates no entry"
+          ],
+          "name": "no_active_mode_entry"
+        },
+        {
+          "actions": [
+            "one registered ModeEntry is active"
+          ],
+          "guards": [
+            "0 <= mnActiveIndex < mEntries.size()"
+          ],
+          "name": "registered_mode_entry_active"
+        }
+      ],
+      "transitions": [
+        {
+          "actions": [
+            "clear active selection"
+          ],
+          "cause": "ClearActiveMode request",
+          "event": "app_mode_entry_requested",
+          "from_state": "registered_mode_entry_active",
+          "guard": "SDK ClearActiveMode is invoked",
+          "to_state": "no_active_mode_entry"
+        },
+        {
+          "actions": [
+            "select the registered entry and invoke OnEnter"
+          ],
+          "cause": "activate an indexed mode",
+          "event": "app_mode_entry_requested",
+          "from_state": "no_active_mode_entry",
+          "guard": "requested index is in range",
+          "to_state": "registered_mode_entry_active"
+        },
+        {
+          "actions": [
+            "invoke OnExit for the prior entry, select the new entry, and invoke OnEnter"
+          ],
+          "cause": "switch to a different indexed mode",
+          "event": "app_mode_entry_requested",
+          "from_state": "registered_mode_entry_active",
+          "guard": "requested index is in range and differs from the current index",
+          "to_state": "registered_mode_entry_active"
+        },
+        {
+          "actions": [
+            "retain the current entry"
+          ],
+          "cause": "request the already-active mode",
+          "event": "app_mode_entry_requested",
+          "from_state": "registered_mode_entry_active",
+          "guard": "requested index equals the current index",
+          "to_state": "registered_mode_entry_active"
+        },
+        {
+          "actions": [
+            "reject without selecting a mode"
+          ],
+          "cause": "out-of-range mode request",
+          "event": "app_mode_entry_requested",
+          "from_state": "any",
+          "guard": "requested index is outside mEntries",
+          "to_state": "unchanged"
+        }
+      ],
+      "validation": [
+        "Repair the exact SetActiveModeAt containing function without changing types solely to satisfy the SDK name.",
+        "Trace mnActiveIndex, mEntries[current].mModeID, IGameMode::OnExit, active-index write, and IGameMode::OnEnter on one switch.",
+        "Correlate selected mModeID with SDK GameModeIDs kGameSpace, kLoadGameMode, kScenarioMode, and other registered IDs at runtime.",
+        "Verify whether switch_game_mode_message reaches this manager or only Simulator::cGameModeManager."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "medium",
+        "reason": "The active-index field, vector, and read guard are direct; setter ordering and SDK address identities conflict and are not promoted."
+      },
+      "consumers": [
+        "App::cGameModeManager",
+        "cViewer",
+        "renderer"
+      ],
+      "entry_actions": [
+        {
+          "action": "an active-camera request selects a camera through the manager interface.",
+          "conditions": [
+            "the requested camera is resolved"
+          ],
+          "evidence": "App/cCameraManager.h"
+        }
+      ],
+      "events": [
+        "active_camera_requested"
+      ],
+      "evidence": [
+        {
+          "address": "0x007c61a0",
+          "claim": "body reads mnActiveIndex at +0xa8 and returns null when negative or mpCameras[index] otherwise.",
+          "kind": "disassembly",
+          "level": "CONFIRMED",
+          "source": "Ghidra MCP read-only disassembly of SporeApp.exe@0x007c61a0"
+        },
+        {
+          "address": "0x007c6eb0",
+          "claim": "containing body associated with camera removal clears/removes camera state and writes index value 0; this conflicts with the SDK's -1 initialization comment.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x007c6eb0"
+        },
+        {
+          "address": "0x007c6750",
+          "claim": "SDK imports SetActiveCameraByID, but receiver fields in the recovered body do not align with cCameraManager.",
+          "kind": "sdk_boundary_conflict",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x007c6750"
+        }
+      ],
+      "exact_events": [
+        "active_camera_requested"
+      ],
+      "exit_actions": [
+        {
+          "action": "remove cameras and reset manager-owned camera state.",
+          "conditions": [
+            "RemoveCameras is invoked"
+          ],
+          "evidence": "0x007c6eb0 and App/cCameraManager.h"
+        }
+      ],
+      "generated_events": [
+        "active_camera_cleared"
+      ],
+      "guards": [
+        "negative mnActiveIndex means GetActiveCamera returns null",
+        "nonnegative index is dereferenced without an upper-bound check in the recovered getter",
+        "index 0 after camera removal may be invalid because the camera vector is emptied"
+      ],
+      "name": "camera_manager_active_index",
+      "producers": [
+        "SetActiveCamera",
+        "SetActiveCameraByID",
+        "SetActiveCameraByKey",
+        "RemoveCameras"
+      ],
+      "relevant_functions": [
+        "0x007c61a0 behaviorally matching GetActiveCamera",
+        "0x007c64c0 SDK SetActiveCamera",
+        "0x007c6750 SDK SetActiveCameraByID",
+        "0x007c6eb0 SDK-associated RemoveCameras containing body"
+      ],
+      "relevant_structures": [
+        "App::cCameraManager",
+        "App::ICameraManager",
+        "App::cViewer"
+      ],
+      "side_effects": [
+        "selects the active camera",
+        "empties or releases camera objects in the removal path",
+        "may update viewer and renderer state through resolved camera callbacks",
+        "does not prove camera persistence"
+      ],
+      "supported_states": [
+        {
+          "actions": [
+            "active-camera getter returns null"
+          ],
+          "guards": [
+            "mnActiveIndex < 0"
+          ],
+          "name": "index_negative_no_active"
+        },
+        {
+          "actions": [
+            "active-camera getter reads mpCameras[mnActiveIndex]"
+          ],
+          "guards": [
+            "mnActiveIndex >= 0"
+          ],
+          "name": "index_nonnegative_reads_slot"
+        }
+      ],
+      "transitions": [
+        {
+          "actions": [
+            "read the current camera slot"
+          ],
+          "cause": "query active camera",
+          "event": "active_camera_requested",
+          "from_state": "index_nonnegative_reads_slot",
+          "guard": "mnActiveIndex >= 0",
+          "to_state": "index_nonnegative_reads_slot"
+        },
+        {
+          "actions": [
+            "return null without reading mpCameras"
+          ],
+          "cause": "query active camera",
+          "event": "active_camera_requested",
+          "from_state": "index_negative_no_active",
+          "guard": "mnActiveIndex < 0",
+          "to_state": "index_negative_no_active"
+        },
+        {
+          "actions": [
+            "set the manager's active index through the SDK setter interface"
+          ],
+          "cause": "activate camera",
+          "event": "active_camera_requested",
+          "from_state": "any",
+          "guard": "requested camera resolves to an index; exact body unresolved",
+          "to_state": "index_nonnegative_reads_slot"
+        },
+        {
+          "actions": [
+            "remove camera objects and store raw index 0"
+          ],
+          "cause": "remove cameras",
+          "event": "active_camera_cleared",
+          "from_state": "any",
+          "guard": "RemoveCameras body completes",
+          "to_state": "index_nonnegative_reads_slot"
+        }
+      ],
+      "validation": [
+        "Recover the true vtable receiver and setter bodies by matching reads of +0x80, +0x94, and +0xa8.",
+        "Trace mnActiveIndex before and after successful and failed SetActiveCamera/ByID requests.",
+        "Verify whether RemoveCameras intentionally stores 0 with an empty vector or whether +0xa8 is a different field due an older layout.",
+        "Correlate active camera IDs with each SpaceContext transition at runtime."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "high",
+        "reason": "ID sentinel, cache validation, ceiling lookup, pointer replacement, and AddRef/store/Release ordering are direct decompilation and committed root-closure evidence."
+      },
+      "consumers": [
+        "cRelationshipManager",
+        "cMissionManager",
+        "cCultureSet",
+        "cCity",
+        "space session and noun code"
+      ],
+      "entry_actions": [
+        {
+          "action": "read mPlayerEmpireID and mpPlayerEmpire without a null check on sSpacePlayerData.",
+          "conditions": [
+            "accessor entry"
+          ],
+          "evidence": "0x01021300"
+        }
+      ],
+      "events": [
+        "current_empire_cache_refreshed",
+        "current_empire_requested"
+      ],
+      "evidence": [
+        {
+          "address": "0x01021d40",
+          "claim": "SpacePlayerData initialization sets mPlayerEmpireID to 0xffffffff and mpPlayerEmpire to null.",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x01021d40"
+        },
+        {
+          "address": "0x00ba9370",
+          "claim": "registry helper returns null for 0xffffffff or lower-bound end, otherwise the intrusive cEmpire payload at the first key greater than or equal to the request; it does not require equality.",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "Ghidra MCP and knowledgegraph/research/root-closure/track-e-empire-chain.json"
+        },
+        {
+          "address": "0x01021300",
+          "claim": "cache refresh AddRefs a different non-null result, stores it, then Releases the old pointer.",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x01021300"
+        }
+      ],
+      "exact_events": [
+        "current_empire_cache_refreshed",
+        "current_empire_requested"
+      ],
+      "exit_actions": [
+        {
+          "action": "return a borrowed cached pointer or null; no centralized release is performed by the accessor.",
+          "conditions": [],
+          "evidence": "0x01021300"
+        }
+      ],
+      "generated_events": [
+        "current_empire_cache_refreshed"
+      ],
+      "guards": [
+        "mPlayerEmpireID == 0xffffffff returns null and leaves the old cache untouched",
+        "cache is valid only when pointer is non-null and cEmpire+0x84 equals mPlayerEmpireID",
+        "same-pointer lookup causes no AddRef or Release",
+        "a ceiling successor can be cached under a mismatched requested ID and will fail validation again on the next call"
+      ],
+      "name": "current_empire_identity_cache",
+      "producers": [
+        "SpacePlayerData initialization",
+        "external mPlayerEmpireID writers",
+        "0x01021300 cache accessor"
+      ],
+      "relevant_functions": [
+        "0x00b3d2a0 cStarManager-compatible manager accessor",
+        "0x00ba9370 empire-registry ceiling lookup",
+        "0x01021300 current-player cEmpire cache accessor",
+        "0x01021d40 SpacePlayerData initializer"
+      ],
+      "relevant_structures": [
+        "Simulator::SpacePlayerData",
+        "Simulator::cEmpire",
+        "Simulator::cStarManager"
+      ],
+      "side_effects": [
+        "reads cEmpire.mPoliticalID",
+        "performs a registry lookup",
+        "AddRefs a new non-null cached pointer",
+        "stores the lookup result",
+        "Releases a replaced old cached pointer",
+        "may leave a stale ceiling successor cached"
+      ],
+      "supported_states": [
+        {
+          "actions": [
+            "return null without changing mpPlayerEmpire"
+          ],
+          "guards": [
+            "mPlayerEmpireID == 0xffffffff"
+          ],
+          "name": "id_unset"
+        },
+        {
+          "actions": [
+            "perform a registry lookup"
+          ],
+          "guards": [
+            "mPlayerEmpireID is set",
+            "mpPlayerEmpire is null"
+          ],
+          "name": "cache_absent"
+        },
+        {
+          "actions": [
+            "perform another registry lookup"
+          ],
+          "guards": [
+            "mpPlayerEmpire is non-null",
+            "mPlayerEmpireID does not equal cached cEmpire.mPoliticalID"
+          ],
+          "name": "cache_stale"
+        },
+        {
+          "actions": [
+            "return the cached pointer without lookup"
+          ],
+          "guards": [
+            "mpPlayerEmpire is non-null",
+            "mPlayerEmpireID equals cached cEmpire.mPoliticalID"
+          ],
+          "name": "cache_valid"
+        }
+      ],
+      "transitions": [
+        {
+          "actions": [
+            "AddRef and store a non-null lookup result"
+          ],
+          "cause": "cold-cache exact-key lookup",
+          "event": "current_empire_cache_refreshed",
+          "from_state": "cache_absent",
+          "guard": "registry lookup returns non-null and its political ID equals mPlayerEmpireID",
+          "to_state": "cache_valid"
+        },
+        {
+          "actions": [
+            "AddRef and store a non-null ceiling successor"
+          ],
+          "cause": "cold-cache ceiling result mismatch",
+          "event": "current_empire_cache_refreshed",
+          "from_state": "cache_absent",
+          "guard": "registry lookup returns non-null and its political ID differs from mPlayerEmpireID",
+          "to_state": "cache_stale"
+        },
+        {
+          "actions": [
+            "store null"
+          ],
+          "cause": "cold-cache miss",
+          "event": "current_empire_cache_refreshed",
+          "from_state": "cache_absent",
+          "guard": "registry lookup returns null",
+          "to_state": "cache_absent"
+        },
+        {
+          "actions": [
+            "AddRef a different non-null result, store it, and Release the stale old pointer"
+          ],
+          "cause": "stale-cache exact-key resolution",
+          "event": "current_empire_cache_refreshed",
+          "from_state": "cache_stale",
+          "guard": "registry result is non-null, differs from the old pointer, and has political ID equal to mPlayerEmpireID",
+          "to_state": "cache_valid"
+        },
+        {
+          "actions": [
+            "store null and Release the stale old pointer"
+          ],
+          "cause": "stale-cache lookup miss",
+          "event": "current_empire_cache_refreshed",
+          "from_state": "cache_stale",
+          "guard": "registry lookup returns null",
+          "to_state": "cache_absent"
+        },
+        {
+          "actions": [
+            "perform another lookup because the stored ID and cached object still disagree"
+          ],
+          "cause": "ceiling result mismatch",
+          "event": "current_empire_cache_refreshed",
+          "from_state": "cache_stale",
+          "guard": "stored ID is not equal to cached cEmpire.mPoliticalID",
+          "to_state": "cache_stale"
+        },
+        {
+          "actions": [
+            "return null and retain the old cache"
+          ],
+          "cause": "unset player identity",
+          "event": "current_empire_requested",
+          "from_state": "id_unset",
+          "guard": "mPlayerEmpireID == 0xffffffff",
+          "to_state": "id_unset"
+        },
+        {
+          "actions": [
+            "return the cached pointer"
+          ],
+          "cause": "valid identity request",
+          "event": "current_empire_requested",
+          "from_state": "cache_valid",
+          "guard": "cached political ID equals stored player ID",
+          "to_state": "cache_valid"
+        }
+      ],
+      "validation": [
+        "Trace mPlayerEmpireID and mpPlayerEmpire before and after every 0x01021300 call.",
+        "Exercise unset ID, cold cache, exact hit, same-pointer lookup, changed ID, absent key with successor, and absent key at map end.",
+        "Record AddRef and Release calls and verify lookup, AddRef, store, Release order.",
+        "Audit registry mutation and erasure sites for stale-cache behavior."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "high",
+        "reason": "Both membership helpers, intrusive reference operations, flag bit 0x10, home-state branches, and message ID 0x55bd8f7 are directly recovered."
+      },
+      "consumers": [
+        "cEmpire",
+        "cStarRecord",
+        "cPlanet and colony presentation",
+        "capture and ownership UI"
+      ],
+      "entry_actions": [
+        {
+          "action": "scan cEmpire.mStars for an exact intrusive pointer match.",
+          "conditions": [
+            "remove-helper entry"
+          ],
+          "evidence": "0x00c34ee0"
+        },
+        {
+          "action": "scan cEmpire.mStars before appending a candidate star.",
+          "conditions": [
+            "star pointer is non-null"
+          ],
+          "evidence": "0x00c341a0"
+        }
+      ],
+      "events": [
+        "star_ownership_changed"
+      ],
+      "evidence": [
+        {
+          "address": "0x00c34ee0",
+          "claim": "removes a found star with intrusive release, updates flags/home state, and emits 0x55bd8f7.",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00c34ee0"
+        },
+        {
+          "address": "0x00c341a0",
+          "claim": "adds a missing star with AddRef, append, temporary Release, flag update, optional home update, and 0x55bd8f7.",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00c341a0"
+        },
+        {
+          "address": "0x00c35240",
+          "claim": "orchestrates removal/addition and relationship-related update paths, but its decompiler ABI is incomplete.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00c35240"
+        },
+        {
+          "address": null,
+          "claim": "SDK documents cEmpire::AddStarOwnership and CaptureSystem and identifies 0x55bd8f7 as kMsgStarOwnershipChanged.",
+          "kind": "sdk_name_only",
+          "level": "CONFIRMED",
+          "source": "Spore ModAPI Simulator/cEmpire.h and Simulator/SimulatorMessages.h"
+        }
+      ],
+      "exact_events": [
+        "star_ownership_changed"
+      ],
+      "exit_actions": [
+        {
+          "action": "release the final temporary/reference after add or remove.",
+          "conditions": [
+            "helper completion"
+          ],
+          "evidence": "0x00c34ee0 and 0x00c341a0"
+        }
+      ],
+      "generated_events": [
+        "star_ownership_changed"
+      ],
+      "guards": [
+        "remove acts only when the exact star pointer is present in cEmpire.mStars",
+        "add acts only when the candidate pointer is non-null and not already present",
+        "cStarRecord.mEmpireID, cPlanet.mPoliticalID, and colony ownership are not directly written by these two helper bodies"
+      ],
+      "name": "empire_star_membership",
+      "producers": [
+        "0x00c34ee0 removal helper",
+        "0x00c341a0 addition helper",
+        "0x00c35240 ownership orchestration"
+      ],
+      "relevant_functions": [
+        "0x00c34ee0",
+        "0x00c341a0",
+        "0x00c35240",
+        "0x00c8d060 CaptureSystem-associated body"
+      ],
+      "relevant_structures": [
+        "Simulator::cEmpire",
+        "Simulator::cStarRecord",
+        "Simulator::cStar",
+        "Simulator::cPlanet",
+        "Simulator::cPlanetRecord"
+      ],
+      "side_effects": [
+        "changes cEmpire.mStars membership",
+        "sets cEmpire flag bit 0x10",
+        "may clear or initialize home star/home planet state",
+        "emits kMsgStarOwnershipChanged",
+        "drives capture-related relationship, UI, mission, and destruction helpers through higher-level bodies"
+      ],
+      "supported_states": [
+        {
+          "actions": [
+            "star is not a member of the inspected cEmpire.mStars vector"
+          ],
+          "guards": [
+            "no exact pointer match exists"
+          ],
+          "name": "membership_absent"
+        },
+        {
+          "actions": [
+            "star is an intrusive member of the inspected cEmpire.mStars vector"
+          ],
+          "guards": [
+            "exact pointer match exists"
+          ],
+          "name": "membership_present"
+        }
+      ],
+      "transitions": [
+        {
+          "actions": [
+            "AddRef candidate, append it, release the local temporary, update flags/home state, and emit ownership-changed"
+          ],
+          "cause": "add star ownership",
+          "event": "star_ownership_changed",
+          "from_state": "membership_absent",
+          "guard": "candidate pointer is non-null",
+          "to_state": "membership_present"
+        },
+        {
+          "actions": [
+            "replace the found vector slot, reduce vector end, release removed member, update flags/home state, and emit ownership-changed"
+          ],
+          "cause": "remove star ownership",
+          "event": "star_ownership_changed",
+          "from_state": "membership_present",
+          "guard": "exact star pointer is found",
+          "to_state": "membership_absent"
+        },
+        {
+          "actions": [
+            "retain the current membership"
+          ],
+          "cause": "duplicate add",
+          "event": "star_ownership_changed",
+          "from_state": "membership_present",
+          "guard": "candidate pointer is already present",
+          "to_state": "membership_present"
+        },
+        {
+          "actions": [
+            "retain the current membership"
+          ],
+          "cause": "remove without membership",
+          "event": "star_ownership_changed",
+          "from_state": "membership_absent",
+          "guard": "candidate pointer is not found",
+          "to_state": "membership_absent"
+        }
+      ],
+      "validation": [
+        "Trace cEmpire.mStars begin/end, cStarRecord.mEmpireID, cStar.mPoliticalID, cPlanet.mPoliticalID, and message 0x55bd8f7 on one capture.",
+        "Record AddRef/Release calls around both helpers and confirm no use-after-release.",
+        "Verify the direct cStarRecord.mEmpireID write site; do not infer it solely from membership mutation.",
+        "Trace colony/planet records and cSpacePlayerData.mPlayerColonies across capture."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "high",
+        "reason": "The record-presence and flag-bit transitions are direct decompilation; only broader economy/message side effects remain bounded."
+      },
+      "consumers": [
+        "cEmpire",
+        "cCivilization",
+        "cCity",
+        "mission and player-message consumers"
+      ],
+      "entry_actions": [
+        {
+          "action": "default the second cEmpire argument to the current player when null.",
+          "conditions": [
+            "interaction callback entry"
+          ],
+          "evidence": "0x00d038e0, 0x00d065a0, 0x00d06920, and 0x00d01e30"
+        }
+      ],
+      "events": [
+        "player_empire_relationship_changed",
+        "relationship_reset",
+        "relationship_score_event_applied"
+      ],
+      "evidence": [
+        {
+          "address": "0x00d05830",
+          "claim": "ResetRelationship finds or creates a record and resets score, flags, and event map to bounded defaults.",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00d05830"
+        },
+        {
+          "address": "0x00d065a0",
+          "claim": "DeclareWar sets bit 0, clears bit 1 in one or both directed entries, updates empires, and applies relationship deltas.",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00d065a0"
+        },
+        {
+          "address": "0x00d06920",
+          "claim": "DeclareAlliance calls DeclarePeace and then sets bit 1 in one or both directed entries.",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00d06920"
+        },
+        {
+          "address": "0x00d01f50",
+          "claim": "war predicate reads cRelationshipData.mFlags bit 0.",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00d01f50"
+        },
+        {
+          "address": "0x00d01ff0",
+          "claim": "alliance predicate reads cRelationshipData.mFlags bit 1.",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00d01ff0"
+        }
+      ],
+      "exact_events": [
+        "player_empire_relationship_changed",
+        "relationship_reset",
+        "relationship_score_event_applied"
+      ],
+      "exit_actions": [
+        {
+          "action": "run empire/civilization update paths after flag mutation when the player is involved.",
+          "conditions": [
+            "callback reaches its post-transition update block"
+          ],
+          "evidence": "0x00d038e0, 0x00d065a0, 0x00d06920, and 0x00d01e30"
+        }
+      ],
+      "generated_events": [
+        "player_empire_relationship_changed"
+      ],
+      "guards": [
+        "relationship record absence is distinct from neutral flags",
+        "DeclareWar returns early when bit 0 is already set",
+        "DeclarePeace changes bit 0 only when the current record reports war",
+        "DeclareAlliance first invokes the peace path and then sets bit 1",
+        "war and alliance bits are not claimed to be mutually exclusive in arbitrary data; recovered writers keep them mutually exclusive"
+      ],
+      "name": "empire_relationship_flags",
+      "producers": [
+        "DeclareWar",
+        "DeclarePeace",
+        "DeclareAlliance",
+        "BreakAlliance",
+        "ResetRelationship",
+        "ApplyRelationship"
+      ],
+      "relevant_functions": [
+        "0x00d01f50 IsAtWar",
+        "0x00d01ff0 IsAllied2",
+        "0x00d038e0 DeclarePeace",
+        "0x00d05830 ResetRelationship",
+        "0x00d06270 ApplyRelationship",
+        "0x00d065a0 DeclareWar",
+        "0x00d06920 DeclareAlliance",
+        "0x00d01e30 BreakAlliance"
+      ],
+      "relevant_structures": [
+        "Simulator::cRelationshipManager",
+        "Simulator::cRelationshipData",
+        "Simulator::cEmpire",
+        "Simulator::cGameData"
+      ],
+      "side_effects": [
+        "creates or resets relationship records",
+        "mutates war/alliance bits in one or both directed entries",
+        "updates enemy/allied empire state through helpers",
+        "applies relationship score/event deltas",
+        "emits player alliance and lost-alliance messages for player-involved paths"
+      ],
+      "supported_states": [
+        {
+          "actions": [
+            "no cRelationshipData record exists for the pair"
+          ],
+          "guards": [
+            "ordered map lookup fails"
+          ],
+          "name": "relationship_absent"
+        },
+        {
+          "actions": [
+            "relationship exists and alliance bit is set while recovered writers keep war clear"
+          ],
+          "guards": [
+            "record exists",
+            "mFlags bit 1 == 1",
+            "mFlags bit 0 == 0"
+          ],
+          "name": "allied"
+        },
+        {
+          "actions": [
+            "relationship exists without war or alliance"
+          ],
+          "guards": [
+            "record exists",
+            "mFlags bit 0 == 0",
+            "mFlags bit 1 == 0"
+          ],
+          "name": "neutral"
+        },
+        {
+          "actions": [
+            "relationship exists and war bit is set while recovered writers keep alliance clear"
+          ],
+          "guards": [
+            "record exists",
+            "mFlags bit 0 == 1",
+            "mFlags bit 1 == 0"
+          ],
+          "name": "war"
+        }
+      ],
+      "transitions": [
+        {
+          "actions": [
+            "set war bit and clear alliance bit in one or both directed entries, update empires, and apply negative relationship deltas"
+          ],
+          "cause": "declare war",
+          "event": "player_empire_relationship_changed",
+          "from_state": "allied",
+          "guard": "current relation is not already war",
+          "to_state": "war"
+        },
+        {
+          "actions": [
+            "set war bit and clear alliance bit in one or both directed entries, update empires, and apply negative relationship deltas"
+          ],
+          "cause": "declare war",
+          "event": "player_empire_relationship_changed",
+          "from_state": "neutral",
+          "guard": "current relation is not already war",
+          "to_state": "war"
+        },
+        {
+          "actions": [
+            "retain relationship flags"
+          ],
+          "cause": "duplicate declare-war request",
+          "event": "player_empire_relationship_changed",
+          "from_state": "war",
+          "guard": "war bit is already set",
+          "to_state": "war"
+        },
+        {
+          "actions": [
+            "reset the existing allied relationship record"
+          ],
+          "cause": "reset relationship",
+          "event": "relationship_reset",
+          "from_state": "allied",
+          "guard": "ResetRelationship is invoked",
+          "to_state": "neutral"
+        },
+        {
+          "actions": [
+            "retain the reset neutral record"
+          ],
+          "cause": "reset relationship",
+          "event": "relationship_reset",
+          "from_state": "neutral",
+          "guard": "ResetRelationship is invoked",
+          "to_state": "neutral"
+        },
+        {
+          "actions": [
+            "create or reset the relationship record"
+          ],
+          "cause": "reset relationship",
+          "event": "relationship_reset",
+          "from_state": "relationship_absent",
+          "guard": "ResetRelationship is invoked",
+          "to_state": "neutral"
+        },
+        {
+          "actions": [
+            "reset the existing war relationship record"
+          ],
+          "cause": "reset relationship",
+          "event": "relationship_reset",
+          "from_state": "war",
+          "guard": "ResetRelationship is invoked",
+          "to_state": "neutral"
+        },
+        {
+          "actions": [
+            "clear war bit in one or both directed entries and run update paths"
+          ],
+          "cause": "declare peace",
+          "event": "player_empire_relationship_changed",
+          "from_state": "war",
+          "guard": "current relation reports war",
+          "to_state": "neutral"
+        },
+        {
+          "actions": [
+            "run peace path, set alliance bit, update empires, and emit player alliance message when applicable"
+          ],
+          "cause": "declare alliance",
+          "event": "player_empire_relationship_changed",
+          "from_state": "neutral",
+          "guard": "both empires are valid",
+          "to_state": "allied"
+        },
+        {
+          "actions": [
+            "run peace path, set alliance bit, update empires, and emit player alliance message when applicable"
+          ],
+          "cause": "declare alliance",
+          "event": "player_empire_relationship_changed",
+          "from_state": "war",
+          "guard": "both empires are valid",
+          "to_state": "allied"
+        },
+        {
+          "actions": [
+            "clear alliance bit and emit player lost-alliance message when applicable"
+          ],
+          "cause": "break alliance",
+          "event": "player_empire_relationship_changed",
+          "from_state": "allied",
+          "guard": "BreakAlliance is invoked",
+          "to_state": "neutral"
+        },
+        {
+          "actions": [
+            "mutate score and relationship-event map without changing war/alliance bits"
+          ],
+          "cause": "apply relationship event",
+          "event": "relationship_score_event_applied",
+          "from_state": "allied",
+          "guard": "positive scale and current player civilization resolution pass",
+          "to_state": "allied"
+        },
+        {
+          "actions": [
+            "mutate score and relationship-event map without changing war/alliance bits"
+          ],
+          "cause": "apply relationship event",
+          "event": "relationship_score_event_applied",
+          "from_state": "neutral",
+          "guard": "positive scale and current player civilization resolution pass",
+          "to_state": "neutral"
+        },
+        {
+          "actions": [
+            "mutate score and relationship-event map without changing war/alliance bits"
+          ],
+          "cause": "apply relationship event",
+          "event": "relationship_score_event_applied",
+          "from_state": "war",
+          "guard": "positive scale and current player civilization resolution pass",
+          "to_state": "war"
+        }
+      ],
+      "validation": [
+        "Trace both ordered records, cRelationshipData.mFlags, cEmpire.mEnemies, and cEmpire.mAllies around each callback.",
+        "Issue reset, war, peace, alliance, break-alliance, and relationship-event requests for player and non-player pairs.",
+        "Verify message IDs 0x04445d43 and 0x04445d44 and payload contents.",
+        "Do not infer a finite state for malformed records with both bits set until a producer is found."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "medium",
+        "reason": "The four raw states, writes, and call order are direct, but the global owner is unnamed and the function is vtable-only in the committed KG."
+      },
+      "consumers": [
+        "unknown vtable owner at 0x01479ec0",
+        "space/gameplay orchestration"
+      ],
+      "entry_actions": [
+        {
+          "action": "read DAT_0169dca4 after per-frame list maintenance.",
+          "conditions": [
+            "vtable callback executes"
+          ],
+          "evidence": "0x00d1cdf0"
+        }
+      ],
+      "events": [
+        "galaxy_subsystem_tick"
+      ],
+      "evidence": [
+        {
+          "address": "0x00d1bf10",
+          "claim": "standalone writer stores raw value 1 to DAT_0169dca4.",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00d1bf10"
+        },
+        {
+          "address": "0x00d1cdf0",
+          "claim": "callback executes four exact branches for raw values 0, 1, 2, and 3; values 1, 2, and 3 advance the word and value 3 restores raw 0.",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00d1cdf0"
+        },
+        {
+          "address": "0x01479ec0",
+          "claim": "committed triage identifies 0x00d1cdf0 as a vtable implementation with no SDK owner name.",
+          "kind": "kg_vtable_topology",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl"
+        }
+      ],
+      "exact_events": [
+        "galaxy_subsystem_tick"
+      ],
+      "exit_actions": [
+        {
+          "action": "return after common renderer, camera, and owner-release side effects.",
+          "conditions": [
+            "callback completion"
+          ],
+          "evidence": "0x00d1cdf0"
+        }
+      ],
+      "generated_events": [
+        "galaxy_subsystem_phase_reset"
+      ],
+      "guards": [
+        "states are named raw_0 through raw_3 only",
+        "no SDK enum or structure field defines this word",
+        "semantic role labels are limited to observed branch behavior"
+      ],
+      "name": "unattributed_galaxy_subsystem_update_phase",
+      "producers": [
+        "0x00d1bf10",
+        "0x00d1cdf0 itself"
+      ],
+      "relevant_functions": [
+        "0x00d1bf10",
+        "0x00d1cdf0",
+        "0x00b01db0",
+        "0x00b0b150",
+        "0x00b0c190",
+        "0x00b79aa0",
+        "0x00b781d0"
+      ],
+      "relevant_structures": [
+        "unresolved vtable owner at 0x01479ec0",
+        "Simulator::cGamePersistenceManager",
+        "Simulator::cRelationshipManager"
+      ],
+      "side_effects": [
+        "maintains two owner-managed intrusive vectors",
+        "calls simulator accessors and rendering/camera paths",
+        "calls named persistence and relationship-manager getters",
+        "uses helper routines whose exact save/load and relationship roles are unresolved"
+      ],
+      "supported_states": [
+        {
+          "actions": [
+            "skip the four-way phase block and perform common per-frame work"
+          ],
+          "guards": [
+            "DAT_0169dca4 == 0"
+          ],
+          "name": "raw_0"
+        },
+        {
+          "actions": [
+            "run first-phase helper calls and persistence/relationship paths, then write 2"
+          ],
+          "guards": [
+            "DAT_0169dca4 == 1"
+          ],
+          "name": "raw_1"
+        },
+        {
+          "actions": [
+            "write 3 and continue common work"
+          ],
+          "guards": [
+            "DAT_0169dca4 == 2"
+          ],
+          "name": "raw_2"
+        },
+        {
+          "actions": [
+            "run cleanup/rebuild helper calls and persistence/relationship paths, write 0, and invoke 0x00ba0770"
+          ],
+          "guards": [
+            "DAT_0169dca4 == 3"
+          ],
+          "name": "raw_3"
+        }
+      ],
+      "transitions": [
+        {
+          "actions": [
+            "call first-phase helpers and write 2"
+          ],
+          "cause": "raw phase 1 tick",
+          "event": "galaxy_subsystem_tick",
+          "from_state": "raw_1",
+          "guard": "always in raw_1",
+          "to_state": "raw_2"
+        },
+        {
+          "actions": [
+            "write 3"
+          ],
+          "cause": "raw phase 2 tick",
+          "event": "galaxy_subsystem_tick",
+          "from_state": "raw_2",
+          "guard": "always in raw_2",
+          "to_state": "raw_3"
+        },
+        {
+          "actions": [
+            "run cleanup/rebuild sequence, write 0, and invoke 0x00ba0770"
+          ],
+          "cause": "raw phase 3 tick",
+          "event": "galaxy_subsystem_tick",
+          "from_state": "raw_3",
+          "guard": "always in raw_3",
+          "to_state": "raw_0"
+        },
+        {
+          "actions": [
+            "reset the phase word to 1"
+          ],
+          "cause": "external phase reset",
+          "event": "galaxy_subsystem_phase_reset",
+          "from_state": "any",
+          "guard": "0x00d1bf10 is invoked",
+          "to_state": "raw_1"
+        }
+      ],
+      "validation": [
+        "Identify the concrete vtable owner and all callers of 0x00d1bf10 and 0x00d1cdf0.",
+        "Trace receiver identity, DAT_0169dca4, and helper arguments across at least four consecutive calls.",
+        "Correlate the phase cycle with kLoadGameMode, kScenarioMode, kGameSpace, and renderer state before assigning names.",
+        "Do not interpret persistence-manager calls as confirmed save/load writes until their vtable targets are recovered."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "high",
+        "reason": "The PropertyList read/write loops and boolean failure propagation are direct; this is intentionally only a transfer-outcome machine, not a whole-game save state machine."
+      },
+      "consumers": [
+        "serializable Empire/Space objects",
+        "resource persistence",
+        "saved-game orchestration"
+      ],
+      "entry_actions": [
+        {
+          "action": "initialize local success flag from the first stream operation.",
+          "conditions": [
+            "Write or Read entry"
+          ],
+          "evidence": "0x006a1540 and 0x006a2f60"
+        }
+      ],
+      "events": [
+        "load_game_message",
+        "save_game_message"
+      ],
+      "evidence": [
+        {
+          "address": "0x006a1540",
+          "claim": "Write serializes count first, then every property ID/value, and propagates false on the first failed helper.",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x006a1540"
+        },
+        {
+          "address": "0x006a2f60",
+          "claim": "Read obtains framing, may load a parent list, resizes local entries, and propagates false on failed reads.",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x006a2f60"
+        },
+        {
+          "address": null,
+          "claim": "PlayerPlanetData, cSpacePlayerWarData, cSpaceTradeRouteManager, and cMission expose SDK Write/Read callback surfaces.",
+          "kind": "sdk_name_only",
+          "level": "CONFIRMED",
+          "source": "Spore ModAPI headers and pinned SDK export"
+        },
+        {
+          "address": "0x00b3d440",
+          "claim": "named persistence manager getter returns DAT_0167eb34; LoadGame is known only at vtable +0x10.",
+          "kind": "decompilation_and_sdk_interface",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP and Spore ModAPI Simulator/SubSystem/GamePersistenceManager.h"
+        }
+      ],
+      "exact_events": [
+        "load_game_message",
+        "save_game_message"
+      ],
+      "exit_actions": [
+        {
+          "action": "return the final stream-operation success flag.",
+          "conditions": [
+            "function exit"
+          ],
+          "evidence": "0x006a1540 and 0x006a2f60"
+        }
+      ],
+      "generated_events": [
+        "property_transfer_failed",
+        "property_transfer_succeeded"
+      ],
+      "guards": [
+        "count is written/read before entries",
+        "the first failed count, ID, or value operation makes the transfer fail",
+        "successful transfer does not prove parent-list persistence or whole-save consistency",
+        "not_started is an analytical pre-call phase, not a stored field"
+      ],
+      "name": "property_list_transfer_outcome",
+      "producers": [
+        "App::PropertyList::Write",
+        "App::PropertyList::Read"
+      ],
+      "relevant_functions": [
+        "0x006a1540 App::PropertyList::Write",
+        "0x006a2f60 App::PropertyList::Read",
+        "0x00b3d440 Simulator::cGamePersistenceManager::Get"
+      ],
+      "relevant_structures": [
+        "App::PropertyList",
+        "Simulator::cGamePersistenceManager",
+        "Simulator::GameLoadParameters",
+        "Simulator::cSavedGameHeader",
+        "Simulator::cEmpire",
+        "Simulator::cStarRecord",
+        "Simulator::PlayerPlanetData",
+        "Simulator::cSpacePlayerWarData",
+        "Simulator::cSpaceTradeRouteManager"
+      ],
+      "side_effects": [
+        "reads or writes a property-entry count",
+        "reads or writes each property ID/value",
+        "may replace a PropertyList parent pointer during Read",
+        "resizes the local property vector",
+        "does not establish file atomicity, rollback, or complete object restoration"
+      ],
+      "supported_states": [
+        {
+          "actions": [
+            "stop at the first failed count, property-ID, or property-value operation"
+          ],
+          "guards": [
+            "final success flag is false"
+          ],
+          "name": "transfer_failed"
+        },
+        {
+          "actions": [
+            "analytical pre-call phase before any stream operation"
+          ],
+          "guards": [
+            "function has not returned"
+          ],
+          "name": "transfer_not_started"
+        },
+        {
+          "actions": [
+            "all required count and entry operations succeeded"
+          ],
+          "guards": [
+            "final success flag is true"
+          ],
+          "name": "transfer_succeeded"
+        }
+      ],
+      "transitions": [
+        {
+          "actions": [
+            "write count and all property entries"
+          ],
+          "cause": "serialize PropertyList",
+          "event": "save_game_message",
+          "from_state": "transfer_not_started",
+          "guard": "all stream helper calls succeed",
+          "to_state": "transfer_succeeded"
+        },
+        {
+          "actions": [
+            "stop on the first failed stream helper"
+          ],
+          "cause": "serialize PropertyList",
+          "event": "save_game_message",
+          "from_state": "transfer_not_started",
+          "guard": "at least one stream helper fails",
+          "to_state": "transfer_failed"
+        },
+        {
+          "actions": [
+            "read framing and all property entries"
+          ],
+          "cause": "deserialize PropertyList",
+          "event": "load_game_message",
+          "from_state": "transfer_not_started",
+          "guard": "all required stream helper calls succeed",
+          "to_state": "transfer_succeeded"
+        },
+        {
+          "actions": [
+            "stop on the first failed stream helper"
+          ],
+          "cause": "deserialize PropertyList",
+          "event": "load_game_message",
+          "from_state": "transfer_not_started",
+          "guard": "at least one required stream helper fails",
+          "to_state": "transfer_failed"
+        }
+      ],
+      "validation": [
+        "Capture a legal non-proprietary PropertyList fixture and verify count/entry order without modifying SPORE data.",
+        "Instrument each stream helper and verify first-failure short-circuit behavior.",
+        "Recover the concrete cGamePersistenceManager vtable, LoadGame target, and any SaveGame callback before extending this machine to whole-save state.",
+        "Verify whether cSavedGameHeader and GameLoadParameters are read before or after object restoration."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "high",
+        "reason": "SpaceContext is SDK-defined and the sole setter, initializer, Galaxy follow-up, and consumer branches are directly recovered."
+      },
+      "consumers": [
+        "space navigation",
+        "active planet/star references",
+        "solar-system and galaxy presentation",
+        "0x00c3ae70 and 0x00c3dae0 context consumers"
+      ],
+      "entry_actions": [
+        {
+          "action": "read old mCurrentContext and compare with requested value.",
+          "conditions": [
+            "setter entry"
+          ],
+          "evidence": "0x01021960"
+        }
+      ],
+      "events": [
+        "active_space_context_requested"
+      ],
+      "evidence": [
+        {
+          "address": "0x01021d40",
+          "claim": "SpacePlayerData initializer stores SpaceContext None (-1) at +0x10.",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x01021d40"
+        },
+        {
+          "address": "0x01021960",
+          "claim": "setter writes a changed value before any Galaxy-only follow-up.",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x01021960"
+        },
+        {
+          "address": "0x01001360",
+          "claim": "Galaxy follow-up materializes and updates up to 1000 intrusive object references, then activates/deactivates owner callbacks for the populated tail.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x01001360"
+        },
+        {
+          "address": "0x01021080",
+          "claim": "direct reader returns mCurrentContext.",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x01021080"
+        }
+      ],
+      "exact_events": [
+        "active_space_context_requested"
+      ],
+      "exit_actions": [
+        {
+          "action": "retain the stored context unless the Galaxy follow-up mutates related owner state.",
+          "conditions": [
+            "setter return"
+          ],
+          "evidence": "0x01021960"
+        }
+      ],
+      "generated_events": [
+        "galaxy_context_followup_completed"
+      ],
+      "guards": [
+        "same requested and stored values produce no write or follow-up",
+        "Galaxy follow-up requires mpActiveStar and the result of 0x00ffbe50 to be non-null",
+        "Planet and SolarSystem changes have no special follow-up in this writer"
+      ],
+      "name": "space_navigation_context",
+      "producers": [
+        "0x01021d40",
+        "0x01021960"
+      ],
+      "relevant_functions": [
+        "0x00ffbe50",
+        "0x01001360",
+        "0x01021080",
+        "0x01021960",
+        "0x01021d40"
+      ],
+      "relevant_structures": [
+        "Simulator::SpacePlayerData",
+        "Simulator::SpaceContext"
+      ],
+      "side_effects": [
+        "stores mCurrentContext",
+        "Galaxy transition may resolve a companion object",
+        "Galaxy follow-up may allocate, reference-count, activate, deactivate, and release up to 1000 object entries",
+        "does not itself rewrite mCurrentContext after the Galaxy follow-up"
+      ],
+      "supported_states": [
+        {
+          "actions": [
+            "represent no active space navigation context"
+          ],
+          "guards": [
+            "mCurrentContext == -1"
+          ],
+          "name": "None"
+        },
+        {
+          "actions": [
+            "represent galaxy navigation scale"
+          ],
+          "guards": [
+            "mCurrentContext == 2"
+          ],
+          "name": "Galaxy"
+        },
+        {
+          "actions": [
+            "represent planet-surface navigation scale"
+          ],
+          "guards": [
+            "mCurrentContext == 0"
+          ],
+          "name": "Planet"
+        },
+        {
+          "actions": [
+            "represent solar-system navigation scale"
+          ],
+          "guards": [
+            "mCurrentContext == 1"
+          ],
+          "name": "SolarSystem"
+        }
+      ],
+      "transitions": [
+        {
+          "actions": [
+            "store None"
+          ],
+          "cause": "initialization",
+          "event": "active_space_context_requested",
+          "from_state": "uninitialized",
+          "guard": "0x01021d40 allocates successfully",
+          "to_state": "None"
+        },
+        {
+          "actions": [
+            "store Galaxy, resolve companion when pointers permit, and call 0x01001360 after the store"
+          ],
+          "cause": "galaxy navigation request",
+          "event": "active_space_context_requested",
+          "from_state": "any",
+          "guard": "requested value is 2 and differs from the current value",
+          "to_state": "Galaxy"
+        },
+        {
+          "actions": [
+            "store None"
+          ],
+          "cause": "leave active space context",
+          "event": "active_space_context_requested",
+          "from_state": "any",
+          "guard": "requested value is -1 and differs from the current value",
+          "to_state": "None"
+        },
+        {
+          "actions": [
+            "store Planet"
+          ],
+          "cause": "planet navigation request",
+          "event": "active_space_context_requested",
+          "from_state": "any",
+          "guard": "requested value is 0 and differs from the current value",
+          "to_state": "Planet"
+        },
+        {
+          "actions": [
+            "store SolarSystem"
+          ],
+          "cause": "solar-system navigation request",
+          "event": "active_space_context_requested",
+          "from_state": "any",
+          "guard": "requested value is 1 and differs from the current value",
+          "to_state": "SolarSystem"
+        },
+        {
+          "actions": [
+            "return without changing state"
+          ],
+          "cause": "same Galaxy request",
+          "event": "active_space_context_requested",
+          "from_state": "Galaxy",
+          "guard": "requested value is 2",
+          "to_state": "Galaxy"
+        },
+        {
+          "actions": [
+            "return without changing state"
+          ],
+          "cause": "same None request",
+          "event": "active_space_context_requested",
+          "from_state": "None",
+          "guard": "requested value is -1",
+          "to_state": "None"
+        },
+        {
+          "actions": [
+            "return without changing state"
+          ],
+          "cause": "same Planet request",
+          "event": "active_space_context_requested",
+          "from_state": "Planet",
+          "guard": "requested value is 0",
+          "to_state": "Planet"
+        },
+        {
+          "actions": [
+            "return without changing state"
+          ],
+          "cause": "same SolarSystem request",
+          "event": "active_space_context_requested",
+          "from_state": "SolarSystem",
+          "guard": "requested value is 1",
+          "to_state": "SolarSystem"
+        }
+      ],
+      "validation": [
+        "Trace mCurrentContext, mpActivePlanet, mpActiveStar, and 0x00ffbe50 result around every setter call.",
+        "Exercise all four SDK values, including same-value requests and allocation failure.",
+        "Correlate Galaxy follow-up owner objects and callback flag 0x16c without assigning undocumented names to arbitrary integers.",
+        "Verify that no scenario/game-mode field aliases mCurrentContext."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "medium",
+        "reason": "The state domain comes from SDK enums and the first stores are direct, but the SDK entry lies inside a larger body and fleet/vehicle teardown writers are not recovered."
+      },
+      "consumers": [
+        "cCity",
+        "vehicle combat and economy",
+        "vehicle model and behavior system",
+        "space inventory and colony interactions"
+      ],
+      "entry_actions": [
+        {
+          "action": "store the requested VehiclePurpose at cVehicle+0xb20 and VehicleLocomotion at +0xb1c.",
+          "conditions": [
+            "cVehicle load entry"
+          ],
+          "evidence": "0x00ca6630 and Spore ModAPI Simulator/cVehicle.h"
+        }
+      ],
+      "events": [
+        "vehicle_load_requested"
+      ],
+      "evidence": [
+        {
+          "address": "0x00ca6630",
+          "claim": "containing body stores the two SDK configuration values, resets state flags, selects model/resource tables, updates tools/owner pointers, and releases temporaries.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00ca6630"
+        },
+        {
+          "address": "0x00ca67c0",
+          "claim": "SDK imports cVehicle::Load into the containing body and declares VehicleLocomotion and VehiclePurpose parameters.",
+          "kind": "sdk_boundary_repair",
+          "level": "CONFIRMED",
+          "source": "knowledgegraph/triage/sdk-boundary-repairs-2540f2ca.json and Spore ModAPI Simulator/cVehicle.h"
+        },
+        {
+          "address": null,
+          "claim": "SDK defines Land, Water, Air locomotion and Military, Cultural, Economic, Colony purpose.",
+          "kind": "sdk_name_only",
+          "level": "CONFIRMED",
+          "source": "Spore ModAPI CommonIDs.h"
+        }
+      ],
+      "exact_events": [
+        "vehicle_load_requested"
+      ],
+      "exit_actions": [
+        {
+          "action": "release temporary resource/model/tool references after setup.",
+          "conditions": [
+            "load-body completion"
+          ],
+          "evidence": "0x00ca6630"
+        }
+      ],
+      "generated_events": [
+        "vehicle_configuration_committed"
+      ],
+      "guards": [
+        "labeled states are only the twelve SDK enum products",
+        "the body has an other-value branch, so raw values outside the SDK domain are not named",
+        "no unloaded/loaded lifecycle state is inferred from field writes",
+        "no fleet aggregate or group ownership state is established by cVehicle::Load"
+      ],
+      "name": "vehicle_locomotion_purpose_configuration",
+      "producers": [
+        "Simulator::cVehicle::Load"
+      ],
+      "relevant_functions": [
+        "0x00ca6630 cVehicle::Load-associated body"
+      ],
+      "relevant_structures": [
+        "Simulator::cVehicle",
+        "Simulator::VehicleLocomotion",
+        "Simulator::VehiclePurpose",
+        "Simulator::cCombatant",
+        "Simulator::cBehaviorAgent",
+        "Simulator::cSpaceToolData"
+      ],
+      "side_effects": [
+        "writes locomotion and purpose",
+        "resets behavior-list flags and configuration state",
+        "selects and loads model/resource data",
+        "replaces intrusive owner/tool/player-state references",
+        "configures visible/world presentation fields",
+        "releases temporary references"
+      ],
+      "supported_states": [
+        {
+          "actions": [
+            "represent an air cultural vehicle"
+          ],
+          "guards": [
+            "mLocomotion == Air",
+            "mPurpose == Cultural"
+          ],
+          "name": "air_cultural"
+        },
+        {
+          "actions": [
+            "represent an air economic vehicle"
+          ],
+          "guards": [
+            "mLocomotion == Air",
+            "mPurpose == Economic"
+          ],
+          "name": "air_economic"
+        },
+        {
+          "actions": [
+            "represent an air military vehicle"
+          ],
+          "guards": [
+            "mLocomotion == Air",
+            "mPurpose == Military"
+          ],
+          "name": "air_military"
+        },
+        {
+          "actions": [
+            "represent a land cultural vehicle"
+          ],
+          "guards": [
+            "mLocomotion == Land",
+            "mPurpose == Cultural"
+          ],
+          "name": "land_cultural"
+        },
+        {
+          "actions": [
+            "represent a land economic vehicle"
+          ],
+          "guards": [
+            "mLocomotion == Land",
+            "mPurpose == Economic"
+          ],
+          "name": "land_economic"
+        },
+        {
+          "actions": [
+            "represent a land military vehicle"
+          ],
+          "guards": [
+            "mLocomotion == Land",
+            "mPurpose == Military"
+          ],
+          "name": "land_military"
+        },
+        {
+          "actions": [
+            "represent a water cultural vehicle"
+          ],
+          "guards": [
+            "mLocomotion == Water",
+            "mPurpose == Cultural"
+          ],
+          "name": "water_cultural"
+        },
+        {
+          "actions": [
+            "represent a water economic vehicle"
+          ],
+          "guards": [
+            "mLocomotion == Water",
+            "mPurpose == Economic"
+          ],
+          "name": "water_economic"
+        },
+        {
+          "actions": [
+            "represent a water military vehicle"
+          ],
+          "guards": [
+            "mLocomotion == Water",
+            "mPurpose == Military"
+          ],
+          "name": "water_military"
+        },
+        {
+          "actions": [
+            "represent an air colony-purpose vehicle"
+          ],
+          "guards": [
+            "mLocomotion == Air",
+            "mPurpose == Colony"
+          ],
+          "name": "air_colony"
+        },
+        {
+          "actions": [
+            "represent a land colony-purpose vehicle"
+          ],
+          "guards": [
+            "mLocomotion == Land",
+            "mPurpose == Colony"
+          ],
+          "name": "land_colony"
+        },
+        {
+          "actions": [
+            "represent a water colony-purpose vehicle"
+          ],
+          "guards": [
+            "mLocomotion == Water",
+            "mPurpose == Colony"
+          ],
+          "name": "water_colony"
+        }
+      ],
+      "transitions": [
+        {
+          "actions": [
+            "store the requested locomotion and purpose, load dependent resources, update references, and release temporaries"
+          ],
+          "cause": "vehicle load",
+          "event": "vehicle_load_requested",
+          "from_state": "any",
+          "guard": "arguments are represented by SDK enums; out-of-domain behavior is unresolved",
+          "to_state": "selected enum product"
+        }
+      ],
+      "validation": [
+        "Trace mLocomotion, mPurpose, model key, mpWeapon, owner/player-state pointers, and reference counts for all twelve enum products.",
+        "Repair the exact Load boundary or prove that the containing 0x00ca6630 body is the intended constructor-like loader.",
+        "Find every writer of mLocomotion and mPurpose before adding transition legality guards.",
+        "Locate the actual fleet/group owner and aggregate state; cVehicle alone does not establish a fleet lifecycle."
+      ]
+    }
+  ],
+  "temporal_semantics": {
+    "call_order": [
+      {
+        "claim": "SpacePlayerData initialization writes active planet/star null, context None, player ID -1, empire cache null, rotation factor 1.0, and empty colony vector.",
+        "evidence": [
+          "0x01021d40"
+        ],
+        "order": [
+          "allocate SpacePlayerData",
+          "clear active references",
+          "set context None",
+          "set player ID -1",
+          "set cache null",
+          "initialize colony storage"
+        ]
+      },
+      {
+        "claim": "SpaceContext Galaxy stores the new value before pointer checks and the 0x01001360 follow-up.",
+        "evidence": [
+          "0x01021960"
+        ],
+        "order": [
+          "store Galaxy",
+          "read mpActiveStar",
+          "resolve companion",
+          "call follow-up"
+        ]
+      },
+      {
+        "claim": "Current-empire refresh performs registry lookup, AddRef of a different non-null new pointer, store, then Release of the replaced old pointer.",
+        "evidence": [
+          "0x01021300"
+        ],
+        "order": [
+          "read ID/cache",
+          "registry lookup",
+          "AddRef new",
+          "store new",
+          "Release old"
+        ]
+      },
+      {
+        "claim": "DeclareAlliance invokes the peace path before setting alliance bit and emitting the player message.",
+        "evidence": [
+          "0x00d06920"
+        ],
+        "order": [
+          "DeclarePeace",
+          "set alliance bit",
+          "update empire state",
+          "emit player alliance message"
+        ]
+      },
+      {
+        "claim": "Star add acquires the intrusive reference, appends, and releases the local temporary before the ownership-changed message is observed in the body.",
+        "evidence": [
+          "0x00c341a0"
+        ],
+        "order": [
+          "AddRef star",
+          "append to mStars",
+          "Release local",
+          "update flags/home state",
+          "emit ownership changed"
+        ]
+      },
+      {
+        "claim": "PropertyList Write serializes count before entries and returns false on the first failed helper.",
+        "evidence": [
+          "0x006a1540"
+        ],
+        "order": [
+          "write count",
+          "write property IDs/values",
+          "return final success"
+        ]
+      },
+      {
+        "claim": "The unattributed raw phase word advances 0 to 1, then 1 to 2, 2 to 3, and 3 to 0 within consecutive callback entries.",
+        "evidence": [
+          "0x00d1cdf0",
+          "0x00d1bf10"
+        ],
+        "order": [
+          "external reset may write 1",
+          "raw 1 branch writes 2",
+          "raw 2 branch writes 3",
+          "raw 3 branch writes 0"
+        ]
+      }
+    ],
+    "ownership": [
+      {
+        "fact": "SpacePlayerData owns active planet/star intrusive pointers, the current-player empire cache, and the colony vector.",
+        "level": "SUPPORTED"
+      },
+      {
+        "fact": "cEmpire owns an intrusive mStars vector; exact star-membership add/remove ordering is directly recovered.",
+        "level": "CONFIRMED"
+      },
+      {
+        "fact": "cSimulatorSpaceGame composes UI, inventory, player-UFO wrapper, mission manager, NPC UFOs, and uplift queue through intrusive fields.",
+        "level": "SUPPORTED"
+      },
+      {
+        "fact": "cSimulatorPlayerUFO owns or references a cGameDataUFO and a posse-UFO ID list.",
+        "level": "SUPPORTED"
+      },
+      {
+        "fact": "cVehicle owns or references model, behavior, weapon, city, target, order, cargo, and hostile-unit state.",
+        "level": "SUPPORTED"
+      },
+      {
+        "fact": "cGamePersistenceManager is a named service object, but the current evidence does not establish its complete object ownership or save-stream lifetime.",
+        "level": "SUPPORTED"
+      }
+    ],
+    "runtime_evidence": {
+      "status": "NONE_FOR_DOMAIN",
+      "summary": "All transition claims are static; no empire/space event has been observed end to end."
+    },
+    "sdk_axes": [
+      {
+        "axis": "App game mode",
+        "evidence": "ModeEntry.mModeID and SDK GameModeIDs",
+        "warning": "Do not map App game-mode IDs directly to SpaceContext, cScenarioMode, cStrategy opaque identifiers, or raw DAT_0169dca4."
+      },
+      {
+        "axis": "Space navigation context",
+        "evidence": "SpacePlayerData.mCurrentContext and SDK SpaceContext",
+        "warning": "Planet, SolarSystem, and Galaxy are navigation-scale values, not game-mode IDs."
+      },
+      {
+        "axis": "Simulator strategy mode routing",
+        "evidence": "cStrategy mLastGameMode, mCurrentGameMode, field_14, field_18",
+        "warning": "Individual mode identifiers remain opaque; first pending request wins until commit."
+      },
+      {
+        "axis": "Unattributed update phase",
+        "evidence": "DAT_0169dca4",
+        "warning": "Raw 0-3 values have observed branch roles only and no SDK semantic names."
+      }
+    ],
+    "state_variable_invariants": [
+      "mCurrentContext accepts only the four SDK SpaceContext values; arbitrary integers are not named.",
+      "SpaceContext and active planet/star references are related by code paths but are not aliases.",
+      "mPlayerEmpireID -1 bypasses cache validation and does not clear mpPlayerEmpire.",
+      "The empire registry helper is a ceiling lookup, not an exact-key lookup.",
+      "cRelationshipData war/alliance flags are independent of mValue and mRelationshipEvents.",
+      "DeclareWar clears alliance before setting war; DeclareAlliance clears war through peace before setting alliance.",
+      "cStar membership helpers directly mutate cEmpire.mStars, but the direct cStarRecord.mEmpireID write is not yet isolated.",
+      "PropertyList transfer success is local to that callback and is not whole-save success.",
+      "No state is promoted from a raw integer without an SDK name or explicitly analytical control-phase label."
+    ],
+    "temporal_boundaries": [
+      {
+        "boundary": "app mode switch versus simulator mode routing",
+        "fact": "OnModeEntered/Exited callbacks and cStrategy request/commit helpers are distinct; their exact ordering is unresolved."
+      },
+      {
+        "boundary": "mode exit versus save",
+        "fact": "cSimulatorSpaceGame.mSavePlanetOnDeactivate and persistence getters show a save boundary, but no direct body proves that mode exit writes a save."
+      },
+      {
+        "boundary": "runtime session versus persistent record",
+        "fact": "cPlanet, cStar, cVehicle, and cGameDataUFO are runtime objects; cPlanetRecord, cStarRecord, cEmpire, PlayerPlanetData, cSpacePlayerWarData, and cSpaceTradeRouteManager expose serialization surfaces."
+      }
+    ]
+  },
+  "unresolved": [
+    {
+      "blocking_question": "What is the exact original body and receiver of App::cGameModeManager::SetActiveModeAt at 0x007d8d40?",
+      "evidence": [
+        "0x007d8d40"
+      ],
+      "id": "app_mode_setter_boundary",
+      "impact": "Mode exit, index update, and OnEnter order remain SDK-interface level rather than direct binary confirmation.",
+      "required_evidence": "Repair the containing function and trace mEntries, mnActiveIndex, IGameMode::OnExit, and IGameMode::OnEnter.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "Which raw mode identifiers are produced by cStrategy requests and how do they map to SDK GameModeIDs?",
+      "evidence": [
+        "0x00b5b880",
+        "0x00b5b8a0",
+        "0x00b5b8c0",
+        "0x00b5b8e0",
+        "0x00b5b960"
+      ],
+      "id": "simulator_mode_identifier_mapping",
+      "impact": "The request/commit machine is known, but space/load/scenario IDs cannot be attached to individual raw values statically.",
+      "required_evidence": "All request producers plus a hash-pinned runtime trace correlating mCurrentGameMode with SDK mode names.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "What concrete subsystem owns vtable 0x01479ec0 and DAT_0169dca4?",
+      "evidence": [
+        "0x00d1bf10",
+        "0x00d1cdf0",
+        "0x01479ec0"
+      ],
+      "id": "raw_phase_owner",
+      "impact": "The raw 0-3 cycle cannot be named as loading, galaxy, or space behavior.",
+      "required_evidence": "Constructor/vtable association, all callers, and receiver identity across consecutive calls.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "What are the true cCameraManager setter/remove boundaries and why does the removal path store index 0?",
+      "evidence": [
+        "0x007c61a0",
+        "0x007c64c0",
+        "0x007c6750",
+        "0x007c6eb0"
+      ],
+      "id": "camera_address_conflicts",
+      "impact": "Camera selection order, out-of-range behavior, and the cleared state are not fully modeled.",
+      "required_evidence": "Receiver-matched setter bodies and cCameraManager field writes at +0x80, +0x94, +0x98, +0xa8, and +0xb0.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "What directly writes cStarRecord.mEmpireID, cStar.mPoliticalID, and cPlanet.mPoliticalID during capture?",
+      "evidence": [
+        "0x00c34ee0",
+        "0x00c341a0",
+        "0x00c35240",
+        "0x00c8d060"
+      ],
+      "id": "ownership_field_write_order",
+      "impact": "The empire mStars membership machine is exact, but full planet/system ownership consistency is not yet closed.",
+      "required_evidence": "One capture trace with all three ownership fields and colony vectors before and after.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "How are cPlanet, cPlanetRecord, cCivilization, and SpacePlayerData.mPlayerColonies synchronized when a star changes owner?",
+      "evidence": [
+        "Simulator::cPlanet",
+        "Simulator::cPlanetRecord",
+        "SpacePlayerData.mPlayerColonies"
+      ],
+      "id": "planet_ownership_projection",
+      "impact": "A single planet ownership state machine is intentionally not asserted.",
+      "required_evidence": "Direct writer closure for planet political IDs, colony insertion/removal, home-planet state, and record persistence.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "What is the exact fleet or posse aggregate, and which object owns cGameDataUFO/cVehicle groups?",
+      "evidence": [
+        "Simulator::cSimulatorSpaceGame.mNPC_UFOs",
+        "Simulator::cSimulatorPlayerUFO.mPosseUFOList",
+        "Simulator::cCity::SpawnVehicle"
+      ],
+      "id": "fleet_aggregate",
+      "impact": "Vehicle and spacecraft lifecycles are modeled separately; no fleet formation/order/disband state machine is claimed.",
+      "required_evidence": "Create, join, leave, order, and destroy producers for each container plus political-owner consistency.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "Where are cGameDataUFO::Initialize, CreateUFO, ChangeEnergy, mbAtDestination, destination, and previous-planet writers?",
+      "evidence": [
+        "0x00c38b10",
+        "Simulator::cGameDataUFO",
+        "Simulator::cSimulatorPlayerUFO"
+      ],
+      "id": "ufo_fleet_movement_state",
+      "impact": "UFO travel, energy, destination, and posse lifecycle remain layout/callback surfaces only.",
+      "required_evidence": "Repair SDK addresses, enumerate field writers, and trace one complete create-to-destroy flight.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "What is the concrete cSimulatorSpaceGame and cSimulatorPlayerUFO construction, enter, load, save-on-deactivate, exit, and destruction sequence?",
+      "evidence": [
+        "0x010027b0",
+        "0x00ffbd00",
+        "cSimulatorSpaceGame"
+      ],
+      "id": "space_session_lifecycle",
+      "impact": "The composition root and static SDK interface are known, but full session creation/teardown is not.",
+      "required_evidence": "Recover Get/factory boundaries, cGonzagoSimulator::Load/Update targets, and mSavePlanetOnDeactivate writers/readers.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "What are the concrete cGamePersistenceManager LoadGame and save callback targets?",
+      "evidence": [
+        "0x00b3d440",
+        "cGamePersistenceManager vtable +0x10",
+        "kMsgLoadGame",
+        "kMsgSaveGame"
+      ],
+      "id": "save_load_entrypoints",
+      "impact": "Only the PropertyList transfer outcome and SDK message/vtable surfaces are modeled; whole-game save/load state is not.",
+      "required_evidence": "Runtime vtable publication plus direct SaveGame/LoadGame bodies, file/container hooks, and failure paths.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "What exact objects and attributes are serialized by cEmpire, cStarRecord, cPlanetRecord, PlayerPlanetData, cSpacePlayerWarData, and cSpaceTradeRouteManager?",
+      "evidence": [
+        "Simulator::cEmpire",
+        "Simulator::cStarRecord",
+        "Simulator::cPlanetRecord",
+        "Simulator::PlayerPlanetData",
+        "Simulator::cSpacePlayerWarData",
+        "Simulator::cSpaceTradeRouteManager"
+      ],
+      "id": "save_schema_and_migration",
+      "impact": "Serialization membership is supported at interface level, but field order, versions, migration, and restore effects are unknown.",
+      "required_evidence": "Resolved Write/Read implementations, legal synthetic fixtures, and versioned round-trip validation.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "What is the exact relationship-event ID dictionary and message payload content used by ApplyRelationship and diplomacy callbacks?",
+      "evidence": [
+        "0x00d06270",
+        "Simulator::cRelationshipData.mRelationshipEvents"
+      ],
+      "id": "relationship_event_dictionary",
+      "impact": "Score and named war/alliance state are exact, but event IDs and economy/AI effects are not.",
+      "required_evidence": "Resolve every relationship property ID to SDK enum/config data and trace representative events.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "Can a controlled original runtime trace reach an empire/space save and capture?",
+      "evidence": [
+        "knowledgegraph/research/data-model/06-empire-space-data.json",
+        "knowledgegraph/research/data-model/09-save-load-persistence.json"
+      ],
+      "id": "runtime_validation",
+      "impact": "No static lifecycle in this artifact is runtime-observed or verified end to end.",
+      "required_evidence": "Hash-pinned Wine/input campaign reaching space, with non-mutating probes for all state variables and message IDs.",
+      "status": "blocked_by_missing_runtime_evidence"
+    }
+  ]
+}

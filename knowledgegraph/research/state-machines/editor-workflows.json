@@ -1,0 +1,2937 @@
+{
+  "$schema": "state-machine-research-1",
+  "callbacks": [
+    {
+      "actions": [
+        "gates work on the low byte of Editors::cEditorSkin+0x84",
+        "releases any previous painter job at Editors::cEditorSkin+0x5c",
+        "allocates a 0x84-byte job through 0x0051df40 and copies the texture key, three colors, three seeds, and three effect IDs",
+        "calls Editors::IBakeManager vtable slot +0x64 with the populated job",
+        "releases the job and returns false when the IBakeManager call returns false; otherwise retains it and returns true"
+      ],
+      "address": "0x004c5200",
+      "confidence": {
+        "level": "high",
+        "reason": "The containing function body, field offsets, allocation size, constructor, and downstream IBakeManager call are directly decompiled. The SDK PaintSkin address 0x004c5270 is a contained alias, not a function entry."
+      },
+      "consumers": [
+        "cEditor skin refresh paths",
+        "Skinner::cPaintSystem",
+        "Editors::IBakeManager"
+      ],
+      "evidence": [
+        {
+          "address": "0x004c5200",
+          "claim": "containing function prepares a Skinner/IBakeManager painter job and gates on cEditorSkin+0x84",
+          "kind": "disassembly_decompilation",
+          "level": "CONFIRMED",
+          "source": "ghidra://SporeApp.exe@0x004c5200"
+        },
+        {
+          "address": "0x004c5270",
+          "claim": "SDK PaintSkin label is inside 0x004c5200 and does not begin an independent function",
+          "kind": "sdk_name_only",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/sdk_functions.tsv"
+        }
+      ],
+      "generated_events": [
+        "skin_paint_prepared"
+      ],
+      "guards": [
+        "(cEditorSkin+0x84) & 0xff != 0",
+        "IBakeManager vtable slot +0x64 returns true"
+      ],
+      "name": "Editors::cEditorSkin paint preparation containing function",
+      "validation": [
+        "Trace 0x004c5200 with cEditorSkin+0x5c, +0x84, and the IBakeManager slot +0x64 return value.",
+        "Verify whether the imported PaintSkin label should be repaired to the containing entry 0x004c5200."
+      ]
+    },
+    {
+      "actions": [
+        "packs eventID, EditorModel pointer, and scalar parameters",
+        "passes the packed record to the IAppSystem virtual slot recovered for Send"
+      ],
+      "address": "0x0059d8b0",
+      "confidence": {
+        "level": "high",
+        "reason": "The SDK-named body and its packed call are directly decompiled."
+      },
+      "consumers": [
+        "App::IAppSystem",
+        "editor animation consumers"
+      ],
+      "evidence": [
+        {
+          "address": "0x0059d8b0",
+          "claim": "cEditorAnimEvent::MessageSend packs model/event/scalar fields and performs an immediate IAppSystem virtual call",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditorAnimEvent__MessageSend.c"
+        }
+      ],
+      "generated_events": [
+        "editor_anim_event_send"
+      ],
+      "guards": [],
+      "name": "Editors::cEditorAnimEvent::MessageSend",
+      "validation": [
+        "Record the event object, eventID, model identity, scalar parameters, and destination virtual slot for every editor mode change and history restoration."
+      ]
+    },
+    {
+      "actions": [
+        "packs eventID, EditorModel pointer, and scalar parameters",
+        "passes the packed record to the IAppSystem virtual slot recovered for Post"
+      ],
+      "address": "0x0059d840",
+      "confidence": {
+        "level": "high",
+        "reason": "The SDK-named body and its packed call are directly decompiled."
+      },
+      "consumers": [
+        "App::IAppSystem",
+        "editor animation consumers"
+      ],
+      "evidence": [
+        {
+          "address": "0x0059d840",
+          "claim": "cEditorAnimEvent::MessagePost packs model/event/scalar fields and uses the alternate IAppSystem virtual slot",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditorAnimEvent__MessagePost.c"
+        }
+      ],
+      "generated_events": [
+        "editor_anim_event_post"
+      ],
+      "guards": [],
+      "name": "Editors::cEditorAnimEvent::MessagePost",
+      "validation": [
+        "Correlate MessagePost with Undo's restore path and verify queue timing against MessageSend."
+      ]
+    },
+    {
+      "actions": [
+        "stores six subobject vtable pointers, including the 0x013f57f8 primary cEditor/IGameMode candidate",
+        "initializes mMode at cEditor+0x31c to BuildMode",
+        "initializes mIsActive at cEditor+0x2b0 to false",
+        "zeroes selection, manipulator, history, animation, palette, and skin pointers"
+      ],
+      "address": "0x0057ce80",
+      "confidence": {
+        "level": "high",
+        "reason": "Current read-only Ghidra decompilation, raw vtable data, SDK layout, and the KG cEditor class/structure edges agree."
+      },
+      "consumers": [
+        "0x0057f3e0",
+        "IGameModeManager construction path"
+      ],
+      "evidence": [
+        {
+          "address": "0x0057ce80",
+          "claim": "constructor writes the primary vtable 0x013f57f8 and initializes cEditor+0x31c=0 and cEditor+0x2b0=0",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "ghidra://SporeApp.exe@0x0057ce80"
+        },
+        {
+          "address": "0x013f57f8",
+          "claim": "raw 29-entry candidate contains the first sixteen IGameMode callbacks, including Initialize 0x00584300, OnExit 0x00587a20, input callbacks, and Update 0x0058be50",
+          "kind": "vtable_data",
+          "level": "CONFIRMED",
+          "source": "Ghidra read-only image data at 0x013f57f8"
+        }
+      ],
+      "generated_events": [
+        "editor_constructed"
+      ],
+      "guards": [],
+      "name": "Editor::Editor constructor",
+      "validation": [
+        "Byte-verify the vtable stores and initial mMode/mIsActive values before implementing the lifecycle."
+      ]
+    },
+    {
+      "actions": [
+        "initializes editor properties, a reusable animation event, and app-system callback state",
+        "allocates or replaces UI/support services and render-world helpers",
+        "registers message-listener state and creates the palette/skin/editor infrastructure",
+        "configures shadow, lighting, and model worlds",
+        "returns false on an unresolved render-manager allocation failure and true after setup"
+      ],
+      "address": "0x00584300",
+      "confidence": {
+        "level": "high",
+        "reason": "The exact SDK-named body is persisted and the vtable slot is 4 in the first-16 cEditor/IGameMode layout."
+      },
+      "consumers": [
+        "IGameModeManager",
+        "cEditor message listener",
+        "EditorUI",
+        "EditorPlayMode",
+        "Graphics shadow/lighting/model services"
+      ],
+      "evidence": [
+        {
+          "address": "0x00584300",
+          "claim": "Initialize configures cEditor services, message state, shadow layers, worlds, viewers, and callback objects",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__Initialize.c"
+        }
+      ],
+      "generated_events": [
+        "editor_initialized"
+      ],
+      "guards": [
+        "the render manager queried near 0x00584300 must be non-null"
+      ],
+      "name": "Editors::cEditor::Initialize",
+      "validation": [
+        "Trace every allocated service and listener registration before and after IGameModeManager::Initialize invokes slot +0x10.",
+        "Confirm whether any supported creation type causes an early false return."
+      ]
+    },
+    {
+      "actions": [
+        "updates the embedded GameInput key state",
+        "forwards PlayMode key input to cEditor+0x7c vtable slot +0x1c and consumes the event when accepted",
+        "maps virtual key 8 or 46 to a selected-part deletion helper followed by CommitEditHistory",
+        "maps virtual key 38 and 40 to rotation operations",
+        "maps Ctrl+Z to Undo and Ctrl+Y to Redo when mMode is not PlayMode",
+        "routes other opaque key/UI command values to editor helpers"
+      ],
+      "address": "0x0058ac10",
+      "confidence": {
+        "level": "high",
+        "reason": "Input keys, mode guards, direct Undo/Redo calls, and CommitEditHistory calls are directly decompiled; unnamed helper semantics remain bounded."
+      },
+      "consumers": [
+        "GameInput",
+        "EditorPlayMode",
+        "cEditor deletion helpers",
+        "cEditor::Undo",
+        "cEditor::Redo",
+        "cEditor::CommitEditHistory"
+      ],
+      "evidence": [
+        {
+          "address": "0x0058ac10",
+          "claim": "OnKeyDown updates GameInput, forwards PlayMode input, handles deletion/rotation, and dispatches Ctrl+Z/Ctrl+Y to Undo/Redo",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnKeyDown.c"
+        }
+      ],
+      "generated_events": [
+        "edit_redo_requested",
+        "edit_undo_requested",
+        "editor_key_down",
+        "selected_part_delete_requested"
+      ],
+      "guards": [
+        "cEditor+0x397 must be false before ordinary editor key handling",
+        "Undo/Redo keyboard paths require cEditor+0x31c != PlayMode",
+        "Ctrl+Z/Redo require virtualKey & 7 == 2"
+      ],
+      "name": "Editors::cEditor::OnKeyDown",
+      "validation": [
+        "Trace Backspace, Delete, Ctrl+Z, and Ctrl+Y with active/selected/active-handle fields and history index before and after the callback.",
+        "Record the exact return value of PlayMode key handling before the common editor switch."
+      ]
+    },
+    {
+      "actions": [
+        "stores the incoming mouse button in cEditor+0x34",
+        "returns false without beginning another transaction if cEditor+0x148 already holds an active manipulator",
+        "routes PaintMode left-click paint selection to EditorModel::SetColor and CommitEditHistory",
+        "routes PlayMode left-click to cEditor+0x7c vtable slot +0x10",
+        "performs BuildMode hit testing and selection",
+        "constructs one of several opaque manipulator/tool objects and stores it at cEditor+0x148",
+        "calls the new object's vtable through slots +0x14, +0x1c, +0x24, +0x28, +0x30, and +0x34 across subsequent callbacks"
+      ],
+      "address": "0x00588570",
+      "confidence": {
+        "level": "high",
+        "reason": "The entire 5,989-byte body, state fields, allocations, mode branches, and vtable offsets are directly decompiled. Concrete manipulator class names are unresolved."
+      },
+      "consumers": [
+        "EditorModel",
+        "Palette paint selection",
+        "EditorPlayMode",
+        "opaque BuildMode manipulator classes",
+        "cEditor history"
+      ],
+      "evidence": [
+        {
+          "address": "0x00588570",
+          "claim": "OnMouseDown stores cEditor+0x34, rejects overlapping transactions, handles Paint/Play branches, hit-tests BuildMode, and populates cEditor+0x148",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnMouseDown.c"
+        },
+        {
+          "address": "0x00588570",
+          "claim": "opaque manipulator constructors include 0x005ad9a0, 0x005b4b40, 0x005bc860, 0x005aac30, 0x005b23d0, 0x005b7490, 0x005ac9f0, 0x005b85d0, 0x005aa420, 0x005b53c0, and 0x005ae610",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "ghidra://SporeApp.exe@0x00588570"
+        }
+      ],
+      "generated_events": [
+        "edit_committed",
+        "editor_mouse_down",
+        "manipulator_started"
+      ],
+      "guards": [
+        "cEditor+0x397 must be false",
+        "cEditor+0x148 and cEditor+0x34 must both be empty before a new BuildMode transaction",
+        "PaintMode mutation requires selected rigblock paint and the left mouse button"
+      ],
+      "name": "Editors::cEditor::OnMouseDown",
+      "validation": [
+        "Trace cEditor+0x34, +0x148, +0xcc, +0xd0, +0xd4, and +0xe4 for every button and mode.",
+        "Capture the selected manipulator vtable and identify which offset implements start, move, up, cancel, and commit."
+      ]
+    },
+    {
+      "actions": [
+        "writes the incoming coordinates to cEditor+0x28 and cEditor+0x2c and sets cEditor+0x38",
+        "forwards PlayMode movement to cEditor+0x7c vtable slot +0x18",
+        "when cEditor+0x148 is non-null in BuildMode, invokes manipulator vtable slots +0x1c and +0x28 and requests model/world refresh"
+      ],
+      "address": "0x005737d0",
+      "confidence": {
+        "level": "high",
+        "reason": "The direct field writes, mode branches, and active-manipulator callbacks are visible in the exact body."
+      },
+      "consumers": [
+        "EditorPlayMode",
+        "opaque active manipulator at cEditor+0x148",
+        "EditorModel/world update"
+      ],
+      "evidence": [
+        {
+          "address": "0x005737d0",
+          "claim": "OnMouseMove stores pointer state and updates an existing BuildMode manipulator",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnMouseMove.c"
+        }
+      ],
+      "generated_events": [
+        "editor_mouse_move",
+        "manipulator_updated"
+      ],
+      "guards": [
+        "cEditor+0x397 must be false",
+        "BuildMode manipulator update requires cEditor+0x148 != 0",
+        "PlayMode movement uses cEditor+0x7c slot +0x18"
+      ],
+      "name": "Editors::cEditor::OnMouseMove",
+      "validation": [
+        "Record the number and order of manipulator slot +0x1c/+0x28 calls between mouse-down and mouse-up."
+      ]
+    },
+    {
+      "actions": [
+        "rejects a release whose button differs from cEditor+0x34",
+        "clears cEditor+0x34 before mode-specific release handling",
+        "routes PlayMode release to cEditor+0x7c vtable slot +0x14",
+        "in BuildMode invokes active-manipulator slots +0x10 and +0x34, clears cEditor+0x148, and may release mpMovingPart",
+        "calls CommitEditHistory when the recovered model and transaction guards pass",
+        "may call Undo after a selected rigid-body transaction"
+      ],
+      "address": "0x0058b650",
+      "confidence": {
+        "level": "high",
+        "reason": "Button-match guard, field clear order, PlayMode dispatch, manipulator callbacks, and history call are directly decompiled."
+      },
+      "consumers": [
+        "EditorPlayMode",
+        "opaque active manipulator",
+        "cEditor::CommitEditHistory",
+        "cEditor::Undo"
+      ],
+      "evidence": [
+        {
+          "address": "0x0058b650",
+          "claim": "OnMouseUp requires the stored button, clears it, finalizes the active manipulator, conditionally commits history, and may undo",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnMouseUp.c"
+        }
+      ],
+      "generated_events": [
+        "edit_committed",
+        "edit_undo_requested",
+        "editor_mouse_up",
+        "manipulator_finished"
+      ],
+      "guards": [
+        "release button equals cEditor+0x34",
+        "history commit requires the recovered model field +0x51 and a non-null active/moving-part context"
+      ],
+      "name": "Editors::cEditor::OnMouseUp",
+      "validation": [
+        "Trace commit booleans and the post-finish Undo branch with the exact rigid-body capability bits at EditorRigblock+0xdc8/+0xdcc.",
+        "Verify whether a distinct manipulator cancel path exists before slot +0x10/+0x34 cleanup."
+      ]
+    },
+    {
+      "actions": [
+        "converts delta1 to milliseconds with delta1 * 1000",
+        "returns immediately unless cEditor+0x2b0 mIsActive is true",
+        "runs mode-independent UI, model, skin, shadow, animation, and render-world updates",
+        "when mMode is PlayMode, calls editor PlayMode support at 0x00577e10 and EditorPlayMode update containing function 0x0062c550",
+        "clears transient helper state and invalidates UI"
+      ],
+      "address": "0x0058be50",
+      "confidence": {
+        "level": "high",
+        "reason": "The mIsActive gate, millisecond conversion, mode branches, and large update body are directly decompiled; unnamed helper semantics remain bounded."
+      },
+      "consumers": [
+        "IGameMode update loop",
+        "EditorPlayMode",
+        "EditorUI",
+        "cEditor animation world",
+        "Graphics model/shadow/effect services"
+      ],
+      "evidence": [
+        {
+          "address": "0x0058be50",
+          "claim": "Update returns when cEditor+0x2b0 is false and performs mode-specific PlayMode work when cEditor+0x31c is 2",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__Update.c"
+        }
+      ],
+      "generated_events": [
+        "editor_update_tick"
+      ],
+      "guards": [
+        "cEditor+0x2b0 must be true"
+      ],
+      "name": "Editors::cEditor::Update",
+      "validation": [
+        "Trace one frame in each editor mode with mIsActive, mMode, mouse/tool pointers, and PlayMode module calls.",
+        "Confirm whether delta2 is consumed directly or only through downstream helpers."
+      ]
+    },
+    {
+      "actions": [
+        "clears cEditor+0x2b0 mIsActive",
+        "resets renderer/UI/input state",
+        "requests SetActiveMode PaintMode",
+        "releases selection, manipulator, model, skin, palette UI, PlayMode, animation world, and other editor support objects",
+        "resets shadow and lighting worlds"
+      ],
+      "address": "0x00587a20",
+      "confidence": {
+        "level": "high",
+        "reason": "The exact SDK-named body directly shows the active flag clear, PaintMode request, and broad teardown sequence."
+      },
+      "consumers": [
+        "IGameModeManager",
+        "cEditor::Dispose",
+        "cEditor::SetActiveMode",
+        "Graphics and editor support services"
+      ],
+      "evidence": [
+        {
+          "address": "0x00587a20",
+          "claim": "OnExit clears mIsActive, switches to PaintMode, tears down editor state, and resets graphics worlds",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnExit.c"
+        }
+      ],
+      "generated_events": [
+        "editor_exited",
+        "editor_active_mode_requested"
+      ],
+      "guards": [],
+      "name": "Editors::cEditor::OnExit",
+      "validation": [
+        "Trace all object pointers and verify exact release order after mIsActive is cleared.",
+        "Confirm why exit and entry both request PaintMode rather than restoring the constructor's BuildMode value."
+      ]
+    },
+    {
+      "actions": [
+        "resets model-derived bounds, handle, skin, and animation state",
+        "clears the active event, active/moving/selected/related rigblock pointers, active handle, and active manipulator",
+        "replaces mpEditorModel through refcounted load/constructor paths",
+        "rebuilds skin and PlayMode creatures as mode/model conditions require"
+      ],
+      "address": "0x00586b00",
+      "confidence": {
+        "level": "high",
+        "reason": "Direct field clears, model replacement, skin rebuild, and animation-world teardown are visible in the SDK-named body."
+      },
+      "consumers": [
+        "EditorModel",
+        "cEditor undo/redo restore paths",
+        "cEditor::Undo",
+        "cEditor::Redo",
+        "cEditor selection/manipulator fields"
+      ],
+      "evidence": [
+        {
+          "address": "0x00586b00",
+          "claim": "SetEditorModel clears selection/manipulator state, destroys the current anim creature, installs the new model, and refreshes derived state",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__SetEditorModel.c"
+        }
+      ],
+      "generated_events": [
+        "state_model_restored"
+      ],
+      "guards": [
+        "old active/moving/selected rigblock and manipulator pointers are cleared before replacing the model"
+      ],
+      "name": "Editors::cEditor::SetEditorModel",
+      "validation": [
+        "Trace model identity, selection, tool, skin, and anim-creature identity before and after Undo, Redo, New, Load, and palette replacement."
+      ]
+    },
+    {
+      "actions": [
+        "returns without change when the current mode is BuildMode and the request is BuildMode",
+        "returns without change when cEditor+0x38c is neither 0 nor 6",
+        "tears down the old mode-specific visual/actor/skin state",
+        "clears selected/moving parts, active handle, and active manipulator",
+        "stores the requested enum in cEditor+0x31c",
+        "performs target-mode entry actions for BuildMode, PaintMode, or PlayMode",
+        "may emit a cEditorAnimEvent MessageSend after entry"
+      ],
+      "address": "0x00587270",
+      "confidence": {
+        "level": "high",
+        "reason": "The enum values are SDK-confirmed and the full state write, guards, old-mode cleanup, new-mode branches, and event send are directly decompiled."
+      },
+      "consumers": [
+        "EditorUI mode updater 0x005dda30",
+        "cEditor::HandleMessage",
+        "cEditor::OnExit",
+        "cEditor::OnEnter",
+        "cEditorAnimEvent"
+      ],
+      "evidence": [
+        {
+          "address": "0x00587270",
+          "claim": "SetActiveMode guards and executes old-mode teardown, cEditor+0x31c write, new-mode entry, and event emission",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__SetActiveMode.c"
+        },
+        {
+          "address": "Editors::cEditor+0x31c",
+          "claim": "SDK Mode enum is BuildMode=0, PaintMode=1, PlayMode=2",
+          "kind": "sdk_name_only",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/spore_sdk.xml"
+        }
+      ],
+      "generated_events": [
+        "editor_active_mode_requested",
+        "editor_anim_event_send"
+      ],
+      "guards": [
+        "not (current == BuildMode and request == BuildMode)",
+        "cEditor+0x38c == 0 or cEditor+0x38c == 6"
+      ],
+      "name": "Editors::cEditor::SetActiveMode",
+      "validation": [
+        "Trace every writer of cEditor+0x31c and cEditor+0x38c with old-mode teardown and new-mode entry calls.",
+        "Record whether direct PaintMode/PlayMode self-requests are semantically different from UI requests that suppress equal modes."
+      ]
+    },
+    {
+      "actions": [
+        "if the index is before the vector end, calls 0x005e77e0 and 0x00584160 with the current index before appending",
+        "allocates and fills a 0x2c EditorStateEditHistory record, or AddRefs a supplied record",
+        "allocates a 0xac cEditorResource, invokes the containing EditorModel save path at 0x004af260, and appends it",
+        "appends the state and resource to their parallel vectors",
+        "increments cEditor+0x188 mEditHistoryIndex",
+        "disables redo UI and conditionally enables undo UI",
+        "in BuildMode may destroy/recreate the animation-world creature and sets cEditor+0x39a"
+      ],
+      "address": "0x00586410",
+      "confidence": {
+        "level": "high",
+        "reason": "Allocation sizes, paired vector appends, index update, UI calls, and mode-specific animation refresh are directly decompiled."
+      },
+      "consumers": [
+        "EditorStateEditHistory",
+        "cEditorResource",
+        "EditorModel save path 0x004af260",
+        "EditorUI",
+        "cEditor animation world"
+      ],
+      "evidence": [
+        {
+          "address": "0x00586410",
+          "claim": "CommitEditHistory appends paired state/resource records and increments the edit-history index",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__CommitEditHistory.c"
+        }
+      ],
+      "generated_events": [
+        "edit_committed"
+      ],
+      "guards": [
+        "allocation failure leaves the corresponding append absent",
+        "BuildMode animation refresh requires cEditor+0x360 and cEditor+0x364"
+      ],
+      "name": "Editors::cEditor::CommitEditHistory",
+      "validation": [
+        "Trace vector sizes/end pointers, mEditHistoryIndex, and the two pre-append helpers at every commit.",
+        "Verify the precise truncation semantics of 0x005e77e0 and 0x00584160 on a redo tail."
+      ]
+    },
+    {
+      "actions": [
+        "requires mEditHistoryIndex > 1",
+        "decrements mEditHistoryIndex",
+        "loads the paired state/resource at the new index",
+        "constructs/loads an EditorModel and calls SetEditorModel",
+        "refreshes editor bounds, UI, undo availability, and optionally posts an animation event"
+      ],
+      "address": "0x0058a5a0",
+      "confidence": {
+        "level": "high",
+        "reason": "The guard, decrement, paired vector access, model restore, and UI refresh are directly decompiled."
+      },
+      "consumers": [
+        "EditorUI",
+        "cEditor::SetEditorModel",
+        "EditorStateEditHistory",
+        "cEditorResource",
+        "cEditorAnimEvent"
+      ],
+      "evidence": [
+        {
+          "address": "0x0058a5a0",
+          "claim": "Undo decrements the index, restores paired state/resource, replaces the model, and refreshes UI/availability",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__Undo.c"
+        }
+      ],
+      "generated_events": [
+        "state_model_restored",
+        "editor_anim_event_post"
+      ],
+      "guards": [
+        "mEditHistoryIndex > 1"
+      ],
+      "name": "Editors::cEditor::Undo",
+      "validation": [
+        "Trace the two parallel vector indices, EditorModel identity, active manipulator, and UI availability around every Undo."
+      ]
+    },
+    {
+      "actions": [
+        "requires mEditHistoryIndex to be less than mEditHistory resource count",
+        "increments mEditHistoryIndex",
+        "loads the paired state/resource at the new index",
+        "constructs/loads an EditorModel and calls SetEditorModel",
+        "refreshes bounds, UI, and redo availability"
+      ],
+      "address": "0x0058a950",
+      "confidence": {
+        "level": "high",
+        "reason": "The count guard, increment, paired vector access, model restore, and UI refresh are directly decompiled."
+      },
+      "consumers": [
+        "EditorUI",
+        "cEditor::SetEditorModel",
+        "EditorStateEditHistory",
+        "cEditorResource"
+      ],
+      "evidence": [
+        {
+          "address": "0x0058a950",
+          "claim": "Redo increments the index, restores paired state/resource, replaces the model, and updates redo availability",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__Redo.c"
+        }
+      ],
+      "generated_events": [
+        "state_model_restored"
+      ],
+      "guards": [
+        "mEditHistoryIndex < (mEditHistory.end - mEditHistory.begin) / 4"
+      ],
+      "name": "Editors::cEditor::Redo",
+      "validation": [
+        "Trace both vector sizes and mEditHistoryIndex before and after every Redo."
+      ]
+    },
+    {
+      "actions": [
+        "allocates or replaces the editor model",
+        "resets shadow/lighting/model state and registers editor UI listeners",
+        "sets up editor and PlayMode support",
+        "requests PaintMode before setting mIsActive at cEditor+0x2b0",
+        "returns false if the shadow-world pointer is null",
+        "sets cEditor+0x2b0 to true only near successful completion"
+      ],
+      "address": "0x0058e6d0",
+      "confidence": {
+        "level": "high",
+        "reason": "The direct body shows the PaintMode request, failure return, and mIsActive write near successful exit; many helper names remain noisy."
+      },
+      "consumers": [
+        "IGameModeManager",
+        "EditorUI",
+        "EditorPlayMode",
+        "Graphics shadow/lighting/model services",
+        "cEditor::SetActiveMode"
+      ],
+      "evidence": [
+        {
+          "address": "0x0058e6d0",
+          "claim": "OnEnter calls SetActiveMode PaintMode, can return false on missing shadow state, and sets mIsActive=1 near successful completion",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnEnter.c"
+        }
+      ],
+      "generated_events": [
+        "editor_active_mode_requested",
+        "editor_entered"
+      ],
+      "guards": [
+        "shadow-world pointer must be non-null"
+      ],
+      "name": "Editors::cEditor::OnEnter",
+      "validation": [
+        "Trace mIsActive, mMode, EditorUI, PlayMode, model, and anim-world state across the full entry sequence.",
+        "Record any early failures after the shadow-world check but before the final mIsActive write."
+      ]
+    },
+    {
+      "actions": [
+        "calls OnExit when mIsActive is true",
+        "removes generated editor command IDs and listener state",
+        "releases editor models, support objects, render helpers, and global editor service references",
+        "returns true"
+      ],
+      "address": "0x00576c50",
+      "confidence": {
+        "level": "high",
+        "reason": "The SDK-named body directly gates OnExit and releases the cEditor support graph."
+      },
+      "consumers": [
+        "IGameModeManager",
+        "cEditor::OnExit",
+        "App command generator",
+        "EditorModel",
+        "Graphics support"
+      ],
+      "evidence": [
+        {
+          "address": "0x00576c50",
+          "claim": "Dispose calls OnExit if mIsActive, removes command IDs/listeners, and releases editor support",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__Dispose.c"
+        }
+      ],
+      "generated_events": [
+        "editor_disposed",
+        "editor_exited"
+      ],
+      "guards": [
+        "OnExit is conditional on cEditor+0x2b0"
+      ],
+      "name": "Editors::cEditor::Dispose",
+      "validation": [
+        "Trace whether Dispose is ever called without a prior successful OnEnter and compare resulting object fields."
+      ]
+    },
+    {
+      "actions": [
+        "creates a 0x30-byte category/state record and initializes the named windows",
+        "iterates active category pages, creates 0xfc PaletteCategoryUI objects, and adds them to the vector at +0x34",
+        "installs category buttons, tooltips, and fade effects",
+        "selects the startup category through the active-category setter when valid",
+        "clears the current category pointer at the end of load"
+      ],
+      "address": "0x005cb5a0",
+      "confidence": {
+        "level": "high",
+        "reason": "The containing body is directly decompiled; the imported Load address 0x005cb690 is a contained alias, not a function entry."
+      },
+      "consumers": [
+        "PaletteUI",
+        "PaletteCategoryUI",
+        "UTFWin",
+        "cEditor palette fields"
+      ],
+      "evidence": [
+        {
+          "address": "0x005cb5a0",
+          "claim": "PaletteUI load constructs category UI objects and initializes category controls",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "ghidra://SporeApp.exe@0x005cb5a0"
+        },
+        {
+          "address": "0x005cb690",
+          "claim": "SDK PaletteUI::Load label is inside 0x005cb5a0",
+          "kind": "sdk_name_only",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/sdk_functions.tsv"
+        }
+      ],
+      "generated_events": [
+        "palette_loaded"
+      ],
+      "guards": [
+        "page/category count must be positive before page iteration"
+      ],
+      "name": "Palettes::PaletteUI load containing function",
+      "validation": [
+        "Trace palette category IDs, page IDs, PaletteCategoryUI identities, and the selected startup category."
+      ]
+    },
+    {
+      "actions": [
+        "requires -1 < requested index < category count",
+        "deactivates the old category and category button when present",
+        "stores requested category at PaletteUI+0x64",
+        "activates the new category UI/button",
+        "updates the page number using requested index / 9",
+        "emits app message 0x44ef2b8"
+      ],
+      "address": "0x005cb240",
+      "confidence": {
+        "level": "high",
+        "reason": "Range check, pointer replacement, UI activation/deactivation, page update, and opaque message send are directly decompiled."
+      },
+      "consumers": [
+        "PaletteCategoryUI",
+        "UTFWin category buttons",
+        "Editors::cEditor::HandleMessage"
+      ],
+      "evidence": [
+        {
+          "address": "0x005cb240",
+          "claim": "active-category setter validates the index, swaps PaletteUI+0x64, updates controls, and sends 0x44ef2b8",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "ghidra://SporeApp.exe@0x005cb240"
+        }
+      ],
+      "generated_events": [
+        "palette_category_changed"
+      ],
+      "guards": [
+        "requested index is signed-greater-than -1 and less than PaletteUI+0x48 category count"
+      ],
+      "name": "Palettes::PaletteUI active-category setter",
+      "validation": [
+        "Trace requested index, old/new PaletteUI+0x64, page number, and message 0x44ef2b8 delivery."
+      ]
+    },
+    {
+      "actions": [
+        "returns when the requested mode equals the currently displayed mode",
+        "otherwise requests cEditor::SetActiveMode",
+        "changes visibility/state calls on main, shared, and camera-control windows",
+        "stores the requested mode in the EditorUI controller",
+        "rebuilds or closes layouts as required"
+      ],
+      "address": "0x005dda30",
+      "confidence": {
+        "level": "high",
+        "reason": "The containing body directly implements mode selection and window state changes. It is not safe to call the SDK Load alias an exact function entry."
+      },
+      "consumers": [
+        "Editors::cEditor::SetActiveMode",
+        "EditorUI windows",
+        "UTFWin layouts"
+      ],
+      "evidence": [
+        {
+          "address": "0x005dda30",
+          "claim": "EditorUI mode updater suppresses equal modes, requests cEditor SetActiveMode, and updates window visibility/state",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "ghidra://SporeApp.exe@0x005dda30"
+        }
+      ],
+      "generated_events": [
+        "editor_active_mode_requested"
+      ],
+      "guards": [
+        "requested mode differs from EditorUI+0x60 current mode"
+      ],
+      "name": "Editors::EditorUI mode updater containing function",
+      "validation": [
+        "Trace EditorUI+0x60, cEditor+0x31c, and every window state/visibility change for BuildMode, PaintMode, and PlayMode."
+      ]
+    },
+    {
+      "actions": [
+        "dispatches app message IDs 0x100, 0x102, 0x103, 0x104, and 0x107",
+        "for 0x100, either follows a prepared creation path or requests BuildMode, loads a resource, and updates state",
+        "for 0x102, conditionally creates a 0x20-byte object, uploads it, and starts related work",
+        "for 0x103, calls the opaque helper 0x0058a350 with arguments 2, 2, 1",
+        "for 0x104, calls 0x005de9e0",
+        "for 0x107, posts through the alternate IAppSystem slot"
+      ],
+      "address": "0x005dec10",
+      "confidence": {
+        "level": "medium",
+        "reason": "The switch and calls are direct, but imported EditorUI method names and opaque helpers do not justify New/Finish/Cancel semantic names."
+      },
+      "consumers": [
+        "App message manager",
+        "cEditor support helpers",
+        "resource/model path"
+      ],
+      "evidence": [
+        {
+          "address": "0x005dec10",
+          "claim": "containing function has exact opaque app-message branches 0x100, 0x102, 0x103, 0x104, and 0x107",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "ghidra://SporeApp.exe@0x005dec10"
+        }
+      ],
+      "generated_events": [
+        "editor_app_message_0x100",
+        "editor_app_message_0x102",
+        "editor_app_message_0x103",
+        "editor_app_message_0x104",
+        "editor_app_message_0x107"
+      ],
+      "guards": [
+        "branch-specific guards inside each opaque helper"
+      ],
+      "name": "Editors::EditorUI app-message dispatcher containing function",
+      "validation": [
+        "Correlate each message ID with visible control, model/resource state, and history index before assigning Create/Finish/Cancel names."
+      ]
+    },
+    {
+      "actions": [
+        "dispatches opaque UI command values including 0x70218642, 0xb006ef6e, 0xf006efa5, 0xf019c2e7, 0xf019c2f3, and others",
+        "0x70218642 requests PlayMode",
+        "0xb006ef6e calls Undo",
+        "0xf006efa5 calls Redo",
+        "other known branches toggle BuildMode/PaintMode or forward selected controls to PlayMode/EditorUI"
+      ],
+      "address": "0x005e0000",
+      "confidence": {
+        "level": "high",
+        "reason": "The command values and direct SetActiveMode, Undo, and Redo calls are directly decompiled; names remain opaque."
+      },
+      "consumers": [
+        "EditorUI",
+        "cEditor::SetActiveMode",
+        "cEditor::Undo",
+        "cEditor::Redo",
+        "EditorPlayMode"
+      ],
+      "evidence": [
+        {
+          "address": "0x005e0000",
+          "claim": "EditorUI UI-message containing function routes mode and history commands to exact editor callbacks",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "ghidra://SporeApp.exe@0x005e0000"
+        }
+      ],
+      "generated_events": [
+        "editor_active_mode_requested",
+        "edit_redo_requested",
+        "edit_undo_requested"
+      ],
+      "guards": [
+        "message 0x287259f6 must pass a confirmation helper before subordinate controls are interpreted"
+      ],
+      "name": "Editors::EditorUI UI-message dispatcher containing function",
+      "validation": [
+        "Trace each control ID/command payload to visible UI state and cEditor+0x31c/history changes.",
+        "Recover the semantic names for the two mode commands and the two history commands."
+      ]
+    },
+    {
+      "actions": [
+        "forwards the button/flags to the PlayMode actor array and ORs every actor callback result",
+        "returns true when at least one non-null actor consumes the input"
+      ],
+      "address": "0x0062a820",
+      "confidence": {
+        "level": "high",
+        "reason": "The complete 0x39-byte fan-out body is directly decompiled."
+      },
+      "consumers": [
+        "PlayModeActor objects",
+        "cEditor PlayMode input dispatch"
+      ],
+      "evidence": [
+        {
+          "address": "0x0062a820",
+          "claim": "EditorPlayMode::OnMouseDown loops actors and invokes actor vtable slot +0x18, ORing results",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "ghidra://SporeApp.exe@0x0062a820"
+        }
+      ],
+      "generated_events": [
+        "play_mode_actor_input"
+      ],
+      "guards": [
+        "actor pointer must be non-null"
+      ],
+      "name": "Editors::EditorPlayMode::OnMouseDown",
+      "validation": [
+        "Trace actor count, actor identities, per-actor return values, and the aggregate result."
+      ]
+    },
+    {
+      "actions": [
+        "forwards UI control IDs to background handling first",
+        "otherwise forwards the control ID to each of four PlayMode modules at vtable slot +0x2c and ORs results",
+        "for control IDs 0x445b018, 0x445b318, 0x445b340, and 0x445b388 updates background/animation state",
+        "for those controls plays animation 0x4330667 and calls cEditor::PostEventToActors"
+      ],
+      "address": "0x00628d50",
+      "confidence": {
+        "level": "high",
+        "reason": "The containing body, control IDs, module fan-out, animation call, and PostEventToActors call are directly decompiled."
+      },
+      "consumers": [
+        "PlayModeBackgrounds",
+        "IPlayModeModule array",
+        "PlayModeAnimations",
+        "Editors::cEditor::PostEventToActors"
+      ],
+      "evidence": [
+        {
+          "address": "0x00628d50",
+          "claim": "PlayMode UI-button containing function fans out to modules and emits actor events for four background controls",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "ghidra://SporeApp.exe@0x00628d50"
+        }
+      ],
+      "generated_events": [
+        "play_mode_actor_event"
+      ],
+      "guards": [
+        "background handler consumes the control before module fan-out",
+        "actor-event path requires one of the four exact control IDs"
+      ],
+      "name": "Editors::EditorPlayMode HandleUIButton containing function",
+      "validation": [
+        "Trace selected background, animation index, module results, and PostEventToActors consumers for each control."
+      ]
+    },
+    {
+      "actions": [
+        "runs PlayMode actor/module support",
+        "updates a three-entry environment reaction state when enabled",
+        "forwards delta milliseconds to four modules at slot +0x14 and then to each PlayModeActor",
+        "runs background and UI transitions",
+        "eventually starts and clears a multi-second PlayMode UI sequence"
+      ],
+      "address": "0x0062c550",
+      "confidence": {
+        "level": "high",
+        "reason": "The containing Update body and module/actor fan-out are directly decompiled."
+      },
+      "consumers": [
+        "IPlayModeModule array",
+        "PlayModeActor objects",
+        "PlayModeBackgrounds",
+        "PlayModeUI"
+      ],
+      "evidence": [
+        {
+          "address": "0x0062c550",
+          "claim": "PlayMode Update containing function forwards delta time to modules and actors and runs environment/background/UI state",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "ghidra://SporeApp.exe@0x0062c550"
+        }
+      ],
+      "generated_events": [
+        "play_mode_update_tick"
+      ],
+      "guards": [
+        "environment reaction updates require PlayMode+0x36d0 and matching state in +0x36d8",
+        "long UI sequence requires PlayMode+0x3708 and a timer threshold"
+      ],
+      "name": "Editors::EditorPlayMode Update containing function",
+      "validation": [
+        "Trace the four module callbacks, actor update count, background target/current indices, and PlayModeUI timer fields per frame."
+      ]
+    },
+    {
+      "actions": [
+        "dispatches by opaque message/payload hashes",
+        "for message 0xb2e18705, calls 0x00591690 with an optional object and a payload value",
+        "0x00591690 creates or changes rigblock/model resources, invokes SetEditorModel, commits history, and may send app/anim events for payload hashes 0xdee3d8a8, 0x0674ab27, and 0x17d37d90",
+        "opaque branches 0x7aa519dc and 0x14418c3f forward structured records through IAppSystem",
+        "message 0x51cc0b8 requests PaintMode"
+      ],
+      "address": "0x00591fa0",
+      "confidence": {
+        "level": "high",
+        "reason": "The exact switch constants and direct helper/callback calls are visible, while payload schemas and event names are unresolved."
+      },
+      "consumers": [
+        "App message manager",
+        "cEditor::HandleMessage request helper 0x00591690",
+        "cEditor::SetActiveMode",
+        "cEditor::CommitEditHistory",
+        "cEditor::SetEditorModel"
+      ],
+      "evidence": [
+        {
+          "address": "0x00591fa0",
+          "claim": "cEditor::HandleMessage is a large hash/message switch with exact branch constants and editor-state side effects",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__HandleMessage.c"
+        },
+        {
+          "address": "0x00591690",
+          "claim": "request helper creates/loads resource-backed editor changes, commits paired history, and may emit app events",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "ghidra://SporeApp.exe@0x00591690"
+        }
+      ],
+      "generated_events": [
+        "editor_app_message_0x44ef2b8",
+        "editor_app_message_0x51cc0b8",
+        "editor_anim_event_send",
+        "edit_committed",
+        "state_model_restored"
+      ],
+      "guards": [
+        "branch-specific payload pointer, model type, property, and editor-state gates"
+      ],
+      "name": "Editors::cEditor::HandleMessage",
+      "validation": [
+        "Build a message-ID and payload-schema catalog from registrations and one runtime trace per branch.",
+        "Do not assign Create/Edit/Finish/Cancel names to opaque hashes until controls and model transitions are correlated."
+      ]
+    }
+  ],
+  "domain": "Editor Workflows",
+  "events": [
+    {
+      "consumers": [
+        "cEditor::Initialize",
+        "IGameModeManager"
+      ],
+      "evidence": [
+        "0x0057ce80"
+      ],
+      "id": "editor_constructed",
+      "kind": "constructor_event",
+      "producers": [
+        "0x0057ce80"
+      ],
+      "status": "static_confirmed"
+    },
+    {
+      "consumers": [
+        "IGameModeManager",
+        "editor input",
+        "editor update loop"
+      ],
+      "evidence": [
+        "0x00584300"
+      ],
+      "id": "editor_initialized",
+      "kind": "lifecycle_callback",
+      "producers": [
+        "IGameModeManager virtual slot +0x10"
+      ],
+      "status": "static_confirmed"
+    },
+    {
+      "consumers": [
+        "cEditor::Update",
+        "cGameInputManager",
+        "EditorUI"
+      ],
+      "evidence": [
+        "0x0058e6d0"
+      ],
+      "id": "editor_entered",
+      "kind": "lifecycle_callback",
+      "producers": [
+        "IGameModeManager virtual slot +0x18"
+      ],
+      "status": "static_confirmed"
+    },
+    {
+      "consumers": [
+        "cEditor::Update",
+        "cGameInputManager",
+        "EditorUI",
+        "editor support"
+      ],
+      "evidence": [
+        "0x00587a20"
+      ],
+      "id": "editor_exited",
+      "kind": "lifecycle_callback",
+      "producers": [
+        "IGameModeManager virtual slot +0x1c",
+        "cEditor::Dispose"
+      ],
+      "status": "static_confirmed"
+    },
+    {
+      "consumers": [
+        "IGameModeManager",
+        "editor support release"
+      ],
+      "evidence": [
+        "0x00576c50"
+      ],
+      "id": "editor_disposed",
+      "kind": "lifecycle_callback",
+      "producers": [
+        "IGameModeManager virtual slot +0x14"
+      ],
+      "status": "static_confirmed"
+    },
+    {
+      "consumers": [
+        "cEditor::SetActiveMode"
+      ],
+      "evidence": [
+        "0x00587270",
+        "0x005dda30",
+        "0x005e0000",
+        "0x00591fa0"
+      ],
+      "id": "editor_active_mode_requested",
+      "kind": "analytical_event",
+      "producers": [
+        "EditorUI mode updater",
+        "EditorUI UI command 0x70218642",
+        "cEditor message 0x51cc0b8",
+        "cEditor::OnEnter",
+        "cEditor::OnExit"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "consumers": [
+        "selection/hit-test/manipulator and PlayMode paths"
+      ],
+      "evidence": [
+        "0x00588570"
+      ],
+      "id": "editor_mouse_down",
+      "kind": "input_callback",
+      "producers": [
+        "cGameInputManager to IGameMode slot +0x2c"
+      ],
+      "status": "static_confirmed"
+    },
+    {
+      "consumers": [
+        "pointer tracking",
+        "active manipulator",
+        "EditorPlayMode"
+      ],
+      "evidence": [
+        "0x005737d0"
+      ],
+      "id": "editor_mouse_move",
+      "kind": "input_callback",
+      "producers": [
+        "cGameInputManager to IGameMode slot +0x34"
+      ],
+      "status": "static_confirmed"
+    },
+    {
+      "consumers": [
+        "active manipulator release",
+        "history commit",
+        "EditorPlayMode"
+      ],
+      "evidence": [
+        "0x0058b650"
+      ],
+      "id": "editor_mouse_up",
+      "kind": "input_callback",
+      "producers": [
+        "cGameInputManager to IGameMode slot +0x30"
+      ],
+      "status": "static_confirmed"
+    },
+    {
+      "consumers": [
+        "Undo",
+        "Redo",
+        "selected-part deletion",
+        "rotation",
+        "mode commands"
+      ],
+      "evidence": [
+        "0x0058ac10"
+      ],
+      "id": "editor_key_down",
+      "kind": "input_callback",
+      "producers": [
+        "cGameInputManager to IGameMode slot +0x24"
+      ],
+      "status": "static_confirmed"
+    },
+    {
+      "consumers": [
+        "BuildMode selection and manipulator start"
+      ],
+      "evidence": [
+        "0x00588570"
+      ],
+      "id": "manipulator_started",
+      "kind": "analytical_event",
+      "producers": [
+        "BuildMode OnMouseDown hit path"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "consumers": [
+        "EditorRigblock",
+        "model/world refresh"
+      ],
+      "evidence": [
+        "0x005737d0"
+      ],
+      "id": "manipulator_updated",
+      "kind": "analytical_event",
+      "producers": [
+        "OnMouseMove while cEditor+0x148 is non-null"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "consumers": [
+        "selection cleanup",
+        "conditional history commit",
+        "conditional Undo"
+      ],
+      "evidence": [
+        "0x0058b650"
+      ],
+      "id": "manipulator_finished",
+      "kind": "analytical_event",
+      "producers": [
+        "matching BuildMode OnMouseUp"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "consumers": [
+        "Undo",
+        "Redo",
+        "EditorUI",
+        "animation world"
+      ],
+      "evidence": [
+        "0x00586410"
+      ],
+      "id": "edit_committed",
+      "kind": "analytical_event",
+      "producers": [
+        "mouse-up",
+        "paint click",
+        "selected-part deletion",
+        "opaque app-message request helper"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "consumers": [
+        "cEditor::Undo"
+      ],
+      "evidence": [
+        "0x0058ac10",
+        "0x005e0000"
+      ],
+      "id": "edit_undo_requested",
+      "kind": "analytical_event",
+      "producers": [
+        "Ctrl+Z in non-PlayMode",
+        "EditorUI command 0xb006ef6e"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "consumers": [
+        "cEditor::Redo"
+      ],
+      "evidence": [
+        "0x0058ac10",
+        "0x005e0000"
+      ],
+      "id": "edit_redo_requested",
+      "kind": "analytical_event",
+      "producers": [
+        "Ctrl+Y in non-PlayMode",
+        "EditorUI command 0xf006efa5"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "consumers": [
+        "cEditor::SetEditorModel",
+        "editor bounds/UI refresh"
+      ],
+      "evidence": [
+        "0x0058a5a0",
+        "0x0058a950"
+      ],
+      "id": "state_model_restored",
+      "kind": "analytical_event",
+      "producers": [
+        "Undo",
+        "Redo"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "consumers": [
+        "PaletteUI",
+        "cEditor::HandleMessage"
+      ],
+      "evidence": [
+        "0x005cb240"
+      ],
+      "id": "palette_category_changed",
+      "kind": "analytical_event",
+      "producers": [
+        "valid PaletteUI active-category request"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "consumers": [
+        "Skinner",
+        "Editors::IBakeManager"
+      ],
+      "evidence": [
+        "0x004c5200"
+      ],
+      "id": "skin_paint_prepared",
+      "kind": "analytical_event",
+      "producers": [
+        "cEditorSkin paint preparation"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "consumers": [
+        "AnimatedCreature",
+        "App::IAppSystem"
+      ],
+      "evidence": [
+        "0x00628d50",
+        "0x00574110"
+      ],
+      "id": "play_mode_actor_event",
+      "kind": "analytical_event",
+      "producers": [
+        "PlayMode background controls 0x445b018/0x445b318/0x445b340/0x445b388"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "consumers": [
+        "editor animation consumers"
+      ],
+      "evidence": [
+        "0x0059d8b0"
+      ],
+      "id": "editor_anim_event_send",
+      "kind": "callback_event",
+      "producers": [
+        "mode changes",
+        "history restore",
+        "model/resource request helper"
+      ],
+      "status": "static_confirmed"
+    },
+    {
+      "consumers": [
+        "editor animation consumers"
+      ],
+      "evidence": [
+        "0x0059d840"
+      ],
+      "id": "editor_anim_event_post",
+      "kind": "callback_event",
+      "producers": [
+        "Undo restore path"
+      ],
+      "status": "static_confirmed"
+    }
+  ],
+  "scope": {
+    "boundaries": [
+      "No binary, Ghidra project, OpenSpore source, SPORE payload, or historical triage artifact was modified.",
+      "No OpenSpore clean-room implementation is treated as original SporeApp.exe behavior.",
+      "SDK names establish interface and layout only; contained aliases are not promoted to exact function entries.",
+      "No state or transition is inferred solely from vtable adjacency, KG topology, hashes, or a function's region.",
+      "The editor-to-gameplay scope is limited to the editor's PlayMode actor/module bridge; no transition into cell gameplay is claimed without a positive editor trace.",
+      "The imported PaintSkin, IsPainting, PaletteUI, EditorUI, and several PlayMode addresses are contained or dead aliases; behavior is attributed only to the containing function actually decompiled."
+    ],
+    "build": "SporeApp.exe 3.1.0.22",
+    "evidence_policy": {
+      "decompilation": "Exact-body decompilation and disassembly are behavior evidence when fields and call order are stable. Decompiler parameter names, enum casts, and inferred locals are not authoritative.",
+      "levels": [
+        "APPROXIMATION",
+        "CONFIRMED",
+        "INFERRED",
+        "OBSERVED",
+        "SUPPORTED",
+        "UNKNOWN",
+        "UNRESOLVED",
+        "VERIFIED"
+      ],
+      "runtime": "No positive original editor, palette, skin, Undo/Redo, or PlayMode trace is present. All workflow transitions are static-only.",
+      "sdk_name_only": "SDK names, enums, offsets, and vtable slots establish shape. A named SDK address inside another body is a contained alias and receives the containing entry's mechanics only.",
+      "vtable": "Raw cEditor vtable data and the constructor establish the first sixteen IGameMode slots. Additional slots 16-28 are kept opaque."
+    },
+    "image_base": "0x00400000",
+    "kg_evidence": {
+      "class_node": "cls:013f57f8",
+      "function_nodes": [
+        "fun:0057ce80",
+        "fun:00584300",
+        "fun:00586410",
+        "fun:00586b00",
+        "fun:00587270",
+        "fun:0058a5a0",
+        "fun:0058a950"
+      ],
+      "neighbors_observed": [
+        "cls:013f57f8 hasLayout struct:/Spore/Editors/cEditor",
+        "fun:0058a5a0 sdkAssociatedWithStructure struct:/Spore/Editors/cEditor",
+        "UI::cEditor::HandleMessage, OnMouseDown, and Update are hasSlot edges from the cEditor vtable",
+        "menu_transition probes missed HandleMessage, OnMouseDown, and Update; this is negative runtime evidence, not proof of unreachable behavior"
+      ],
+      "writes": 0
+    },
+    "method": [
+      "Queried the read-only SQLite KG sidecar and inspected cEditor class/function neighbors.",
+      "Read committed editor, UI, global-campaign, decomp-gap, SDK, and state-machine artifacts.",
+      "Queried live Ghidra read-only for function search, decompilation, disassembly, and raw vtable data.",
+      "Correlated SDK structures, cEditor fields, vtable slots, and direct decompiled writes/calls.",
+      "Preserved opaque message hashes, helper names, and contained aliases wherever semantic recovery was not evidence-backed."
+    ],
+    "research_only": true,
+    "sources": [
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__*.c",
+      ".spore-analysis/ghidra-exports/sdk_functions.tsv",
+      ".spore-analysis/ghidra-exports/spore_sdk.xml",
+      ".spore-analysis/ghidra-exports/structs.tsv",
+      ".spore-analysis/ghidra-exports/structs_fields.tsv",
+      ".spore-analysis/ghidra-exports/vtables.json",
+      "Ghidra read-only 0x004c5200",
+      "Ghidra read-only 0x00572xxx editor helpers",
+      "Ghidra read-only 0x0057ce80",
+      "Ghidra read-only 0x00591fa0",
+      "Ghidra read-only 0x005cb240",
+      "Ghidra read-only 0x005cb5a0",
+      "Ghidra read-only 0x005dda30",
+      "Ghidra read-only 0x005dec10",
+      "Ghidra read-only 0x005e0000",
+      "Ghidra read-only 0x00628d50",
+      "Ghidra read-only 0x0062a820",
+      "Ghidra read-only 0x0062c550",
+      "Ghidra raw data 0x013f57f8",
+      "knowledgegraph/research/decomp-gap/editor-core-00.json",
+      "knowledgegraph/research/decomp-gap/editor-support-00.json",
+      "knowledgegraph/research/global-campaign-2026/track-g-editor-ui-input.json",
+      "knowledgegraph/research/types/06-editor-ui.json",
+      "knowledgegraph/research/types/06-editor-ui.md",
+      "knowledgegraph/spore.db"
+    ]
+  },
+  "state_machines": [
+    {
+      "confidence": {
+        "level": "high",
+        "reason": "mIsActive and mMode are SDK-layout fields with direct constructor, Initialize, OnEnter, OnExit, SetActiveMode, Update, and Dispose effects."
+      },
+      "consumers": [
+        "IGameModeManager",
+        "cGameInputManager",
+        "cEditor::Update",
+        "EditorUI",
+        "EditorPlayMode"
+      ],
+      "entry_actions": [
+        {
+          "action": "OnEnter prepares model/UI/world state, requests PaintMode, and sets mIsActive=1 near successful completion",
+          "conditions": [
+            "shadow-world pointer is non-null"
+          ],
+          "evidence": "0x0058e6d0"
+        }
+      ],
+      "evidence": [
+        {
+          "address": "0x0057ce80",
+          "claim": "constructor initializes mMode=BuildMode and mIsActive=false",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "ghidra://SporeApp.exe@0x0057ce80"
+        },
+        {
+          "address": "0x00584300",
+          "claim": "Initialize prepares services and returns success/failure",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__Initialize.c"
+        },
+        {
+          "address": "0x0058e6d0",
+          "claim": "OnEnter requests PaintMode and writes mIsActive=1",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnEnter.c"
+        },
+        {
+          "address": "0x00587a20",
+          "claim": "OnExit clears mIsActive and tears down editor state",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnExit.c"
+        },
+        {
+          "address": "0x00576c50",
+          "claim": "Dispose calls OnExit when mIsActive is true and releases support",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__Dispose.c"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "OnExit clears mIsActive, requests PaintMode, clears selection/manipulator, releases editor support, and resets graphics worlds",
+          "conditions": [],
+          "evidence": "0x00587a20"
+        }
+      ],
+      "generated_events": [
+        "editor_constructed",
+        "editor_disposed",
+        "editor_entered",
+        "editor_exited",
+        "editor_initialized"
+      ],
+      "guards": [
+        "Update runs only while mIsActive is true",
+        "OnEnter can fail before mIsActive is set",
+        "Dispose conditionally invokes OnExit"
+      ],
+      "name": "cEditor lifecycle",
+      "possible_states": [
+        {
+          "actions": [
+            "objects and vtables are not yet constructed"
+          ],
+          "guards": [],
+          "name": "uninitialized",
+          "raw_value": "construction has not run"
+        },
+        {
+          "actions": [
+            "mode is BuildMode",
+            "input/update are inactive"
+          ],
+          "guards": [
+            "mIsActive == false"
+          ],
+          "name": "constructed_inactive",
+          "raw_value": "(mIsActive=0,mMode=0)"
+        },
+        {
+          "actions": [
+            "services are prepared",
+            "mode is still BuildMode until entry"
+          ],
+          "guards": [
+            "mIsActive == false"
+          ],
+          "name": "initialized_inactive",
+          "raw_value": "(mIsActive=0,mMode=0)"
+        },
+        {
+          "actions": [
+            "receives editor input and updates"
+          ],
+          "guards": [
+            "mIsActive == true",
+            "mMode == BuildMode"
+          ],
+          "name": "active_build",
+          "raw_value": "(mIsActive=1,mMode=0)"
+        },
+        {
+          "actions": [
+            "receives editor input and updates with paint support"
+          ],
+          "guards": [
+            "mIsActive == true",
+            "mMode == PaintMode"
+          ],
+          "name": "active_paint",
+          "raw_value": "(mIsActive=1,mMode=1)"
+        },
+        {
+          "actions": [
+            "receives editor input and updates with PlayMode delegation"
+          ],
+          "guards": [
+            "mIsActive == true",
+            "mMode == PlayMode"
+          ],
+          "name": "active_play",
+          "raw_value": "(mIsActive=1,mMode=2)"
+        },
+        {
+          "actions": [
+            "input/update are inactive",
+            "mode is PaintMode after the exit cleanup request"
+          ],
+          "guards": [
+            "mIsActive == false"
+          ],
+          "name": "inactive_after_exit",
+          "raw_value": "(mIsActive=0,mMode=1)"
+        },
+        {
+          "actions": [
+            "service ownership is released"
+          ],
+          "guards": [
+            "no active cEditor callback or update may run"
+          ],
+          "name": "disposed",
+          "raw_value": "lifecycle terminal"
+        }
+      ],
+      "relevant_functions": [
+        "0x0057ce80",
+        "0x00584300",
+        "0x00587a20",
+        "0x0058be50",
+        "0x0058e6d0",
+        "0x00576c50"
+      ],
+      "relevant_structures": [
+        "App::IGameMode",
+        "Editors::cEditor"
+      ],
+      "side_effects": [
+        "app-mode activation/deactivation",
+        "message listener registration/removal",
+        "UI/world/PlayMode creation and teardown",
+        "input and update gating"
+      ],
+      "state_variable": {
+        "expression": "(Editors::cEditor+0x2b0, Editors::cEditor+0x31c)",
+        "owner": "Editors::cEditor",
+        "type": "(bool mIsActive, Editors::Mode mMode)"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "write subobject vtables",
+            "initialize mMode=BuildMode",
+            "initialize mIsActive=false"
+          ],
+          "cause": "construction",
+          "event": "editor_constructed",
+          "from_state": "uninitialized",
+          "guard": "always",
+          "to_state": "constructed_inactive"
+        },
+        {
+          "actions": [
+            "initialize editor services and return true"
+          ],
+          "cause": "IGameMode Initialize",
+          "event": "editor_initialized",
+          "from_state": "constructed_inactive",
+          "guard": "all required render-manager allocations succeed",
+          "to_state": "initialized_inactive"
+        },
+        {
+          "actions": [
+            "prepare entry state",
+            "request PaintMode",
+            "set mIsActive=true"
+          ],
+          "cause": "IGameMode OnEnter",
+          "event": "editor_entered",
+          "from_state": "initialized_inactive",
+          "guard": "shadow-world pointer is non-null and entry reaches the final active write",
+          "to_state": "active_paint"
+        },
+        {
+          "actions": [
+            "return false",
+            "leave mIsActive false"
+          ],
+          "cause": "entry failure",
+          "event": "editor_entered",
+          "from_state": "initialized_inactive",
+          "guard": "shadow-world pointer is null",
+          "to_state": "initialized_inactive"
+        },
+        {
+          "actions": [
+            "clear mIsActive",
+            "request PaintMode",
+            "release editor support"
+          ],
+          "cause": "IGameMode OnExit",
+          "event": "editor_exited",
+          "from_state": "active_build|active_paint|active_play",
+          "guard": "always",
+          "to_state": "inactive_after_exit"
+        },
+        {
+          "actions": [
+            "call OnExit if active",
+            "remove listeners/commands",
+            "release support"
+          ],
+          "cause": "IGameMode Dispose",
+          "event": "editor_disposed",
+          "from_state": "active_build|active_paint|active_play|initialized_inactive|inactive_after_exit",
+          "guard": "always",
+          "to_state": "disposed"
+        }
+      ],
+      "validation": [
+        "Byte-verify mIsActive at +0x2b0 and mMode at +0x31c at constructor, OnEnter, SetActiveMode, OnExit, and Dispose boundaries.",
+        "Trace the exact IGameModeManager lifecycle calls and confirm Initialize/OnEnter/OnExit/Dispose ordering for this concrete mode.",
+        "Verify whether an initialized editor can be disposed without successful entry."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "high",
+        "reason": "The enum domain, every state write, old-mode cleanup, target-mode actions, and transition guards are directly observed."
+      },
+      "consumers": [
+        "EditorUI mode updater",
+        "cEditor input branches",
+        "cEditor::Update",
+        "EditorPlayMode",
+        "cEditorAnimEvent"
+      ],
+      "entry_actions": [
+        {
+          "action": "clear selected/moving parts, active handle, active manipulator, and old skin/visual state before writing the new mode",
+          "conditions": [
+            "the request passes the same-build and +0x38c guards"
+          ],
+          "evidence": "0x00587270"
+        }
+      ],
+      "evidence": [
+        {
+          "address": "0x00587270",
+          "claim": "full old-mode teardown, cEditor+0x31c write, target-mode branch, and event emission",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__SetActiveMode.c"
+        },
+        {
+          "address": "0x005dda30",
+          "claim": "EditorUI suppresses equal displayed modes and requests the new mode",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "ghidra://SporeApp.exe@0x005dda30"
+        },
+        {
+          "address": "Editors::Mode",
+          "claim": "BuildMode=0, PaintMode=1, PlayMode=2",
+          "kind": "sdk_name_only",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/spore_sdk.xml"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "perform old-mode-specific teardown before storing the requested mode",
+          "conditions": [],
+          "evidence": "0x00587270"
+        }
+      ],
+      "generated_events": [
+        "editor_active_mode_requested",
+        "editor_anim_event_send"
+      ],
+      "guards": [
+        "BuildMode-to-BuildMode direct request is a no-op",
+        "cEditor+0x38c must be 0 or 6",
+        "EditorUI mode updater suppresses requests equal to its own current mode"
+      ],
+      "name": "cEditor active editor mode",
+      "possible_states": [
+        {
+          "actions": [
+            "part selection, rigblock manipulation, and deletion paths"
+          ],
+          "guards": [
+            "cEditor+0x31c == 0"
+          ],
+          "name": "BuildMode",
+          "raw_value": 0
+        },
+        {
+          "actions": [
+            "palette paint selection and model color mutation"
+          ],
+          "guards": [
+            "cEditor+0x31c == 1"
+          ],
+          "name": "PaintMode",
+          "raw_value": 1
+        },
+        {
+          "actions": [
+            "delegate key/mouse callbacks to EditorPlayMode",
+            "run PlayMode actor/module/background/animation update"
+          ],
+          "guards": [
+            "cEditor+0x31c == 2"
+          ],
+          "name": "PlayMode",
+          "raw_value": 2
+        }
+      ],
+      "relevant_functions": [
+        "0x005737d0",
+        "0x00588570",
+        "0x0058ac10",
+        "0x0058b650",
+        "0x0058be50",
+        "0x00587270",
+        "0x005dda30"
+      ],
+      "relevant_structures": [
+        "Editors::Mode",
+        "Editors::cEditor",
+        "Editors::EditorUI",
+        "Editors::EditorPlayMode"
+      ],
+      "side_effects": [
+        "UI window visibility and mode flags",
+        "part/skin/actor teardown and setup",
+        "animation creature add/destroy",
+        "animation/app event emission"
+      ],
+      "state_variable": {
+        "expression": "Editors::cEditor+0x31c",
+        "owner": "Editors::cEditor",
+        "type": "Editors::Mode enum"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "return without writing or teardown"
+          ],
+          "cause": "duplicate BuildMode request",
+          "event": "editor_active_mode_requested",
+          "from_state": "BuildMode",
+          "guard": "requested mode == 0",
+          "to_state": "BuildMode"
+        },
+        {
+          "actions": [
+            "return without transition"
+          ],
+          "cause": "global editor gate",
+          "event": "editor_active_mode_requested",
+          "from_state": "any",
+          "guard": "cEditor+0x38c != 0 and cEditor+0x38c != 6",
+          "to_state": "unchanged"
+        },
+        {
+          "actions": [
+            "tear down PaintMode/PlayMode state as applicable",
+            "clear selection/manipulator",
+            "store BuildMode",
+            "run BuildMode entry support",
+            "emit mode animation event"
+          ],
+          "cause": "BuildMode request",
+          "event": "editor_active_mode_requested",
+          "from_state": "PaintMode|PlayMode",
+          "guard": "not duplicate BuildMode and +0x38c gate passes",
+          "to_state": "BuildMode"
+        },
+        {
+          "actions": [
+            "tear down BuildMode/PlayMode state as applicable",
+            "clear selection/manipulator",
+            "store PaintMode",
+            "set paint/UI flags",
+            "rebuild paint/skin/creature support as available",
+            "emit mode animation event"
+          ],
+          "cause": "PaintMode request",
+          "event": "editor_active_mode_requested",
+          "from_state": "BuildMode|PlayMode",
+          "guard": "+0x38c gate passes",
+          "to_state": "PaintMode"
+        },
+        {
+          "actions": [
+            "tear down BuildMode/PaintMode state as applicable",
+            "clear selection/manipulator",
+            "store PlayMode",
+            "show PlayMode UI and add/create actor support",
+            "set PlayMode/environment flags",
+            "emit mode animation event"
+          ],
+          "cause": "PlayMode request",
+          "event": "editor_active_mode_requested",
+          "from_state": "BuildMode|PaintMode",
+          "guard": "+0x38c gate passes",
+          "to_state": "PlayMode"
+        }
+      ],
+      "validation": [
+        "Trace cEditor+0x31c and cEditor+0x38c on every request and every entry/exit transition.",
+        "Correlate UI mode controls, window visibility, skin state, PlayMode actors, and animation events.",
+        "Verify the third SetActiveMode boolean's semantics and the +0x38c gate owner."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "high",
+        "reason": "The transaction state fields, MouseDown/Move/Up guards, direct vtable slots, and commit/Undo branches are all decompiled."
+      },
+      "consumers": [
+        "EditorRigblock",
+        "opaque manipulator/tool classes",
+        "EditorModel",
+        "edit history",
+        "EditorPlayMode"
+      ],
+      "entry_actions": [
+        {
+          "action": "store mouse button at cEditor+0x34, hit-test, and optionally create/store a manipulator at cEditor+0x148",
+          "conditions": [
+            "no active manipulator and no stored button"
+          ],
+          "evidence": "0x00588570"
+        }
+      ],
+      "evidence": [
+        {
+          "address": "0x00588570",
+          "claim": "MouseDown owns the transaction start, overlapping-event guard, selection, and manipulator construction",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnMouseDown.c"
+        },
+        {
+          "address": "0x005737d0",
+          "claim": "MouseMove updates the stored manipulator and model/world",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnMouseMove.c"
+        },
+        {
+          "address": "0x0058b650",
+          "claim": "MouseUp matches the button, finalizes the manipulator, conditionally commits history, and may Undo",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnMouseUp.c"
+        },
+        {
+          "address": "0x00586b00",
+          "claim": "SetEditorModel aborts any active manipulator and clears related rigblock pointers",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__SetEditorModel.c"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "invoke manipulator slots +0x10/+0x34, clear cEditor+0x148, conditionally commit history, and release moving/selected state",
+          "conditions": [
+            "MouseUp button matches cEditor+0x34"
+          ],
+          "evidence": "0x0058b650"
+        }
+      ],
+      "generated_events": [
+        "edit_committed",
+        "manipulator_finished",
+        "manipulator_started",
+        "manipulator_updated"
+      ],
+      "guards": [
+        "MouseDown is consumed while cEditor+0x148 or cEditor+0x34 is active",
+        "MouseMove manipulator update requires cEditor+0x148 != 0",
+        "MouseUp requires exact button equality with cEditor+0x34",
+        "mode switch, model replacement, and exit forcibly clear the manipulator"
+      ],
+      "name": "BuildMode selection and manipulator transaction",
+      "possible_states": [
+        {
+          "actions": [
+            "no transaction owns a mouse button or manipulator"
+          ],
+          "guards": [
+            "cEditor+0x34 == 0",
+            "cEditor+0x148 == 0"
+          ],
+          "name": "idle",
+          "raw_value": "no active button/manipulator"
+        },
+        {
+          "actions": [
+            "last mouse coordinates are stored at cEditor+0x28",
+            "pointer-active byte cEditor+0x38 is set"
+          ],
+          "guards": [
+            "no active manipulator is required"
+          ],
+          "name": "pointer_tracked",
+          "raw_value": "cEditor+0x38 != 0"
+        },
+        {
+          "actions": [
+            "a mouse button is reserved but no manipulator object has been stored"
+          ],
+          "guards": [
+            "cEditor+0x34 != 0",
+            "cEditor+0x148 == 0"
+          ],
+          "name": "button_armed",
+          "raw_value": "button reserved without active manipulator"
+        },
+        {
+          "actions": [
+            "mouse move dispatches to cEditor+0x148 slots +0x1c and +0x28"
+          ],
+          "guards": [
+            "cEditor+0x34 != 0",
+            "cEditor+0x148 != 0"
+          ],
+          "name": "manipulator_active",
+          "raw_value": "matching button plus active manipulator"
+        },
+        {
+          "actions": [
+            "OnMouseUp has cleared cEditor+0x34 and is finalizing cEditor+0x148"
+          ],
+          "guards": [
+            "cEditor+0x34 == 0",
+            "cEditor+0x148 != 0 during cleanup"
+          ],
+          "name": "finalizing",
+          "raw_value": "transient OnMouseUp cleanup"
+        }
+      ],
+      "relevant_functions": [
+        "0x005737d0",
+        "0x00586b00",
+        "0x00587270",
+        "0x00587a20",
+        "0x00588570",
+        "0x0058b650"
+      ],
+      "relevant_structures": [
+        "Editors::cEditor",
+        "Editors::EditorRigblock",
+        "Editors::EditorBaseHandle"
+      ],
+      "side_effects": [
+        "rigblock selection and active/moving pointers",
+        "position/orientation and handle mutations",
+        "model/world refresh",
+        "edit-history commit or post-transaction Undo"
+      ],
+      "state_variable": {
+        "expression": "(cEditor+0x34, cEditor+0x148, cEditor+0xcc, cEditor+0xd0, cEditor+0xd4, cEditor+0xe4, cEditor+0x38)",
+        "owner": "Editors::cEditor",
+        "type": "mouse button, opaque manipulator pointer, rigblock pointers, active handle pointer, pointer-active byte"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "store coordinates",
+            "set cEditor+0x38=1"
+          ],
+          "cause": "pointer movement",
+          "event": "editor_mouse_move",
+          "from_state": "idle",
+          "guard": "cEditor+0x397 == false",
+          "to_state": "pointer_tracked"
+        },
+        {
+          "actions": [
+            "store button at cEditor+0x34",
+            "perform hit test/selection"
+          ],
+          "cause": "click without manipulator hit",
+          "event": "editor_mouse_down",
+          "from_state": "idle|pointer_tracked",
+          "guard": "cEditor+0x34 and cEditor+0x148 are empty and no manipulator is created",
+          "to_state": "button_armed"
+        },
+        {
+          "actions": [
+            "store button",
+            "select rigblock/handle",
+            "construct and store opaque manipulator",
+            "set moving/active pointers as required"
+          ],
+          "cause": "click starts manipulator",
+          "event": "manipulator_started",
+          "from_state": "idle|pointer_tracked",
+          "guard": "BuildMode hit path and cEditor+0x34/+0x148 are empty",
+          "to_state": "manipulator_active"
+        },
+        {
+          "actions": [
+            "return consumed without starting a second transaction"
+          ],
+          "cause": "overlapping click",
+          "event": "editor_mouse_down",
+          "from_state": "button_armed|manipulator_active",
+          "guard": "cEditor+0x148 != 0 or cEditor+0x34 != 0",
+          "to_state": "unchanged"
+        },
+        {
+          "actions": [
+            "invoke manipulator slots +0x1c and +0x28",
+            "refresh model/world"
+          ],
+          "cause": "pointer movement during manipulation",
+          "event": "manipulator_updated",
+          "from_state": "manipulator_active",
+          "guard": "cEditor+0x148 != 0",
+          "to_state": "manipulator_active"
+        },
+        {
+          "actions": [
+            "return false without changing ownership"
+          ],
+          "cause": "nonmatching release",
+          "event": "editor_mouse_up",
+          "from_state": "button_armed|manipulator_active",
+          "guard": "release button != cEditor+0x34",
+          "to_state": "unchanged"
+        },
+        {
+          "actions": [
+            "clear cEditor+0x34",
+            "invoke manipulator release slots",
+            "clear moving/manipulator state"
+          ],
+          "cause": "matching release",
+          "event": "manipulator_finished",
+          "from_state": "manipulator_active",
+          "guard": "release button == stored button",
+          "to_state": "finalizing"
+        },
+        {
+          "actions": [
+            "commit when recovered guards pass",
+            "optionally call Undo",
+            "clear cEditor+0x148 and moving pointer"
+          ],
+          "cause": "finalization complete",
+          "event": "edit_committed",
+          "from_state": "finalizing",
+          "guard": "commit guards may be false, in which case no commit event occurs",
+          "to_state": "idle"
+        },
+        {
+          "actions": [
+            "release manipulator",
+            "clear selected/moving/active rigblock and active handle"
+          ],
+          "cause": "mode/model/teardown reset",
+          "event": "editor_active_mode_requested|state_model_restored|editor_exited",
+          "from_state": "button_armed|manipulator_active|finalizing",
+          "guard": "transitioning out of the current model/mode",
+          "to_state": "idle"
+        }
+      ],
+      "validation": [
+        "Trace all six transaction fields before and after every mouse callback.",
+        "Capture the opaque manipulator vtable for each constructor and map slots +0x10, +0x14, +0x1c, +0x24, +0x28, +0x30, and +0x34.",
+        "Record whether OnMouseUp can abandon a transaction without commit and whether any explicit cancel path exists.",
+        "Correlate cEditor+0xcc/+0xd0/+0xd4 with EditorRigblock parent/child/selection effects."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "high",
+        "reason": "The parallel vector appends, index guards, decrement/increment, model restore, and UI availability mechanics are direct decompilation evidence."
+      },
+      "consumers": [
+        "EditorUI",
+        "cEditor::SetEditorModel",
+        "cEditorAnimEvent",
+        "BuildMode animation world"
+      ],
+      "entry_actions": [
+        {
+          "action": "call CommitEditHistory after a guarded editor mutation",
+          "conditions": [
+            "the caller has not already supplied a distinct state snapshot"
+          ],
+          "evidence": "0x00586410"
+        }
+      ],
+      "evidence": [
+        {
+          "address": "0x00586410",
+          "claim": "Commit appends 0x2c state and 0xac resource records to parallel vectors and increments the index",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__CommitEditHistory.c"
+        },
+        {
+          "address": "0x0058a5a0",
+          "claim": "Undo requires index > 1, decrements, restores paired records, and refreshes model/UI",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__Undo.c"
+        },
+        {
+          "address": "0x0058a950",
+          "claim": "Redo requires index < resource count, increments, restores paired records, and refreshes model/UI",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__Redo.c"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "none; history remains stored for later navigation",
+          "conditions": [],
+          "evidence": "0x00586410"
+        }
+      ],
+      "generated_events": [
+        "edit_committed",
+        "edit_redo_requested",
+        "edit_undo_requested",
+        "state_model_restored"
+      ],
+      "guards": [
+        "Undo requires mEditHistoryIndex > 1",
+        "Redo requires mEditHistoryIndex < resource-vector count",
+        "Commit disables redo UI and increments the shared index once"
+      ],
+      "name": "cEditor paired edit-history cursor",
+      "possible_states": [
+        {
+          "actions": [
+            "no history record is restorable"
+          ],
+          "guards": [
+            "state count == 0",
+            "resource count == 0",
+            "mEditHistoryIndex == 0"
+          ],
+          "name": "empty",
+          "raw_value": "index=0,count=0"
+        },
+        {
+          "actions": [
+            "Undo is disabled",
+            "Redo may be available when a future tail exists"
+          ],
+          "guards": [
+            "mEditHistoryIndex == 1",
+            "Undo guard is false"
+          ],
+          "name": "at_undo_boundary",
+          "raw_value": "index=1"
+        },
+        {
+          "actions": [
+            "Undo and Redo are both mechanically available"
+          ],
+          "guards": [
+            "1 < mEditHistoryIndex < resource count"
+          ],
+          "name": "middle",
+          "raw_value": "1<index<count"
+        },
+        {
+          "actions": [
+            "Redo is disabled",
+            "Undo is available when count > 1"
+          ],
+          "guards": [
+            "mEditHistoryIndex == resource count",
+            "resource count > 1"
+          ],
+          "name": "at_redo_tip",
+          "raw_value": "index=count"
+        }
+      ],
+      "relevant_functions": [
+        "0x00586410",
+        "0x0058a5a0",
+        "0x0058a950"
+      ],
+      "relevant_structures": [
+        "Editors::cEditor",
+        "Editors::EditorStateEditHistory",
+        "Editors::cEditorResource"
+      ],
+      "side_effects": [
+        "linear paired-vector growth",
+        "model/resource replacement",
+        "UI undo/redo availability",
+        "optional animation event",
+        "BuildMode animation-creature refresh"
+      ],
+      "state_variable": {
+        "expression": "cEditor+0x188 with vectors at cEditor+0x160 and cEditor+0x174",
+        "owner": "Editors::cEditor",
+        "type": "int32_t mEditHistoryIndex plus paired intrusive vectors"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "append state/resource pair",
+            "increment index",
+            "disable redo"
+          ],
+          "cause": "edit commit",
+          "event": "edit_committed",
+          "from_state": "empty|at_undo_boundary|middle|at_redo_tip",
+          "guard": "always",
+          "to_state": "at_redo_tip"
+        },
+        {
+          "actions": [
+            "return without change"
+          ],
+          "cause": "undo at lower boundary",
+          "event": "edit_undo_requested",
+          "from_state": "empty|at_undo_boundary",
+          "guard": "mEditHistoryIndex <= 1",
+          "to_state": "unchanged"
+        },
+        {
+          "actions": [
+            "decrement index",
+            "restore model/state",
+            "refresh UI"
+          ],
+          "cause": "undo",
+          "event": "edit_undo_requested",
+          "from_state": "middle|at_redo_tip",
+          "guard": "mEditHistoryIndex > 1",
+          "to_state": "at_undo_boundary|middle"
+        },
+        {
+          "actions": [
+            "return without change"
+          ],
+          "cause": "redo at tip",
+          "event": "edit_redo_requested",
+          "from_state": "at_redo_tip|empty",
+          "guard": "mEditHistoryIndex >= resource count",
+          "to_state": "unchanged"
+        },
+        {
+          "actions": [
+            "increment index",
+            "restore model/state",
+            "refresh UI"
+          ],
+          "cause": "redo",
+          "event": "edit_redo_requested",
+          "from_state": "at_undo_boundary|middle",
+          "guard": "mEditHistoryIndex < resource count",
+          "to_state": "middle|at_redo_tip"
+        }
+      ],
+      "validation": [
+        "Record both vector begin/end/capacity, mEditHistoryIndex, and UI availability after every commit/undo/redo.",
+        "Prove the behavior of 0x005e77e0 and 0x00584160 when a commit occurs after Undo.",
+        "Verify that state and resource vector lengths remain identical and paired by index."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "high",
+        "reason": "PaletteUI category pointer, range guard, old/new activation, page update, and message emission are directly decompiled; cEditor's matching message branch is also present."
+      },
+      "consumers": [
+        "PaletteCategoryUI",
+        "UTFWin category buttons",
+        "Editors::cEditor::HandleMessage"
+      ],
+      "entry_actions": [
+        {
+          "action": "Palette load creates category UI objects and invokes the active-category setter for the startup category",
+          "conditions": [
+            "startup category is in range"
+          ],
+          "evidence": "0x005cb5a0, 0x005cb240"
+        }
+      ],
+      "evidence": [
+        {
+          "address": "0x005cb5a0",
+          "claim": "Palette load populates category/page UI and calls the active-category setter",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "ghidra://SporeApp.exe@0x005cb5a0"
+        },
+        {
+          "address": "0x005cb240",
+          "claim": "category request validates the index, swaps active category, updates page/buttons, and sends 0x44ef2b8",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "ghidra://SporeApp.exe@0x005cb240"
+        },
+        {
+          "address": "0x00591fa0",
+          "claim": "cEditor::HandleMessage has a branch for 0x44ef2b8 that can clear an editor-side paint selection when model type is 1",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__HandleMessage.c"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "deactivate the old category before activating the requested category",
+          "conditions": [
+            "an old active category exists"
+          ],
+          "evidence": "0x005cb240"
+        }
+      ],
+      "generated_events": [
+        "palette_category_changed"
+      ],
+      "guards": [
+        "requested category index must be in [-1, category_count)",
+        "cEditor selection clearing additionally requires cEditor+0x30c == 1 and cEditor+0x3b4 != 0"
+      ],
+      "name": "Palette category routing",
+      "possible_states": [
+        {
+          "actions": [
+            "no active category is selected"
+          ],
+          "guards": [
+            "PaletteUI+0x64 == null"
+          ],
+          "name": "no_active_category",
+          "raw_value": "null"
+        },
+        {
+          "actions": [
+            "old category is inactive",
+            "new category/button is active",
+            "page number and 0x44ef2b8 event are updated"
+          ],
+          "guards": [
+            "PaletteUI+0x64 != null"
+          ],
+          "name": "active_category",
+          "raw_value": "non-null PaletteCategoryUI pointer"
+        }
+      ],
+      "relevant_functions": [
+        "0x00591fa0",
+        "0x005cb240",
+        "0x005cb5a0"
+      ],
+      "relevant_structures": [
+        "Palettes::PaletteUI",
+        "Palettes::PaletteCategoryUI",
+        "Editors::cEditor",
+        "Editors::EditorRigblockPaint"
+      ],
+      "side_effects": [
+        "category/page button visibility and state",
+        "category tooltip/fade effects",
+        "cEditor paint-selection invalidation"
+      ],
+      "state_variable": {
+        "expression": "Palettes::PaletteUI+0x64",
+        "owner": "Palettes::PaletteUI",
+        "type": "intrusive_ptr<PaletteCategoryUI>"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "populate category UI",
+            "request startup category"
+          ],
+          "cause": "PaletteUI load",
+          "event": "palette_loaded",
+          "from_state": "no_active_category",
+          "guard": "startup category is valid",
+          "to_state": "active_category"
+        },
+        {
+          "actions": [
+            "return without change"
+          ],
+          "cause": "invalid category request",
+          "event": "palette_category_changed",
+          "from_state": "no_active_category|active_category",
+          "guard": "requested index <= -1 or requested index >= category count",
+          "to_state": "unchanged"
+        },
+        {
+          "actions": [
+            "deactivate old category",
+            "store requested category at +0x64",
+            "activate new category",
+            "update page number",
+            "emit message 0x44ef2b8"
+          ],
+          "cause": "valid category request",
+          "event": "palette_category_changed",
+          "from_state": "no_active_category|active_category",
+          "guard": "requested index is in range",
+          "to_state": "active_category"
+        }
+      ],
+      "validation": [
+        "Trace category IDs and PaletteUI+0x64 through load and every button press.",
+        "Log message 0x44ef2b8 delivery and cEditor+0x30c/+0x3b4 before and after handling.",
+        "Recover the exact payload for PaletteUI::GetSelectedRigblockPaint before modeling selection identity."
+      ]
+    }
+  ],
+  "temporal_semantics": {
+    "call_order": [
+      {
+        "claim": "SetActiveMode performs old-mode cleanup before storing cEditor+0x31c, performs target-mode entry afterward, and may send an animation event last.",
+        "evidence": [
+          "0x00587270"
+        ],
+        "order": [
+          "guard",
+          "old-mode teardown",
+          "clear selection/manipulator",
+          "store mMode",
+          "new-mode entry",
+          "optional MessageSend"
+        ]
+      },
+      {
+        "claim": "A normal BuildMode manipulator transaction is a synchronous MouseDown, zero or more MouseMove callbacks, and a matching MouseUp; model refresh occurs during movement and history commit is conditional during release.",
+        "evidence": [
+          "0x005737d0",
+          "0x00588570",
+          "0x0058b650"
+        ],
+        "order": [
+          "OnMouseDown stores button and manipulator",
+          "OnMouseMove updates manipulator",
+          "OnMouseUp matches button and clears it",
+          "OnMouseUp finalizes manipulator",
+          "conditional CommitEditHistory",
+          "optional Undo"
+        ]
+      },
+      {
+        "claim": "OnEnter requests PaintMode before it writes mIsActive=1; OnExit clears mIsActive before its PaintMode request and teardown.",
+        "evidence": [
+          "0x0058e6d0",
+          "0x00587a20"
+        ],
+        "order": [
+          "OnEnter prepare",
+          "SetActiveMode PaintMode",
+          "mIsActive=1",
+          "OnExit mIsActive=0",
+          "SetActiveMode PaintMode",
+          "teardown"
+        ]
+      },
+      {
+        "claim": "Undo decrements the history index before loading the paired state/resource and replacing the model; Redo increments before the analogous restore.",
+        "evidence": [
+          "0x0058a5a0",
+          "0x0058a950"
+        ],
+        "order": [
+          "index movement",
+          "paired record lookup",
+          "EditorModel construction/load",
+          "SetEditorModel",
+          "bounds/UI refresh",
+          "optional animation event"
+        ]
+      }
+    ],
+    "event_queueing": [
+      {
+        "claim": "cEditorAnimEvent MessageSend and MessagePost use distinct IAppSystem virtual slots, but exact destination queueing semantics are not established by the decompiler labels alone.",
+        "evidence": [
+          "0x0059d840",
+          "0x0059d8b0"
+        ],
+        "status": "send_post_distinction_static_confirmed_queue_semantics_unresolved"
+      }
+    ],
+    "ownership": [
+      {
+        "evidence_level": "SUPPORTED",
+        "fact": "Editors::cEditor is the reference-counted editor root and owns/holds the model, histories, worlds, skin, animation world, palettes, UI, and PlayMode support graph; many child controllers retain raw back-pointers."
+      },
+      {
+        "evidence_level": "SUPPORTED",
+        "fact": "mStateEditHistory and mEditHistory are separate intrusive vectors but CommitEditHistory appends one record to each and Undo/Redo index them in parallel."
+      },
+      {
+        "evidence_level": "SUPPORTED",
+        "fact": "cEditorSkin holds the prepared painter job at +0x5c; preparation replaces and releases the previous job before calling Editors::IBakeManager."
+      },
+      {
+        "evidence_level": "SUPPORTED",
+        "fact": "EditorPlayMode holds four IPlayModeModule pointers; input and update fan out to actors/modules through exact vtable slots."
+      }
+    ],
+    "runtime_status": {
+      "editor_trace": "absent",
+      "historical_menu_transition": "KG probes for HandleMessage, OnMouseDown, and Update missed; this is negative evidence and does not prove the callbacks unreachable",
+      "status": "all workflow conclusions are static-only"
+    },
+    "state_variable_invariants": [
+      "cEditor+0x2b0 mIsActive is zero at construction, zero throughout Initialize, set only near successful OnEnter completion, and cleared at the beginning of OnExit.",
+      "cEditor+0x31c mMode is initialized to BuildMode; successful OnEnter requests PaintMode; mode values are restricted to 0, 1, and 2 by the SDK enum.",
+      "cEditor+0x148 can hold at most the current opaque manipulator because MouseDown refuses to begin when it is non-null and OnMouseUp/SetEditorModel/mode exit clear it.",
+      "cEditor+0x34 stores the mouse button that owns the current manipulator transaction; MouseUp with a different button is rejected.",
+      "mEditHistoryIndex is shared by the state and resource vectors; Undo requires it to be greater than 1 and Redo requires it to be less than the resource count.",
+      "PaletteUI+0x64 changes only for an in-range category index; the selected category pointer is also used to update page and button state."
+    ],
+    "update_loops": [
+      {
+        "evidence": "direct decompilation",
+        "loop": "Editors::cEditor::Update",
+        "status": "mIsActive-gated; mode-independent editor work plus PlayMode actor/module/background work"
+      },
+      {
+        "evidence": "direct decompilation",
+        "loop": "Editors::EditorPlayMode Update containing function 0x0062c550",
+        "status": "four module updates, actor updates, background/UI state, and timed sequence mechanics are visible; imported alias at 0x0062c580 is contained"
+      },
+      {
+        "evidence": "direct input decompilation",
+        "loop": "cEditor input callbacks",
+        "status": "synchronous transaction and mode dispatch is established; central cGameInputManager region routing remains unresolved"
+      }
+    ]
+  },
+  "unresolved": [
+    {
+      "blocking_question": "What semantic names and payload schemas correspond to the cEditor::HandleMessage hashes, especially branches 0x100, 0x102, 0x103, 0x104, 0x107, 0x51cc0b8, and 0xb2e18705?",
+      "evidence": [
+        "0x00591fa0",
+        "0x005dec10"
+      ],
+      "id": "editor_message_names_and_payloads",
+      "impact": "Create/Edit/Finish/Cancel actions remain opaque hashes; only direct side effects are modeled.",
+      "required_evidence": "Message registration tables, typed message structures, and a runtime trace with visible control labels.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "What concrete classes implement the opaque manipulator/tool objects stored at cEditor+0x148, and what do vtable slots +0x10, +0x14, +0x1c, +0x24, +0x28, +0x30, and +0x34 mean?",
+      "evidence": [
+        "0x00588570",
+        "0x005737d0",
+        "0x0058b650"
+      ],
+      "id": "manipulator_types",
+      "impact": "Manipulator transaction mechanics are high confidence, but translate/rotate/scale/delete/other tool identities and their guards are unresolved.",
+      "required_evidence": "Constructor vtable stores, xrefs, field typing, and a positive editor input trace.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "Is there a distinct original cancel action for a BuildMode manipulator, or are abort/reset paths only implicit in model replacement, mode change, OnExit, and selected-part deletion?",
+      "evidence": [
+        "0x00588570",
+        "0x00586b00",
+        "0x00587270",
+        "0x00587a20"
+      ],
+      "id": "manipulator_cancel",
+      "impact": "No evidence-backed cancel state or transition is included; only forced cleanup and finalization are documented.",
+      "required_evidence": "Trace Escape, right-click, a lost mouse-up, and each manipulator slot during an aborted drag.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "What owns and writes cEditor+0x38c, and why are only values 0 and 6 accepted by SetActiveMode?",
+      "evidence": [
+        "0x00587270",
+        "0x0057ce80"
+      ],
+      "id": "editor_mode_gate",
+      "impact": "The transition guard is exact, but its game meaning and blocking owner are unknown.",
+      "required_evidence": "All writes to +0x38c and correlated runtime objects/messages.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "What is the exact meaning of SetActiveMode's boolean argument and of the remaining cEditor primary-vtable slots 16 through 28?",
+      "evidence": [
+        "0x00587270",
+        "0x013f57f8"
+      ],
+      "id": "ceditor_vtable_tail",
+      "impact": "The first sixteen IGameMode slots are exact; additional editor/base virtuals remain opaque and no workflow is assigned to them.",
+      "required_evidence": "Call sites and constructor/interface-base comparisons for slots +0x40 through +0x70.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "Do the helpers 0x005e77e0 and 0x00584160 truncate a redo tail exactly at mEditHistoryIndex during CommitEditHistory?",
+      "evidence": [
+        "0x00586410"
+      ],
+      "id": "history_redo_truncation",
+      "impact": "Commit-after-Undo destroys the future tail by inference from paired appends, but exact vector mutation is not yet direct.",
+      "required_evidence": "Decompile/disassemble both helpers with vector begin/end arguments and trace them after Undo.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "What are the exact fields in EditorStateEditHistory beyond mMode, and how does mBudget affect retention?",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/spore_sdk.xml",
+        "0x00574080",
+        "0x00586410"
+      ],
+      "id": "history_budget_semantics",
+      "impact": "History is modeled as a paired linear cursor, not as a bounded-budget state machine.",
+      "required_evidence": "Typed field behavior for mBudget and all callers of Editor_FillEditorStateEditHistory/0x00574080.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "Which exact UI controls and semantic actions produce EditorUI commands 0x70218642, 0xb006ef6e, 0xf006efa5, 0xf019c2e7, and 0xf019c2f3?",
+      "evidence": [
+        "0x005e0000"
+      ],
+      "id": "editor_ui_command_names",
+      "impact": "The commands have exact targets, but only Play/Undo/Redo are semantically established by direct callbacks.",
+      "required_evidence": "Layout/control-ID mapping, button captions/resources, and editor UI trace.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "What is the exact PaletteUI::GetSelectedRigblockPaint body and selected-paint identity flow?",
+      "evidence": [
+        "0x005cb2a0",
+        "0x005cb240"
+      ],
+      "id": "palette_selected_paint",
+      "impact": "Palette category routing is high confidence, but paint-record selection is represented only through cEditor mutation branches and SDK return type.",
+      "required_evidence": "Disassemble the containing return path, identify the selected record storage, and trace it into EditorModel::SetColor.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "Is cEditorSkin::IsPainting actually a function?",
+      "evidence": [
+        "0x004c5920",
+        "0x004c5910"
+      ],
+      "id": "ceditor_skin_ispainting_alias",
+      "impact": "No IsPainting state or guard is modeled. The imported address lies inside a containing function that returns cEditorSkin+0x70/+0x74 intrusive pointers.",
+      "required_evidence": "Repair the SDK alias to an actual boundary or find a separate exact body, then trace callers.",
+      "status": "contradicted_by_current_function_boundaries"
+    },
+    {
+      "blocking_question": "When does cEditorSkin field +0x84 change, and does the prepared job transition through observable Skinner job state before CommitEditHistory?",
+      "evidence": [
+        "0x004c5200",
+        "Editors::cEditorSkin+0x84"
+      ],
+      "id": "skin_paint_lifecycle",
+      "impact": "Paint job preparation and downstream IBakeManager submission are documented, but asynchronous job completion and commit timing are not a proven state machine.",
+      "required_evidence": "All writes to +0x84, job callbacks, completion queue order, and editor paint interaction trace.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "What are the four concrete IPlayModeModule implementations and their vtable targets?",
+      "evidence": [
+        "0x0062a820",
+        "0x00628d50",
+        "0x0062c550",
+        "Editors::EditorPlayMode+0xc8"
+      ],
+      "id": "play_mode_module_types",
+      "impact": "PlayMode fan-out and timing are high confidence, but actor/module behavior cannot be attributed to concrete gameplay features.",
+      "required_evidence": "Module factories, vtable stores, and constructor/call-site type propagation.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "Does editor PlayMode transition into a real gameplay mode, or is it an internal preview only?",
+      "evidence": [
+        "0x00587270",
+        "0x0062a820",
+        "0x0062c550",
+        "0x0059d8b0"
+      ],
+      "id": "editor_to_gameplay_boundary",
+      "impact": "This artifact records the editor PlayMode actor/module and animation bridge only; it does not claim a transition into cell, space, or another IGameMode.",
+      "required_evidence": "Runtime trace crossing from Editor PlayMode to IGameModeManager SetActiveMode/SetActiveModeByName into a non-editor mode, with input and state snapshots.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "Which cGameInputManager regions route editor mouse/key input, and what prevents editor input while an overlay owns the pointer?",
+      "evidence": [
+        "0x005737d0",
+        "0x00588570",
+        "0x0058ac10"
+      ],
+      "id": "editor_input_routing",
+      "impact": "cEditor callback-local guards and PlayMode forwarding are exact, but pre-callback mode/region routing is not.",
+      "required_evidence": "Decompile concrete cGameInputManager slots and trace editor/main-menu/overlay input ownership.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "Can a positive original editor trace confirm mode order, manipulator behavior, history commits, palette selection, skin preparation, and PlayMode-to-gameplay boundaries?",
+      "evidence": [
+        "knowledgegraph/spore.db",
+        "knowledgegraph/research/global-campaign-2026/track-g-editor-ui-input.json"
+      ],
+      "id": "editor_runtime_validation",
+      "impact": "All workflow states and transitions are static-only; reachability and temporal frequency are unverified.",
+      "required_evidence": "A hash-pinned editor session trace that records cEditor+0x2b0, +0x31c, +0x34, +0x148, +0x188, history/model IDs, message IDs, and active game mode.",
+      "status": "unresolved"
+    }
+  ]
+}

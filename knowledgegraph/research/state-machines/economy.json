@@ -1,0 +1,3019 @@
+{
+  "$schema": "state-machine-research-1",
+  "callbacks": [
+    {
+      "address": "0x00596da0",
+      "consumers": [
+        "cCreatureModeStrategy",
+        "collectable editor",
+        "collectable initialization"
+      ],
+      "evidence": [
+        {
+          "address": "0x00596da0",
+          "claim": "UnlockPart validates through 0x00595110, rejects an unaffordable nonzero cost, subtracts it from mUnlockPoints, sets status bits 0 and 1, updates mUnlockedItems, and returns true.",
+          "kind": "disassembly",
+          "level": "CONFIRMED",
+          "source": "read-only objdump disassembly of SporeApp.exe"
+        },
+        {
+          "address": "cCollectableItems+0x4d00/+0x6d70/+0x6d80",
+          "claim": "Touched fields are mItemStatusInfos, mUnlockPoints, and mUnlockedItems.",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": "pinned structs_fields.tsv"
+        }
+      ],
+      "name": "Simulator::cCollectableItems::UnlockPart",
+      "parameters": [
+        "uint32_t instanceID",
+        "uint32_t groupID",
+        "int cost = 0"
+      ],
+      "returns": "bool success",
+      "semantics": "Direct collectable-specific point debit and unlock; no link to cEmpire.mEmpireMoney is shown.",
+      "status": "resolved_static_mechanics"
+    },
+    {
+      "address": "0x00596e10",
+      "consumers": [
+        "collectable editor",
+        "collectable reset paths"
+      ],
+      "evidence": [
+        {
+          "address": "0x00596e10",
+          "claim": "LockPart clears status bits 0 and 1 and updates mUnlockedItems; no point refund is present.",
+          "kind": "disassembly",
+          "level": "CONFIRMED",
+          "source": "read-only objdump disassembly of SporeApp.exe"
+        }
+      ],
+      "name": "Simulator::cCollectableItems::LockPart",
+      "parameters": [
+        "uint32_t instanceID",
+        "uint32_t groupID"
+      ],
+      "returns": "bool success",
+      "semantics": "Clears unlocked/highlighted status and list membership.",
+      "status": "resolved_static_mechanics"
+    },
+    {
+      "address": "0x00d2e8a0",
+      "consumers": [
+        "creature progression UI",
+        "goal progress",
+        "cCreatureModeStrategy"
+      ],
+      "evidence": [
+        {
+          "address": "0x00d2e8a0",
+          "claim": "Nonzero points are added to DAT_0169e398, capped at DAT_01582e54, added to cPlayer+0x10f0, and may dispatch action 0x045ab96e.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "committed AddEvolutionPoints export"
+        }
+      ],
+      "name": "Simulator::cCreatureGameData::AddEvolutionPoints",
+      "parameters": [
+        "float points"
+      ],
+      "returns": "void",
+      "semantics": "Creature-specific progression balance; not proven to be a universal or money currency.",
+      "status": "resolved_static_mechanics"
+    },
+    {
+      "address": "0x00d06270",
+      "consumers": [
+        "cRelationshipManager",
+        "empire/civilization diplomacy"
+      ],
+      "evidence": [
+        {
+          "address": "0x00d06270",
+          "claim": "ApplyRelationship mutates signed relationship score/event data without directly changing war/alliance bits.",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "committed empire-space state-machine research"
+        }
+      ],
+      "name": "Simulator::cRelationshipManager::ApplyRelationship",
+      "parameters": [
+        "cEmpire* actor",
+        "cEmpire* target",
+        "uint32_t relationshipEvent",
+        "float scale"
+      ],
+      "returns": "void",
+      "semantics": "Applies trade, gift, bribe, mission, and other relationship effects; relationship score is not money.",
+      "status": "resolved_static_mechanics"
+    },
+    {
+      "address": "0x0103ca40 containing function",
+      "consumers": [
+        "planet generation",
+        "planet refresh",
+        "cSpaceTrading"
+      ],
+      "evidence": [
+        {
+          "address": "0x0103ca50",
+          "claim": "SDK imports AssignPlanetSpice inside the containing function at 0x0103ca40.",
+          "kind": "sdk_boundary_repair",
+          "level": "CONFIRMED",
+          "source": "sdk-boundary-repairs-2540f2ca.tsv"
+        },
+        {
+          "address": null,
+          "claim": "SDK says an existing spice is replaced only when forceReassign is true and selection uses planet type/difficulty.",
+          "kind": "sdk_semantics",
+          "level": "SUPPORTED",
+          "source": "Spore ModAPI SubSystem/SpaceTrading.h"
+        }
+      ],
+      "name": "Simulator::cSpaceTrading::AssignPlanetSpice",
+      "parameters": [
+        "cPlanetRecord* planetRecord",
+        "bool forceReassign = false"
+      ],
+      "returns": "void",
+      "semantics": "Planet spice assignment; probabilities and overwrite ordering are unresolved.",
+      "status": "interface_and_containing_function"
+    },
+    {
+      "address": "0x00c38b10 / 0x00c38b50",
+      "consumers": [
+        "unknown callers 0x00c3a5a0 and 0x00c3b630"
+      ],
+      "evidence": [
+        {
+          "address": "0x00c38b10",
+          "claim": "The ChangeEnergy-associated body does not read/write cGameDataUFO.mEnergy+0x7f4; it resolves +0x7a8, decrements a selected field, clears +0x7a8, and releases the object.",
+          "kind": "disassembly",
+          "level": "CONFIRMED",
+          "source": "read-only objdump disassembly"
+        },
+        {
+          "address": "cGameDataUFO+0x7f4/+0x7f8",
+          "claim": "SDK names float mEnergy and mMaxEnergy.",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": "Spore ModAPI cGameDataUFO.h"
+        }
+      ],
+      "name": "Simulator::cGameDataUFO::ChangeEnergy-associated body",
+      "parameters": [
+        "float delta according to SDK",
+        "actual containing-body ABI unresolved"
+      ],
+      "returns": "unresolved",
+      "semantics": "No energy transition is claimed from the conflicting body.",
+      "status": "identity_conflict"
+    },
+    {
+      "address": "0x0104cbd0",
+      "consumers": [
+        "cToolManager",
+        "tool initialization",
+        "ammunition pickups"
+      ],
+      "evidence": [
+        {
+          "address": "0x0104cbd0",
+          "claim": "AddAmmo leaves a value already >= maximum unchanged; otherwise stores current+amount and clamps only an above-max result.",
+          "kind": "disassembly",
+          "level": "CONFIRMED",
+          "source": "read-only objdump disassembly of SporeApp.exe"
+        }
+      ],
+      "name": "Simulator::cSpaceToolData::AddAmmo",
+      "parameters": [
+        "int amount"
+      ],
+      "returns": "void",
+      "semantics": "Synchronous signed integer ammunition accumulation with an upper cap.",
+      "status": "resolved_static_mechanics"
+    },
+    {
+      "address": "0x0104cc00 containing function",
+      "consumers": [
+        "tool firing logic"
+      ],
+      "evidence": [
+        {
+          "address": "0x0104cc00",
+          "claim": "Explicit amount is subtracted from mCurrentAmmoCount; amount -1 is replaced by mAmmoUsedPerShot; no lower clamp appears.",
+          "kind": "disassembly",
+          "level": "CONFIRMED",
+          "source": "read-only objdump disassembly of SporeApp.exe"
+        }
+      ],
+      "name": "Simulator::cSpaceToolData::ConsumeAmmo",
+      "parameters": [
+        "int amount = -1"
+      ],
+      "returns": "void",
+      "semantics": "Synchronous signed ammunition subtraction.",
+      "status": "resolved_static_mechanics"
+    },
+    {
+      "address": "0x0103e8e0 containing function",
+      "consumers": [
+        "space communication screen",
+        "trading UI"
+      ],
+      "evidence": [
+        {
+          "address": "0x0103e8f0",
+          "claim": "SDK imports GenerateNPCStore inside the containing function at 0x0103e8e0 and documents entry to the store screen as the call context.",
+          "kind": "sdk_boundary_and_semantics",
+          "level": "SUPPORTED",
+          "source": "Spore ModAPI SubSystem/SpaceTrading.h; boundary-repairs"
+        }
+      ],
+      "name": "Simulator::cSpaceTrading::GenerateNPCStore",
+      "parameters": [
+        "cPlanetRecord* planetRecord",
+        "LocalizedString& dstSpiceText"
+      ],
+      "returns": "void",
+      "semantics": "Store generation; stock selection, price, reuse, and invalidation ordering are unresolved.",
+      "status": "interface_and_containing_function"
+    },
+    {
+      "address": "0x0103ac40",
+      "consumers": [
+        "rare discovery UI",
+        "trading UI"
+      ],
+      "evidence": [
+        {
+          "address": "0x0103ac40",
+          "claim": "The body looks up mRareMap and returns the stored uint32 payload or zero for an absent key.",
+          "kind": "disassembly",
+          "level": "CONFIRMED",
+          "source": "read-only objdump disassembly of SporeApp.exe"
+        }
+      ],
+      "name": "Simulator::cSpaceTrading::GetRareHasBeenFound",
+      "parameters": [
+        "const ResourceKey& key"
+      ],
+      "returns": "uint32_t found flag or zero",
+      "semantics": "Read-only rare discovery query.",
+      "status": "resolved_static_mechanics"
+    },
+    {
+      "address": "0x01037d30",
+      "consumers": [
+        "cToolManager",
+        "trade-route UI"
+      ],
+      "evidence": [
+        {
+          "address": "0x01037d30",
+          "claim": "HasTradeRoute compares endpoints in either direction and returns true on a match or false after exhaustion; it has no stores.",
+          "kind": "disassembly",
+          "level": "CONFIRMED",
+          "source": "read-only objdump disassembly of SporeApp.exe"
+        },
+        {
+          "address": null,
+          "claim": "ToolFailText names kSystemMustHaveTradeRoute.",
+          "kind": "sdk_enum",
+          "level": "SUPPORTED",
+          "source": "Spore ModAPI SubSystem/ToolManager.h"
+        }
+      ],
+      "name": "Simulator::cSpaceTradeRouteManager::HasTradeRoute",
+      "parameters": [
+        "endpoint A",
+        "endpoint B"
+      ],
+      "returns": "bool",
+      "semantics": "Pure route-presence query, not stock or transaction proof.",
+      "status": "resolved_static_mechanics"
+    },
+    {
+      "address": "0x0103fc10 containing function",
+      "consumers": [
+        "cPlayerInventory",
+        "event-log/badge/rare-message paths"
+      ],
+      "evidence": [
+        {
+          "address": "0x0103fc10",
+          "claim": "Static xrefs show calls into inventory-property and space-event machinery.",
+          "kind": "static_xrefs",
+          "level": "CONFIRMED",
+          "source": "xrefs-2540f2ca.tsv"
+        },
+        {
+          "address": null,
+          "claim": "SDK says the item is added to inventory; a rare also produces event-log/badge/message side effects and kMsgSpaceRareFound.",
+          "kind": "sdk_semantics",
+          "level": "SUPPORTED",
+          "source": "Spore ModAPI SubSystem/SpaceTrading.h"
+        }
+      ],
+      "name": "Simulator::cSpaceTrading::ObtainTradingObject",
+      "parameters": [
+        "const ResourceKey& key",
+        "int amount = 1"
+      ],
+      "returns": "void",
+      "semantics": "Acquisition, not a proven purchase; stacking, capacity failure, and rare-map order are unresolved.",
+      "status": "partially_resolved"
+    },
+    {
+      "address": "0x0103fba0",
+      "consumers": [
+        "rare discovery UI",
+        "cSpaceTrading.mRareMap"
+      ],
+      "evidence": [
+        {
+          "address": "0x0103fba0",
+          "claim": "SetRareAsFound finds/creates the map entry, stores the requested value, and emits 0x06779f04 only on a transition to 1.",
+          "kind": "disassembly",
+          "level": "CONFIRMED",
+          "source": "read-only objdump disassembly of SporeApp.exe"
+        },
+        {
+          "address": "0x06779f04",
+          "claim": "SDK names kMsgSpaceRareDiscovered and documents the rare instance pointer.",
+          "kind": "sdk_message",
+          "level": "CONFIRMED",
+          "source": "Spore ModAPI SimulatorMessages.h"
+        }
+      ],
+      "name": "Simulator::cSpaceTrading::SetRareAsFound",
+      "parameters": [
+        "const ResourceKey& key",
+        "bool found"
+      ],
+      "returns": "void",
+      "semantics": "Synchronously changes the rare bit and conditionally announces first discovery.",
+      "status": "resolved_static_mechanics"
+    },
+    {
+      "address": "0x010535e0 / 0x010535f0",
+      "consumers": [
+        "repair tool strategy"
+      ],
+      "evidence": [
+        {
+          "address": "0x010535e0",
+          "claim": "The repair ProcessCost body returns trunc((after-before)/after * useCost) with no explicit zero-denominator guard.",
+          "kind": "disassembly",
+          "level": "CONFIRMED",
+          "source": "read-only objdump disassembly of SporeApp.exe"
+        },
+        {
+          "address": null,
+          "claim": "SDK calls the result a sporebucks firing cost but no balance store is shown in this body.",
+          "kind": "sdk_semantics",
+          "level": "SUPPORTED",
+          "source": "Spore ModAPI cToolStrategy.h"
+        }
+      ],
+      "name": "Simulator::cRepairToolStrategy::ProcessCost",
+      "parameters": [
+        "int useCost"
+      ],
+      "returns": "int processed cost",
+      "semantics": "Read-only relative-cost calculation; currency debit is not proven.",
+      "status": "mechanics_resolved_currency_debit_unresolved"
+    },
+    {
+      "address": "0x00c15e50 containing function / 0x00c15f20 SDK anchor",
+      "consumers": [
+        "scenario captain jump/ability paths"
+      ],
+      "evidence": [
+        {
+          "address": "0x00c15f20",
+          "claim": "The ConsumeEnergy SDK address is an interior callsite in an unrelated composite body and does not directly show mEnergy subtraction.",
+          "kind": "disassembly_and_boundary_conflict",
+          "level": "CONFIRMED",
+          "source": "read-only objdump disassembly and KG xref"
+        },
+        {
+          "address": null,
+          "claim": "SDK says scenario-captain energy consumption sends kMsgScenarioEnergyConsumed.",
+          "kind": "sdk_semantics",
+          "level": "SUPPORTED",
+          "source": "Spore ModAPI cCreatureBase.h"
+        }
+      ],
+      "name": "Simulator::cCreatureBase::ConsumeEnergy-associated body",
+      "parameters": [
+        "float amount according to SDK",
+        "actual entry unresolved"
+      ],
+      "returns": "unresolved",
+      "semantics": "Callback surface exists; no native energy balance transition is accepted.",
+      "status": "identity_conflict"
+    },
+    {
+      "address": "cMission+0x94",
+      "consumers": [
+        "player empire",
+        "player inventory",
+        "relationship manager",
+        "mission manager"
+      ],
+      "evidence": [
+        {
+          "address": null,
+          "claim": "Default completion updates tutorial/empire state, tools, adds mRewardMoney to player empire money, applies relationships, and performs omitted effects.",
+          "kind": "sdk_semantics",
+          "level": "SUPPORTED",
+          "source": "Spore ModAPI cMission.h"
+        }
+      ],
+      "name": "Simulator::cMission::OnMissionCompleted",
+      "parameters": [
+        "this"
+      ],
+      "returns": "void",
+      "semantics": "Mission payout boundary; exact backing money field and ordering are unresolved.",
+      "status": "interface_contract"
+    },
+    {
+      "address": "SDK SetState anchor",
+      "consumers": [
+        "mission manager",
+        "mission UI"
+      ],
+      "evidence": [
+        {
+          "address": "cMission+0x84",
+          "claim": "MissionState is stored at +0x84; SetState clears two strings and emits kMsgMissionUpdate when entering Active.",
+          "kind": "sdk_layout_and_semantics",
+          "level": "SUPPORTED",
+          "source": "Spore ModAPI cMission.h"
+        }
+      ],
+      "name": "Simulator::cMission::SetState",
+      "parameters": [
+        "this",
+        "Simulator::MissionState state"
+      ],
+      "returns": "void",
+      "semantics": "Central state writer; callback and economy ordering are unresolved.",
+      "status": "partially_resolved"
+    }
+  ],
+  "domain": "Resource currencies, energy, ammunition, collectable points, costs, income, trading, commodities, mission rewards, and population/resource transitions",
+  "events": [
+    {
+      "consumers": [
+        "cCollectableItems",
+        "creature editor"
+      ],
+      "evidence": [
+        {
+          "address": "0x00596da0",
+          "claim": "Twenty direct static callers invoke UnlockPart; 0x005973a0 is the SDK action bridge.",
+          "kind": "static_xrefs",
+          "level": "CONFIRMED",
+          "source": "read-only KG xrefs and SDK cCollectableItems.h"
+        }
+      ],
+      "id": "collectable_part_unlock_requested",
+      "kind": "analytical_event",
+      "producers": [
+        "cCollectableItems::sub_597390",
+        "collectable/editor initialization"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "consumers": [
+        "cCollectableItems",
+        "creature editor"
+      ],
+      "evidence": [
+        {
+          "address": "0x00596e10",
+          "claim": "LockPart clears unlocked/highlighted status and updates the unlocked list.",
+          "kind": "disassembly",
+          "level": "CONFIRMED",
+          "source": "read-only objdump disassembly"
+        }
+      ],
+      "id": "collectable_part_lock_requested",
+      "kind": "analytical_event",
+      "producers": [
+        "editor reset/configuration callers"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "consumers": [
+        "creature UI",
+        "goal progress",
+        "cCreatureModeStrategy"
+      ],
+      "evidence": [
+        {
+          "address": "0x00d2e8a0",
+          "claim": "A nonzero amount conditionally dispatches action 0x045ab96e after balance/goal updates.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "committed AddEvolutionPoints export"
+        }
+      ],
+      "id": "creature_evolution_points_changed",
+      "kind": "analytical_event",
+      "producers": [
+        "Simulator::cCreatureGameData::AddEvolutionPoints"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "consumers": [
+        "mission manager",
+        "mission UI"
+      ],
+      "evidence": [
+        {
+          "address": null,
+          "claim": "SDK places Accepted immediately before Active in the acceptance route.",
+          "kind": "sdk_semantics",
+          "level": "SUPPORTED",
+          "source": "Spore ModAPI cMission.h and SimulatorEnums.h"
+        }
+      ],
+      "id": "mission_accepted",
+      "kind": "analytical_event",
+      "producers": [
+        "Simulator::cMission::AcceptMission"
+      ],
+      "status": "sdk_contract"
+    },
+    {
+      "consumers": [
+        "player empire",
+        "player inventory",
+        "relationship manager"
+      ],
+      "evidence": [
+        {
+          "address": "cMission+0x94",
+          "claim": "Default completion owns reward-money, tool, relationship, tutorial, empire, and omitted effects.",
+          "kind": "sdk_semantics",
+          "level": "SUPPORTED",
+          "source": "Spore ModAPI cMission.h"
+        }
+      ],
+      "id": "mission_completion_economy_applied",
+      "kind": "analytical_event",
+      "producers": [
+        "Simulator::cMission::OnMissionCompleted"
+      ],
+      "status": "sdk_contract_exact_order_unresolved"
+    },
+    {
+      "consumers": [
+        "space communication UI",
+        "cNPCStore"
+      ],
+      "evidence": [
+        {
+          "address": null,
+          "claim": "SDK says generation is called when entering the store communication screen.",
+          "kind": "sdk_semantics",
+          "level": "SUPPORTED",
+          "source": "Spore ModAPI SubSystem/SpaceTrading.h"
+        }
+      ],
+      "id": "npc_store_generation_requested",
+      "kind": "analytical_event",
+      "producers": [
+        "space communication screen"
+      ],
+      "status": "sdk_contract"
+    },
+    {
+      "consumers": [
+        "cRelationshipManager",
+        "diplomacy UI"
+      ],
+      "evidence": [
+        {
+          "address": "0x00d06270",
+          "claim": "ApplyRelationship changes score/event state without directly changing war/alliance flags.",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "committed empire-space research"
+        }
+      ],
+      "id": "relationship_score_event_applied",
+      "kind": "analytical_event",
+      "producers": [
+        "Simulator::cRelationshipManager::ApplyRelationship"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "consumers": [
+        "scenario UI",
+        "scenario gameplay"
+      ],
+      "evidence": [
+        {
+          "address": "0x07c7a52e",
+          "claim": "SDK names kMsgScenarioEnergyConsumed and exposes the consumed float payload.",
+          "kind": "sdk_message",
+          "level": "CONFIRMED",
+          "source": "Spore ModAPI SimulatorMessages.h"
+        }
+      ],
+      "id": "scenario_energy_consumed_message",
+      "kind": "simulator_message",
+      "producers": [
+        "unresolved true ConsumeEnergy body"
+      ],
+      "status": "sdk_message_native_producer_unresolved"
+    },
+    {
+      "consumers": [
+        "cScenarioPlayMode",
+        "cScenarioTerraformMode"
+      ],
+      "evidence": [
+        {
+          "address": "cScenarioDataEconomy+0x08",
+          "claim": "SDK layout exposes eight indexed values through adapter query slots.",
+          "kind": "sdk_layout",
+          "level": "SUPPORTED",
+          "source": "pinned structs_fields.tsv and committed data-model research"
+        }
+      ],
+      "id": "scenario_economy_limit_requested",
+      "kind": "analytical_event",
+      "producers": [
+        "scenario play/terraform code"
+      ],
+      "status": "interface_only"
+    },
+    {
+      "consumers": [
+        "cScenarioPlayMode",
+        "cScenarioTerraformMode"
+      ],
+      "evidence": [
+        {
+          "address": "IEditorLimits+0x04",
+          "claim": "SDK-derived adapter layout names a value-query slot with unknown index semantics.",
+          "kind": "sdk_vtable_layout",
+          "level": "SUPPORTED",
+          "source": "committed data-model research"
+        }
+      ],
+      "id": "scenario_economy_value_queried",
+      "kind": "analytical_event",
+      "producers": [
+        "scenario play/terraform code"
+      ],
+      "status": "interface_only"
+    },
+    {
+      "consumers": [
+        "rare discovery UI",
+        "badge observers"
+      ],
+      "evidence": [
+        {
+          "address": "0x0103fba0",
+          "claim": "A transition to rare-map value 1 emits 0x06779f04.",
+          "kind": "disassembly",
+          "level": "CONFIRMED",
+          "source": "read-only objdump disassembly"
+        }
+      ],
+      "id": "space_rare_discovered_message",
+      "kind": "simulator_message",
+      "producers": [
+        "cSpaceTrading::SetRareAsFound(key, true)"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "consumers": [
+        "event log",
+        "rare UI",
+        "badge observers"
+      ],
+      "evidence": [
+        {
+          "address": null,
+          "claim": "SDK says rare acquisition emits kMsgSpaceRareFound even if already found.",
+          "kind": "sdk_semantics",
+          "level": "SUPPORTED",
+          "source": "Spore ModAPI SubSystem/SpaceTrading.h"
+        }
+      ],
+      "id": "space_rare_found_message",
+      "kind": "simulator_message",
+      "producers": [
+        "cSpaceTrading::ObtainTradingObject for a rare"
+      ],
+      "status": "sdk_contract_exact_order_unresolved"
+    },
+    {
+      "consumers": [
+        "cSpaceToolData",
+        "tool UI"
+      ],
+      "evidence": [
+        {
+          "address": "0x0104cbd0",
+          "claim": "The body synchronously updates mCurrentAmmoCount.",
+          "kind": "disassembly",
+          "level": "CONFIRMED",
+          "source": "read-only objdump disassembly"
+        }
+      ],
+      "id": "tool_ammo_added",
+      "kind": "analytical_event",
+      "producers": [
+        "Simulator::cSpaceToolData::AddAmmo"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "consumers": [
+        "cSpaceToolData",
+        "tool-firing logic"
+      ],
+      "evidence": [
+        {
+          "address": "0x0104cc00",
+          "claim": "The body synchronously subtracts explicit or per-shot ammunition.",
+          "kind": "disassembly",
+          "level": "CONFIRMED",
+          "source": "read-only objdump disassembly"
+        }
+      ],
+      "id": "tool_ammo_consumed",
+      "kind": "analytical_event",
+      "producers": [
+        "Simulator::cSpaceToolData::ConsumeAmmo"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "consumers": [
+        "repair tool strategy"
+      ],
+      "evidence": [
+        {
+          "address": "0x010535e0",
+          "claim": "ProcessCost returns an adjusted integer and has no direct store.",
+          "kind": "disassembly",
+          "level": "CONFIRMED",
+          "source": "read-only objdump disassembly"
+        }
+      ],
+      "id": "tool_use_cost_computed",
+      "kind": "analytical_event",
+      "producers": [
+        "Simulator::cRepairToolStrategy::ProcessCost"
+      ],
+      "status": "static_mechanics_no_debit_proven"
+    },
+    {
+      "consumers": [
+        "cToolManager"
+      ],
+      "evidence": [
+        {
+          "address": "0x01037d30",
+          "claim": "The route predicate returns a boolean match result and has no writes.",
+          "kind": "disassembly",
+          "level": "CONFIRMED",
+          "source": "read-only objdump disassembly"
+        }
+      ],
+      "id": "trade_route_presence_queried",
+      "kind": "analytical_event",
+      "producers": [
+        "Simulator::cSpaceTradeRouteManager::HasTradeRoute"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "consumers": [
+        "cPlayerInventory",
+        "rare/log/badge paths"
+      ],
+      "evidence": [
+        {
+          "address": "0x0103fc10",
+          "claim": "The acquisition body calls inventory-property and event machinery; SDK states the item is added to inventory.",
+          "kind": "static_xrefs_and_sdk_semantics",
+          "level": "SUPPORTED",
+          "source": "KG xrefs and Spore ModAPI SubSystem/SpaceTrading.h"
+        }
+      ],
+      "id": "trading_object_obtained",
+      "kind": "analytical_event",
+      "producers": [
+        "Simulator::cSpaceTrading::ObtainTradingObject"
+      ],
+      "status": "static_call_shape_sdk_inventory_contract"
+    }
+  ],
+  "scope": {
+    "binary": {
+      "build": "SporeApp.exe 3.1.0.22",
+      "image_base": "0x00400000",
+      "name": "SPORE/SporeBin/SporeApp.exe",
+      "sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e"
+    },
+    "boundaries": [
+      "No binary, implementation, Ghidra program, KG row, historical triage artifact, or SPORE-directory file was modified.",
+      "No successful original-process economy or population trace was available.",
+      "A money-, cost-, reward-, wealth-, price-, or points-named field is not treated as one currency without a direct producer/consumer link.",
+      "ResourceKey is identity, not balance or proof of ownership transfer.",
+      "Current OpenSpore growMeter, Cell loot, and DBPF loading are not original global economy behavior."
+    ],
+    "evidence_policy": {
+      "confidence_scale": [
+        "high",
+        "low",
+        "medium",
+        "unresolved"
+      ],
+      "levels": [
+        "APPROXIMATION",
+        "CONFIRMED",
+        "INFERRED",
+        "OBSERVED",
+        "SUPPORTED",
+        "UNKNOWN",
+        "VERIFIED"
+      ],
+      "rules": [
+        "Direct instructions establish stores, comparisons, branches, and emitted message IDs.",
+        "SDK names establish interfaces and documented contracts, not undocumented writers or ordering.",
+        "Damaged decompiler signatures, dead anchors, and current-header disagreements are not exact binary behavior.",
+        "Currency identity requires direct linkage; no static transition is OBSERVED or VERIFIED."
+      ]
+    },
+    "ghidra": {
+      "live_open_program": false,
+      "mode": "read_only_queries_committed_exports_and_disassembly",
+      "result": "The headless instance had no open program; committed Ghidra research/exports and read-only disassembly were used without Ghidra mutation."
+    },
+    "inputs": [
+      ".spore-analysis/ghidra-exports",
+      "Ghidra MCP and committed decompilation summaries",
+      "knowledgegraph/spore.db read-only xrefs and triage",
+      "Spore ModAPI cbf9206b9a823f0911cd9be0217104a49d72380b",
+      "committed economy, progression, empire-space, creature-civilization, and decomp-gap research"
+    ],
+    "mutations": {
+      "ghidra_program": false,
+      "historical_artifacts": false,
+      "implementation": false,
+      "knowledgegraph_database": false,
+      "only_written_path": "knowledgegraph/research/state-machines/economy.json",
+      "spore_directory": false
+    },
+    "runtime_evidence": {
+      "level": "OBSERVED",
+      "status": "NOT_AVAILABLE_FOR_ECONOMY",
+      "summary": "Committed traces do not reach a successful economy or population mutation."
+    },
+    "sdk": {
+      "commit": "cbf9206b9a823f0911cd9be0217104a49d72380b",
+      "name": "Spore ModAPI",
+      "pinned_xml_sha256": "5d894677c1835082da0392e8b794f3c93a0251733898c3c5b81cf7945f458f09"
+    },
+    "sources": [
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cCollectableItems__AddUnlockableItem.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cCollectableItems__AddUnlockableItemFromProp.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cCreatureGameData__AddEvolutionPoints.c",
+      ".spore-analysis/ghidra-exports/structs_fields.tsv",
+      "knowledgegraph/research/data-model/06-empire-space-data.json",
+      "knowledgegraph/research/data-model/08-progression-economy.json",
+      "knowledgegraph/research/global-campaign-2026/track-f-empire-economy.json",
+      "knowledgegraph/research/state-machines/creature-civilization.json",
+      "knowledgegraph/research/state-machines/empire-space.json",
+      "knowledgegraph/research/state-machines/progression.json",
+      "knowledgegraph/research/types/05-empire-space.json",
+      "knowledgegraph/triage/sdk-boundary-repairs-2540f2ca.tsv",
+      "knowledgegraph/triage/xrefs-2540f2ca.tsv",
+      "Spore ModAPI Simulator/SubSystem/SpaceTrading.h",
+      "Spore ModAPI Simulator/cCollectableItems.h",
+      "Spore ModAPI Simulator/cMission.h",
+      "Spore ModAPI Simulator/cSpaceToolData.h",
+      "Spore ModAPI Simulator/cToolStrategy.h",
+      "Spore ModAPI Simulator/SimulatorMessages.h",
+      "read-only objdump disassembly of the pinned SporeApp.exe"
+    ]
+  },
+  "state_machines": [
+    {
+      "causes": [
+        "collectable unlock action",
+        "configuration percentage unlock",
+        "collectable lock/reset"
+      ],
+      "confidence": {
+        "level": "high",
+        "reason": "Point comparison/subtraction, status bits, list update/removal, and return values are direct disassembly; producers and immediate-unlock accounting remain partial."
+      },
+      "consumers": [
+        "mItemStatusInfos",
+        "mUnlockedItems",
+        "creature editor",
+        "cCreatureModeStrategy"
+      ],
+      "entry_actions": [
+        {
+          "action": "call the item precondition helper at 0x00595110",
+          "conditions": [
+            "every UnlockPart call"
+          ],
+          "evidence": "0x00596da0 disassembly"
+        }
+      ],
+      "event_consumers": [
+        "collectable_part_unlock_requested",
+        "collectable_part_lock_requested"
+      ],
+      "event_producers": [
+        "cCollectableItems::UnlockPart",
+        "cCollectableItems::LockPart"
+      ],
+      "evidence": [
+        {
+          "address": "0x00596da0",
+          "claim": "UnlockPart checks nonzero cost against mUnlockPoints, subtracts it, sets status 0x03, and updates mUnlockedItems.",
+          "kind": "disassembly",
+          "level": "CONFIRMED",
+          "source": "read-only objdump disassembly"
+        },
+        {
+          "address": "0x00596e10",
+          "claim": "LockPart clears status 0x03 and updates mUnlockedItems without a point credit.",
+          "kind": "disassembly",
+          "level": "CONFIRMED",
+          "source": "read-only objdump disassembly"
+        },
+        {
+          "address": "0x00598e90",
+          "claim": "Property-driven registration can mark an item unlocked by percentage; point accounting on that path is not proven.",
+          "kind": "decompilation_and_sdk_semantics",
+          "level": "SUPPORTED",
+          "source": "committed export and Spore ModAPI cCollectableItems.h"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "return true after success or false after rejection",
+          "conditions": [
+            "precondition passes and cost is affordable for unlock"
+          ],
+          "evidence": "0x00596da0/0x00596e10 disassembly"
+        }
+      ],
+      "guards": [
+        "precondition rejection leaves state unchanged",
+        "nonzero cost requires mUnlockPoints >= cost",
+        "cost zero bypasses affordability",
+        "unlock sets Unlocked and Highlighted",
+        "lock clears those bits",
+        "mUnlockPoints production and lock refunds are unresolved"
+      ],
+      "name": "collectable_unlock_point_and_status",
+      "producers": [
+        "cCollectableItems::sub_597390",
+        "editor/collectable initialization"
+      ],
+      "relevant_functions": [
+        "0x00596da0 UnlockPart",
+        "0x00596e10 LockPart",
+        "0x005942e0 sub_594010",
+        "0x005973a0 sub_597390",
+        "0x00598db0 AddUnlockableItem",
+        "0x00598e90 AddUnlockableItemFromProp"
+      ],
+      "relevant_structures": [
+        "cCollectableItems",
+        "UnlockableItem",
+        "cCollectableItemID",
+        "CollectableItemStatusFlags"
+      ],
+      "side_effects": [
+        "subtracts collectable cost",
+        "sets/clears status bits",
+        "updates unlocked list",
+        "returns immediate success",
+        "may cause later visibility refresh"
+      ],
+      "state_variable": {
+        "expression": "(mItemStatusInfos[item], mUnlockedItems contains item, mUnlockPoints)",
+        "owner": "Simulator::cCollectableItems",
+        "type": "status byte plus list membership plus integer points"
+      },
+      "supported_states": [
+        {
+          "actions": [
+            "unlocked/highlighted bits clear"
+          ],
+          "guards": [
+            "status & 0x03 == 0"
+          ],
+          "name": "neither_unlocked_nor_highlighted"
+        },
+        {
+          "actions": [
+            "unlocked bit set"
+          ],
+          "guards": [
+            "status & 0x01 != 0",
+            "status & 0x02 == 0"
+          ],
+          "name": "unlocked_not_highlighted"
+        },
+        {
+          "actions": [
+            "unlocked and highlighted bits set"
+          ],
+          "guards": [
+            "status & 0x03 == 0x03"
+          ],
+          "name": "unlocked_and_highlighted"
+        },
+        {
+          "actions": [
+            "no lifecycle meaning inferred"
+          ],
+          "guards": [
+            "other/malformed combination"
+          ],
+          "name": "other_flag_combination"
+        }
+      ],
+      "transitions": [
+        {
+          "actions": [
+            "return false unchanged"
+          ],
+          "cause": "invalid unlock",
+          "event": "collectable_part_unlock_requested",
+          "from_state": "any",
+          "guard": "0x00595110 returns nonzero",
+          "to_state": "unchanged"
+        },
+        {
+          "actions": [
+            "return false unchanged"
+          ],
+          "cause": "unaffordable unlock",
+          "event": "collectable_part_unlock_requested",
+          "from_state": "any",
+          "guard": "cost != 0 and mUnlockPoints < cost",
+          "to_state": "unchanged"
+        },
+        {
+          "actions": [
+            "store points-cost",
+            "OR status 0x03",
+            "update unlocked list",
+            "return true"
+          ],
+          "cause": "accepted unlock",
+          "event": "collectable_part_unlock_requested",
+          "from_state": "any",
+          "guard": "precondition passes and cost affordable or zero",
+          "to_state": "unlocked_and_highlighted"
+        },
+        {
+          "actions": [
+            "AND status 0xfc",
+            "update unlocked list",
+            "return true"
+          ],
+          "cause": "lock",
+          "event": "collectable_part_lock_requested",
+          "from_state": "any",
+          "guard": "LockPart completes",
+          "to_state": "neither_unlocked_nor_highlighted"
+        }
+      ],
+      "validation": [
+        "Trace 0x00595110 for valid/locked/already-unlocked/NotUnlockable items.",
+        "Call UnlockPart with zero, exact, insufficient, negative, and repeated costs.",
+        "Record points, status, and list on every path.",
+        "Prove whether percentage unlock calls the same debit path.",
+        "Search for an external lock refund."
+      ]
+    },
+    {
+      "causes": [
+        "evolution reward",
+        "save restoration",
+        "scripted mutation"
+      ],
+      "confidence": {
+        "level": "high",
+        "reason": "Additive mutation, upper cap, goal progress, and conditional strategy action are direct decompilation; brain-level writer is unresolved."
+      },
+      "consumers": [
+        "creature UI",
+        "goal progress",
+        "cCreatureModeStrategy"
+      ],
+      "entry_actions": [
+        {
+          "action": "ignore exact zero amount",
+          "conditions": [
+            "points == 0.0"
+          ],
+          "evidence": "0x00d2e8a0 decompilation"
+        }
+      ],
+      "event_consumers": [
+        "creature_evolution_points_changed"
+      ],
+      "event_producers": [
+        "cCreatureGameData::AddEvolutionPoints",
+        "cCreatureGameData::SetEvolutionPoints"
+      ],
+      "evidence": [
+        {
+          "address": "0x00d2e8a0",
+          "claim": "Nonzero points update DAT_0169e398 with an upper cap, cPlayer+0x10f0 by the requested amount, and may dispatch action 0x045ab96e.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "committed AddEvolutionPoints export"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "perform goal and conditional strategy side effects synchronously",
+          "conditions": [
+            "nonzero amount and context/action-handler guards pass"
+          ],
+          "evidence": "0x00d2e8a0 decompilation"
+        }
+      ],
+      "guards": [
+        "zero is no-op",
+        "only upper bound is capped",
+        "negative amounts may reduce",
+        "goal receives requested rather than clamped delta",
+        "no direct brain-level change"
+      ],
+      "name": "creature_evolution_point_balance",
+      "producers": [
+        "cCreatureGameData::AddEvolutionPoints",
+        "cCreatureGameData::SetEvolutionPoints"
+      ],
+      "relevant_functions": [
+        "0x00d2e350 GetEvolutionPoints",
+        "0x00d2e380 GetEvoPointsToNextBrainLevel",
+        "0x00d2e480 SetEvolutionPoints",
+        "0x00d2e8a0 AddEvolutionPoints"
+      ],
+      "relevant_structures": [
+        "cCreatureGameData",
+        "cPlayer",
+        "cCreatureModeStrategy"
+      ],
+      "side_effects": [
+        "mutates evolution backing store",
+        "adds requested amount to goal progress",
+        "runs update/UI helpers",
+        "may dispatch strategy action"
+      ],
+      "state_variable": {
+        "expression": "DAT_0169e398 interpreted against cCreatureGameData.mEvolutionPoints+0x28",
+        "owner": "cCreatureGameData-backed state",
+        "type": "float point balance"
+      },
+      "supported_states": [
+        {
+          "actions": [
+            "no mutation"
+          ],
+          "guards": [
+            "points == 0"
+          ],
+          "name": "unchanged"
+        },
+        {
+          "actions": [
+            "stores old+points"
+          ],
+          "guards": [
+            "points != 0",
+            "old+points < cap"
+          ],
+          "name": "changed_below_cap"
+        },
+        {
+          "actions": [
+            "stores cap"
+          ],
+          "guards": [
+            "points != 0",
+            "old+points >= cap"
+          ],
+          "name": "at_or_above_cap_normalized"
+        }
+      ],
+      "transitions": [
+        {
+          "actions": [
+            "return without side effects"
+          ],
+          "cause": "zero request",
+          "event": "creature_evolution_points_changed",
+          "from_state": "any",
+          "guard": "points == 0",
+          "to_state": "unchanged"
+        },
+        {
+          "actions": [
+            "store old+points",
+            "update goal",
+            "maybe dispatch action"
+          ],
+          "cause": "below-cap mutation",
+          "event": "creature_evolution_points_changed",
+          "from_state": "any",
+          "guard": "points != 0 and old+points < cap",
+          "to_state": "changed_below_cap"
+        },
+        {
+          "actions": [
+            "store cap",
+            "update goal",
+            "maybe dispatch action"
+          ],
+          "cause": "capped mutation",
+          "event": "creature_evolution_points_changed",
+          "from_state": "any",
+          "guard": "points != 0 and old+points >= cap",
+          "to_state": "at_or_above_cap_normalized"
+        }
+      ],
+      "validation": [
+        "Trace zero, positive, negative, below/exact/above-cap calls.",
+        "Record backing store, goal progress, mode handler, and brain level.",
+        "Find all brain-level writers and correlate action 0x045ab96e.",
+        "Compare Set and Add persistence behavior."
+      ]
+    },
+    {
+      "causes": [
+        "ammunition pickup/initialization",
+        "tool-shot consumption"
+      ],
+      "confidence": {
+        "level": "high",
+        "reason": "Both compact mutators are direct disassembly over SDK-confirmed offsets."
+      },
+      "consumers": [
+        "cToolManager",
+        "tool firing",
+        "tool UI"
+      ],
+      "entry_actions": [
+        {
+          "action": "read current and maximum ammunition",
+          "conditions": [
+            "AddAmmo entry"
+          ],
+          "evidence": "0x0104cbd0 disassembly"
+        },
+        {
+          "action": "replace amount -1 with mAmmoUsedPerShot",
+          "conditions": [
+            "ConsumeAmmo amount == -1"
+          ],
+          "evidence": "0x0104cc00 disassembly"
+        }
+      ],
+      "event_consumers": [
+        "tool_ammo_added",
+        "tool_ammo_consumed"
+      ],
+      "event_producers": [
+        "cSpaceToolData::AddAmmo",
+        "cSpaceToolData::ConsumeAmmo"
+      ],
+      "evidence": [
+        {
+          "address": "0x0104cbd0",
+          "claim": "AddAmmo leaves current unchanged at/above max; otherwise stores current+amount and clamps only an above-max result.",
+          "kind": "disassembly",
+          "level": "CONFIRMED",
+          "source": "read-only objdump disassembly"
+        },
+        {
+          "address": "0x0104cc00",
+          "claim": "ConsumeAmmo subtracts explicit or per-shot amount with no lower clamp.",
+          "kind": "disassembly",
+          "level": "CONFIRMED",
+          "source": "read-only objdump disassembly"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "return immediately after the store",
+          "conditions": [
+            "mutator completes"
+          ],
+          "evidence": "direct compact bodies"
+        }
+      ],
+      "guards": [
+        "AddAmmo no-ops when current >= max",
+        "ConsumeAmmo has no zero floor",
+        "negative consumption increases count",
+        "mutators emit no message"
+      ],
+      "name": "space_tool_ammunition_reserve",
+      "producers": [
+        "cSpaceToolData::AddAmmo",
+        "cSpaceToolData::ConsumeAmmo"
+      ],
+      "relevant_functions": [
+        "0x0104cbd0 AddAmmo",
+        "0x0104cc00 ConsumeAmmo"
+      ],
+      "relevant_structures": [
+        "cSpaceToolData",
+        "cSpaceInventoryItem",
+        "cToolManager"
+      ],
+      "side_effects": [
+        "updates mCurrentAmmoCount",
+        "may normalize to max",
+        "does not directly debit money or energy"
+      ],
+      "state_variable": {
+        "expression": "mCurrentAmmoCount+0x7c with max+0x1a0 and per-shot+0x19c",
+        "owner": "Simulator::cSpaceToolData",
+        "type": "signed int ammunition"
+      },
+      "supported_states": [
+        {
+          "actions": [
+            "firing may report insufficient ammo"
+          ],
+          "guards": [
+            "current <= 0"
+          ],
+          "name": "nonpositive_reserve"
+        },
+        {
+          "actions": [
+            "firing may proceed subject to other guards"
+          ],
+          "guards": [
+            "0 < current < max"
+          ],
+          "name": "positive_below_max"
+        },
+        {
+          "actions": [
+            "AddAmmo is a no-op"
+          ],
+          "guards": [
+            "current >= max"
+          ],
+          "name": "at_or_above_max"
+        }
+      ],
+      "transitions": [
+        {
+          "actions": [
+            "retain current"
+          ],
+          "cause": "add to full tool",
+          "event": "tool_ammo_added",
+          "from_state": "at_or_above_max",
+          "guard": "current >= max",
+          "to_state": "at_or_above_max"
+        },
+        {
+          "actions": [
+            "store current+amount"
+          ],
+          "cause": "add positive amount below max",
+          "event": "tool_ammo_added",
+          "from_state": "positive_below_max",
+          "guard": "amount > 0 and current+amount < max",
+          "to_state": "positive_below_max"
+        },
+        {
+          "actions": [
+            "store max"
+          ],
+          "cause": "add positive amount to cap",
+          "event": "tool_ammo_added",
+          "from_state": "positive_below_max",
+          "guard": "amount > 0 and current+amount >= max",
+          "to_state": "at_or_above_max"
+        },
+        {
+          "actions": [
+            "store current+amount"
+          ],
+          "cause": "signed add makes reserve nonpositive",
+          "event": "tool_ammo_added",
+          "from_state": "positive_below_max",
+          "guard": "current+amount <= 0",
+          "to_state": "nonpositive_reserve"
+        },
+        {
+          "actions": [
+            "store current-amount"
+          ],
+          "cause": "consume without crossing zero",
+          "event": "tool_ammo_consumed",
+          "from_state": "any",
+          "guard": "0 < current-amount < max",
+          "to_state": "positive_below_max"
+        },
+        {
+          "actions": [
+            "store current-amount"
+          ],
+          "cause": "consume to cap or above",
+          "event": "tool_ammo_consumed",
+          "from_state": "any",
+          "guard": "current-amount >= max",
+          "to_state": "at_or_above_max"
+        },
+        {
+          "actions": [
+            "store current-amount"
+          ],
+          "cause": "consume to zero or below",
+          "event": "tool_ammo_consumed",
+          "from_state": "any",
+          "guard": "current-amount <= 0",
+          "to_state": "nonpositive_reserve"
+        }
+      ],
+      "validation": [
+        "Call AddAmmo with zero, positive, negative, exact-cap, and over-cap.",
+        "Call ConsumeAmmo at current 0, 1, per-shot, and max.",
+        "Verify strategy preflight against post-consume count.",
+        "Correlate kRanOutOfAmmo."
+      ]
+    },
+    {
+      "causes": [
+        "rare acquisition",
+        "save restoration/reset"
+      ],
+      "confidence": {
+        "level": "high",
+        "reason": "Map lookup/store and first-discovery branch are direct; exact acquisition ordering is not."
+      },
+      "consumers": [
+        "rare UI",
+        "event log",
+        "badge observers",
+        "cSpaceTrading"
+      ],
+      "entry_actions": [
+        {
+          "action": "look up ResourceKey in mRareMap",
+          "conditions": [
+            "every rare query/mutation"
+          ],
+          "evidence": "0x0103ac40/0x0103fba0 disassembly"
+        }
+      ],
+      "event_consumers": [
+        "space_rare_discovered_message",
+        "space_rare_found_message"
+      ],
+      "event_producers": [
+        "cSpaceTrading::SetRareAsFound",
+        "cSpaceTrading::ObtainTradingObject"
+      ],
+      "evidence": [
+        {
+          "address": "0x0103fba0",
+          "claim": "The value is stored for false and true, but 0x06779f04 is emitted only on a change to 1.",
+          "kind": "disassembly",
+          "level": "CONFIRMED",
+          "source": "read-only objdump disassembly"
+        },
+        {
+          "address": "0x0103ac40",
+          "claim": "GetRareHasBeenFound returns map payload or zero when absent.",
+          "kind": "disassembly",
+          "level": "CONFIRMED",
+          "source": "read-only objdump disassembly"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "return without notification for false or unchanged value",
+          "conditions": [
+            "new value != 1 or no change"
+          ],
+          "evidence": "0x0103fba0 disassembly"
+        }
+      ],
+      "guards": [
+        "absent is query-equivalent to false",
+        "only transition to 1 emits discovery",
+        "every rare acquisition may emit kMsgSpaceRareFound",
+        "acquisition ordering is unresolved"
+      ],
+      "name": "space_rare_discovery_bit",
+      "producers": [
+        "cSpaceTrading::SetRareAsFound",
+        "rare acquisition path"
+      ],
+      "relevant_functions": [
+        "0x0103ac40 GetRareHasBeenFound",
+        "0x0103fba0 SetRareAsFound",
+        "0x0103fc10 ObtainTradingObject"
+      ],
+      "relevant_structures": [
+        "cSpaceTrading",
+        "ResourceKey",
+        "SpaceRareFoundMessage"
+      ],
+      "side_effects": [
+        "creates/updates mRareMap entry",
+        "emits first-discovery message",
+        "may participate in every-found/badge/log paths",
+        "does not directly debit money"
+      ],
+      "state_variable": {
+        "expression": "cSpaceTrading.mRareMap[ResourceKey]",
+        "owner": "Simulator::cSpaceTrading",
+        "type": "optional uint32 found flag"
+      },
+      "supported_states": [
+        {
+          "actions": [
+            "query returns zero"
+          ],
+          "guards": [
+            "absent or value 0"
+          ],
+          "name": "not_found_or_unrecorded"
+        },
+        {
+          "actions": [
+            "query returns 1"
+          ],
+          "guards": [
+            "value == 1"
+          ],
+          "name": "found"
+        }
+      ],
+      "transitions": [
+        {
+          "actions": [
+            "store 1",
+            "emit 0x06779f04"
+          ],
+          "cause": "first discovery",
+          "event": "space_rare_discovered_message",
+          "from_state": "not_found_or_unrecorded",
+          "guard": "found=true and prior!=1",
+          "to_state": "found"
+        },
+        {
+          "actions": [
+            "retain 1",
+            "emit nothing"
+          ],
+          "cause": "duplicate discovery request",
+          "event": "space_rare_discovered_message",
+          "from_state": "found",
+          "guard": "found=true and prior==1",
+          "to_state": "found"
+        },
+        {
+          "actions": [
+            "store 0",
+            "emit nothing"
+          ],
+          "cause": "clear discovery",
+          "event": "space_rare_discovered_message",
+          "from_state": "found",
+          "guard": "found=false and prior==1",
+          "to_state": "not_found_or_unrecorded"
+        }
+      ],
+      "validation": [
+        "Call SetRare on absent, 0, 1, repeated 1, and repeated 0 entries.",
+        "Record key presence/value and message delivery.",
+        "Acquire same rare twice and distinguish both messages.",
+        "Log map, inventory, badge, log, and both message points."
+      ]
+    },
+    {
+      "causes": [
+        "mission accept",
+        "complete/fail",
+        "abort/reject",
+        "timeout"
+      ],
+      "confidence": {
+        "level": "medium",
+        "reason": "Enum, state field, active update, cargo guard, and completion reward are strong; exact SetState/callback ordering is unresolved."
+      },
+      "consumers": [
+        "mission manager",
+        "mission UI",
+        "player empire",
+        "player inventory",
+        "relationship manager"
+      ],
+      "entry_actions": [
+        {
+          "action": "clear mTitle and field_15c on SetState",
+          "conditions": [
+            "state write"
+          ],
+          "evidence": "SDK cMission::SetState"
+        }
+      ],
+      "event_consumers": [
+        "mission_accepted",
+        "mission_completion_economy_applied"
+      ],
+      "event_producers": [
+        "cMission::SetState",
+        "OnMissionAccept",
+        "OnMissionCompleted",
+        "OnMissionFailed",
+        "OnMissionAbort",
+        "OnMissionReject"
+      ],
+      "evidence": [
+        {
+          "address": "cMission+0x84",
+          "claim": "Raw states are Unaccepted=0, Finished=1, Accepted=2, Active=3, Completed=5, Failed=6, Aborted=7, Rejected=8, StepCompleted=9.",
+          "kind": "sdk_layout_and_enum",
+          "level": "CONFIRMED",
+          "source": "Spore ModAPI cMission.h and SimulatorEnums.h"
+        },
+        {
+          "address": "cMission+0x94",
+          "claim": "Default completion includes reward-money addition, tools, tutorial/empire updates, relationships, and omitted effects.",
+          "kind": "sdk_semantics",
+          "level": "SUPPORTED",
+          "source": "Spore ModAPI cMission.h"
+        },
+        {
+          "address": "cMission+0x138",
+          "claim": "Cargo is checked for give-on-accept animals/plants.",
+          "kind": "sdk_semantics",
+          "level": "SUPPORTED",
+          "source": "Spore ModAPI cMission.h"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "emit kMsgMissionUpdate on Active entry",
+          "conditions": [
+            "new state Active"
+          ],
+          "evidence": "SDK SetState contract"
+        },
+        {
+          "action": "schedule destruction after Finished",
+          "conditions": [
+            "terminal route reaches Finished"
+          ],
+          "evidence": "SDK lifecycle"
+        }
+      ],
+      "guards": [
+        "money affordability is undocumented",
+        "accept/give/reward/tool costs are distinct fields",
+        "cargo guard does not prove money affordability",
+        "callback ordering and mission-type overrides are unresolved"
+      ],
+      "name": "mission_economy_lifecycle",
+      "producers": [
+        "mission availability/choice",
+        "mission update loop",
+        "mission event handlers"
+      ],
+      "relevant_functions": [
+        "SetState",
+        "AcceptMission",
+        "CompleteMission",
+        "FailMission",
+        "OnMissionAccept",
+        "OnMissionCompleted",
+        "OnMissionFailed",
+        "OnMissionAbort",
+        "OnMissionReject",
+        "Update",
+        "HasEnoughAvailableCargoSlots",
+        "GetTravelCost"
+      ],
+      "relevant_structures": [
+        "cMission",
+        "cMissionManager",
+        "cEmpire",
+        "cPlayerInventory",
+        "RelationshipEvents"
+      ],
+      "side_effects": [
+        "state/update-message transitions",
+        "cargo checks and item grants",
+        "tool unlocks/grants",
+        "reward-money addition",
+        "relationship application",
+        "tutorial/empire advancement"
+      ],
+      "state_variable": {
+        "expression": "cMission.mState+0x84 plus reward/cost/give-on-accept fields",
+        "owner": "Simulator::cMission",
+        "type": "MissionState plus economy payload"
+      },
+      "supported_states": [
+        {
+          "actions": [
+            "not accepted"
+          ],
+          "guards": [
+            "mState==0"
+          ],
+          "name": "Unaccepted",
+          "raw_value": 0
+        },
+        {
+          "actions": [
+            "terminal"
+          ],
+          "guards": [
+            "mState==1"
+          ],
+          "name": "Finished",
+          "raw_value": 1
+        },
+        {
+          "actions": [
+            "accepted before Active"
+          ],
+          "guards": [
+            "mState==2"
+          ],
+          "name": "Accepted",
+          "raw_value": 2
+        },
+        {
+          "actions": [
+            "per-frame updates"
+          ],
+          "guards": [
+            "mState==3"
+          ],
+          "name": "Active",
+          "raw_value": 3
+        },
+        {
+          "actions": [
+            "completion callback/routing"
+          ],
+          "guards": [
+            "mState==5"
+          ],
+          "name": "Completed",
+          "raw_value": 5
+        },
+        {
+          "actions": [
+            "failure before Finished"
+          ],
+          "guards": [
+            "mState==6"
+          ],
+          "name": "Failed",
+          "raw_value": 6
+        },
+        {
+          "actions": [
+            "abort before Finished"
+          ],
+          "guards": [
+            "mState==7"
+          ],
+          "name": "Aborted",
+          "raw_value": 7
+        },
+        {
+          "actions": [
+            "rejection before Finished"
+          ],
+          "guards": [
+            "mState==8"
+          ],
+          "name": "Rejected",
+          "raw_value": 8
+        },
+        {
+          "actions": [
+            "sub-mission step complete"
+          ],
+          "guards": [
+            "mState==9"
+          ],
+          "name": "StepCompleted",
+          "raw_value": 9
+        }
+      ],
+      "transitions": [
+        {
+          "actions": [
+            "store Accepted",
+            "OnMissionAccept",
+            "store Active",
+            "emit update"
+          ],
+          "cause": "accept",
+          "event": "mission_accepted",
+          "from_state": "Unaccepted",
+          "guard": "acceptance succeeds; economy guard unresolved",
+          "to_state": "Active"
+        },
+        {
+          "actions": [
+            "store Completed",
+            "OnMissionCompleted",
+            "apply rewards/tools/relationships",
+            "route terminal"
+          ],
+          "cause": "complete",
+          "event": "mission_completion_economy_applied",
+          "from_state": "Active",
+          "guard": "completion succeeds",
+          "to_state": "Completed"
+        },
+        {
+          "actions": [
+            "store Failed",
+            "OnMissionFailed",
+            "route terminal"
+          ],
+          "cause": "fail/timeout",
+          "event": "mission_completion_economy_applied",
+          "from_state": "Active",
+          "guard": "failure condition",
+          "to_state": "Failed"
+        },
+        {
+          "actions": [
+            "store Aborted",
+            "OnMissionAbort",
+            "route terminal"
+          ],
+          "cause": "abort",
+          "event": "mission_completion_economy_applied",
+          "from_state": "any_nonterminal",
+          "guard": "abort accepted",
+          "to_state": "Aborted"
+        },
+        {
+          "actions": [
+            "store Rejected",
+            "OnMissionReject",
+            "route terminal"
+          ],
+          "cause": "reject",
+          "event": "mission_completion_economy_applied",
+          "from_state": "Unaccepted",
+          "guard": "rejection accepted",
+          "to_state": "Rejected"
+        }
+      ],
+      "validation": [
+        "Trace top-level and sub-missions through every route.",
+        "Record all money/cost/cargo/inventory/relationship fields at callback boundaries.",
+        "Force insufficient/exact/excess money after a writer is found.",
+        "Force cargo-full give items and timeout/failure.",
+        "Verify the actual money backing slot before naming cEmpire.mEmpireMoney."
+      ]
+    },
+    {
+      "causes": [
+        "trade complete/declined",
+        "gift/bribe",
+        "mission outcome",
+        "tool use",
+        "political transition"
+      ],
+      "confidence": {
+        "level": "high",
+        "reason": "Relationship writes and flags are direct Ghidra evidence; this is relationship economy, not money."
+      },
+      "consumers": [
+        "cRelationshipManager",
+        "empire/civilization diplomacy",
+        "trade/mission/tool producers"
+      ],
+      "entry_actions": [
+        {
+          "action": "find or create the ordered political-ID relationship record",
+          "conditions": [
+            "relationship callback entry"
+          ],
+          "evidence": "0x00d05830/0x00d06270 decompilation"
+        }
+      ],
+      "event_consumers": [
+        "relationship_score_event_applied"
+      ],
+      "event_producers": [
+        "ApplyRelationship",
+        "DeclareWar",
+        "DeclarePeace",
+        "DeclareAlliance",
+        "BreakAlliance"
+      ],
+      "evidence": [
+        {
+          "address": "0x00d06270",
+          "claim": "ApplyRelationship changes score/event state without directly changing war/alliance bits.",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "committed empire-space research"
+        },
+        {
+          "address": null,
+          "claim": "RelationshipEvents names trade complete/declined, gift, bribe, mission, and tool-use effect IDs.",
+          "kind": "sdk_enum",
+          "level": "CONFIRMED",
+          "source": "Spore ModAPI SimulatorEnums.h"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "run empire/civilization updates for flag transitions",
+          "conditions": [
+            "political state changes"
+          ],
+          "evidence": "direct Ghidra decompilation"
+        }
+      ],
+      "guards": [
+        "trade/gift effects do not imply money",
+        "numeric score and political flags are separate",
+        "ApplyRelationship does not set flags",
+        "exact clamp values remain bounded/unresolved here"
+      ],
+      "name": "relationship_economic_event_state",
+      "producers": [
+        "trade/gift/bribe/mission/tool handlers"
+      ],
+      "relevant_functions": [
+        "0x00d05830 ResetRelationship",
+        "0x00d06270 ApplyRelationship",
+        "0x00d065a0 DeclareWar",
+        "0x00d06920 DeclareAlliance",
+        "0x00d038e0 DeclarePeace",
+        "0x00d01e30 BreakAlliance"
+      ],
+      "relevant_structures": [
+        "cRelationshipManager",
+        "cRelationshipData",
+        "RelationshipEvents",
+        "cEmpire",
+        "cCivilization"
+      ],
+      "side_effects": [
+        "creates/resets records",
+        "accumulates event values and score",
+        "changes flags only through political callbacks",
+        "emits alliance/lost-alliance messages for player paths"
+      ],
+      "state_variable": {
+        "expression": "mValue, mFlags, and mRelationshipEvents keyed by ordered political-ID pair",
+        "owner": "Simulator::cRelationshipManager",
+        "type": "float score plus flags plus event map"
+      },
+      "supported_states": [
+        {
+          "actions": [
+            "no record"
+          ],
+          "guards": [
+            "lookup fails"
+          ],
+          "name": "relationship_absent"
+        },
+        {
+          "actions": [
+            "economic effects can accumulate"
+          ],
+          "guards": [
+            "record exists",
+            "war/alliance bits clear"
+          ],
+          "name": "neutral"
+        },
+        {
+          "actions": [
+            "alliance and trade effects can apply"
+          ],
+          "guards": [
+            "alliance bit set",
+            "war bit clear"
+          ],
+          "name": "allied"
+        },
+        {
+          "actions": [
+            "hostility effects apply"
+          ],
+          "guards": [
+            "war bit set",
+            "alliance bit clear"
+          ],
+          "name": "war"
+        }
+      ],
+      "transitions": [
+        {
+          "actions": [
+            "apply signed event/score delta",
+            "retain flags"
+          ],
+          "cause": "economic relationship event",
+          "event": "relationship_score_event_applied",
+          "from_state": "neutral",
+          "guard": "valid record and event scale",
+          "to_state": "neutral"
+        },
+        {
+          "actions": [
+            "apply signed event/score delta",
+            "retain flags"
+          ],
+          "cause": "event while allied",
+          "event": "relationship_score_event_applied",
+          "from_state": "allied",
+          "guard": "valid record and event scale",
+          "to_state": "allied"
+        },
+        {
+          "actions": [
+            "apply signed event/score delta",
+            "retain flags"
+          ],
+          "cause": "event during war",
+          "event": "relationship_score_event_applied",
+          "from_state": "war",
+          "guard": "valid record and event scale",
+          "to_state": "war"
+        },
+        {
+          "actions": [
+            "reset score/events/flags"
+          ],
+          "cause": "relationship reset",
+          "event": "relationship_score_event_applied",
+          "from_state": "relationship_absent",
+          "guard": "ResetRelationship invoked",
+          "to_state": "neutral"
+        }
+      ],
+      "validation": [
+        "Apply TradeComplete and TradeDeclined from neutral/allied states.",
+        "Record event map, score, flags, and messages together.",
+        "Correlate an actual trade request with relationship event delivery.",
+        "Never call relationship score money without a direct transfer."
+      ]
+    },
+    {
+      "causes": [
+        "store-screen entry",
+        "trade-route query",
+        "trading-object acquisition"
+      ],
+      "confidence": {
+        "level": "medium",
+        "reason": "Route predicate and acquisition call shape are direct/strong; store generation, pricing, stock, capacity, and transaction body remain unresolved."
+      },
+      "consumers": [
+        "cToolManager",
+        "space communication UI",
+        "cPlayerInventory",
+        "cNPCStore"
+      ],
+      "entry_actions": [
+        {
+          "action": "validate trading key and resolve store/route context",
+          "conditions": [
+            "trade request entry"
+          ],
+          "evidence": "SDK SpaceTrading contract and direct route predicate"
+        }
+      ],
+      "event_consumers": [
+        "npc_store_generation_requested",
+        "trade_route_presence_queried",
+        "trading_object_obtained"
+      ],
+      "event_producers": [
+        "space communication screen",
+        "cSpaceTradeRouteManager::HasTradeRoute",
+        "cSpaceTrading::ObtainTradingObject"
+      ],
+      "evidence": [
+        {
+          "address": "0x01037d30",
+          "claim": "Route presence is a pure endpoint query returning bool.",
+          "kind": "disassembly",
+          "level": "CONFIRMED",
+          "source": "read-only objdump disassembly"
+        },
+        {
+          "address": "0x0103fc10",
+          "claim": "Acquisition calls inventory-property and space-event machinery.",
+          "kind": "static_xrefs",
+          "level": "CONFIRMED",
+          "source": "xrefs-2540f2ca.tsv"
+        },
+        {
+          "address": "cNPCStore+0x5c",
+          "claim": "SDK says mbDirty marks a store invalid and requiring refresh; store also has lifetime, stock, bought, spice IDs, and costs.",
+          "kind": "sdk_layout_and_semantics",
+          "level": "SUPPORTED",
+          "source": "Spore ModAPI SubSystem/SpaceTrading.h"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "present or acquire store/item data; no purchase is inferred without a buy body",
+          "conditions": [
+            "request completes"
+          ],
+          "evidence": "SDK contract; exact ordering unresolved"
+        }
+      ],
+      "guards": [
+        "route match does not prove stock",
+        "dirty store requires refresh",
+        "valid key must be a SpaceTrading prop",
+        "stack/capacity/failure ordering unresolved",
+        "no money debit proven"
+      ],
+      "name": "space_trade_and_store_request_lifecycle",
+      "producers": [
+        "space communication screen",
+        "route-map writers",
+        "cSpaceTrading"
+      ],
+      "relevant_functions": [
+        "0x01037d30 HasTradeRoute",
+        "0x0103e8e0 GenerateNPCStore-containing",
+        "0x0103a480 CreateTradingObject-containing",
+        "0x0103fc10 ObtainTradingObject-containing",
+        "0x00c877f0 inventory-item initialization"
+      ],
+      "relevant_structures": [
+        "cSpaceTradeRouteManager",
+        "cSpaceTrading",
+        "cNPCStore",
+        "cPlayerInventory",
+        "cSpaceInventoryItem"
+      ],
+      "side_effects": [
+        "may refresh store",
+        "may generate stock/cost metadata",
+        "may create/update inventory item",
+        "may emit rare/log/badge messages",
+        "no stock purchase or money transfer proven"
+      ],
+      "state_variable": {
+        "expression": "route membership, cNPCStore.mbDirty/lifetime/stock, inventory item count",
+        "owner": "trade manager, stores, and player inventory",
+        "type": "distributed request/availability state"
+      },
+      "supported_states": [
+        {
+          "actions": [
+            "tool gate may report no route"
+          ],
+          "guards": [
+            "no matching route"
+          ],
+          "name": "route_absent"
+        },
+        {
+          "actions": [
+            "route predicate passes"
+          ],
+          "guards": [
+            "matching route"
+          ],
+          "name": "route_present"
+        },
+        {
+          "actions": [
+            "must regenerate"
+          ],
+          "guards": [
+            "mbDirty or absent/expired store"
+          ],
+          "name": "store_invalid"
+        },
+        {
+          "actions": [
+            "may be presented while valid"
+          ],
+          "guards": [
+            "not dirty and lifetime valid"
+          ],
+          "name": "store_usable"
+        },
+        {
+          "actions": [
+            "no owned entry proven"
+          ],
+          "guards": [
+            "inventory lookup has no item key"
+          ],
+          "name": "item_not_acquired"
+        },
+        {
+          "actions": [
+            "item may be owned"
+          ],
+          "guards": [
+            "inventory contains item key"
+          ],
+          "name": "item_acquired"
+        }
+      ],
+      "transitions": [
+        {
+          "actions": [
+            "return false"
+          ],
+          "cause": "query absent route",
+          "event": "trade_route_presence_queried",
+          "from_state": "route_absent",
+          "guard": "no endpoint match",
+          "to_state": "route_absent"
+        },
+        {
+          "actions": [
+            "return true"
+          ],
+          "cause": "query present route",
+          "event": "trade_route_presence_queried",
+          "from_state": "route_present",
+          "guard": "endpoint match either direction",
+          "to_state": "route_present"
+        },
+        {
+          "actions": [
+            "generate/refresh store"
+          ],
+          "cause": "enter store screen",
+          "event": "npc_store_generation_requested",
+          "from_state": "store_invalid",
+          "guard": "inputs usable; exact guards unresolved",
+          "to_state": "store_usable"
+        },
+        {
+          "actions": [
+            "retain valid store"
+          ],
+          "cause": "revisit valid store",
+          "event": "npc_store_generation_requested",
+          "from_state": "store_usable",
+          "guard": "not dirty and lifetime valid",
+          "to_state": "store_usable"
+        },
+        {
+          "actions": [
+            "dispatch creation/insertion"
+          ],
+          "cause": "obtain trading object",
+          "event": "trading_object_obtained",
+          "from_state": "item_not_acquired",
+          "guard": "valid key; amount/capacity unresolved",
+          "to_state": "item_acquired"
+        }
+      ],
+      "validation": [
+        "Enter one planet store twice and compare dirty/lifetime/stock/cost fields.",
+        "Force dirty, five-slot, lifetime-expiry, and clear-store paths.",
+        "Acquire ordinary/rare amounts 0, 1, 2, negative, and cargo-full.",
+        "Separate generation/acquisition from actual buy/sell and record money/inventory only there."
+      ]
+    },
+    {
+      "causes": [],
+      "confidence": {
+        "level": "unresolved",
+        "reason": "Income, population/food, and commodity fields are confirmed, but no update writer, cadence, or finite node/scheduler state was recovered."
+      },
+      "consumers": [
+        "cCivilization",
+        "cCity",
+        "cTribePlanner",
+        "cCommodityNode"
+      ],
+      "entry_actions": [
+        {
+          "action": "no static economy-tick entry is established",
+          "conditions": [],
+          "evidence": "no matching body recovered"
+        }
+      ],
+      "event_consumers": [],
+      "event_producers": [],
+      "evidence": [
+        {
+          "address": "cCity+0x664/+0x678",
+          "claim": "Pinned SDK names city mMoneyCount and mFinalIncome.",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": "pinned structs_fields.tsv"
+        },
+        {
+          "address": "cCivilization+0x4b4",
+          "claim": "Pinned SDK names civilization mUpdateMoneyCount.",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": "pinned structs_fields.tsv"
+        },
+        {
+          "address": "cBuilding+0x294",
+          "claim": "Pinned SDK names per-building mMoneyCount.",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": "pinned structs_fields.tsv"
+        },
+        {
+          "address": "cTribeData+0x10/+0x14 and cTribe+0x510",
+          "claim": "Pinned SDK names saved population/food and mPopulationTimer.",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": "pinned structs_fields.tsv"
+        },
+        {
+          "address": "cCommodityNode+0x1d0/+0x1d4",
+          "claim": "Pinned SDK names mResourcePoints and mMaxResourcePoints.",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": "pinned structs_fields.tsv"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "no static income/population/depletion exit is established",
+          "conditions": [],
+          "evidence": "writers unresolved"
+        }
+      ],
+      "guards": [
+        "field names do not establish cadence or formula",
+        "TribePlanType is not cTribePlan.mState",
+        "commodity mine-state values are unknown",
+        "political IDs are not money",
+        "no field tuple is merged without direct linkage"
+      ],
+      "name": "civilization_population_and_commodity_economy_unresolved",
+      "producers": [],
+      "relevant_functions": [
+        "0x00be2590 cCity::ProcessBuildingUpdate",
+        "cTribePlanner scheduler unresolved",
+        "commodity node writers unresolved"
+      ],
+      "relevant_structures": [
+        "cCivilization",
+        "cCity",
+        "cBuilding",
+        "cTribe",
+        "cTribePlanner",
+        "cTribePlan",
+        "cTribeData",
+        "cCommodityNode"
+      ],
+      "side_effects": [
+        "none established beyond field presence"
+      ],
+      "state_variable": {
+        "expression": "city/building/civilization money counters; population/food/timers; commodity points and ownership tuple",
+        "owner": "multiple civilization-stage objects",
+        "type": "opaque accounting and resource tuple"
+      },
+      "supported_states": [
+        {
+          "actions": [
+            "no gameplay states inferred"
+          ],
+          "guards": [
+            "no writer/cadence/domain evidence"
+          ],
+          "name": "unresolved_numeric_tuple"
+        }
+      ],
+      "transitions": [],
+      "validation": [
+        "Find every writer/reader of city and civilization money fields over one economic tick.",
+        "Trace ProcessBuildingUpdate and city-hall aggregation.",
+        "Enumerate cTribePlan.mState and timer transitions.",
+        "Find all mResourcePoints writers and mMineState values.",
+        "Correlate buy/capture/convert and population/food effects without assuming currency."
+      ]
+    },
+    {
+      "causes": [
+        "scenario economy query",
+        "scenario limit request"
+      ],
+      "confidence": {
+        "level": "unresolved",
+        "reason": "Eight indexed values and limit fields exist, but indices, units, defaults, producers, and consumers are unnamed."
+      },
+      "consumers": [
+        "cScenarioPlayMode",
+        "cScenarioTerraformMode",
+        "cScenarioData"
+      ],
+      "entry_actions": [
+        {
+          "action": "read or mutate one indexed scenario-economy slot/limit",
+          "conditions": [
+            "scenario economy interface entry"
+          ],
+          "evidence": "SDK adapter layout"
+        }
+      ],
+      "event_consumers": [
+        "scenario_economy_limit_requested",
+        "scenario_economy_value_queried"
+      ],
+      "event_producers": [
+        "scenario goal/act/economy handlers"
+      ],
+      "evidence": [
+        {
+          "address": "cScenarioDataEconomy+0x08",
+          "claim": "Pinned SDK exposes int mValues[8] and two unnamed limit fields.",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": "pinned structs_fields.tsv"
+        },
+        {
+          "address": "IEditorLimits+0x04/+0x0c/+0x18",
+          "claim": "SDK-derived layout names GetValue, HasEnough, and SetLimit slots without slot semantics.",
+          "kind": "sdk_vtable_layout",
+          "level": "SUPPORTED",
+          "source": "committed data-model research"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "return a value/sufficiency result for a query",
+          "conditions": [
+            "adapter query completes"
+          ],
+          "evidence": "SDK layout; body unresolved"
+        }
+      ],
+      "guards": [
+        "indices 0..7 are opaque",
+        "HasEnough threshold is unresolved",
+        "scenario values are not proven money or interchangeable with mission/civ fields",
+        "mAdventurePoints relation is unresolved"
+      ],
+      "name": "scenario_indexed_economy_and_limits_unresolved",
+      "producers": [
+        "scenario goal/act/economy handlers"
+      ],
+      "relevant_functions": [
+        "cScenarioDataEconomy::GetValue adapter",
+        "cScenarioDataEconomy::HasEnough adapter",
+        "cScenarioDataEconomy::SetLimit adapter"
+      ],
+      "relevant_structures": [
+        "cScenarioDataEconomy",
+        "cScenarioTerraformEconomy",
+        "cScenarioPlayMode"
+      ],
+      "side_effects": [
+        "queries indexed values",
+        "requests indexed limits",
+        "no producer/consumer/formula promoted"
+      ],
+      "state_variable": {
+        "expression": "mValues[0..7] plus field_28/field_2C and adapter limits",
+        "owner": "Simulator::cScenarioData",
+        "type": "eight opaque integers plus opaque limits"
+      },
+      "supported_states": [
+        {
+          "actions": [
+            "one slot has arbitrary integer"
+          ],
+          "guards": [
+            "index in 0..7"
+          ],
+          "name": "opaque_indexed_value"
+        },
+        {
+          "actions": [
+            "limit meaning unresolved"
+          ],
+          "guards": [
+            "limit fields/sentinels unidentified"
+          ],
+          "name": "unresolved_limit_configuration"
+        }
+      ],
+      "transitions": [
+        {
+          "actions": [
+            "read requested value"
+          ],
+          "cause": "scenario value query",
+          "event": "scenario_economy_value_queried",
+          "from_state": "opaque_indexed_value",
+          "guard": "index in range",
+          "to_state": "opaque_indexed_value"
+        },
+        {
+          "actions": [
+            "invoke limit setter"
+          ],
+          "cause": "limit request",
+          "event": "scenario_economy_limit_requested",
+          "from_state": "unresolved_limit_configuration",
+          "guard": "valid index/adapter",
+          "to_state": "unresolved_limit_configuration"
+        }
+      ],
+      "validation": [
+        "Enumerate callers for indices 0..7 and name values from properties/consumers.",
+        "Trace all mAdventurePoints and mValues writers.",
+        "Recover HasEnough/SetLimit bodies.",
+        "Do not map a slot to empire money without a shared writer/consumer."
+      ]
+    },
+    {
+      "causes": [
+        "space tool use",
+        "scenario captain jump/ability use"
+      ],
+      "confidence": {
+        "level": "unresolved",
+        "reason": "SDK fields/messages exist, but both native energy mutation anchors conflict with their SDK boundaries."
+      },
+      "consumers": [
+        "cGameDataUFO",
+        "cSpaceToolData",
+        "cCreatureBase",
+        "cToolManager"
+      ],
+      "entry_actions": [
+        {
+          "action": "no trustworthy energy mutation entry is established",
+          "conditions": [],
+          "evidence": "both native anchors conflict"
+        }
+      ],
+      "event_consumers": [
+        "scenario_energy_consumed_message"
+      ],
+      "event_producers": [
+        "unresolved true ConsumeEnergy body"
+      ],
+      "evidence": [
+        {
+          "address": "cGameDataUFO+0x7f4/+0x7f8",
+          "claim": "SDK names current/max UFO energy.",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": "Spore ModAPI cGameDataUFO.h"
+        },
+        {
+          "address": "0x00c38b50/0x00c38b10",
+          "claim": "ChangeEnergy-associated body does not touch the named energy fields.",
+          "kind": "disassembly",
+          "level": "CONFIRMED",
+          "source": "read-only objdump disassembly"
+        },
+        {
+          "address": "0x00c15f20/0x00c15e50",
+          "claim": "ConsumeEnergy is an interior SDK anchor in an unrelated body with no direct energy subtraction.",
+          "kind": "disassembly_and_boundary_conflict",
+          "level": "CONFIRMED",
+          "source": "read-only objdump and KG xref"
+        },
+        {
+          "address": "0x07c7a52e",
+          "claim": "SDK defines scenario energy-consumed message and float payload.",
+          "kind": "sdk_message",
+          "level": "CONFIRMED",
+          "source": "Spore ModAPI SimulatorMessages.h"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "scenario producer emits 0x07c7a52e per SDK",
+          "conditions": [
+            "player captain consumes energy"
+          ],
+          "evidence": "SDK contract; native producer unresolved"
+        }
+      ],
+      "guards": [
+        "space and scenario energy are separate",
+        "mEnergyCost and mUseCost are separate tool fields",
+        "regeneration and clamp are unresolved",
+        "no exact energy decrement is claimed"
+      ],
+      "name": "energy_balance_transitions_unresolved",
+      "producers": [
+        "unresolved space/scenario energy callbacks"
+      ],
+      "relevant_functions": [
+        "0x00c38b10 ChangeEnergy-associated",
+        "0x00c15e50 ConsumeEnergy-associated",
+        "space tool energy-cost consumer unresolved"
+      ],
+      "relevant_structures": [
+        "cGameDataUFO",
+        "cSpaceToolData",
+        "cCreatureBase",
+        "cCreatureAbility",
+        "cSpeciesProfile"
+      ],
+      "side_effects": [
+        "scenario message is interface-documented",
+        "native energy stores and bounds are unresolved"
+      ],
+      "state_variable": {
+        "expression": "separate cGameDataUFO.mEnergy/mMaxEnergy and creature/scenario energy fields",
+        "owner": "multiple objects",
+        "type": "float balances without recovered transition"
+      },
+      "supported_states": [
+        {
+          "actions": [
+            "no available/depleted split inferred"
+          ],
+          "guards": [
+            "mutation semantics/bounds unresolved"
+          ],
+          "name": "unresolved_energy_state"
+        }
+      ],
+      "transitions": [],
+      "validation": [
+        "Recover true ChangeEnergy by matching +0x7f4/+0x7f8 accesses.",
+        "Recover true ConsumeEnergy and trace 0x07c7a52e.",
+        "Correlate tool shot with mUseCost, mEnergyCost, UFO energy, and repair.",
+        "Test below-zero and regeneration separately; do not reuse Ammo rules."
+      ]
+    },
+    {
+      "causes": [
+        "repair-tool use"
+      ],
+      "confidence": {
+        "level": "medium",
+        "reason": "Arithmetic and read-only behavior are direct, but sampled economic fields and currency label are not tied to a debit."
+      },
+      "consumers": [
+        "cRepairToolStrategy"
+      ],
+      "entry_actions": [
+        {
+          "action": "sample pre float and invoke +0x58 accessor for post float",
+          "conditions": [
+            "ProcessCost entry"
+          ],
+          "evidence": "0x010535e0 disassembly"
+        }
+      ],
+      "event_consumers": [
+        "tool_use_cost_computed"
+      ],
+      "event_producers": [
+        "cRepairToolStrategy::ProcessCost"
+      ],
+      "evidence": [
+        {
+          "address": "0x010535e0",
+          "claim": "Body has no stores to sampled objects and returns trunc((after-before)/after * useCost) without explicit zero guard.",
+          "kind": "disassembly",
+          "level": "CONFIRMED",
+          "source": "read-only objdump disassembly"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "return adjusted integer cost",
+          "conditions": [
+            "float calculations complete"
+          ],
+          "evidence": "0x010535e0 disassembly"
+        }
+      ],
+      "guards": [
+        "no explicit zero denominator guard",
+        "before==after returns zero for finite values",
+        "useCost sign and sampled fields unresolved",
+        "SDK sporebucks wording does not prove balance mutation"
+      ],
+      "name": "repair_tool_relative_cost_adjustment",
+      "producers": [
+        "cRepairToolStrategy::ProcessCost"
+      ],
+      "relevant_functions": [
+        "0x010535e0 cRepairToolStrategy::ProcessCost"
+      ],
+      "relevant_structures": [
+        "cToolStrategy",
+        "cRepairToolStrategy"
+      ],
+      "side_effects": [
+        "reads two valuation values",
+        "returns adjusted cost",
+        "does not store a balance"
+      ],
+      "state_variable": {
+        "expression": "return int((after-before)/after * useCost)",
+        "owner": "ProcessCost call",
+        "type": "derived integer cost"
+      },
+      "supported_states": [
+        {
+          "actions": [
+            "return zero"
+          ],
+          "guards": [
+            "before==after"
+          ],
+          "name": "zero_relative_change"
+        },
+        {
+          "actions": [
+            "return adjusted cost"
+          ],
+          "guards": [
+            "before!=after"
+          ],
+          "name": "nonzero_relative_change"
+        },
+        {
+          "actions": [
+            "unguarded division by zero"
+          ],
+          "guards": [
+            "after==0"
+          ],
+          "name": "degenerate_denominator"
+        }
+      ],
+      "transitions": [
+        {
+          "actions": [
+            "return zero for finite inputs"
+          ],
+          "cause": "unchanged valuation",
+          "event": "tool_use_cost_computed",
+          "from_state": "zero_relative_change",
+          "guard": "before==after",
+          "to_state": "zero_relative_change"
+        },
+        {
+          "actions": [
+            "evaluate relative difference * useCost"
+          ],
+          "cause": "changed valuation",
+          "event": "tool_use_cost_computed",
+          "from_state": "nonzero_relative_change",
+          "guard": "before!=after",
+          "to_state": "nonzero_relative_change"
+        },
+        {
+          "actions": [
+            "divide by zero"
+          ],
+          "cause": "degenerate valuation",
+          "event": "tool_use_cost_computed",
+          "from_state": "degenerate_denominator",
+          "guard": "after==0",
+          "to_state": "degenerate_denominator"
+        }
+      ],
+      "validation": [
+        "Sample positive/zero/negative before-after and useCost signs.",
+        "Resolve objects returned by 0x00ffbe50/0x00a1ad60 and +0x58 accessor.",
+        "Trace next store/message.",
+        "Call it a debit only after a direct named balance write."
+      ]
+    }
+  ],
+  "temporal_semantics": [
+    {
+      "confidence": "high",
+      "evidence": "Direct compact bodies",
+      "id": "T-001",
+      "meaning": "Collectable unlock/lock, rare-map writes, ammunition mutation, and ProcessCost are synchronous: stores/returns occur in the call body.",
+      "scope": [
+        "collectable_unlock_point_and_status",
+        "space_rare_discovery_bit",
+        "space_tool_ammunition_reserve",
+        "repair_tool_relative_cost_adjustment"
+      ]
+    },
+    {
+      "confidence": "high",
+      "evidence": "0x0103fba0 disassembly",
+      "id": "T-002",
+      "meaning": "First rare discovery emits 0x06779f04 immediately after the map value becomes 1; SetRareAsFound has no timer.",
+      "scope": [
+        "space_rare_discovery_bit"
+      ]
+    },
+    {
+      "confidence": "high",
+      "evidence": "0x0104cbd0/0x0104cc00 disassembly",
+      "id": "T-003",
+      "meaning": "Ammunition changes immediately at call time; AddAmmo clamps only above max and ConsumeAmmo has no body-level lower clamp.",
+      "scope": [
+        "space_tool_ammunition_reserve"
+      ]
+    },
+    {
+      "confidence": "high",
+      "evidence": "0x010535e0 disassembly",
+      "id": "T-004",
+      "meaning": "ProcessCost reads current relative values and returns a derived cost in the same call; no balance update occurs in that body.",
+      "scope": [
+        "repair_tool_relative_cost_adjustment"
+      ]
+    },
+    {
+      "confidence": "medium",
+      "evidence": "Spore ModAPI cMission.h",
+      "id": "T-005",
+      "meaning": "Only Active missions receive Update; elapsed time advances and duration can cause failure. Exact frame units/body ordering are unresolved.",
+      "scope": [
+        "mission_economy_lifecycle"
+      ]
+    },
+    {
+      "confidence": "low",
+      "evidence": "Spore ModAPI SubSystem/SpaceTrading.h",
+      "id": "T-006",
+      "meaning": "NPC stores have a lifetime and dirty flag; store-screen entry requests generation, but expiry/refresh writers are unresolved.",
+      "scope": [
+        "space_trade_and_store_request_lifecycle"
+      ]
+    },
+    {
+      "confidence": "unresolved",
+      "evidence": "SDK layouts only",
+      "id": "T-007",
+      "meaning": "Civilization income, city building update, population timers, tribe plans, and commodity depletion have no recovered cadence or writer contract.",
+      "scope": [
+        "civilization_population_and_commodity_economy_unresolved"
+      ]
+    },
+    {
+      "confidence": "high",
+      "evidence": "committed runtime evidence and scope policy",
+      "id": "T-008",
+      "meaning": "No static economy transition is runtime-observed; all ordering here is direct instruction evidence or SDK contract.",
+      "scope": [
+        "all"
+      ]
+    }
+  ],
+  "unresolved": [
+    {
+      "evidence_needed": "Direct bodies and a common writer/consumer for the actual balance field.",
+      "id": "U-E001",
+      "impact": "Blocks a global money/credit ledger.",
+      "question": "Which functions write cEmpire.mEmpireMoney, and does mission completion use that field?",
+      "status": "UNKNOWN"
+    },
+    {
+      "evidence_needed": "ProcessBuildingUpdate, city-hall aggregation, and civilization budget update bodies.",
+      "id": "U-E002",
+      "impact": "Blocks income timing/formulas.",
+      "question": "How do cCity.mMoneyCount/mFinalIncome, cBuilding.mMoneyCount, and cCivilization.mUpdateMoneyCount accumulate?",
+      "status": "UNKNOWN"
+    },
+    {
+      "evidence_needed": "Mission callback bodies and pre/post state traces.",
+      "id": "U-E003",
+      "impact": "Blocks accept debit and completion payout ordering.",
+      "question": "When are mAcceptCost, mToolCost, mGiveOnAcceptMoney, mRewardMoney, and tool grants applied?",
+      "status": "UNKNOWN"
+    },
+    {
+      "evidence_needed": "NPC-store buy/sell bodies, inventory insertion/removal, and balance stores.",
+      "id": "U-E004",
+      "impact": "Blocks pricing, stock, capacity, and completed trade transactions.",
+      "question": "What computes buy/sell price, removes stock, and debits/credits money?",
+      "status": "UNKNOWN"
+    },
+    {
+      "evidence_needed": "Ordinary and rare acquisition call-path trace.",
+      "id": "U-E005",
+      "impact": "Blocks stacking and cargo-failure semantics.",
+      "question": "Does ObtainTradingObject update an existing count or insert a new item, and what happens when cargo is full?",
+      "status": "UNKNOWN"
+    },
+    {
+      "evidence_needed": "Store timer/dirty writers and ClearNPCStores true entry.",
+      "id": "U-E006",
+      "impact": "Blocks store lifetime and invalidation behavior.",
+      "question": "When is mbDirty set and how does lifetime expiry select a retained store?",
+      "status": "UNKNOWN"
+    },
+    {
+      "evidence_needed": "All commodity-node update/harvest/capture/convert/buy writers.",
+      "id": "U-E007",
+      "impact": "Blocks resource depletion and ownership transitions.",
+      "question": "What are mMineState values and the formulas mutating mResourcePoints and political IDs?",
+      "status": "UNKNOWN"
+    },
+    {
+      "evidence_needed": "cTribePlanner update and cTribePlan.mState reader/writer bodies.",
+      "id": "U-E008",
+      "impact": "Blocks population/food plan lifecycle.",
+      "question": "What values and transitions does cTribePlan.mState have, and how do workers/food change it?",
+      "status": "UNKNOWN"
+    },
+    {
+      "evidence_needed": "cCommunity population writers and timer callbacks.",
+      "id": "U-E009",
+      "impact": "Blocks birth/death/migration effects.",
+      "question": "How does mCommunitySize or saved population change and what does mPopulationTimer trigger?",
+      "status": "UNKNOWN"
+    },
+    {
+      "evidence_needed": "True function entries matching cGameDataUFO.mEnergy/mMaxEnergy accesses.",
+      "id": "U-E010",
+      "impact": "Blocks all space-energy transitions.",
+      "question": "What is the real cGameDataUFO::ChangeEnergy body and its clamp/message behavior?",
+      "status": "UNKNOWN"
+    },
+    {
+      "evidence_needed": "True ConsumeEnergy entry and scenario energy fields/body.",
+      "id": "U-E011",
+      "impact": "Blocks scenario captain-energy debit and recovery.",
+      "question": "Which body emits kMsgScenarioEnergyConsumed and subtracts which field?",
+      "status": "UNKNOWN"
+    },
+    {
+      "evidence_needed": "Scenario adapter callers, property IDs, and vtable bodies.",
+      "id": "U-E012",
+      "impact": "Blocks scenario economy reconstruction.",
+      "question": "What do cScenarioDataEconomy.mValues[0..7] and its two limits represent, and how do adventure points affect them?",
+      "status": "UNKNOWN"
+    },
+    {
+      "evidence_needed": "Trace all mUnlockPoints writes outside UnlockPart and all LockPart callers.",
+      "id": "U-E013",
+      "impact": "Blocks collectable point source/refund semantics.",
+      "question": "How are collectable points earned, and does any path refund points when a part is locked?",
+      "status": "UNKNOWN"
+    },
+    {
+      "evidence_needed": "Identity of ProcessCost's two sampled floats and the following tool-use path.",
+      "id": "U-E014",
+      "impact": "Blocks associating calculated cost with a balance debit.",
+      "question": "Which object fields are before/after, and where is the returned cost stored or charged?",
+      "status": "UNKNOWN"
+    },
+    {
+      "evidence_needed": "Successful original-process traces and save/load round trips for every supported machine.",
+      "id": "U-E015",
+      "impact": "No economy transition can be promoted to OBSERVED/VERIFIED.",
+      "question": "What are runtime ordering, UI events, failure messages, and persisted state for economy actions?",
+      "status": "NOT_AVAILABLE"
+    }
+  ]
+}

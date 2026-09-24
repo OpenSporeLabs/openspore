@@ -1,0 +1,896 @@
+{
+  "$schema": "openspore-track-07-architecture-resolution-1",
+  "track": "Track 7",
+  "conflict_id": "CONFLICT-AVATAR-OWNER-LIFETIME",
+  "classification": "cross_boundary",
+  "resolution_status": "preferred_claim_with_limit",
+  "finding_status": "RESOLVED_SUPPORTED_WITH_LIMIT",
+  "taxonomy": {
+    "classification": {
+      "allowed": ["simulation", "presentation", "persistent_content", "cross_boundary"],
+      "selected": "cross_boundary"
+    },
+    "resolution_status": {
+      "allowed": ["unresolved", "preserved_alternatives", "preferred_claim_with_limit", "same_observation_different_scope"],
+      "selected": "preferred_claim_with_limit"
+    },
+    "finding_status": {
+      "allowed": ["RESOLVED_SUPPORTED", "RESOLVED_SUPPORTED_WITH_LIMIT", "UNRESOLVED"],
+      "selected": "RESOLVED_SUPPORTED_WITH_LIMIT"
+    }
+  },
+  "contract_layers": {
+    "native_exact_contracts": "Direct instruction, local call-site, field-access, and object-layout facts that do not require root publication or runtime equality.",
+    "conditional_native_interpretations": "Typed conclusions that hold when a receiver has the demonstrated layout, while root publication/liveness may remain unresolved.",
+    "modern_recommendations": "Replacement architecture guidance such as a stable gameplay EntityId; these are not claims about an original native field or ABI."
+  },
+  "scope": {
+    "binary": "SporeApp.exe",
+    "version": "3.1.0.22",
+    "ghidra_program": "SporeApp.exe",
+    "language": "x86:LE:32:default",
+    "compiler": "windows",
+    "image_base": "0x00400000",
+    "ghidra_access": "read_only",
+    "historical_artifacts": "read_only",
+    "spore_directory_access": false,
+    "spore_db_access": false,
+    "implementation": false,
+    "source_mutation": false,
+    "historical_artifact_mutation": false,
+    "runtime_trace": "not_performed",
+    "runtime_reason": "The smallest static receiver/refcount separator resolves the local +0x54 contracts: the exceptional 0x00bff2d0 receiver is a separately published cSimulatorSpaceGame-shaped parent/context and its +0x54 field is mpHighLODPlanetSim, while 0x00b3d300 is a noun-manager-compatible raw root port whose result is consumed through cGameNounManager-layout fields. Follow-up-03 did not find a direct or bounded computed writer for DAT_0167eae0 or DAT_0167eb60 and did not close their publication, liveness, teardown, or value equality. Runtime would be required for those root-level questions and for save restoration timing, but is not required to describe the local accessor and replacement mechanics.",
+    "target_addresses": [
+      "0x00b1fdb0",
+      "0x00b1fd50",
+      "0x00d2e4a0",
+      "0x00d2e580",
+      "0x00d2e8a0",
+      "0x00d39360",
+      "0x00bff2d0",
+      "0x01002bd0"
+    ],
+    "target_fields": [
+      "cGameNounManager owner+0x54",
+      "cSimulatorSpaceGame owner+0x54",
+      "result vtable+0xd8",
+      "other-pointer+0x55c",
+      "cCreatureBase+0xb54",
+      "cCellGame+0x411c"
+    ]
+  },
+  "hypotheses": [
+    {
+      "id": "H1",
+      "name": "authoritative_gameplay_state",
+      "contract_layer": "conditional_native_interpretation",
+      "claim": "When the receiver is the demonstrated cGameNounManager-layout object, its +0x54 value is the current intrusive gameplay-creature selection, not a disposable cache value. This does not establish which DAT_0167eae0/DAT_0167eb60 publication is live at runtime.",
+      "prediction": "The owner must retain and release the selected creature, clear or replace it during lifecycle transitions, and consumers must reach authoritative creature fields such as target, health, brain level, locomotion, species profile, and progression-affecting state.",
+      "outcome": "supported_for_noun_manager_receiver_family",
+      "status": "RESOLVED_SUPPORTED_WITH_LIMIT",
+      "classification": "simulation",
+      "key_evidence": [
+        "0x00b1fd50 performs virtual +0x00 on the new value, stores it at owner+0x54, then performs virtual +0x04 on the old value.",
+        "0x00d2e4a0 dispatches a creature virtual method and reads creature+0xb5c; 0x00d2e580 reads locomotion and species state; 0x00d2e8a0 places the returned address in an action record consumed by 0x00d39360.",
+        "0x00c099e0 creates a cCreatureAnimal-compatible object and installs it through 0x00b1fd50 when the caller requests player/avatar state."
+      ]
+    },
+    {
+      "id": "H2",
+      "name": "transient_runtime_pointer",
+      "contract_layer": "conditional_native_interpretation",
+      "claim": "The accessor result is a transient borrowed view, but the noun-manager-shaped +0x54 storage is not merely an unretained cache: the demonstrated writer reference-manages the selected object.",
+      "prediction": "A transient-only pointer would have no retained ownership, would be replaceable without affecting the authoritative noun, and would normally point to a presentation, index, or lightweight context rather than the full mutable creature object.",
+      "outcome": "contradicted_as_sole_description_but_supported_as_borrowed_view",
+      "status": "RESOLVED_SUPPORTED_WITH_LIMIT",
+      "classification": "cross_boundary",
+      "key_evidence": [
+        "0x00b1fdb0 is only a two-instruction read and therefore returns a borrowed/transient view of the stored word.",
+        "The same field is an intrusive owner reference: 0x00b1fd50 AddRefs the new object, stores it, and Releases the old object.",
+        "0x00c099e0 also inserts the creature into noun/parent collections, so the raw current pointer is one retention path rather than the object's whole ownership graph."
+      ]
+    },
+    {
+      "id": "H3",
+      "name": "presentation_proxy",
+      "contract_layer": "conditional_native_interpretation",
+      "claim": "The +0x54 value is a presentation/GFX proxy for the avatar rather than the gameplay creature itself.",
+      "prediction": "Consumers should primarily resolve model, animation, world, or render handles; gameplay brain, health, locomotion, and target state should remain elsewhere; visual teardown should be able to replace the proxy independently.",
+      "outcome": "contradicted_for_noun_manager_path_supported_as_a_distinct_subsystem",
+      "status": "RESOLVED_SUPPORTED_WITH_LIMIT",
+      "classification": "presentation",
+      "key_evidence": [
+        "Noun-manager consumers use the returned value as a cCreatureBase/cCreatureAnimal and reach gameplay state, not only render handles.",
+        "cCreatureBase+0xb54 is the separate intrusive_ptr<Anim::AnimatedCreature> presentation/animation association; cCreatureBase+0x150 is the model ResourceKey and +0x15c/+0x160 are model/world handles.",
+        "Cell has a separate GFX association and rebuild lifecycle at cCellObjectData+0x248, independent of cGameNounManager+0x54."
+      ]
+    },
+    {
+      "id": "H4",
+      "name": "handle",
+      "contract_layer": "native_exact_contract",
+      "claim": "The returned word is an opaque ID, generation handle, pool index, or tagged union rather than an object pointer.",
+      "prediction": "A handle should not support direct vtable loads and nested pointer dereferences, and replacement should not use virtual AddRef/Release on the value itself.",
+      "outcome": "contradicted",
+      "status": "RESOLVED_SUPPORTED",
+      "classification": "cross_boundary",
+      "key_evidence": [
+        "0x00d2e380 loads result->vtable and calls slot +0xd8; 0x00d2e580 dereferences result+0xc0 and result+0xb20; 0x00d2e4a0 calls result vtable +0x84.",
+        "0x00b1fd50 invokes vtable +0x00 and +0x04 directly on the new and old words, requiring object addresses with refcount virtuals.",
+        "0x00d39360 uses raw pointer equality and ObjectTYPE kCreatureAnimal checks, not numeric range, map, or generation operations."
+      ]
+    },
+    {
+      "id": "H5",
+      "name": "hybrid_typed_current_selection",
+      "contract_layer": "conditional_native_interpretation_with_modern_recommendation",
+      "claim": "The local contract is hybrid: on a cGameNounManager-layout receiver, +0x54 is an intrusive current gameplay reference and 0x00b1fdb0 returns it without retaining; the creature carries runtime state plus a separate presentation association; Cell uses a pool index; and the tiny accessor body is reused across unrelated +0x54 fields. DAT_0167eae0/DAT_0167eb60 publication and equality remain unresolved.",
+      "prediction": "Type-specific receiver provenance must determine the meaning of +0x54. Noun-manager-layout receivers yield cCreatureAnimal; the 0x01002bd0 receiver yields the cSimulatorSpaceGame +0x54 planet-simulation field. A stable gameplay EntityId is a modern replacement recommendation, not the observed native owner+0x54 contract.",
+      "outcome": "supported_with_global_alias_and_save_wire_limits",
+      "status": "RESOLVED_SUPPORTED_WITH_LIMIT",
+      "classification": "cross_boundary",
+      "key_evidence": [
+        "0x00b3d300 is a raw borrowed load of DAT_0167eae0, and the selected creature functions use that returned word immediately before 0x00b1fdb0.",
+        "0x00b20c60 and 0x00b21340 corroborate cGameNounManager fields +0x78/+0x7c, +0x98/+0x9c, and +0x10c/+0x110 in the same live-analysis session; they do not publish or equate DAT_0167eae0 with DAT_0167eb60.",
+        "Follow-up-03 found no direct or bounded computed writer, no cross-accessor equality, and four distinct four-byte root words; DAT_0167eae0 publication/liveness/teardown therefore remain open.",
+        "0x01002bd0 returns DAT_016dc0fc; 0x010066e0 publishes it with the cGonzagoSimulator/cSimulatorSpaceGame vtable pattern and 0x01006880 clears it. This is a separate publication chain, not evidence for either noun root.",
+        "0x00ef10c0 saves the current noun-layout avatar, clears owner+0x54, and destroys the old object; 0x00c099e0 creates/installs a new animal when the 0x00b3d300 port supplies a live noun-layout receiver.",
+        "The noun current pointer, cCellGame+0x411c avatar pool index, presentation handles, and save candidates are structurally distinct."
+      ]
+    },
+    {
+      "id": "H6",
+      "name": "universal_avatar_accessor",
+      "contract_layer": "native_exact_contract",
+      "claim": "Every receiver of 0x00b1fdb0 is a cGameNounManager and every result is the current avatar.",
+      "prediction": "All receiver+0x54 fields would have cCreatureAnimal/cCreatureBase semantics and all call sites would use creature gameplay or avatar state.",
+      "outcome": "contradicted",
+      "status": "RESOLVED_SUPPORTED",
+      "classification": "cross_boundary",
+      "key_evidence": [
+        "At 0x00bff3ad, 0x01002bd0 returns DAT_016dc0fc before 0x00b1fdb0 at 0x00bff3b4.",
+        "DAT_016dc0fc is the published cSimulatorSpaceGame object, and its +0x54 field is mpHighLODPlanetSim, not mpAvatar.",
+        "The result at that site is compared with the inherited EBX sentinel and otherwise only enables a separate 0x00ff5b30 call; it is not dereferenced as a creature."
+      ]
+    }
+  ],
+  "adversarial_steps": [
+    {
+      "step": 1,
+      "name": "receiver-type-separation",
+      "hypothesis": "H6 versus H5",
+      "prediction": "If 0x00b1fdb0 is universally GetAvatar, every receiver must be noun-manager-shaped. A receiver with a different exact vtable/size and a different +0x54 field type falsifies that claim.",
+      "evidence_for": [
+        "Ten selected creature consumers obtain ECX from the 0x00b3d300 raw noun-root port and then call 0x00b1fdb0.",
+        "0x00b1fd50 receives a 0x00b3d300 result in its sampled callers and reference-manages +0x54.",
+        "0x00b21340 accepts that receiver family at cGameNounManager-layout noun fields, but this is a local type-contract result, not proof of DAT_0167eae0 publication or DAT_0167eb60 equality."
+      ],
+      "evidence_against": [
+        "0x00bff2d0 obtains ECX from 0x01002bd0 instead; that function returns DAT_016dc0fc.",
+        "0x010066e0 publishes DAT_016dc0fc using the 0xf0-byte cSimulatorSpaceGame cGonzagoSimulator vtable prefix, and 0x01006880 clears it on destruction.",
+        "cSimulatorSpaceGame+0x54 is mpHighLODPlanetSim, an intrusive_ptr<cSimPlanetHighLOD>, while cGameNounManager+0x54 is intrusive_ptr<cCreatureAnimal>."
+      ],
+      "independence": "The exception separator combines a direct call-site dataflow, a separately published global, constructor/destructor writes, vtable bytes, and structure-layout metadata. These were correlated observations from the same analysis session and shared type vocabulary, not independent subagents or independent source lineages.",
+      "repetition": "The ten b3d300-selected sites are repeated call-site evidence for one receiver family, not ten independent owner identities. The single exception is a distinct correlated observation that disproves universality; it does not resolve DAT_0167eae0 versus DAT_0167eb60 publication.",
+      "separator_result": "0x00b1fdb0 must remain a raw +0x54 accessor. Its semantic return type is receiver-dependent. The cCreatureAnimal contract is valid only for a receiver demonstrated to be cGameNounManager-layout; neither 0x00b3d300 publication nor 0x00b3d400/DAT_0167eb60 equality is established.",
+      "classification": "cross_boundary"
+    },
+    {
+      "step": 2,
+      "name": "pointer-versus-handle",
+      "hypothesis": "H4",
+      "prediction": "A stable ID or pool handle cannot be loaded as a vtable or passed to virtual AddRef/Release without prior resolution.",
+      "evidence_for": [
+        "0x00b1fdb0 returns a raw 32-bit owner field and does no lookup, generation check, or index resolution.",
+        "0x00d39360 carries the returned address in an action record and compares it by address."
+      ],
+      "evidence_against": [
+        "0x00d2e380 dereferences the returned value as a vtable and calls +0xd8.",
+        "0x00d2e580 dereferences +0xc0 and +0xb20; 0x00d2e4a0 dispatches +0x84.",
+        "0x00b1fd50 calls virtual +0x00/+0x04 on new/old words before/after the store."
+      ],
+      "independence": "The direct dereferences, virtual dispatch, and replacement sequence come from different bodies, but all were correlated in the same live-analysis session. They are mechanically distinct observations, not independent evidence sources.",
+      "repetition": "Several creature consumers repeat the same pointer-layout evidence; repetition strengthens the pointer result but does not independently prove the owner.",
+      "separator_result": "Integer ID, generation handle, tagged union, and pool index are rejected for the noun-manager return. The ABI remains pointer-like and borrowed.",
+      "classification": "simulation"
+    },
+    {
+      "step": 3,
+      "name": "owner-versus-borrower",
+      "hypothesis": "H1 versus H2",
+      "prediction": "If +0x54 is owned, a writer must retain the new value before publication and release the old value after replacement; the getter must not retain on every read.",
+      "evidence_for": [
+        "0x00b1fd50 clears old+0xb58 bit 0x200, sets new+0xb58 bit 0x200, then AddRefs/stores/Releases when the address changes.",
+        "0x00c099e0 creates a cCreatureAnimal-compatible object and installs it for the player/avatar path.",
+        "0x00ef10c0 clears +0x54 before destroying the saved old object."
+      ],
+      "evidence_against": [
+        "0x00b1fdb0 itself performs no AddRef, so a caller retaining the raw result beyond the next replacement would be unsafe.",
+        "Other noun/parent collections may retain the same creature, so +0x54 is not necessarily its only owner."
+      ],
+      "independence": "The exact local ownership mechanics come from the explicit virtual call order in 0x00b1fd50. Creation and reset bodies corroborate that sequence in the same session, not as independent evidence lineages; none closes root publication.",
+      "repetition": "Two direct writer callers both source the receiver through 0x00b3d300; this repeats one root port and is not independent proof of aliasing or live publication relative to 0x00b3d400.",
+      "separator_result": "For a live cGameNounManager-layout receiver, +0x54 is an intrusive current-selection slot and 0x00b1fdb0 returns its borrowed raw pointer. Same-pointer replacement performs no AddRef/store/Release; null replacement stores null and releases the old. The slot's publication through DAT_0167eae0 versus DAT_0167eb60 remains unresolved.",
+      "classification": "simulation"
+    },
+    {
+      "step": 4,
+      "name": "gameplay-versus-presentation-authority",
+      "hypothesis": "H3 versus H5",
+      "prediction": "If the noun pointer is a presentation proxy, direct consumers should resolve only model/animation/GFX state. Gameplay consumers should instead reach brain, locomotion, species, target, and action state, while presentation remains at cCreatureBase+0xb54 or separate GFX handles.",
+      "evidence_for": [
+        "0x00d2e4a0 calls creature vtable +0x84 with creature+0xb5c state.",
+        "0x00d2e580 reads species profile+0x61c and the locomotion subobject at creature+0xc0.",
+        "0x00d39360 checks ObjectTYPE kCreatureAnimal and pointer equality."
+      ],
+      "evidence_against": [
+        "The returned creature itself contains model, AnimatedCreature, model-world, audio, and effect fields, so object and presentation graph are not wholly disjoint.",
+        "The exact detach/rebuild order for cCreatureBase+0xb54 was not traced in this investigation."
+      ],
+      "independence": "Gameplay field access, vtable semantics, and creature structure fields are mechanically distinct but were collected in one same-session synthesis. Track-08's Cell GFX lifecycle is a separate artifact about a different domain, not independent proof of the noun pointer's meaning.",
+      "repetition": "The same creature object naturally appears in both gameplay and presentation paths; that is the hybrid reason, not evidence that the current pointer is presentation-only.",
+      "separator_result": "The noun pointer selects authoritative runtime gameplay state that also links to presentation. Presentation is a dependent association, not the meaning of owner+0x54.",
+      "classification": "cross_boundary"
+    },
+    {
+      "step": 5,
+      "name": "current-pointer-versus-stable-identity",
+      "hypothesis": "H1 and H4",
+      "prediction": "A stable entity identity would use a noun/definition ID, pool index, or generation. A current selection instead can be null or change while action records carry only the old raw address.",
+      "evidence_for": [
+        "0x00b1fd50 can replace or clear the word with no generation field at +0x54.",
+        "0x00d2e8a0 stores the current address in an action record; 0x00d39360 later compares that address to a fresh current value.",
+        "0x00ef10c0 saves, clears, and destroys the previous current object during a reset path."
+      ],
+      "evidence_against": [
+        "cCreatureBase has definition/political IDs and a serializable interface, but the current-selection word is not proven to encode any of them.",
+        "A current pointer can remain stable between transitions, but stability is temporal rather than a persistent handle contract."
+      ],
+      "independence": "The replacement body, action-record producer/consumer pair, and reset body are different control-flow paths, but all are correlated same-session static observations rather than independent sources.",
+      "repetition": "Pointer equality in several action branches is repeated branch behavior, not evidence of a persistent identifier.",
+      "separator_result": "owner+0x54 is current raw-object selection. No generation, pool index, or durable avatar ID is established at this field.",
+      "classification": "simulation"
+    },
+    {
+      "step": 6,
+      "name": "replacement-and-despawn-separation",
+      "hypothesis": "H1 and H5",
+      "prediction": "Replacing the current selection, destroying the noun object, and rebuilding a Cell pool avatar are separate lifecycle operations.",
+      "evidence_for": [
+        "0x00b1fd50 implements atomic current-slot replacement with refcount operations and no destruction.",
+        "0x00c099e0 creates/configures a creature and then installs it as current.",
+        "0x00ef10c0 clears the current slot before the old object destruction path.",
+        "Cell despawn 0x00e780a0 clears cCellGame+0x411c only when the index matches, releases GFX/query state, optionally creates a replacement, and releases the pool entry."
+      ],
+      "evidence_against": [
+        "The exact mode-level order between noun avatar teardown, persistence handoff, and presentation shutdown is not runtime-observed.",
+        "Cell and noun lifecycles can be coordinated by one mode, which can make the operations look merged from a caller."
+      ],
+      "independence": "The noun writer, noun creator, noun reset, and Cell pool lifecycle are separate function bodies and state owners. The noun observations are same-session correlated evidence; the Cell evidence comes from a separate historical synthesis and concerns a different owner.",
+      "repetition": "Many Cell despawn callers repeat the same pool cleanup, but that repetition does not establish noun-object destruction.",
+      "separator_result": "Current-slot replacement, noun-object destruction, Cell despawn, and Cell reload/rebuild are distinct transitions.",
+      "classification": "cross_boundary"
+    },
+    {
+      "step": 7,
+      "name": "pool-and-index-separation",
+      "hypothesis": "H5",
+      "prediction": "The noun current avatar must not be represented by the Cell avatar index. The Cell current player is a local pool index; the noun current avatar is a retained cross-stage object pointer.",
+      "evidence_for": [
+        "cGameNounManager+0x54 is intrusive_ptr<cCreatureAnimal>; cCellGame+0x411c is cObjectPoolIndex into a 4096-slot cCellObjectData pool.",
+        "Cell movement/despawn resolves the index through pool lookup, while creature progression functions call 0x00b1fdb0 for a cCreature pointer.",
+        "0x00d39360 stores/compares the noun creature address, not a Cell pool index."
+      ],
+      "evidence_against": [
+        "Both domains use the word avatar and both are player-facing current selections, which invites accidental conflation.",
+        "The historical current-source approximation uses a scene player and has no original noun-pointer counterpart."
+      ],
+      "independence": "The two layouts and two resolution mechanisms are direct, separate observations, but they were synthesized in the same session and share the same SDK/type vocabulary; they are not independent source lineages.",
+      "repetition": "The name similarity is repeated evidence of a semantic parallel, not object identity.",
+      "separator_result": "Native evidence establishes that the noun-layout path carries a raw cCreatureAnimal reference while Cell carries a pool index. Introducing a stable gameplay EntityId is a modern replacement recommendation, not a recovered native contract.",
+      "classification": "simulation"
+    },
+    {
+      "step": 8,
+      "name": "presentation-and-save-boundary",
+      "hypothesis": "H3 and H5",
+      "prediction": "The raw owner pointer, render handles, and Cell pool slot should not be serialized as save state. Save candidates should use noun/definition/content identities and serializable records, then reconstruct runtime pointers and presentation.",
+      "evidence_for": [
+        "cGameNounManager's primary interface is a message listener/strategy/runtime manager, while cCreatureBase exposes Write/Read slots and cGameData-derived records are serializable candidates.",
+        "cCreatureBase+0xb54, model handles, cCellGFX, and cCellGame pool state are runtime presentation/runtime structures.",
+        "cCellGame+0x5190 separately holds cCellSerializableData; cCreatureGameData is a separate progression object with no direct serializer or cross-stage handoff established."
+      ],
+      "evidence_against": [
+        "No positive original save/load trace or field-level round trip is available.",
+        "The exact noun record that recreates a current creature and the ordering relative to mode restoration remain unresolved."
+      ],
+      "independence": "Vtable/layout eligibility, Cell serialization separation, and persistence synthesis are separate artifacts, but several reuse the same Ghidra/SDK exports and are not independent votes. Current-source comparison is not original-binary evidence.",
+      "repetition": "Several reports state the content/runtime/save split; those repetitions share static limitations and are not independent runtime proof.",
+      "separator_result": "Native evidence establishes separate runtime owners, cCreatureBase/cGameData serializable eligibility, and separate Cell serialization state, but it does not establish the emitted save field set. The recommendation not to persist owner+0x54, presentation handles, or Cell pool indices is modern architecture guidance until a save writer/load trace proves the native treatment.",
+      "classification": "persistent_content"
+    },
+    {
+      "step": 9,
+      "name": "architecture-dependence-and-smallest-separator",
+      "hypothesis": "H5",
+      "prediction": "A conclusion depending only on x86 pointer width or offset coincidence should change when the receiver class changes. A conclusion supported by explicit dereference, virtual refcount, store, and release instructions should remain architecture-deciding.",
+      "evidence_for": [
+        "The 32-bit architecture fixes pointer and vtable-slot width at four bytes.",
+        "The exceptional receiver changes the semantic type at the same +0x54 offset, proving that the raw body is not a universal semantic accessor.",
+        "0x00b1fd50's AddRef/store/Release order and the consumer dereferences are instruction-level facts independent of the SDK name."
+      ],
+      "evidence_against": [
+        "The exact source-level reason for identical bodies at 0x00b1fdb0 and 0x01002bd0 may be intentional sharing or linker ICF and is not proven.",
+        "The formal hidden-register ABI of 0x00bff2d0 and a few decompiler signatures is imperfect."
+      ],
+      "independence": "The static separator used direct Ghidra assembly, global publication/destruction, structure layouts, and consumer type evidence. These are correlated same-session observations, not independent sources; the direct instruction sequence is stronger than the typed root-publication inference.",
+      "repetition": "The same offset appears in two unrelated types; that repetition is the reason not to infer semantics from offset alone.",
+      "separator_result": "The local +0x54 architecture boundary is resolved conditionally by receiver layout. Root publication/liveness/equality for DAT_0167eae0 versus DAT_0167eb60 remains unresolved under follow-up-03. Runtime was not performed because it would not change the local accessor/refcount mechanics, but it remains necessary for root equality, phase, teardown, and save restoration.",
+      "classification": "cross_boundary"
+    }
+  ],
+  "smallest_separator": {
+    "performed": true,
+    "kind": "static_receiver_provenance_and_refcount_snapshot",
+    "runtime": false,
+    "exceptional_receiver_trace": [
+      {
+        "address": "0x00bff3ad",
+        "instruction": "call 0x01002bd0"
+      },
+      {
+        "address": "0x01002bd0",
+        "instruction": "mov eax, dword ptr [0x016dc0fc]; ret"
+      },
+      {
+        "address": "0x00bff3b2",
+        "instruction": "mov ecx, eax"
+      },
+      {
+        "address": "0x00bff3b4",
+        "instruction": "call 0x00b1fdb0"
+      },
+      {
+        "address": "0x00bff3b9",
+        "instruction": "cmp eax, ebx"
+      },
+      {
+        "address": "0x00bff3c0",
+        "instruction": "call 0x00ff5b30 after pushing the caller's separate object; 0x00ff5b30 does not consume the high-LOD pointer in ECX"
+      }
+    ],
+    "exceptional_receiver_publication": [
+      "0x010066e0 sets the cGonzagoSimulator/cSimulatorSpaceGame vtable prefix and writes DAT_016dc0fc at 0x010067f0.",
+      "0x01006880 clears DAT_016dc0fc at 0x010068c4.",
+      "The parent construction path 0x00fda750 allocates/stores the 0xf0-byte object at parent+0x15c through the 0x010066e0 constructor."
+    ],
+    "exceptional_field": "cSimulatorSpaceGame+0x54 = intrusive_ptr<cSimPlanetHighLOD> mpHighLODPlanetSim",
+    "noun_manager_receiver_trace": [
+      "0x00b3d300 returns the raw value in DAT_0167eae0; it is a noun-manager-compatible alternate port, not a proven live singleton publication.",
+      "The selected 0x00d2e4a0, 0x00d2e580, 0x00d2e8a0, and 0x00d39360 paths use 0x00b3d300's result as ECX for 0x00b1fdb0.",
+      "0x00b20c60 and 0x00b21340 use the same receiver family at cGameNounManager offsets +0x78/+0x7c, +0x98/+0x9c, and +0x10c/+0x110.",
+      "Follow-up-03 found no direct or bounded computed writer for DAT_0167eae0 or DAT_0167eb60, no cross-accessor equality, and no publication/teardown state; value aliasing remains open."
+    ],
+    "refcount_chain": [
+      {
+        "address": "0x00b1fd53",
+        "action": "load old = owner+0x54"
+      },
+      {
+        "address": "0x00b1fd5c",
+        "action": "if old != 0, clear old+0xb58 bit 0x200"
+      },
+      {
+        "address": "0x00b1fd6e",
+        "action": "if new != 0, set new+0xb58 bit 0x200"
+      },
+      {
+        "address": "0x00b1fd7b",
+        "action": "if old == new, skip replacement"
+      },
+      {
+        "address": "0x00b1fd89",
+        "action": "call new vtable+0x00 (AddRef)"
+      },
+      {
+        "address": "0x00b1fd8b",
+        "action": "store new at owner+0x54"
+      },
+      {
+        "address": "0x00b1fd99",
+        "action": "call old vtable+0x04 (Release)"
+      }
+    ],
+    "result": "The separator proves that one tiny accessor body serves type-specific +0x54 semantics. On a live noun-manager-layout receiver, +0x54 is a retained current-creature selection; the separately published DAT_016dc0fc path is a high-LOD planet simulation pointer. This does not establish DAT_0167eae0 versus DAT_0167eb60 publication, liveness, teardown, or value equality. Runtime is not needed for the local accessor/refcount decision, but is needed for those root-level questions."
+  },
+  "ownership_lifetime_matrix": {
+    "classification_vocabulary": [
+      "simulation",
+      "presentation",
+      "persistent_content",
+      "cross_boundary"
+    ],
+    "rows": [
+      {
+        "concept": "cGameNounManager owner A from 0x00b3d300 / DAT_0167eae0",
+        "owner": "cGameNounManager-layout raw noun-root port when published",
+        "classification": "simulation",
+        "authority": "current noun selection, noun lists/maps, object materialization when the port is live and the receiver has the demonstrated layout",
+        "lifetime": "publication/liveness/teardown unresolved; object ownership mechanics are local to the receiver",
+        "addresses": ["0x00b3d300", "0x00b20c60", "0x00b21340"],
+        "limit": "Follow-up-03 found no writer and no equality; this is not a proven runtime singleton."
+      },
+      {
+        "concept": "cGameNounManager owner B from 0x00b3d400 / DAT_0167eb60",
+        "owner": "SDK-named cGameNounManager raw noun-root port",
+        "classification": "cross_boundary",
+        "authority": "named noun-manager service and indirect saved-noun handoff when published",
+        "lifetime": "publication/liveness/teardown unresolved; raw accessor performs no ownership transfer",
+        "addresses": ["0x00b3d400"],
+        "limit": "Must not be merged with DAT_0167eae0; follow-up-03 found no cross-accessor equality and no writer."
+      },
+      {
+        "concept": "cGameNounManager+0x54 on owner A",
+        "owner": "owner A intrusive_ptr<cCreatureAnimal> when the receiver is noun-layout",
+        "classification": "simulation",
+        "authority": "one current player/avatar runtime selection",
+        "lifetime": "retained until replaced/cleared by the demonstrated writer; object may outlive selection through other owners",
+        "addresses": ["0x00b1fdb0", "0x00b1fd50", "0x00ef10c0"],
+        "limit": "The port value in DAT_0167eae0 is not known to be published or live; the field contract is conditional."
+      },
+      {
+        "concept": "0x00b1fdb0 return",
+        "owner": "no retained caller ownership",
+        "classification": "cross_boundary",
+        "authority": "borrowed raw receiver+0x54 value; semantic type depends on receiver",
+        "lifetime": "valid only while the corresponding owner/publication remains valid",
+        "addresses": ["0x00b1fdb0", "0x01002bd0", "0x00bff2d0"]
+      },
+      {
+        "concept": "cCreatureBase/cCreatureAnimal runtime object",
+        "owner": "noun manager/list/parent intrusive graph; current slot is one owner",
+        "classification": "simulation",
+        "authority": "definition/political identity, locomotion, target, health, species, gameplay state",
+        "lifetime": "intrusive object lifetime until final owner release",
+        "addresses": ["0x00c099e0", "0x00b225d0", "0x00ef10c0", "cCreatureBase", "cCreatureAnimal"]
+      },
+      {
+        "concept": "cGameNounManager mNouns/mObjects and parent collections",
+        "owner": "noun manager and parent/group collections",
+        "classification": "cross_boundary",
+        "authority": "runtime object graph and noun ownership beyond current selection",
+        "lifetime": "until list/vector removal and final Release",
+        "addresses": ["0x00b20c60", "0x00c099e0", "0x00b225d0"]
+      },
+      {
+        "concept": "cCreatureBase+0xb54 mpAnimatedCreature",
+        "owner": "creature-held intrusive presentation association",
+        "classification": "presentation",
+        "authority": "animated skeleton/pose/controller association",
+        "lifetime": "detachable/rebuildable; exact original detach sequence deferred",
+        "addresses": ["cCreatureBase+0xb54"]
+      },
+      {
+        "concept": "cCreatureBase+0x150 model key and +0x15c/+0x160 model handles",
+        "owner": "content identity plus runtime graphics association",
+        "classification": "cross_boundary",
+        "authority": "stable model identity and presentation resource handles",
+        "lifetime": "content identity outlives one loaded model/world handle",
+        "addresses": ["cCreatureBase+0x150", "cCreatureBase+0x15c", "cCreatureBase+0x160"]
+      },
+      {
+        "concept": "action record built by 0x00d2e8a0",
+        "owner": "transient cCreatureModeStrategy action/event record",
+        "classification": "cross_boundary",
+        "authority": "target raw avatar address, related cCreatureAnimal pointer, point amount",
+        "lifetime": "until action dispatch/comparison",
+        "addresses": ["0x00d2e8a0", "0x00d39360"]
+      },
+      {
+        "concept": "cCellGame+0x411c mAvatarCellIndex",
+        "owner": "Cell mode cCellGame",
+        "classification": "simulation",
+        "authority": "current Cell player pool identity",
+        "lifetime": "Cell pool allocation; cleared on matching despawn/rebuild",
+        "addresses": ["cCellGame+0x411c", "0x00e780a0", "0x00e7fd00"]
+      },
+      {
+        "concept": "cCellObjectData+0x248 GFX association",
+        "owner": "Cell gameplay record to cCellGFX association",
+        "classification": "presentation",
+        "authority": "replaceable visual object association",
+        "lifetime": "detached/released before pool-object release",
+        "addresses": ["cCellObjectData+0x248", "0x00e780a0"]
+      },
+      {
+        "concept": "cSimulatorSpaceGame+0x54 mpHighLODPlanetSim",
+        "owner": "cSimulatorSpaceGame intrusive_ptr<cSimPlanetHighLOD>",
+        "classification": "simulation",
+        "authority": "Space high-LOD planet simulation pointer",
+        "lifetime": "Space-mode simulation object; not avatar",
+        "addresses": ["0x01002bd0", "0x010066e0", "0x01006880", "0x00bff2d0"]
+      },
+      {
+        "concept": "result vtable+0xd8",
+        "owner": "cCreatureBase virtual interface",
+        "classification": "simulation",
+        "authority": "GetCurrentBrainLevel slot",
+        "lifetime": "code/vtable, not object data",
+        "addresses": ["0x00d2e380", "cCreatureBase__vftable+0xd8"]
+      },
+      {
+        "concept": "species-profile+0x55c",
+        "owner": "cSpeciesProfile returned by 0x004df420",
+        "classification": "simulation",
+        "authority": "unknown species/profile float consumed for avatar normalization",
+        "lifetime": "profile data, not owner+0x54 result",
+        "addresses": ["0x004df420", "0x004df550", "0x00d2e720"],
+        "layout_note": "Use the conflict-adjudicated 0xA18 runtime size. The imported 0xEEC Ghidra cSpeciesProfile projection is superseded/quarantined; +0x55c remains semantically unnamed."
+      },
+      {
+        "concept": "cGameData/cCreatureBase serializable slots",
+        "owner": "serializable noun/object record architecture",
+        "classification": "persistent_content",
+        "authority": "Write/Read eligibility and noun/object state restoration",
+        "lifetime": "save representation, distinct from owner pointer and presentation",
+        "addresses": ["cCreatureBase__vftable+0x10", "cCreatureBase__vftable+0x14"]
+      },
+      {
+        "concept": "cCreatureGameData",
+        "owner": "global progression object at 0x0169e370",
+        "classification": "cross_boundary",
+        "authority": "brain level, evolution points, ability mode, learned abilities, glide state",
+        "lifetime": "mode/runtime progression with unresolved save handoff",
+        "addresses": ["0x0169e370", "0x00d2e380", "0x00d2e4a0", "0x00d2e8a0"]
+      },
+      {
+        "concept": "cCellSerializableData",
+        "owner": "Cell mode serializable state holder",
+        "classification": "cross_boundary",
+        "authority": "Cell player key, progression, counters, missions, telemetry candidate",
+        "lifetime": "runtime plus save candidate; independent from noun pointer",
+        "addresses": ["cCellGame+0x5190", "cCellSerializableData"]
+      },
+      {
+        "concept": "cGamePersistenceManager",
+        "owner": "runtime save/load orchestration service",
+        "classification": "cross_boundary",
+        "authority": "saved-game transaction/header/load context orchestration",
+        "lifetime": "runtime service; concrete writer/round trip unresolved",
+        "addresses": ["0x00b3d440"]
+      }
+    ]
+  },
+  "field_adjudications": [
+    {
+      "field": "cGameNounManager+0x54",
+      "adjudication": "owned current intrusive_ptr<cCreatureAnimal> conditional on a live cGameNounManager-layout receiver returned through 0x00b3d300; 0x00b1fdb0 itself is a raw borrowed read",
+      "confidence": "high local mechanics; unresolved DAT_0167eae0 publication and DAT_0167eb60 equality"
+    },
+    {
+      "field": "cSimulatorSpaceGame+0x54",
+      "adjudication": "mpHighLODPlanetSim, not mpAvatar",
+      "confidence": "high"
+    },
+    {
+      "field": "result+0xd8",
+      "adjudication": "cCreatureBase vtable slot GetCurrentBrainLevel, not a result-object field",
+      "confidence": "high"
+    },
+    {
+      "field": "result+0x55c",
+      "adjudication": "rejected as an owner+0x54 result field; 0x00d2e720 discards 0x00b1fdb0's return and reads +0x55c on cSpeciesProfile returned by 0x004df420. The cSpeciesProfile runtime size is 0xA18 by conflict adjudication; the imported 0xEEC Ghidra layout is superseded/quarantined. The +0x55c field meaning remains unknown.",
+      "confidence": "high pointer separation and runtime-size selection; field semantics unknown"
+    },
+    {
+      "field": "cCreatureBase+0xb54",
+      "adjudication": "separate intrusive AnimatedCreature presentation association",
+      "confidence": "high structure; exact detach timing limited"
+    },
+    {
+      "field": "cCellGame+0x411c",
+      "adjudication": "Cell-local cObjectPoolIndex, not the noun avatar pointer",
+      "confidence": "high"
+    }
+  ],
+  "layout_adjudications": {
+    "cSpeciesProfile": {
+      "selected_runtime_size": "0xA18",
+      "supersedes": "Imported 0xEEC Ghidra projection",
+      "basis": [
+        "0x004df440 and 0x004df550 request 0xA18 for Simulator/cSpeciesProfile allocation paths.",
+        "0x004d3dd0 initializes fixed-vector state through +0xA17, and the SDK header asserts 0xA18.",
+        "The conflict-adjudication record explicitly supersedes/quarantines the 0xEEC projection."
+      ],
+      "effect_on_track_07": "The +0x55c read in 0x00d2e720 is within the selected runtime object and is independent of the 0x00b1fdb0 result. Its semantic field name remains unknown.",
+      "local_layout_rule": "Do not use a locally imported 0xEEC cSpeciesProfile type as authoritative; if a local type is still 0xEEC, treat it as stale metadata and qualify the claim."
+    }
+  },
+  "resolution": {
+    "overall_status": "RESOLVED_SUPPORTED_WITH_LIMIT",
+    "conflict_record_resolution_status": "preferred_claim_with_limit",
+    "merge_decision": "separate_by_scope",
+    "native_contract_decision": "At the instruction/layout level, 0x00b1fdb0 is a raw +0x54 reader. On a receiver demonstrated to be cGameNounManager-layout, 0x00b1fd50 reference-manages a current cCreatureAnimal selection. The separately published DAT_016dc0fc path is a cSimulatorSpaceGame-shaped parent/context whose +0x54 field is mpHighLODPlanetSim. The tiny accessor is not globally GetAvatar.",
+    "modern_architecture_recommendation": "Expose receiver-typed ports and lifecycle events; if a replacement design uses a stable gameplay EntityId, label that as modern architecture rather than a native recovered field. Do not merge DAT_0167eae0 and DAT_0167eb60, and keep presentation, Cell pool identity, and save state separate until their contracts are proven.",
+    "resolved": [
+      "For a live cGameNounManager-layout receiver, +0x54 is reference-managed as one current cCreatureAnimal through AddRef/store/Release replacement; the root port that supplies that receiver is not publication-closed.",
+      "0x00b1fdb0 is a raw borrowed +0x54 reader and not a globally typed avatar getter.",
+      "The separately published 0x01002bd0/DAT_016dc0fc receiver is a cSimulatorSpaceGame-shaped parent/context and its +0x54 field is mpHighLODPlanetSim.",
+      "cCreatureBase/cCreatureAnimal is the runtime gameplay object on the noun-layout path; cCreatureBase+0xb54 is a separate presentation association.",
+      "The current noun-layout pointer is nullable, replaceable, and has no observed generation/durable-ID semantics.",
+      "Cell mAvatarCellIndex and its pool/presentation lifecycle are separate from noun-layout avatar ownership.",
+      "result vtable+0xd8 is GetCurrentBrainLevel; the old result+0x55c association is rejected.",
+      "Native evidence establishes separate runtime/presentation/Cell/save layers and serializable eligibility, but not the exact save field set or whether a raw current pointer is emitted."
+    ],
+    "not_resolved": [
+      "Follow-up-03 leaves DAT_0167eae0 and SDK-named DAT_0167eb60 as physically distinct words with unresolved publication, unpublication/teardown, liveness, and value equality; no direct or bounded computed writer was found.",
+      "The eleven noun co-call functions do not prove equality because no cross-accessor comparison was recovered.",
+      "The exact source-level identity of 0x00b1fd50 versus dead SDK address 0x00b1fca0; mechanics are authoritative, symbol relocation/name identity is not.",
+      "Complete owner multiplicity and destruction order across cGameNounManager lists, parent collections, current slot, and external references.",
+      "Exact detach/rebuild sequence for cCreatureBase+0xb54 AnimatedCreature and model/world handles.",
+      "Which concrete noun records are written/read to recreate the current creature and how cCreatureGameData synchronizes across stage/save transitions.",
+      "The meaning of cSpeciesProfile+0x55c and cCreatureBase+0xb58 bit 0x200 beyond current-avatar selection behavior.",
+      "Positive original runtime timing for root publication, replacement, mode teardown, and save/load restoration."
+    ],
+    "runtime_resolution": "NOT_REQUIRED_FOR_ARCHITECTURE_BOUNDARY_NOT_PERFORMED",
+    "persistence_resolution": "INSUFFICIENT_EVIDENCE_FOR_FIELD_COVERAGE_AND_ROUND_TRIP",
+    "architecture_dependency": "yes"
+  },
+  "minimum_semantics": {
+    "owner_and_selection": [
+      "Conditional native contract: if the receiver is a live cGameNounManager-layout object, +0x54 is an intrusive current cCreatureAnimal selection.",
+      "Replacement is AddRef-new, store-new, Release-old; equal pointers do not churn references; null is a valid stored value.",
+      "0x00b1fdb0 returns a borrowed raw pointer and must not imply caller ownership.",
+      "Follow-up-03 does not establish that DAT_0167eae0 is published, live, equal to DAT_0167eb60, or torn down through a particular path."
+    ],
+    "receiver_typing": [
+      "The accessor body is offset-generic and must not carry one universal return type.",
+      "0x00b3d300 is a noun-manager-compatible raw root port; its result is conditionally a cGameNounManager-layout current-avatar receiver.",
+      "0x01002bd0 is a separately published cSimulatorSpaceGame-shaped parent/context receiver whose +0x54 is a high-LOD planet-sim pointer.",
+      "0x00b3d400/DAT_0167eb60 is a separate named noun-root port; equality, publication, and teardown remain unresolved."
+    ],
+    "gameplay_state": [
+      "cCreatureBase/cCreatureAnimal contains authoritative runtime identity, locomotion, target, health, species, and interaction state.",
+      "cCreatureGameData contains separate progression state; the current pointer is not the whole save/progression state.",
+      "Action records carry raw target addresses for short-lived routing and are not durable identity."
+    ],
+    "presentation": [
+      "Model ResourceKey/content identity is separate from model/world handles and AnimatedCreature.",
+      "cCreatureBase+0xb54 is the presentation association; it may be rebuilt without changing noun/progression identity.",
+      "Cell GFX index, UI, world, and effect handles remain presentation proxies separate from the noun object."
+    ],
+    "pool_and_despawn": [
+      "cCellGame+0x411c is a Cell pool index and must not alias the noun avatar pointer.",
+      "Cell despawn, GFX detach, optional replacement, pool release, and stage rebuild are separate transitions.",
+      "Noun current-slot clear and old-object destruction are separate from Cell despawn."
+    ],
+    "save_boundary": [
+      "Native evidence establishes cCreatureBase/cGameData serializable eligibility and separate cCellSerializableData state, not the exact emitted field set.",
+      "Whether owner+0x54, presentation handles, or Cell pool indices are ever written/read is unresolved without a writer/load trace.",
+      "A reconstruction boundary for noun objects, current selection, Cell pool state, and presentation is a modern architecture recommendation, not a recovered native save contract."
+    ],
+    "modern_recommendations": [
+      "Expose a stable gameplay EntityId internally only if a replacement architecture needs one; do not present it as a native owner+0x54 field or ABI.",
+      "Keep noun-root ports, object references, Cell pool indices, presentation handles, and save candidates as explicit separate domains.",
+      "Treat DAT_0167eae0 and DAT_0167eb60 as separate ports until a positive publication/equality observation closes them."
+    ],
+    "field_specific": [
+      "vtable+0xd8 is GetCurrentBrainLevel.",
+      "cSpeciesProfile+0x55c is a separate normalization input and must not be attached to the root result; its field name remains unknown.",
+      "The selected cSpeciesProfile runtime size is 0xA18; the imported 0xEEC projection is superseded/quarantined.",
+      "cCreatureBase+0xb58 bit 0x200 is updated on old/new current-avatar selection, but its semantic name remains deferred."
+    ]
+  },
+  "exact_dependent_decisions": [
+    {
+      "id": "D1",
+      "decision": "Do not declare 0x00b1fdb0 globally as cGameNounManager::GetAvatar; expose a raw +0x54 accessor and type it at each receiver boundary.",
+      "depends_on": ["0x00b1fdb0", "0x01002bd0", "0x00bff2d0", "cSimulatorSpaceGame+0x54"]
+    },
+    {
+      "id": "D2",
+      "decision": "For a receiver proven cGameNounManager-layout, model owner+0x54 as a retained current cCreatureAnimal selection and accessor results as borrowed; treat 0x00b3d300 publication/liveness as a separate root-port lifecycle fact.",
+      "depends_on": ["0x00b3d300", "0x00b1fdb0", "0x00b1fd50", "cGameNounManager+0x54", "followup-03-root-publication"]
+    },
+    {
+      "id": "D3",
+      "decision": "Implement replacement semantics as new AddRef -> store -> old Release, with equal-address no-op and null clear support.",
+      "depends_on": ["0x00b1fd53-0x00b1fd99", "0x00c099e0", "0x00ef10c0"]
+    },
+    {
+      "id": "D4",
+      "decision": "Keep DAT_0167eae0 and DAT_0167eb60 as separate noun-root ports with independent publication, liveness, and teardown hypotheses; do not infer equality from the noun-layout consumer or co-call topology.",
+      "depends_on": ["0x00b3d300", "0x00b3d400", "DAT_0167eae0", "DAT_0167eb60", "followup-03-root-publication"]
+    },
+    {
+      "id": "D5",
+      "decision": "Keep cCreature gameplay state, cCreatureGameData progression, cCreatureBase+0xb54 AnimatedCreature, model keys, and model/world handles in separate domains.",
+      "depends_on": ["cCreatureBase", "cCreatureAnimal", "cCreatureGameData", "0x00d2e4a0", "0x00d2e580"]
+    },
+    {
+      "id": "D6",
+      "decision": "Native contract: the observed noun-layout current value is a raw pointer compared by address, with no observed generation or durable-ID field. A stable gameplay EntityId is a modern replacement recommendation only.",
+      "depends_on": ["0x00b1fd50", "0x00d2e8a0", "0x00d39360"]
+    },
+    {
+      "id": "D7",
+      "decision": "Keep noun avatar object identity separate from cCellGame+0x411c Cell pool identity and cCellObjectData+0x248 GFX association.",
+      "depends_on": ["cGameNounManager+0x54", "cCellGame+0x411c", "0x00e780a0", "0x00e7fd00"]
+    },
+    {
+      "id": "D8",
+      "decision": "Model noun current-slot clear, object destruction, Cell despawn, and stage rebuild as separate lifecycle transitions.",
+      "depends_on": ["0x00b1fd50", "0x00ef10c0", "0x00b225d0", "0x00e780a0", "0x00e7fd00"]
+    },
+    {
+      "id": "D9",
+      "decision": "Native contract: serializable eligibility and separate runtime state are observed, but the save writer/read field set is unresolved. Modern recommendation: keep raw current pointers, presentation handles, and pool indices out of a universal save record until proven otherwise.",
+      "depends_on": ["cCreatureBase__vftable+0x10/+0x14", "cCreatureGameData", "cCellSerializableData", "cGamePersistenceManager", "followup-03-root-publication"]
+    },
+    {
+      "id": "D10",
+      "decision": "Freeze vtable+0xd8 as GetCurrentBrainLevel and reject result+0x55c; model +0x55c on cSpeciesProfile only.",
+      "depends_on": ["0x00d2e380", "0x00d2e720", "0x004df420", "0x004df550"]
+    },
+    {
+      "id": "D11",
+      "decision": "Treat the 0x00bff2d0 high-LOD pointer as a Space-simulation availability/selection value, never as an avatar fallback.",
+      "depends_on": ["0x00bff3ad-0x00bff3c0", "0x01002bd0", "cSimulatorSpaceGame+0x54"]
+    },
+    {
+      "id": "D12",
+      "decision": "Modern replacement architecture may introduce a stable gameplay EntityId, but this is not an original native contract and must not be used to collapse noun-root publication, object references, or Cell pool identity.",
+      "depends_on": ["0x00b1fdb0", "0x00b1fd50", "cCellGame+0x411c", "followup-03-root-publication"]
+    }
+  ],
+  "freeze_defer": {
+    "freeze": [
+      "0x00b1fdb0 exact body: return *(uint32_t*)(ECX+0x54), with no AddRef/Release.",
+      "0x00b1fd50 exact reference order and +0xb58 bit 0x200 old/new update.",
+      "Conditional native noun-layout +0x54 contract: intrusive_ptr<cCreatureAnimal> current selection and borrowed accessor result when the receiver is live and noun-layout.",
+      "0x01002bd0/DAT_016dc0fc as a separate cSimulatorSpaceGame-shaped parent/context publication and +0x54 as mpHighLODPlanetSim.",
+      "0x00b3d300 and 0x00b3d400 as separate noun-root ports; their publication, liveness, teardown, and value equality remain unfrozen.",
+      "cCreatureBase 0xfc0 and cCreatureAnimal 0x16a0 layout-prefix relationship; virtual AddRef/Release at +0/+4 and Write/Read at +0x10/+0x14.",
+      "result vtable+0xd8 = GetCurrentBrainLevel; +0x55c is not a root-result field.",
+      "cCreatureBase+0xb54 AnimatedCreature presentation association.",
+      "cCellGame+0x411c avatar pool index and separate GFX association/lifecycle.",
+      "Raw current pointer is nullable, replaceable, and not a durable identity handle."
+    ],
+    "defer": [
+      "DAT_0167eae0 versus DAT_0167eb60 publication, alias, phase, liveness, and teardown semantics; follow-up-03 found no direct or bounded computed writer and no cross-accessor equality.",
+      "Exact 0x00b1fd50 source symbol/relocation identity versus SDK SetAvatar 0x00b1fca0.",
+      "Complete reference graph and destruction order across current slot, noun lists, parent/group vectors, and external consumers.",
+      "Exact cCreatureBase+0xb54 AnimatedCreature and model/world detach/rebuild ordering.",
+      "Complete null classification across all 303 direct caller functions beyond the selected paths.",
+      "Species-profile+0x55c and cCreatureBase+0xb58 bit 0x200 semantic names.",
+      "Concrete noun/cCreature Write/Read field set, pointer tables, save/load order, version/migration, and round trip.",
+      "Cross-mode synchronization between cCreatureGameData, Cell serializable state, noun records, and current pointer restoration.",
+      "Runtime timing of manager publication, avatar replacement, presentation rebuild, and teardown."
+    ]
+  },
+  "blockers": [
+    {
+      "id": "B1",
+      "priority": "critical",
+      "blocker": "Follow-up-03 leaves the two noun root words DAT_0167eae0 and DAT_0167eb60 physically distinct but publication-, liveness-, teardown-, and value-equality-closed only as unresolved states: five direct reads, zero direct writers, zero bounded computed stores, and no cross-accessor comparison.",
+      "next_observation": "Positive runtime or a newly identified opaque publisher/registration path for both noun ports, with one value-equality observation and one mode-transition publication/teardown observation; no direct SPORE filesystem access."
+    },
+    {
+      "id": "B2",
+      "priority": "high",
+      "blocker": "0x00b1fd50 mechanics are exact but its relationship to dead SDK address 0x00b1fca0 and any source relocation/ICF identity is unresolved.",
+      "next_observation": "Read-only PE symbol/relocation and adjacent function-boundary analysis around 0x00b1fca0-0x00b1fd50."
+    },
+    {
+      "id": "B3",
+      "priority": "high",
+      "blocker": "The complete owner multiplicity of cCreatureAnimal is not closed beyond current slot, noun lists, and sampled parent vector insertion.",
+      "next_observation": "One creation-to-final-release trace covering current slot AddRef/Release, mNouns/mObjects links, parent vector membership, herd, and mode teardown."
+    },
+    {
+      "id": "B4",
+      "priority": "high",
+      "blocker": "cCreature presentation detach/rebuild is structurally separated but not lifecycle-closed at cCreatureBase+0xb54 and model/world fields.",
+      "next_observation": "One creature model reload path tracing model key resolution, AnimatedCreature creation/AddRef/store/Release, gameplay pointer continuity, and current-slot continuity."
+    },
+    {
+      "id": "B5",
+      "priority": "high",
+      "blocker": "No positive save/load trace proves which noun/progression records recreate the current avatar or how raw pointers are reconstructed.",
+      "next_observation": "One original save write and load read tracing serialized noun identity, cCreatureGameData or equivalent progression, mode restoration, cGameNounManager current-slot assignment, and presentation creation."
+    },
+    {
+      "id": "B6",
+      "priority": "medium",
+      "blocker": "The null contract differs by consumer and the root has multiple receiver types.",
+      "next_observation": "Receiver-typed caller classification that records, per owner domain, whether null is tested before first dereference and which lifecycle phases guarantee non-null."
+    }
+  ],
+  "supporting_evidence_streams": [
+    {
+      "stream": "ghidra_decomp_callgraph_receiver_provenance",
+      "scope": ["0x00b1fdb0", "0x00b1fd50", "0x00b3d300", "0x00b3d400", "0x00b21340", "0x00b20c60", "0x00c099e0", "0x00ef10c0"],
+      "result": "Correlated same-session support for the conditional noun-layout current selection, explicit local refcount mechanics, and reset/destruction order; it does not establish root publication or equality."
+    },
+    {
+      "stream": "ghidra_exception_and_structure_separator",
+      "scope": ["0x00bff2d0", "0x01002bd0", "0x010066e0", "0x01006880", "0x0149544c", "0x01495428", "0x01495418", "cSimulatorSpaceGame"],
+      "result": "Falsifies a universal avatar accessor and identifies +0x54 as mpHighLODPlanetSim for the exceptional receiver."
+    },
+    {
+      "stream": "structures_ownership_refcount_and_field_use",
+      "scope": ["cGameNounManager", "cCreatureBase", "cCreatureAnimal", "cCreatureBase__vftable", "0x00d2e380", "0x00d2e4a0", "0x00d2e580", "0x00d2e8a0", "0x00d39360", "0x00d2e720", "0x004df420"],
+      "result": "Supports raw-pointer/current-selection semantics, exact creature fields and vtable slots, rejected +0x55c association, and separate presentation links."
+    },
+    {
+      "stream": "cell_gfx_save_historical_evidence",
+      "scope": ["cCellGame+0x411c", "cCellObjectData+0x248", "0x00e780a0", "0x00e7fd00", "cCellSerializableData", "cCreatureGameData", "track-08-cell-lifecycle"],
+      "result": "Separate-artifact support for Cell pool/presentation lifetimes, despawn/rebuild transitions, and content/runtime/save layer separation; it is not independent proof of the noun-root receiver or publication."
+    },
+    {
+      "stream": "root_publication_followup",
+      "scope": ["followup-03-root-publication.md:15-117", "followup-03-root-publication.json:60-194,380-412", "0x00b3d300", "0x00b3d400", "DAT_0167eae0", "DAT_0167eb60"],
+      "result": "Adds the publication/equality uncertainty: four root words are physically distinct, the noun pair has unresolved publication/teardown/equality, and the DAT_016dc0fc receiver is a separate publication chain."
+    }
+  ],
+  "subagent_status": "No subagent interface was exposed. The decompilation/callgraph, structure/ownership/refcount, and Cell/GFX/save lanes were correlated same-session evidence queries, not independent supporters. Follow-up-03 is a separate bounded static artifact and is used for publication uncertainty, not as a runtime vote.",
+  "citations": [
+    {"source": "ghidra://SporeApp.exe@0x00b1fdb0", "use": "exact raw +0x54 return body"},
+    {"source": "ghidra://SporeApp.exe@0x00b1fd50", "use": "old/new +0xb58 flag update and AddRef/store/Release replacement"},
+    {"source": "ghidra://SporeApp.exe@0x00b3d300", "use": "DAT_0167eae0 receiver source"},
+    {"source": "ghidra://SporeApp.exe@0x00b3d400", "use": "separate SDK-named DAT_0167eb60 noun-manager accessor"},
+    {"source": "ghidra://SporeApp.exe@0x00b20c60", "use": "cGameNounManager mNouns/mObjects layout use"},
+    {"source": "ghidra://SporeApp.exe@0x00b21340", "use": "cGameNounManager mNounMap layout and noun materialization"},
+    {"source": "ghidra://SporeApp.exe@0x00c099e0", "use": "creature creation, noun insertion, current avatar installation"},
+    {"source": "ghidra://SporeApp.exe@0x00ef10c0", "use": "save/clear/destroy current avatar transition"},
+    {"source": "ghidra://SporeApp.exe@0x00bff2d0", "use": "exceptional receiver call window"},
+    {"source": "ghidra://SporeApp.exe@0x01002bd0", "use": "DAT_016dc0fc accessor"},
+    {"source": "ghidra://SporeApp.exe@0x010066e0", "use": "cSimulatorSpaceGame vtable initialization and global publication"},
+    {"source": "ghidra://SporeApp.exe@0x01006880", "use": "cSimulatorSpaceGame destruction and global clear"},
+    {"source": "ghidra://SporeApp.exe@0x00ff5b30", "use": "exceptional high-LOD value is not consumed as ECX by the subsequent helper"},
+    {"source": "ghidra://SporeApp.exe@0x00d2e380", "use": "vtable+0xd8 GetCurrentBrainLevel call"},
+    {"source": "ghidra://SporeApp.exe@0x00d2e4a0", "use": "vtable+0x84 and creature+0xb5c gameplay use"},
+    {"source": "ghidra://SporeApp.exe@0x00d2e580", "use": "creature+0xc0 locomotion and +0xb20 species profile use"},
+    {"source": "ghidra://SporeApp.exe@0x00d2e8a0", "use": "current creature address stored in action record"},
+    {"source": "ghidra://SporeApp.exe@0x00d39360", "use": "raw pointer equality, cCreatureAnimal type check, null branch"},
+    {"source": "ghidra://SporeApp.exe@0x00d2e720", "use": "root result discarded before profile+0x55c read"},
+    {"source": "ghidra://SporeApp.exe@0x004df420", "use": "current/default cSpeciesProfile lookup"},
+    {"source": "ghidra://SporeApp.exe@0x004df550", "use": "cSpeciesProfile lookup/materialization; 0xA18 allocation path"},
+    {"source": "ghidra://SporeApp.exe@structure:cGameNounManager", "use": "+0x54 mpAvatar and full noun-owner layout"},
+    {"source": "ghidra://SporeApp.exe@structure:cSimulatorSpaceGame", "use": "0xf0 size and +0x54 mpHighLODPlanetSim"},
+    {"source": "ghidra://SporeApp.exe@structure:cCreatureBase", "use": "0xfc0 size, gameplay fields, +0xb54 AnimatedCreature, model fields"},
+    {"source": "ghidra://SporeApp.exe@structure:cCreatureAnimal", "use": "0x16a0 cCreatureBase-prefix extension"},
+    {"source": "ghidra://SporeApp.exe@structure:cCreatureBase__vftable", "use": "AddRef/Release, Write/Read, SetCreatureTarget, GetCurrentBrainLevel slots"},
+    {"source": "ghidra://SporeApp.exe@structure:cCellGame", "use": "pool, +0x411c avatar index, +0x5190 serializable state"},
+    {"source": "knowledgegraph/research/root-closure/track-c-opaque-owner.md:7-19,31-46,48-97,123-160", "use": "prior raw-pointer, owner, vtable, +0x55c rejection, and null/lifetime claims"},
+    {"source": "knowledgegraph/research/root-closure/followup-receiver-provenance.md:13-40,88-141", "use": "prior selected ECX sources, exceptional unresolved receiver, and refcount writer"},
+    {"source": "knowledgegraph/research/root-closure/followup-noun-boundary.md:53-80,118-149", "use": "noun-manager field layout, borrowed records, and alternate/canonical slot limit"},
+    {"source": "knowledgegraph/research/root-closure/cross-root-relationships.md:96-126,178-210", "use": "separate owner families and unresolved global alias"},
+    {"source": "knowledgegraph/research/data-model/04-creature-data.json:561-690,785-791", "use": "creature base/animal layouts, presentation field, progression, and transient/save limits"},
+    {"source": "knowledgegraph/research/data-model/09-save-load-persistence.json:367-383,452-568", "use": "Cell avatar index, serializable holder, and noun/progression save relationships"},
+    {"source": "knowledgegraph/research/data-model/17-persistence-synthesis.json:257-282,366-381,555-560,698-718", "use": "runtime transient versus save candidate classification and reset/reload distinction"},
+    {"source": "knowledgegraph/research/state-machines/cell-stage.json:274-327,780-949,953-999", "use": "Cell despawn/rebuild and avatar-index lifecycle"},
+    {"source": "knowledgegraph/research/architecture-resolution/track-08-cell-lifecycle.json:16-249,383-499", "use": "separate Cell-domain simulation/presentation/content synthesis; not independent noun-root publication evidence"},
+    {"source": "knowledgegraph/research/architecture-resolution/followup-03-root-publication.md:15-117", "use": "noun-root direct-read, writer, equality, receiver, and publication uncertainty"},
+    {"source": "knowledgegraph/research/architecture-resolution/followup-03-root-publication.json:60-194,380-412", "use": "root-word separation, unresolved publication/equality lower bound, and safe four-port architecture decision"},
+    {"source": "knowledgegraph/research/conflict-adjudication.json:4337-4375,10227-10355", "use": "0xA18 cSpeciesProfile runtime-size adjudication and supersession of the imported 0xEEC projection"},
+    {"source": "src/sim/CellGame.hpp:55-75", "use": "current OpenSpore Cell avatar pool-index projection; comparison only, not original avatar evidence"},
+    {"source": "src/sim/CellPool.hpp:66-162", "use": "current clean-room pool behavior; comparison only, not original noun ownership evidence"}
+  ],
+  "limitations": [
+    "All original-binary conclusions are static Ghidra/decompilation evidence; no runtime execution or trace is claimed.",
+    "Ghidra decompiler signatures around hidden ECX/EBX/stack parameters are not treated as authoritative when assembly is available.",
+    "SporeApp.exe has no MSVC RTTI; class identity is bounded by SDK layouts, vtable shapes, and field-consistent method bodies.",
+    "DAT_0167eae0 is strongly cGameNounManager-layout but is not proven pointer-equal to the SDK-named DAT_0167eb60 singleton.",
+    "The identical tiny accessor may be deliberate sharing, source folding, or linker ICF; exact source symbol identity is unresolved.",
+    "The current pointer may be null, but the selected creature consumers often assume non-null after mode setup; no universal non-null contract is claimed.",
+    "cCreatureBase/cCreatureAnimal layout-prefix extension is supported, but RTTI-backed language inheritance is not proven.",
+    "The exact owner multiplicity and final destruction ordering across noun/parent collections are incomplete.",
+    "cCreatureBase Write/Read slots establish serialization eligibility, not complete field coverage or a successful save round trip.",
+    "Current OpenSpore source is comparison context only and was not used to infer original avatar ownership.",
+    "No direct SPORE/ path, asset, or executable filesystem access was performed; only the explicit read-only Ghidra SporeApp.exe program was queried.",
+    "No spore.db access or mutation was performed.",
+    "No Ghidra mutation, save, annotation, type application, or project change was performed.",
+    "No implementation or source change was performed."
+  ]
+}

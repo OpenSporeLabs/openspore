@@ -1,0 +1,978 @@
+{
+  "$schema": "openspore-track-d-sim-cell-1",
+  "track": {
+    "id": "track-d",
+    "title": "Simulator/core state and Cell gameplay domains",
+    "research_date": "2026-09-24",
+    "scope_root": "/home/juanr/Proyectos/OpenSpore",
+    "implementation_modified": false,
+    "artifact_policy": "Static clean-room research only; decompilation is evidence, not truth; current source is evidence of OpenSpore behavior, not original-game truth."
+  },
+  "source_precedence": [
+    {
+      "precedence": 1,
+      "sources": ["pinned SporeApp.exe bytes", "runtime traces when available"],
+      "use": "identity, bytes, runtime observations"
+    },
+    {
+      "precedence": 2,
+      "sources": ["Ghidra MCP decompilation", "Ghidra structure and xref exports"],
+      "use": "function bodies, offsets, direct call/data relations"
+    },
+    {
+      "precedence": 3,
+      "sources": ["Spore-ModAPI SDK XML names and declarations"],
+      "use": "names, type names, documented field semantics; reference-only provenance"
+    },
+    {
+      "precedence": 4,
+      "sources": ["knowledgegraph/spore.db", "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl", "triage clusters and readiness artifacts"],
+      "use": "cross-tool inventory, classification, dependencies, queue state"
+    },
+    {
+      "precedence": 5,
+      "sources": ["docs/analysis/dossiers", "campaign and replacement reports"],
+      "use": "bounded hypotheses, evidence pointers, unresolved questions"
+    },
+    {
+      "precedence": 6,
+      "sources": ["current src/sim", "current src/replace", "current src/apps", "current tests and CMake"],
+      "use": "implemented contracts, test coverage, dependency boundaries"
+    }
+  ],
+  "binary_and_graph": {
+    "binary": "SPORE/SporeBin/SporeApp.exe",
+    "binary_version": "GOG 3.1.0.22",
+    "image_base": "0x00400000",
+    "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+    "triage_snapshot_sha256": "f0e310e0c83fc960ed38d490ff6d2a78d53925969206b4c4db7a012ddbf8b54b",
+    "spore_db_counts": {
+      "nodes": 65461,
+      "edges": 20397,
+      "fields": 25561,
+      "test_results": 28,
+      "triage_rows": 58757,
+      "xref_rows": 223704,
+      "investigations": 1704,
+      "trace_runs": 2
+    },
+    "triage_cell_cluster": {
+      "name": "sim-cell",
+      "function_count": 26,
+      "decompilation_coverage": 26,
+      "category_counts": {
+        "GAMEPLAY_LOGIC": 20,
+        "GAMEPLAY_SUPPORT": 6
+      },
+      "readiness": "near-ready",
+      "dependencies": ["resource-io", "app-lifecycle", "utfwin-framework", "graphics-render"],
+      "vtable_association": "none recorded; Cell virtuals, if any, are hidden in unknown-vtable-impl",
+      "triage_slice": "sdk_name LIKE 'Simulator::Cell::%'"
+    },
+    "decompiled_campaign_capture": {
+      "cell_stage_campaign_reported_files": 37,
+      "interpretation": "The 26-function sim-cell cluster is the SDK Simulator::Cell slice; the campaign list also contains App::cCellModeStrategy functions, accessors, and lifecycle methods. 00e806b0 and 00e5b2e0 are high-value unnamed dependencies inspected directly with Ghidra but are not in the 26 SDK-named cluster."
+    }
+  },
+  "actual_boundaries": {
+    "original_game_boundary": {
+      "domain": "Simulator::Cell plus App::cCellModeStrategy",
+      "address_regions": ["00e4ce20-00e82340", "App mode vtable functions including 00e51010, 00e552f0, 00e5c0f0, 00e6c860, 00e7d660, 00e7fc00, 00e80980, 00e818f0, 00e81cf0, 00e81f30"],
+      "not_assumed": "The presence of a Cell SDK namespace does not establish a complete runtime object graph, a Cell vtable, AI execution, world population, event transport, or the full app bootstrap."
+    },
+    "current_src_sim_boundary": {
+      "path": "src/sim",
+      "role": "Pure deterministic contract simulation plus typed static reconstructions of CellGame, free-list pool, query, advect, and combat rules.",
+      "sources": ["src/sim/Sim.hpp:222-260", "src/sim/Sim.cpp:99-356", "src/sim/CellGame.hpp:60-155", "src/sim/CellPool.hpp:31-164", "src/sim/CellQuery.hpp:27-82", "src/sim/Advect.hpp:29-106", "src/sim/Combat.hpp:14-128"],
+      "boundary": "The current CellSim state is role/string/entity based and is not a byte-compatible cCellGame runtime. Its eat, flee, camera, speed, radius, and damping semantics are OpenSpore contract choices unless explicitly marked otherwise."
+    },
+    "current_src_replace_boundary": {
+      "path": "src/replace",
+      "role": "One narrow replacement target: MovePlayerToMousePosition, plus a decompilation-derived reference and POD memory views.",
+      "sources": ["src/replace/Replace.hpp:39-80", "src/replace/Replace.cpp:25-68", "src/replace/Reference.cpp:41-92", "src/replace/CellGameView.hpp:22-62"],
+      "boundary": "The installed replacement seam is established; the real 32-bit player-index lookup, runtime plane point, UI/camera gates, and live original differential are not established."
+    },
+    "current_src_apps_boundary": {
+      "path": "src/apps",
+      "role": "Host-side scene loading, input, mode lifecycle shell, animation/effect/UI projections, and renderer presentation.",
+      "sources": ["src/apps/CellModeStrategy.cpp:7-92", "src/apps/CellGfx.cpp:5-44", "src/apps/CellUI.cpp:5-25", "src/apps/CellInput.cpp:5-95", "src/apps/CellAnim.cpp:7-85", "src/apps/cell_stage.cpp:725-855", "src/apps/cell_stage.cpp:1086-1135", "src/CMakeLists.txt:88-182"],
+      "boundary": "The app composes the sim and renderer but does not reproduce the original IAppSystem bootstrap, message dispatch, stage transitions, or complete RenderWare/UI systems."
+    },
+    "boundary_conclusion": "The strongest defensible boundary is a four-way split: original state/runtime orchestration, deterministic movement/rule contracts, presentation/lifecycle projections, and one narrow replacement seam. The current source does not yet form an original Cell gameplay runtime."
+  },
+  "root_functions": [
+    {
+      "address": "00e80ba0",
+      "name": "Simulator::Cell::cCellGame::Initialize",
+      "layer": "original-state-root",
+      "role": "Initializes the global cell-game state object, including reset fields, the 4096-cell object pool, time scale, serializable-data path, collectable-item setup, and background bounding box constants.",
+      "observed_sequence": [
+        "Set time scale and early state fields",
+        "Allocate main cell pool with 0x1000 capacity",
+        "Set field_514C and field_5150 to 1.0f",
+        "Set field_4124 to 20",
+        "Initialize/load serializable data and collectable-item side state",
+        "Write background visible bounding box values",
+        "Invoke application/service side effects"
+      ],
+      "state_writes": ["sCellGame+0x5194", "sCellGame+0x5198", "sCellGame+0x5168", "sCellGame+0x5169", "sCellGame+0x515c", "sCellGame+0x5160", "sCellGame+0x516c", "sCellGame+0x4104 pool", "sCellGame+0x514c", "sCellGame+0x5150", "sCellGame+0x4124", "sCellGame+0x51b0..0x51e0", "DAT_016b3c8c..0x016b3c9c"],
+      "dependencies": ["IAppSystem", "cGameNounManager", "serializable data", "collectable items", "cObjectPool", "time manager"],
+      "current_counterpart": "src/sim/CellGame.cpp:22-80",
+      "confidence": "SUPPORTED",
+      "provenance": ["Ghidra MCP decompile 00e80ba0", "docs/analysis/dossiers/cell-movement.md:97", "docs/analysis/campaigns/cell-stage-campaign.md:94-99", "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl:33815"]
+    },
+    {
+      "address": "00e81cf0",
+      "name": "App::cCellModeStrategy::Initialize",
+      "layer": "original-app-lifecycle-root",
+      "role": "Constructs/attaches the sCellGame, sCellGFX, and sCellUI singletons, initializes lifecycle flags, and performs application-service pre-shutdown/setup work.",
+      "state_writes": ["sCellGame+0x4121", "sCellGame+0x410c", "sCellGame+0x4110", "mode state and global app pre-shutdown state"],
+      "dependencies": ["IAppSystem", "resource/service allocation", "sCellGame", "sCellGFX", "sCellUI", "cGameNounManager"],
+      "current_counterpart": "src/apps/CellModeStrategy.cpp:7-16",
+      "mapping_confidence": "INFERRED",
+      "provenance": ["Ghidra MCP decompile 00e81cf0", "docs/analysis/campaigns/cell-stage-campaign.md:97", "knowledgegraph/spore.db investigation fun:00e81cf0"]
+    },
+    {
+      "address": "00e552f0",
+      "name": "App::cCellModeStrategy::OnEnter",
+      "layer": "original-app-lifecycle",
+      "role": "Resets mode flags, starts the cell display, and invokes world/UI/application activation side effects.",
+      "state_writes": ["mode bytes at +0x09/+0x0a", "sCellGame+0x5169", "sCellUI+0x937", "cell display state"],
+      "dependencies": ["cCellGFX::StartDisplay", "cell world", "UI", "cGameNounManager"],
+      "current_counterpart": "src/apps/CellModeStrategy.cpp:32-36",
+      "mapping_confidence": "SUPPORTED",
+      "provenance": ["Ghidra MCP decompile 00e552f0", "docs/analysis/campaigns/cell-stage-campaign.md:68", "src/apps/CellModeStrategy.cpp:32-36"]
+    },
+    {
+      "address": "00e806b0",
+      "name": "FUN_00e806b0",
+      "layer": "original-orchestrator-unknown",
+      "role": "Real per-frame cell-mode body reached through the App mode vtable. The function reads the cell-game state word at +0x51e0, gates active updates on +0x515c, scales time, updates trading/other services, calls MovePlayerToMousePosition, and then dispatches further cell updates.",
+      "observed_branches": ["state word at sCellGame+0x51e0", "sCellGame+0x515c gate", "delta scaling to milliseconds", "MovePlayerToMousePosition", "post-movement cell update calls"],
+      "current_counterpart": "src/apps/CellModeStrategy.cpp:56-60 only increments mFrame; the orchestration is not implemented.",
+      "confidence": "SUPPORTED for call/branch shape; INFERRED for parameter meanings",
+      "provenance": ["Ghidra MCP decompile 00e806b0", "docs/analysis/dossiers/cell-movement.md:26-33", "knowledgegraph/triage row VA 00e806b0: UNKNOWN before this pass"]
+    },
+    {
+      "address": "00e80980",
+      "name": "App::cCellModeStrategy::Update",
+      "layer": "original-app-vtable",
+      "role": "Thin vtable adapter that delegates the frame delta to FUN_00e806b0.",
+      "contract": "void update(cCellModeStrategy*, float fDelta1, float fDelta2); fDelta2 is unused in the decompiled body.",
+      "dependencies": ["FUN_00e806b0"],
+      "current_counterpart": "src/apps/CellModeStrategy.cpp:56-60",
+      "confidence": "CONFIRMED",
+      "provenance": ["Ghidra MCP decompile 00e80980", "docs/analysis/dossiers/cell-movement.md:14-18", "src/apps/IGameMode.hpp:47-51"]
+    },
+    {
+      "address": "00e5b790",
+      "name": "Simulator::Cell::MovePlayerToMousePosition",
+      "layer": "original-movement-root",
+      "role": "Resolves the avatar cell by pool index, runs per-frame/camera/UI gates, intersects the camera ray with the movement plane, writes the target position, sets the moving flag, and computes travel orientation.",
+      "inputs": ["float deltaTime", "sCellGame+0x411c avatar index", "sCellGame+0x5158 lock flag", "camera origin and view ray", "plane normal DAT_015a7c40/44/48", "plane point DAT_016b3c28/2c/30"],
+      "outputs": ["player target position at +0x08/+0x0c/+0x10", "player orientation at +0x14..+0x20", "moving flag at sCellGame+0x5190+0xe0"],
+      "preconditions": ["lock flag zero", "avatar lookup non-null", "camera/UI gates pass", "dot direction with plane normal nonzero", "intersection t non-negative"],
+      "current_counterpart": "src/replace/Replace.cpp:25-68 and src/sim/Sim.cpp:103-260",
+      "confidence": "SUPPORTED for body; CONFIRMED for SDK symbol/address; field meanings INFERRED",
+      "provenance": ["Ghidra MCP decompile 00e5b790", "docs/analysis/dossiers/cell-movement.md:46-59", "docs/REPLACEMENT-ABI.md:40-82", "src/replace/Replace.hpp:39-67"]
+    },
+    {
+      "address": "00e74a20",
+      "name": "Simulator::Cell::CreateCellObject",
+      "layer": "original-object-root",
+      "role": "Allocates a cCellObjectData object, derives cell size, initializes orientation/position/elevation/opacity/transform/resource/scale/query/effect fields, and returns its pool index.",
+      "size_formula": "cellSize == 0: (None ? 1 : DAT_01483bd0[level] * 0.033333335) / field_514C * resource.size * sizeFactor; otherwise sizeFactor * cellSize.",
+      "current_counterpart": "src/sim/CellGame.cpp:82-152",
+      "confidence": "SUPPORTED for core size/position/model fields; INFERRED for omitted resource/AI/GFX fields",
+      "provenance": ["Ghidra MCP decompile 00e74a20", "src/sim/CellGame.cpp:82-152", "docs/analysis/campaigns/cell-stage-campaign.md:90-95"]
+    },
+    {
+      "address": "00e6d200",
+      "name": "Simulator::Cell::PlayAnimation",
+      "layer": "original-gameplay-event",
+      "role": "Computes animation blend in/out times, scales them by the cell animation-time factor, dispatches the target animation, and stores current/target animation state.",
+      "special_cases": ["IdleBig and IdleBlink1Big set out=0.1", "EatProbRetractTrgt/TakeDmgElecNpc/TakeDmgPoisonNpc set out=0.0", "target EatProbRetractTrgt sets in=0.0"],
+      "current_counterpart": "src/apps/CellAnim.cpp:7-23",
+      "confidence": "SUPPORTED",
+      "provenance": ["Ghidra MCP decompile 00e6d200", "src/apps/CellAnim.hpp:39-56", "src/apps/CellAnim.cpp:7-23"]
+    },
+    {
+      "address": "00e5dba0",
+      "name": "Simulator::Cell::cCellGFX::Initialize",
+      "layer": "original-render-state-root",
+      "role": "Creates/replaces the render-world, layer, shadow, and effect objects for skybox, background, beach, main model, effects, and foreground; resets GFX bookkeeping.",
+      "current_counterpart": "src/apps/CellGfx.cpp:5-20",
+      "mapping_confidence": "SUPPORTED for world ID/order projection; APPROXIMATION for integer handles",
+      "provenance": ["Ghidra MCP decompile 00e5dba0", "src/apps/CellGfx.hpp:1-76", "docs/analysis/campaigns/cell-stage-campaign.md:76-88"]
+    },
+    {
+      "address": "00e54270",
+      "name": "Simulator::Cell::cCellUI::Load",
+      "layer": "original-ui-state-root",
+      "role": "Initializes the cell UI singleton, world/background vectors, zoom/layout constants, global UI resource, progress bar, hover state, and rollover pool.",
+      "current_counterpart": "src/apps/CellUI.cpp:5-10",
+      "mapping_confidence": "SUPPORTED for pinned constants and rollover schema; APPROXIMATION for full UI resource graph",
+      "provenance": ["Ghidra MCP decompile 00e54270", "src/apps/CellUI.hpp:1-55", "docs/analysis/campaigns/cell-stage-campaign.md:66-67"]
+    },
+    {
+      "address": "00e4ce20",
+      "name": "Simulator::Cell::GetGlobalsData",
+      "layer": "original-data-boundary",
+      "role": "Loads the CellGame globals resource through the resource subsystem.",
+      "current_counterpart": "src/assets/CellResource.* parsers and the host app, not a direct runtime call",
+      "confidence": "SUPPORTED",
+      "provenance": ["Ghidra MCP decompile 00e4ce20", "docs/analysis/campaigns/cell-stage-campaign.md:64-65", "spore.db node fun:00e4ce20"]
+    }
+  ],
+  "important_structures": [
+    {
+      "name": "sCellGame / cCellGame",
+      "original_size": "20964 bytes (0x51e4)",
+      "kg_structure": "struct:/Spore/Simulator/Cell/cCellGame",
+      "role": "Global Cell mode state object containing pools, world references, avatar index, serializable data, timing/flags, and stage bookkeeping.",
+      "important_fields": [
+        {"offset": "0x0000", "role": "mpCurrentAdvectionMap", "meaning": "advect resource pointer", "evidence": "SUPPORTED"},
+        {"offset": "0x001c", "role": "mCells", "meaning": "main cObjectPool<cCellObjectData>", "evidence": "SUPPORTED"},
+        {"offset": "0x0038", "role": "field_38", "meaning": "non-main pool handle", "evidence": "INFERRED"},
+        {"offset": "0x0054", "role": "field_54", "meaning": "non-main pool handle", "evidence": "INFERRED"},
+        {"offset": "0x0070", "role": "field_70", "meaning": "int map", "evidence": "INFERRED"},
+        {"offset": "0x008c", "role": "field_8C", "meaning": "non-main pool handle", "evidence": "INFERRED"},
+        {"offset": "0x00a8", "role": "field_A8", "meaning": "non-main pool handle", "evidence": "INFERRED"},
+        {"offset": "0x00c4", "role": "field_C4", "meaning": "non-main pool handle", "evidence": "INFERRED"},
+        {"offset": "0x00e0", "role": "field_E0", "meaning": "fixed_vector<int,4096>", "evidence": "SUPPORTED"},
+        {"offset": "0x40fc", "role": "mpCellQuery", "meaning": "foreground cell query linked pool", "evidence": "SUPPORTED"},
+        {"offset": "0x4100", "role": "mpCellQueryBackground", "meaning": "background cell query linked pool", "evidence": "SUPPORTED"},
+        {"offset": "0x4114", "role": "mpCurrentWorld", "meaning": "current world resource reference", "evidence": "CONFIRMED"},
+        {"offset": "0x4118", "role": "mpCurrentWorldBackground", "meaning": "background world resource reference", "evidence": "CONFIRMED"},
+        {"offset": "0x411c", "role": "mAvatarCellIndex", "meaning": "player cell object-pool index", "evidence": "SUPPORTED"},
+        {"offset": "0x4124", "role": "field_4124", "meaning": "initialized to 20", "evidence": "OBSERVED"},
+        {"offset": "0x5148", "role": "flag_5148", "meaning": "initialized false", "evidence": "OBSERVED"},
+        {"offset": "0x514c", "role": "field_514C", "meaning": "time scale, initialized to 1.0f", "evidence": "OBSERVED"},
+        {"offset": "0x5150", "role": "field_5150", "meaning": "copied from field_514C in Initialize", "evidence": "OBSERVED"},
+        {"offset": "0x5158", "role": "lock/paused flag", "meaning": "MovePlayerToMousePosition early-return guard", "evidence": "INFERRED from decompilation"},
+        {"offset": "0x515c", "role": "update gate", "meaning": "FUN_00e806b0 active-update gate", "evidence": "INFERRED"},
+        {"offset": "0x5168/0x5169", "role": "flags", "meaning": "reset by Initialize; 0x5169 also reset by OnEnter", "evidence": "OBSERVED"},
+        {"offset": "0x5190", "role": "mpSerializableData", "meaning": "serializable state pointer", "evidence": "SUPPORTED"},
+        {"offset": "0x51cc", "role": "mShowCallMateButtonCountdown", "meaning": "call/UI countdown", "evidence": "SUPPORTED"},
+        {"offset": "0x51d8/0x51d9", "role": "state flags", "meaning": "post-movement branch flags", "evidence": "INFERRED"},
+        {"offset": "0x51e0", "role": "mode/state word", "meaning": "FUN_00e806b0 branch state", "evidence": "OBSERVED access, meaning INFERRED"},
+        {"offset": "0x5190+0xe0", "role": "moving flag", "meaning": "set to 1 after a valid movement-plane hit", "evidence": "OBSERVED write, meaning INFERRED"}
+      ],
+      "current_projection": "src/sim/CellGame.hpp:60-113 models named fields and pool capacities but not the complete 20,964-byte object; src/replace/CellGameView.hpp:50-62 aliases only the fields touched by the target and extends through 0x5274 because the moving flag is nested through the serializable-data pointer."
+    },
+    {
+      "name": "cCellObjectData",
+      "original_size": "920 bytes (0x398)",
+      "kg_structure": "struct:/Spore/Simulator/Cell/cCellObjectData",
+      "role": "Per-cell gameplay/graphics object containing transform, target state, resource identity, animation/AI/health/flee/chase/GFX/query state.",
+      "important_fields": [
+        {"offset": "0x00", "role": "mObjectPoolIndex", "meaning": "own pool index while allocated, free-list next while free", "evidence": "SUPPORTED"},
+        {"offset": "0x04", "role": "mIsIdle", "meaning": "idle flag", "evidence": "SUPPORTED"},
+        {"offset": "0x08", "role": "mTargetPosition", "meaning": "movement target position", "evidence": "INFERRED"},
+        {"offset": "0x14", "role": "mTargetOrientation", "meaning": "target quaternion", "evidence": "INFERRED"},
+        {"offset": "0x48", "role": "mTransform", "meaning": "graphics transform", "evidence": "SUPPORTED"},
+        {"offset": "0x80", "role": "mRelativeElevation", "meaning": "cell elevation", "evidence": "SUPPORTED"},
+        {"offset": "0xa0/0xa4", "role": "mOpacity/mTargetOpacity", "meaning": "current/target opacity", "evidence": "SUPPORTED"},
+        {"offset": "0xb4/0xb8/0xbc", "role": "size/speed words", "meaning": "cell size and speed-related values", "evidence": "SUPPORTED for offsets; meaning partially INFERRED"},
+        {"offset": "0xfc", "role": "mModelKey", "meaning": "model resource key", "evidence": "SUPPORTED"},
+        {"offset": "0x108", "role": "mCellResource", "meaning": "cell resource reference", "evidence": "SUPPORTED"},
+        {"offset": "0x111", "role": "mIsInvulnerable", "meaning": "invulnerability flag", "evidence": "SUPPORTED"},
+        {"offset": "0x112", "role": "field_112", "meaning": "attack bypass condition", "evidence": "SUPPORTED as field, meaning INFERRED"},
+        {"offset": "0x1b0/0x1b4/0x1b8", "role": "animation state", "meaning": "current/previous animation and blend duration", "evidence": "SUPPORTED"},
+        {"offset": "0x21c/0x220", "role": "flee state", "meaning": "flee timer and target index", "evidence": "SUPPORTED names; runtime behavior INFERRED"},
+        {"offset": "0x22c/0x230", "role": "chase state", "meaning": "chase target index and timer", "evidence": "SUPPORTED names; runtime behavior INFERRED"},
+        {"offset": "0x244", "role": "mHealthPoints", "meaning": "cell health", "evidence": "SUPPORTED"},
+        {"offset": "0x248", "role": "mGFXObjectIndex", "meaning": "graphics object index", "evidence": "SUPPORTED"},
+        {"offset": "0x358", "role": "mScale", "meaning": "CellStageScale", "evidence": "SUPPORTED"},
+        {"offset": "0x35c", "role": "mpQuery", "meaning": "owning cell query pool", "evidence": "SUPPORTED"}
+      ],
+      "current_projection": "src/sim/CellPool.hpp:31-64 reproduces a 920-byte padded subset; src/sim/Sim.hpp:49-78 provides a contract-facing role-based Entity superset. The two are not interchangeable ABI views."
+    },
+    {
+      "name": "cObjectPool<cCellObjectData>",
+      "original_size": "28 bytes metadata; element size 920 bytes",
+      "kg_structure": "SDK cObjectPool family",
+      "role": "Preallocated free-list object pool.",
+      "fields": ["mpData", "mNextAvailableIndex", "mObjectPoolIdentifier", "mNumObjects", "mNumAllocatedObjects", "mObjectSize", "field_18"],
+      "observed_capacity": "4096 for mCells",
+      "current_projection": "src/sim/CellPool.hpp:66-164; tests cellpool_test and createcell_test cover allocation, exhaustion, refill, and layout."
+    },
+    {
+      "name": "cCellQueryEntry / cCellQueryLinkedPool / cCellQueryLinkedPoolData",
+      "original_size": "cCellQueryEntry 28 bytes (0x1c); linked pool 16 bytes; data header 24 bytes",
+      "kg_structures": ["struct:/Spore/Simulator/Cell/cCellQueryEntry", "struct:/Spore/Simulator/Cell/cCellQueryLinkedPool", "struct:/Spore/Simulator/Cell/cCellQueryLinkedPoolData"],
+      "role": "Spatial candidate arena for nearby cells.",
+      "entry_fields": [{"offset": "0x00", "role": "mPosition"}, {"offset": "0x0c", "role": "mCellSize"}, {"offset": "0x10", "role": "field_10"}, {"offset": "0x14", "role": "mpNext"}, {"offset": "0x18", "role": "mCellIndex"}],
+      "near_predicate": "distance(C,P) <= C.cellSize + radius; touching counts as in range",
+      "current_projection": "src/sim/CellQuery.hpp:27-82 uses a vector arena and LIFO links; it is a clean-room behavioral projection, not a byte-layout reconstruction of the original linked pool."
+    },
+    {
+      "name": "cAdvectEntry / cCellWorldResource",
+      "original_size": "cAdvectEntry 24 bytes (0x18); world resource has a variable 16-byte header plus arrays",
+      "kg_structures": ["struct:/Spore/Simulator/Cell/cCellWorldResource", "struct:/Spore/Simulator/Cell/cCellWorldResource/cAdvectEntry", "struct:/Spore/Simulator/Cell/cCellWorldResource/cLevelEntry"],
+      "role": "World population and advection selection by player scale bucket.",
+      "entry_fields": [{"offset": "0x00", "role": "scale level"}, {"offset": "0x04", "role": "playerSize bucket or -1 default"}, {"offset": "0x08", "role": "strength"}, {"offset": "0x0c", "role": "variance"}, {"offset": "0x10", "role": "period"}, {"offset": "0x14", "role": "advectID"}],
+      "current_projection": "src/sim/Advect.hpp:29-106 and src/assets/CellResource.* provide typed decode/lookup but do not execute world flow."
+    },
+    {
+      "name": "cCellUI / cCellUIRollover",
+      "original_size": "cCellUI 2372 bytes; cCellUIRollover 56 bytes (0x38)",
+      "kg_structures": ["struct:/Spore/Simulator/Cell/cCellUI", "struct:/Spore/Simulator/Cell/cCellUIRollover"],
+      "important_fields": [
+        {"offset": "0x48/0x54/0x60/0x6c/0x78", "role": "world/background vectors", "evidence": "SUPPORTED offsets"},
+        {"offset": "0x80", "role": "layout constant", "value": "20.0f", "evidence": "OBSERVED"},
+        {"offset": "0x9c", "role": "mRollovers", "meaning": "rollover object pool", "evidence": "SUPPORTED"},
+        {"offset": "0xbc", "role": "layout/scale constant", "value": "1.0f", "evidence": "OBSERVED"},
+        {"offset": "0xf8", "role": "mZoom", "meaning": "cell UI zoom", "evidence": "SUPPORTED"},
+        {"offset": "0x934", "role": "state flags", "meaning": "UI selection/input state", "evidence": "INFERRED"},
+        {"offset": "0x937", "role": "health-display toggle", "meaning": "toggled by virtual key 2", "evidence": "INFERRED"},
+        {"offset": "0x24 in rollover", "role": "mDisappearTime", "value": "0.5f", "evidence": "OBSERVED"}
+      ],
+      "current_projection": "src/apps/CellUI.hpp:19-55 and src/apps/CellUI.cpp:5-25 model the rollover formula and selected layout constants only."
+    },
+    {
+      "name": "cCellCellResource / cCellGlobalsResource / cCellPopulateResource / cCellEffectMapResource",
+      "role": "Asset-side inputs to runtime state, preloading, effects, AI, and scene population.",
+      "current_projection": "src/assets/CellResource.* decodes and validates the records; the original runtime consumer paths are only partially represented in src/apps and src/sim.",
+      "provenance": ["docs/analysis/campaigns/cell-stage-campaign.md:139-168", "spore.db structure nodes 61853/61860/61869/61880/61885"]
+    }
+  ],
+  "state_model": {
+    "original_state_holders": [
+      {"name": "Simulator::Cell::sCellGame", "role": "primary gameplay state singleton", "evidence": "Ghidra decompilation and SDK field exports"},
+      {"name": "Simulator::Cell::sCellGFX", "role": "render-world, effect, preload, and display singleton", "evidence": "Ghidra decompilation"},
+      {"name": "Simulator::Cell::sCellUI", "role": "HUD, world/background vectors, selection, zoom, and rollover singleton", "evidence": "Ghidra decompilation and SDK field exports"},
+      {"name": "Simulator::Cell::sCellSerializableData", "role": "serialization/save-load state", "evidence": "SDK field name and Initialize branch"},
+      {"name": "cObjectPool<cCellObjectData>", "role": "main live cell population", "evidence": "Initialize pool allocation and CreateCellObject"},
+      {"name": "cCellQueryLinkedPool", "role": "foreground/background spatial candidate pools", "evidence": "SDK structs and KG fields"}
+    ],
+    "current_state_holders": [
+      {"name": "openspore::sim::CellSim", "fields": ["player_", "cam_", "params_", "plane_", "entities_", "events_", "frame_"], "source": "src/sim/Sim.hpp:222-260"},
+      {"name": "openspore::sim::CellGame", "fields": ["mCells", "mQueryPool", "world references", "mAvatarCellIndex", "named Initialize fields"], "source": "src/sim/CellGame.hpp:60-155"},
+      {"name": "openspore::cellgfx::CellGfx", "fields": ["slots", "preloadedModels", "preloadedPopulates", "displayActive"], "source": "src/apps/CellGfx.hpp:41-76"},
+      {"name": "openspore::cellui::CellUI", "fields": ["globalUi", "layoutA", "layoutB", "loaded", "rollovers"], "source": "src/apps/CellUI.hpp:37-55"},
+      {"name": "openspore::gamemode::CellModeStrategy", "fields": ["mInitialized", "mEntered", "mFrame", "mLastKey", "mGfx", "mUI"], "source": "src/apps/CellModeStrategy.hpp:45-77"}
+    ],
+    "state_transitions": [
+      {
+        "id": "original-mode-initialize",
+        "from": "mode not initialized / singletons absent or stale",
+        "to": "sCellGame, sCellGFX, sCellUI allocated; lifecycle flags reset; resources initialized",
+        "entries": ["00e81cf0", "00e80ba0", "00e5dba0", "00e54270"],
+        "current_mapping": "src/apps/CellModeStrategy.cpp:7-16 plus src/apps/CellGfx.cpp:5-20 and src/apps/CellUI.cpp:5-10",
+        "status": "partial"
+      },
+      {
+        "id": "original-mode-enter",
+        "from": "initialized but inactive",
+        "to": "display started; mode active; UI/world activation side effects",
+        "entries": ["00e552f0", "00e55120"],
+        "current_mapping": "src/apps/CellModeStrategy.cpp:32-36 and src/apps/CellGfx.cpp:30",
+        "status": "partial"
+      },
+      {
+        "id": "original-active-update",
+        "from": "sCellGame state word 0 and update gate clear",
+        "to": "services update, movement target writes, per-frame cell/AI/graphics updates",
+        "entries": ["00e80980", "00e806b0", "00e5b790", "00e5b2e0", "00e7f3a0", "00e53b00", "00e600a0", "00e6c9f0"],
+        "current_mapping": "src/sim/Sim.cpp:103-260 plus stage->update() counter in src/apps/cell_stage.cpp:767-771 and 1132-1135",
+        "status": "partial; orchestration and original state gates are absent"
+      },
+      {
+        "id": "original-movement-hit",
+        "from": "avatar exists, lock clear, camera/UI gate pass",
+        "to": "target position/orientation updated and moving flag set",
+        "entries": ["00e5b790"],
+        "current_mapping": "src/sim/Sim.cpp:124-139 and src/replace/Replace.cpp:43-67",
+        "status": "supported for ray-plane shape; field/runtime gates remain approximated"
+      },
+      {
+        "id": "original-object-create",
+        "from": "free pool entry available",
+        "to": "allocated cCellObjectData with resource, transform, size, scale, and query state",
+        "entries": ["00e74a20", "00b721d0", "00e6cad0", "00e868f0"],
+        "current_mapping": "src/sim/CellGame.cpp:82-152 and src/sim/CellPool.hpp:108-121",
+        "status": "partial; original AI/GFX/query/effect initialization is omitted"
+      },
+      {
+        "id": "original-object-lifecycle",
+        "from": "existing cell/avatar and old GFX association",
+        "to": "avatar ref cleared when matching; old GFX/associated object released; object rebuilt if scale changed; new pool object created",
+        "entries": ["00e780a0"],
+        "current_mapping": "no full lifecycle implementation",
+        "status": "reconstruction candidate"
+      },
+      {
+        "id": "original-mode-exit-dispose",
+        "from": "active mode",
+        "to": "UI/background globals restored, stage/effects disabled, pools/GFX/UI released",
+        "entries": ["00e7fc00", "00e81f30"],
+        "current_mapping": "src/apps/CellModeStrategy.cpp:18-42",
+        "status": "partial"
+      },
+      {
+        "id": "current-deterministic-update",
+        "from": "InputFrame plus CellSim state",
+        "to": "camera update, turn, optional mouse target, flee, velocity damping, integration, eat, camera follow, frame increment, event append",
+        "entries": ["src/sim/Sim.cpp:103-260"],
+        "current_mapping": "exact current contract",
+        "status": "observable OpenSpore contract; original semantics partly inferred"
+      }
+    ]
+  },
+  "events": {
+    "original_event_surfaces": [
+      {"name": "App::cCellModeStrategy::OnKeyDown", "address": "00e818f0", "event": "keyboard input plus virtual-key-2 health-display toggle", "evidence": "CONFIRMED symbol, INFERRED semantics"},
+      {"name": "App::cCellModeStrategy::OnMouseMove", "address": "00e51010", "event": "mouse position routed toward camera/input state", "evidence": "CONFIRMED symbol; decompiled body is a short adapter"},
+      {"name": "MovePlayerToMousePosition", "address": "00e5b790", "event": "target/orientation/moving state mutation", "evidence": "OBSERVED writes"},
+      {"name": "PlayAnimation", "address": "00e6d200", "event": "animation state and blend transition", "evidence": "OBSERVED writes"},
+      {"name": "cCellGFX::InstanceEffectOnCell", "address": "00e66840", "event": "IVisualEffect instance returned and placed on cell transform", "evidence": "OBSERVED return/call shape"},
+      {"name": "cCellUI::ShowHealthRollover", "address": "00e62340", "event": "health rollover allocation/update when mGFXObjectIndex nonzero", "evidence": "OBSERVED early-out and 0.5f store"},
+      {"name": "GetNextAdvectID", "address": "00e58e30", "event": "next scale-bucket advect ID selection", "evidence": "OBSERVED return path"},
+      {"name": "ShouldNotAttack", "address": "00e57460", "event": "attack gate decision", "evidence": "CONFIRMED return branches"},
+      {"name": "GetDamageAmount", "address": "00e58980", "event": "damage amount 0..6", "evidence": "CONFIRMED matrix/branch structure"}
+    ],
+    "current_sim_events": [
+      {"name": "SimEvent eat", "payload": ["frame", "entity role", "growMeter increment", "food alive=false"], "source": "src/sim/Sim.hpp:208-220 and src/sim/Sim.cpp:237-251", "status": "OpenSpore contract; eat rule INFERRED from animation states"},
+      {"name": "SimEvent flee", "payload": ["frame", "prey role", "heading away", "boost=true", "forward override"], "source": "src/sim/Sim.hpp:208-220 and src/sim/Sim.cpp:141-163", "status": "OpenSpore contract; flee rule INFERRED from animation states"}
+    ],
+    "transport_boundary": "The original Cell event record, message IDs, and dispatch paths are not identified in this pass. The current SimEvent is a deterministic local event type, not a claim about the original event ABI."
+  },
+  "function_inventory": [
+    {"address": "00dd3ca0", "name": "App::cCellModeStrategy::AddRef", "layer": "app-lifecycle", "status": "decompiled-campaign-inventory", "priority": "P0", "role": "reference-count/lifecycle method", "evidence": "SDK/function inventory; not semantically deconstructed in this pass"},
+    {"address": "00e4ce20", "name": "Simulator::Cell::GetGlobalsData", "layer": "resource-state", "status": "decompiled", "priority": "P3", "role": "load globals resource", "evidence": "CONFIRMED"},
+    {"address": "00e51010", "name": "App::cCellModeStrategy::OnMouseMove", "layer": "input", "status": "decompiled", "priority": "P0", "role": "mouse event adapter", "evidence": "CONFIRMED"},
+    {"address": "00e54270", "name": "Simulator::Cell::cCellUI::Load", "layer": "ui", "status": "decompiled", "priority": "P3", "role": "initialize UI singleton", "evidence": "CONFIRMED"},
+    {"address": "00e55120", "name": "Simulator::Cell::cCellGFX::StartDisplay", "layer": "graphics", "status": "decompiled", "priority": "P3", "role": "activate worlds, shadows, effects, audio/environment hooks", "evidence": "CONFIRMED"},
+    {"address": "00e552f0", "name": "App::cCellModeStrategy::OnEnter", "layer": "app-lifecycle", "status": "decompiled", "priority": "P0", "role": "enter cell mode", "evidence": "CONFIRMED"},
+    {"address": "00e57340", "name": "Simulator::Cell::GetScaleDifferenceWithPlayer", "layer": "combat-rule", "status": "decompiled", "priority": "P3", "role": "scale-bucket comparison", "evidence": "CONFIRMED"},
+    {"address": "00e57460", "name": "Simulator::Cell::ShouldNotAttack", "layer": "combat-rule", "status": "decompiled", "priority": "P3", "role": "attack gate", "evidence": "CONFIRMED"},
+    {"address": "00e58980", "name": "Simulator::Cell::GetDamageAmount", "layer": "combat-rule", "status": "decompiled", "priority": "P3", "role": "damage matrix", "evidence": "CONFIRMED"},
+    {"address": "00e58e30", "name": "Simulator::Cell::GetNextAdvectID", "layer": "world-state", "status": "decompiled", "priority": "P3", "role": "next advect bucket lookup", "evidence": "CONFIRMED"},
+    {"address": "00e58ef0", "name": "Simulator::Cell::GetCurrentAdvectInfo", "layer": "world-state", "status": "decompiled", "priority": "P3", "role": "current advect lookup", "evidence": "CONFIRMED"},
+    {"address": "00e5b790", "name": "Simulator::Cell::MovePlayerToMousePosition", "layer": "movement", "status": "decompiled", "priority": "P3", "role": "mouse movement target and orientation", "evidence": "CONFIRMED"},
+    {"address": "00e5c0f0", "name": "App::cCellModeStrategy::OnMouseUp", "layer": "input", "status": "decompiled", "priority": "P0", "role": "mouse release adapter", "evidence": "CONFIRMED"},
+    {"address": "00e5dba0", "name": "Simulator::Cell::cCellGFX::Initialize", "layer": "graphics", "status": "decompiled", "priority": "P3", "role": "create render worlds/layers", "evidence": "CONFIRMED"},
+    {"address": "00e62340", "name": "Simulator::Cell::cCellUI::ShowHealthRollover", "layer": "ui", "status": "decompiled", "priority": "P3", "role": "health rollover trigger", "evidence": "CONFIRMED"},
+    {"address": "00e63560", "name": "Simulator::Cell::cCellGFX::LoadEffectMap", "layer": "effects", "status": "decompiled", "priority": "P3", "role": "load three effect-map slots", "evidence": "CONFIRMED"},
+    {"address": "00e64980", "name": "Simulator::Cell::cCellGFX::PreloadCreature", "layer": "graphics", "status": "decompiled", "priority": "P3", "role": "preload creature resources", "evidence": "CONFIRMED"},
+    {"address": "00e653a0", "name": "Simulator::Cell::cCellGFX::AddPreloadedModel2", "layer": "graphics", "status": "decompiled", "priority": "P3", "role": "preload model variant", "evidence": "CONFIRMED"},
+    {"address": "00e65410", "name": "Simulator::Cell::cCellGFX::AddPreloadedModel", "layer": "graphics", "status": "decompiled", "priority": "P3", "role": "preload model", "evidence": "CONFIRMED"},
+    {"address": "00e65640", "name": "Simulator::Cell::GetModelKeyForCellResource", "layer": "resource-boundary", "status": "decompiled", "priority": "P3", "role": "derive model key from cell resource", "evidence": "CONFIRMED"},
+    {"address": "00e65970", "name": "Simulator::Cell::cCellGFX::AddPreloadedTexture", "layer": "graphics", "status": "decompiled", "priority": "P3", "role": "preload texture", "evidence": "CONFIRMED"},
+    {"address": "00e66280", "name": "Simulator::Cell::cCellGFX::AddPreloadedEffect", "layer": "effects", "status": "decompiled", "priority": "P3", "role": "preload effect", "evidence": "CONFIRMED"},
+    {"address": "00e663b0", "name": "Simulator::Cell::cCellGFX::PreloadCellResource", "layer": "graphics-resource", "status": "decompiled", "priority": "P3", "role": "preload cell resource", "evidence": "CONFIRMED"},
+    {"address": "00e665c0", "name": "Simulator::Cell::cCellGFX::PreloadPopulateResource", "layer": "graphics-resource", "status": "decompiled", "priority": "P3", "role": "preload populate resource", "evidence": "CONFIRMED"},
+    {"address": "00e666f0", "name": "Simulator::Cell::cCellGFX::PreloadResources", "layer": "graphics-resource", "status": "decompiled", "priority": "P3", "role": "preload cell and populate resources", "evidence": "CONFIRMED"},
+    {"address": "00e66840", "name": "Simulator::Cell::cCellGFX::InstanceEffectOnCell", "layer": "effects", "status": "decompiled", "priority": "P3", "role": "instantiate visual effect on cell", "evidence": "CONFIRMED"},
+    {"address": "00e6c860", "name": "App::cCellModeStrategy::OnMouseDown", "layer": "input", "status": "decompiled", "priority": "P0", "role": "mouse press adapter", "evidence": "CONFIRMED"},
+    {"address": "00e6d200", "name": "Simulator::Cell::PlayAnimation", "layer": "gameplay-event", "status": "decompiled", "priority": "P3", "role": "animation blend and state transition", "evidence": "CONFIRMED"},
+    {"address": "00e74a20", "name": "Simulator::Cell::CreateCellObject", "layer": "gameplay-state", "status": "decompiled", "priority": "P3", "role": "allocate and initialize cell object", "evidence": "CONFIRMED"},
+    {"address": "00e780a0", "name": "FUN_00e780a0", "layer": "gameplay-state", "status": "dossier-decompiled", "priority": "P3", "role": "cell object pool lifecycle/rebuild", "evidence": "SUPPORTED"},
+    {"address": "00e7d660", "name": "App::cCellModeStrategy::OnMouseWheel", "layer": "input", "status": "decompiled", "priority": "P0", "role": "camera zoom/wheel adapter", "evidence": "CONFIRMED"},
+    {"address": "00e7fc00", "name": "App::cCellModeStrategy::OnExit", "layer": "app-lifecycle", "status": "decompiled", "priority": "P0", "role": "exit cell mode and restore globals", "evidence": "CONFIRMED"},
+    {"address": "00e806b0", "name": "FUN_00e806b0", "layer": "orchestrator", "status": "directly-decompiled-this-pass", "priority": "P3", "role": "real per-frame cell update body", "evidence": "SUPPORTED body; parameter names untrusted"},
+    {"address": "00e80980", "name": "App::cCellModeStrategy::Update", "layer": "app-lifecycle", "status": "decompiled", "priority": "P0", "role": "vtable update adapter", "evidence": "CONFIRMED"},
+    {"address": "00e80ba0", "name": "Simulator::Cell::cCellGame::Initialize", "layer": "gameplay-state", "status": "decompiled", "priority": "P3", "role": "state initialization root", "evidence": "CONFIRMED"},
+    {"address": "00e818f0", "name": "App::cCellModeStrategy::OnKeyDown", "layer": "input", "status": "decompiled", "priority": "P0", "role": "keyboard input and health toggle", "evidence": "CONFIRMED"},
+    {"address": "00e81cf0", "name": "App::cCellModeStrategy::Initialize", "layer": "app-lifecycle", "status": "decompiled", "priority": "P0", "role": "mode/singleton initialization", "evidence": "CONFIRMED"},
+    {"address": "00e81f30", "name": "App::cCellModeStrategy::Dispose", "layer": "app-lifecycle", "status": "decompiled", "priority": "P0", "role": "mode teardown and singleton release", "evidence": "CONFIRMED"},
+    {"address": "00e82340", "name": "cCellDataReference_::Create / FUN_00e82340", "layer": "resource-state", "status": "directly-decompiled-this-pass", "priority": "P3", "role": "allocate/reference-copy data reference object", "evidence": "SUPPORTED body; campaign address and KG queue address differ"}
+  ],
+  "function_contracts": [
+    {
+      "address": "00e80ba0",
+      "name": "Simulator::Cell::cCellGame::Initialize",
+      "contract": "Initialize the global cell-game object: reset early flags/fields, initialize the 4096-cell main pool, set the 1.0f time scale and adjacent copy, initialize serializable/collectable state, set field_4124=20, and write the background bounding box constants.",
+      "preconditions": ["resource/service allocator is usable"],
+      "postconditions": ["mCells capacity 4096 and allocated count 0", "field_514C=1.0f", "field_5150=field_514C", "named late fields reset", "background bbox values populated"],
+      "side_effects": ["IAppSystem time scale", "resource/serializable state", "collectable-item service"],
+      "confidence": "SUPPORTED",
+      "provenance": ["Ghidra MCP decompile 00e80ba0", "src/sim/CellGame.cpp:22-80", "src/sim/tests/cellgame_test.cpp:31-77"]
+    },
+    {
+      "address": "00e81cf0",
+      "name": "App::cCellModeStrategy::Initialize",
+      "contract": "Allocate or assign sCellGame, sCellGFX, and sCellUI, initialize mode flags, and perform application pre-shutdown/setup calls. The original body is broader than the current clean-room shell.",
+      "preconditions": ["mode manager and allocator available"],
+      "postconditions": ["three Cell singleton pointers established or null", "mode flags initialized"],
+      "confidence": "SUPPORTED",
+      "provenance": ["Ghidra MCP decompile 00e81cf0", "src/apps/CellModeStrategy.cpp:7-16", "spore.db investigation fun:00e81cf0"]
+    },
+    {
+      "address": "00e81f30",
+      "name": "App::cCellModeStrategy::Dispose",
+      "contract": "Tear down active cell state, restore global background colors, dispose/release sCellGFX and sCellUI resources, release sCellGame, and perform pause/unpause side effects.",
+      "preconditions": ["mode initialized"],
+      "postconditions": ["global color globals restored", "Cell singleton state cleared/released", "display/resources disposed"],
+      "confidence": "SUPPORTED",
+      "provenance": ["Ghidra MCP decompile 00e81f30", "src/apps/CellModeStrategy.cpp:18-30"]
+    },
+    {
+      "address": "00e552f0",
+      "name": "App::cCellModeStrategy::OnEnter",
+      "contract": "Reset mode/UI flags, start cell display, enable the cell world/render path, and invoke world/UI/application activation side effects.",
+      "preconditions": ["Initialize completed"],
+      "postconditions": ["cCellGFX display active", "cell mode entered", "cell UI/background state refreshed"],
+      "confidence": "SUPPORTED",
+      "provenance": ["Ghidra MCP decompile 00e552f0", "src/apps/CellModeStrategy.cpp:32-36"]
+    },
+    {
+      "address": "00e7fc00",
+      "name": "App::cCellModeStrategy::OnExit",
+      "contract": "Restore background-map clear-color globals, drain/clean cell state, disable the cell mode, and release world/effect state.",
+      "preconditions": ["mode active"],
+      "postconditions": ["background globals restored", "cell mode disabled", "cell state cleanup initiated"],
+      "confidence": "SUPPORTED",
+      "provenance": ["Ghidra MCP decompile 00e7fc00", "src/apps/CellModeStrategy.cpp:38-42"]
+    },
+    {
+      "address": "00e806b0",
+      "name": "FUN_00e806b0",
+      "contract": "If the cell-game mode/state word at +0x51e0 is zero and the +0x515c gate is clear, update mode counters/services with scaled delta, call MovePlayerToMousePosition, then invoke post-movement cell update, AI/behavior, graphics, and effect functions. Other state words enter texture/id generation branches.",
+      "preconditions": ["function is invoked through the mode vtable", "delta/state fields are valid"],
+      "postconditions": ["cell state and services update", "movement function may write target/orientation", "post-movement callbacks execute"],
+      "confidence": "SUPPORTED for branch/call shape; INFERRED for unnamed arguments",
+      "provenance": ["Ghidra MCP decompile 00e806b0", "docs/analysis/dossiers/cell-movement.md:30-33", "knowledgegraph/triage row 00e806b0"]
+    },
+    {
+      "address": "00e80980",
+      "name": "App::cCellModeStrategy::Update",
+      "contract": "void update(cCellModeStrategy*, float fDelta1, float fDelta2) { FUN_00e806b0(this, fDelta1); }",
+      "preconditions": ["mode instance valid"],
+      "postconditions": ["real per-frame cell update body is invoked"],
+      "confidence": "CONFIRMED",
+      "provenance": ["Ghidra MCP decompile 00e80980", "docs/analysis/dossiers/cell-movement.md:26-28"]
+    },
+    {
+      "address": "00e5b790",
+      "name": "Simulator::Cell::MovePlayerToMousePosition",
+      "contract": "If sCellGame+0x5158 is nonzero, return. Resolve the player via FUN_00b721d0(sCellGame+0x411c); if null, return. Run per-frame/camera/UI gates. Fetch origin and normalized view ray. If dot(dir,N) is nonzero and t>=0, write target=origin+dir*t to player+0x08/0x0c/0x10, set the moving flag, compute travel orientation from current position and write player+0x14..0x20.",
+      "preconditions": ["sCellGame available", "avatar index valid", "lock clear", "camera mode and UI selection allow steering"],
+      "postconditions": ["no-op on any guard failure", "otherwise target/orientation/moving writes"],
+      "confidence": "SUPPORTED body; field meanings INFERRED",
+      "provenance": ["Ghidra MCP decompile 00e5b790", "docs/analysis/dossiers/cell-movement.md:46-59", "docs/REPLACEMENT-ABI.md:64-82"]
+    },
+    {
+      "address": "00e5b2e0",
+      "name": "FUN_00e5b2e0",
+      "contract": "Per-frame cell UI/world update: resolve the avatar, adjust the current swim-plane point from UI bitfields, mark the moving flag when adjustments occur, normalize direction, compute a target displacement, write the avatar target position, clear idle, and maintain UI plane state.",
+      "preconditions": ["sCellGame and sCellUI exist", "avatar lookup succeeds"],
+      "postconditions": ["sCellUI plane/target fields may change", "avatar target position and moving state may change"],
+      "confidence": "SUPPORTED for writes/flow; INFERRED for UI bit meanings",
+      "provenance": ["Ghidra MCP decompile 00e5b2e0", "src/sim/Sim.cpp:103-260", "docs/REPLACEMENT-ABI.md:68-69"]
+    },
+    {
+      "address": "00e74a20",
+      "name": "Simulator::Cell::CreateCellObject",
+      "contract": "Allocate a pool object, derive cell size from scale/resource/explicit size, initialize target orientation and position, elevation, opacity, transform scale, model key, scale level, query and effect/GFX state, and return the pool index.",
+      "preconditions": ["main pool has a free entry", "resource fields are available"],
+      "postconditions": ["new allocated cCellObjectData or invalid index on exhaustion"],
+      "confidence": "SUPPORTED for core sequence; INFERRED for omitted resource/AI details",
+      "provenance": ["Ghidra MCP decompile 00e74a20", "src/sim/CellGame.cpp:82-152", "src/sim/tests/createcell_test.cpp:60-153"]
+    },
+    {
+      "address": "00e780a0",
+      "name": "FUN_00e780a0 / cell-object-pool-lifecycle",
+      "contract": "Given a pool index, clear the avatar reference if it matches, release old GFX/associated object, rebuild when stage scale changes, and recreate the pooled cell object.",
+      "preconditions": ["valid pool index", "cell object and associated graphics state available"],
+      "postconditions": ["avatar reference and associated graphics state reconciled", "pooled object rebuilt or released"],
+      "confidence": "SUPPORTED",
+      "provenance": ["docs/analysis/dossiers/unknown-high/cell-object-pool-lifecycle.md:18-85", "knowledgegraph/triage/unknown-high-investigation-f0e310e0.json"]
+    },
+    {
+      "address": "00e6d200",
+      "name": "Simulator::Cell::PlayAnimation",
+      "contract": "If the model instance and GFX object are live, calculate blend times from current/target animation, scale by the cell animation-time factor, dispatch the target animation, and write animation state/blend fields.",
+      "preconditions": ["cell model instance nonzero", "GFX object index nonzero"],
+      "postconditions": ["animation state and blend duration updated, or no-op"],
+      "confidence": "SUPPORTED",
+      "provenance": ["Ghidra MCP decompile 00e6d200", "src/apps/CellAnim.cpp:7-23", "src/apps/CellAnim.hpp:47-56"]
+    },
+    {
+      "address": "00e63560",
+      "name": "Simulator::Cell::cCellGFX::LoadEffectMap",
+      "contract": "For each effect-map record, select a persistent slot by record type (0/2 -> slot 0, 1/3 -> slot 1, 4 -> slot 2), create/replace/start the effect, and update effect parameters using cell and background geometry.",
+      "preconditions": ["sCellGame, sCellGFX, sCellUI initialized", "effect-map record available"],
+      "postconditions": ["three effect slots reflect active records", "effect parameters are updated"],
+      "confidence": "SUPPORTED for selection and call sequence; INFERRED for visual semantics",
+      "provenance": ["Ghidra MCP decompile 00e63560", "src/apps/CellAnim.cpp:25-41", "src/apps/CellAnim.hpp:69-85"]
+    },
+    {
+      "address": "00e66840",
+      "name": "Simulator::Cell::cCellGFX::InstanceEffectOnCell",
+      "contract": "Select foreground/background effect slot, read the nine-word effect-map parameter record, override the first three words with the swim-plane point and word 3 with 1.0f, instantiate the effect, place it on the cell transform, and return the effect pointer.",
+      "preconditions": ["cell and effect map available"],
+      "postconditions": ["visual effect instance returned"],
+      "confidence": "SUPPORTED",
+      "provenance": ["Ghidra MCP decompile 00e66840", "src/apps/CellAnim.cpp:64-83", "src/apps/CellAnim.hpp:58-86"]
+    },
+    {
+      "address": "00e5dba0",
+      "name": "Simulator::Cell::cCellGFX::Initialize",
+      "contract": "Create or replace the cell render worlds and named layers: skybox, background, beach, effects, foreground, and main model; create shadow layers; initialize GFX bookkeeping; retain no actual RenderWare ownership in the current projection.",
+      "preconditions": ["graphics/render services available"],
+      "postconditions": ["world/layer table initialized", "GFX display inactive until StartDisplay"],
+      "confidence": "SUPPORTED for world IDs/order; APPROXIMATION for host handles",
+      "provenance": ["Ghidra MCP decompile 00e5dba0", "src/apps/CellGfx.cpp:5-20", "src/apps/CellGfx.hpp:20-76"]
+    },
+    {
+      "address": "00e55120",
+      "name": "Simulator::Cell::cCellGFX::StartDisplay",
+      "contract": "Activate lighting/shadow/effect world state, enable display-side objects, reset the model shadow state, start display/service hooks, and create cell motion/ambient/music handles.",
+      "preconditions": ["GFX initialized", "render/lighting services available"],
+      "postconditions": ["cell graphics/display active"],
+      "confidence": "SUPPORTED for side-effect sequence; INFERRED for service meanings",
+      "provenance": ["Ghidra MCP decompile 00e55120", "src/apps/CellGfx.cpp:30", "src/apps/CellModeStrategy.cpp:32-36"]
+    },
+    {
+      "address": "00e666f0",
+      "name": "Simulator::Cell::cCellGFX::PreloadResources",
+      "contract": "Enumerate cell/world resource references and preload cell resources, populate resources, and related graphics records before the cell display is used.",
+      "preconditions": ["resource table and preloaded-map structures available"],
+      "postconditions": ["cell and populate preload records registered"],
+      "confidence": "SUPPORTED for orchestration; INFERRED for malformed decompiler locals",
+      "provenance": ["Ghidra MCP decompile 00e666f0", "src/apps/CellGfx.cpp:23-28", "src/apps/CellGfx.hpp:62-65"]
+    },
+    {
+      "address": "00e54270",
+      "name": "Simulator::Cell::cCellUI::Load",
+      "contract": "Initialize cell UI singleton fields, world/background vectors, zoom/layout constants, GlobalUICell-3 resource, progress bar, hover state, and rollover pool.",
+      "preconditions": ["resource/UI services available"],
+      "postconditions": ["sCellUI initialized with known constants and pools"],
+      "confidence": "SUPPORTED for offsets/constants; APPROXIMATION for full UI graph",
+      "provenance": ["Ghidra MCP decompile 00e54270", "src/apps/CellUI.cpp:5-10", "src/apps/CellUI.hpp:37-55"]
+    },
+    {
+      "address": "00e62340",
+      "name": "Simulator::Cell::cCellUI::ShowHealthRollover",
+      "contract": "If the cell GFX object index is nonzero, request a rollover for the cell using initialHealth/6, then set the rollover disappear time to 0.5f.",
+      "preconditions": ["cell pointer and rollover allocator available"],
+      "postconditions": ["rollover created/updated or no-op"],
+      "confidence": "SUPPORTED",
+      "provenance": ["Ghidra MCP decompile 00e62340", "src/apps/CellUI.cpp:12-25", "src/apps/CellUI.hpp:19-35"]
+    },
+    {
+      "address": "00e57340",
+      "name": "Simulator::Cell::GetScaleDifferenceWithPlayer",
+      "contract": "Resolve the other cell's scale bucket and the player bucket, subtract player from other, center the result at Equal=2, and clamp to MuchSmaller..MuchLarger.",
+      "preconditions": ["other cell scale available", "player scale table/current scale available"],
+      "postconditions": ["ScaleDifference enum in 0..4"],
+      "confidence": "CONFIRMED",
+      "provenance": ["Ghidra MCP decompile 00e57340", "src/sim/Combat.hpp:23-35", "src/sim/tests/combat_test.cpp:25-33"]
+    },
+    {
+      "address": "00e58980",
+      "name": "Simulator::Cell::GetDamageAmount",
+      "contract": "Return player-attacker damage by victim difference, non-player two-cell damage from the 5x5 matrix, or non-player-vs-player damage by attacker difference. Values are 0..6; equal player case is 2 or 3 depending on player flag at sCellGame+0x5190+0x7c.",
+      "preconditions": ["attacker/victim cell pointers and player scale/flag available"],
+      "postconditions": ["integer damage amount"],
+      "confidence": "CONFIRMED",
+      "provenance": ["Ghidra MCP decompile 00e58980", "src/sim/Combat.hpp:37-89", "src/sim/tests/combat_test.cpp:35-77"]
+    },
+    {
+      "address": "00e57460",
+      "name": "Simulator::Cell::ShouldNotAttack",
+      "contract": "Return true for same resource, bypass-field cases return false, passive/smaller-than-player resource flags suppress attacks against the player, and equal non-zero territory suppresses attacks; otherwise return false.",
+      "preconditions": ["attacker/target cell resource/state fields available"],
+      "postconditions": ["attack gate boolean"],
+      "confidence": "CONFIRMED",
+      "provenance": ["Ghidra MCP decompile 00e57460", "src/sim/Combat.hpp:91-126", "src/sim/tests/combat_test.cpp:79-115"]
+    },
+    {
+      "address": "00e58ef0",
+      "name": "Simulator::Cell::GetCurrentAdvectInfo",
+      "contract": "Resolve current world resource and player scale bucket, scan advect entries, return exact playerSize match immediately, otherwise retain the -1 default entry, and write scale/strength/variance/period plus return advect ID.",
+      "preconditions": ["current world resource and advect entries available", "player scale available"],
+      "postconditions": ["advect info outputs written; default or no-match values returned"],
+      "confidence": "CONFIRMED",
+      "provenance": ["Ghidra MCP decompile 00e58ef0", "src/sim/Advect.hpp:65-88", "src/sim/tests/advect_test.cpp"]
+    },
+    {
+      "address": "00e58e30",
+      "name": "Simulator::Cell::GetNextAdvectID",
+      "contract": "Resolve current world and scale bucket, scan entries for the next bucket, return its advect ID, otherwise return the -1 default advect ID, otherwise 0.",
+      "preconditions": ["current world and advect entries available", "player scale available"],
+      "postconditions": ["next advect ID returned"],
+      "confidence": "CONFIRMED",
+      "provenance": ["Ghidra MCP decompile 00e58e30", "src/sim/Advect.hpp:90-104", "src/sim/tests/advect_test.cpp"]
+    },
+    {
+      "address": "00e65640",
+      "name": "Simulator::Cell::GetModelKeyForCellResource",
+      "contract": "Resolve nested cell resource records and select a model key based on record type, with special handling for types 3, 4, and 5 and global defaults.",
+      "preconditions": ["cell resource reference and resource manager available"],
+      "postconditions": ["ResourceKey returned"],
+      "confidence": "SUPPORTED for selection branches; INFERRED for record-type meanings",
+      "provenance": ["Ghidra MCP decompile 00e65640", "src/sim/CellGame.cpp:145-149", "docs/analysis/campaigns/cell-stage-campaign.md:82"]
+    },
+    {
+      "address": "00b721d0",
+      "name": "FUN_00b721d0",
+      "contract": "Container lookup by pool index: reject zero/out-of-range IDs, compute element address from the container stride, verify the element's index tag, and return the element pointer or null.",
+      "preconditions": ["container base and count valid"],
+      "postconditions": ["element pointer or null"],
+      "confidence": "SUPPORTED",
+      "provenance": ["Ghidra MCP decompile 00b721d0", "docs/analysis/dossiers/cell-movement.md:54-59", "knowledgegraph/spore.db xref row for 00e5b790"]
+    },
+    {
+      "address": "00e82340",
+      "name": "cCellDataReference_::Create / FUN_00e82340",
+      "contract": "Allocate a small reference object and copy source reference fields, including a retained referenced object and final field. The KG also records 00e82420 for the SDK-named queued item; the address discrepancy is unresolved.",
+      "preconditions": ["allocator and source reference available"],
+      "postconditions": ["new reference object with copied fields"],
+      "confidence": "SUPPORTED for allocation/copy shape; address alias UNKNOWN",
+      "provenance": ["Ghidra MCP decompile 00e82340", "docs/analysis/campaigns/cell-stage-campaign.md:99-102", "knowledgegraph/spore.db investigation fun:00e82420"]
+    },
+    {
+      "address": "00e51010",
+      "name": "App::cCellModeStrategy::OnMouseMove",
+      "contract": "Adapter receives mouse state and routes the movement/input surface. The decompiled body is a short call through GameInput/related input state; the exact argument and destination semantics are not promoted beyond the dossier.",
+      "preconditions": ["mode instance valid"],
+      "postconditions": ["mouse state routed or ignored by downstream service"],
+      "confidence": "CONFIRMED symbol; INFERRED semantics",
+      "provenance": ["Ghidra MCP decompile 00e51010", "docs/analysis/dossiers/cell-movement.md:39-41", "src/apps/CellInput.hpp:1-10"]
+    },
+    {
+      "address": "00e818f0",
+      "name": "App::cCellModeStrategy::OnKeyDown",
+      "contract": "Look up a key/action, special-case virtualKey 2 to toggle sCellUI+0x937, forward the key to GameInput, and route the event to per-mode handlers. Return whether the event is handled.",
+      "preconditions": ["mode/input/UI state valid"],
+      "postconditions": ["health-display flag may toggle", "key may be forwarded/handled"],
+      "confidence": "SUPPORTED",
+      "provenance": ["Ghidra MCP decompile 00e818f0", "docs/analysis/dossiers/cell-movement.md:35-37", "src/apps/CellInput.cpp:29-95"]
+    }
+  ],
+  "dependencies": {
+    "original_internal": [
+      {"dependency": "sCellGame", "role": "primary global state", "consumers": ["Initialize", "Update", "MovePlayerToMousePosition", "CreateCellObject", "combat", "advect", "GFX", "UI"]},
+      {"dependency": "sCellGFX", "role": "worlds, layers, preloads, effects, display", "consumers": ["mode Initialize", "OnEnter", "PreloadResources", "InstanceEffectOnCell", "LoadEffectMap"]},
+      {"dependency": "sCellUI", "role": "HUD, world/background vectors, input/selection, zoom, health rollovers", "consumers": ["mode input", "per-frame update", "ShowHealthRollover", "GFX effect placement"]},
+      {"dependency": "serializable data", "role": "save/load/load-time state", "consumers": ["cCellGame Initialize", "moving flag and other nested state"]},
+      {"dependency": "cObjectPool<cCellObjectData>", "role": "main cell identity/allocation", "consumers": ["CreateCellObject", "MovePlayerToMousePosition", "cell lifecycle", "combat"]},
+      {"dependency": "cCellQueryLinkedPool", "role": "spatial candidates and world/background partition", "consumers": ["cell steering/flee/attack candidate paths", "cell GFX/query ownership"]},
+      {"dependency": "resource manager / cCellDataReference", "role": "cell/world/populate/effect resources", "consumers": ["GetGlobalsData", "PreloadResources", "advect", "CreateCellObject", "GetModelKeyForCellResource"]},
+      {"dependency": "IAppSystem / cGameNounManager", "role": "time, lifecycle, service, noun/collectable integration", "consumers": ["mode Initialize", "cCellGame Initialize", "Update"]},
+      {"dependency": "render/lighting/shadow/effects services", "role": "world creation, display, effect instances", "consumers": ["cCellGFX", "MovePlayerToMousePosition", "cCellUI"]},
+      {"dependency": "input/camera", "role": "key, mouse, ray/origin, wheel/zoom", "consumers": ["mode vtable", "MovePlayerToMousePosition", "per-frame update"]},
+      {"dependency": "trading/time/animation/audio", "role": "original per-frame services", "consumers": ["FUN_00e806b0", "cCellGFX::StartDisplay"]}
+    ],
+    "current_runtime": [
+      {"dependency": "openspore_sim", "provided_by": "src/sim/Sim.cpp and CellGame.cpp", "consumers": ["cell_stage", "sim tests", "replace differential"]},
+      {"dependency": "openspore_replace", "provided_by": "src/replace/Replace.cpp and Reference.cpp", "consumers": ["replace_diff_test"], "depends_on": "openspore_sim"},
+      {"dependency": "openspore_assets", "provided_by": "src/assets", "consumers": ["cell_stage asset decode"], "relationship": "asset inputs feed sim/entity/scene construction but do not change the sim contract"},
+      {"dependency": "openspore_renderer", "provided_by": "src/renderer", "consumers": ["cell_stage", "asset_view", "material_smoke"]},
+      {"dependency": "SDL3", "provided_by": "optional build dependency", "consumers": ["interactive cell_stage"]},
+      {"dependency": "Vulkan/present", "provided_by": "renderer", "consumers": ["interactive and offscreen presentation"]}
+    ],
+    "triage_dependency_boundary": {
+      "cluster_dependencies": ["resource-io", "app-lifecycle", "utfwin-framework", "graphics-render"],
+      "missing_link": "No Cell vtable association is recorded; App mode vtable edges are separate from the Simulator::Cell slice.",
+      "consequence": "Static function inventory is comparatively strong, but runtime dispatch/continuation and the relationship between Cell singleton state, app mode, and service managers remains incomplete."
+    }
+  },
+  "reconstruction_candidates": [
+    {
+      "id": "R1",
+      "priority": 0,
+      "name": "CellGameStateFacade",
+      "scope": "sCellGame named fields, pool/query handles, world refs, avatar index, serializable-data state, lock/mode/update gates, and initialize/dispose transitions.",
+      "reconstruction_surface": ["00e80ba0", "00e806b0", "00e5b790", "00e7fc00", "00e81f30"],
+      "current_reuse": ["src/sim/CellGame.hpp:60-155", "src/sim/CellGame.cpp:22-152", "src/replace/CellGameView.hpp:50-62"],
+      "status": "high-value / partial",
+      "gating_evidence": ["sCellGame field meaning inventory", "cell-mode runtime trace", "service callsite order"]
+    },
+    {
+      "id": "R2",
+      "priority": 0,
+      "name": "CellObjectLifecycle",
+      "scope": "Allocate, initialize, query, destroy, release GFX association, avatar-ref reconciliation, and scale-change rebuild.",
+      "reconstruction_surface": ["00e74a20", "00e780a0", "00b721d0", "00e868f0", "00e86980"],
+      "current_reuse": ["src/sim/CellPool.hpp:66-164", "src/sim/CellQuery.hpp:36-82", "src/sim/CellGame.cpp:82-152"],
+      "status": "high-value / partial",
+      "gating_evidence": ["pool lifecycle dossier", "GFX release/rebuild callees", "cell-mode runtime trace"]
+    },
+    {
+      "id": "R3",
+      "priority": 0,
+      "name": "CellFrameOrchestrator",
+      "scope": "Replace the current frame counter-only strategy update with a typed orchestration contract matching FUN_00e806b0's state gates, delta conversion, movement, AI/behavior, graphics/effects, and service updates.",
+      "reconstruction_surface": ["00e80980", "00e806b0", "00e5b2e0", "00e7f3a0", "00e53b00", "00e600a0", "00e6c9f0"],
+      "current_reuse": ["src/sim/Sim.cpp:103-260", "src/apps/CellModeStrategy.cpp:56-60", "src/apps/cell_stage.cpp:767-771"],
+      "status": "highest unknown boundary",
+      "gating_evidence": ["decompilation of unnamed parameters", "direct call/continuation order", "runtime state transitions"]
+    },
+    {
+      "id": "R4",
+      "priority": 1,
+      "name": "CellInputCameraGate",
+      "scope": "Represent mode vtable input events, mouse camera resolution, UI selection gates, lock flag, and ray-plane target updates without conflating the original function with the deterministic contract.",
+      "reconstruction_surface": ["00e51010", "00e6c860", "00e5c0f0", "00e7d660", "00e818f0", "00e5b790", "FUN_007c4900"],
+      "current_reuse": ["src/apps/CellInput.cpp:5-95", "src/sim/Sim.hpp:89-187", "src/replace/Replace.cpp:25-68"],
+      "status": "partial with strong static structure",
+      "gating_evidence": ["camera mode field at +0xd4", "UI selection bits", "runtime ray/origin and plane point"]
+    },
+    {
+      "id": "R5",
+      "priority": 1,
+      "name": "CellGfxLifecycle",
+      "scope": "Preserve world/effect/shadow identity, preload resource ordering, effect slot selection, cell effect instances, animation transitions, and display start/stop.",
+      "reconstruction_surface": ["00e5dba0", "00e666f0", "00e663b0", "00e665c0", "00e66840", "00e63560", "00e55120", "00e6d200"],
+      "current_reuse": ["src/apps/CellGfx.cpp:5-44", "src/apps/CellAnim.cpp:7-85", "src/apps/CellUI.cpp:5-25"],
+      "status": "static projection good; actual RenderWare/UI effects remain out of scope"
+    },
+    {
+      "id": "R6",
+      "priority": 1,
+      "name": "CellRuleBus",
+      "scope": "Expose scale difference, damage, attack gate, advect selection, and current/next world transitions as pure functions with explicit cell/resource/world inputs.",
+      "reconstruction_surface": ["00e57340", "00e57460", "00e58980", "00e58e30", "00e58ef0"],
+      "current_reuse": ["src/sim/Combat.hpp:14-128", "src/sim/Advect.hpp:29-106", "src/sim/tests/combat_test.cpp", "src/sim/tests/advect_test.cpp"],
+      "status": "mostly reconstructed as pure contracts; runtime wiring missing"
+    },
+    {
+      "id": "R7",
+      "priority": 1,
+      "name": "CellEventBus",
+      "scope": "Translate eat/flee/damage/animation/effect/health-rollover triggers into explicit event records and route them to animation/UI/effect services without claiming an original event ABI.",
+      "reconstruction_surface": ["00e6d200", "00e66840", "00e62340", "00e57460", "00e58980", "00e58e30"],
+      "current_reuse": ["src/sim/Sim.hpp:208-220", "src/apps/CellAnim.cpp:44-83", "src/apps/CellUI.cpp:12-25"],
+      "status": "proposed clean-room seam; original transport unresolved"
+    },
+    {
+      "id": "R8",
+      "priority": 2,
+      "name": "CellWorldPopulationAndPlacement",
+      "scope": "Bridge decoded world/populate records to actual cell population, player identity, and stage placement rather than hard-coded scene roles.",
+      "reconstruction_surface": ["00e4cce0", "00e663b0", "00e665c0", "00e666f0", "00e74a20", "00e780a0"],
+      "current_reuse": ["src/assets/CellResource.*", "src/apps/SceneConfig.*", "src/apps/cell_stage.cpp:737-751"],
+      "status": "asset decode exists; execution/identity unresolved",
+      "gating_evidence": ["world-object/populate record execution", "real player-cell identity", "stage placement oracle"]
+    }
+  ],
+  "proposed_replacement_interfaces": [
+    {
+      "name": "ICellGameState",
+      "purpose": "Stable host-facing facade for original Cell state transitions without exposing the 20,964-byte layout by default.",
+      "operations": ["initialize", "dispose", "isLocked", "setLock", "getAvatarIndex", "setAvatarIndex", "lookupCell", "getCurrentWorld", "setCurrentWorld", "getSerializableState", "tick"],
+      "inputs": ["allocator/resource provider", "initialization options", "time delta"],
+      "outputs": ["state snapshot", "lifecycle result", "cell index/pointer resolution"],
+      "compatibility_note": "Use a typed host object; provide an explicit ABI adapter only at the replacement boundary."
+    },
+    {
+      "name": "ICellObjectPool",
+      "purpose": "Free-list allocation contract shared by the main 4096-cell pool and future typed pools.",
+      "operations": ["initialize(capacity, id)", "allocate", "deallocate", "at(index)", "isAllocated", "capacity", "allocatedCount", "clear"],
+      "invariants": ["invalid index sentinel 0xffffffff", "free-list head is the next available index", "allocated object stores its own index", "null returned on exhaustion"]
+    },
+    {
+      "name": "ICellSpatialQuery",
+      "purpose": "Candidate query seam for flee, attack, and world logic.",
+      "operations": ["reserve", "insert", "queryNear(position,radius)", "remove(index)", "clear", "count"],
+      "predicate": "distance(C,P) <= C.cellSize + radius",
+      "ordering_note": "LIFO order is the current behavioral projection; original insertion/removal order remains unresolved."
+    },
+    {
+      "name": "ICellMovement",
+      "purpose": "Separate original movement target mutation from deterministic integration.",
+      "operations": ["resolveAvatar", "updateTargetFromCameraRay", "integrate", "applyInput", "snapshot"],
+      "inputs": ["deltaTime", "InputFrame", "CameraView", "MovementPlane", "lock/mode/UI gate state"],
+      "outputs": ["target position", "heading/orientation", "velocity", "position", "movement event list"],
+      "original_target_contract": ["lock guard", "avatar pool lookup", "camera mode/UI gates", "dot/intersection guards", "target/orientation/moving writes"],
+      "current_contract_note": "CellSim's mouse-primary/keyboard-secondary update is a separate deterministic interface and must not be treated as an ABI-equivalent replacement."
+    },
+    {
+      "name": "ICellLifecycleMode",
+      "purpose": "Generalize the mode vtable seam beyond the current Cell shell.",
+      "operations": ["initialize(manager)", "dispose", "onEnter", "onExit", "onKeyDown", "onMouseMove", "onMouseDown", "onMouseUp", "onMouseWheel", "update(delta)"],
+      "ordering": ["OnExit current", "set active index", "OnEnter next", "per-frame Update"],
+      "current_counterpart": "src/apps/IGameMode.hpp:28-52 and src/apps/CellModeStrategy.cpp:7-92"
+    },
+    {
+      "name": "ICellGfx",
+      "purpose": "Host-neutral graphics state/effect seam.",
+      "operations": ["initialize", "preloadCellResource", "preloadPopulateResource", "preloadResources", "startDisplay", "stopDisplay", "instanceEffectOnCell", "playAnimation", "loadEffectMap"],
+      "data": ["world slots", "layer names", "preloaded resource keys", "effect map slots", "animation state"],
+      "current_counterpart": "src/apps/CellGfx.hpp:41-76 and src/apps/CellAnim.hpp:39-86"
+    },
+    {
+      "name": "ICellUi",
+      "purpose": "HUD and health/feedback boundary.",
+      "operations": ["load", "setZoom", "getCameraVectors", "showHealthRollover", "toggleHealthDisplay", "update"],
+      "data": ["world/background vectors", "layout constants", "rollover records", "selection flags"],
+      "current_counterpart": "src/apps/CellUI.hpp:37-55 and src/apps/CellUI.cpp:5-25"
+    },
+    {
+      "name": "ICellRules",
+      "purpose": "Pure rules seam for combat and advection decisions.",
+      "operations": ["getScaleDifferenceWithPlayer", "getDamageAmount", "shouldNotAttack", "getCurrentAdvectInfo", "getNextAdvectID"],
+      "invariants": ["no wall clock", "no random source", "explicit resource/world inputs", "table-driven outputs"],
+      "current_counterpart": "src/sim/Combat.hpp:23-126 and src/sim/Advect.hpp:47-104"
+    },
+    {
+      "name": "ICellEventSink",
+      "purpose": "Proposed clean-room event boundary; not an assertion about the original event record.",
+      "operations": ["onEat", "onFlee", "onDamage", "onAnimation", "onEffect", "onHealthRollover", "onAdvectChange"],
+      "event_payload": ["event kind", "frame/time if applicable", "cell index", "world/resource id", "numeric parameters"],
+      "current_counterpart": "src/sim/SimEvent and src/apps/CellAnim/CellUI projections"
+    },
+    {
+      "name": "MovePlayerReplacementBoundary",
+      "purpose": "Existing narrow hook seam, kept separate from the broader Cell interfaces.",
+      "operations": ["replacement_MovePlayerToMousePosition(float deltaTime, SCellGameView*, CameraView const*, MovementPlane const*)"],
+      "requirements": ["cdecl stack-compatible entry", "read lock/player/plane/camera inputs", "write target/orientation/moving fields only", "preserve stack", "perform real pool lookup in installed build"],
+      "status": "64/64 differential against decompilation reference; not runtime-verified",
+      "provenance": ["src/replace/Replace.hpp:66-80", "src/replace/Replace.cpp:25-68", "docs/REPLACEMENT-ABI.md:84-127"]
+    }
+  ],
+  "unresolved_questions": [
+    {"id": "Q1", "question": "What is the runtime value of the per-world movement-plane point DAT_016b3c28/2c/30?", "why_it_matters": "The static image contains zero only at load time; faithful steering requires per-world runtime state.", "current_status": "UNKNOWN", "evidence": "src/sim/Sim.hpp:136-142 and docs/CELL-CONTRACT.md:51-58"},
+    {"id": "Q2", "question": "What do the sCellGame+0x5158, +0x515c, +0x51d8, +0x51d9, and +0x51e0 fields mean?", "why_it_matters": "They gate movement, update dispatch, and post-movement behavior.", "current_status": "INFERRED access; meaning UNKNOWN", "evidence": "Ghidra decompile 00e5b790 and 00e806b0"},
+    {"id": "Q3", "question": "What is the exact argument contract and continuation order of FUN_00e806b0 and FUN_00e5b2e0?", "why_it_matters": "They are the bridge between the App vtable and original Cell runtime state.", "current_status": "SUPPORTED body shape, parameter types UNKNOWN", "evidence": "Ghidra decompile 00e806b0 and 00e5b2e0"},
+    {"id": "Q4", "question": "How are cCellQueryLinkedPool entries inserted, removed, partitioned between foreground/background worlds, and ordered during queries?", "why_it_matters": "The current LIFO vector projection is not an original ABI or necessarily the original iteration order.", "current_status": "INFERRED near predicate; lifecycle/order UNKNOWN", "evidence": "src/sim/CellQuery.hpp:1-18 and 45-77"},
+    {"id": "Q5", "question": "What are the full cCellObjectData fields at +0x100..+0x358 and which are AI, health, damage, animation, power, and projectile state?", "why_it_matters": "CreateCellObject and lifecycle touch these fields, but current code models only a subset.", "current_status": "offset inventory CONFIRMED; semantic ownership partial", "evidence": "spore.db cCellObjectData field rows and Ghidra decompile 00e74a20"},
+    {"id": "Q6", "question": "What is the original event/message path for eat, damage, death, animation, and effect transitions?", "why_it_matters": "Current SimEvent is a local contract type, not an original event ABI.", "current_status": "UNKNOWN", "evidence": "src/sim/Sim.hpp:208-220 and current source projections"},
+    {"id": "Q7", "question": "Which runtime resources populate the current world and populate resources, and what creates the actual player-cell identity and placement?", "why_it_matters": "Current scene positions and player identity are approximations.", "current_status": "APPROXIMATION/UNRESOLVED", "evidence": "docs/analysis/campaigns/cell-stage-campaign.md:44-52 and docs/analysis/dossiers/cell-movement.md:105-123"},
+    {"id": "Q8", "question": "What are the original scale thresholds and stage-size semantics beyond the current CellStageScale table?", "why_it_matters": "Current size table is verified for the first eight tiers, but runtime scale transitions and stage scaling are not traced.", "current_status": "table VERIFIED for indexed bytes; transition UNKNOWN", "evidence": "src/sim/CellGame.cpp:15-18 and src/sim/CellGame.hpp:21-29"},
+    {"id": "Q9", "question": "What are the exact vtable slots and unknown-vtable implementations for Cell state/GFX objects?", "why_it_matters": "Triage has no Cell vtable association despite 26 decompiled named functions.", "current_status": "UNKNOWN linkage", "evidence": "knowledgegraph/triage/clusters-f0e310e0-v6.json:160-165"},
+    {"id": "Q10", "question": "Are campaign Cell records, world records, and populate records sufficient to reproduce AI/attack behavior, or are additional runtime/global services required?", "why_it_matters": "The current combat/advect functions are pure and not wired to a full cell tick.", "current_status": "UNKNOWN", "evidence": "src/sim/Combat.hpp:1-8 and src/sim/Advect.hpp:1-22"},
+    {"id": "Q11", "question": "What is the relationship between the campaign address 00e82340 and the KG queued SDK address 00e82420 for cCellDataReference creation?", "why_it_matters": "A one-address mismatch can misplace a resource reference boundary.", "current_status": "UNRESOLVED alias/adjacent-function discrepancy", "evidence": "Ghidra decompile 00e82340 and spore.db investigation fun:00e82420"},
+    {"id": "Q12", "question": "Can a reproducible Wine/X display trace reach the Cell stage and record plane point, avatar pointer, mode state, and target/orientation writes?", "why_it_matters": "This is the main gate to promote the current replaced-stub/replaced-approx status to a runtime-validated replacement.", "current_status": "BLOCKED in current environment", "evidence": "docs/analysis/CELL-RUNTIME-OBSERVATION.md:8-19 and 86-96"}
+  ],
+  "direct_evidence_references": [
+    {"id": "E1", "kind": "Ghidra MCP", "location": "SporeApp.exe:00e80ba0 Simulator::Cell::cCellGame::Initialize", "supports": "state initialization, pool capacity 4096, time scale, late reset block, background bbox", "limitations": "decompiler types and app-service calls are not semantic truth"},
+    {"id": "E2", "kind": "Ghidra MCP", "location": "SporeApp.exe:00e806b0 FUN_00e806b0", "supports": "actual per-frame cell update branch, state gates, delta scaling, MovePlayerToMousePosition and post-movement calls", "limitations": "parameter names and indirect call meanings are untrusted"},
+    {"id": "E3", "kind": "Ghidra MCP", "location": "SporeApp.exe:00e5b790 Simulator::Cell::MovePlayerToMousePosition", "supports": "lock/player/camera/UI gates, ray-plane intersection, target/orientation/moving writes", "limitations": "field meanings and plane values are inferred/approximated"},
+    {"id": "E4", "kind": "Ghidra MCP", "location": "SporeApp.exe:00e5b2e0 FUN_00e5b2e0", "supports": "per-frame UI plane-point adjustment, avatar target update, moving flag writes", "limitations": "UI bitfield meanings and named parameter contract unknown"},
+    {"id": "E5", "kind": "Ghidra MCP", "location": "SporeApp.exe:00e74a20 Simulator::Cell::CreateCellObject", "supports": "cell object allocation, size formula, transform/model/scale/query/effect initialization sequence", "limitations": "resource/AI/GFX calls remain partially named only"},
+    {"id": "E6", "kind": "Ghidra MCP", "location": "SporeApp.exe:00e5dba0, 00e666f0, 00e55120, 00e66840, 00e63560, 00e6d200", "supports": "GFX world/preload/effect/animation/display contracts", "limitations": "RenderWare and visual effect semantics are outside the current host projection"},
+    {"id": "E7", "kind": "Ghidra MCP", "location": "SporeApp.exe:00e57340, 00e57460, 00e58980, 00e58e30, 00e58ef0", "supports": "combat and advect pure function behavior", "limitations": "calling context and runtime wiring are not complete"},
+    {"id": "E8", "kind": "Ghidra MCP", "location": "SporeApp.exe:00e81cf0, 00e552f0, 00e7fc00, 00e818f0, 00e80980", "supports": "App Cell mode lifecycle and input boundary", "limitations": "app bootstrap and vtable linkage remain incomplete"},
+    {"id": "E9", "kind": "knowledgegraph DB", "location": "knowledgegraph/spore.db", "supports": "65461 nodes, 25561 fields, 223704 xrefs, 58757 triage rows, and structure/function node presence", "limitations": "sidecar is shared memory and not the binary analysis graph; counts are not semantic proof"},
+    {"id": "E10", "kind": "triage artifact", "location": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl", "supports": "confirmed/verified SDK function rows, categories, decomp paths, recon flags, and 00e806b0 unknown status", "limitations": "triage is a projection and some rows are inherited or category-propagated"},
+    {"id": "E11", "kind": "triage cluster", "location": "knowledgegraph/triage/clusters-f0e310e0-v6.json:136-180", "supports": "sim-cell boundary, 26 functions, 26 decomp coverage, dependencies, and missing vtable association", "limitations": "cluster membership does not prove runtime ordering"},
+    {"id": "E12", "kind": "dossier", "location": "docs/analysis/dossiers/cell-movement.md:8-21, 26-59, 64-101, 133-151", "supports": "vtable update flow, ray-plane movement, pool lookup, UI/camera gates, negative runtime evidence, and open questions", "limitations": "secondary synthesis; retains evidence labels and no-runtime caveat"},
+    {"id": "E13", "kind": "dossier", "location": "docs/analysis/dossiers/unknown-high/cell-object-pool-lifecycle.md:18-93", "supports": "pool lifecycle sequence, avatar-ref clearing, GFX release/rebuild, and 17 callers", "limitations": "release/rebuild callees are not yet reconstructed"},
+    {"id": "E14", "kind": "current source", "location": "src/sim/Sim.hpp:1-23, 132-206, 222-284 and src/sim/Sim.cpp:99-260", "supports": "deterministic movement contract, ray-plane helper, event order, and input replay", "limitations": "approximation/inference labels apply to original semantics"},
+    {"id": "E15", "kind": "current source", "location": "src/sim/CellGame.hpp:1-155 and src/sim/CellGame.cpp:22-152", "supports": "typed current state projection, 920-byte object pool projection, and CreateCellObject reproduction", "limitations": "does not represent the full 20964-byte state or all original fields"},
+    {"id": "E16", "kind": "current source", "location": "src/sim/CellQuery.hpp:1-82, src/sim/Combat.hpp:1-128, src/sim/Advect.hpp:1-106", "supports": "query predicate, combat rules, and advect bucket behavior", "limitations": "pure components are not connected to original CellFrameOrchestrator"},
+    {"id": "E17", "kind": "current source", "location": "src/apps/CellModeStrategy.cpp:7-92, src/apps/CellGfx.cpp:5-44, src/apps/CellUI.cpp:5-25, src/apps/CellInput.cpp:5-95, src/apps/CellAnim.cpp:7-85", "supports": "host lifecycle, world/effect/UI/input projections", "limitations": "current app shell is not original EA bootstrap or service graph"},
+    {"id": "E18", "kind": "current source", "location": "src/apps/cell_stage.cpp:651-855 and 1086-1135", "supports": "scene-to-sim data flow, dead-entity culling, scripted/interactive replay, and renderer composition", "limitations": "scene positions/player identity remain approximations"},
+    {"id": "E19", "kind": "current source", "location": "src/replace/Replace.hpp:39-80, src/replace/Replace.cpp:25-68, src/replace/Reference.cpp:41-92, src/replace/CellGameView.hpp:22-62", "supports": "narrow movement replacement contract, ABI seam, and explicit stand-in approximations", "limitations": "no live runtime differential; playerRef is a pointer stand-in in the clean-room unit"},
+    {"id": "E20", "kind": "tests and build", "location": "src/sim/CMakeLists.txt:1-90, src/replace/CMakeLists.txt:1-16, src/CMakeLists.txt:88-182, src/sim/tests/sim_test.cpp:51-272, src/sim/tests/sim_contract_test.cpp:1-26", "supports": "current executable inventory and deterministic contract validation", "limitations": "tests validate OpenSpore contracts and static projections, not original runtime fidelity"},
+    {"id": "E21", "kind": "test/contract", "location": "docs/CELL-CONTRACT.md:19-100 and docs/replacement-status.json:94-110", "supports": "fixed 1/60 contract, event order, deterministic fixture boundary, and current replaced-stub/replaced-approx statuses", "limitations": "explicitly states no original differential oracle for Cell movement"},
+    {"id": "E22", "kind": "campaign summary", "location": "docs/analysis/campaigns/cell-stage-campaign.md:44-102, 104-168", "supports": "37 decompiled Cell campaign files, KG structure census, 60+ Cell structures, record census, and static scope", "limitations": "campaign narrative is secondary and some runtime subparts remain blocked"}
+  ],
+  "conclusion": {
+    "status": "complete-static-research",
+    "confidence": "SUPPORTED for static boundaries and named function inventory; INFERRED/APPROXIMATION for unwired runtime semantics",
+    "summary": "The actual Cell domain is broader than src/sim/Sim.cpp and narrower than the original Simulator::Cell runtime. The strongest static core is cCellGame initialization, the 4096-cell free-list pool, CreateCellObject, spatial query, combat/advect pure functions, movement target replacement, and the mode/Gfx/UI lifecycle projections. The largest unresolved boundary is the unnamed per-frame orchestrator FUN_00e806b0 and the service/continuation graph around it. The current source provides deterministic contracts and host projections but does not claim original runtime fidelity.",
+    "next_research_priority": [
+      "Obtain a reproducible Cell-stage runtime trace or equivalent live state dump.",
+      "Resolve 00e806b0/00e5b2e0 argument and continuation contracts.",
+      "Resolve the cCellDataReference address discrepancy 00e82340 versus 00e82420.",
+      "Map cCellQueryLinkedPool insert/remove/partition behavior and original iteration order.",
+      "Connect decoded world/populate resources to actual cell population and player identity."
+    ]
+  }
+}

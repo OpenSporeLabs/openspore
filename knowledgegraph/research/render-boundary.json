@@ -1,0 +1,2470 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Canonical synthesis of gameplay-facing, presentation, renderer, third-party, platform, and unresolved boundaries between Spore gameplay and the original RenderWare/D3D presentation stack.",
+  "canonical_classifications": [
+    "GAMEPLAY_SEMANTIC",
+    "GAMEPLAY_RELEVANT_ENGINE_INTERFACE",
+    "PRESENTATION_ONLY",
+    "RENDERER_INFRASTRUCTURE",
+    "THIRD_PARTY_IMPLEMENTATION",
+    "PLATFORM_RUNTIME",
+    "UNKNOWN"
+  ],
+  "source_tracks": [
+    "knowledgegraph/research/render-boundary/01-renderware-objects.json",
+    "knowledgegraph/research/render-boundary/02-material-textures.json",
+    "knowledgegraph/research/render-boundary/03-camera-transforms.json",
+    "knowledgegraph/research/render-boundary/04-animation-pose.json",
+    "knowledgegraph/research/render-boundary/05-scene-entity.json",
+    "knowledgegraph/research/render-boundary/06-d3d-platform.json",
+    "knowledgegraph/research/render-boundary/07-resource-lifetime.json",
+    "knowledgegraph/research/render-boundary/08-gameplay-renderer.json",
+    "knowledgegraph/research/render-boundary/09-ui-presentation.json"
+  ],
+  "boundary_count": 48,
+  "classification_counts": {
+    "GAMEPLAY_SEMANTIC": 9,
+    "GAMEPLAY_RELEVANT_ENGINE_INTERFACE": 11,
+    "PRESENTATION_ONLY": 5,
+    "RENDERER_INFRASTRUCTURE": 7,
+    "THIRD_PARTY_IMPLEMENTATION": 5,
+    "PLATFORM_RUNTIME": 2,
+    "UNKNOWN": 9
+  },
+  "boundaries": [
+    {
+      "id": "animation-clip-transition-state",
+      "classification": "GAMEPLAY_SEMANTIC",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/04-animation-pose.json",
+        "knowledgegraph/research/render-boundary/08-gameplay-renderer.json"
+      ],
+      "boundary": "Cell animation clip selection and blend-transition state",
+      "gameplay_caller": "Cell gameplay, interaction, and entity-state paths call Simulator::Cell::PlayAnimation; forty-four static direct-call xrefs exist but the exact runtime event producer is unresolved.",
+      "original_callee": "Simulator::Cell::PlayAnimation and FUN_00e6d180, FUN_00e563e0, FUN_00b72210, and FUN_00e4f330",
+      "parameters": [
+        "cCellObjectData cell state",
+        "cell animation-time factor",
+        "current CellAnimations value",
+        "target CellAnimations value"
+      ],
+      "outputs": [
+        "animation dispatch request",
+        "computed blend-in time",
+        "computed blend-out time",
+        "updated current-animation and transition fields"
+      ],
+      "state_changed": [
+        "animation-manager request state",
+        "cCellObjectData animation flag and blend fields",
+        "cCellObjectData.mCurrentAnimation"
+      ],
+      "structures": [
+        "CellAnimations",
+        "Simulator::Cell::cCellAnimDefinition",
+        "Simulator::Cell::cCellObjectData"
+      ],
+      "lifetime": "Clip and transition state belongs to the pooled Cell object until the Cell is rebuilt, released, rebound to a model, or explicitly changes clip state.",
+      "failure_semantics": "The function no-ops when model identity or the Cell GFX association is absent; invalid clips, interruption, loop exhaustion, and callback failure are unresolved.",
+      "timing_order": "Guard valid model and presentation association, derive blend times, apply transition special cases, scale times, dispatch the request, then write Cell animation state.",
+      "openspore_concept": "Gameplay-owned animation intent: current clip, target clip, transition policy, and deterministic phase state.",
+      "modern_abstraction": "IAnimationController with typed clip IDs, transition policy, time scale, and a state snapshot before pose evaluation.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__PlayAnimation.c:22",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__PlayAnimation.c:35",
+        "knowledgegraph/research/render-boundary/04-animation-pose.json:100-156",
+        "knowledgegraph/research/render-boundary/08-gameplay-renderer.json:334-402"
+      ],
+      "confidence": "high",
+      "notes": "Static decompilation strongly supports blend calculation and state writes; it does not validate event causality or final pose output."
+    },
+    {
+      "id": "camera-ray-movement-plane-result",
+      "classification": "GAMEPLAY_SEMANTIC",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/03-camera-transforms.json",
+        "knowledgegraph/research/render-boundary/08-gameplay-renderer.json"
+      ],
+      "boundary": "Camera-ray to movement-plane result and Cell target mutation",
+      "gameplay_caller": "App::cCellModeStrategy::Update reaches Simulator::Cell::MovePlayerToMousePosition through the Cell update body.",
+      "original_callee": "Graphics::IRenderer::Get, renderer Layer access, FUN_007c4900, App::cViewer camera-to-point/mouse helpers, and the ray-plane calculation in MovePlayerToMousePosition",
+      "parameters": [
+        "camera origin and normalized ray direction",
+        "current pointer or mouse state",
+        "frame delta",
+        "movement-plane normal and point",
+        "player Cell pool identity"
+      ],
+      "outputs": [
+        "Cell moving state",
+        "player target position",
+        "player travel orientation",
+        "ray-plane target point"
+      ],
+      "state_changed": [
+        "Cell moving flag",
+        "cCellObjectData target orientation",
+        "cCellObjectData target position"
+      ],
+      "structures": [
+        "App::cViewer",
+        "Simulator::Cell::cCellObjectData",
+        "Simulator::Cell::sCellGame"
+      ],
+      "lifetime": "The camera query is frame-scoped; target position and orientation persist until the next movement update or gameplay mutation.",
+      "failure_semantics": "Movement no-ops for lock, invalid player, UI or camera-mode gates, invalid denominator, or negative ray-plane distance; target state is left unchanged on failure.",
+      "timing_order": "Route current pointer state, resolve the camera frame, produce origin and ray, intersect the gameplay movement plane, then write target position, travel orientation, and moving state.",
+      "openspore_concept": "A read-only camera-ray provider consumed by movement, with ray-plane intersection performed as gameplay logic.",
+      "modern_abstraction": "ICameraRayProvider and IPlayerMovement over a documented CameraState coordinate convention and explicit movement-plane result.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__MovePlayerToMousePosition.c:30",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__MovePlayerToMousePosition.c:58",
+        "docs/analysis/dossiers/cell-movement.md:46-55",
+        "knowledgegraph/research/render-boundary/03-camera-transforms.json:162-232"
+      ],
+      "confidence": "high",
+      "notes": "This is the strongest gameplay-hidden-behind-Graphics case: the semantic result is the target mutation, not the renderer accessor."
+    },
+    {
+      "id": "cell-gameplay-input-routing",
+      "classification": "GAMEPLAY_SEMANTIC",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/08-gameplay-renderer.json",
+        "knowledgegraph/research/render-boundary/09-ui-presentation.json"
+      ],
+      "boundary": "Active-mode input routing, pointer picks, and Cell UI selection transitions",
+      "gameplay_caller": "Input manager dispatch to App::cCellModeStrategy pointer and key callbacks, followed by cCellGame and cCellUI consumers.",
+      "original_callee": "cCellModeStrategy::OnMouseMove, OnMouseDown, OnMouseUp, OnMouseWheel, OnKeyDown, Graphics::IRenderer Layer, FUN_007c4900, and Cell spatial-query helpers",
+      "parameters": [
+        "Cell UI and camera-mode gates",
+        "camera and layer query context",
+        "ordered mouse and key events",
+        "pointer coordinates and button state"
+      ],
+      "outputs": [
+        "Cell UI hover and selection state",
+        "Cell query hit or candidate handle",
+        "camera and movement input state",
+        "consumed or default callback result"
+      ],
+      "state_changed": [
+        "cCellUI hover and selection fields",
+        "cCellUI mouse and hit-test fields",
+        "mode-local input and health-display state"
+      ],
+      "structures": [
+        "App::cCellModeStrategy",
+        "Simulator::Cell::cCellGame",
+        "Simulator::Cell::cCellUI",
+        "cCellQueryLinkedPool"
+      ],
+      "lifetime": "Pointer interaction state is per event; mode-local input and selection persist across frames until changed or the mode exits.",
+      "failure_semantics": "Callbacks return false when not consumed; failed pointer queries clear or leave selection unset; several field meanings and routing bits remain unresolved.",
+      "timing_order": "Normalize platform input, route to the active mode, query camera and Cell space, update gameplay or UI selection state, then apply it in the Cell update.",
+      "openspore_concept": "Typed input events and a mode-owned Cell interaction state that can feed gameplay without exposing UI widgets or renderer layers.",
+      "modern_abstraction": "IInputRouter, IModeInputState, and ICellPickQuery with explicit consumed, selected, and no-hit outcomes.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnMouseDown.c:23",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnMouseUp.c:20",
+        "knowledgegraph/research/render-boundary/08-gameplay-renderer.json:138-197",
+        "knowledgegraph/research/render-boundary/09-ui-presentation.json:135-198"
+      ],
+      "confidence": "medium",
+      "notes": "Input and selection are gameplay-relevant transitions. Which cCellUI fields are read by simulation rather than only consumed by presentation is not established."
+    },
+    {
+      "id": "cell-mode-lifecycle",
+      "classification": "GAMEPLAY_SEMANTIC",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/05-scene-entity.json",
+        "knowledgegraph/research/render-boundary/07-resource-lifetime.json",
+        "knowledgegraph/research/render-boundary/08-gameplay-renderer.json",
+        "knowledgegraph/research/render-boundary/09-ui-presentation.json"
+      ],
+      "boundary": "Game-mode transition and Cell mode ownership lifecycle",
+      "gameplay_caller": "App::cGameModeManager changes the active mode, then the selected mode drives per-frame input, simulation, display, exit, and disposal.",
+      "original_callee": "App::cGameModeManager::SetActiveModeAt and App::cCellModeStrategy::Initialize, OnEnter, Update, OnExit, and Dispose",
+      "parameters": [
+        "frame delta",
+        "mode-owned gameplay and presentation state",
+        "old and new mode instances",
+        "target mode identity and index"
+      ],
+      "outputs": [
+        "Cell simulation and display update frames",
+        "cleared and disposed mode state",
+        "old-mode exit and new-mode entry transition",
+        "selected active mode"
+      ],
+      "state_changed": [
+        "Cell frame and background presentation state",
+        "Cell game, CellGFX, and CellUI singleton ownership",
+        "Cell mode initialized and entered flags",
+        "active game-mode index"
+      ],
+      "structures": [
+        "App::cCellModeStrategy",
+        "App::cGameModeManager",
+        "Simulator::Cell::cCellGFX",
+        "Simulator::Cell::cCellGame",
+        "Simulator::Cell::cCellUI"
+      ],
+      "lifetime": "A mode owns its gameplay and presentation state from initialization through disposal; display activation is normally bounded by entry and exit.",
+      "failure_semantics": "The original manager body is boundary-damaged and provides little explicit error propagation; partial initialization must not be treated as display-ready.",
+      "timing_order": "Initialize, exit the old mode, enter the new mode, update gameplay and presentation, exit on transition, then dispose mode-owned state before global renderer shutdown.",
+      "openspore_concept": "An explicit mode transition and lifetime boundary that orders gameplay, presentation, input routing, and resource retirement.",
+      "modern_abstraction": "IGameModeRegistry and IGameMode with initialize, onEnter, update, onExit, and dispose transitions plus idempotent teardown.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__Dispose.c:20",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnExit.c:15",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/App__cGameModeManager__SetActiveModeAt.c:8",
+        "knowledgegraph/research/render-boundary/07-resource-lifetime.json:501-590"
+      ],
+      "confidence": "high",
+      "notes": "The old-exit/new-enter contract is strongly supported, but the exact complete transition path is static and not a runtime trace."
+    },
+    {
+      "id": "content-resource-model-identity",
+      "classification": "GAMEPLAY_SEMANTIC",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/01-renderware-objects.json",
+        "knowledgegraph/research/render-boundary/02-material-textures.json",
+        "knowledgegraph/research/render-boundary/07-resource-lifetime.json",
+        "knowledgegraph/research/render-boundary/08-gameplay-renderer.json"
+      ],
+      "boundary": "Stable content, model, material, texture, and effect identity selection",
+      "gameplay_caller": "Cell creation and cCellGFX preload traverse Cell, Populate, effect-map, and nested resource records to select visual content.",
+      "original_callee": "Simulator::Cell::GetModelKeyForCellResource and cCellGFX preload helpers for models, textures, effects, creatures, and populate records",
+      "parameters": [
+        "Cell and Populate resource records",
+        "ResourceKey instance, type, and group",
+        "model, material, texture, effect, and creature identity",
+        "nested effect-map records"
+      ],
+      "outputs": [
+        "cell-resource to visual-content association",
+        "material IDs and texture references",
+        "preload identity set",
+        "stable ResourceKey or model key"
+      ],
+      "state_changed": [
+        "CellGFX preload key associations",
+        "cCellObjectData model identity",
+        "stage-to-resource association state"
+      ],
+      "structures": [
+        "GmdlModel",
+        "GmdlTextureRef",
+        "ResourceKey",
+        "cCellCellResource",
+        "cCellEffectMapResource",
+        "cCellPopulateResource"
+      ],
+      "lifetime": "Resource identities are stable content values; the visual handles acquired for them have independent stage or cache lifetime.",
+      "failure_semantics": "Unknown record types and missing nested records can select defaults, skip preload entries, or yield absent presentation state; the original aggregate status is not consistent.",
+      "timing_order": "Resolve content keys before acquiring models, textures, effects, or meshes, then retain those handles across preload-to-display use.",
+      "openspore_concept": "Content identity as immutable typed keys, separate from loaded model, material, texture, mesh, and presentation handles.",
+      "modern_abstraction": "IContentStore, IModelKeyResolver, IMaterialIntent, and typed ResourceKey, MaterialId, and TextureKey values.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__GetModelKeyForCellResource.c:8",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__PreloadResources.c:50",
+        "knowledgegraph/research/render-boundary/07-resource-lifetime.json:175-358",
+        "src/assets/Gmdl.hpp:68"
+      ],
+      "confidence": "high",
+      "notes": "Identity is a semantic asset contract. Exact record meaning, material-slot mapping, and original cache priority remain separate questions."
+    },
+    {
+      "id": "editor-creature-motion-animation-state",
+      "classification": "GAMEPLAY_SEMANTIC",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/04-animation-pose.json",
+        "knowledgegraph/research/render-boundary/08-gameplay-renderer.json",
+        "knowledgegraph/research/render-boundary/09-ui-presentation.json"
+      ],
+      "boundary": "Editor creature target motion, clip, event, and pose-intent state",
+      "gameplay_caller": "Editor mode selection, cEditorAnimWorld target setters, EditorCreatureController updates, and editor animation event commands.",
+      "original_callee": "Editors::cEditor::SetActiveMode, cEditorAnimWorld setters, EditorCreatureController::Update, AnimatedCreature and IAnimWorld vtables, and cEditorAnimEvent MessageSend or MessagePost",
+      "parameters": [
+        "animation event identity and scalar parameters",
+        "creature identity",
+        "delta time",
+        "old and new editor mode",
+        "target position and angle"
+      ],
+      "outputs": [
+        "animation clip and event request",
+        "current and target angle",
+        "current and target creature transform",
+        "look-at and neutral-pose intent"
+      ],
+      "state_changed": [
+        "EditorCreatureController current and target angle",
+        "EditorCreatureController current and target position",
+        "editor animation event state",
+        "editor creature and animation-world mapping"
+      ],
+      "structures": [
+        "Anim::AnimatedCreature",
+        "Anim::AnimationMessage",
+        "Anim::IAnimWorld",
+        "Editors::EditorCreatureController",
+        "Editors::cEditorAnimWorld"
+      ],
+      "lifetime": "Controller and animation intent live with the editor creature binding; event payload lifetime and queue ownership are unresolved.",
+      "failure_semantics": "Missing creature or controller entries become no-ops; event IDs, queue priority, completion, and exact pose side effects are not characterized.",
+      "timing_order": "Clean the old editor mode, install creature and target state, dispatch ordered animation commands, then update and render the resulting editor view.",
+      "openspore_concept": "Editor-owned creature motion, animation intent, and mode state with pose evaluation behind an adapter.",
+      "modern_abstraction": "IEditorCreatureController and IAnimationEventSink over typed target state, event ordering, and explicit missing-target results.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__EditorCreatureController__Update.c:58",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditorAnimEvent__MessageSend.c:8",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditorAnimWorld__SetTargetPosition.c:42",
+        "knowledgegraph/research/render-boundary/04-animation-pose.json:438-556"
+      ],
+      "confidence": "medium",
+      "notes": "This is editor semantic state, not evidence that the same controller drives Cell creatures."
+    },
+    {
+      "id": "entity-transform-composition",
+      "classification": "GAMEPLAY_SEMANTIC",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/01-renderware-objects.json",
+        "knowledgegraph/research/render-boundary/03-camera-transforms.json",
+        "knowledgegraph/research/render-boundary/04-animation-pose.json",
+        "knowledgegraph/research/render-boundary/05-scene-entity.json",
+        "knowledgegraph/research/render-boundary/08-gameplay-renderer.json"
+      ],
+      "boundary": "Gameplay-owned local, parent, and world transform composition",
+      "gameplay_caller": "Cell and entity construction, movement, animation, model attachment, editor creature controllers, and presentation snapshot code compose transforms.",
+      "original_callee": "Transform::PreTransformBy, Transform::ToMatrix4, and local transform math helpers",
+      "parameters": [
+        "offset",
+        "parent and child transform values",
+        "rotation matrix or quaternion",
+        "scale",
+        "transform flags and count"
+      ],
+      "outputs": [
+        "composed gameplay Transform value",
+        "current world position and orientation",
+        "renderer-facing Matrix4 snapshot"
+      ],
+      "state_changed": [
+        "Transform flags and composition count",
+        "Transform offset",
+        "Transform rotation",
+        "Transform scale"
+      ],
+      "structures": [
+        "Matrix3",
+        "Matrix4",
+        "Transform"
+      ],
+      "lifetime": "Transform values are value state embedded in entities, models, camera state, and presentation records until recomputed.",
+      "failure_semantics": "The helpers expose no typed error path; invalid or denormal transform handling and exact normalization order are unresolved.",
+      "timing_order": "Compose authoritative entity transforms during gameplay, snapshot after movement and animation, then convert to a render matrix at the presentation boundary.",
+      "openspore_concept": "A backend-neutral AffineTransform carrying gameplay position, orientation, scale, and deterministic composition order.",
+      "modern_abstraction": "AffineTransform with compose, inverse, transformPoint, and transformDirection operations independent of the original 56-byte layout.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Transform__PreTransformBy.c:18",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Transform__PreTransformBy.c:6",
+        ".spore-analysis/ghidra-exports/structs_fields.tsv:2365",
+        "knowledgegraph/research/render-boundary/03-camera-transforms.json:373-441"
+      ],
+      "confidence": "high",
+      "notes": "Preserve coordinate handedness and composition order, not original flags, storage layout, or helper ABI."
+    },
+    {
+      "id": "gameplay-entity-presentation-association",
+      "classification": "GAMEPLAY_SEMANTIC",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/05-scene-entity.json",
+        "knowledgegraph/research/render-boundary/08-gameplay-renderer.json"
+      ],
+      "boundary": "Gameplay Cell identity to replaceable presentation-handle association",
+      "gameplay_caller": "Simulator::Cell::CreateCellObject and Cell lifecycle paths create, rebuild, and release renderer-facing associations for pooled gameplay objects.",
+      "original_callee": "FUN_00e6d8f0, cObjectPool CellGFXObjectData allocation, cCellObjectData GFX-index helpers, and reciprocal CellGFXObjectData model or creature links",
+      "parameters": [
+        "Cell pool index and cCellObjectData",
+        "CellGFX presentation pool entry",
+        "foreground or background presentation context",
+        "model and animation identity"
+      ],
+      "outputs": [
+        "detach or rebuild result",
+        "mGFXObjectIndex association",
+        "model and animated-creature presentation links",
+        "reciprocal CellGFXObjectData mCellIndex"
+      ],
+      "state_changed": [
+        "CellGFX presentation-pool live state",
+        "CellGFXObjectData.mCellIndex",
+        "cCellObjectData.mGFXObjectIndex",
+        "model and creature association state"
+      ],
+      "structures": [
+        "CellGFXObjectData",
+        "Simulator::Cell::cCellGFX",
+        "Simulator::Cell::cCellObjectData"
+      ],
+      "lifetime": "Gameplay Cell identity persists in its gameplay pool; its presentation handle can be detached, rebuilt, or released independently.",
+      "failure_semantics": "Missing handles are treated as detached; pool exhaustion is inferred to be a fatal invariant violation; individual component-release failures are not fully characterized.",
+      "timing_order": "Create or rebuild the gameplay Cell, allocate and populate its presentation representation, establish reciprocal links, and invalidate only the presentation link during removal.",
+      "openspore_concept": "Stable gameplay EntityId with an optional PresentationHandle that can be rebuilt without changing simulation identity.",
+      "modern_abstraction": "IEntityPresentationRegistry with attach, rebuild, detach, and idempotent invalidation operations.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__CreateCellObject.c:157-170",
+        "knowledgegraph/research/render-boundary/05-scene-entity.json:5-130",
+        "knowledgegraph/triage/structs_fields.tsv:1359-1367",
+        "knowledgegraph/triage/structs_fields.tsv:1871-1909"
+      ],
+      "confidence": "medium",
+      "notes": "The reciprocal association is strong static evidence; exact helper intent and pre-load versus immediate allocation remain address-addressed."
+    },
+    {
+      "id": "vehicle-locomotion-state",
+      "classification": "GAMEPLAY_SEMANTIC",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/04-animation-pose.json",
+        "knowledgegraph/research/render-boundary/08-gameplay-renderer.json"
+      ],
+      "boundary": "Vehicle identity, locomotion, and model-transform intent",
+      "gameplay_caller": "Simulator::cCity::SpawnVehicle, Simulator::cVehicle::Load, and cLocomotiveObject movement or model updates.",
+      "original_callee": "Simulator::cVehicle and cLocomotiveObject movement and model virtuals",
+      "parameters": [
+        "desired speed",
+        "model and model-world handles",
+        "orientation",
+        "position",
+        "scale and direction",
+        "vehicle and city identity"
+      ],
+      "outputs": [
+        "desired speed",
+        "linear and angular velocity",
+        "transform-dirty and model-changed state",
+        "vehicle position and orientation"
+      ],
+      "state_changed": [
+        "cVehicle desired speed",
+        "cVehicle position and orientation",
+        "cVehicle transform-dirty and model-changed flags",
+        "cVehicle velocity and angular velocity"
+      ],
+      "structures": [
+        "Simulator::cLocomotiveObject",
+        "Simulator::cVehicle",
+        "Simulator::cVehicleData"
+      ],
+      "lifetime": "Vehicle objects live from city spawn and load through locomotion updates until their owning city or game-data container destroys them.",
+      "failure_semantics": "The original Load and spawn bodies are unavailable; invalid references, unloaded models, teleport, and transform-update failure behavior are unresolved.",
+      "timing_order": "Spawn and load vehicle state, apply locomotion, mark model transform dirty, then let presentation consume the current transform snapshot; pose coupling is unknown.",
+      "openspore_concept": "Vehicle locomotion and transform intent owned by gameplay, independent of the visual model and any animation backend.",
+      "modern_abstraction": "IVehicleState with typed locomotion fields, model binding, and an explicit transform-dirty transition.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/sdk_functions.tsv:1302",
+        ".spore-analysis/ghidra-exports/structs_fields.tsv:8272",
+        ".spore-analysis/ghidra-exports/structs_fields.tsv:8288",
+        "knowledgegraph/research/render-boundary/04-animation-pose.json:557-621"
+      ],
+      "confidence": "medium",
+      "notes": "Vehicle locomotion is semantic; no direct vehicle-to-animation or pose edge is established."
+    },
+    {
+      "id": "animation-service-controller",
+      "classification": "GAMEPLAY_RELEVANT_ENGINE_INTERFACE",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/04-animation-pose.json",
+        "knowledgegraph/research/render-boundary/08-gameplay-renderer.json"
+      ],
+      "boundary": "Animation manager, animation world, and animated-creature engine wrappers",
+      "gameplay_caller": "Cell, editor creature, and mode update paths use animation services to express clip, loop, blend, creature, and pose requests.",
+      "original_callee": "Anim::IAnimManager::Get, AnimatedCreature vtable methods, Anim::IAnimWorld::Update, UpdateCreatures, PostUpdateCreatures, and model-world animation operations",
+      "parameters": [
+        "animated-creature or Cell identity",
+        "blend and time-scale values",
+        "clip or animation ID",
+        "delta time",
+        "mode, idle, loop, and loop-count values"
+      ],
+      "outputs": [
+        "animation service handle",
+        "current clip and phase state",
+        "ordered animation updates",
+        "pose snapshot or update handle"
+      ],
+      "state_changed": [
+        "animated-creature clip and world ownership",
+        "animation manager service lookup",
+        "animation-world update phase"
+      ],
+      "structures": [
+        "Anim::AnimatedCreature",
+        "Anim::IAnimManager",
+        "Anim::IAnimWorld",
+        "Anim::anim_cid",
+        "Anim::anim_query"
+      ],
+      "lifetime": "The service is application-scoped; clip state follows a controller or Cell; pose buffers follow the model instance or animation world.",
+      "failure_semantics": "The accessor can return the current global pointer; most implementation bodies and missing-clip, interruption, loop, and phase failure paths are unavailable.",
+      "timing_order": "Fetch or inject the service, apply gameplay clip and transition intent, update animation worlds and creatures in explicit phases, snapshot pose, then submit presentation.",
+      "openspore_concept": "Injected animation services expressing gameplay-owned transitions while hiding manager and evaluator objects.",
+      "modern_abstraction": "IAnimationService, IAnimationController, and IAnimationWorld with explicit update phases and PoseSnapshot output.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Anim__IAnimManager__Get.c:8",
+        ".spore-analysis/ghidra-exports/structs_fields.tsv:10630",
+        "knowledgegraph/research/render-boundary/04-animation-pose.json:268-324",
+        "knowledgegraph/research/render-boundary/04-animation-pose.json:5-98"
+      ],
+      "confidence": "medium",
+      "notes": "The wrapper surface is known, but the exact pose-update ordering and implementation semantics are not."
+    },
+    {
+      "id": "camera-service",
+      "classification": "GAMEPLAY_RELEVANT_ENGINE_INTERFACE",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/03-camera-transforms.json",
+        "knowledgegraph/research/render-boundary/08-gameplay-renderer.json"
+      ],
+      "boundary": "Active camera, viewer frame, projection, viewport, and pointer-ray service",
+      "gameplay_caller": "Mode setup selects cameras; Cell movement, pointer picking, editor tools, and editor creature controllers query camera and layer state.",
+      "original_callee": "App::cCameraManager camera-selection methods, App::cViewer camera and projection methods, cMouseCamera input methods, and GetCameraToPoint or GetCameraToMouse helpers",
+      "parameters": [
+        "active camera or ID",
+        "pointer NDC or target point",
+        "projection and clip planes",
+        "view transform",
+        "viewer attachment",
+        "viewport dimensions"
+      ],
+      "outputs": [
+        "active camera and viewer state",
+        "camera or pick query context",
+        "camera origin and normalized ray",
+        "view and projection snapshot"
+      ],
+      "state_changed": [
+        "active camera and ID",
+        "mouse-camera orientation and distance state",
+        "view, projection, viewport, and clip state",
+        "viewer attachment"
+      ],
+      "structures": [
+        "App::cCameraManager",
+        "App::cMouseCamera",
+        "App::cViewer",
+        "Matrix4"
+      ],
+      "lifetime": "Camera services and registries are application-scoped; the active viewer and camera frame are mode- or frame-scoped.",
+      "failure_semantics": "Named camera misses report failure; invalid viewer or graphics-state creation can stop setup; no typed error exists for a missing camera ray in the exported helper.",
+      "timing_order": "Apply input, select the active camera, finalize view and projection, then expose the same immutable camera snapshot to gameplay queries and rendering.",
+      "openspore_concept": "A coherent CameraState and camera service shared by gameplay queries and frame rendering.",
+      "modern_abstraction": "ICameraService, ICameraController, CameraState, ProjectionState, and ICameraRayProvider with documented coordinate conventions.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCameraManager__SetActiveCameraByID.c:9",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/App__cViewer__SetViewTransform.c:22",
+        ".spore-analysis/ghidra-exports/structs_fields.tsv:2974",
+        "knowledgegraph/research/render-boundary/03-camera-transforms.json:5-303"
+      ],
+      "confidence": "high",
+      "notes": "The service is gameplay-relevant because gameplay reads its state. Exact follow, handedness, and unprojection details remain unresolved."
+    },
+    {
+      "id": "cell-content-preloader",
+      "classification": "GAMEPLAY_RELEVANT_ENGINE_INTERFACE",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/01-renderware-objects.json",
+        "knowledgegraph/research/render-boundary/02-material-textures.json",
+        "knowledgegraph/research/render-boundary/05-scene-entity.json",
+        "knowledgegraph/research/render-boundary/07-resource-lifetime.json",
+        "knowledgegraph/research/render-boundary/08-gameplay-renderer.json",
+        "knowledgegraph/research/render-boundary/09-ui-presentation.json"
+      ],
+      "boundary": "Cell resource preload and presentation association service",
+      "gameplay_caller": "App::cCellModeStrategy::OnEnter preloads Cell and Populate resources before individual entities receive visual representations.",
+      "original_callee": "cCellGFX::PreloadResources, PreloadCellResource, PreloadPopulateResource, PreloadCreature, AddPreloadedModel, AddPreloadedTexture, AddPreloadedEffect, and GetModelKeyForCellResource",
+      "parameters": [
+        "Cell and Populate resource references",
+        "model, texture, effect, and creature keys",
+        "nested resource and effect-map records",
+        "wait-until-loaded and preload-map state"
+      ],
+      "outputs": [
+        "model and creature handles",
+        "preload readiness and association state",
+        "resource-key to presentation-handle bindings",
+        "texture and effect handles"
+      ],
+      "state_changed": [
+        "cCellGFX preload collections",
+        "per-key deduplication and reference counters",
+        "recursive preload traversal state",
+        "stage resource associations"
+      ],
+      "structures": [
+        "IsPreloadedMap_t",
+        "ResourceKey",
+        "cCellCellResource",
+        "cCellGFX",
+        "cCellPopulateResource"
+      ],
+      "lifetime": "Preload collections belong to the Cell stage and outlive individual presentation views; loaded handles remain valid until stage teardown or last-owner release.",
+      "failure_semantics": "Null models, zero identities, unsupported records, and failed child references are often skipped or logged; modern code should expose missing, unreadable, and timeout results explicitly.",
+      "timing_order": "Initialize scene services, walk content records, recursively acquire and deduplicate dependencies, publish readiness, bind resources, then activate display.",
+      "openspore_concept": "A stage-owned content preload catalog keyed by stable identity and independent from entity ownership.",
+      "modern_abstraction": "IContentPreloader and IPresentationResourceCache with preloadModel, preloadCreature, preloadTexture, preloadEffect, readiness, and typed errors.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__PreloadCellResource.c:52",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__PreloadPopulateResource.c:42",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__PreloadResources.c:22",
+        "knowledgegraph/research/render-boundary/07-resource-lifetime.json:257-358"
+      ],
+      "confidence": "high",
+      "notes": "The original traversal and ordering are required; decompiler-ambiguous container and refcount layouts are not ABI requirements."
+    },
+    {
+      "id": "cell-entity-view-propagation",
+      "classification": "GAMEPLAY_RELEVANT_ENGINE_INTERFACE",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/04-animation-pose.json",
+        "knowledgegraph/research/render-boundary/05-scene-entity.json"
+      ],
+      "boundary": "Gameplay Cell snapshot to model, animation, opacity, and visibility view",
+      "gameplay_caller": "Cell updates and animation transitions provide transform, opacity, clip, scale, and visibility intent to each presentation association.",
+      "original_callee": "FUN_00e5e590, Simulator::Cell::PlayAnimation, Graphics::IModelWorld animation and group-transform virtuals, and Simulator::IGameDataView model and visibility methods",
+      "parameters": [
+        "Cell scale and presentation flags",
+        "Cell world transform",
+        "animation ID, mode, transition, and loop",
+        "game-data view visibility",
+        "model or animated-creature identity",
+        "target and current opacity"
+      ],
+      "outputs": [
+        "active model or creature view",
+        "model-world animation and transform state",
+        "presentation transform and point snapshot",
+        "scene visibility state"
+      ],
+      "state_changed": [
+        "model or creature view selection",
+        "model-world animation state",
+        "per-view transform and opacity",
+        "view visibility and world membership"
+      ],
+      "structures": [
+        "Anim::AnimatedCreature",
+        "Graphics::IModelWorld",
+        "Simulator::Cell::cCellObjectData",
+        "Simulator::IGameDataView"
+      ],
+      "lifetime": "The snapshot is per frame and tied to a presentation handle; it is discarded or reset when that view is detached.",
+      "failure_semantics": "A missing view or presentation handle makes propagation a no-op while gameplay state continues; exact opacity and visibility readers are unresolved.",
+      "timing_order": "Update authoritative gameplay state, synchronize the immutable view snapshot, evaluate animation, then use view membership and visibility for frame assembly.",
+      "openspore_concept": "An immutable per-entity presentation snapshot derived from, but not writing back to, gameplay state.",
+      "modern_abstraction": "IEntityView with setTransform, setOpacity, setAnimation, setVisible, and snapshot semantics.",
+      "evidence": [
+        "knowledgegraph/research/render-boundary/05-scene-entity.json:209-272",
+        "knowledgegraph/triage/structs_fields.tsv:1354-1367",
+        "knowledgegraph/triage/structs_fields.tsv:3810-3848",
+        "knowledgegraph/triage/structs_fields.tsv:3885-3891"
+      ],
+      "confidence": "medium",
+      "notes": "The data flow is supported, but complete per-frame ordering and whether opacity directly drives visibility are unresolved."
+    },
+    {
+      "id": "cell-presentation-stage",
+      "classification": "GAMEPLAY_RELEVANT_ENGINE_INTERFACE",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/01-renderware-objects.json",
+        "knowledgegraph/research/render-boundary/02-material-textures.json",
+        "knowledgegraph/research/render-boundary/05-scene-entity.json",
+        "knowledgegraph/research/render-boundary/07-resource-lifetime.json",
+        "knowledgegraph/research/render-boundary/08-gameplay-renderer.json",
+        "knowledgegraph/research/render-boundary/09-ui-presentation.json"
+      ],
+      "boundary": "CellGFX world, layer, display, and mode-owned presentation stage",
+      "gameplay_caller": "Cell mode initialization and entry call cCellGFX Initialize, PreloadResources, StartDisplay, shutdown, and Dispose around gameplay updates.",
+      "original_callee": "cCellGFX::Initialize, PreloadResources, StartDisplay, Graphics layer and world virtuals, effects-world operations, lighting and shadow services, and CellGFX teardown helpers",
+      "parameters": [
+        "display activation",
+        "lighting, effects, and shadow state",
+        "mode-owned CellGFX instance",
+        "preload readiness",
+        "world and layer IDs"
+      ],
+      "outputs": [
+        "active or inactive display state",
+        "main model and effects-world context",
+        "ordered world and layer handles",
+        "stopped and disposed presentation graph"
+      ],
+      "state_changed": [
+        "CellGFX world and layer handle table",
+        "layer visibility and display flags",
+        "model, lighting, and effects-world associations",
+        "renderer registrations and stage ownership"
+      ],
+      "structures": [
+        "Graphics::ILayer",
+        "Graphics::IModelWorld",
+        "Simulator::Cell::cCellGFX",
+        "Swarm::IEffectsWorld"
+      ],
+      "lifetime": "The stage spans the Cell mode and outlives individual presentation views but not the mode.",
+      "failure_semantics": "Some setup failures produce a recorded status, but normal return can leave an incomplete graph; teardown is pointer-checked and best effort.",
+      "timing_order": "Create stage worlds, preload content, activate display and lighting context, update views, stop services, detach views, unregister layers, and release the graph.",
+      "openspore_concept": "A mode-owned scene stage coordinating views, resources, passes, and explicit activation without exposing renderer objects.",
+      "modern_abstraction": "ISceneStage with initialize, preload, startDisplay, stopDisplay, shutdown, and idempotent ownership transitions.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__Initialize.c:34",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__PreloadResources.c:40",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__StartDisplay.c:39",
+        "knowledgegraph/research/render-boundary/05-scene-entity.json:133-208"
+      ],
+      "confidence": "high",
+      "notes": "World and layer ordering is strongly supported. Lighting appearance remains a separate presentation-only concern."
+    },
+    {
+      "id": "effect-presenter",
+      "classification": "GAMEPLAY_RELEVANT_ENGINE_INTERFACE",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/01-renderware-objects.json",
+        "knowledgegraph/research/render-boundary/05-scene-entity.json",
+        "knowledgegraph/research/render-boundary/07-resource-lifetime.json",
+        "knowledgegraph/research/render-boundary/08-gameplay-renderer.json",
+        "knowledgegraph/research/render-boundary/09-ui-presentation.json"
+      ],
+      "boundary": "Effect presenter and entity-scoped effect-instance wrapper",
+      "gameplay_caller": "Gameplay effect events and cCellGFX paths request effect-map slots, foreground or background placement, and instance replacement.",
+      "original_callee": "cCellGFX::LoadEffectMap, cCellGFX::InstanceEffectOnCell, Swarm::IEffectsWorld::CreateVisualEffect, Swarm::EffectInstance, and IVisualEffect virtuals",
+      "parameters": [
+        "cell world transform",
+        "effect ID and effect-map record",
+        "local effect transform",
+        "parent and cleanup flags",
+        "presentation or gameplay entity handle",
+        "world selector"
+      ],
+      "outputs": [
+        "effect definition or map-slot binding",
+        "no-effect or creation-failure result",
+        "owned EffectInstance handle",
+        "world and transform association"
+      ],
+      "state_changed": [
+        "CellGFX effect slots and instance collections",
+        "effect replacement and release state",
+        "effect transform and active parameters",
+        "entity-to-effect association"
+      ],
+      "structures": [
+        "CellGFXObjectData::mModelEffectMaps",
+        "Simulator::Cell::cCellGFX",
+        "Swarm::EffectInstance",
+        "Swarm::IEffectsWorld",
+        "Swarm::IVisualEffect"
+      ],
+      "lifetime": "Definitions belong to the world; instances live for the entity or effect-map lifetime and are stopped or released before their world and owning view.",
+      "failure_semantics": "Missing effect, parent, world, or creation failure is logged or returns a null handle; pointer-checked cleanup tolerates incomplete initialization.",
+      "timing_order": "Accept typed effect request, resolve world and definition, create instance, copy local and world transforms, update until stop, then release before view and world teardown.",
+      "openspore_concept": "Typed effect requests consumed by a presenter that returns independently owned visual-effect handles.",
+      "modern_abstraction": "IEffectPresenter with create, update, stop, release, and explicit no-effect results.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__InstanceEffectOnCell.c:24",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__InstanceEffectOnCell.c:90",
+        "knowledgegraph/research/render-boundary/05-scene-entity.json:333-395",
+        "knowledgegraph/triage/structs_fields.tsv:19329-19333"
+      ],
+      "confidence": "high",
+      "notes": "This wrapper expresses a presentation operation; particle rendering inside it is not proven gameplay state."
+    },
+    {
+      "id": "material-texture-content-lookup",
+      "classification": "GAMEPLAY_RELEVANT_ENGINE_INTERFACE",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/01-renderware-objects.json",
+        "knowledgegraph/research/render-boundary/02-material-textures.json",
+        "knowledgegraph/research/render-boundary/07-resource-lifetime.json"
+      ],
+      "boundary": "Material and texture content lookup service",
+      "gameplay_caller": "Cell preload and presentation material paths resolve selected material IDs and texture keys before model draw use.",
+      "original_callee": "Graphics::IMaterialManager, Graphics::ITextureManager, Graphics::MaterialShader::GetMaterialShader, and resource-manager lookup paths",
+      "parameters": [
+        "MaterialId",
+        "TextureKey",
+        "content and cache context",
+        "resource type, group, and instance"
+      ],
+      "outputs": [
+        "MaterialDefinitionHandle",
+        "TextureAsset or TextureHandle",
+        "missing or unsupported result",
+        "resource lifetime owner"
+      ],
+      "state_changed": [
+        "loaded content handle lifetime",
+        "material or texture lookup cache state",
+        "resource-manager association state"
+      ],
+      "structures": [
+        "Graphics::IMaterialManager",
+        "Graphics::ITextureManager",
+        "Graphics::MaterialShader",
+        "ResourceKey"
+      ],
+      "lifetime": "Material definitions and texture resources are content- or cache-scoped; slot bindings and sampler state are shorter-lived.",
+      "failure_semantics": "Unknown material IDs return null; missing resources and unreadable records need explicit modern errors; the original lookup cache provides no ownership transfer.",
+      "timing_order": "Resolve material and texture identity, acquire content, bind definitions to meshes, then update short-lived draw state.",
+      "openspore_concept": "Content-addressed material definitions and texture assets, separate from compiled shaders and GPU descriptors.",
+      "modern_abstraction": "IMaterialRegistry, ITextureStore, and IContentStore returning typed handles and explicit missing or unsupported outcomes.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__ITextureManager__Get.c:8",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__MaterialShader__GetMaterialShader.c:6",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Resource__cResourceManager__GetPrivateResource.c:8",
+        "knowledgegraph/research/render-boundary/02-material-textures.json:81-140"
+      ],
+      "confidence": "high",
+      "notes": "The ID-to-definition association is required; linked-list, cache-pointer, and manager object layouts are not."
+    },
+    {
+      "id": "mesh-model-world-interface",
+      "classification": "GAMEPLAY_RELEVANT_ENGINE_INTERFACE",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/01-renderware-objects.json",
+        "knowledgegraph/research/render-boundary/03-camera-transforms.json",
+        "knowledgegraph/research/render-boundary/05-scene-entity.json",
+        "knowledgegraph/research/render-boundary/07-resource-lifetime.json",
+        "knowledgegraph/research/render-boundary/08-gameplay-renderer.json"
+      ],
+      "boundary": "Model, mesh, and model-world content and membership interface",
+      "gameplay_caller": "Cell, editor, terrain, and model presentation paths bind models and mesh resources to scenes and update transforms, animation, materials, LOD, and effects.",
+      "original_callee": "Graphics::IModelManager, Graphics::IModelWorld, Graphics::Model release and reference operations, model-world membership virtuals, and IModelWorld LOD and background-load anchors",
+      "parameters": [
+        "ModelKey or ModelHandle",
+        "ModelWorldHandle",
+        "material and effect state",
+        "view-projection state",
+        "world or layer membership",
+        "world transform and animation state"
+      ],
+      "outputs": [
+        "LOD or render-set selection",
+        "background-load and release state",
+        "model and mesh handle",
+        "model-world membership and transform"
+      ],
+      "state_changed": [
+        "LOD and background-load state",
+        "model reference count and shared ownership",
+        "model-world active and in-world state",
+        "world transform and render membership"
+      ],
+      "structures": [
+        "Graphics::IModelManager",
+        "Graphics::IModelWorld",
+        "Graphics::Model",
+        "Math::BoundingBox"
+      ],
+      "lifetime": "Models and meshes are shared asset-scoped handles; model worlds and membership follow scene or object presentation lifetime.",
+      "failure_semantics": "Invalid handles and missing controllers become no-ops; release has no status; exact LOD and background-load failure behavior is unavailable.",
+      "timing_order": "Acquire shared content, create or bind a model world, synchronize gameplay-derived state, update membership and LOD, submit visible draws, then detach and release after retirement.",
+      "openspore_concept": "Shared model and mesh identity with scene membership and invalidatable presentation state.",
+      "modern_abstraction": "IModelStore, ModelHandle, IModelWorld, and IModelView with membership, transform, LOD request, and last-owner release semantics.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__Model__Release.c:9",
+        ".spore-analysis/ghidra-exports/structs_fields.tsv:3810-3865",
+        ".spore-analysis/ghidra-exports/structs_fields.tsv:3992-3996",
+        "knowledgegraph/research/render-boundary/01-renderware-objects.json:577-644"
+      ],
+      "confidence": "medium",
+      "notes": "The wrapper contract is useful, but exact model-world LOD and background-load behavior remains unresolved."
+    },
+    {
+      "id": "render-queue-submission",
+      "classification": "GAMEPLAY_RELEVANT_ENGINE_INTERFACE",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/03-camera-transforms.json",
+        "knowledgegraph/research/render-boundary/05-scene-entity.json"
+      ],
+      "boundary": "Gameplay-derived renderable snapshot to renderer submission",
+      "gameplay_caller": "Camera, Cell, model, terrain, and editor presentation passes submit visible meshes and effects after gameplay updates.",
+      "original_callee": "Graphics::ILayer traversal, Graphics::IRenderer::Render and SubRender, Graphics::GlobalState::SetTransform, model-world draw state, and downstream RenderWare draw submission",
+      "parameters": [
+        "layer, pass, topology, and draw order",
+        "material and texture bindings",
+        "view and projection snapshot",
+        "visible mesh and effect components",
+        "world transform"
+      ],
+      "outputs": [
+        "ordered draw submission",
+        "render pass contribution",
+        "scene frame output"
+      ],
+      "state_changed": [
+        "backend stream, material, and draw state",
+        "layer or pass queues",
+        "renderer transform and active state"
+      ],
+      "structures": [
+        "Graphics::GlobalState",
+        "Graphics::ILayer",
+        "Graphics::IModelWorld",
+        "Graphics::IRenderJob"
+      ],
+      "lifetime": "Submission records are frame- or pass-scoped; visible scene membership, transform snapshots, and material resources are longer-lived.",
+      "failure_semantics": "Missing renderers, transforms, materials, or services cause presentation failure; no reviewed path converts a backend draw failure into gameplay state.",
+      "timing_order": "Freeze gameplay-derived snapshots, update camera and culling, build ordered draw items, apply per-draw state, submit the pass, and present after all dependent work.",
+      "openspore_concept": "A narrow scene submission interface carrying stable renderable identity and state without backend objects.",
+      "modern_abstraction": "IRenderQueue or IRenderCommandEncoder accepting mesh, world transform, material, layer, and pass order.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__GlobalState__SetTransform.c:8",
+        "knowledgegraph/research/render-boundary/03-camera-transforms.json:443-518",
+        "knowledgegraph/triage/structs_fields.tsv:4046-4059",
+        "src/compat/MeshSource.hpp:64"
+      ],
+      "confidence": "high",
+      "notes": "The entity transform and draw ordering are semantic; global state pointers, RW objects, and D3D calls are not."
+    },
+    {
+      "id": "scene-layer-attachment",
+      "classification": "GAMEPLAY_RELEVANT_ENGINE_INTERFACE",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/01-renderware-objects.json",
+        "knowledgegraph/research/render-boundary/05-scene-entity.json",
+        "knowledgegraph/research/render-boundary/08-gameplay-renderer.json"
+      ],
+      "boundary": "Scene graph layer, world, model-world, and shadow attachment wrapper",
+      "gameplay_caller": "Cell and editor modes attach scene layers, model worlds, and shadow relationships to mode-owned presentation graphs.",
+      "original_callee": "Graphics::IRenderer::Layer and UnregisterLayer, Graphics::IShadowWorld::SetShadowMapLayer and AddModelWorld, and ILayer or IModelWorld attachment virtuals",
+      "parameters": [
+        "LayerHandle and parent-child relation",
+        "ModelWorldHandle",
+        "WorldHandle or world ID",
+        "setup, replacement, pause, or teardown phase",
+        "shadow layer or active state"
+      ],
+      "outputs": [
+        "active layer and shadow state",
+        "bound model-world handle",
+        "detached or invalid attachment result",
+        "scene attachment record"
+      ],
+      "state_changed": [
+        "model-world registration",
+        "renderer registration and replacement",
+        "shadow-layer active bits",
+        "world and layer parent-child relationships"
+      ],
+      "structures": [
+        "Editors::cEditor",
+        "Graphics::ILayer",
+        "Graphics::IModelWorld",
+        "Graphics::IShadowWorld",
+        "Simulator::Cell::cCellGFX"
+      ],
+      "lifetime": "Attachments follow their mode, cell, or editor presentation owner and are replaced or detached before teardown.",
+      "failure_semantics": "Original methods expose little status; conflict handling, null service behavior, and exact detach failure are not runtime-observed.",
+      "timing_order": "Acquire handles, attach scene and shadow relationships, populate views, pause or leave the mode, then detach and release in reverse ownership order.",
+      "openspore_concept": "Typed scene attachment and teardown relationships using opaque world, layer, and model-world handles.",
+      "modern_abstraction": "ISceneAttachment with attachLayer, attachModelWorld, detach, setVisibility, and setShadowLayer transitions.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__Dispose.c:155",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__Initialize.c:150",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__Initialize.c:47",
+        "knowledgegraph/research/render-boundary/01-renderware-objects.json:741-816"
+      ],
+      "confidence": "medium",
+      "notes": "This is a gameplay-facing engine wrapper even when the attached object ultimately reaches RenderWare."
+    },
+    {
+      "id": "shared-resource-handle-lifetime",
+      "classification": "GAMEPLAY_RELEVANT_ENGINE_INTERFACE",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/01-renderware-objects.json",
+        "knowledgegraph/research/render-boundary/07-resource-lifetime.json"
+      ],
+      "boundary": "Shared model, mesh, texture, effect, pose, and presentation-handle lifetime",
+      "gameplay_caller": "Cell preload, entity presentation, model-world, editor, and stage teardown paths retain and release shared visual resources across use.",
+      "original_callee": "Graphics::Model reference operations, resource intrusive handles, CellGFX preload lists, model-world final release, and IVisualEffect release paths",
+      "parameters": [
+        "entity or model-world borrower",
+        "owning presentation stage",
+        "resource identity or handle",
+        "retain and release operation"
+      ],
+      "outputs": [
+        "detached or released result",
+        "last-owner retirement request",
+        "remaining ownership state",
+        "shared resource handle"
+      ],
+      "state_changed": [
+        "entity resource association",
+        "last-owner destruction state",
+        "preload and scene membership",
+        "resource reference count"
+      ],
+      "structures": [
+        "Graphics::IModelWorld",
+        "Graphics::Model",
+        "Swarm::IVisualEffect",
+        "intrusive_ptr"
+      ],
+      "lifetime": "Handles remain live through preload, scene membership, submission, and any in-flight GPU work; retirement begins only after the last semantic owner detaches.",
+      "failure_semantics": "Original release wrappers have no error return and can underflow if misused; original GPU-retirement and pending-effect behavior are not runtime-observed.",
+      "timing_order": "Retain before registration, borrow during scene use, detach, drop the last semantic reference, and retire backend resources only after dependent work is complete.",
+      "openspore_concept": "Shared ownership with separate semantic, scene, and backend-retirement lifetimes.",
+      "modern_abstraction": "Shared ModelHandle, TextureHandle, MeshHandle, EffectHandle, and explicit retirement acknowledgements or invalid-handle results.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__Model__Release.c:9",
+        "knowledgegraph/research/render-boundary/01-renderware-objects.json:517-575",
+        "knowledgegraph/research/render-boundary/07-resource-lifetime.json:361-419",
+        "knowledgegraph/triage/structs_fields.tsv:3873-3874"
+      ],
+      "confidence": "medium",
+      "notes": "Strong shared lifetime is required. Original refcount offsets, terminal vtable slots, and GPU teardown timing are not modern contracts."
+    },
+    {
+      "id": "cell-effect-map-visuals",
+      "classification": "PRESENTATION_ONLY",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/01-renderware-objects.json",
+        "knowledgegraph/research/render-boundary/04-animation-pose.json",
+        "knowledgegraph/research/render-boundary/07-resource-lifetime.json",
+        "knowledgegraph/research/render-boundary/08-gameplay-renderer.json"
+      ],
+      "boundary": "Cell effect-map selection and visual effect appearance",
+      "gameplay_caller": "Cell mode and gameplay effect events cause effect-map records and instances to appear, but no reviewed path shows the particle result mutating health, movement, or combat state.",
+      "original_callee": "cCellGFX::LoadEffectMap and InstanceEffectOnCell through effect-world and IVisualEffect presentation methods",
+      "parameters": [
+        "cell transform and foreground or background context",
+        "effect identifier and parameters",
+        "effect-map record type"
+      ],
+      "outputs": [
+        "effect placement and appearance",
+        "selected effect-map slot",
+        "visible effect instance"
+      ],
+      "state_changed": [
+        "effect active state and visual parameters",
+        "effect-map slot state",
+        "visible effect instance state"
+      ],
+      "structures": [
+        "Simulator::Cell::cCellGFX",
+        "Swarm::EffectInstance",
+        "Swarm::IVisualEffect",
+        "cCellEffectMapResource"
+      ],
+      "lifetime": "Effect slots and instances follow Cell presentation and are replaced or released independently of the gameplay event.",
+      "failure_semantics": "Unsupported record types, missing effects, or failed starts skip or omit the visual instance; no gameplay failure is established.",
+      "timing_order": "Resolve effect identity, create or replace the instance, update visual parameters, render, then stop or release it with the owner.",
+      "openspore_concept": "A visual-effect request and presenter result with no implied gameplay state mutation.",
+      "modern_abstraction": "IEffectView over typed effect IDs and parameters, separate from effect presenter ownership.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__InstanceEffectOnCell.c:30",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__LoadEffectMap.c:53",
+        "knowledgegraph/research/render-boundary/04-animation-pose.json:380-436",
+        "knowledgegraph/research/render-boundary/08-gameplay-renderer.json:334-402"
+      ],
+      "confidence": "medium",
+      "notes": "The event that requests an effect may be gameplay-relevant; the effect instance and its appearance are presentation-only under current evidence."
+    },
+    {
+      "id": "cursor-overlay",
+      "classification": "PRESENTATION_ONLY",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/09-ui-presentation.json"
+      ],
+      "boundary": "Cursor, drop icon, and screen-overlay presentation",
+      "gameplay_caller": "UI and editor hover or drag handlers request cursor and overlay changes after gameplay or editor selection state is decided.",
+      "original_callee": "UTFWin::cCursorManager::SetActiveCursor and ShowDropCursorIcon, UTFWin::Window::GetCursorID, and UI::cLayerManager::Get",
+      "parameters": [
+        "cursor ID",
+        "drop-icon visibility",
+        "overlay ordering",
+        "window cursor state"
+      ],
+      "outputs": [
+        "active cursor",
+        "drop-cursor visibility",
+        "overlay composition order"
+      ],
+      "state_changed": [
+        "UI layered-object ordering",
+        "cursor manager state",
+        "window cursor ID"
+      ],
+      "structures": [
+        "UI::cLayerManager",
+        "UTFWin::Window",
+        "UTFWin::cCursorManager"
+      ],
+      "lifetime": "Cursor and overlay state follow the active window or mode interaction and are replaced on exit.",
+      "failure_semantics": "Cursor requests can be declined; exact resource failure and restoration behavior is unresolved.",
+      "timing_order": "Selection or hover changes, then cursor or overlay update before the next UI paint.",
+      "openspore_concept": "Observable cursor and overlay state without a general gameplay cursor singleton.",
+      "modern_abstraction": "ICursorService and IOverlayLayerStack over host cursor and compositor state.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__cCursorManager__SetActiveCursor.c:8",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__cCursorManager__ShowDropCursorIcon.c:8",
+        "knowledgegraph/research/render-boundary/09-ui-presentation.json:265-328",
+        "knowledgegraph/triage/structs_fields.tsv:24617"
+      ],
+      "confidence": "medium",
+      "notes": "The preceding selection transition is not presentation-only; cursor pixels and overlay order are."
+    },
+    {
+      "id": "frustum-culling",
+      "classification": "PRESENTATION_ONLY",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/03-camera-transforms.json"
+      ],
+      "boundary": "Projection-derived frustum and render-bounds visibility culling",
+      "gameplay_caller": "Cell per-frame and editor or terrain visibility paths update cull state, but no reviewed gameplay consumer gates movement, interaction, spawning, or other simulation state.",
+      "original_callee": "Graphics::cFrustumCull::UpdateFromProjectionMatrix, FrustumTestSphere, FrustumTestAABB, and OffsetPlanes",
+      "parameters": [
+        "projection or view-projection matrix",
+        "world bounds center and extents or radius"
+      ],
+      "outputs": [
+        "frustum planes",
+        "inside or outside result",
+        "render submission skip decision"
+      ],
+      "state_changed": [
+        "Graphics::cFrustumCull six-plane state",
+        "presentation visibility decision"
+      ],
+      "structures": [
+        "Graphics::cFrustumCull",
+        "Graphics::cPlane",
+        "Math::BoundingBox"
+      ],
+      "lifetime": "Planes are a camera-frame snapshot; cull objects follow camera or renderer lifetime.",
+      "failure_semantics": "Return polarity and exact corner behavior are decompiler-noisy; no gameplay failure follows a presentation cull result.",
+      "timing_order": "Finalize view and projection, update planes, test world bounds, then skip or submit presentation work.",
+      "openspore_concept": "A renderer VisibilitySet and explicit render-bounds result separate from gameplay spatial queries.",
+      "modern_abstraction": "ICameraFrustum and renderer visibility testing with a separately named semantic visibility query if gameplay later consumes it.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__cFrustumCull__FrustumTestSphere.c:6",
+        ".spore-analysis/ghidra-exports/structs_fields.tsv:3732",
+        "knowledgegraph/research/render-boundary/03-camera-transforms.json:576-639",
+        "knowledgegraph/triage/xrefs-2540f2ca.tsv:160333"
+      ],
+      "confidence": "medium",
+      "notes": "Frame coupling is not gameplay causality. Reclassify only if a gameplay consumer is proven."
+    },
+    {
+      "id": "hud-health-rollover",
+      "classification": "PRESENTATION_ONLY",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/09-ui-presentation.json"
+      ],
+      "boundary": "Cell health-rollover HUD pixels and expiry state",
+      "gameplay_caller": "A gameplay health or damage event requests rollover feedback through cCellUI::ShowHealthRollover.",
+      "original_callee": "Simulator::Cell::cCellUI::ShowHealthRollover and HUD draw/layout operations",
+      "parameters": [
+        "Cell identity and presentation handle",
+        "HUD layout identity",
+        "initial health"
+      ],
+      "outputs": [
+        "health scale and expiry timer",
+        "rollover record",
+        "visible HUD feedback"
+      ],
+      "state_changed": [
+        "cCellUIRollover pool entry",
+        "disappear time",
+        "health scale"
+      ],
+      "structures": [
+        "Simulator::Cell::cCellObjectData",
+        "Simulator::Cell::cCellUI",
+        "Simulator::Cell::cCellUIRollover"
+      ],
+      "lifetime": "HUD configuration is mode-scoped; individual rollover records expire independently.",
+      "failure_semantics": "No rollover is created when the Cell lacks a GFX association; exact HUD field meanings are unresolved.",
+      "timing_order": "Gameplay health change, rollover creation, UI update and draw, then expiry and release.",
+      "openspore_concept": "Presentation-owned feedback from a typed gameplay health event.",
+      "modern_abstraction": "IHudFeedback and IUIRolloverView with entity identity, health value, and presentation expiry separate from health state.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellUI__ShowHealthRollover.c:8",
+        "knowledgegraph/research/render-boundary/09-ui-presentation.json:71-133",
+        "knowledgegraph/triage/structs_fields.tsv:18529"
+      ],
+      "confidence": "high",
+      "notes": "Health and damage are semantic; the rollover record and pixels are presentation-only. The early-out weakly couples the view to presentation association."
+    },
+    {
+      "id": "lighting-shadow-appearance",
+      "classification": "PRESENTATION_ONLY",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/01-renderware-objects.json",
+        "knowledgegraph/research/render-boundary/02-material-textures.json",
+        "knowledgegraph/research/render-boundary/05-scene-entity.json",
+        "knowledgegraph/research/render-boundary/06-d3d-platform.json"
+      ],
+      "boundary": "Lighting-world activation, shadow reset, and rendered lighting appearance",
+      "gameplay_caller": "Cell display entry and scene setup call lighting and shadow services, but no reviewed path shows light appearance changing gameplay state.",
+      "original_callee": "Graphics::ILightingManager::GetLightingWorld, Graphics::IShadowWorld::Reset and shadow activation, lighting-world virtuals, and D3D fixed-function lighting state",
+      "parameters": [
+        "light state",
+        "lighting-world handles and selectors",
+        "shadow activation flags",
+        "world and shadow-layer handles"
+      ],
+      "outputs": [
+        "active lighting-world state",
+        "rendered lighting and shadow appearance",
+        "shadow reset state"
+      ],
+      "state_changed": [
+        "D3D or renderer lighting state",
+        "lighting-world activation state",
+        "shadow reset and active bits"
+      ],
+      "structures": [
+        "Graphics::ILightingManager",
+        "Graphics::IShadowWorld",
+        "Lighting::LightingWorld",
+        "Simulator::Cell::cCellGFX"
+      ],
+      "lifetime": "World and shadow state follows Cell presentation or renderer-device lifetime.",
+      "failure_semantics": "Missing lighting services cause incomplete presentation; no gameplay transition is established.",
+      "timing_order": "Create or bind worlds, preload content, activate lighting, reset shadows, render, then replace or reset on stage change.",
+      "openspore_concept": "Presentation lighting state associated with the stage, with exact world IDs preserved only when semantically required.",
+      "modern_abstraction": "IPresentationLighting with world activation, shadow reset, and typed light values.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__StartDisplay.c:16",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__StartDisplay.c:32",
+        "docs/RENDERWARE-RESEARCH.md:285-302",
+        "knowledgegraph/research/render-boundary/02-material-textures.json:508-574"
+      ],
+      "confidence": "medium",
+      "notes": "Lighting-world selection and display order are known; the four selector values and pixel-level lighting model remain unresolved."
+    },
+    {
+      "id": "d3d-device-lifecycle",
+      "classification": "RENDERER_INFRASTRUCTURE",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/06-d3d-platform.json"
+      ],
+      "boundary": "Renderer device initialization, resize, readiness, and subsystem lifecycle",
+      "gameplay_caller": "Application renderer initialization and resize paths own this lifecycle; no direct gameplay caller uses the D3D wrapper.",
+      "original_callee": "Graphics::RenderUtils::CreateDevice and SetPresentationParameters, static RenderWare D3D9 device-target calls, and renderer Init or Resize",
+      "parameters": [
+        "adapter format and output configuration",
+        "vertical synchronization and presentation flags",
+        "window dimensions",
+        "windowed or fullscreen mode"
+      ],
+      "outputs": [
+        "device-ready state",
+        "initialized renderer subsystems",
+        "main color and depth targets",
+        "wrapped device handle"
+      ],
+      "state_changed": [
+        "device timing stamp",
+        "main render-target attachments",
+        "renderer readiness flag",
+        "sD3D, sDevice, and presentation parameters"
+      ],
+      "structures": [
+        "D3DPRESENT_PARAMETERS",
+        "Graphics::RenderUtils",
+        "main color RTT",
+        "main depth RTT"
+      ],
+      "lifetime": "Process, window, or renderer lifetime, with replacement on resize and device recovery.",
+      "failure_semantics": "Adapter, device, target, or subsystem-init failure aborts renderer startup and reaches the Direct X unavailable path.",
+      "timing_order": "Resolve presentation mode, create device, create targets, initialize render subsystems, publish ready state, then serve render passes.",
+      "openspore_concept": "Renderer and GPU-device lifecycle with host-owned surface and typed backend errors.",
+      "modern_abstraction": "IGpuDevice create, configure, resize, recover, and destroy operations.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__RenderUtils__CreateDevice.c:6",
+        "docs/RENDERWARE-RESEARCH.md:113-139",
+        "knowledgegraph/research/render-boundary/06-d3d-platform.json:5-82",
+        "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl:43637"
+      ],
+      "confidence": "high",
+      "notes": "Preserve lifecycle outcomes and ordering, not D3D globals, pointers, or vtables."
+    },
+    {
+      "id": "mesh-stream-index-draw",
+      "classification": "RENDERER_INFRASTRUCTURE",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/01-renderware-objects.json",
+        "knowledgegraph/research/render-boundary/02-material-textures.json",
+        "knowledgegraph/research/render-boundary/06-d3d-platform.json"
+      ],
+      "boundary": "Vertex-stream, index-buffer, topology, and indexed mesh draw mechanics",
+      "gameplay_caller": "No direct gameplay caller; RenderWare terrain, model-world, editor, and Cell presentation draw passes submit mesh resources.",
+      "original_callee": "RenderWare::VertexDescriptionBase::LoadDeclaration, RenderWare::Mesh::SetVertexBuffer, SetIndexBuffer, SetIndicesCount, and Render, with underlying D3D stream and draw calls",
+      "parameters": [
+        "index buffer and count",
+        "topology and draw offset",
+        "vertex buffer, offset, and stride",
+        "vertex declaration and stream count"
+      ],
+      "outputs": [
+        "bound vertex and index streams",
+        "indexed primitive draw",
+        "updated draw-state cache"
+      ],
+      "state_changed": [
+        "active primitive state",
+        "index-buffer and index-scope state",
+        "surplus stream unbinding",
+        "vertex stream bindings"
+      ],
+      "structures": [
+        "RenderWare::IndexBuffer",
+        "RenderWare::Mesh",
+        "RenderWare::VertexDescriptionBase"
+      ],
+      "lifetime": "Buffers and topology are asset-scoped; bindings and caches are draw- or frame-scoped.",
+      "failure_semantics": "Stream failures return early, stale index scope suppresses rebinding, and missing declarations or buffers invalidate the draw without gameplay effects.",
+      "timing_order": "Select material state, bind declared streams, unbind surplus streams, bind valid indices, set topology, then issue the indexed draw.",
+      "openspore_concept": "Mesh topology, vertex layout, index count, and state ordering behind the renderer.",
+      "modern_abstraction": "IMeshDraw with stream binding, index binding, topology, and indexed submission.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/RenderWare__Mesh__SetIndexBuffer.c:22",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/RenderWare__Mesh__SetIndexBuffer.c:84",
+        "docs/RENDERWARE-RESEARCH.md:151-173",
+        "knowledgegraph/research/render-boundary/06-d3d-platform.json:284-356"
+      ],
+      "confidence": "high",
+      "notes": "The binding order is compatibility-relevant; the helper name SetIndexBuffer does not make this a gameplay boundary."
+    },
+    {
+      "id": "model-world-draw-list",
+      "classification": "RENDERER_INFRASTRUCTURE",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/01-renderware-objects.json",
+        "knowledgegraph/research/render-boundary/05-scene-entity.json"
+      ],
+      "boundary": "Renderer-owned model-world traversal and draw-list assembly",
+      "gameplay_caller": "No direct gameplay caller; registered layers, model membership, transforms, materials, LOD, animation, and visibility are the upstream semantic inputs.",
+      "original_callee": "Graphics::IModelWorld render-group operations, Graphics::ILayer traversal, Graphics::IRenderer::Render and SubRender, and RenderWare scene traversal",
+      "parameters": [
+        "model-world active and membership flags",
+        "registered layer order",
+        "render groups and render-set data",
+        "transforms, materials, LOD, and camera state"
+      ],
+      "outputs": [
+        "model-world draw lists",
+        "pass-specific render queues",
+        "sorted or batched render jobs"
+      ],
+      "state_changed": [
+        "draw-list membership",
+        "pass ordering and batching state",
+        "render queues"
+      ],
+      "structures": [
+        "Graphics::ILayer",
+        "Graphics::IModelWorld",
+        "Graphics::IRenderJob",
+        "Graphics::IRenderer"
+      ],
+      "lifetime": "Scene membership is stage-scoped; draw lists and queues are frame- or pass-scoped.",
+      "failure_semantics": "Inactive or absent membership removes a view from presentation; traversal and allocation failures do not change gameplay ownership.",
+      "timing_order": "Synchronize visible semantic state, traverse layers, build draw lists, order and batch jobs, then submit renderer passes.",
+      "openspore_concept": "Renderer scene traversal and draw-list generation from explicit visible renderable state.",
+      "modern_abstraction": "ISceneRenderer or renderer-owned traversal producing per-pass draw items.",
+      "evidence": [
+        "docs/RENDERER-DESIGN.md:19-25",
+        "knowledgegraph/research/render-boundary/05-scene-entity.json:465-529",
+        "knowledgegraph/triage/structs_fields.tsv:3825-3865",
+        "knowledgegraph/triage/structs_fields.tsv:4046-4059"
+      ],
+      "confidence": "medium",
+      "notes": "The upstream renderable contract matters; exact persistent-versus-transient traversal and RenderWare sorting are not promoted."
+    },
+    {
+      "id": "render-state-cache",
+      "classification": "RENDERER_INFRASTRUCTURE",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/01-renderware-objects.json",
+        "knowledgegraph/research/render-boundary/02-material-textures.json",
+        "knowledgegraph/research/render-boundary/06-d3d-platform.json",
+        "knowledgegraph/research/render-boundary/07-resource-lifetime.json"
+      ],
+      "boundary": "Active shader, material, texture-slot, shader-constant, and render-state cache",
+      "gameplay_caller": "Material and mesh presentation paths select content identity and request draws; no direct gameplay caller mutates the active backend state.",
+      "original_callee": "Graphics::ActiveState::SetTexture and SetShaderData, RenderWare::CompiledState::SetRaster and GetRaster, and MaterialShader lookup",
+      "parameters": [
+        "material or shader ID",
+        "shader constants",
+        "texture slot and texture handle",
+        "vertex declaration and primitive state"
+      ],
+      "outputs": [
+        "active material and shader state",
+        "bound texture slots",
+        "draw-ready state",
+        "queued or uploaded shader data"
+      ],
+      "state_changed": [
+        "current-frame active shader",
+        "on-change render-state cache",
+        "shader-data records",
+        "texture-slot bindings"
+      ],
+      "structures": [
+        "Graphics::ActiveState",
+        "Graphics::MaterialShader",
+        "RenderWare::CompiledState",
+        "RenderWare::Raster"
+      ],
+      "lifetime": "Material identities may be renderer-cached; texture bindings, constants, and active state are draw- or frame-scoped.",
+      "failure_semantics": "Missing shader, texture, or constant state can suppress or invalidate a draw; exact fallback state is not gameplay-observed.",
+      "timing_order": "Resolve material, bind textures and constants, select vertex declaration and primitive state, then submit mesh geometry.",
+      "openspore_concept": "Per-draw material bindings and an on-change renderer state cache.",
+      "modern_abstraction": "IMaterialBindings, IRenderStateCache, and pipeline or descriptor updates.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__ActiveState__SetShaderData.c:6",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/RenderWare__CompiledState__SetRaster.c:90",
+        "docs/RENDERWARE-RESEARCH.md:285-302",
+        "knowledgegraph/research/render-boundary/02-material-textures.json:208-419"
+      ],
+      "confidence": "high",
+      "notes": "Stable material IDs and slot semantics survive above this boundary; global cache addresses and RW tables do not."
+    },
+    {
+      "id": "render-target-present",
+      "classification": "RENDERER_INFRASTRUCTURE",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/06-d3d-platform.json"
+      ],
+      "boundary": "Backbuffer, render targets, render-pass completion, and presentation",
+      "gameplay_caller": "No direct gameplay caller; renderer terrain, model, and UI passes target the main attachments and present the frame.",
+      "original_callee": "RenderWare device-target backbuffer, SetRenderTarget, pass completion, and Present operations behind Graphics::RenderUtils",
+      "parameters": [
+        "clear and pass state",
+        "main color and depth targets",
+        "present synchronization and swap interval",
+        "target dimensions"
+      ],
+      "outputs": [
+        "bound render targets",
+        "completed frame submission",
+        "presented image or device failure"
+      ],
+      "state_changed": [
+        "active color and depth attachments",
+        "backbuffer selection",
+        "present synchronization state"
+      ],
+      "structures": [
+        "IDirect3DDevice9-compatible surface state",
+        "main color RTT",
+        "main depth RTT"
+      ],
+      "lifetime": "Attachments follow the device; backbuffer and swapchain state follow window size and presentation mode.",
+      "failure_semantics": "Missing targets prevent a pass; device-lost and present failures require recreation; HRESULT propagation to gameplay is not established.",
+      "timing_order": "Select targets, record passes, complete submission, present, and replace targets only after prior work is safe.",
+      "openspore_concept": "Swapchain render pass and main color and depth attachments separate from scene handles.",
+      "modern_abstraction": "IGpuDevice begin frame, set targets, end frame, present, and resize operations.",
+      "evidence": [
+        "docs/RENDERWARE-RESEARCH.md:123-137",
+        "knowledgegraph/research/render-boundary/06-d3d-platform.json:83-143",
+        "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl:7544"
+      ],
+      "confidence": "medium",
+      "notes": "The exact raw Present call is not separately exported; target and presentation ordering are the supported contract."
+    },
+    {
+      "id": "texture-gpu-upload",
+      "classification": "RENDERER_INFRASTRUCTURE",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/02-material-textures.json",
+        "knowledgegraph/research/render-boundary/06-d3d-platform.json"
+      ],
+      "boundary": "Texture asset upload, mip storage, sampler configuration, and GPU binding",
+      "gameplay_caller": "Presentation preload and draw paths request texture use by stable identity; gameplay does not own a D3D texture object.",
+      "original_callee": "Graphics texture manager, RenderWare Raster creation and extraction, and the static D3D9 texture-target path",
+      "parameters": [
+        "decoded pixel bytes or raster record",
+        "dimensions",
+        "format and mip chain",
+        "sampler configuration",
+        "texture key"
+      ],
+      "outputs": [
+        "GPU texture resource",
+        "backend texture handle",
+        "bound texture slot",
+        "uploaded mip data"
+      ],
+      "state_changed": [
+        "GPU texture and mip resources",
+        "active texture-slot binding",
+        "sampler state"
+      ],
+      "structures": [
+        "Graphics::ITextureManager",
+        "RW4 Raster record",
+        "RenderWare::Raster"
+      ],
+      "lifetime": "Source content is asset-scoped; decoded and GPU textures remain live through all draws that use them.",
+      "failure_semantics": "Unsupported or truncated data and upload failure make the texture unavailable; no gameplay semantic is assigned beyond content not being drawable.",
+      "timing_order": "Decode content, upload resource and mips, configure sampling, bind the material slot, and submit dependent draws.",
+      "openspore_concept": "Backend texture upload and binding from stable texture identity and immutable image data.",
+      "modern_abstraction": "ITextureStore and ITextureUpload with create, uploadMip, bind, clear, and destroy operations.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__ActiveState__SetTexture.c:6",
+        "docs/RENDERWARE-RESEARCH.md:271-281",
+        "knowledgegraph/research/render-boundary/06-d3d-platform.json:357-427",
+        "src/assets/Texture.cpp:70"
+      ],
+      "confidence": "medium",
+      "notes": "Raster decoding and identity are assets; D3D memory layout, unmanaged lists, and runtime mip selection are not gameplay contracts."
+    },
+    {
+      "id": "viewport-transform-state",
+      "classification": "RENDERER_INFRASTRUCTURE",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/01-renderware-objects.json",
+        "knowledgegraph/research/render-boundary/03-camera-transforms.json",
+        "knowledgegraph/research/render-boundary/06-d3d-platform.json"
+      ],
+      "boundary": "Viewport, projection, and global transform render state",
+      "gameplay_caller": "Camera and gameplay code supplies view, projection, and world-transform values; renderer code owns and dispatches the active state.",
+      "original_callee": "App::cViewer projection and viewport setup, Graphics::GlobalState::SetTransform, and RenderWare device-target viewport and transform operations",
+      "parameters": [
+        "MatrixType",
+        "projection matrix",
+        "view matrix",
+        "viewport rectangle or target dimensions",
+        "world or model matrix"
+      ],
+      "outputs": [
+        "active view, projection, or world transform",
+        "configured viewport",
+        "dirty transform state"
+      ],
+      "state_changed": [
+        "active viewport",
+        "render-target dimensions",
+        "sTransform and transform type",
+        "soft-state dirty bit"
+      ],
+      "structures": [
+        "Graphics::GlobalState",
+        "Matrix4",
+        "MatrixType"
+      ],
+      "lifetime": "Viewport follows render targets and resize; transforms are camera-, pass-, or draw-scoped.",
+      "failure_semantics": "Invalid dimensions or transform state invalidates presentation; no gameplay transition is tied to global-state dispatch.",
+      "timing_order": "Select target and viewport, apply camera view and projection, update culling, apply world transform, then submit dependent geometry.",
+      "openspore_concept": "Renderer pass and draw state fed by authoritative camera and gameplay-derived transform snapshots.",
+      "modern_abstraction": "Render-pass state with setViewport, setViewProjection, setWorldTransform, and setRenderTarget.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__GlobalState__SetTransform.c:11",
+        "docs/RENDERWARE-RESEARCH.md:132-145",
+        "knowledgegraph/research/render-boundary/03-camera-transforms.json:641-716"
+      ],
+      "confidence": "medium",
+      "notes": "A distinct SDK SetViewport anchor is not established; coordinate-space and ordering are stronger evidence than the exact call site."
+    },
+    {
+      "id": "compiled-shader-raster-internals",
+      "classification": "THIRD_PARTY_IMPLEMENTATION",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/01-renderware-objects.json",
+        "knowledgegraph/research/render-boundary/02-material-textures.json",
+        "knowledgegraph/research/render-boundary/06-d3d-platform.json"
+      ],
+      "boundary": "RenderWare compiled shader, raster, and material object internals",
+      "gameplay_caller": "No direct gameplay caller; renderer and material code consume compiled shader, raster, and slot state.",
+      "original_callee": "RenderWare::CompiledState, RenderWare::Raster, MaterialShader data, compiled D3D9 shader objects, and RenderWare managed and unmanaged raster lists",
+      "parameters": [
+        "backend shader bytecode",
+        "compiled-state pointer",
+        "material slot index",
+        "shader or raster object"
+      ],
+      "outputs": [
+        "backend shader object state",
+        "compiled-state and raster pointers",
+        "slot-to-raster state"
+      ],
+      "state_changed": [
+        "RenderWare compiled-state tables",
+        "compiled D3D9 shader object state",
+        "managed and unmanaged raster lists"
+      ],
+      "structures": [
+        "Graphics::MaterialShader",
+        "RenderWare::CompiledState",
+        "RenderWare::Raster"
+      ],
+      "lifetime": "Compiled shaders and rasters follow content and renderer resource lifetime; their tables and caches are backend-owned.",
+      "failure_semantics": "Missing or malformed objects may invalidate draws; backend allocation and shader errors do not define gameplay failure.",
+      "timing_order": "Load compiled content, create backend objects, bind material and raster state, draw, then release after dependent work.",
+      "openspore_concept": "Backend material and shader compilation with stable semantic material IDs and texture slots above it.",
+      "modern_abstraction": "Modern shader modules, descriptors, and texture resources without RenderWare or D3D9 bytecode containers.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/RenderWare__CompiledState__GetRaster.c:89",
+        "docs/RENDERWARE-RESEARCH.md:285-302",
+        "docs/RENDERWARE-RESEARCH.md:382-392",
+        "knowledgegraph/research/render-boundary/02-material-textures.json:283-344"
+      ],
+      "confidence": "high",
+      "notes": "The dead d3dx9_27 import does not imply a runtime compiler; shipped shaders are precompiled."
+    },
+    {
+      "id": "renderware-draw-internals",
+      "classification": "THIRD_PARTY_IMPLEMENTATION",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/01-renderware-objects.json",
+        "knowledgegraph/research/render-boundary/02-material-textures.json",
+        "knowledgegraph/research/render-boundary/06-d3d-platform.json",
+        "knowledgegraph/research/render-boundary/07-resource-lifetime.json"
+      ],
+      "boundary": "RenderWare mesh, stream, index, raster-list, and device-target implementation",
+      "gameplay_caller": "No direct gameplay caller; terrain, model-world, editor, and Cell presentation passes use renderer-owned draw infrastructure.",
+      "original_callee": "RenderWare::Mesh, Raster, VertexDescriptionBase, index and stream caches, and the statically linked RenderWare D3D9 device target",
+      "parameters": [
+        "D3D9 device wrapper state",
+        "RenderWare object pointers",
+        "raster and shader state",
+        "vertex and index streams"
+      ],
+      "outputs": [
+        "backend stream and index bindings",
+        "indexed draw or presentation result",
+        "material and raster bindings"
+      ],
+      "state_changed": [
+        "D3D9 device state behind the wrapper",
+        "RenderWare mesh draw state",
+        "RenderWare stream and index caches"
+      ],
+      "structures": [
+        "RenderWare::IndexBuffer",
+        "RenderWare::Mesh",
+        "RenderWare::Raster",
+        "RenderWare::VertexDescriptionBase"
+      ],
+      "lifetime": "RenderWare objects and caches follow asset and device lifetime and are renderer-owned.",
+      "failure_semantics": "Negative device calls, stale caches, and scope checks suppress backend work; no gameplay-visible error is defined here.",
+      "timing_order": "Select RenderWare state, reconcile caches, invoke the D3D9 target, and return backend status to the renderer.",
+      "openspore_concept": "A clean-room modern backend with no exposed RenderWare object graph or original cache globals.",
+      "modern_abstraction": "Backend mesh, texture, pipeline, and command-recording adapters.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/RenderWare__Mesh__SetIndexBuffer.c:67",
+        "docs/RENDERWARE-RESEARCH.md:15-25",
+        "docs/RENDERWARE-RESEARCH.md:66-74",
+        "knowledgegraph/research/render-boundary/01-renderware-objects.json:645-740"
+      ],
+      "confidence": "high",
+      "notes": "This is the hard non-reconstruction layer. Preserve observable draw ordering and results, not object identities or vtables."
+    },
+    {
+      "id": "renderware-model-world-internals",
+      "classification": "THIRD_PARTY_IMPLEMENTATION",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/01-renderware-objects.json",
+        "knowledgegraph/research/render-boundary/03-camera-transforms.json",
+        "knowledgegraph/research/render-boundary/05-scene-entity.json"
+      ],
+      "boundary": "RenderWare model-world, LOD mesh, scene traversal, and backend cache internals",
+      "gameplay_caller": "No direct gameplay caller; model-world and renderer code consume scene membership, transforms, camera state, and content handles.",
+      "original_callee": "Graphics::cModelWorld, RenderWare world and LOD objects, IModelWorld background-load operations, and RenderWare scene caches",
+      "parameters": [
+        "background-load state",
+        "model and LOD state",
+        "view-projection and bounds",
+        "world and layer membership"
+      ],
+      "outputs": [
+        "RenderWare scene traversal state",
+        "backend LOD mesh selection",
+        "model-world draw membership"
+      ],
+      "state_changed": [
+        "RenderWare LOD and scene caches",
+        "background-load implementation state",
+        "model-world backend membership"
+      ],
+      "structures": [
+        "Graphics::IModelWorld",
+        "Graphics::cModelWorld",
+        "RenderWare LOD objects"
+      ],
+      "lifetime": "Backend LOD and scene state follows the model world and renderer asset lifetime.",
+      "failure_semantics": "Exact original LOD, background-load, and cache failure semantics are unavailable and must not be inferred from names.",
+      "timing_order": "Synchronize scene state, reconcile model-world and LOD caches, traverse, then submit visible draw items.",
+      "openspore_concept": "A clean renderer-side model world and LOD implementation with gameplay-independent visibility state.",
+      "modern_abstraction": "Renderer-owned model-world and LOD services behind the stable IModelWorld facade.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/sdk_functions.tsv:495-497",
+        "docs/RENDERWARE-RESEARCH.md:320-325",
+        "knowledgegraph/research/render-boundary/01-renderware-objects.json:577-644",
+        "knowledgegraph/research/render-boundary/05-scene-entity.json:465-529"
+      ],
+      "confidence": "medium",
+      "notes": "The existence of these internals is supported; their exact semantics remain unresolved and are not needed above the facade."
+    },
+    {
+      "id": "renderware-skeletal-pose-internals",
+      "classification": "THIRD_PARTY_IMPLEMENTATION",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/04-animation-pose.json"
+      ],
+      "boundary": "RenderWare skeleton, keyframe, skin, blend-shape, and pose-evaluation internals",
+      "gameplay_caller": "No direct gameplay caller reads RenderWare bone, morph, or deformation buffers in the reviewed evidence.",
+      "original_callee": "RenderWare::Skeleton, KeyframeAnim, AnimationSkin, BlendShape, BlendShapeBuffer, Graphics::cModelInstanceAnimations, and the unknown pose evaluator",
+      "parameters": [
+        "animation time and blend state",
+        "model and animation identities",
+        "skeleton, skin, bone, and morph data"
+      ],
+      "outputs": [
+        "blend-shape or morph buffers",
+        "bone or pose matrices",
+        "deformed vertices",
+        "model-to-world transform"
+      ],
+      "state_changed": [
+        "RenderWare pose and deformation buffers",
+        "model-instance animation backend state"
+      ],
+      "structures": [
+        "Graphics::cModelInstance",
+        "Graphics::cModelInstanceAnimations",
+        "RenderWare::AnimationSkin",
+        "RenderWare::BlendShape",
+        "RenderWare::KeyframeAnim",
+        "RenderWare::Skeleton"
+      ],
+      "lifetime": "Animation assets follow model content; evaluated pose buffers follow the model instance or animation world.",
+      "failure_semantics": "Unsupported sections, missing bones or clips, and evaluator fallback behavior are not runtime-characterized.",
+      "timing_order": "Load animation content, evaluate clip and blend state, update pose buffers, and expose the result to draw submission.",
+      "openspore_concept": "A provider-neutral skeletal, skin, and morph evaluator behind animation state and pose snapshots.",
+      "modern_abstraction": "IPoseEvaluator and PoseSnapshot with load, evaluate, deform, and release operations.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/structs_fields.tsv:3491-3535",
+        "docs/RENDERWARE-RESEARCH.md:306-316",
+        "knowledgegraph/research/render-boundary/04-animation-pose.json:673-737"
+      ],
+      "confidence": "medium",
+      "notes": "RW4 section presence is established; original evaluator memory, failure policy, and gameplay-read policy are not."
+    },
+    {
+      "id": "utfwin-presentation-shell",
+      "classification": "THIRD_PARTY_IMPLEMENTATION",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/09-ui-presentation.json"
+      ],
+      "boundary": "UTFWin window, message, drawable, and overlay implementation shell",
+      "gameplay_caller": "UI, editor, and mode callbacks request message delivery, paint, window state, and overlays; gameplay does not require the original shell implementation.",
+      "original_callee": "UTFWin::Window::SendMsg, App::cMessageManager::ProcessQueue and GetMessageQueue, App::Canvas::Update, and UI layer or drawable virtuals",
+      "parameters": [
+        "message ID and payload",
+        "queue selection and priority",
+        "window area and paint state",
+        "window or message target"
+      ],
+      "outputs": [
+        "ordered callback or listener result",
+        "paint and overlay composition",
+        "window and drawable state"
+      ],
+      "state_changed": [
+        "drawable and cursor state",
+        "message queue and listener state",
+        "overlay layer collection",
+        "window hierarchy and flags"
+      ],
+      "structures": [
+        "App::Canvas",
+        "App::IMessageManager",
+        "UI::cLayerManager",
+        "UTFWin::IWindow",
+        "UTFWin::Window"
+      ],
+      "lifetime": "Windows follow the active mode; messages and drawables are event- or frame-scoped; queues own pending callbacks.",
+      "failure_semantics": "Invalid targets, queue locking, and message-ID failure behavior are unresolved; original status values are not portable.",
+      "timing_order": "Post or send message, process the queue, invoke window or editor handlers, update state, then paint or present.",
+      "openspore_concept": "Modern event-loop, window-host, and overlay abstractions preserving order and observable UI state.",
+      "modern_abstraction": "IEventLoop, IUiWindowHost, IMessageBus, IOverlayStack, and IPresentationCanvas.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/App__cMessageManager__ProcessQueue.c:6",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__Window__SendMsg.c:8",
+        "knowledgegraph/research/render-boundary/09-ui-presentation.json:329-393"
+      ],
+      "confidence": "medium",
+      "notes": "The mode request and callback order matter; UTFWin widget hierarchies, message IDs, and pdtk grammar are replaceable."
+    },
+    {
+      "id": "d3d9-platform-runtime",
+      "classification": "PLATFORM_RUNTIME",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/06-d3d-platform.json"
+      ],
+      "boundary": "Direct3D 9 platform runtime and D3DX import compatibility",
+      "gameplay_caller": "No direct gameplay caller; the statically linked RenderWare D3D9 target calls raw D3D interfaces through the renderer wrapper.",
+      "original_callee": "IDirect3D9 and IDirect3DDevice9 vtable methods inside RenderWare, Direct3DCreate9, and the dead d3dx9_27.dll import surface",
+      "parameters": [
+        "D3D device and context pointers",
+        "D3D9 state and resource arguments",
+        "presentation and resource calls"
+      ],
+      "outputs": [
+        "D3D HRESULT results",
+        "device resource and state changes",
+        "draw or presentation completion"
+      ],
+      "state_changed": [
+        "D3D texture, buffer, render-target, and lighting state",
+        "raw D3D9 device state"
+      ],
+      "structures": [
+        "IDirect3D9",
+        "IDirect3DDevice9",
+        "RenderWare dx9 device target"
+      ],
+      "lifetime": "Static RenderWare code and D3D resources follow application and device lifetime; the unused D3DX import has no runtime lifetime contract.",
+      "failure_semantics": "D3D HRESULT failures propagate through backend initialization, draw, or present; no gameplay-level failure semantics are defined by the platform.",
+      "timing_order": "Initialize D3D, create and resize resources, record draws, complete frame submission, and present.",
+      "openspore_concept": "A modern GPU platform adapter replacing Direct3D 9 and any dead D3DX dependency.",
+      "modern_abstraction": "IGpuDevice backed by Vulkan, OpenGL, or another modern platform API.",
+      "evidence": [
+        "docs/RENDERWARE-RESEARCH.md:15-25",
+        "docs/RENDERWARE-RESEARCH.md:62-74",
+        "docs/devlog/003-renderware-research.md:60",
+        "knowledgegraph/research/render-boundary/06-d3d-platform.json:144-206"
+      ],
+      "confidence": "high",
+      "notes": "Direct3D is platform runtime; RenderWare object internals are classified separately as third-party implementation."
+    },
+    {
+      "id": "win32-host-runtime",
+      "classification": "PLATFORM_RUNTIME",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/06-d3d-platform.json",
+        "knowledgegraph/research/render-boundary/09-ui-presentation.json"
+      ],
+      "boundary": "Win32 window, message pump, and frame-timing host runtime",
+      "gameplay_caller": "The application and simulation consume normalized events, frame deltas, window dimensions, and quit state; gameplay does not call Win32 directly.",
+      "original_callee": "PeekMessageW, TranslateMessage, DispatchMessageW, window creation and device-context imports, QueryPerformanceCounter, and QueryPerformanceFrequency",
+      "parameters": [
+        "Win32 message queue and HWND",
+        "frame and quit condition",
+        "performance counter and frequency",
+        "window client dimensions"
+      ],
+      "outputs": [
+        "monotonic frame time and delta",
+        "ordered platform events",
+        "quit request",
+        "window dimensions"
+      ],
+      "state_changed": [
+        "Win32 message queue",
+        "frame timing state",
+        "window and client dimensions"
+      ],
+      "structures": [
+        "HDC",
+        "HWND",
+        "LARGE_INTEGER",
+        "MSG"
+      ],
+      "lifetime": "Window and message pump are process-scoped; timing and frame state are per frame.",
+      "failure_semantics": "WM_QUIT ends the pump; window or device-context creation failure follows the platform failure path; timing error handling is not gameplay-observed.",
+      "timing_order": "Poll and dispatch events, update host state, obtain frame timing, update the active mode, render, then invalidate or present.",
+      "openspore_concept": "A platform host exposing normalized event order, monotonic time, frame identity, dimensions, and quit state.",
+      "modern_abstraction": "IPlatformHost backed by SDL or another host runtime.",
+      "evidence": [
+        "docs/RECON-3.1.0.22.md:41-43",
+        "knowledgegraph/research/render-boundary/06-d3d-platform.json:559-650",
+        "knowledgegraph/triage/xrefs-2540f2ca.externals.tsv:117-118",
+        "knowledgegraph/triage/xrefs-2540f2ca.externals.tsv:285-341"
+      ],
+      "confidence": "high",
+      "notes": "This is host-runtime compatibility, not a requirement to recreate Win32 IDs or the message pump."
+    },
+    {
+      "id": "camera-follow-unprojection",
+      "classification": "UNKNOWN",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/03-camera-transforms.json",
+        "knowledgegraph/research/render-boundary/08-gameplay-renderer.json"
+      ],
+      "boundary": "Camera follow target, attachment, and exact pointer unprojection",
+      "gameplay_caller": "Cell movement, editor tools, and camera control consume camera origin, direction, target, and mode state.",
+      "original_callee": "cCameraManager::SetViewer is known, but no distinct follow-target method or complete GetCameraToMouse body is exported; larger live functions contain the SDK anchors.",
+      "parameters": [
+        "camera target identity and transform",
+        "offset, distance, yaw, pitch, and smoothing",
+        "pointer coordinates",
+        "viewport and projection state"
+      ],
+      "outputs": [
+        "camera-mode gate",
+        "exact camera ray or unprojected world point",
+        "followed camera transform"
+      ],
+      "state_changed": [
+        "derived camera eye and orientation",
+        "possible camera target or viewer attachment state"
+      ],
+      "structures": [
+        "App::cCameraManager::mpViewer",
+        "App::cViewer::viewTransform",
+        "Transform"
+      ],
+      "lifetime": "Attachment follows the active viewer; follow state would follow the target entity per frame, but this is not proven.",
+      "failure_semantics": "Missing target, inactive camera mode, and invalid unprojection failure paths are not characterized.",
+      "timing_order": "Apply camera input, resolve target and follow, finalize view and projection, then query gameplay ray or render the frame; exact original order is unresolved.",
+      "openspore_concept": "No original follow contract may be claimed from current OpenSpore orbit or target-copy approximations.",
+      "modern_abstraction": "Candidate ICameraTarget with explicit attach, detach, setTargetTransform, and updateFollow, gated by new evidence.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCameraManager__SetViewer.c:8",
+        "knowledgegraph/research/render-boundary/03-camera-transforms.json:305-372",
+        "knowledgegraph/research/render-boundary/03-camera-transforms.json:718-728"
+      ],
+      "confidence": "low",
+      "notes": "Camera-ray movement itself is supported; follow, smoothing, and the exact unprojection formula are not."
+    },
+    {
+      "id": "cell-event-animation-transport",
+      "classification": "UNKNOWN",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/04-animation-pose.json",
+        "knowledgegraph/research/render-boundary/08-gameplay-renderer.json"
+      ],
+      "boundary": "Cell gameplay event to animation and effect request transport",
+      "gameplay_caller": "Cell interactions and per-frame gameplay events are expected to drive animation or effect behavior, but the original producer, message ID, and callback registration are not identified.",
+      "original_callee": "UNKNOWN; no direct original SimEvent-to-PlayAnimation or SimEvent-to-effect edge is established",
+      "parameters": [
+        "event identity",
+        "event payload",
+        "source and target Cell identities",
+        "target clip or effect"
+      ],
+      "outputs": [
+        "animation transition request",
+        "effect request",
+        "ordered event delivery"
+      ],
+      "state_changed": [
+        "unknown original event queue or callback state"
+      ],
+      "structures": [
+        "Anim::AnimationMessage editor candidate",
+        "Simulator::Cell::cCellObjectData"
+      ],
+      "lifetime": "UNKNOWN for original event allocation, queue ownership, delivery, and retention.",
+      "failure_semantics": "UNKNOWN for missing targets, dropped events, replay, cancellation, and invalid IDs.",
+      "timing_order": "UNKNOWN between gameplay event production, animation dispatch, pose update, effect creation, and draw.",
+      "openspore_concept": "Current SimEvent strings must not be treated as the original event ABI or event-to-animation proof.",
+      "modern_abstraction": "Candidate typed IAnimationEventRouter only after the original mapping is characterized.",
+      "evidence": [
+        "knowledgegraph/research/render-boundary/04-animation-pose.json:157-208",
+        "knowledgegraph/research/render-boundary/04-animation-pose.json:790-803",
+        "knowledgegraph/research/render-boundary/08-gameplay-renderer.json:334-402",
+        "src/apps/CellAnim.cpp:44"
+      ],
+      "confidence": "low",
+      "notes": "Clip state writes are known; the gameplay event transport that requests them is the central unknown."
+    },
+    {
+      "id": "material-slot-mapping",
+      "classification": "UNKNOWN",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/02-material-textures.json",
+        "knowledgegraph/research/render-boundary/06-d3d-platform.json",
+        "knowledgegraph/research/render-boundary/07-resource-lifetime.json"
+      ],
+      "boundary": "Exact GMDL material and texture-set to backend slot mapping",
+      "gameplay_caller": "No direct gameplay caller; model preload and material draw paths use selected material IDs and texture references.",
+      "original_callee": "cCellGFX::AddPreloadedTexture has ambiguous aliases; MaterialShader, CompiledState, and ActiveState expose the destination slot machinery but not the complete source mapping.",
+      "parameters": [
+        "GMDL material ID",
+        "GMDL texture-set entry",
+        "backend texture slot",
+        "material or shader definition"
+      ],
+      "outputs": [
+        "exact material-slot and texture-slot association",
+        "required shader and sampler policy"
+      ],
+      "state_changed": [
+        "backend slot binding state",
+        "material definition texture bindings"
+      ],
+      "structures": [
+        "GmdlModel",
+        "GmdlTextureRef",
+        "Graphics::MaterialShader",
+        "RenderWare::CompiledState"
+      ],
+      "lifetime": "The semantic material definition is content-scoped; backend slot bindings are draw-scoped.",
+      "failure_semantics": "Missing or mismatched slots may leave invalid or default draw state; original fallback behavior is not fully characterized.",
+      "timing_order": "Parse material and texture references, resolve definitions, map to slots, bind before draw.",
+      "openspore_concept": "No exact per-slot equivalence claim until the source mapping and fallback policy are recovered.",
+      "modern_abstraction": "IMaterialDefinition with explicit slot map and fallback policy once characterized.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__AddPreloadedTexture.c:8",
+        "knowledgegraph/research/render-boundary/02-material-textures.json:576-640",
+        "src/assets/Gmdl.cpp:218",
+        "src/assets/Gmdl.hpp:68"
+      ],
+      "confidence": "low",
+      "notes": "Stable material and texture identity is known; the exact slot association is not."
+    },
+    {
+      "id": "mip-sampler-policy",
+      "classification": "UNKNOWN",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/02-material-textures.json",
+        "knowledgegraph/research/render-boundary/06-d3d-platform.json"
+      ],
+      "boundary": "Original mip selection, sampler, and texture-coordinate policy",
+      "gameplay_caller": "No direct gameplay caller; material and renderer paths consume UVs and sample textures.",
+      "original_callee": "Graphics::ActiveState::SetTexture has no committed body, and the static D3D9 sampler state is not fully exported.",
+      "parameters": [
+        "UV inputs",
+        "mip chain",
+        "sampler mode and anisotropy state",
+        "surface dimensions and derivatives"
+      ],
+      "outputs": [
+        "filtered texture result",
+        "selected texel or mip level"
+      ],
+      "state_changed": [
+        "mip selection behavior",
+        "texture sampling state"
+      ],
+      "structures": [
+        "D3D sampler state behind the wrapper",
+        "RenderWare::Raster",
+        "TexVertex UV stream"
+      ],
+      "lifetime": "Sampler and mip state follow resource and draw state.",
+      "failure_semantics": "Invalid texture or sampler state can produce fallback or invalid sampling; the original path is not runtime-observed.",
+      "timing_order": "Bind texture resources, configure sampler state, bind UV streams, then draw and sample.",
+      "openspore_concept": "Preserve decoded mip data and later establish explicit sampler and mip policy.",
+      "modern_abstraction": "Candidate SamplerPolicy and mip-chain-aware texture interface; current mip-0-only OpenSpore is an approximation.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__ActiveState__SetTexture.c:6",
+        "docs/MATERIALS-DESIGN.md:107-117",
+        "knowledgegraph/research/render-boundary/02-material-textures.json:641-677"
+      ],
+      "confidence": "low",
+      "notes": "The source formats and mip presence are known; the original runtime selection policy is not."
+    },
+    {
+      "id": "model-world-lod-semantics",
+      "classification": "UNKNOWN",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/01-renderware-objects.json",
+        "knowledgegraph/research/render-boundary/03-camera-transforms.json",
+        "knowledgegraph/research/render-boundary/05-scene-entity.json"
+      ],
+      "boundary": "Model-world LOD selection and background-load completion semantics",
+      "gameplay_caller": "Model and terrain presentation owners invoke or consume model-world LOD and background-load state; exact gameplay callers are not exported.",
+      "original_callee": "Graphics::cModelWorld::UpdateWithLODMeshes, Graphics::IModelWorld::LoadModelProperties, and cModelWorld::FinishBackgroundLoad have SDK anchors but no committed bodies.",
+      "parameters": [
+        "background-load state",
+        "camera and view-projection snapshot",
+        "model bounds and distance",
+        "model-world state"
+      ],
+      "outputs": [
+        "LOD-selected mesh set",
+        "background-load completion result",
+        "updated render membership"
+      ],
+      "state_changed": [
+        "unknown background-load state",
+        "unknown model-world LOD state"
+      ],
+      "structures": [
+        "Graphics::IModelWorld",
+        "Graphics::Model",
+        "Graphics::cModelWorld"
+      ],
+      "lifetime": "Model-world state follows scene presentation, but exact load and object lifetimes are uncharacterized.",
+      "failure_semantics": "UNKNOWN for missing LOD levels, invalid distance, cancellation, stale requests, and background-load failure.",
+      "timing_order": "Names suggest load then completion then update before render, but this order is not established by bodies or runtime evidence.",
+      "openspore_concept": "Keep LOD and background load behind a renderer model-world facade until semantics are characterized.",
+      "modern_abstraction": "Candidate updateLOD(viewProjection) and background-load status operations without claimed original behavior.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/sdk_functions.tsv:495-497",
+        "docs/RENDERWARE-RESEARCH.md:320-325",
+        "knowledgegraph/research/render-boundary/01-renderware-objects.json:577-644"
+      ],
+      "confidence": "low",
+      "notes": "Function names alone do not establish gameplay-visible LOD, culling, or async-load behavior."
+    },
+    {
+      "id": "pose-propagation",
+      "classification": "UNKNOWN",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/03-camera-transforms.json",
+        "knowledgegraph/research/render-boundary/04-animation-pose.json",
+        "knowledgegraph/research/render-boundary/05-scene-entity.json"
+      ],
+      "boundary": "Cell and creature transform to skeleton, pose, deformation, and draw propagation",
+      "gameplay_caller": "Cell, editor creature, vehicle, and model presentation paths supply transforms and animation state, but no complete original pose-upload chain is established.",
+      "original_callee": "UNKNOWN path among cCellObjectData, AnimatedCreature, IAnimWorld update phases, RenderWare model-instance animation, and draw submission",
+      "parameters": [
+        "clip and blend state",
+        "entity world transform",
+        "model-world membership",
+        "skeleton, skin, and morph data"
+      ],
+      "outputs": [
+        "bone or morph matrices",
+        "deformed vertex or indexed draw state",
+        "pose snapshot"
+      ],
+      "state_changed": [
+        "model-to-world and group-transform state",
+        "unknown pose and deformation buffers"
+      ],
+      "structures": [
+        "Anim::AnimatedCreature",
+        "Anim::IAnimWorld",
+        "Graphics::cModelInstanceAnimations",
+        "Simulator::Cell::cCellObjectData"
+      ],
+      "lifetime": "Pose buffers should follow the active model and animation world, but original ownership and reuse are uncharacterized.",
+      "failure_semantics": "UNKNOWN for missing model, invalid pose, failed upload, fallback bind pose, and transform propagation failure.",
+      "timing_order": "UNKNOWN among gameplay transform update, animation update, post-update, pose evaluation, membership update, culling, and draw.",
+      "openspore_concept": "Preserve only authoritative transform and animation intent until a provenance-bearing pose path is found.",
+      "modern_abstraction": "Candidate IPoseSink and PoseSnapshot bridge; no required original evaluator interface is established.",
+      "evidence": [
+        "knowledgegraph/research/render-boundary/04-animation-pose.json:209-379",
+        "knowledgegraph/research/render-boundary/04-animation-pose.json:804-821",
+        "knowledgegraph/triage/structs_fields.tsv:3810-3835"
+      ],
+      "confidence": "low",
+      "notes": "This is the major integration gap between known gameplay animation state and renderer output."
+    },
+    {
+      "id": "swarm-animation-ownership",
+      "classification": "UNKNOWN",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/04-animation-pose.json"
+      ],
+      "boundary": "Swarm animation, event, and gameplay ownership",
+      "gameplay_caller": "No committed local analysis identifies a gameplay caller for the Swarm cluster.",
+      "original_callee": "UNKNOWN Swarm, Anim, and Math virtual implementations; Swarm visual-effect structures are present",
+      "parameters": [
+        "unknown Swarm identity",
+        "unknown animation or event payload"
+      ],
+      "outputs": [
+        "unknown Swarm animation or effect output"
+      ],
+      "state_changed": [
+        "unknown Swarm state"
+      ],
+      "structures": [
+        "Anim structures",
+        "Math structures",
+        "Swarm::IVisualEffect"
+      ],
+      "lifetime": "UNKNOWN; the available cluster is structure-heavy and function-thin.",
+      "failure_semantics": "UNKNOWN for missing agents, event drops, state reset, and animation failure.",
+      "timing_order": "UNKNOWN; no proven event, update, or draw phase is available.",
+      "openspore_concept": "Swarm remains an investigation target and must not be classified by namespace alone.",
+      "modern_abstraction": "No interface should be defined until owner and event semantics are characterized.",
+      "evidence": [
+        "docs/analysis/semantic-atlas.md:67",
+        "knowledgegraph/research/render-boundary/04-animation-pose.json:738-788",
+        "knowledgegraph/triage/clusters-f0e310e0-v6.json:614"
+      ],
+      "confidence": "low",
+      "notes": "Absence of proven coupling is not evidence that Swarm animation is absent or presentation-only."
+    },
+    {
+      "id": "teardown-gpu-retirement",
+      "classification": "UNKNOWN",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/05-scene-entity.json",
+        "knowledgegraph/research/render-boundary/07-resource-lifetime.json"
+      ],
+      "boundary": "Mode teardown, in-flight GPU work, and final resource retirement",
+      "gameplay_caller": "Mode exit, entity detach, effect stop, preload clear, layer unregister, and model-world disposal are gameplay- and stage-lifetime consumers.",
+      "original_callee": "cCellGFX teardown helpers, IModelWorld::FinalRelease and Dispose, Graphics::Model release, IVisualEffect release, renderer unregister, and backend device shutdown",
+      "parameters": [
+        "active view and effect associations",
+        "in-flight frame or device work",
+        "mode and stage shutdown state",
+        "renderer registrations"
+      ],
+      "outputs": [
+        "detached presentation components",
+        "released semantic resources",
+        "retired backend resources",
+        "unregistered layers"
+      ],
+      "state_changed": [
+        "mode and scene ownership",
+        "pending work or retirement state",
+        "renderer and device lifetime",
+        "resource reference state"
+      ],
+      "structures": [
+        "Graphics::IModelManager",
+        "Graphics::IModelWorld",
+        "Simulator::Cell::cCellGFX",
+        "Swarm::IEffectsWorld"
+      ],
+      "lifetime": "Original teardown spans mode exit through global renderer shutdown, but exact ordering of last-owner release, frame completion, and device destruction is uncharacterized.",
+      "failure_semantics": "Pointer checks permit best-effort cleanup; original failures, pending effects, in-flight draws, and device reset behavior are not runtime-observed.",
+      "timing_order": "Stop mode input and simulation, stop effects, detach views, unregister layers, release semantic owners, complete or fence dependent GPU work, then retire resources and finally shut down the device.",
+      "openspore_concept": "The modern contract should distinguish semantic detach, shared-owner release, and backend retirement.",
+      "modern_abstraction": "Explicit retirement acknowledgements or deferred destruction for model, mesh, texture, effect, and pose resources.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnExit.c:15",
+        "knowledgegraph/research/render-boundary/05-scene-entity.json:530-594",
+        "knowledgegraph/research/render-boundary/07-resource-lifetime.json:697-705",
+        "knowledgegraph/triage/structs_fields.tsv:3873-3874"
+      ],
+      "confidence": "low",
+      "notes": "The required ordering is architectural; the original runtime teardown and GPU-retirement contract remain unknown."
+    },
+    {
+      "id": "vehicle-animation-coupling",
+      "classification": "UNKNOWN",
+      "tracks": [
+        "knowledgegraph/research/render-boundary/04-animation-pose.json",
+        "knowledgegraph/research/render-boundary/08-gameplay-renderer.json"
+      ],
+      "boundary": "Vehicle locomotion to animation, creature, or pose coupling",
+      "gameplay_caller": "Simulator::cCity::SpawnVehicle and Simulator::cVehicle::Load establish vehicle state; no direct animation caller is identified.",
+      "original_callee": "UNKNOWN; no committed call edge links cVehicle or cLocomotiveObject to AnimatedCreature, IAnimWorld, AnimationMessage, or PlayAnimation",
+      "parameters": [
+        "locomotion state",
+        "unknown animation or pose request",
+        "vehicle identity"
+      ],
+      "outputs": [
+        "unknown vehicle animation or pose output"
+      ],
+      "state_changed": [
+        "unknown vehicle animation state"
+      ],
+      "structures": [
+        "Anim::AnimatedCreature candidate type",
+        "Simulator::cLocomotiveObject",
+        "Simulator::cVehicle"
+      ],
+      "lifetime": "UNKNOWN between vehicle, model, animation-controller, and pose-binding lifetimes.",
+      "failure_semantics": "UNKNOWN for missing clips, unloaded models, invalid vehicle bindings, and pose fallback.",
+      "timing_order": "UNKNOWN among locomotion, transform propagation, animation update, and draw.",
+      "openspore_concept": "Do not add a vehicle pose contract without a vehicle-to-animation edge or runtime observation.",
+      "modern_abstraction": "Candidate IVehicleAnimationBinding is not yet a required abstraction.",
+      "evidence": [
+        "knowledgegraph/research/render-boundary/04-animation-pose.json:623-672",
+        "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl:26128",
+        "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl:29185"
+      ],
+      "confidence": "low",
+      "notes": "Vehicle locomotion is known gameplay state; whether the vehicle is animated is unknown."
+    }
+  ],
+  "unresolved_dependencies": [
+    {
+      "id": "U-001",
+      "question": "What are the original camera follow target, attachment, update order, and exact pointer-unprojection formula?",
+      "impact": "Camera-driven movement and picking can be wrong even when ray-plane arithmetic is correct.",
+      "affected_boundary_ids": [
+        "camera-follow-unprojection",
+        "camera-ray-movement-plane-result",
+        "camera-service"
+      ],
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCameraManager__SetViewer.c:8",
+        "knowledgegraph/research/render-boundary/03-camera-transforms.json:305-372"
+      ],
+      "confidence": "low"
+    },
+    {
+      "id": "U-002",
+      "question": "Which Cell camera-mode and UI fields gate movement and picking, and which fields are presentation-only?",
+      "impact": "Input routing can mutate gameplay at the wrong times or expose presentation state as gameplay state.",
+      "affected_boundary_ids": [
+        "camera-ray-movement-plane-result",
+        "cell-gameplay-input-routing"
+      ],
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnMouseDown.c:23-56",
+        "docs/analysis/dossiers/cell-movement.md:133-139"
+      ],
+      "confidence": "low"
+    },
+    {
+      "id": "U-003",
+      "question": "What original event or message IDs connect gameplay interactions to PlayAnimation and visual-effect requests?",
+      "impact": "Known clip state mutation cannot be connected to the gameplay event that caused it.",
+      "affected_boundary_ids": [
+        "animation-clip-transition-state",
+        "cell-event-animation-transport",
+        "effect-presenter"
+      ],
+      "evidence": [
+        "knowledgegraph/research/render-boundary/04-animation-pose.json:790-803",
+        "src/apps/CellAnim.cpp:44"
+      ],
+      "confidence": "low"
+    },
+    {
+      "id": "U-004",
+      "question": "What exact path propagates entity transforms, animation state, bones, morphs, and deformed geometry into draw submission?",
+      "impact": "Animation intent may be correct while rendered pose, deformation, or frame timing remains absent or wrong.",
+      "affected_boundary_ids": [
+        "animation-clip-transition-state",
+        "cell-entity-view-propagation",
+        "pose-propagation",
+        "render-queue-submission"
+      ],
+      "evidence": [
+        "knowledgegraph/research/render-boundary/04-animation-pose.json:804-821",
+        "knowledgegraph/research/render-boundary/05-scene-entity.json:209-272"
+      ],
+      "confidence": "low"
+    },
+    {
+      "id": "U-005",
+      "question": "What is the original order among gameplay update, IAnimWorld update phases, pose evaluation, visibility update, draw-list build, and submit?",
+      "impact": "One-frame state, camera causality, animation phase, and visibility can drift if phase order is wrong.",
+      "affected_boundary_ids": [
+        "animation-service-controller",
+        "cell-entity-view-propagation",
+        "model-world-draw-list",
+        "render-queue-submission"
+      ],
+      "evidence": [
+        ".spore-analysis/ghidra-exports/structs_fields.tsv:10630",
+        "knowledgegraph/research/render-boundary/04-animation-pose.json:815-822"
+      ],
+      "confidence": "low"
+    },
+    {
+      "id": "U-006",
+      "question": "Does vehicle locomotion bind to an animation controller, AnimatedCreature, IAnimWorld, or a distinct pose representation?",
+      "impact": "Vehicle transform and locomotion may be correct while wheels, suspension, body motion, or other vehicle pose behavior is missing.",
+      "affected_boundary_ids": [
+        "pose-propagation",
+        "vehicle-animation-coupling",
+        "vehicle-locomotion-state"
+      ],
+      "evidence": [
+        ".spore-analysis/ghidra-exports/structs_fields.tsv:5998",
+        ".spore-analysis/ghidra-exports/structs_fields.tsv:8288"
+      ],
+      "confidence": "low"
+    },
+    {
+      "id": "U-007",
+      "question": "What are the Swarm animation state machine, event semantics, owner lifetime, and gameplay relationship?",
+      "impact": "Swarm behavior cannot be assigned to gameplay, presentation, or replacement infrastructure safely.",
+      "affected_boundary_ids": [
+        "cell-event-animation-transport",
+        "swarm-animation-ownership"
+      ],
+      "evidence": [
+        "knowledgegraph/research/render-boundary/04-animation-pose.json:738-788",
+        "knowledgegraph/triage/clusters-f0e310e0-v6.json:614-622"
+      ],
+      "confidence": "low"
+    },
+    {
+      "id": "U-008",
+      "question": "What is the exact mapping from GMDL material IDs and texture-set entries to compiled-state slots, shader data, and fallbacks?",
+      "impact": "Models can load and draw while material appearance and texture bindings differ from the original.",
+      "affected_boundary_ids": [
+        "content-resource-model-identity",
+        "material-slot-mapping",
+        "material-texture-content-lookup",
+        "render-state-cache"
+      ],
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__AddPreloadedTexture.c:8-22",
+        "src/assets/Gmdl.cpp:218"
+      ],
+      "confidence": "low"
+    },
+    {
+      "id": "U-009",
+      "question": "What original mip selection, sampler, anisotropy, and texture-coordinate policy is used at draw time?",
+      "impact": "Texture content can decode correctly yet produce visibly different filtering and mip output.",
+      "affected_boundary_ids": [
+        "mip-sampler-policy",
+        "render-state-cache",
+        "texture-gpu-upload"
+      ],
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__ActiveState__SetTexture.c:6",
+        "docs/MATERIALS-DESIGN.md:107-117"
+      ],
+      "confidence": "low"
+    },
+    {
+      "id": "U-010",
+      "question": "What original teardown and GPU-retirement protocol guarantees resources are safe after detach and draw submission?",
+      "impact": "A replacement can preserve logical ownership and still use destroyed buffers, textures, effects, or pose data.",
+      "affected_boundary_ids": [
+        "cell-presentation-stage",
+        "shared-resource-handle-lifetime",
+        "teardown-gpu-retirement"
+      ],
+      "evidence": [
+        "knowledgegraph/research/render-boundary/05-scene-entity.json:530-594",
+        "knowledgegraph/research/render-boundary/07-resource-lifetime.json:697-705"
+      ],
+      "confidence": "low"
+    },
+    {
+      "id": "U-011",
+      "question": "What are the real model-world LOD thresholds, selection behavior, background-load lifecycle, and failure results?",
+      "impact": "Geometry visibility and loading transitions cannot be claimed compatible from SDK function names.",
+      "affected_boundary_ids": [
+        "mesh-model-world-interface",
+        "model-world-lod-semantics",
+        "renderware-model-world-internals"
+      ],
+      "evidence": [
+        ".spore-analysis/ghidra-exports/sdk_functions.tsv:495-497",
+        "knowledgegraph/research/render-boundary/01-renderware-objects.json:577-644"
+      ],
+      "confidence": "low"
+    },
+    {
+      "id": "U-012",
+      "question": "What complete runtime oracles are available for Cell mode, editor, vehicle, presentation teardown, and final pixels?",
+      "impact": "Static decompilation cannot validate timing, ownership, pose output, sampler policy, teardown, or pixel equivalence.",
+      "affected_boundary_ids": [
+        "camera-ray-movement-plane-result",
+        "cell-mode-lifecycle",
+        "mip-sampler-policy",
+        "pose-propagation",
+        "teardown-gpu-retirement"
+      ],
+      "evidence": [
+        "docs/replacement-boundaries.md:93-121",
+        "knowledgegraph/research/render-boundary/08-gameplay-renderer.json:802-817"
+      ],
+      "confidence": "high"
+    }
+  ]
+}

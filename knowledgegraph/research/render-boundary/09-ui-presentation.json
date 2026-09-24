@@ -1,0 +1,591 @@
+{
+  "track": "ui-presentation",
+  "scope": "UI and presentation crossings only: in-game Cell UI, screen and overlay layers, cursor and selection feedback, UI-owned state consumed by callbacks, presentation callbacks, and mode-transition/presentation lifecycle. RenderWare and D3D internals are treated as replaceable; no gameplay implementation is prescribed.",
+  "boundaries": [
+    {
+      "classification": "required_for_semantics",
+      "boundary": "Cell GFX world, layer, model, texture, and effect presentation lifecycle",
+      "gameplay_caller": "Cell mode initialization, resource preload, mode entry, and gameplay events that need visible cell/effect handles",
+      "original_callee": "Simulator::Cell::cCellGFX::Initialize (0x00e5dba0); PreloadResources (0x00e666f0); PreloadCellResource (0x00e663b0); PreloadPopulateResource (0x00e665c0); LoadEffectMap (0x00e63560); InstanceEffectOnCell (0x00e66840); StartDisplay (0x00e55120)",
+      "parameters": [
+        "named Cell effects worlds and layers",
+        "cell and populate resource references",
+        "preloaded model, texture, creature, and effect handles",
+        "cell transform and effect identifiers"
+      ],
+      "outputs": [
+        "Cell world and layer handle table",
+        "resource-to-visual-handle associations",
+        "active lighting and shadow-world state",
+        "per-cell visual-effect instances"
+      ],
+      "state_changed": [
+        "cCellGFX preload vectors and effect-instance storage",
+        "skybox, background, beach, main, and foreground layer handles",
+        "effect-world and model-world associations",
+        "display visibility, lighting, shadow, and presentation cue state"
+      ],
+      "structures": [
+        "Simulator::Cell::cCellGFX",
+        "cCellGFX::CellGFXObjectData",
+        "cCellGFX::EffectInstance",
+        "cCellGFX preload vectors",
+        "graphics model, texture, effect, lighting, and shadow-world handles"
+      ],
+      "lifetime": "Owned by the Cell mode: worlds and preload state are initialized before entry, display is started on entry, effects are instantiated during gameplay, and presentation resources are released during exit/disposal.",
+      "failure_semantics": "Null world or effect handles are retained or disabled and the affected visual is skipped or released; the decompilation shows no gameplay-level error return. Resource preload order is not runtime-observed.",
+      "timing_order": "Initialize creates the world/layer table; PreloadResources binds records and handles; OnEnter calls StartDisplay; gameplay events instantiate effects; OnExit resets display state; Dispose releases GFX and UI-owned presentation resources.",
+      "openspore_concept": "src/apps/CellGfx.cpp:5-44; src/renderer/Renderer.hpp:53-87; src/compat/MeshSource.hpp:62-81; docs/analysis/reconstruction-packages.md:704-738",
+      "modern_abstraction": "ICellPresentation with createWorld, preloadModel, preloadEffect, preloadTexture, bindPopulate, setLayerVisibility, instantiateEffect, startDisplay, stopDisplay, and destroyWorld; keep handles and ordering, not RenderWare or D3D objects.",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__Initialize.c",
+          "line": 8,
+          "symbol": "Simulator::Cell::cCellGFX::Initialize"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__PreloadResources.c",
+          "line": 8,
+          "symbol": "Simulator::Cell::cCellGFX::PreloadResources"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__StartDisplay.c",
+          "line": 8,
+          "symbol": "Simulator::Cell::cCellGFX::StartDisplay"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__InstanceEffectOnCell.c",
+          "line": 8,
+          "symbol": "Simulator::Cell::cCellGFX::InstanceEffectOnCell"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/structs_fields.tsv",
+          "line": 18480,
+          "symbol": "Simulator::Cell::cCellGFX"
+        }
+      ],
+      "confidence": "high",
+      "notes": "The handle and association contract is presentation-facing but observable to gameplay. The renderer implementation is replaceable; the original function bodies are static evidence, not runtime verification."
+    },
+    {
+      "classification": "required_for_semantics",
+      "boundary": "Cell HUD health rollover feedback and UI-owned feedback state",
+      "gameplay_caller": "Cell health or damage feedback path calling cCellUI::ShowHealthRollover; Cell mode input callbacks also mutate cCellUI state",
+      "original_callee": "Simulator::Cell::cCellUI::Load (0x00e54270); ShowHealthRollover (0x00e62340); App::cCellModeStrategy::OnKeyDown (0x00e818f0); OnMouseDown (0x00e6c860); OnMouseUp (0x00e5c0f0)",
+      "parameters": [
+        "cell object with a GFX object index",
+        "cell object-pool index",
+        "initial health",
+        "mouse button, pointer coordinates, and input-state values"
+      ],
+      "outputs": [
+        "health-rollover record or rollover-pool index",
+        "HUD layout handle and GlobalUICell resource identity",
+        "feedback timer and health scale",
+        "UI hit-test and selection fields"
+      ],
+      "state_changed": [
+        "cCellUI layout constants and loaded state",
+        "cCellUIRollover object-pool and cell indices",
+        "cCellUIRollover health scale and disappear time",
+        "cCellUI pointer/hit-test fields written by mouse callbacks"
+      ],
+      "structures": [
+        "Simulator::Cell::cCellUI",
+        "Simulator::Cell::cCellUIRollover",
+        "cell object pool and GFX object index",
+        "UI layout and rollover feedback records"
+      ],
+      "lifetime": "HUD configuration is loaded with Cell mode initialization; rollover records are created from gameplay feedback and are intended to expire; UI hit-test state is transient per pointer interaction but is stored in cCellUI.",
+      "failure_semantics": "ShowHealthRollover returns without a rollover when the cell has no GFX object index. Mouse callbacks return false or clear the UI selection field when no hit succeeds. The exact meaning of every cCellUI offset is not resolved.",
+      "timing_order": "CellUI::Load establishes HUD constants; gameplay health feedback creates a rollover; key and mouse callbacks update UI state; drawing consumes the HUD/rollover state during the active display frame.",
+      "openspore_concept": "src/apps/CellUI.hpp:37-55; src/apps/CellUI.cpp:5-25; docs/analysis/reconstruction-packages.md:704-738",
+      "modern_abstraction": "IHudFeedback and IUIRolloverView, fed by a gameplay feedback event containing cell identity and health, with a separate presentation-owned expiry/layout layer.",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellUI__Load.c",
+          "line": 6,
+          "symbol": "Simulator::Cell::cCellUI::Load"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellUI__ShowHealthRollover.c",
+          "line": 8,
+          "symbol": "Simulator::Cell::cCellUI::ShowHealthRollover"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnKeyDown.c",
+          "line": 8,
+          "symbol": "App::cCellModeStrategy::OnKeyDown"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnMouseDown.c",
+          "line": 8,
+          "symbol": "App::cCellModeStrategy::OnMouseDown"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/structs_fields.tsv",
+          "line": 18529,
+          "symbol": "Simulator::Cell::cCellUIRollover"
+        }
+      ],
+      "confidence": "high",
+      "notes": "The visible rollover is presentation-only, but its trigger, cell identity, health scale, timer, and no-GFX early-out are the semantic feedback contract. Do not make gameplay depend on a general UTFWin widget implementation."
+    },
+    {
+      "classification": "required_for_semantics",
+      "boundary": "Cell mode callback UI state and gameplay input routing",
+      "gameplay_caller": "Input manager and active-mode dispatch feeding cCellModeStrategy callbacks, followed by cCellGame update and UI consumers",
+      "original_callee": "App::cCellModeStrategy::OnMouseMove (0x00e51010); OnMouseDown (0x00e6c860); OnMouseUp (0x00e5c0f0); OnMouseWheel (0x00e7d660); OnKeyDown (0x00e818f0); Update (0x00e80980)",
+      "parameters": [
+        "mouse position and mouse state",
+        "mouse button and wheel delta",
+        "virtual key and modifier state",
+        "frame delta"
+      ],
+      "outputs": [
+        "mode-local input and pointer state",
+        "UI hit-test and selection feedback",
+        "camera and movement input consumed by the Cell simulation",
+        "consumed-versus-default callback return values"
+      ],
+      "state_changed": [
+        "cCellUI flag at offset +0x937",
+        "cCellUI mouse/hit-test fields at offsets +0xc0, +0xc4, +0x900, and +0x904",
+        "GameInput/mode callback state",
+        "per-frame CellGame state reached from the callback/update path"
+      ],
+      "structures": [
+        "App::cCellModeStrategy",
+        "Simulator::Cell::cCellUI",
+        "Simulator::Cell::cCellGame",
+        "MouseState, MouseButton, KeyModifiers",
+        "cGameInputManager and active game-mode routing"
+      ],
+      "lifetime": "Input state is owned by the active mode and persists across frames until changed; UI hit-test fields are overwritten on pointer actions; display and simulation state persist for the active mode.",
+      "failure_semantics": "Callbacks return false when the event is not consumed, and a failed pointer query clears or leaves the UI selection field at zero. The decompilation has calling-convention warnings, so exact parameter identities and all gate meanings are not established.",
+      "timing_order": "OS/input event is normalized into the active mode callback; mouse/key callbacks update mode and UI state; Update runs the per-frame Cell body; presentation then draws the resulting frame.",
+      "openspore_concept": "src/apps/IGameMode.hpp:28-52; src/apps/CellInput.hpp:19-48; src/apps/cell_stage.cpp:997-1135",
+      "modern_abstraction": "IInputRouter plus typed InputEvent and IModeInputState, with separate routes for gameplay movement, editor/UI selection, camera actions, and lifecycle commands; preserve event order and consumed/default results.",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnMouseMove.c",
+          "line": 8,
+          "symbol": "App::cCellModeStrategy::OnMouseMove"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnMouseDown.c",
+          "line": 8,
+          "symbol": "App::cCellModeStrategy::OnMouseDown"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnMouseUp.c",
+          "line": 8,
+          "symbol": "App::cCellModeStrategy::OnMouseUp"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnMouseWheel.c",
+          "line": 8,
+          "symbol": "App::cCellModeStrategy::OnMouseWheel"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 33817,
+          "symbol": "App::cCellModeStrategy::OnKeyDown"
+        }
+      ],
+      "confidence": "medium",
+      "notes": "This is the explicit UI/gameplay crossing: mode callbacks write UI state while the same input surface also gates camera and simulation behavior. The exact boundary between UI feedback state and gameplay-read state remains unresolved."
+    },
+    {
+      "classification": "required_for_semantics",
+      "boundary": "Editor pointer hover, selection, drag, and tool feedback",
+      "gameplay_caller": "UTFWin/editor input dispatch to cEditor pointer callbacks and active editor/tool/actor vtables",
+      "original_callee": "Editors::cEditor::OnMouseMove (0x005737d0); OnMouseDown (0x00588570); OnMouseUp (0x0058b650); Graphics::IRenderer::Layer; IShadowWorld; cToolStrategy vtable; CommitEditHistory",
+      "parameters": [
+        "pointer coordinates and MouseState",
+        "MouseButton",
+        "active editor mode and selected tool state",
+        "renderer layer and shadow-world query results"
+      ],
+      "outputs": [
+        "hover and active-pointer state",
+        "selected object or actor identity",
+        "drag/tool operation requests",
+        "edit-history commit or undo result",
+        "selection, cursor, and placement feedback requests"
+      ],
+      "state_changed": [
+        "cEditor pointer, active-movement, selected-tool, and mode state",
+        "cEditor model/resource selection and drag state",
+        "active tool/actor vtable state",
+        "edit history and animation-world synchronization state"
+      ],
+      "structures": [
+        "Editors::cEditor",
+        "Editors::EditorStateEditHistory",
+        "Simulator::cToolStrategy",
+        "UTFWin::Window and IDrawable composition",
+        "Graphics layer and shadow-world handles"
+      ],
+      "lifetime": "Hover and drag state are interaction-scoped; selected object/tool state persists until a mode change or selection release; edit history persists for the editor session and is updated on commit.",
+      "failure_semantics": "Missing shadow world, layer, tool, actor, or hit result returns false or consumes the event without a completed edit. The decompiler does not reliably identify all message IDs or tool field names.",
+      "timing_order": "Pointer move updates hover; pointer down performs layer hit-testing and enters a tool/actor path; pointer up releases, commits history, may undo, and clears active interaction state; render then presents the selected/hover feedback.",
+      "openspore_concept": "docs/analysis/reconstruction-packages.md:779-845; src/apps/IGameMode.hpp:28-52",
+      "modern_abstraction": "IEditorInteraction with pointer events, IEditorSelection, IHitTestLayer, and IToolCommandSink; keep selection, drag, commit, undo, and feedback as separate typed transitions.",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnMouseMove.c",
+          "line": 8,
+          "symbol": "Editors::cEditor::OnMouseMove"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnMouseDown.c",
+          "line": 9,
+          "symbol": "Editors::cEditor::OnMouseDown"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnMouseUp.c",
+          "line": 15,
+          "symbol": "Editors::cEditor::OnMouseUp"
+        },
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/track-g-editor-ui-input.json",
+          "line": 305,
+          "symbol": "editor-to-tool"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/structs_fields.tsv",
+          "line": 11563,
+          "symbol": "Simulator::cToolStrategy::OnSelect"
+        }
+      ],
+      "confidence": "high",
+      "notes": "This is a UI-to-editor presentation boundary, not a general gameplay movement boundary. Preserve observable selection and edit-history semantics if editor support is required; replace UTFWin internals and RenderWare hit-test implementation."
+    },
+    {
+      "classification": "replaceable_infrastructure",
+      "boundary": "Cursor, drop-icon, and overlay-layer presentation service",
+      "gameplay_caller": "UTFWin window hover/drag handlers and editor/tool feedback requesting cursor or overlay changes",
+      "original_callee": "UTFWin::cCursorManager::SetActiveCursor (0x00801cf0); ShowDropCursorIcon (0x00801ac0); UTFWin::Window::GetCursorID (0x00575ea0); UI::cLayerManager::Get (0x0067ca90)",
+      "parameters": [
+        "cursor identifier",
+        "drop-icon visibility",
+        "window cursor state",
+        "layered-object and overlay ordering requests"
+      ],
+      "outputs": [
+        "active cursor resource or cursor identifier",
+        "drop-cursor visibility state",
+        "window cursor feedback",
+        "layered-object and screen-overlay composition"
+      ],
+      "state_changed": [
+        "cCursorManager active cursor and drop-icon state",
+        "UTFWin::Window cursor identifier and visual state",
+        "UI::cLayerManager layered-object collection and ordering"
+      ],
+      "structures": [
+        "UTFWin::cCursorManager",
+        "UTFWin::Window",
+        "UI::cLayerManager",
+        "UI layered objects",
+        "window drawable composition"
+      ],
+      "lifetime": "Cursor and overlay state follows the active window/editor interaction and is discarded or replaced when the window or mode changes.",
+      "failure_semantics": "SetActiveCursor returns a boolean and can decline the requested cursor under its internal conditions; ShowDropCursorIcon has conditional setup and can return without applying the icon. Exact resource/loading failure behavior is unresolved.",
+      "timing_order": "Selection or hover state changes the cursor/overlay request; the window manager applies it before the next UI paint/draw; mode exit restores or releases the prior window state.",
+      "openspore_concept": "docs/analysis/reconstruction-packages.md:779-845; src/renderer/Renderer.hpp:53-87",
+      "modern_abstraction": "ICursorService plus IOverlayLayerStack and IWindowVisualState; preserve cursor identity, visibility, and z/layer order while allowing a modern host cursor and compositor-backed overlay implementation.",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__cCursorManager__SetActiveCursor.c",
+          "line": 8,
+          "symbol": "UTFWin::cCursorManager::SetActiveCursor"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__cCursorManager__ShowDropCursorIcon.c",
+          "line": 8,
+          "symbol": "UTFWin::cCursorManager::ShowDropCursorIcon"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__Window__GetCursorID.c",
+          "line": 7,
+          "symbol": "UTFWin::Window::GetCursorID"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/structs_fields.tsv",
+          "line": 24617,
+          "symbol": "UI::cLayerManager"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/structs_fields.tsv",
+          "line": 13754,
+          "symbol": "UTFWin::Window::mCursorID"
+        }
+      ],
+      "confidence": "medium",
+      "notes": "This is presentation-only infrastructure. It must not become a gameplay singleton API; only the observable cursor and overlay contract crosses the replacement boundary."
+    },
+    {
+      "classification": "runtime_compatibility_only",
+      "boundary": "UTFWin window, overlay, and message-callback presentation shell",
+      "gameplay_caller": "UTFWin window procedures, editor message handlers, and mode/UI callbacks requesting message delivery or paint",
+      "original_callee": "UTFWin::Window::SendMsg (0x00960250); App::cMessageManager::ProcessQueue (0x008841f0); GetMessageQueue (0x0098f4d0); App::Canvas::Update (0x00847a90); Editors::cEditor::HandleMessage (0x00591fa0)",
+      "parameters": [
+        "window or IMessageManager target",
+        "message payload and message identifier",
+        "queue/process selection",
+        "canvas and frame presentation context"
+      ],
+      "outputs": [
+        "window-procedure callback result",
+        "ordered listener/handler delivery",
+        "window area, drawable, and paint state",
+        "mode or editor action result"
+      ],
+      "state_changed": [
+        "UTFWin::Window parent/child and proc-list state",
+        "window area, state flags, cursor, caption, and drawable state",
+        "message queue, listener, handler, lock, and priority state",
+        "canvas active-window/message-server state"
+      ],
+      "structures": [
+        "UTFWin::Window and IWindow",
+        "App::IMessageManager and cMessageManager",
+        "message listener/handler queue entries",
+        "App::Canvas",
+        "UI::cLayerManager"
+      ],
+      "lifetime": "Windows and their drawables live with the active UI/editor mode; message entries are queued, processed, and released by the message manager; paint state is frame/window scoped.",
+      "failure_semantics": "SendMsg and ProcessQueue return boolean/int status but the decompilation is not type-safe enough to name every result. Queue locking, invalid message targets, and exact message-ID failure behavior remain unresolved.",
+      "timing_order": "OS/input or UI action posts/sends a message; ProcessQueue selects queue entries; window proc or editor handler runs; mode/resource actions may be requested; Canvas::Update activates the window and the frame render path presents the result.",
+      "openspore_concept": "src/apps/IGameMode.hpp:28-52; src/apps/cell_stage.cpp:997-1022; docs/analysis/GUI-BOUNDARY.md:89-102",
+      "modern_abstraction": "IEventLoop plus IUiWindowHost, IMessageBus, IOverlayStack, and IPresentationCanvas; preserve event identity, handler order, mode requests, and frame boundaries without recreating UTFWin or Win32 message IDs.",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__Window__SendMsg.c",
+          "line": 8,
+          "symbol": "UTFWin::Window::SendMsg"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cMessageManager__ProcessQueue.c",
+          "line": 6,
+          "symbol": "App::cMessageManager::ProcessQueue"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cMessageManager__GetMessageQueue.c",
+          "line": 6,
+          "symbol": "App::cMessageManager::GetMessageQueue"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/App__Canvas__Update.c",
+          "line": 6,
+          "symbol": "App::Canvas::Update"
+        },
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/track-g-editor-ui-input.json",
+          "line": 411,
+          "symbol": "UTFWin window messages"
+        }
+      ],
+      "confidence": "medium",
+      "notes": "The original UTFWin hierarchy and message manager are compatibility infrastructure, but the mode request and ordered callback semantics are not presentation-only. Exact message IDs, payloads, priority rules, and pdtk command grammar are unresolved."
+    },
+    {
+      "classification": "required_for_semantics",
+      "boundary": "Cell mode transition and presentation activation lifecycle",
+      "gameplay_caller": "Application/game-mode manager selecting the active mode and the active mode's frame loop",
+      "original_callee": "App::cGameModeManager::SetActiveModeAt (0x007d8d40); App::cCellModeStrategy::Initialize (0x00e81cf0); OnEnter (0x00e552f0); Update (0x00e80980); OnExit (0x00e7fc00); Dispose (0x00e81f30); cCellGFX::StartDisplay (0x00e55120)",
+      "parameters": [
+        "active-mode index or mode identity",
+        "mode manager and mode object",
+        "frame deltas",
+        "mode-owned initialization and teardown context"
+      ],
+      "outputs": [
+        "selected active mode",
+        "mode input route",
+        "started or stopped display world",
+        "loaded HUD and presentation resources",
+        "disposed mode-owned state"
+      ],
+      "state_changed": [
+        "cGameModeManager active mode/index",
+        "cCellModeStrategy lifecycle flags and frame counter",
+        "cCellGame, cCellGFX, and cCellUI ownership state",
+        "display activation, background-clear, and pause/shutdown state"
+      ],
+      "structures": [
+        "App::cGameModeManager",
+        "App::cCellModeStrategy",
+        "Simulator::Cell::cCellGame",
+        "Simulator::Cell::cCellGFX",
+        "Simulator::Cell::cCellUI"
+      ],
+      "lifetime": "A mode owns its gameplay and presentation state between Initialize and Dispose; the display is active between OnEnter and OnExit; the manager owns the transition between old and new modes.",
+      "failure_semantics": "The decompiled lifecycle has allocation and subsystem calls but little explicit error propagation. OnExit restores global presentation state; Dispose releases owned objects and calls subsystem pause/shutdown hooks. Exact manager replacement order is static-inferred.",
+      "timing_order": "Initialize -> old mode OnExit during SetActiveModeAt -> new mode activation/OnEnter -> StartDisplay -> Update* -> OnExit -> Dispose; presentation teardown follows gameplay-mode exit rather than being treated as an independent render pass.",
+      "openspore_concept": "src/apps/IGameMode.hpp:32-51; src/apps/CellModeStrategy.cpp:7-92; docs/replacement-boundaries.md:30-34",
+      "modern_abstraction": "IModeTransitionService plus IPresentationLifecycle with initialize, activate, startDisplay, update, stopDisplay, deactivate, and dispose; keep old-exit/new-enter ordering and mode-owned presentation lifetimes.",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cGameModeManager__SetActiveModeAt.c",
+          "line": 8,
+          "symbol": "App::cGameModeManager::SetActiveModeAt"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__Initialize.c",
+          "line": 9,
+          "symbol": "App::cCellModeStrategy::Initialize"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnEnter.c",
+          "line": 8,
+          "symbol": "App::cCellModeStrategy::OnEnter"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnExit.c",
+          "line": 8,
+          "symbol": "App::cCellModeStrategy::OnExit"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__Dispose.c",
+          "line": 8,
+          "symbol": "App::cCellModeStrategy::Dispose"
+        }
+      ],
+      "confidence": "high",
+      "notes": "This is the lifecycle boundary that keeps presentation state aligned with active gameplay. The current OpenSpore lifecycle is a clean-room seam and does not reproduce the original AppSystem/manager implementation."
+    },
+    {
+      "classification": "required_for_semantics",
+      "boundary": "Editor mode change, pose target, and animation feedback callbacks",
+      "gameplay_caller": "Editor UI mode selection and creature-editing actions driving the editor animation world and app message system",
+      "original_callee": "Editors::cEditor::SetActiveMode (0x00587270); cEditorAnimWorld::SetTargetPosition (0x0059cf00); SetTargetAngle (0x0059cea0); GetCreatureController (0x0059cac0); cEditorAnimEvent::MessageSend (0x0059d8b0); MessagePost (0x0059d840)",
+      "parameters": [
+        "old and new editor mode",
+        "creature identifier",
+        "target position and target angle",
+        "animation event identifier and scalar parameters",
+        "editor model and apply/ignore flags"
+      ],
+      "outputs": [
+        "active editor mode",
+        "target creature position and angle",
+        "EditorCreatureController target state",
+        "animation event sent or posted to the application system"
+      ],
+      "state_changed": [
+        "cEditor active mode and cleanup state",
+        "cEditorAnimWorld creature/controller map and target state",
+        "EditorCreatureController target/current position and angle",
+        "application animation/message callback state"
+      ],
+      "structures": [
+        "Editors::cEditor",
+        "Editors::cEditorAnimWorld",
+        "Editors::EditorCreatureController",
+        "Anim::AnimatedCreature",
+        "Anim::AnimationMessage"
+      ],
+      "lifetime": "Mode and creature animation targets are scoped to the editor session and active creature; old mode/creature state is cleaned before the new target is installed; sent events are released after dispatch.",
+      "failure_semantics": "Missing creature/controller entries are no-ops in the exported target setters. MessageSend and MessagePost use different app-system vtable slots, but exact event IDs, payload layout, and queue priority are unresolved.",
+      "timing_order": "Old editor mode is cleaned; target position/angle is set or creature is created/destroyed; the new mode is installed; animation events are sent or posted; render/update consumes the resulting pose state.",
+      "openspore_concept": "docs/analysis/reconstruction-packages.md:779-845; src/apps/CellAnim.cpp:7-82; src/renderer/Renderer.hpp:53-87",
+      "modern_abstraction": "IEditorPoseController plus IAnimationEventSink and IAnimatedCreatureView; preserve mode-change ordering, target identity, and event distinction while replacing the original animation manager and pose storage.",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__SetActiveMode.c",
+          "line": 8,
+          "symbol": "Editors::cEditor::SetActiveMode"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditorAnimWorld__SetTargetPosition.c",
+          "line": 8,
+          "symbol": "Editors::cEditorAnimWorld::SetTargetPosition"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditorAnimWorld__SetTargetAngle.c",
+          "line": 8,
+          "symbol": "Editors::cEditorAnimWorld::SetTargetAngle"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditorAnimEvent__MessageSend.c",
+          "line": 8,
+          "symbol": "Editors::cEditorAnimEvent::MessageSend"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/structs_fields.tsv",
+          "line": 5965,
+          "symbol": "Anim::AnimatedCreature"
+        }
+      ],
+      "confidence": "medium",
+      "notes": "This is an editor presentation/pose callback crossing rather than a claim about live Cell gameplay. The callback and target-state ordering are supported statically; animation event semantics remain unresolved."
+    }
+  ],
+  "unresolved": [
+    {
+      "question": "What exact gameplay caller and lifecycle timing invoke cCellUI::ShowHealthRollover, and what do all cCellUI feedback offsets mean?",
+      "status": "The no-GFX early-out, health scale, and disappear time are static; caller identity, field ownership, and runtime timing are unresolved.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellUI__ShowHealthRollover.c:8-20",
+        ".spore-analysis/ghidra-exports/structs_fields.tsv:18529-18542"
+      ]
+    },
+    {
+      "question": "Which Cell mode UI fields are read by gameplay versus only written for presentation, especially cCellUI offsets +0xc0, +0xc4, +0x900, and +0x904?",
+      "status": "The callbacks write these fields, but no positive original Cell trace establishes their readers or gameplay effect.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnMouseDown.c:23-56",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnMouseUp.c:20-28",
+        "knowledgegraph/research/global-campaign-2026/track-g-editor-ui-input.json:301-303"
+      ]
+    },
+    {
+      "question": "What are the exact cGameInputManager input-region routing rules and cCellMode callback calling conventions?",
+      "status": "The 27-slot interface and callback names are known, but routing ownership, bit-state semantics, and decompiler parameter recovery are incomplete.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/structs_fields.tsv:4656-4682",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnMouseMove.c:8-16",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnMouseWheel.c:8-34"
+      ]
+    },
+    {
+      "question": "What are the UTFWin message IDs, payload layouts, queue priority rules, and pdtk widget commands that connect UI actions to mode or editor changes?",
+      "status": "Window, message-manager, Canvas, and editor handler roots are identified statically; the command grammar and dispatch order are not characterized.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__Window__SendMsg.c:8-18",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/App__cMessageManager__ProcessQueue.c:6-39",
+        "knowledgegraph/research/global-campaign-2026/track-g-editor-ui-input.json:395-429"
+      ]
+    },
+    {
+      "question": "What is the exact cEditor hit-test, selection, drag, and tool-vtable contract, including which editor fields and renderer layers are authoritative?",
+      "status": "The callbacks clearly cross layer lookup and tool/actor dispatch, but many field names and message IDs are decompiler-dependent.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnMouseDown.c:239-305",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnMouseDown.c:768-775",
+        ".spore-analysis/ghidra-exports/structs_fields.tsv:11557-11577"
+      ]
+    },
+    {
+      "question": "Does SetActiveModeAt guarantee old OnExit before new OnEnter, and where are mode transition, presentation activation, and frame render ordered?",
+      "status": "The lifecycle vtable and Cell callbacks support the static sequence, but the manager body and original runtime transition remain unresolved.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/App__cGameModeManager__SetActiveModeAt.c:8-34",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnEnter.c:19-46",
+        "docs/analysis/reconstruction-packages.md:635-703"
+      ]
+    },
+    {
+      "question": "What are the AnimationMessage event IDs and the exact pose/animation state transition caused by editor mode changes?",
+      "status": "Target position/angle writes and Send/Post dispatch are present, but event payload names, queue priority, and animation interpolation semantics are unresolved.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditorAnimEvent__MessageSend.c:18-30",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditorAnimEvent__MessagePost.c:18-30",
+        ".spore-analysis/ghidra-exports/structs_fields.tsv:5965-6014"
+      ]
+    }
+  ]
+}

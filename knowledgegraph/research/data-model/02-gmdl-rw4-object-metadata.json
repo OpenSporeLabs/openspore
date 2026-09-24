@@ -1,0 +1,2569 @@
+{
+  "schema_version": "openspore-data-model/1",
+  "track": "gmdl-rw4-object-metadata",
+  "scope": {
+    "included": [
+      "dbpf-record-identity",
+      "gmdl-v8-and-v9-metadata",
+      "gmdl-material-and-texture-references",
+      "gmdl-animation-trailer",
+      "mesh-runtime-conversion",
+      "rw4-container-and-section-directory",
+      "rw4-renderware-runtime-metadata",
+      "world-object-v9-v10",
+      "cell-gameplay-content-references",
+      "resource-manager-and-renderer-lifecycle"
+    ],
+    "excluded": [
+      "SPORE-file-or-game-process-access",
+      "decompiled-source-reproduction",
+      "game-patching-or-injection",
+      "historical-artifact-modification",
+      "Ghidra-program-mutation"
+    ],
+    "research_rule": "Use committed analysis, read-only Ghidra queries, KG observations, and checked-in source; synthesize semantics without copying decompiled code."
+  },
+  "evidence_base": [
+    {
+      "id": "E01",
+      "kind": "checked_in_source",
+      "description": "GMDL value types, strict renderable-prefix walker, shader-data sizing, texture references, and current trailer policy.",
+      "provenance": [
+        "src/assets/Gmdl.hpp:1-84",
+        "src/assets/Gmdl.cpp:12-71",
+        "src/assets/Gmdl.cpp:80-270"
+      ],
+      "evidence_level": "OBSERVED"
+    },
+    {
+      "id": "E02",
+      "kind": "checked_in_source",
+      "description": "Host mesh extraction and renderer conversion limits.",
+      "provenance": [
+        "src/assets/Mesh.hpp:1-66",
+        "src/assets/Mesh.cpp:49-248",
+        "src/compat/MeshSource.hpp:24-81"
+      ],
+      "evidence_level": "OBSERVED"
+    },
+    {
+      "id": "E03",
+      "kind": "checked_in_source",
+      "description": "RW4 header, manifest, section-info, type-code, bounds, and adjusted BaseResource pointer implementation.",
+      "provenance": [
+        "src/assets/Rw4.hpp:1-89",
+        "src/assets/Rw4.cpp:12-207"
+      ],
+      "evidence_level": "OBSERVED"
+    },
+    {
+      "id": "E04",
+      "kind": "checked_in_source",
+      "description": "World-object header, version, semantic string/vector extraction, and byte-accounting walker.",
+      "provenance": [
+        "src/assets/WorldObject.hpp:1-70",
+        "src/assets/WorldObject.cpp:23-112"
+      ],
+      "evidence_level": "OBSERVED"
+    },
+    {
+      "id": "E05",
+      "kind": "checked_in_oracle",
+      "description": "Independent Python GMDL and RW4 readers, including their exposed field names and end-offset checks.",
+      "provenance": [
+        "tools/spore/gmdl/gmdl.py:1-41",
+        "tools/spore/gmdl/gmdl.py:45-66",
+        "tools/spore/gmdl/gmdl.py:87-188",
+        "tools/spore/rw4/rw4.py:1-95"
+      ],
+      "evidence_level": "OBSERVED"
+    },
+    {
+      "id": "E06",
+      "kind": "checked_in_tests",
+      "description": "Synthetic and opt-in real-asset tests for GMDL, RW4, world objects, scene configuration, and cell content.",
+      "provenance": [
+        "src/assets/tests/assets_test.cpp:99-153",
+        "src/assets/tests/assets_test.cpp:224-291",
+        "src/assets/tests/rw4_test.cpp:1-130",
+        "src/assets/tests/worldobj_test.cpp:1-153",
+        "src/assets/tests/cell_gmdl_test.cpp:1-148",
+        "src/apps/scene_config_test.cpp:1-162",
+        "tests/test_formats.py:128-275",
+        "tests/test_rw4.py:1-55"
+      ],
+      "evidence_level": "OBSERVED"
+    },
+    {
+      "id": "E07",
+      "kind": "committed_documentation",
+      "description": "Format research notes for RW4, GMDL, materials, animation, terrain, and asset type identities.",
+      "provenance": [
+        "docs/RENDERWARE-RESEARCH.md:177-316",
+        "docs/ASSET-PATH.md:27-84",
+        "docs/analysis/campaigns/cell-stage-campaign.md:150-180",
+        "docs/analysis/campaigns/cell-stage-campaign.md:270-289",
+        "docs/analysis/campaigns/cell-stage-campaign.md:429-447",
+        "docs/analysis/campaigns/cell-stage-campaign.md:560-571"
+      ],
+      "evidence_level": "SUPPORTED"
+    },
+    {
+      "id": "E08",
+      "kind": "read_only_ghidra",
+      "description": "Runtime model-resource dispatch, RenderWare object layouts, material lookup, model-world access, and cell display paths.",
+      "provenance": [
+        "Ghidra program SporeApp.exe, read-only get_struct_layout queries for ResourceKey, RWSectionInfo, CompiledState, Mesh, MeshCompiledStateLink, cMeshData, and IRwResource",
+        "Ghidra program SporeApp.exe, read-only decompile_function queries at 0x006f1c40, 0x006edbc0, 0x0073d160, 0x0074c670, 0x0076a720, 0x011ee700, 0x011ee8c0, 0x011f2bf0, 0x011f9710, 0x011fa030, 0x00e55120, 0x00e65640, and 0x00e666f0",
+        "Ghidra program SporeApp.exe, read-only call-graph queries for the same model and renderer functions"
+      ],
+      "evidence_level": "SUPPORTED"
+    },
+    {
+      "id": "E09",
+      "kind": "knowledge_graph",
+      "description": "Cross-tool observations for GMDL identities, RW4 special containers, DBPF group families, and the cell-model family.",
+      "provenance": [
+        "knowledgegraph/spore.db AssetFormat nodes dbpf_group_scheme and png32_type_is_rw4",
+        "knowledgegraph/spore.db AssetRecord nodes for the GMDL samples and real cell-stage family",
+        "knowledgegraph/spore.db Structure nodes GameModelResource, RW4Container, and CellWorldObjects"
+      ],
+      "evidence_level": "SUPPORTED"
+    },
+    {
+      "id": "E10",
+      "kind": "checked_in_source",
+      "description": "Gameplay-facing CellWorld, CellPopulate, and CellCell serialization and cross-reference validation.",
+      "provenance": [
+        "src/assets/CellResource.hpp:124-197",
+        "src/assets/CellResource.hpp:442-500",
+        "src/assets/CellResource.cpp:907-1091"
+      ],
+      "evidence_level": "OBSERVED"
+    },
+    {
+      "id": "E11",
+      "kind": "checked_in_source",
+      "description": "Declarative OpenSpore scene model and its explicit identity/position provenance policy.",
+      "provenance": [
+        "src/apps/SceneConfig.hpp:1-47",
+        "src/apps/SceneConfig.cpp:269-337",
+        "src/apps/scene.json:1-75"
+      ],
+      "evidence_level": "OBSERVED"
+    },
+    {
+      "id": "E12",
+      "kind": "checked_in_source",
+      "description": "DBPF/resource identity seam, package resolver, and type/group naming maps.",
+      "provenance": [
+        "src/compat/ResourceProvider.hpp:21-85",
+        "tools/spore/asset_resolver.py:1-225",
+        "tools/spore/types/typenames.json:1",
+        "tools/spore/types/groupnames.json:1"
+      ],
+      "evidence_level": "OBSERVED"
+    }
+  ],
+  "asset_types": [
+    {
+      "id": "A01",
+      "name": "gmdl",
+      "type_id": "0x00E6BCE5",
+      "scope": "model-and-render-asset",
+      "record_identity": "DBPF type/group/instance",
+      "group_examples": [
+        "0x40616200 CellModels",
+        "0x40616201 CellImages",
+        "0x40616202 cell low-LOD family",
+        "0x40627100 creature-scale sample",
+        "0x40637E03 building-category sample",
+        "0x40666202 backdrop/heightfield family",
+        "0x40666203 backdrop/heightfield family"
+      ],
+      "observed_record_counts": {
+        "Spore_Content": 4209,
+        "EP1_content_reported": 317,
+        "real_cell_stage_family": "88 records / 44 instances"
+      },
+      "current_support": "Version 8 renderable-prefix walker plus best-effort trailer acceptance; version 9 rejected.",
+      "semantic_class": "rendering-heavy with gameplay identity consumed by cell/content systems",
+      "evidence_level": "SUPPORTED",
+      "provenance": [
+        "docs/RENDERWARE-RESEARCH.md:244-267",
+        "docs/RENDERWARE-RESEARCH.md:329-352",
+        "src/assets/Gmdl.hpp:1-11",
+        "src/assets/tests/cell_gmdl_test.cpp:1-53",
+        "tools/spore/types/groupnames.json:1",
+        "knowledgegraph/spore.db AssetRecord nodes"
+      ]
+    },
+    {
+      "id": "A02",
+      "name": "rw4",
+      "type_id": "0x2F4E681B",
+      "scope": "renderware-container",
+      "record_identity": "DBPF type/group/instance",
+      "container_ftypes": [
+        "0x00000001 MODEL",
+        "0x04000000 TEXTURE",
+        "0xCAFED00D SPECIAL"
+      ],
+      "observed_record_counts": {
+        "Spore_Content": 1131,
+        "Spore_Graphics_reported": 9368
+      },
+      "current_support": "Structural container walker only; section payload decoding is not implemented in C++.",
+      "semantic_class": "rendering and animation object directory; can supply runtime model/render resources",
+      "evidence_level": "SUPPORTED",
+      "provenance": [
+        "docs/RENDERWARE-RESEARCH.md:177-240",
+        "src/assets/Rw4.hpp:1-22",
+        "src/assets/tests/rw4_test.cpp:1-11",
+        "tests/test_rw4.py:1-9",
+        "knowledgegraph/spore.db AssetFormat node png32_type_is_rw4"
+      ]
+    },
+    {
+      "id": "A03",
+      "name": "raster",
+      "type_id": "0x2F4E681C",
+      "scope": "related-render-container",
+      "record_identity": "DBPF type/group/instance",
+      "current_support": "Referenced by RW4 section identity and texture paths; outside the requested GMDL/RW4 parser scope.",
+      "semantic_class": "rendering-only pixel payload and raster metadata",
+      "evidence_level": "SUPPORTED",
+      "provenance": [
+        "docs/RENDERWARE-RESEARCH.md:271-281",
+        "docs/RENDERWARE-RESEARCH.md:336-348"
+      ]
+    },
+    {
+      "id": "A04",
+      "name": "gmsh",
+      "type_id": "0x01C135DA",
+      "scope": "related-model-container",
+      "record_identity": "DBPF type/group/instance",
+      "current_support": "Recognized as a separate resource type in the read-only runtime dispatcher; not decoded by the current C++ asset library.",
+      "semantic_class": "model/render alternative whose relationship to GMDL is not established here",
+      "evidence_level": "INFERRED",
+      "provenance": [
+        "Ghidra read-only decompile_function query at 0x0076a720",
+        "docs/RENDERWARE-RESEARCH.md:340-344"
+      ]
+    },
+    {
+      "id": "A05",
+      "name": "world-object",
+      "type_id": "0x0F43029A",
+      "scope": "model-part-definition",
+      "record_identity": "DBPF type/group/instance",
+      "observed_record_counts": {
+        "base_plus_EP1": 1365,
+        "Spore_Content_reported": 1022,
+        "EP1_content_reported": 343
+      },
+      "versions": [
+        "9 base game",
+        "10 EP1"
+      ],
+      "current_support": "Header, lowercase part-name extraction, plausible vector3 extraction, and full byte accounting; no typed entry field order.",
+      "semantic_class": "model part-definition metadata, not per-entity scene placement",
+      "evidence_level": "SUPPORTED",
+      "provenance": [
+        "src/assets/WorldObject.hpp:1-20",
+        "src/assets/tests/worldobj_test.cpp:1-153",
+        "docs/analysis/campaigns/cell-stage-campaign.md:150-180",
+        "docs/analysis/campaigns/cell-stage-campaign.md:560-571",
+        "knowledgegraph/spore.db Structure node CellWorldObjects"
+      ]
+    },
+    {
+      "id": "A06",
+      "name": "cell-world",
+      "type_id": "0x9B8E862F",
+      "scope": "gameplay-content-reference",
+      "record_identity": "DBPF type/group/instance",
+      "current_support": "Exact-count variable-length decoder; stores populate and advect references.",
+      "semantic_class": "gameplay/world composition; indirect model selection rather than geometry",
+      "evidence_level": "OBSERVED",
+      "provenance": [
+        "src/assets/CellResource.hpp:165-197",
+        "src/assets/CellResource.cpp:1032-1124"
+      ]
+    },
+    {
+      "id": "A07",
+      "name": "cell-populate",
+      "type_id": "0xDA141C1B",
+      "scope": "gameplay-content-reference",
+      "record_identity": "DBPF type/group/instance",
+      "current_support": "Variable-length marker decoder; stores cell references, distributions, counts, sizes, parts, and z offsets.",
+      "semantic_class": "gameplay spawn/population metadata; may affect runtime instance selection and placement but not mesh bytes",
+      "evidence_level": "OBSERVED",
+      "provenance": [
+        "src/assets/CellResource.hpp:442-484",
+        "src/assets/CellResource.cpp:907-1000"
+      ]
+    },
+    {
+      "id": "A08",
+      "name": "cell",
+      "type_id": "0xDFAD9F51",
+      "scope": "gameplay-content-reference",
+      "record_identity": "DBPF type/group/instance",
+      "current_support": "Direct 796-byte gameplay resource decoder with AI, health, friend, size, and interaction fields.",
+      "semantic_class": "gameplay data; its model identity is indirect through cell/content records",
+      "evidence_level": "OBSERVED",
+      "provenance": [
+        "src/assets/CellResource.hpp:124-163",
+        "src/assets/CellResource.cpp:1141-1297"
+      ]
+    }
+  ],
+  "schemas": [
+    {
+      "id": "S01",
+      "name": "dbpf-record-identity",
+      "format": "DBPF v3 index row",
+      "identity_order": [
+        "type",
+        "group",
+        "instance"
+      ],
+      "runtime_key_order": [
+        "instanceID",
+        "typeID",
+        "groupID"
+      ],
+      "semantic_note": "The DBPF lookup key and the 12-byte ResourceKey layout use different field ordering; callers must not infer one from the other.",
+      "current_boundary": "IResourceProvider.fetch(type, group, instance) and DbpfResourceProvider use DBPF order; Ghidra ResourceKey layout is instance/type/group.",
+      "evidence_level": "OBSERVED",
+      "provenance": [
+        "src/compat/ResourceProvider.hpp:24-53",
+        "src/assets/Dbpf.hpp:1-48",
+        "Ghidra read-only get_struct_layout(ResourceKey)",
+        "docs/RENDERWARE-RESEARCH.md:329-334"
+      ]
+    },
+    {
+      "id": "S02",
+      "name": "gmdl-v8-renderable-prefix",
+      "format": "GMDL",
+      "versions": [
+        "8 supported by current C++ walker",
+        "9 described by the Python oracle and docs but rejected by current C++"
+      ],
+      "field_order": [
+        {
+          "order": 1,
+          "field": "version",
+          "width": "u32 little-endian",
+          "current_behavior": "must equal 8"
+        },
+        {
+          "order": 2,
+          "field": "refCount",
+          "width": "u32 big-endian on observed v8 records",
+          "current_behavior": "current C++ skips each 12-byte reference"
+        },
+        {
+          "order": 3,
+          "field": "meshCount",
+          "width": "u32 little-endian"
+        },
+        {
+          "order": 4,
+          "field": "bboxMin[3], bboxMax[3], radius",
+          "width": "7 f32 little-endian",
+          "current_behavior": "decoded into GmdlModel"
+        },
+        {
+          "order": 5,
+          "field": "indexBuffers[]",
+          "width": "primitiveType, indexCount, indexBits, bufferSize, raw bytes"
+        },
+        {
+          "order": 6,
+          "field": "vertexDescriptors[]",
+          "width": "elementCount, repeated 12-byte RWVertexElement"
+        },
+        {
+          "order": 7,
+          "field": "vertexBuffers[]",
+          "width": "descriptorIndex, vertexCount, bufferSize, raw bytes"
+        },
+        {
+          "order": 8,
+          "field": "meshes[]",
+          "width": "indexBufferIndex, vertexBufferIndex per mesh"
+        },
+        {
+          "order": 9,
+          "field": "materialIDs[]",
+          "width": "u32 per mesh"
+        },
+        {
+          "order": 10,
+          "field": "observedZeroWord",
+          "width": "u32"
+        },
+        {
+          "order": 11,
+          "field": "materialInfoCount and materialInfo[]",
+          "width": "v8 entryCount-prefixed blocks"
+        }
+      ],
+      "current_model_fields": [
+        "bboxMin",
+        "bboxMax",
+        "descriptors",
+        "indexBuffers",
+        "materialIds",
+        "meshes",
+        "radius",
+        "textureRefs",
+        "unknownKey",
+        "vertexBuffers",
+        "version"
+      ],
+      "current_model_omissions": [
+        "top-level referenced-file keys",
+        "bone-range pairs",
+        "animation-data records",
+        "shader-data IDs and payloads"
+      ],
+      "evidence_level": "OBSERVED",
+      "provenance": [
+        "src/assets/Gmdl.hpp:22-78",
+        "src/assets/Gmdl.cpp:95-242",
+        "tools/spore/gmdl/gmdl.py:4-36",
+        "tools/spore/gmdl/gmdl.py:94-185"
+      ]
+    },
+    {
+      "id": "S03",
+      "name": "gmdl-material-info",
+      "format": "GMDL material-info block",
+      "structure": [
+        "materialInfoCount",
+        "per-material entryCount on v8",
+        "per-entry ShaderData ID",
+        "ID 0x20D texture-set block or fixed-size ShaderData block"
+      ],
+      "texture_set_structure": [
+        "textureCount",
+        "per texture: sampler u32",
+        "per texture: 12 opaque bytes",
+        "per texture: referenced instance u32",
+        "per texture: referenced group u32"
+      ],
+      "known_shader_ids": [
+        "0x201",
+        "0x202",
+        "0x203",
+        "0x204",
+        "0x205",
+        "0x206",
+        "0x208",
+        "0x209",
+        "0x20A",
+        "0x20B",
+        "0x20C",
+        "0x20E",
+        "0x20F",
+        "0x210",
+        "0x211",
+        "0x212",
+        "0x213",
+        "0x216",
+        "0x217",
+        "0x21C",
+        "0x21E",
+        "0x220",
+        "0x223",
+        "0x224",
+        "0x226",
+        "0x22D",
+        "0x22E",
+        "0x22F",
+        "0x230",
+        "0x231",
+        "0x232",
+        "0x233",
+        "0x235",
+        "0x236",
+        "0x237",
+        "0x238",
+        "0x23B",
+        "0x23C",
+        "0x241",
+        "0x242",
+        "0x243",
+        "0x244",
+        "0x245",
+        "0x246",
+        "0x247",
+        "0x248",
+        "0x24A",
+        "0x255",
+        "0x256"
+      ],
+      "current_behavior": "Unknown shader IDs are hard errors; 0x20D references are retained only as instance/group pairs; all other payloads are skipped by size.",
+      "evidence_level": "OBSERVED",
+      "provenance": [
+        "src/assets/Gmdl.cpp:40-71",
+        "src/assets/Gmdl.cpp:210-242",
+        "tools/spore/gmdl/gmdl.py:45-60",
+        "tools/spore/gmdl/gmdl.py:147-167",
+        "docs/ASSET-PATH.md:14-15",
+        "docs/ASSET-PATH.md:76-84"
+      ]
+    },
+    {
+      "id": "S04",
+      "name": "gmdl-animation-trailer",
+      "format": "GMDL post-material-info trailer",
+      "known_framing": [
+        "boneRangeCount u32",
+        "boneRangeCount pairs of u32 start/count",
+        "animDataCount u32",
+        "per animData: two 64-byte transforms, one u32 field, one 12-byte ResourceKey",
+        "per animData: bakedDeformGroupCount u32",
+        "per baked group: count u32 entries"
+      ],
+      "terminal_key": "three u32 words, named unknownKey by OpenSpore",
+      "families": [
+        "CellImages/mini.gmdl family: known framing reaches the record end",
+        "real cell-stage groups 0x40616201/02: larger opaque baked-deform framing overran the known walk"
+      ],
+      "current_behavior": "The C++ walker attempts known framing, ignores failed trailer reads, reads up to three unknownKey words if possible, and always sets consumed to the input size.",
+      "evidence_level": "SUPPORTED",
+      "provenance": [
+        "src/assets/Gmdl.hpp:5-11",
+        "src/assets/Gmdl.cpp:244-270",
+        "docs/analysis/campaigns/cell-stage-campaign.md:430-447",
+        "docs/analysis/campaigns/cell-stage-campaign.md:367-368"
+      ]
+    },
+    {
+      "id": "S05",
+      "name": "rw4-container-header",
+      "format": "Spore RW4 container",
+      "magic": "28-byte RW4w32 header",
+      "header_fields": [
+        {
+          "offset": "0x1C",
+          "field": "ftype",
+          "width": "u32",
+          "values": [
+            "0x00000001 MODEL",
+            "0x04000000 TEXTURE",
+            "0xCAFED00D SPECIAL"
+          ]
+        },
+        {
+          "offset": "0x20",
+          "field": "objCount",
+          "width": "u32"
+        },
+        {
+          "offset": "0x24",
+          "field": "sectionCount",
+          "width": "u32"
+        },
+        {
+          "offset": "0x30",
+          "field": "pSectionInfo",
+          "width": "u32 absolute offset"
+        },
+        {
+          "offset": "0x44",
+          "field": "pBufferData",
+          "width": "u32 arena base"
+        },
+        {
+          "offset": "0x4C",
+          "field": "bufSize",
+          "width": "u32"
+        }
+      ],
+      "manifest": {
+        "offset": "0x98",
+        "typecode": "0x10004 SectionManifest",
+        "subobjects": [
+          "SectionTypes",
+          "SectionExternalArenas",
+          "SectionSubReferences",
+          "SectionAtoms"
+        ]
+      },
+      "current_behavior": "Magic, ftype, manifest typecode, SectionTypes typecode, typecode-table bounds, section-table bounds, nonnegative sizes, and adjusted data bounds are checked.",
+      "evidence_level": "OBSERVED",
+      "provenance": [
+        "src/assets/Rw4.hpp:1-22",
+        "src/assets/Rw4.cpp:107-177",
+        "docs/RENDERWARE-RESEARCH.md:182-206"
+      ]
+    },
+    {
+      "id": "S06",
+      "name": "rw4-section-info",
+      "format": "24-byte RW4 section-info row",
+      "fields": [
+        {
+          "offset": "0x00",
+          "field": "pData",
+          "width": "u32"
+        },
+        {
+          "offset": "0x04",
+          "field": "f04",
+          "width": "u32"
+        },
+        {
+          "offset": "0x08",
+          "field": "size",
+          "width": "i32"
+        },
+        {
+          "offset": "0x0C",
+          "field": "align",
+          "width": "i32"
+        },
+        {
+          "offset": "0x10",
+          "field": "tcIndex",
+          "width": "i32"
+        },
+        {
+          "offset": "0x14",
+          "field": "tc",
+          "width": "u32"
+        }
+      ],
+      "adjusted_data": "For tc 0x10030 BaseResource only, data equals pData plus pBufferData; other sections use pData as stored.",
+      "runtime_layout_match": "Ghidra RWSectionInfo is also 24 bytes with data pointer, size, alignment, type-code index, and type code.",
+      "current_limitations": "The C++ parser does not validate tcIndex against nTypes, does not require tc to equal typecodes[tcIndex], and does not validate the semantic identity of every section payload.",
+      "evidence_level": "OBSERVED",
+      "provenance": [
+        "src/assets/Rw4.hpp:35-44",
+        "src/assets/Rw4.cpp:179-203",
+        "Ghidra read-only get_struct_layout(RWSectionInfo)",
+        "docs/RENDERWARE-RESEARCH.md:208-216"
+      ]
+    },
+    {
+      "id": "S07",
+      "name": "rw4-section-type-code-map",
+      "format": "Spore/SMFX section identities",
+      "type_codes": [
+        {
+          "code": "0x10004",
+          "name": "SectionManifest"
+        },
+        {
+          "code": "0x10005",
+          "name": "SectionTypes"
+        },
+        {
+          "code": "0x10006",
+          "name": "SectionExternalArenas"
+        },
+        {
+          "code": "0x10007",
+          "name": "SectionSubReferences"
+        },
+        {
+          "code": "0x10008",
+          "name": "SectionAtoms"
+        },
+        {
+          "code": "0x10030",
+          "name": "BaseResource"
+        },
+        {
+          "code": "0x20003",
+          "name": "Raster"
+        },
+        {
+          "code": "0x20004",
+          "name": "VertexDescription"
+        },
+        {
+          "code": "0x20005",
+          "name": "VertexBuffer"
+        },
+        {
+          "code": "0x20007",
+          "name": "IndexBuffer"
+        },
+        {
+          "code": "0x20008",
+          "name": "TextureOverride"
+        },
+        {
+          "code": "0x20009",
+          "name": "Mesh"
+        },
+        {
+          "code": "0x2000B",
+          "name": "Spore-specific unmapped"
+        },
+        {
+          "code": "0x2001A",
+          "name": "MeshCompiledStateLink"
+        },
+        {
+          "code": "0x200AF",
+          "name": "BlendShapeBuffer"
+        },
+        {
+          "code": "0x70001",
+          "name": "KeyframeAnim"
+        },
+        {
+          "code": "0x70002",
+          "name": "Skeleton"
+        },
+        {
+          "code": "0x70003",
+          "name": "AnimationSkin"
+        },
+        {
+          "code": "0x7000B",
+          "name": "Spore-specific unmapped"
+        },
+        {
+          "code": "0x80003",
+          "name": "TriangleKDTreeProcedural"
+        },
+        {
+          "code": "0x80005",
+          "name": "BBox"
+        },
+        {
+          "code": "0xFF0000",
+          "name": "MorphHandle"
+        },
+        {
+          "code": "0xFF0001",
+          "name": "Animations"
+        },
+        {
+          "code": "0xFF0002",
+          "name": "BlendShape"
+        }
+      ],
+      "current_known_set": "C++ known set is informational only; unknownTypeCodes counts codes outside it and does not reject them.",
+      "evidence_level": "SUPPORTED",
+      "provenance": [
+        "docs/RENDERWARE-RESEARCH.md:218-237",
+        "src/assets/Rw4.cpp:18-48",
+        "src/assets/Rw4.hpp:66-88",
+        "tools/spore/rw4/rw4.py:48-55"
+      ]
+    },
+    {
+      "id": "S08",
+      "name": "renderware-runtime-mesh",
+      "format": "RenderWare runtime object representation",
+      "objects": [
+        {
+          "name": "ResourceKey",
+          "size": 12,
+          "fields": [
+            "instanceID",
+            "typeID",
+            "groupID"
+          ]
+        },
+        {
+          "name": "Mesh",
+          "size": 40,
+          "fields": [
+            "instancedSize",
+            "primitiveType",
+            "pIndexBuffer",
+            "triangleCount",
+            "vertexBuffersCount",
+            "firstIndex",
+            "indicesCount",
+            "firstVertex",
+            "vertexCount",
+            "pVertexBuffers"
+          ]
+        },
+        {
+          "name": "MeshCompiledStateLink",
+          "size": 12,
+          "fields": [
+            "mpMesh",
+            "mCompiledStatesCount",
+            "mpCompiledStates"
+          ]
+        },
+        {
+          "name": "CompiledState",
+          "size": 28,
+          "fields": [
+            "instancedSize",
+            "primitiveType",
+            "softStateDirty",
+            "softStateDelta",
+            "hardStateDirty",
+            "hardStateDelta",
+            "shader"
+          ]
+        },
+        {
+          "name": "cMeshData",
+          "size": 88,
+          "fields": [
+            "vtable",
+            "referenceCount",
+            "elementArray",
+            "sections",
+            "primitives",
+            "field_44"
+          ]
+        }
+      ],
+      "original_runtime_role": "Ghidra queries show model-resource dispatch, section-based bounds/compiled-state access, material lookup, and RenderWare mesh draw submission.",
+      "openspore_runtime_role": "Current OpenSpore has a host Mesh and renderer seam, not a RenderWare object graph.",
+      "evidence_level": "SUPPORTED",
+      "provenance": [
+        "Ghidra read-only get_struct_layout(ResourceKey)",
+        "Ghidra read-only get_struct_layout(Mesh)",
+        "Ghidra read-only get_struct_layout(MeshCompiledStateLink)",
+        "Ghidra read-only get_struct_layout(CompiledState)",
+        "Ghidra read-only get_struct_layout(cMeshData)",
+        "Ghidra read-only decompile_function at 0x011f9710 and 0x011fa030"
+      ]
+    },
+    {
+      "id": "S09",
+      "name": "world-object-v9-v10",
+      "format": "0x0F43029A model-part-definition record",
+      "header_fields": [
+        "magic u32 = 0xABB455B7",
+        "version u32 = 9 or 10",
+        "countC u32",
+        "countD u32",
+        "countE u32"
+      ],
+      "body_semantics": [
+        "lowercase part names such as spine, eye, sense, limb, and foot",
+        "plausible 12-byte vector3 values",
+        "variable-length primary entries",
+        "body fields whose exact order is not established"
+      ],
+      "size_model": "size minus 20 approximately equals countC*141 plus countD*5 plus countE*12 plus 50; residual is attributed to string overhead.",
+      "current_boundary": "The walker proves all bytes are accounted but does not establish typed c-entry field order or placement semantics.",
+      "evidence_level": "SUPPORTED",
+      "provenance": [
+        "src/assets/WorldObject.hpp:8-20",
+        "src/assets/WorldObject.cpp:48-111",
+        "src/assets/tests/worldobj_test.cpp:52-145",
+        "docs/analysis/campaigns/cell-stage-campaign.md:560-571"
+      ]
+    },
+    {
+      "id": "S10",
+      "name": "cell-content-to-model-graph",
+      "format": "gameplay content records referencing model-bearing cells",
+      "edges": [
+        "CellWorld populate[] -> cCellDataReference key",
+        "CellPopulate marker distributeCell/clusterCell -> cell instance IDs",
+        "CellCell -> gameplay identity and behavior",
+        "cell resource/model selection -> GMDL or RW4 model record"
+      ],
+      "placement_note": "CellWorld and CellPopulate carry population/scale/z-distribution metadata, but the current campaign finding is that the original cell stage places entities procedurally and does not store per-entity x/y in these records.",
+      "evidence_level": "SUPPORTED",
+      "provenance": [
+        "src/assets/CellResource.hpp:165-197",
+        "src/assets/CellResource.hpp:442-484",
+        "src/assets/CellResource.cpp:907-1091",
+        "src/apps/SceneConfig.hpp:8-13",
+        "src/apps/scene.json:1-75",
+        "Ghidra read-only decompile_function at 0x00e65640 and 0x00e666f0"
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "R01",
+      "from": "DBPF index row",
+      "to": "decompressed record bytes",
+      "cardinality": "one row to one record payload",
+      "owner": "DBPF package/database",
+      "producer": "parseDbpfIndex plus extractDbpfRecord",
+      "consumer": "GMDL, RW4, CellResource, and WorldObject parsers",
+      "gameplay_relevance": "The key selects content; it is not geometry.",
+      "rendering_relevance": "The key selects the render asset.",
+      "evidence_level": "OBSERVED",
+      "provenance": [
+        "src/assets/Dbpf.hpp:1-48",
+        "src/compat/ResourceProvider.hpp:32-53",
+        "docs/ASSET-PATH.md:27-36"
+      ]
+    },
+    {
+      "id": "R02",
+      "from": "GMDL top-level reference",
+      "to": "resource key",
+      "cardinality": "refCount references, each 12 bytes",
+      "owner": "GMDL record",
+      "producer": "Python oracle retains instance/group/type; current C++ skips the block",
+      "consumer": "original resource/model loading path; current C++ has no consumer",
+      "gameplay_relevance": "Potential dependency on external textures, models, or other resources; exact target roles are not classified.",
+      "rendering_relevance": "Direct for render dependencies such as textures.",
+      "evidence_level": "SUPPORTED",
+      "provenance": [
+        "tools/spore/gmdl/gmdl.py:4-10",
+        "tools/spore/gmdl/gmdl.py:94-102",
+        "src/assets/Gmdl.cpp:113-122",
+        "src/assets/Gmdl.hpp:58-73"
+      ]
+    },
+    {
+      "id": "R03",
+      "from": "GMDL mesh index",
+      "to": "index buffer and vertex buffer",
+      "cardinality": "one mesh to one index buffer and one vertex buffer",
+      "owner": "GmdlModel",
+      "producer": "parseGmdl mesh-reference table",
+      "consumer": "meshFromGmdl",
+      "gameplay_relevance": "Indirect through model identity and bounds; not a gameplay state field.",
+      "rendering_relevance": "Direct geometry dependency.",
+      "evidence_level": "OBSERVED",
+      "provenance": [
+        "src/assets/Gmdl.cpp:196-204",
+        "src/assets/Gmdl.hpp:46-49",
+        "src/assets/Mesh.cpp:49-76"
+      ]
+    },
+    {
+      "id": "R04",
+      "from": "GMDL mesh index",
+      "to": "material ID",
+      "cardinality": "one material ID per mesh",
+      "owner": "GmdlModel",
+      "producer": "parseGmdl material-ID table",
+      "consumer": "current OpenSpore records it but does not resolve or execute it",
+      "gameplay_relevance": "No gameplay semantics established.",
+      "rendering_relevance": "Direct material selection metadata.",
+      "evidence_level": "OBSERVED",
+      "provenance": [
+        "src/assets/Gmdl.cpp:196-205",
+        "src/assets/Gmdl.hpp:68-70",
+        "src/assets/tests/cell_gmdl_test.cpp:129-133"
+      ]
+    },
+    {
+      "id": "R05",
+      "from": "GMDL texture-set entry",
+      "to": "texture instance/group pair",
+      "cardinality": "zero or more entries per texture-set block",
+      "owner": "GmdlTextureRef",
+      "producer": "parseGmdl 0x20D decoder",
+      "consumer": "future texture/material resolver; current mesh conversion ignores it",
+      "gameplay_relevance": "No gameplay semantics established.",
+      "rendering_relevance": "Direct texture binding metadata; sampler and 12 opaque bytes are not interpreted.",
+      "evidence_level": "OBSERVED",
+      "provenance": [
+        "src/assets/Gmdl.hpp:51-56",
+        "src/assets/Gmdl.cpp:210-229",
+        "docs/ASSET-PATH.md:14-15"
+      ]
+    },
+    {
+      "id": "R06",
+      "from": "RW4 SectionManifest",
+      "to": "SectionTypes and section-info rows",
+      "cardinality": "one manifest to one type table and sectionCount rows",
+      "owner": "Rw4 container",
+      "producer": "parseRw4",
+      "consumer": "current structural walker; future section decoders",
+      "gameplay_relevance": "Indirect through model/animation resource selection.",
+      "rendering_relevance": "Direct directory metadata for render objects.",
+      "evidence_level": "OBSERVED",
+      "provenance": [
+        "src/assets/Rw4.hpp:47-63",
+        "src/assets/Rw4.cpp:147-177",
+        "docs/RENDERWARE-RESEARCH.md:204-216"
+      ]
+    },
+    {
+      "id": "R07",
+      "from": "RW4 BaseResource section",
+      "to": "adjusted data address",
+      "cardinality": "one section to one adjusted address",
+      "owner": "RW4 section-info row",
+      "producer": "parseRw4 when tc equals 0x10030",
+      "consumer": "future payload decoder",
+      "gameplay_relevance": "None by itself.",
+      "rendering_relevance": "Required to locate payload bytes such as rasters, meshes, or buffers.",
+      "evidence_level": "OBSERVED",
+      "provenance": [
+        "src/assets/Rw4.hpp:17-22",
+        "src/assets/Rw4.cpp:190-197",
+        "Ghidra read-only get_struct_layout(RWSectionInfo)"
+      ]
+    },
+    {
+      "id": "R08",
+      "from": "resource manager type query",
+      "to": "GMDL or RW4 runtime resource",
+      "cardinality": "one requested type to one type-specific object",
+      "owner": "original resource/model manager",
+      "producer": "resource lookup and type-specific loader dispatch",
+      "consumer": "model world, viewer, thumbnail, and render paths",
+      "gameplay_relevance": "Selects which model represents gameplay content.",
+      "rendering_relevance": "Supplies renderable model objects.",
+      "evidence_level": "SUPPORTED",
+      "provenance": [
+        "Ghidra read-only decompile_function at 0x006f1c40",
+        "Ghidra read-only decompile_function at 0x0073d160",
+        "Ghidra read-only decompile_function at 0x0073eb90",
+        "Ghidra read-only decompile_function at 0x0074c670"
+      ]
+    },
+    {
+      "id": "R09",
+      "from": "GMDL/RW4 model resource",
+      "to": "RenderWare mesh/material runtime",
+      "cardinality": "one resource to one or more runtime meshes and material bindings",
+      "owner": "original model world and material manager",
+      "producer": "GMDL/RW4 loaders",
+      "consumer": "RenderWare mesh draw and material submission",
+      "gameplay_relevance": "Model identity and LOD selection can affect visible gameplay state, but geometry/material fields are not gameplay rules.",
+      "rendering_relevance": "Direct.",
+      "evidence_level": "SUPPORTED",
+      "provenance": [
+        "Ghidra read-only decompile_function at 0x006edbc0",
+        "Ghidra read-only decompile_function at 0x011f9710",
+        "Ghidra read-only decompile_function at 0x011fa030",
+        "Ghidra read-only get_struct_layout(CompiledState)",
+        "Ghidra read-only get_struct_layout(MeshCompiledStateLink)"
+      ]
+    },
+    {
+      "id": "R10",
+      "from": "CellWorld/CellPopulate/CellCell",
+      "to": "cell model selection",
+      "cardinality": "indirect and content-dependent",
+      "owner": "cell gameplay content system",
+      "producer": "content records and runtime population logic",
+      "consumer": "cell model/resource loader",
+      "gameplay_relevance": "Direct through health, AI, size, friend, population, and cell-reference fields.",
+      "rendering_relevance": "Indirect through the selected cell model and LOD.",
+      "evidence_level": "SUPPORTED",
+      "provenance": [
+        "src/assets/CellResource.hpp:124-197",
+        "src/assets/CellResource.hpp:442-484",
+        "Ghidra read-only decompile_function at 0x00e65640"
+      ]
+    },
+    {
+      "id": "R11",
+      "from": "cCellGFX",
+      "to": "render worlds and preloaded model/populate keys",
+      "cardinality": "one display object to multiple world slots and content keys",
+      "owner": "cell graphics state",
+      "producer": "Initialize, PreloadResources, and StartDisplay",
+      "consumer": "cell display and model rendering",
+      "gameplay_relevance": "Model/populate keys are content inputs; world handles are presentation state.",
+      "rendering_relevance": "Direct for world activation and model display.",
+      "evidence_level": "SUPPORTED",
+      "provenance": [
+        "src/apps/CellGfx.hpp:1-78",
+        "src/apps/CellGfx.cpp:5-46",
+        "Ghidra read-only decompile_function at 0x00e666f0",
+        "Ghidra read-only decompile_function at 0x00e55120"
+      ]
+    },
+    {
+      "id": "R12",
+      "from": "WorldObject 0x0F43029A",
+      "to": "model part definitions",
+      "cardinality": "many part-name/vector-like entries per record",
+      "owner": "unknown original model/content subsystem",
+      "producer": "WorldObject parser",
+      "consumer": "none in current OpenSpore",
+      "gameplay_relevance": "Potentially model/attachment identity, but no loader semantics are proven.",
+      "rendering_relevance": "Potentially part placement or deformation metadata, but not established.",
+      "evidence_level": "INFERRED",
+      "provenance": [
+        "src/assets/WorldObject.hpp:1-20",
+        "docs/analysis/campaigns/cell-stage-campaign.md:560-571",
+        "src/apps/SceneConfig.hpp:8-13"
+      ]
+    },
+    {
+      "id": "R13",
+      "from": "SceneEntity record key and transform",
+      "to": "OpenSpore static draw",
+      "cardinality": "one configured entity to one baked flat/textured mesh",
+      "owner": "OpenSpore scene configuration",
+      "producer": "loadSceneConfig plus DBPF fetch and GMDL mesh conversion",
+      "consumer": "cell_stage renderer",
+      "gameplay_relevance": "Positions are presentation inputs and are explicitly inferred; simulation owns runtime positions.",
+      "rendering_relevance": "Direct.",
+      "evidence_level": "OBSERVED",
+      "provenance": [
+        "src/apps/SceneConfig.hpp:23-47",
+        "src/apps/scene.json:1-75",
+        "src/apps/cell_stage.cpp:442-537",
+        "src/compat/MeshSource.hpp:50-80"
+      ]
+    }
+  ],
+  "functions": [
+    {
+      "id": "F01",
+      "name": "FUN_0073d160",
+      "address": "0x0073d160",
+      "role": "Selects a model resource by asking for RW4 first and falling back to GMDL when the requested container is absent.",
+      "inputs": [
+        "model-owner pointer",
+        "resource type query"
+      ],
+      "outputs": [
+        "one runtime model object or null"
+      ],
+      "owner": "original resource/model manager",
+      "producer": "type-specific resource lookup",
+      "consumer": "model world/viewer paths",
+      "boundary": "read-only runtime selection, not a serializer",
+      "evidence_level": "SUPPORTED",
+      "provenance": [
+        "Ghidra read-only decompile_function(0x0073d160)",
+        "Ghidra read-only call-graph query at 0x0073d160"
+      ]
+    },
+    {
+      "id": "F02",
+      "name": "FUN_006f1c40",
+      "address": "0x006f1c40",
+      "role": "Builds a graphics model/viewer-side object from a GMDL key, with RW4 fallback and model/material setup.",
+      "inputs": [
+        "GMDL ResourceKey fields",
+        "optional graphics owner"
+      ],
+      "outputs": [
+        "graphics model object",
+        "decoded model/material state"
+      ],
+      "owner": "original graphics model loader",
+      "producer": "resource fetch and type-specific decode",
+      "consumer": "thumbnail and model render paths",
+      "boundary": "runtime object construction",
+      "evidence_level": "SUPPORTED",
+      "provenance": [
+        "Ghidra read-only decompile_function(0x006f1c40)",
+        "Ghidra read-only call-graph query at 0x006f1c40"
+      ]
+    },
+    {
+      "id": "F03",
+      "name": "FUN_006edbc0",
+      "address": "0x006edbc0",
+      "role": "Enumerates GMDL meshes or RW4 sections to derive model bounds and section/material-related preview metadata.",
+      "inputs": [
+        "graphics model target",
+        "resource object"
+      ],
+      "outputs": [
+        "bounding box and radius metadata",
+        "mesh/section-derived preview data"
+      ],
+      "owner": "original graphics model/thumbnail subsystem",
+      "producer": "model section traversal",
+      "consumer": "thumbnail and model presentation",
+      "boundary": "read-only metadata extraction",
+      "evidence_level": "SUPPORTED",
+      "provenance": [
+        "Ghidra read-only decompile_function(0x006edbc0)",
+        "Ghidra read-only call-graph query at 0x006edbc0"
+      ]
+    },
+    {
+      "id": "F04",
+      "name": "FUN_0073eb90",
+      "address": "0x0073eb90",
+      "role": "Dispatches a model-world element to GMDL or RW4-specific processing and releases or updates associated elements.",
+      "inputs": [
+        "model-world element",
+        "runtime parameter"
+      ],
+      "outputs": [
+        "processed model element or failure"
+      ],
+      "owner": "original model world",
+      "producer": "model-specific handlers",
+      "consumer": "model-world update and display",
+      "boundary": "runtime lifecycle dispatch",
+      "evidence_level": "SUPPORTED",
+      "provenance": [
+        "Ghidra read-only decompile_function(0x0073eb90)",
+        "Ghidra read-only call-graph query at 0x0073eb90"
+      ]
+    },
+    {
+      "id": "F05",
+      "name": "FUN_0074c670",
+      "address": "0x0074c670",
+      "role": "Reads model keys from a property list and tries GMDL then RW4 viewer/resource availability.",
+      "inputs": [
+        "PropertyList",
+        "property keys"
+      ],
+      "outputs": [
+        "selected model/viewer state"
+      ],
+      "owner": "original property and viewer manager",
+      "producer": "property lookup and type substitution",
+      "consumer": "viewer/model selection",
+      "boundary": "configuration-driven model resolution",
+      "evidence_level": "SUPPORTED",
+      "provenance": [
+        "Ghidra read-only decompile_function(0x0074c670)",
+        "Ghidra read-only call-graph query at 0x0074c670"
+      ]
+    },
+    {
+      "id": "F06",
+      "name": "FUN_0076a720",
+      "address": "0x0076a720",
+      "role": "Dispatches resource jobs by type, with distinct GMDL, RW4, GMSH, raster, and image paths.",
+      "inputs": [
+        "job type ID",
+        "resource job context"
+      ],
+      "outputs": [
+        "type-specific continuation chain"
+      ],
+      "owner": "original asynchronous resource/thumbnail pipeline",
+      "producer": "resource type dispatch",
+      "consumer": "model, raster, and thumbnail loaders",
+      "boundary": "asynchronous load scheduling",
+      "evidence_level": "SUPPORTED",
+      "provenance": [
+        "Ghidra read-only decompile_function(0x0076a720)",
+        "Ghidra read-only call-graph query at 0x0076a720"
+      ]
+    },
+    {
+      "id": "F07",
+      "name": "Graphics::MaterialShader::GetMaterialShader",
+      "address": "0x011FA030",
+      "role": "Looks up a material shader by numeric shader ID in a linked list and caches the hit.",
+      "inputs": [
+        "shader ID",
+        "material shader list"
+      ],
+      "outputs": [
+        "cached MaterialShader pointer or null"
+      ],
+      "owner": "original material manager",
+      "producer": "material registration/list search",
+      "consumer": "compiled state and draw submission",
+      "boundary": "render-only material identity cache",
+      "evidence_level": "SUPPORTED",
+      "provenance": [
+        "Ghidra read-only decompile_function(Graphics::MaterialShader::GetMaterialShader)",
+        "docs/RENDERWARE-RESEARCH.md:285-302"
+      ]
+    },
+    {
+      "id": "F08",
+      "name": "RenderWare::Mesh::SetIndexBuffer",
+      "address": "0x011F9710",
+      "role": "Uses the active shader's vertex declaration, rebinds vertex streams as needed, sets indices, and submits an indexed draw.",
+      "inputs": [
+        "RenderWare mesh",
+        "index buffer",
+        "active shader state"
+      ],
+      "outputs": [
+        "device draw submission"
+      ],
+      "owner": "original RenderWare renderer",
+      "producer": "mesh draw path",
+      "consumer": "D3D9 device wrapper",
+      "boundary": "render-only submission",
+      "evidence_level": "SUPPORTED",
+      "provenance": [
+        "Ghidra read-only decompile_function(RenderWare::Mesh::SetIndexBuffer)",
+        "Ghidra read-only call-graph query at 0x011F9710",
+        "docs/RENDERWARE-RESEARCH.md:285-302"
+      ]
+    },
+    {
+      "id": "F09",
+      "name": "RenderWare::CompiledState::SetRaster",
+      "address": "0x011EE700",
+      "role": "Associates a raster with a compiled-state slot/material state.",
+      "inputs": [
+        "compiled state",
+        "slot index",
+        "raster"
+      ],
+      "outputs": [
+        "updated material-state raster binding"
+      ],
+      "owner": "original RenderWare material state",
+      "producer": "material/raster loader",
+      "consumer": "draw submission",
+      "boundary": "render-only material binding",
+      "evidence_level": "SUPPORTED",
+      "provenance": [
+        "Ghidra read-only decompile_function(RenderWare::CompiledState::SetRaster)",
+        "Ghidra read-only get_struct_layout(CompiledState)"
+      ]
+    },
+    {
+      "id": "F10",
+      "name": "RenderWare::VertexDescriptionBase::LoadDeclaration",
+      "address": "0x011F2BF0",
+      "role": "Resets/loads the active vertex-declaration state used by the RenderWare draw path.",
+      "inputs": [
+        "vertex description object"
+      ],
+      "outputs": [
+        "updated declaration state"
+      ],
+      "owner": "original RenderWare renderer",
+      "producer": "vertex declaration load",
+      "consumer": "Mesh::SetIndexBuffer",
+      "boundary": "render-only declaration state",
+      "evidence_level": "SUPPORTED",
+      "provenance": [
+        "Ghidra read-only decompile_function(RenderWare::VertexDescriptionBase::LoadDeclaration)",
+        "Ghidra read-only call graph for RenderWare mesh submission"
+      ]
+    },
+    {
+      "id": "F11",
+      "name": "Simulator::Cell::GetModelKeyForCellResource",
+      "address": "0x00E65640",
+      "role": "Derives a model ResourceKey from a cell resource and its referenced composition data.",
+      "inputs": [
+        "cell resource reference",
+        "composition/reference records"
+      ],
+      "outputs": [
+        "instance/type/group ResourceKey"
+      ],
+      "owner": "cell gameplay/content system",
+      "producer": "cell-resource reference traversal",
+      "consumer": "cell model loader",
+      "boundary": "gameplay-to-render identity bridge",
+      "evidence_level": "SUPPORTED",
+      "provenance": [
+        "Ghidra read-only decompile_function(Simulator::Cell::GetModelKeyForCellResource)",
+        "Ghidra read-only get_struct_layout(ResourceKey)"
+      ]
+    },
+    {
+      "id": "F12",
+      "name": "Simulator::Cell::cCellGFX::PreloadResources",
+      "address": "0x00E666F0",
+      "role": "Registers cell and populate resource records before display.",
+      "inputs": [
+        "cell resource references",
+        "populate resource references"
+      ],
+      "outputs": [
+        "preloaded content keys"
+      ],
+      "owner": "cell graphics state",
+      "producer": "preload traversal",
+      "consumer": "cell display and model world",
+      "boundary": "pre-display lifecycle",
+      "evidence_level": "SUPPORTED",
+      "provenance": [
+        "Ghidra read-only decompile_function(Simulator::Cell::cCellGFX::PreloadResources)",
+        "src/apps/CellGfx.hpp:3-11"
+      ]
+    },
+    {
+      "id": "F13",
+      "name": "Simulator::Cell::cCellGFX::StartDisplay",
+      "address": "0x00E55120",
+      "role": "Activates the cell-stage worlds, lighting/shadow state, and display flag.",
+      "inputs": [
+        "initialized cell graphics state"
+      ],
+      "outputs": [
+        "active display state"
+      ],
+      "owner": "cell graphics state",
+      "producer": "display activation",
+      "consumer": "render loop and cell model world",
+      "boundary": "presentation lifecycle",
+      "evidence_level": "SUPPORTED",
+      "provenance": [
+        "Ghidra read-only decompile_function(Simulator::Cell::cCellGFX::StartDisplay)",
+        "src/apps/CellGfx.cpp:5-30"
+      ]
+    }
+  ],
+  "lifecycle": {
+    "serialization_boundaries": [
+      {
+        "id": "L01",
+        "stage": "package-index-to-payload",
+        "input": "DBPF type/group/instance row",
+        "output": "raw or QFS-decompressed record bytes",
+        "owner": "DbpfResourceProvider",
+        "producer": "parseDbpfIndex and extractDbpfRecord",
+        "consumer": "format-specific parser",
+        "failure_semantics": "Missing identity or decompression mismatch is an error in current code.",
+        "evidence_level": "OBSERVED",
+        "provenance": [
+          "src/compat/ResourceProvider.hpp:32-53",
+          "src/assets/Dbpf.hpp:1-48",
+          "docs/ASSET-PATH.md:27-36"
+        ]
+      },
+      {
+        "id": "L02",
+        "stage": "resource-key-to-runtime-object",
+        "input": "ResourceKey/type query",
+        "output": "loaded GMDL or RW4 object",
+        "owner": "original resource manager/model manager",
+        "producer": "resource lookup and type-specific loader",
+        "consumer": "model world, viewer, thumbnail, and draw paths",
+        "failure_semantics": "The runtime distinguishes absent type-specific resources and falls back in observed model paths.",
+        "evidence_level": "SUPPORTED",
+        "provenance": [
+          "Ghidra read-only decompile_function at 0x006f1c40",
+          "Ghidra read-only decompile_function at 0x0073d160",
+          "Ghidra read-only decompile_function at 0x0074c670"
+        ]
+      },
+      {
+        "id": "L03",
+        "stage": "gmdl-to-host-model",
+        "input": "GMDL v8 record bytes",
+        "output": "GmdlModel",
+        "owner": "OpenSpore Gmdl parser",
+        "producer": "parseGmdl",
+        "consumer": "meshFromGmdl and compatibility seam",
+        "failure_semantics": "Renderable-prefix truncation and undocumented content fail; trailer failures are currently best-effort.",
+        "evidence_level": "OBSERVED",
+        "provenance": [
+          "src/assets/Gmdl.cpp:95-242",
+          "src/assets/Gmdl.cpp:244-270",
+          "src/compat/MeshSource.hpp:50-60"
+        ]
+      },
+      {
+        "id": "L04",
+        "stage": "gmdl-to-host-mesh",
+        "input": "GmdlModel and mesh index",
+        "output": "Mesh with positions, optional normals/UVs, indices, topology, and computed bounds",
+        "owner": "OpenSpore mesh conversion",
+        "producer": "meshFromGmdl",
+        "consumer": "toRendererMesh and toRendererTexMesh",
+        "failure_semantics": "Unsupported stream, topology, index width, missing position, bad descriptor, or out-of-range index fails.",
+        "evidence_level": "OBSERVED",
+        "provenance": [
+          "src/assets/Mesh.cpp:49-142",
+          "src/assets/Mesh.hpp:48-64"
+        ]
+      },
+      {
+        "id": "L05",
+        "stage": "rw4-to-structural-directory",
+        "input": "RW4 record bytes",
+        "output": "Rw4 with typecodes and Rw4Section rows",
+        "owner": "OpenSpore RW4 parser",
+        "producer": "parseRw4",
+        "consumer": "current structural tests and future section decoders",
+        "failure_semantics": "Bad magic/header/manifest/table/size/data bounds fail; unknown section type codes do not fail.",
+        "evidence_level": "OBSERVED",
+        "provenance": [
+          "src/assets/Rw4.cpp:107-203",
+          "src/assets/Rw4.hpp:66-85"
+        ]
+      },
+      {
+        "id": "L06",
+        "stage": "rw4-to-renderware-runtime",
+        "input": "RW4 section directory and payloads",
+        "output": "RenderWare meshes, buffers, materials, animation, and bounds",
+        "owner": "original RenderWare loader",
+        "producer": "RW4 section-specific runtime loaders",
+        "consumer": "model world and draw path",
+        "failure_semantics": "Not implemented in the current C++ source.",
+        "evidence_level": "INFERRED",
+        "provenance": [
+          "Ghidra read-only decompile_function at 0x006edbc0",
+          "Ghidra read-only decompile_function at 0x011f9710",
+          "docs/RENDERWARE-RESEARCH.md:306-316"
+        ]
+      },
+      {
+        "id": "L07",
+        "stage": "cell-content-to-scene",
+        "input": "CellWorld, CellPopulate, CellCell, and model keys",
+        "output": "runtime cell population and model selection",
+        "owner": "cell gameplay/content system",
+        "producer": "content decoders and original cell resource traversal",
+        "consumer": "cell model/world and simulation",
+        "failure_semantics": "Current decoders reject count-span mismatches; cross-record domain checks are separate.",
+        "evidence_level": "SUPPORTED",
+        "provenance": [
+          "src/assets/CellResource.cpp:925-991",
+          "src/assets/CellResource.cpp:1050-1124",
+          "Ghidra read-only decompile_function at 0x00e65640"
+        ]
+      },
+      {
+        "id": "L08",
+        "stage": "world-object-to-part-catalog",
+        "input": "0x0F43029A bytes",
+        "output": "names, plausible vectors, counts, and byte-accounted body",
+        "owner": "OpenSpore WorldObject parser",
+        "producer": "parseWorldObject",
+        "consumer": "none in current runtime",
+        "failure_semantics": "Short header, bad magic, or unsupported version fail; semantic field order is not validated.",
+        "evidence_level": "OBSERVED",
+        "provenance": [
+          "src/assets/WorldObject.cpp:23-111",
+          "src/assets/tests/worldobj_test.cpp:96-145"
+        ]
+      },
+      {
+        "id": "L09",
+        "stage": "mesh-to-renderer",
+        "input": "host Mesh or TexMesh",
+        "output": "transient renderer mesh handle and draw",
+        "owner": "OpenSpore renderer seam",
+        "producer": "toRendererMesh/toRendererTexMesh and renderer create",
+        "consumer": "cell_stage draw loop",
+        "failure_semantics": "Renderer handle creation failure is surfaced; current handles are destroyed after submission in submitMeshSource.",
+        "evidence_level": "OBSERVED",
+        "provenance": [
+          "src/assets/Mesh.cpp:181-248",
+          "src/compat/MeshSource.hpp:62-80",
+          "src/apps/cell_stage.cpp:506-547"
+        ]
+      }
+    ],
+    "ownership_rules": [
+      {
+        "id": "O01",
+        "owner": "original resource manager",
+        "rule": "Loaded resources are keyed and cached; Ghidra layouts expose ResourceKey and PFRecordRead boundaries.",
+        "current_counterpart": "DbpfResourceProvider reparses a borrowed package index on each fetch and has no cache.",
+        "evidence_level": "SUPPORTED",
+        "provenance": [
+          "Ghidra read-only get_struct_layout(ResourceKey)",
+          "Ghidra read-only decompile_function(0x008de540)",
+          "src/compat/ResourceProvider.hpp:32-53"
+        ]
+      },
+      {
+        "id": "O02",
+        "owner": "GmdlModel",
+        "rule": "Owns decoded index buffers, descriptors, vertex buffers, mesh references, material IDs, and texture references.",
+        "current_counterpart": "Value object passed into GmdlMeshSource and meshFromGmdl.",
+        "evidence_level": "OBSERVED",
+        "provenance": [
+          "src/assets/Gmdl.hpp:58-78",
+          "src/compat/MeshSource.hpp:36-47"
+        ]
+      },
+      {
+        "id": "O03",
+        "owner": "Rw4",
+        "rule": "Owns typecode table and section-info rows; payload ownership is not implemented.",
+        "current_counterpart": "Structural value object only.",
+        "evidence_level": "OBSERVED",
+        "provenance": [
+          "src/assets/Rw4.hpp:46-79",
+          "src/assets/Rw4.cpp:174-197"
+        ]
+      },
+      {
+        "id": "O04",
+        "owner": "IResourceProvider",
+        "rule": "Provides record bytes by DBPF identity and owns no package data; provider borrows the package buffer.",
+        "current_counterpart": "DbpfResourceProvider and MemoryResourceProvider are interchangeable fetch sources.",
+        "evidence_level": "OBSERVED",
+        "provenance": [
+          "src/compat/ResourceProvider.hpp:21-85",
+          "src/assets/tests/assets_test.cpp:326-364"
+        ]
+      },
+      {
+        "id": "O05",
+        "owner": "OpenSpore renderer",
+        "rule": "Owns transient GPU mesh/texture handles; host Mesh and GmdlModel are separate CPU-side values.",
+        "current_counterpart": "submitMeshSource creates, draws, and destroys a handle.",
+        "evidence_level": "OBSERVED",
+        "provenance": [
+          "src/compat/MeshSource.hpp:62-80",
+          "src/apps/cell_stage.cpp:506-547"
+        ]
+      },
+      {
+        "id": "O06",
+        "owner": "CellGfx",
+        "rule": "Owns world slots, preloaded model/populate keys, and display-active state in current OpenSpore.",
+        "current_counterpart": "Integer world tokens replace the original RenderWare worlds.",
+        "evidence_level": "OBSERVED",
+        "provenance": [
+          "src/apps/CellGfx.hpp:41-75",
+          "src/apps/CellGfx.cpp:5-46"
+        ]
+      }
+    ],
+    "gameplay_vs_rendering": [
+      {
+        "id": "G01",
+        "classification": "gameplay",
+        "metadata": "type/group/instance identity and model selection",
+        "reason": "Cell model identity and LOD selection can change which visible object represents a gameplay entity.",
+        "evidence_level": "SUPPORTED",
+        "provenance": [
+          "Ghidra read-only decompile_function at 0x00e65640",
+          "src/apps/scene.json:28-72",
+          "src/compat/ResourceProvider.hpp:24-53"
+        ]
+      },
+      {
+        "id": "G02",
+        "classification": "gameplay",
+        "metadata": "CellCell health, AI, size, friend group, and interaction fields",
+        "reason": "These are direct simulation/content fields, not render metadata.",
+        "evidence_level": "OBSERVED",
+        "provenance": [
+          "src/assets/CellResource.hpp:124-163",
+          "src/assets/CellResource.cpp:1141-1297"
+        ]
+      },
+      {
+        "id": "G03",
+        "classification": "gameplay",
+        "metadata": "CellWorld populate references and CellPopulate distributions, counts, sizes, and z offsets",
+        "reason": "These affect population and runtime placement/distribution semantics, although exact original x/y placement is procedural.",
+        "evidence_level": "SUPPORTED",
+        "provenance": [
+          "src/assets/CellResource.hpp:165-197",
+          "src/assets/CellResource.hpp:442-484",
+          "src/apps/SceneConfig.hpp:8-13"
+        ]
+      },
+      {
+        "id": "G04",
+        "classification": "rendering",
+        "metadata": "GMDL vertex descriptors, buffers, indices, primitive type, and computed Mesh bounds",
+        "reason": "These describe drawable geometry and host conversion; no direct gameplay rule was established.",
+        "evidence_level": "OBSERVED",
+        "provenance": [
+          "src/assets/Mesh.cpp:49-179",
+          "src/assets/Mesh.hpp:27-40"
+        ]
+      },
+      {
+        "id": "G05",
+        "classification": "rendering",
+        "metadata": "GMDL material IDs, texture-set references, shader-data IDs, and RW4 material sections",
+        "reason": "Material/raster state controls appearance and shader submission; gameplay meaning is not established.",
+        "evidence_level": "SUPPORTED",
+        "provenance": [
+          "src/assets/Gmdl.cpp:210-242",
+          "Ghidra read-only decompile_function(0x011fa030)",
+          "Ghidra read-only get_struct_layout(CompiledState)"
+        ]
+      },
+      {
+        "id": "G06",
+        "classification": "rendering",
+        "metadata": "RW4 BBox, Mesh, MeshCompiledStateLink, VertexDescription, and buffer sections",
+        "reason": "These are the RenderWare object directory consumed by model/render construction.",
+        "evidence_level": "SUPPORTED",
+        "provenance": [
+          "Ghidra read-only decompile_function(0x006edbc0)",
+          "Ghidra read-only get_struct_layout(MeshCompiledStateLink)",
+          "docs/RENDERWARE-RESEARCH.md:234-240"
+        ]
+      },
+      {
+        "id": "G07",
+        "classification": "rendering",
+        "metadata": "GMDL file bbox/radius and normal/UV encodings",
+        "reason": "Bounds and vertex attributes are consumed by renderer, while the normal UBYTE4 interpretation remains uncertain.",
+        "evidence_level": "SUPPORTED",
+        "provenance": [
+          "src/assets/Gmdl.hpp:58-73",
+          "docs/ASSET-PATH.md:69-84"
+        ]
+      },
+      {
+        "id": "G08",
+        "classification": "rendering-with-gameplay-impact",
+        "metadata": "LOD groups 0x40616201/02 and shared cell material 0xD7BE35F9",
+        "reason": "LOD changes presentation density and the material may be a cell-family identity cue, but no gameplay rule consuming the material was found.",
+        "evidence_level": "SUPPORTED",
+        "provenance": [
+          "src/assets/tests/cell_gmdl_test.cpp:1-53",
+          "docs/analysis/campaigns/cell-stage-campaign.md:438-447"
+        ]
+      },
+      {
+        "id": "G09",
+        "classification": "unknown",
+        "metadata": "WorldObject part names and vector-like values",
+        "reason": "The record is separate from CellSerializer and no loader reference establishes whether vectors are part placement, deformation, or another model semantic.",
+        "evidence_level": "UNKNOWN",
+        "provenance": [
+          "src/assets/WorldObject.hpp:8-20",
+          "docs/analysis/campaigns/cell-stage-campaign.md:560-571"
+        ]
+      }
+    ]
+  },
+  "persistence": {
+    "formats": [
+      {
+        "id": "FMT01",
+        "name": "DBPF v3 package",
+        "read_boundary": "96-byte header plus index rows; payload can be raw or QFS-compressed.",
+        "write_boundary": "Current OpenSpore has read-only package access; no DBPF writer is present in the requested asset modules.",
+        "identity": "type/group/instance",
+        "round_trip": "not tested",
+        "evidence_level": "OBSERVED",
+        "provenance": [
+          "src/assets/Dbpf.hpp:1-48",
+          "src/compat/ResourceProvider.hpp:32-53",
+          "docs/RENDERWARE-RESEARCH.md:329-334"
+        ]
+      },
+      {
+        "id": "FMT02",
+        "name": "GMDL v8",
+        "read_boundary": "Header, references, bounds, geometry, material info, and best-effort trailer.",
+        "write_boundary": "No current GMDL serializer or writer exists.",
+        "identity": "DBPF record key plus internal top-level reference keys",
+        "round_trip": "not available; parser is one-way",
+        "evidence_level": "OBSERVED",
+        "provenance": [
+          "src/assets/Gmdl.hpp:1-11",
+          "src/assets/Gmdl.cpp:95-270"
+        ]
+      },
+      {
+        "id": "FMT03",
+        "name": "GMDL v9",
+        "read_boundary": "Python oracle conditionally omits per-material entryCount when version equals 9.",
+        "write_boundary": "No current serializer.",
+        "identity": "same broad DBPF model identity",
+        "round_trip": "not available",
+        "evidence_level": "SUPPORTED",
+        "provenance": [
+          "tools/spore/gmdl/gmdl.py:24-30",
+          "tools/spore/gmdl/gmdl.py:147-151",
+          "src/assets/Gmdl.cpp:106-111"
+        ]
+      },
+      {
+        "id": "FMT04",
+        "name": "RW4 container",
+        "read_boundary": "Magic/header/manifest/typecode table/section-info directory and section bounds.",
+        "write_boundary": "No current RW4 serializer or section writer exists.",
+        "identity": "DBPF record key plus section type-code identities",
+        "round_trip": "not available; structural differential is one-way",
+        "evidence_level": "OBSERVED",
+        "provenance": [
+          "src/assets/Rw4.hpp:1-22",
+          "src/assets/Rw4.cpp:107-204"
+        ]
+      },
+      {
+        "id": "FMT05",
+        "name": "WorldObject 0x0F43029A",
+        "read_boundary": "20-byte header plus semantically extracted body with complete byte accounting.",
+        "write_boundary": "No current writer; exact c-entry field order is unresolved.",
+        "identity": "DBPF record key",
+        "round_trip": "not available",
+        "evidence_level": "SUPPORTED",
+        "provenance": [
+          "src/assets/WorldObject.hpp:1-20",
+          "src/assets/WorldObject.cpp:23-111"
+        ]
+      },
+      {
+        "id": "FMT06",
+        "name": "Cell content records",
+        "read_boundary": "Fixed or count-driven direct serialization for CellWorld, CellPopulate, and CellCell.",
+        "write_boundary": "No current writer for these content records.",
+        "identity": "DBPF record key plus gameplay reference IDs",
+        "round_trip": "dump() provides canonical semantic text, not byte serialization",
+        "evidence_level": "OBSERVED",
+        "provenance": [
+          "src/assets/CellResource.hpp:124-197",
+          "src/assets/CellResource.hpp:442-500",
+          "src/assets/CellResource.cpp:907-1091"
+        ]
+      }
+    ],
+    "reference_persistence": [
+      {
+        "id": "REF01",
+        "record": "GMDL top-level reference",
+        "wire_shape": "instance u32, group u32, type u32 in the Python oracle",
+        "current_storage": "skipped by C++ GmdlModel",
+        "runtime_equivalent": "ResourceKey is instance/type/group in Ghidra",
+        "evidence_level": "SUPPORTED",
+        "provenance": [
+          "tools/spore/gmdl/gmdl.py:94-102",
+          "src/assets/Gmdl.cpp:113-122",
+          "Ghidra read-only get_struct_layout(ResourceKey)"
+        ]
+      },
+      {
+        "id": "REF02",
+        "record": "GMDL texture-set reference",
+        "wire_shape": "sampler, 12 opaque bytes, instance, group; no type word in current model",
+        "current_storage": "GmdlTextureRef instance/group only",
+        "runtime_equivalent": "future texture/resource key resolution is required",
+        "evidence_level": "OBSERVED",
+        "provenance": [
+          "src/assets/Gmdl.hpp:51-56",
+          "src/assets/Gmdl.cpp:218-225",
+          "tools/spore/gmdl/gmdl.py:154-162"
+        ]
+      },
+      {
+        "id": "REF03",
+        "record": "RW4 section identity",
+        "wire_shape": "tcIndex plus tc in a 24-byte section-info row",
+        "current_storage": "Rw4Section preserves both values",
+        "runtime_equivalent": "RWSectionInfo has matching 24-byte shape",
+        "evidence_level": "OBSERVED",
+        "provenance": [
+          "src/assets/Rw4.hpp:35-44",
+          "src/assets/Rw4.cpp:190-197",
+          "Ghidra read-only get_struct_layout(RWSectionInfo)"
+        ]
+      },
+      {
+        "id": "REF04",
+        "record": "cell content references",
+        "wire_shape": "u32 populate, distributeCell, clusterCell, encounterPopulate, and related IDs",
+        "current_storage": "CellWorld/CellPopulate value objects preserve these IDs",
+        "runtime_equivalent": "original cell content traversal resolves the IDs to model/resource keys",
+        "evidence_level": "SUPPORTED",
+        "provenance": [
+          "src/assets/CellResource.hpp:165-197",
+          "src/assets/CellResource.hpp:442-484",
+          "Ghidra read-only decompile_function at 0x00e65640"
+        ]
+      }
+    ],
+    "current_write_policy": {
+      "current_writers": [
+        "none for GMDL, RW4, or WorldObject",
+        "none for CellWorld, CellPopulate, or CellCell"
+      ],
+      "original_write_boundary": "Ghidra exposes PFRecordWrite and resource-manager record operations, but the requested read-only queries did not establish byte-exact GMDL/RW4 writers.",
+      "round_trip_status": "Parser/differential tests are read-only semantic or differential checks, not round-trip tests.",
+      "evidence_level": "SUPPORTED",
+      "provenance": [
+        "Ghidra read-only search_functions for Resource::PFRecordWrite and Resource::DatabasePackedFile record operations",
+        "tests/diff_real.py:1-113",
+        "src/assets/Gmdl.cpp:95-270",
+        "src/assets/Rw4.cpp:107-204"
+      ]
+    }
+  },
+  "openspore_comparison": [
+    {
+      "id": "CMP01",
+      "area": "GMDL parser",
+      "original_semantics": "GMDL is a model resource with geometry, material metadata, bounds, references, and animation/trailer data.",
+      "openspore_behavior": "Version 8 renderable prefix is decoded into GmdlModel; references and animation records are skipped; trailer is opaque/best-effort.",
+      "status": "partial",
+      "evidence_level": "OBSERVED",
+      "provenance": [
+        "src/assets/Gmdl.hpp:1-11",
+        "src/assets/Gmdl.cpp:95-270",
+        "tools/spore/gmdl/gmdl.py:4-36"
+      ]
+    },
+    {
+      "id": "CMP02",
+      "area": "RW4 parser",
+      "original_semantics": "RW4 is a RenderWare object container with manifest, type table, section directory, and payload sections.",
+      "openspore_behavior": "Rw4 validates and exposes the container directory but decodes no section payloads.",
+      "status": "partial",
+      "evidence_level": "OBSERVED",
+      "provenance": [
+        "src/assets/Rw4.hpp:1-22",
+        "src/assets/Rw4.cpp:107-204",
+        "docs/RENDERWARE-RESEARCH.md:177-240"
+      ]
+    },
+    {
+      "id": "CMP03",
+      "area": "Mesh conversion",
+      "original_semantics": "RenderWare runtime mesh carries primitive type, index buffer, vertex buffers, index ranges, and material compiled-state links.",
+      "openspore_behavior": "Mesh carries positions, optional normals/UVs, widened indices, topology, and recomputed bounds; only trilist/u16/stream0 is accepted.",
+      "status": "partial_static_path",
+      "evidence_level": "OBSERVED",
+      "provenance": [
+        "Ghidra read-only get_struct_layout(Mesh)",
+        "Ghidra read-only get_struct_layout(MeshCompiledStateLink)",
+        "src/assets/Mesh.hpp:27-64",
+        "src/assets/Mesh.cpp:49-179"
+      ]
+    },
+    {
+      "id": "CMP04",
+      "area": "Material runtime",
+      "original_semantics": "MaterialShader lookup by ID, CompiledState raster slots, and RenderWare draw submission.",
+      "openspore_behavior": "GMDL material IDs and texture references are retained only as metadata; renderer uses host TexMesh/MaterialState and does not resolve original shader state.",
+      "status": "partial",
+      "evidence_level": "SUPPORTED",
+      "provenance": [
+        "Ghidra read-only decompile_function at 0x011fa030",
+        "Ghidra read-only decompile_function at 0x011ee700",
+        "src/assets/Gmdl.cpp:210-242",
+        "src/assets/Mesh.cpp:216-248"
+      ]
+    },
+    {
+      "id": "CMP05",
+      "area": "World object",
+      "original_semantics": "The type is a model/part-definition record with names and vector-like data; it is not proven to be scene placement.",
+      "openspore_behavior": "WorldObject extracts names, vectors, counts, and byte accounting but has no runtime consumer.",
+      "status": "catalog_only",
+      "evidence_level": "SUPPORTED",
+      "provenance": [
+        "src/assets/WorldObject.hpp:1-20",
+        "src/assets/WorldObject.cpp:23-111",
+        "docs/analysis/campaigns/cell-stage-campaign.md:560-571"
+      ]
+    },
+    {
+      "id": "CMP06",
+      "area": "Cell content",
+      "original_semantics": "Cell content records select and populate gameplay entities; model keys are derived through content/resource relationships.",
+      "openspore_behavior": "CellWorld/CellPopulate/CellCell decoders preserve gameplay metadata, while CellGfx stores integer world tokens and key pairs.",
+      "status": "supported_structural_slice",
+      "evidence_level": "SUPPORTED",
+      "provenance": [
+        "src/assets/CellResource.hpp:124-197",
+        "src/assets/CellResource.hpp:442-500",
+        "src/apps/CellGfx.hpp:41-75",
+        "Ghidra read-only decompile_function at 0x00e65640 and 0x00e666f0"
+      ]
+    },
+    {
+      "id": "CMP07",
+      "area": "Scene identity and placement",
+      "original_semantics": "Original cell stage placement is procedural; no per-entity x/y is stored in the cited world-object records.",
+      "openspore_behavior": "scene.json stores explicit transforms with every position marked INFERRED and identity provenance carried per value.",
+      "status": "provenance_explicit",
+      "evidence_level": "OBSERVED",
+      "provenance": [
+        "src/apps/SceneConfig.hpp:1-13",
+        "src/apps/scene.json:1-75",
+        "src/apps/scene_config_test.cpp:1-7"
+      ]
+    },
+    {
+      "id": "CMP08",
+      "area": "Resource identity seam",
+      "original_semantics": "ResourceKey and resource manager mediate model/content records.",
+      "openspore_behavior": "IResourceProvider hides package versus memory bytes and fetches by DBPF type/group/instance; GmdlMeshSource owns a parsed model by value.",
+      "status": "replacement_seam_present",
+      "evidence_level": "OBSERVED",
+      "provenance": [
+        "src/compat/ResourceProvider.hpp:21-85",
+        "src/compat/MeshSource.hpp:24-80",
+        "src/assets/tests/assets_test.cpp:326-364"
+      ]
+    }
+  ],
+  "gaps": [
+    {
+      "id": "G01",
+      "gap": "GMDL top-level referenced-file keys are skipped by the C++ model and not exposed.",
+      "impact": "Cannot reconstruct complete GMDL dependency graph or distinguish model/texture references from the C++ value object.",
+      "priority": "high",
+      "evidence_level": "OBSERVED",
+      "provenance": [
+        "src/assets/Gmdl.hpp:58-73",
+        "src/assets/Gmdl.cpp:113-122",
+        "tools/spore/gmdl/gmdl.py:94-102"
+      ]
+    },
+    {
+      "id": "G02",
+      "gap": "GMDL bone ranges, animation data, and baked deform groups are not retained as structured fields.",
+      "impact": "Animation and deformation semantics cannot be reconstructed from the current C++ model.",
+      "priority": "high",
+      "evidence_level": "OBSERVED",
+      "provenance": [
+        "src/assets/Gmdl.hpp:58-73",
+        "src/assets/Gmdl.cpp:252-267",
+        "tools/spore/gmdl/gmdl.py:169-185"
+      ]
+    },
+    {
+      "id": "G03",
+      "gap": "The real cell-stage GMDL trailer has a different opaque baked-deform framing.",
+      "impact": "The parser can validate geometry/material prefix but cannot provide byte-exact trailer semantics or a strong end-of-record guarantee.",
+      "priority": "high",
+      "evidence_level": "SUPPORTED",
+      "provenance": [
+        "src/assets/Gmdl.cpp:244-270",
+        "docs/analysis/campaigns/cell-stage-campaign.md:438-447"
+      ]
+    },
+    {
+      "id": "G04",
+      "gap": "GMDL version 9 is not supported by the C++ parser.",
+      "impact": "Any v9 material framing or geometry variation is outside the current static path.",
+      "priority": "high",
+      "evidence_level": "OBSERVED",
+      "provenance": [
+        "src/assets/Gmdl.cpp:106-111",
+        "tools/spore/gmdl/gmdl.py:147-151",
+        "docs/RENDERWARE-RESEARCH.md:244-267"
+      ]
+    },
+    {
+      "id": "G05",
+      "gap": "GMDL shader-data IDs are skipped by size and unknown IDs are rejected.",
+      "impact": "Material semantics beyond texture instance/group pairs are unavailable.",
+      "priority": "high",
+      "evidence_level": "OBSERVED",
+      "provenance": [
+        "src/assets/Gmdl.cpp:40-66",
+        "src/assets/Gmdl.cpp:230-239"
+      ]
+    },
+    {
+      "id": "G06",
+      "gap": "RW4 section payloads are not decoded.",
+      "impact": "Meshes, vertex descriptions, buffers, rasters, compiled states, animation, skeleton, blend shapes, and BBox payloads remain opaque bytes.",
+      "priority": "high",
+      "evidence_level": "OBSERVED",
+      "provenance": [
+        "src/assets/Rw4.hpp:46-63",
+        "src/assets/Rw4.cpp:179-203",
+        "docs/RENDERWARE-RESEARCH.md:234-240"
+      ]
+    },
+    {
+      "id": "G07",
+      "gap": "RW4 tcIndex/typecode consistency and manifest subobject offsets o2-o4 are not validated.",
+      "impact": "A structurally in-bounds but semantically inconsistent section directory can be accepted.",
+      "priority": "medium",
+      "evidence_level": "OBSERVED",
+      "provenance": [
+        "src/assets/Rw4.cpp:147-177",
+        "src/assets/Rw4.cpp:186-203",
+        "src/assets/Rw4.hpp:61-71"
+      ]
+    },
+    {
+      "id": "G08",
+      "gap": "RW4 code 0x7000B and other Spore-specific section identities remain unmapped.",
+      "impact": "Morph/blend-shape or other model behavior cannot be assigned to a section payload.",
+      "priority": "medium",
+      "evidence_level": "SUPPORTED",
+      "provenance": [
+        "docs/RENDERWARE-RESEARCH.md:306-316",
+        "src/assets/Rw4.cpp:35-39"
+      ]
+    },
+    {
+      "id": "G09",
+      "gap": "WorldObject c-entry field order, vector semantics, and part ownership are unresolved.",
+      "impact": "The parser cannot produce a typed part graph or attach records.",
+      "priority": "high",
+      "evidence_level": "UNKNOWN",
+      "provenance": [
+        "src/assets/WorldObject.hpp:8-20",
+        "src/assets/WorldObject.cpp:74-103",
+        "docs/analysis/campaigns/cell-stage-campaign.md:560-571"
+      ]
+    },
+    {
+      "id": "G10",
+      "gap": "The GMDL file bbox is not proven to be a gameplay collision or simulation bound.",
+      "impact": "Do not use file bounds as gameplay extents without runtime evidence; current OpenSpore recomputes host bounds for drawing.",
+      "priority": "medium",
+      "evidence_level": "INFERRED",
+      "provenance": [
+        "src/assets/Gmdl.hpp:58-73",
+        "src/assets/Mesh.cpp:145-179",
+        "docs/ASSET-PATH.md:69-80"
+      ]
+    },
+    {
+      "id": "G11",
+      "gap": "GMDL UBYTE4 normal interpretation is not established.",
+      "impact": "The current [0,1] decode and color visualization cannot be treated as original lighting semantics.",
+      "priority": "medium",
+      "evidence_level": "UNKNOWN",
+      "provenance": [
+        "src/assets/Mesh.hpp:27-33",
+        "docs/ASSET-PATH.md:54-60",
+        "src/assets/Mesh.cpp:123-125"
+      ]
+    },
+    {
+      "id": "G12",
+      "gap": "The committed type/group maps are incomplete for many asset families.",
+      "impact": "Identity labels are only as strong as the resolver map; raw type/group/instance IDs remain authoritative.",
+      "priority": "medium",
+      "evidence_level": "OBSERVED",
+      "provenance": [
+        "tools/spore/types/typenames.json:1",
+        "tools/spore/types/groupnames.json:1",
+        "tools/spore/asset_resolver.py:46-64"
+      ]
+    },
+    {
+      "id": "G13",
+      "gap": "No current C++ decoder preserves the original object ownership/refcount graph for GMDL/RW4 runtime objects.",
+      "impact": "OpenSpore can parse and draw static slices but cannot yet reproduce asynchronous cache, loader continuation, and release timing.",
+      "evidence_level": "SUPPORTED",
+      "provenance": [
+        "Ghidra read-only decompile_function at 0x006f1c40 and 0x0076a720",
+        "src/compat/ResourceProvider.hpp:32-53",
+        "src/compat/MeshSource.hpp:62-80"
+      ]
+    }
+  ],
+  "contradictions": [
+    {
+      "id": "X01",
+      "claim_a": "Gmdl.hpp says the parser rejects any truncated or undocumented content on the walk.",
+      "claim_b": "Gmdl.cpp makes trailer reads best-effort and returns true after setting consumed to size even when the known trailer framing fails.",
+      "resolution": "Treat renderable prefix and material-info as strict; treat the GMDL trailer as opaque/best-effort until a byte-exact variant decoder exists.",
+      "evidence_level": "OBSERVED",
+      "provenance": [
+        "src/assets/Gmdl.hpp:5-11",
+        "src/assets/Gmdl.hpp:75-78",
+        "src/assets/Gmdl.cpp:244-270"
+      ]
+    },
+    {
+      "id": "X02",
+      "claim_a": "ASSET-PATH says GMDL parsing fails unless the final offset equals the record size and reports consumed equals file size.",
+      "claim_b": "The C++ parser does not expose or compare the Reader offset to size after the trailer and unconditionally sets consumed=size on success.",
+      "resolution": "The documentation is accurate for the Python oracle/mini fixture path but stronger than current C++ behavior.",
+      "evidence_level": "OBSERVED",
+      "provenance": [
+        "docs/ASSET-PATH.md:27-43",
+        "docs/ASSET-PATH.md:67-70",
+        "tools/spore/gmdl/gmdl.py:183-188",
+        "src/assets/Gmdl.cpp:266-270"
+      ]
+    },
+    {
+      "id": "X03",
+      "claim_a": "The synthetic GMDL truncation test says a truncated record is rejected.",
+      "claim_b": "The test cuts at byte 48, which is inside geometry, so it validates the strict prefix but does not test trailer-only truncation.",
+      "resolution": "Do not generalize the test to trailer completeness; add separate trailer-offset assertions before claiming strict end coverage.",
+      "evidence_level": "OBSERVED",
+      "provenance": [
+        "src/assets/tests/assets_test.cpp:224-252",
+        "tools/spore/gmdl/gmdl.py:187-188"
+      ]
+    },
+    {
+      "id": "X04",
+      "claim_a": "Rw4.hpp describes complete() as proving every section type code is well-formed/known.",
+      "claim_b": "Rw4::complete checks section count, nonnegative size, and adjusted data bounds; unknown type codes are explicitly informational.",
+      "resolution": "Use the implementation as source of truth: unknown type codes are accepted, not rejected.",
+      "evidence_level": "OBSERVED",
+      "provenance": [
+        "src/assets/Rw4.hpp:21-22",
+        "src/assets/Rw4.hpp:66-75",
+        "src/assets/Rw4.cpp:68-92"
+      ]
+    },
+    {
+      "id": "X05",
+      "claim_a": "rw4_test comments describe a known-type-code check.",
+      "claim_b": "rw4_test checks ftype, manifest walk, and in-bounds data, but does not call knownRw4TypeCode or reject unknown tc values.",
+      "resolution": "Treat the test as structural-boundary coverage, not complete semantic type-code coverage.",
+      "evidence_level": "OBSERVED",
+      "provenance": [
+        "src/assets/tests/rw4_test.cpp:1-11",
+        "src/assets/tests/rw4_test.cpp:97-123"
+      ]
+    },
+    {
+      "id": "X06",
+      "claim_a": "docs/RENDERWARE-RESEARCH.md maps section codes 0x20004/05 to VertexDescription/VertexBuffer and 0x20007/08/09 to IndexBuffer/TextureOverride/Mesh.",
+      "claim_b": "tools/spore/rw4/rw4.py uses an older or different map with 0x20001/02/04/05 and 0x40001/50001 for other objects.",
+      "resolution": "Do not merge the Python TYPES dictionary with the C++ known set or the committed SMFX map without a code-by-code payload census.",
+      "evidence_level": "SUPPORTED",
+      "provenance": [
+        "docs/RENDERWARE-RESEARCH.md:218-232",
+        "tools/spore/rw4/rw4.py:48-55",
+        "src/assets/Rw4.cpp:21-45"
+      ]
+    },
+    {
+      "id": "X07",
+      "claim_a": "The Python GMDL oracle documents version up to 9 and conditionally changes material-info framing at v9.",
+      "claim_b": "The current C++ parser rejects every version other than 8.",
+      "resolution": "Record v9 as oracle/documentation evidence, not as a supported C++ behavior.",
+      "evidence_level": "OBSERVED",
+      "provenance": [
+        "tools/spore/gmdl/gmdl.py:4-4",
+        "tools/spore/gmdl/gmdl.py:147-151",
+        "src/assets/Gmdl.cpp:106-111"
+      ]
+    },
+    {
+      "id": "X08",
+      "claim_a": "Early campaign notes initially described 0x0F43029A as possibly CellSerializer-based.",
+      "claim_b": "The resolved campaign finding and current source describe it as a separate model/part-definition format with part names and no derived loader reference.",
+      "resolution": "Use the resolved classification; do not treat the old hypothesis as current semantics.",
+      "evidence_level": "SUPPORTED",
+      "provenance": [
+        "docs/analysis/campaigns/cell-stage-campaign.md:150-180",
+        "docs/analysis/campaigns/cell-stage-campaign.md:560-571",
+        "src/assets/WorldObject.hpp:1-6"
+      ]
+    },
+    {
+      "id": "X09",
+      "claim_a": "GmdlModel.consumed is documented as input bytes consumed and equal to input size on a full parse.",
+      "claim_b": "The implementation sets consumed=size after the best-effort trailer, so the field is currently a success marker rather than a trustworthy cursor position.",
+      "resolution": "Add a separate validated offset field or trailer state before using consumed as a serialization integrity proof.",
+      "evidence_level": "OBSERVED",
+      "provenance": [
+        "src/assets/Gmdl.hpp:68-73",
+        "src/assets/Gmdl.cpp:266-270"
+      ]
+    }
+  ],
+  "reconstruction_packages": [
+    {
+      "id": "P01",
+      "name": "resource-key-and-dbpf-boundary",
+      "purpose": "Make record identity and package extraction explicit for model and content consumers.",
+      "inputs": [
+        "DBPF type/group/instance",
+        "package bytes",
+        "QFS-compressed or raw payload"
+      ],
+      "outputs": [
+        "RecordKey",
+        "record bytes",
+        "missing/decompression diagnostics"
+      ],
+      "semantic_boundary": "Identity and byte extraction only; no GMDL/RW4 interpretation.",
+      "current_dependencies": [
+        "DbpfResourceProvider",
+        "MemoryResourceProvider",
+        "asset_resolver.py",
+        "typenames.json/groupnames.json"
+      ],
+      "acceptance": [
+        "same fetch result from package and memory providers",
+        "raw and QFS paths covered",
+        "unknown names remain IDs"
+      ],
+      "evidence_level": "OBSERVED",
+      "provenance": [
+        "src/compat/ResourceProvider.hpp:21-85",
+        "src/assets/Dbpf.hpp:1-48",
+        "src/assets/tests/assets_test.cpp:326-364"
+      ]
+    },
+    {
+      "id": "P02",
+      "name": "gmdl-v8-geometry-material",
+      "purpose": "Reconstruct the static version-8 GMDL prefix and a validated host mesh while preserving metadata boundaries.",
+      "inputs": [
+        "GMDL v8 bytes",
+        "DBPF RecordKey"
+      ],
+      "outputs": [
+        "GmdlModel with retained references and structured material metadata",
+        "Mesh",
+        "RendererMesh or TexMesh"
+      ],
+      "semantic_boundary": "Geometry and material identity; not animation execution.",
+      "current_dependencies": [
+        "parseGmdl",
+        "meshFromGmdl",
+        "GmdlMeshSource"
+      ],
+      "acceptance": [
+        "all v8 prefix reads have explicit cursor checks",
+        "references and material blocks round-trip to value fields",
+        "trailer offset is reported separately from opaque bytes",
+        "real cell-family records and synthetic fixture agree"
+      ],
+      "evidence_level": "SUPPORTED",
+      "provenance": [
+        "src/assets/Gmdl.cpp:95-270",
+        "src/assets/Mesh.cpp:49-142",
+        "src/assets/tests/cell_gmdl_test.cpp:44-138"
+      ]
+    },
+    {
+      "id": "P03",
+      "name": "rw4-container-directory",
+      "purpose": "Turn the RW4 structural walker into a validated, typed section directory with no payload overclaim.",
+      "inputs": [
+        "RW4 bytes",
+        "known type-code registry"
+      ],
+      "outputs": [
+        "Rw4 manifest",
+        "SectionTypes table",
+        "validated RWSectionInfo-compatible rows",
+        "unknown type-code report"
+      ],
+      "semantic_boundary": "Container identity and section location only; payloads remain opaque until section decoders exist.",
+      "current_dependencies": [
+        "parseRw4",
+        "tools/spore/rw4/rw4.py describe",
+        "RWSectionInfo layout"
+      ],
+      "acceptance": [
+        "tcIndex is range-checked",
+        "tc/typecodes relationship is checked or explicitly marked unverified",
+        "manifest subobject offsets are recorded",
+        "1131-record differential remains byte-identical"
+      ],
+      "evidence_level": "SUPPORTED",
+      "provenance": [
+        "src/assets/Rw4.cpp:107-204",
+        "tests/test_rw4.py:25-51",
+        "Ghidra read-only get_struct_layout(RWSectionInfo)"
+      ]
+    },
+    {
+      "id": "P04",
+      "name": "renderware-runtime-material",
+      "purpose": "Reconstruct the original runtime model/material/mesh object graph and draw seam from RW4 sections and GMDL metadata.",
+      "inputs": [
+        "RW4 section payloads",
+        "GMDL material/texture metadata",
+        "vertex declarations and buffers"
+      ],
+      "outputs": [
+        "RenderWare-compatible model object graph",
+        "MeshCompiledStateLink and CompiledState bindings",
+        "MaterialShader lookup by ID",
+        "draw submission"
+      ],
+      "semantic_boundary": "Rendering execution; model identity keys remain gameplay-facing at the input boundary.",
+      "current_dependencies": [
+        "RW4 section decoders",
+        "Ghidra Mesh/CompiledState/RWSectionInfo layouts",
+        "host renderer"
+      ],
+      "acceptance": [
+        "section payloads decode with bounds checks",
+        "material/raster slot behavior is observable",
+        "LOD and bounds semantics are separated",
+        "draw path does not infer gameplay state from material fields"
+      ],
+      "evidence_level": "SUPPORTED",
+      "provenance": [
+        "Ghidra read-only get_struct_layout(Mesh)",
+        "Ghidra read-only get_struct_layout(MeshCompiledStateLink)",
+        "Ghidra read-only get_struct_layout(CompiledState)",
+        "Ghidra read-only decompile_function at 0x011f9710 and 0x011fa030"
+      ]
+    },
+    {
+      "id": "P05",
+      "name": "cell-gameplay-content-graph",
+      "purpose": "Link gameplay records to model identities without treating render bounds or material IDs as simulation rules.",
+      "inputs": [
+        "CellWorld",
+        "CellPopulate",
+        "CellCell",
+        "GMDL/RW4 RecordKeys"
+      ],
+      "outputs": [
+        "cell population graph",
+        "model-selection references",
+        "distribution/scale metadata",
+        "explicit unresolved placement provenance"
+      ],
+      "semantic_boundary": "Gameplay/content semantics; scene transforms remain separate presentation data.",
+      "current_dependencies": [
+        "CellResource decoders",
+        "SceneConfig",
+        "CellGfx",
+        "original cell model-key traversal evidence"
+      ],
+      "acceptance": [
+        "all non-null populate/cell references are domain-checked",
+        "model identity and role provenance are separate",
+        "no x/y is claimed from WorldObject or CellWorld without evidence",
+        "LOD groups are identified as presentation choices"
+      ],
+      "evidence_level": "SUPPORTED",
+      "provenance": [
+        "src/assets/CellResource.hpp:124-197",
+        "src/assets/CellResource.hpp:442-484",
+        "src/apps/SceneConfig.hpp:1-13",
+        "Ghidra read-only decompile_function at 0x00e65640 and 0x00e666f0"
+      ]
+    },
+    {
+      "id": "P06",
+      "name": "worldobject-part-catalog",
+      "purpose": "Reconstruct 0x0F43029A as a typed model-part catalog only after its body grammar is established.",
+      "inputs": [
+        "WorldObject v9/v10 bytes",
+        "known part-name vocabulary",
+        "loader/section evidence"
+      ],
+      "outputs": [
+        "part records",
+        "name and vector semantics",
+        "relationship to model/animation data"
+      ],
+      "semantic_boundary": "Model/part metadata; explicitly not scene placement until disproven or proven otherwise.",
+      "current_dependencies": [
+        "parseWorldObject",
+        "worldobj_test",
+        "additional reverse-engineering evidence"
+      ],
+      "acceptance": [
+        "field order is byte-exact",
+        "name delimiters and vector types are typed",
+        "part ownership and consumers are identified",
+        "placement claims are rejected without independent evidence"
+      ],
+      "evidence_level": "UNKNOWN",
+      "provenance": [
+        "src/assets/WorldObject.hpp:8-20",
+        "src/assets/WorldObject.cpp:74-111",
+        "docs/analysis/campaigns/cell-stage-campaign.md:560-571"
+      ]
+    },
+    {
+      "id": "P07",
+      "name": "gmdl-animation-and-version-variants",
+      "purpose": "Recover version-9 framing and the two observed trailer variants as separately testable schemas.",
+      "inputs": [
+        "GMDL v8/v9 samples",
+        "CellImages/mini trailer",
+        "real cell-stage opaque trailer"
+      ],
+      "outputs": [
+        "typed bone ranges",
+        "typed animation data",
+        "typed baked deform groups",
+        "trailer variant detector"
+      ],
+      "semantic_boundary": "Animation/deformation metadata and runtime execution boundary; do not merge with static geometry parser by assumption.",
+      "current_dependencies": [
+        "Ghidra GMDL loader evidence",
+        "additional samples or trace",
+        "explicit cursor validation"
+      ],
+      "acceptance": [
+        "variant detection is deterministic",
+        "trailer offset equals record size for a successful strict decode",
+        "animation data can be converted without decompiled-source transcription",
+        "v9 material framing is independently verified"
+      ],
+      "evidence_level": "INFERRED",
+      "provenance": [
+        "src/assets/Gmdl.cpp:244-270",
+        "docs/analysis/campaigns/cell-stage-campaign.md:438-447",
+        "tools/spore/gmdl/gmdl.py:147-185"
+      ]
+    }
+  ],
+  "provenance": {
+    "generated_at": "2026-09-24",
+    "method": "Read-only archaeology synthesis from committed source, documentation, tests, KG, and Ghidra queries. No decompiled source is reproduced.",
+    "read_only_ghidra_queries": [
+      "get_struct_layout: CompiledState",
+      "get_struct_layout: IRwResource",
+      "get_struct_layout: Mesh",
+      "get_struct_layout: MeshCompiledStateLink",
+      "get_struct_layout: ResourceKey",
+      "get_struct_layout: RWSectionInfo",
+      "get_struct_layout: cMeshData",
+      "decompile_function: 0x006edbc0",
+      "decompile_function: 0x006f1c40",
+      "decompile_function: 0x0073d160",
+      "decompile_function: 0x0073eb90",
+      "decompile_function: 0x0074c670",
+      "decompile_function: 0x0076a720",
+      "decompile_function: 0x00e55120",
+      "decompile_function: 0x00e65640",
+      "decompile_function: 0x00e666f0",
+      "decompile_function: 0x011ee700",
+      "decompile_function: 0x011ee8c0",
+      "decompile_function: 0x011f2bf0",
+      "decompile_function: 0x011f9710",
+      "decompile_function: 0x011fa030",
+      "get_function_call_graph: 0x006edbc0",
+      "get_function_call_graph: 0x006f1c40",
+      "get_function_call_graph: 0x0073d160",
+      "get_function_call_graph: 0x0074c670",
+      "get_function_call_graph: 0x0076a720",
+      "get_function_call_graph: 0x011f9710"
+    ],
+    "knowledge_graph_queries": [
+      "AssetFormat: dbpf_group_scheme",
+      "AssetFormat: png32_type_is_rw4",
+      "AssetRecord: asset:gmdl:00E6BCE5:40627100:067B0FBC",
+      "AssetRecord: asset:gmdl:00E6BCE5:40637E03:067A07F0",
+      "AssetRecord: asset:gmdl:00E6BCE5:40666202:0D1B4BB56",
+      "AssetRecord: asset:gmdl:cell-stage:40616201",
+      "Structure: GameModelResource",
+      "Structure: RW4Container",
+      "Structure: CellWorldObjects"
+    ],
+    "checked_in_source_refs": [
+      "src/assets/Gmdl.cpp:12-270",
+      "src/assets/Gmdl.hpp:1-84",
+      "src/assets/Mesh.cpp:49-248",
+      "src/assets/Mesh.hpp:1-66",
+      "src/assets/Rw4.cpp:12-207",
+      "src/assets/Rw4.hpp:1-89",
+      "src/assets/WorldObject.cpp:23-112",
+      "src/assets/WorldObject.hpp:1-70",
+      "src/assets/CellResource.cpp:907-1124",
+      "src/assets/CellResource.hpp:124-197",
+      "src/compat/MeshSource.hpp:24-81",
+      "src/compat/ResourceProvider.hpp:21-85",
+      "src/apps/CellGfx.hpp:1-78",
+      "src/apps/CellGfx.cpp:5-46",
+      "src/apps/SceneConfig.hpp:1-47",
+      "src/apps/SceneConfig.cpp:269-337",
+      "src/apps/scene.json:1-75",
+      "tools/spore/gmdl/gmdl.py:1-275",
+      "tools/spore/rw4/rw4.py:1-95",
+      "tools/spore/asset_resolver.py:1-225"
+    ],
+    "safety": [
+      "No file under SPORE/ was read or written by this worker.",
+      "No game was launched, patched, injected, or otherwise modified.",
+      "No historical artifact was altered.",
+      "No Ghidra program was saved or changed; Ghidra tools were read queries only."
+    ],
+    "ordering": "All research arrays are emitted in deterministic ID, schema, or wire order; known type codes are ascending hexadecimal order."
+  }
+}

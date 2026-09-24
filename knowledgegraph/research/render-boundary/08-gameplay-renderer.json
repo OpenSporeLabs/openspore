@@ -1,0 +1,819 @@
+{
+  "track": "gameplay-renderer",
+  "scope": "SporeApp.exe 3.1.0.22 gameplay-to-renderer crossings. Inspected triage-v4/v5, Track K, semantic-atlas, reconstruction-packages, cell-movement, BOUNDARIES, all types/*.json partitions, RenderWare research, committed decompilation exports, and current OpenSpore counterparts. This report contains 11 static crossing records: 10 required_for_semantics and 1 replaceable_infrastructure. The strongest crossings are Cell movement/picking, CellGFX lifecycle/preload/effects, Cell pool GFX-handle lifetime, and editor mode/selection/animation. RenderWare::Mesh, RenderWare::CompiledState, and D3D9 device bodies are excluded because no gameplay-facing caller contract was established for them. docs/REPLACEMENT-BOUNDARIES.md is absent from this checkout; docs/BOUNDARIES.md is the available replacement-boundary document.",
+  "boundaries": [
+    {
+      "classification": "required_for_semantics",
+      "boundary": "cell-mode-presentation-lifecycle",
+      "gameplay_caller": "App::cCellModeStrategy::Initialize/OnEnter/OnExit/Dispose at 0x00e81cf0/0x00e552f0/0x00e7fc00/0x00e81f30",
+      "original_callee": "Simulator::Cell::cCellGFX::Initialize at 0x00e5dba0, cCellGFX::StartDisplay at 0x00e55120, Graphics::IShadowWorld::Get, Graphics::ILightingManager::Get, and unnamed service accessor FUN_0067ddd0",
+      "parameters": [
+        "cCellModeStrategy instance and mode-manager context",
+        "Cell stage world/layer identifiers",
+        "display, shadow, and lighting state"
+      ],
+      "outputs": [
+        "sCellGFX world and layer handles",
+        "active Cell display/lighting state",
+        "presentation-related mode and background state"
+      ],
+      "state_changed": [
+        "sCellGFX world-handle table",
+        "Cell layer visibility and shadow state",
+        "Cell mode/UI singleton activation and teardown state"
+      ],
+      "structures": [
+        "Simulator::Cell::cCellGFX",
+        "Simulator::Cell::cCellGame",
+        "Graphics::IRenderer",
+        "Graphics::IShadowWorld",
+        "Graphics::ILightingManager",
+        "ILayer",
+        "IEffectsWorld"
+      ],
+      "lifetime": "Mode initialization creates or attaches the Cell presentation singleton; OnEnter/StartDisplay activates it; OnExit and Dispose disable and release the associated presentation state.",
+      "failure_semantics": "The decompiled bodies contain null checks at selected service and object sites, but allocation, missing-service, and teardown failure results are not a closed original contract.",
+      "timing_order": "Initialize -> OnEnter/StartDisplay -> per-frame mode update -> OnExit -> Dispose, with original sub-order established statically but not runtime-validated.",
+      "openspore_concept": "ICellPresentation",
+      "modern_abstraction": "An injected Cell presentation service owns world/layer/effect/display handles; gameplay receives opaque handles and lifecycle events, never RenderWare object layouts or global Graphics getters.",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnEnter.c",
+          "line": 24,
+          "symbol": "App::cCellModeStrategy::OnEnter"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__Initialize.c",
+          "line": 33,
+          "symbol": "Simulator::Cell::cCellGFX::Initialize"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__Initialize.c",
+          "line": 110,
+          "symbol": "Simulator::Cell::cCellGFX::Initialize"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__StartDisplay.c",
+          "line": 16,
+          "symbol": "Simulator::Cell::cCellGFX::StartDisplay"
+        },
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/track-k-engine-boundaries.json",
+          "line": 371,
+          "symbol": "B-K-05 Cell presentation world, layers, models, effects, and UI handles"
+        }
+      ],
+      "confidence": "high",
+      "notes": "The GFX and world/layer vocabulary is presentation state owned by Simulator gameplay code. It is not RenderWare implementation even though the underlying original graphics stack is RenderWare."
+    },
+    {
+      "classification": "required_for_semantics",
+      "boundary": "cell-movement-camera-ray",
+      "gameplay_caller": "App::cCellModeStrategy::Update at 0x00e80980 -> FUN_00e806b0 -> Simulator::Cell::MovePlayerToMousePosition at 0x00e5b790",
+      "original_callee": "Graphics::IRenderer::Get at 0x0067dd10, the renderer Layer virtual call, and camera-origin helper FUN_007c4900",
+      "parameters": [
+        "deltaTime",
+        "camera layer and view-ray context",
+        "movement-plane normal and point",
+        "player pool index"
+      ],
+      "outputs": [
+        "player target position",
+        "player target orientation",
+        "moving state flag"
+      ],
+      "state_changed": [
+        "cCellObjectData target position and orientation",
+        "cCellGame nested moving state",
+        "camera/movement interaction result"
+      ],
+      "structures": [
+        "Simulator::Cell::sCellGame",
+        "Simulator::Cell::cCellObjectData",
+        "movement plane",
+        "camera origin/view-ray state",
+        "Graphics::IRenderer"
+      ],
+      "lifetime": "Per-frame; camera and renderer state are read during the update, while player target and orientation persist until the next movement update.",
+      "failure_semantics": "A movement lock returns immediately; a missing player returns immediately; camera-mode/UI gates can suppress steering; an invalid or backward ray-plane intersection leaves target state unchanged. Exact numeric gate meanings remain inferred.",
+      "timing_order": "mode Update -> cell update gate -> player pool lookup -> camera Layer/origin query -> ray-plane intersection -> target position/orientation writes -> moving flag write.",
+      "openspore_concept": "ICameraRayProvider + IPlayerMovement",
+      "modern_abstraction": "Preserve the normalized camera ray, movement plane, lock gate, target position, travel orientation, and moving flag as gameplay contracts; keep the renderer backend behind the camera service.",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__Update.c",
+          "line": 11,
+          "symbol": "App::cCellModeStrategy::Update"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__MovePlayerToMousePosition.c",
+          "line": 30,
+          "symbol": "Simulator::Cell::MovePlayerToMousePosition"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__MovePlayerToMousePosition.c",
+          "line": 58,
+          "symbol": "Simulator::Cell::MovePlayerToMousePosition"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__MovePlayerToMousePosition.c",
+          "line": 61,
+          "symbol": "Simulator::Cell::MovePlayerToMousePosition"
+        },
+        {
+          "file": "docs/analysis/dossiers/cell-movement.md",
+          "line": 10,
+          "symbol": "cell-movement evidence summary"
+        },
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/track-k-engine-boundaries.json",
+          "line": 240,
+          "symbol": "B-K-03 MovePlayerToMousePosition"
+        }
+      ],
+      "confidence": "high",
+      "notes": "Graphics::IRenderer::Get is a six-byte global accessor, not RenderWare. The gameplay semantic is the camera-ray-to-movement-plane mutation; current OpenSpore implements a clean-room approximation of this path."
+    },
+    {
+      "classification": "required_for_semantics",
+      "boundary": "cell-input-pick-and-camera-layer",
+      "gameplay_caller": "App::cCellModeStrategy::OnMouseDown at 0x00e6c860 and OnMouseUp at 0x00e5c0f0",
+      "original_callee": "Graphics::IRenderer::Get -> IRenderer::Layer, plus camera-origin helper FUN_007c4900",
+      "parameters": [
+        "mouse button",
+        "mouse x/y",
+        "mouse state",
+        "Cell UI/camera mode gates"
+      ],
+      "outputs": [
+        "Cell query hit or candidate handle",
+        "Cell UI hover/selection state",
+        "mouse-up query result"
+      ],
+      "state_changed": [
+        "sCellUI hover/selection fields at +0xc0/+0xc4",
+        "sCellUI mouse/query fields at +0x900/+0x904"
+      ],
+      "structures": [
+        "Simulator::Cell::cCellUI",
+        "cCellQueryLinkedPool",
+        "cCellQueryEntry",
+        "Graphics::IRenderer layer"
+      ],
+      "lifetime": "Per input event; the queried handle is copied into Cell UI state for later interaction or hover use.",
+      "failure_semantics": "OnMouseDown returns false or clears the UI selection when mode/UI gates or query results fail; OnMouseUp always updates the recorded query fields in the decompiled path.",
+      "timing_order": "input callback -> renderer Layer -> camera origin -> Cell spatial query -> Cell UI selection/hover write.",
+      "openspore_concept": "IInputRouter + ICameraService + ICellPickQuery",
+      "modern_abstraction": "Expose ordered pointer events, camera-ray/pick results, and a stable Cell query handle; do not expose the renderer Layer object or its vtable.",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnMouseDown.c",
+          "line": 23,
+          "symbol": "App::cCellModeStrategy::OnMouseDown"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnMouseDown.c",
+          "line": 30,
+          "symbol": "App::cCellModeStrategy::OnMouseDown"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnMouseUp.c",
+          "line": 20,
+          "symbol": "App::cCellModeStrategy::OnMouseUp"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnMouseUp.c",
+          "line": 24,
+          "symbol": "App::cCellModeStrategy::OnMouseUp"
+        },
+        {
+          "file": "docs/analysis/dossiers/cell-movement.md",
+          "line": 39,
+          "symbol": "App::cCellModeStrategy::OnMouseMove and camera-ray movement input"
+        }
+      ],
+      "confidence": "high",
+      "notes": "The renderer call is an input/picking dependency. It must not be classified as a RenderWare draw boundary merely because the accessor is in the Graphics namespace."
+    },
+    {
+      "classification": "required_for_semantics",
+      "boundary": "cell-entity-gfx-handle-lifecycle",
+      "gameplay_caller": "Simulator::Cell::CreateCellObject at 0x00e74a20 and FUN_00e780a0 at 0x00e780a0",
+      "original_callee": "Unresolved GFX association/release/rebuild helpers in 0x00e51650..0x00e86980 and cObjectPool_ lifecycle helpers",
+      "parameters": [
+        "Cell query pool and position",
+        "Cell resource reference and scale",
+        "cell pool index",
+        "model key and GFX object index"
+      ],
+      "outputs": [
+        "pooled cCellObjectData identity",
+        "model/resource identity",
+        "GFX object association"
+      ],
+      "state_changed": [
+        "cCellGame avatar pool index",
+        "cCellObjectData model, resource, transform, scale, and GFX fields",
+        "pool free/live state during release and recreation"
+      ],
+      "structures": [
+        "Simulator::Cell::cCellObjectData",
+        "Simulator::Cell::cCellGame",
+        "Simulator::cObjectPool_",
+        "CellGFXObjectData",
+        "Graphics::Model handle"
+      ],
+      "lifetime": "A pooled Cell owns the gameplay object and its renderer-facing model/GFX associations; lifecycle helpers detach the avatar, release the old GFX association, and recreate the object when stage scale changes.",
+      "failure_semantics": "Pool lookup failure returns no object; exact GFX release/rebuild failure behavior is unresolved, but the gameplay object/pool identity must not be discarded when the visual handle is replaced.",
+      "timing_order": "CreateCellObject -> initialize gameplay and GFX-facing fields -> query/AI consumers -> detach avatar if matching -> release old GFX association -> rebuild/recreate pooled object when required.",
+      "openspore_concept": "ICellEntity + IEntityPool + IVisualHandleStore",
+      "modern_abstraction": "Keep stable pool/entity handles, model/resource keys, and visual-handle lifetime separate; replace the original GFX object graph with an injected presentation handle store.",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__CreateCellObject.c",
+          "line": 167,
+          "symbol": "Simulator::Cell::CreateCellObject"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__CreateCellObject.c",
+          "line": 193,
+          "symbol": "Simulator::Cell::CreateCellObject"
+        },
+        {
+          "file": "docs/analysis/dossiers/unknown-high/cell-object-pool-lifecycle.md",
+          "line": 20,
+          "symbol": "FUN_00e780a0"
+        },
+        {
+          "file": "docs/analysis/dossiers/unknown-high/cell-object-pool-lifecycle.md",
+          "line": 42,
+          "symbol": "FUN_00e780a0"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 33733,
+          "symbol": "FUN_00e780a0"
+        }
+      ],
+      "confidence": "high",
+      "notes": "This is a gameplay entity lifecycle crossing even though no named Graphics::Get is called in the dossier. The GFX object is renderer-facing state owned by gameplay lifecycle code, not a RenderWare implementation."
+    },
+    {
+      "classification": "required_for_semantics",
+      "boundary": "cell-resource-preload-and-identity",
+      "gameplay_caller": "Simulator::Cell::cCellGFX::PreloadResources/PreloadCellResource/PreloadPopulateResource and cCellModeStrategy lifecycle",
+      "original_callee": "cCellGFX::AddPreloadedEffect at 0x00e66280, Graphics::IRenderTargetManager::Get at 0x0067dd60, and AddPreloadedTexture/AddPreloadedModel helpers",
+      "parameters": [
+        "Cell resource references",
+        "populate resource references",
+        "instance/group IDs",
+        "effect-map entries containing model, texture, and effect identities"
+      ],
+      "outputs": [
+        "preloaded model records",
+        "preloaded effect records",
+        "preloaded texture records",
+        "resource identity bindings for Cell presentation"
+      ],
+      "state_changed": [
+        "cCellGFX preloaded model/effect/texture collections",
+        "effect and model association counters",
+        "stage presentation bindings keyed by resource identity"
+      ],
+      "structures": [
+        "Simulator::Cell::cCellGFX",
+        "cCellDataReference",
+        "cCellCellResource",
+        "cCellPopulateResource",
+        "cCellEffectMapResource",
+        "Graphics::IRenderTargetManager",
+        "Graphics::Texture",
+        "Graphics::Model"
+      ],
+      "lifetime": "Preload occurs after presentation-world initialization and before StartDisplay; records remain associated with the Cell stage until preloaded state is cleared or rebuilt.",
+      "failure_semantics": "Zero instance/group IDs are ignored; unsupported effect-map types do not preload; effect startup failure is logged as 'couldn't start effect'; null model/texture/effect results are propagated as absent presentation state.",
+      "timing_order": "Create presentation worlds -> preload Cell and populate resources -> recursively inspect effect-map entries -> preload textures/models/effects -> StartDisplay.",
+      "openspore_concept": "IContentStore + ICellPresentation",
+      "modern_abstraction": "Preserve type/group/instance identity and the cell-to-model/effect/texture association while hiding DBPF lookup, RW4 parsing, RenderWare handles, and render-target implementation.",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__PreloadResources.c",
+          "line": 60,
+          "symbol": "Simulator::Cell::cCellGFX::PreloadResources"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__PreloadResources.c",
+          "line": 77,
+          "symbol": "Simulator::Cell::cCellGFX::PreloadResources"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__AddPreloadedEffect.c",
+          "line": 27,
+          "symbol": "Simulator::Cell::cCellGFX::AddPreloadedEffect"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__AddPreloadedEffect.c",
+          "line": 42,
+          "symbol": "Simulator::Cell::cCellGFX::AddPreloadedEffect"
+        },
+        {
+          "file": "knowledgegraph/research/types/09-asset-content.json",
+          "line": 149,
+          "symbol": "cCellEffectMapResource content type"
+        },
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/track-k-engine-boundaries.json",
+          "line": 387,
+          "symbol": "B-K-05 preload path"
+        }
+      ],
+      "confidence": "high",
+      "notes": "This boundary is content-to-presentation identity, not RenderWare implementation. The graphics wrapper is reached only after gameplay resource identity has been selected."
+    },
+    {
+      "classification": "required_for_semantics",
+      "boundary": "cell-animation-and-effect-events",
+      "gameplay_caller": "Simulator::Cell::PlayAnimation at 0x00e6d200, cCellGFX::InstanceEffectOnCell at 0x00e66840, and cCellGFX::LoadEffectMap at 0x00e63560",
+      "original_callee": "Cell animation/effect-world virtual interfaces, cCellGFX effect handles, and the unnamed graphics/service accessor used by effect creation",
+      "parameters": [
+        "Cell object and optional other Cell",
+        "current and target animation IDs",
+        "effect ID and nine-word effect-map parameter record",
+        "Cell transform and current swim-plane point"
+      ],
+      "outputs": [
+        "animation blend state and current animation ID",
+        "IVisualEffect instance",
+        "effect-map slot bindings",
+        "cell-specific effect placement"
+      ],
+      "state_changed": [
+        "cCellObjectData current animation and animation blend fields",
+        "cCellGFX effect instances and persistent effect slots",
+        "effect parameters and cell transform association"
+      ],
+      "structures": [
+        "Simulator::Cell::cCellObjectData",
+        "Simulator::Cell::cCellGFX",
+        "cCellEffectMapResource",
+        "IVisualEffect",
+        "IEffectsWorld",
+        "Cell animation state"
+      ],
+      "lifetime": "Animation state is stored on the Cell object; visual effects are created, updated, and released by the Cell presentation/effect world.",
+      "failure_semantics": "PlayAnimation returns without changes if model key or GFX object index is absent; missing effect handles return no visual effect; unknown effect-map types do not select a persistent slot; the exact effect lifetime is only statically bounded.",
+      "timing_order": "Gameplay animation/event decision -> PlayAnimation blend state update or effect-map selection -> effect-world/virtual presentation call -> per-cell effect transform update -> presentation update.",
+      "openspore_concept": "ICellAnimation + IEffectPresenter",
+      "modern_abstraction": "Expose animation IDs, blend parameters, effect IDs, effect parameters, and cell transforms as typed events; let a modern renderer/pose backend consume them without exposing RenderWare or D3D objects.",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__PlayAnimation.c",
+          "line": 22,
+          "symbol": "Simulator::Cell::PlayAnimation"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__PlayAnimation.c",
+          "line": 45,
+          "symbol": "Simulator::Cell::PlayAnimation"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__InstanceEffectOnCell.c",
+          "line": 30,
+          "symbol": "Simulator::Cell::cCellGFX::InstanceEffectOnCell"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__InstanceEffectOnCell.c",
+          "line": 56,
+          "symbol": "Simulator::Cell::cCellGFX::InstanceEffectOnCell"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__LoadEffectMap.c",
+          "line": 42,
+          "symbol": "Simulator::Cell::cCellGFX::LoadEffectMap"
+        },
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/track-g-editor-ui-input.json",
+          "line": 381,
+          "symbol": "cell animation surface"
+        }
+      ],
+      "confidence": "high",
+      "notes": "The animation/effect functions carry gameplay event semantics even though their presentation targets are graphics interfaces. Current OpenSpore has pure CellAnim helpers, but the committed Track G record says cell_stage does not yet route animation or effect state into the renderer."
+    },
+    {
+      "classification": "required_for_semantics",
+      "boundary": "creature-effect-pool-to-presentation-service",
+      "gameplay_caller": "Simulator::cCreatureBase::GetEffectFromPools at 0x00c14f70 and cCreatureBase::StartOrStopEffectFromPool1 at 0x00c20230",
+      "original_callee": "Unnamed app-level service accessor FUN_0067ddd0 and unresolved effect/virtual helper calls; direct Graphics::Get identity is not persisted",
+      "parameters": [
+        "creature effect-pool selection state",
+        "effect start/stop selection",
+        "creature animation/effect parameters"
+      ],
+      "outputs": [
+        "pooled effect handle or effect transition result"
+      ],
+      "state_changed": [
+        "cCreatureBase effect-pool state",
+        "service-owned effect/visual state reached through the unnamed accessor"
+      ],
+      "structures": [
+        "Simulator::cCreatureBase",
+        "cCreatureGameData",
+        "IVisualEffect/IEffectsWorld candidate",
+        "unnamed app-level graphics/service object"
+      ],
+      "lifetime": "Effect-pool state belongs to creature gameplay and persists with the creature/ability lifecycle; the visual effect is managed below that boundary.",
+      "failure_semantics": "Missing pool or effect handles can result in no-op transitions; exact return codes and the unnamed service contract are not established.",
+      "timing_order": "Creature gameplay/ability effect event -> cCreatureBase pool lookup or start/stop request -> unnamed service access -> effect/virtual presentation operation.",
+      "openspore_concept": "ICreatureEffectPresenter",
+      "modern_abstraction": "Expose typed creature ability/effect requests and effect lifetime callbacks; keep the unnamed service, RenderWare effects, and D3D resources behind an injected effect presenter.",
+      "evidence": [
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 26902,
+          "symbol": "Simulator::cCreatureBase::GetEffectFromPools"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 26985,
+          "symbol": "Simulator::cCreatureBase::StartOrStopEffectFromPool1"
+        },
+        {
+          "file": "knowledgegraph/research/decomp-gap/sim-core-02.json",
+          "line": 47780,
+          "symbol": "cCreatureBase::GetEffectFromPools static contract"
+        },
+        {
+          "file": "knowledgegraph/research/decomp-gap/sim-core-02.json",
+          "line": 54963,
+          "symbol": "cCreatureBase::StartOrStopEffectFromPool1 static contract"
+        },
+        {
+          "file": "knowledgegraph/research/types/15-reconstruction-relevance.json",
+          "line": 219,
+          "symbol": "creature gameplay core relevance"
+        }
+      ],
+      "confidence": "medium",
+      "notes": "This is a confirmed gameplay-to-presentation lead, not a claim that the unknown callee is RenderWare. The direct body is unavailable in committed decompilation, so only the creature effect-pool semantic and direct unnamed-service edge are retained."
+    },
+    {
+      "classification": "required_for_semantics",
+      "boundary": "editor-mode-presentation-lifecycle",
+      "gameplay_caller": "Editors::cEditor::Initialize at 0x00584300, OnEnter at 0x0058e6d0, OnExit at 0x00587a20, and Dispose at 0x00576c50",
+      "original_callee": "Graphics::IShadowWorld::Get, Swarm::IEffectsManager::Get, Graphics::IRenderer::Get, Graphics::ILightingManager::Get, Graphics::IModelManager::Get, and FUN_0067ddd0",
+      "parameters": [
+        "editor instance and game-mode manager context",
+        "editor model/effect world IDs",
+        "editor view transform and lighting state"
+      ],
+      "outputs": [
+        "editor model/effect worlds and layers",
+        "editor lighting and shadow state",
+        "editor scene visibility state"
+      ],
+      "state_changed": [
+        "cEditor world/model/effect handles",
+        "editor layer visibility and shadow-layer bits",
+        "editor lighting/model manager state"
+      ],
+      "structures": [
+        "Editors::cEditor",
+        "Graphics::IShadowWorld",
+        "Swarm::IEffectsManager",
+        "Graphics::ILightingManager",
+        "Graphics::IModelManager",
+        "IModelWorld",
+        "IEffectsWorld",
+        "ILightingWorld"
+      ],
+      "lifetime": "Editor initialization creates or attaches world/layer state; OnEnter activates the editor scene; OnExit removes lighting/shadow state; Dispose releases remaining model/world state.",
+      "failure_semantics": "OnEnter/Initialize return false when the required shadow service is absent; other decompiled paths contain selective null checks, while complete allocation and teardown failure semantics are unresolved.",
+      "timing_order": "Editor Initialize -> editor OnEnter/display setup -> editor Update/selection/animation -> OnExit cleanup -> Dispose release.",
+      "openspore_concept": "IEditorPresentation + IStagePresentation",
+      "modern_abstraction": "Expose editor scene, model-world, lighting, shadow, and layer lifecycle through injected presentation services; do not reproduce UTFWin/Graphics global ABI or RenderWare internals.",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__Initialize.c",
+          "line": 150,
+          "symbol": "Editors::cEditor::Initialize"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnEnter.c",
+          "line": 144,
+          "symbol": "Editors::cEditor::OnEnter"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnEnter.c",
+          "line": 1484,
+          "symbol": "Editors::cEditor::OnEnter"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnExit.c",
+          "line": 506,
+          "symbol": "Editors::cEditor::OnExit"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__Dispose.c",
+          "line": 155,
+          "symbol": "Editors::cEditor::Dispose"
+        },
+        {
+          "file": "knowledgegraph/research/types/06-editor-ui.json",
+          "line": 297,
+          "symbol": "Editors::cEditor presentation fields"
+        }
+      ],
+      "confidence": "high",
+      "notes": "The editor is a gameplay/editor policy boundary over graphics managers. Its RenderWare/D3D implementation is replaceable; world/layer identity, lighting-world selection, and teardown order are the compatibility contract."
+    },
+    {
+      "classification": "required_for_semantics",
+      "boundary": "editor-input-picking-and-edit-commit",
+      "gameplay_caller": "Editors::cEditor::OnMouseDown and cEditor::HandleMessage",
+      "original_callee": "Graphics::IShadowWorld::Get and Graphics::IRenderer::Get -> IRenderer::Layer, with editor tool/command and EditorModel callbacks",
+      "parameters": [
+        "mouse position and button state",
+        "editor mode and tool selection",
+        "editor message payload",
+        "camera/layer context"
+      ],
+      "outputs": [
+        "editor pick/selection result",
+        "tool-specific edit operation",
+        "model color/history update"
+      ],
+      "state_changed": [
+        "cEditor selection and active-tool state",
+        "EditorModel color/name/model state",
+        "edit-history commit state"
+      ],
+      "structures": [
+        "Editors::cEditor",
+        "Editors::EditorModel",
+        "Graphics::IShadowWorld",
+        "Graphics::IRenderer layer",
+        "editor tool/actor vtables"
+      ],
+      "lifetime": "Input/message event lifetime for picking; selected object and committed model state persist in the editor document.",
+      "failure_semantics": "Missing shadow service or editor gating returns false; unsupported tool/model paths can return without edit; renderer Layer is a query dependency, not a draw submission.",
+      "timing_order": "mouse/message event -> shadow-service gate -> renderer Layer/camera query -> tool/actor selection -> model edit -> CommitEditHistory.",
+      "openspore_concept": "IEditorPickQuery + IEditorCommandSink",
+      "modern_abstraction": "Keep editor input, camera pick results, tool commands, model mutations, and history commits separate from the graphics backend; expose editor policy rather than RenderWare layer objects.",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnMouseDown.c",
+          "line": 116,
+          "symbol": "Editors::cEditor::OnMouseDown"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnMouseDown.c",
+          "line": 146,
+          "symbol": "Editors::cEditor::OnMouseDown"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnMouseDown.c",
+          "line": 239,
+          "symbol": "Editors::cEditor::OnMouseDown"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__HandleMessage.c",
+          "line": 131,
+          "symbol": "Editors::cEditor::HandleMessage"
+        },
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/track-g-editor-ui-input.json",
+          "line": 180,
+          "symbol": "editor static input flow"
+        }
+      ],
+      "confidence": "high",
+      "notes": "This is the editor gameplay-facing wrapper around renderer/shadow queries. The gameplay/editor operation is selection and edit commit; the original Graphics calls must not be mistaken for RenderWare draw implementation."
+    },
+    {
+      "classification": "required_for_semantics",
+      "boundary": "editor-creature-animation-and-shadow",
+      "gameplay_caller": "Editors::cEditor::AddCreature, cEditor::SetActiveMode, cEditorAnimWorld setters, and EditorCreatureController::Update",
+      "original_callee": "Anim::IAnimManager::Get, Graphics::IShadowWorld::Get, AnimatedCreature/IAnimWorld vtables, and cEditorAnimWorld controller/creature map",
+      "parameters": [
+        "creature ID and EditorModel/resource key",
+        "target position and angle",
+        "animation ID and event parameters",
+        "movement and rotation timing"
+      ],
+      "outputs": [
+        "EditorCreatureController current/target transform",
+        "AnimatedCreature animation/pose state",
+        "shadow-layer activation state",
+        "editor animation event dispatch"
+      ],
+      "state_changed": [
+        "cEditorAnimWorld creature-ID map",
+        "EditorCreatureController current/real target position and angle",
+        "AnimatedCreature animation/model state",
+        "shadow-layer active bits and editor pose state"
+      ],
+      "structures": [
+        "Editors::cEditorAnimWorld",
+        "Editors::EditorCreatureController",
+        "Anim::AnimatedCreature",
+        "Anim::IAnimWorld",
+        "Editors::EditorModel",
+        "Graphics::IShadowWorld",
+        "AnimationMessage"
+      ],
+      "lifetime": "Editor creature controllers and AnimatedCreature references live in the editor animation world; target/current transforms persist across editor updates, while animation events are dispatched as mode changes.",
+      "failure_semantics": "Missing controller or creature makes the corresponding animation/target operation a no-op; absent animation manager branches are guarded; numeric animation event IDs and exact pose side effects remain unresolved.",
+      "timing_order": "AddCreature/SetActiveMode -> controller target position/angle -> shadow-layer activation and AnimatedCreature call -> animation dispatch/update -> editor model/history or message event.",
+      "openspore_concept": "IAnimationWorld + IAnimatedCreatureView + IEditorScene",
+      "modern_abstraction": "Preserve creature identity, current/target transform, angle, animation IDs, event ordering, and model association; replace the 32-slot animation ABI and graphics objects with injected animation/pose services.",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__AddCreature.c",
+          "line": 145,
+          "symbol": "Editors::cEditor::AddCreature"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__AddCreature.c",
+          "line": 230,
+          "symbol": "Editors::cEditor::AddCreature"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__SetActiveMode.c",
+          "line": 101,
+          "symbol": "Editors::cEditor::SetActiveMode"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__EditorCreatureController__Update.c",
+          "line": 290,
+          "symbol": "Editors::EditorCreatureController::Update"
+        },
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/track-g-editor-ui-input.json",
+          "line": 319,
+          "symbol": "editor-to-animation-world bridge"
+        },
+        {
+          "file": "knowledgegraph/research/types/15-reconstruction-relevance.json",
+          "line": 327,
+          "symbol": "AnimatedCreature relevance"
+        }
+      ],
+      "confidence": "high",
+      "notes": "The function names can resemble renderer implementation, but cEditorAnimWorld and EditorCreatureController own editor/gameplay pose semantics. AnimatedCreature and its model are presentation handles below this boundary."
+    },
+    {
+      "classification": "replaceable_infrastructure",
+      "boundary": "unnamed-graphics-service-accessor",
+      "gameplay_caller": "cCellGFX::Initialize/StartDisplay, cCellModeStrategy::OnEnter/OnExit/Dispose, cEditor::Initialize/OnEnter/OnExit/HandleMessage",
+      "original_callee": "FUN_0067ddd0 at 0x0067ddd0, an unnamed six-byte app-level service accessor",
+      "parameters": [
+        "world/layer identifiers and engine virtual method selectors",
+        "mode/editor-specific service state"
+      ],
+      "outputs": [
+        "engine service or world/layer manager pointer",
+        "caller-owned world/layer/effect handles"
+      ],
+      "state_changed": [
+        "service-owned world/layer state",
+        "cCellGFX or cEditor presentation handle tables"
+      ],
+      "structures": [
+        "unknown App/Graphics service object",
+        "Simulator::Cell::cCellGFX",
+        "Editors::cEditor",
+        "ILayer",
+        "IModelWorld",
+        "IEffectsWorld"
+      ],
+      "lifetime": "The accessor returns a global service region; the returned interface or manager is retained only as long as the caller-owned presentation objects need it.",
+      "failure_semantics": "The decompiled callers dereference the returned service through interface slots; null and failed-service behavior is not characterized because the six-byte accessor has no persisted body or SDK name.",
+      "timing_order": "The accessor is called around named Graphics::Get calls and world/layer creation or toggling in Initialize, OnEnter, OnExit, Dispose, and editor message paths.",
+      "openspore_concept": "IGraphicsServiceRegistry",
+      "modern_abstraction": "Replace the global unnamed accessor with injected typed presentation services; preserve only world/layer/effect identity and lifecycle operations, not the original global slot or interface layout.",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/functions.tsv",
+          "line": 7552,
+          "symbol": "FUN_0067ddd0"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 7551,
+          "symbol": "FUN_0067ddd0"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__Initialize.c",
+          "line": 54,
+          "symbol": "Simulator::Cell::cCellGFX::Initialize"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__Initialize.c",
+          "line": 389,
+          "symbol": "Editors::cEditor::Initialize"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__HandleMessage.c",
+          "line": 157,
+          "symbol": "Editors::cEditor::HandleMessage"
+        }
+      ],
+      "confidence": "medium",
+      "notes": "This is explicitly not a RenderWare claim. Triage classifies the function as an app-level engine implementation/accessor, and the committed evidence does not establish its exact interface identity."
+    }
+  ],
+  "unresolved": [
+    {
+      "item": "Simulator::cVehicle::Load at 0x00ca6630 and Simulator::cCity::SpawnVehicle at 0x00bdde70",
+      "reason": "Committed decomp-gap evidence says cVehicle::Load creates/replaces effects and has three callers, but no named Graphics::Get or RenderWare callee is persisted; do not promote a vehicle renderer boundary until the body and callee identity are recovered.",
+      "evidence": [
+        {
+          "file": "knowledgegraph/research/decomp-gap/sim-core-04.json",
+          "line": 33496,
+          "symbol": "Simulator::cVehicle::Load targeted static review"
+        },
+        {
+          "file": "knowledgegraph/research/decomp-gap/sim-core-04.json",
+          "line": 33545,
+          "symbol": "Simulator::cVehicle::Load next action"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 26128,
+          "symbol": "Simulator::cCity::SpawnVehicle"
+        }
+      ],
+      "confidence": "low"
+    },
+    {
+      "item": "Simulator::cGameNounManager::UpdateModels at 0x00b227c0",
+      "reason": "The function is triage-confirmed gameplay logic and is called from the simulator flow, but its body is unavailable and no direct named graphics-wrapper edge is committed. Treat model identity/update as a candidate until the body is extracted.",
+      "evidence": [
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 23637,
+          "symbol": "Simulator::cGameNounManager::UpdateModels"
+        },
+        {
+          "file": "knowledgegraph/research/decomp-gap/sim-core-07.json",
+          "line": 751,
+          "symbol": "Simulator::cGameNounManager::UpdateModels caller topology"
+        }
+      ],
+      "confidence": "low"
+    },
+    {
+      "item": "FUN_0067ddd0 and its interface slots",
+      "reason": "The function is a six-byte app-level engine accessor used by Cell and editor presentation paths, but it has no SDK name, persisted body, or ownership/type proof. Characterize before exposing any modern interface equivalent.",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/functions.tsv",
+          "line": 7552,
+          "symbol": "FUN_0067ddd0"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 7551,
+          "symbol": "FUN_0067ddd0"
+        }
+      ],
+      "confidence": "low"
+    },
+    {
+      "item": "Creature animation/effect bodies and exact presentation call chain",
+      "reason": "The creature effect functions have committed xref/decomp-gap topology but no persisted direct body. The report retains only the gameplay effect-pool semantic and the unnamed service edge, not a RenderWare or IEffectsWorld identity.",
+      "evidence": [
+        {
+          "file": "knowledgegraph/research/decomp-gap/sim-core-02.json",
+          "line": 47817,
+          "symbol": "FUN_00c14f70 identity"
+        },
+        {
+          "file": "knowledgegraph/research/decomp-gap/sim-core-02.json",
+          "line": 54963,
+          "symbol": "FUN_00c20230 identity"
+        }
+      ],
+      "confidence": "low"
+    },
+    {
+      "item": "Original runtime ordering and pixel/pose behavior",
+      "reason": "No positive original Cell-stage, editor, creature, or vehicle runtime trace is present. All crossings in this report are static; RenderWare draw state, D3D9 presentation, and current OpenSpore approximations are not promoted to runtime-validated equivalence.",
+      "evidence": [
+        {
+          "file": "docs/analysis/dossiers/cell-movement.md",
+          "line": 99,
+          "symbol": "cell-movement runtime observations"
+        },
+        {
+          "file": "knowledgegraph/research/types/15-reconstruction-relevance.json",
+          "line": 386,
+          "symbol": "current renderer pose gap"
+        }
+      ],
+      "confidence": "high"
+    }
+  ]
+}

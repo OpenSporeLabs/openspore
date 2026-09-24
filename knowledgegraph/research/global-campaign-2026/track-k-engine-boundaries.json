@@ -1,0 +1,857 @@
+{
+  "$schema": "openspore-global-campaign-engine-boundaries-1",
+  "title": "Track K engine-boundary analysis",
+  "as_of": "2026-09-24",
+  "scope": {
+    "workspace": "/home/juanr/Proyectos/OpenSpore",
+    "purpose": "Identify original engine-facing functions that gameplay depends on, classify the boundary, and state the smallest modern interface OpenSpore needs without implementing it.",
+    "target": "SporeApp.exe 3.1.0.22, GOG x86:LE:32 PE, image base 0x00400000",
+    "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+    "sdk": {
+      "name": "Spore-ModAPI march2017 Ghidra XML",
+      "revision": "cbf9206b9a823f0911cd9be0217104a49d72380b",
+      "sha256": "5d894677c1835082da0392e8b794f3c93a0251733898c3c5b81cf7945f458f09",
+      "role": "reference-only SDK names, signatures, structs, and enum semantics; no code or assets copied"
+    },
+    "analysis_snapshots": {
+      "xrefs": "2540f2ca7cd3",
+      "triage": "f0e310e0c83f",
+      "triage_v6": "f0e310e0c83f960ed38d490ff6d2a78d53925969206b4c4db7a012ddbf8b54b",
+      "frozen_function_universe": 58757,
+      "live_ghidra_function_count": 59245,
+      "note": "Live Ghidra includes thunk/external entries absent from the frozen pinned universe. Address-level conclusions use both, and SDK labels landing inside bodies are treated as anchors, not guaranteed entries."
+    },
+    "method": [
+      "CodeGraph exploration of current OpenSpore source and call paths before source inspection",
+      "Read committed SDK-boundary, reconstruction-readiness, RenderWare, Cell Stage, and replacement documents",
+      "Read Ghidra decompilation exports for named engine, Cell, resource, property, and RenderWare functions",
+      "Use live read-only Ghidra function lookup and xrefs for signatures, body ranges, caller totals, and vtable data",
+      "Cross-check committed SDK function anchors, probe definitions, asset-tool oracles, and current OpenSpore compatibility seams",
+      "Do not infer original runtime semantics from OpenSpore tests or implementation alone"
+    ],
+    "excluded": [
+      "implementation",
+      "knowledgegraph database writes",
+      "Ghidra state writes or re-analysis",
+      "game launch or runtime trace",
+      "commits",
+      "modification of files other than this report"
+    ]
+  },
+  "classification_vocabulary": {
+    "required_for_semantics": "The original function or boundary owns state, identity, ordering, event semantics, resource selection, or observable behavior that OpenSpore gameplay must preserve. The interface shape is part of the reconstruction contract.",
+    "runtime_compatibility_only": "The function is needed to reproduce host/application behavior or an event route, but its original implementation is not a gameplay semantic source of truth.",
+    "replaceable_infrastructure": "The original implementation is an engine service or storage/device mechanism that may be replaced by a modern equivalent while retaining its observable contract.",
+    "renderware_third_party": "The original function is RenderWare or another third-party/internal renderer implementation detail; preserve only the narrow semantic state or draw contract that gameplay can observe.",
+    "os_runtime": "Win32, CRT, input/audio device, timing, memory, or platform plumbing. Preserve the host contract, not the original platform call sequence.",
+    "thin_wrapper": "A getter, forwarding method, or small dispatch wrapper around a real service. It is useful for mapping ownership but must not be copied as a global singleton API into modern code.",
+    "unknown": "The body, layout, ownership, or meaning is not sufficiently characterized. The candidate interface is a placeholder for characterization, not an implementation prescription."
+  },
+  "evidence_policy": {
+    "sdk_name": "Name-level provenance only; it establishes an SDK boundary anchor, not the truth of every decompiler type or field cast.",
+    "ghidra": "Static body, signature, vtable, and xref evidence. Decompilation is evidence-not-truth.",
+    "xrefs": "Direct-call, data, and vtable-reference counts are structural evidence of dependence, not proof of runtime execution.",
+    "assets_and_tools": "Real DBPF/GMDL/RW4/CellResource bytes and independent decoders establish content contracts and observed records; they do not establish original runtime field meanings.",
+    "runtime_status": "The committed evidence contains positive startup/menu evidence and negative or absent Cell-mode reachability. No claim in this report is promoted to runtime-observed Cell semantics."
+  },
+  "summary": {
+    "headline": "Gameplay crosses a small set of semantic seams—mode lifecycle, shared game services, Cell state, content identity, and presentation—and a larger set of replaceable engine/runtime seams. The original global singleton and RenderWare/D3D internals should not become OpenSpore gameplay interfaces.",
+    "semantic_priority": [
+      "Freeze mode and game-service contracts before reconstructing more gameplay functions.",
+      "Treat Cell state, player identity, world references, input/camera rays, and resource identity as semantic contracts.",
+      "Keep DBPF, GMDL, RW4, texture, Vulkan, SDL, and file/stream implementations behind narrow adapters.",
+      "Characterize the unnamed high-fan-in Simulator roots before assigning additional game semantics to them."
+    ],
+    "classification_counts_by_boundary": {
+      "required_for_semantics": 7,
+      "runtime_compatibility_only": 1,
+      "replaceable_infrastructure": 0,
+      "renderware_third_party": 1,
+      "os_runtime": 1,
+      "thin_wrapper": 0,
+      "unknown": 1
+    },
+    "important_negative": "The current replacement status is replaced-approx, not live-runtime verified; 64/64 against the decompilation reference does not close the original ABI boundary."
+  },
+  "boundaries": [
+    {
+      "id": "B-K-01",
+      "name": "Application bootstrap and game-mode lifecycle",
+      "classification": "required_for_semantics",
+      "priority": "P0",
+      "why_gameplay_depends": "A gameplay stage is entered, ticked, exited, and torn down through a virtual application/mode contract. The Cell stage's Initialize, OnEnter, and Update are explicitly part of the mode strategy rather than incidental engine calls.",
+      "original_functions": [
+        {
+          "va": "0x0067dcc0",
+          "name": "App::IAppSystem::Get",
+          "classification": "thin_wrapper",
+          "role": "global app-service accessor; returns DAT_015fd890",
+          "direct_evidence": [
+            ".spore-analysis/ghidra-exports/decompiled_sdk/App__IAppSystem__Get.c:1-10",
+            "Ghidra function lookup: signature IAppSystem * App::IAppSystem::Get(void), body 0x0067dcc0-0x0067dcc5",
+            "Ghidra xref total 1318 in the live program; frozen dependency reports count 695 callers"
+          ]
+        },
+        {
+          "va": "0x007e93d0",
+          "name": "App::cAppSystem::InitPlugins",
+          "classification": "runtime_compatibility_only",
+          "role": "application/plugin initialization; vtable data target 0x01413acc",
+          "direct_evidence": [
+            ".spore-analysis/ghidra-exports/sdk_functions.tsv:544-556",
+            "Ghidra live xref: one vtable data reference at 0x01413aec",
+            ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__Initialize.c:56-79 shows IAppSystem virtual Shutdown/PreShutdown calls during Cell initialization"
+          ]
+        },
+        {
+          "va": "0x007d8d40",
+          "name": "App::cGameModeManager::SetActiveModeAt",
+          "classification": "required_for_semantics",
+          "role": "mode switch boundary",
+          "direct_evidence": [
+            ".spore-analysis/ghidra-exports/sdk_functions.tsv:544-556",
+            ".spore-analysis/ghidra-exports/decompiled_sdk/App__cGameModeManager__SetActiveModeAt.c:8-33",
+            "docs/analysis/campaigns/cell-stage-campaign.md:475-485 maps mode lifecycle and stage entry to this function"
+          ]
+        },
+        {
+          "va": "0x00e81cf0 / 0x00e552f0 / 0x00e80980 / 0x00e7fc00 / 0x00e81f30",
+          "name": "App::cCellModeStrategy::Initialize / OnEnter / Update / OnExit / Dispose",
+          "classification": "required_for_semantics",
+          "role": "Cell stage lifecycle slots in the 27-slot vtable at 0x01485550",
+          "direct_evidence": [
+            ".spore-analysis/ghidra-exports/sdk_functions.tsv:1407-1440",
+            ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__Initialize.c:32-51",
+            ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnEnter.c:19-46",
+            ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__Update.c:8-12",
+            "Ghidra xrefs for Initialize/OnEnter/Update are vtable data references at 0x01485570/0x01485594, consistent with virtual dispatch",
+            "current OpenSpore interface: src/apps/IGameMode.hpp:1-52 and src/apps/CellModeStrategy.cpp:7-92"
+          ]
+        }
+      ],
+      "minimal_modern_interface": {
+        "name": "IAppHost + IGameModeRegistry",
+        "operations": [
+          "initialize(ApplicationConfig) and shutdown()",
+          "setTimeScale(float)",
+          "registerMode(unique_id, IGameMode*)",
+          "activateMode(unique_id) with old OnExit followed by new OnEnter",
+          "tick(frame_delta) for the active mode",
+          "dispose() after OnExit"
+        ],
+        "design_rule": "Inject the host and mode registry into gameplay; do not reproduce the global DAT_015fd890 singleton or the original 27-slot ABI. Keep input callbacks on the mode interface, but model the modern event value as key, modifiers, mouse position, and wheel delta."
+      },
+      "openspore_mapping": {
+        "existing": ["src/apps/IGameMode.hpp", "src/apps/CellModeStrategy.cpp", "src/apps/cell_stage.cpp:1332-1364"],
+        "gap": "The current host is a Cell executable, not a replacement for AppSystem/plugin bootstrap or the complete mode-manager service registry."
+      }
+    },
+    {
+      "id": "B-K-02",
+      "name": "Game services, input, camera, behavior, and frame clock",
+      "classification": "required_for_semantics",
+      "priority": "P0",
+      "why_gameplay_depends": "Gameplay functions repeatedly obtain shared managers through global accessors. Input, camera, behavior, persistence, and time are not optional plumbing if they determine state transitions or movement targets.",
+      "original_functions": [
+        {
+          "va": "0x00b3d350",
+          "name": "Simulator::cGameInputManager::Get",
+          "classification": "thin_wrapper",
+          "role": "returns DAT_0167eaf8",
+          "direct_evidence": [
+            ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cGameInputManager__Get.c:1-12",
+            "Ghidra xref total 1129 in the live program; reconstruction report counts 80 gameplay callers",
+            "knowledgegraph/research/track-i-dependency-graph.json:439-460"
+          ]
+        },
+        {
+          "va": "0x00b3d340",
+          "name": "Simulator::cGameViewManager::Get",
+          "classification": "thin_wrapper",
+          "role": "returns DAT_0167eaf4",
+          "direct_evidence": [
+            ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cGameViewManager__Get.c:1-12",
+            "Ghidra xref total 26; reconstruction report identifies it as a named service root"
+          ]
+        },
+        {
+          "va": "0x00b3d360 / 0x00b3d420 / 0x00b3d440 / 0x00b3d480",
+          "name": "cGameBehaviorManager::Get / cGameModeManager::Get / cGamePersistenceManager::Get / cGameTimeManager::Get",
+          "classification": "thin_wrapper",
+          "role": "named global service accessors; the manager getter itself is not the semantic implementation",
+          "direct_evidence": [
+            ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cGameModeManager__Get.c:1-12",
+            ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cGameTimeManager__Get.c:1-12",
+            "Ghidra xref totals: behavior 49, mode 59, persistence 52, time 31",
+            "knowledgegraph/research/track-i-dependency-graph.json:439-460 and :154-164 of docs/analysis/reconstruction-readiness.md"
+          ]
+        },
+        {
+          "va": "0x00b63980",
+          "name": "Simulator::TimeAtStartOfFrame",
+          "classification": "required_for_semantics",
+          "role": "frame-time heartbeat used to order and scale per-frame simulation",
+          "direct_evidence": [
+            ".spore-analysis/ghidra-exports/sdk_functions.tsv:24359 in triage-v6 projection",
+            "Ghidra xref total is one data reference at 0x01464450",
+            "tools/observatory/probes/menu_transition.json:20-21 uses it as a frame-rate control",
+            "docs/analysis/reconstruction-readiness.md:57-64 treats frame and service state as an interface freeze prerequisite"
+          ]
+        }
+      ],
+      "minimal_modern_interface": {
+        "name": "IGameServices",
+        "operations": [
+          "input() returns normalized key/mouse/wheel state with event ordering",
+          "camera() returns viewer identity, projection/view state, and a view-ray provider",
+          "behavior() returns AI/behavior callbacks and event delivery",
+          "mode() returns the active mode identity and mode-transition operations",
+          "persistence() serializes gameplay state through the property/data boundary",
+          "clock().beginFrame() returns monotonic time, delta, and frame identity"
+        ],
+        "design_rule": "The original Get functions are accessors, not an API to reproduce. Keep service interfaces typed and injected; only the observable input, camera, behavior, persistence, and timing operations cross the boundary."
+      },
+      "openspore_mapping": {
+        "existing": ["src/apps/CellInput.cpp:5-95", "src/sim/Sim.hpp:59-66", "src/sim/Sim.cpp:103-260", "src/apps/IGameMode.hpp:19-51"],
+        "gap": "OpenSpore has input, camera, and fixed simulation time, but not the original behavior, persistence, or service-root contracts."
+      }
+    },
+    {
+      "id": "B-K-03",
+      "name": "Cell world state, entity pool, movement, and interaction",
+      "classification": "required_for_semantics",
+      "priority": "P0",
+      "why_gameplay_depends": "This is the gameplay-facing state spine. Player identity, lock/moving state, world references, cell creation, camera-ray movement, advect, damage, and interaction all cross this boundary.",
+      "original_functions": [
+        {
+          "va": "0x00e80ba0",
+          "name": "Simulator::Cell::cCellGame::Initialize",
+          "classification": "required_for_semantics",
+          "role": "initializes sCellGame flags, time scale, world references, 4096-cell pool, serializable state, and background bounds",
+          "direct_evidence": [
+            ".spore-analysis/ghidra-exports/sdk_functions.tsv:1437",
+            ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGame__Initialize.c:8-155",
+            ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGame__Initialize.c:45-58 shows pool allocation thunk_FUN_00bbb400(0x1000,0x1000)",
+            "Ghidra function signature: void Simulator::Cell::cCellGame::Initialize(void), body 0x00e80ba0-0x00e81116",
+            "current source reconstruction: src/sim/CellGame.cpp:22-80"
+          ]
+        },
+        {
+          "va": "0x00e5b790",
+          "name": "Simulator::Cell::MovePlayerToMousePosition",
+          "classification": "required_for_semantics",
+          "role": "camera-ray to movement-plane target and face-travel orientation",
+          "direct_evidence": [
+            ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__MovePlayerToMousePosition.c:1-42",
+            "tools/re/data/decompiled/MovePlayerToMousePosition.c:11-40",
+            "docs/REPLACEMENT-ABI.md:13-82",
+            "Ghidra signature: void Simulator::Cell::MovePlayerToMousePosition(float deltaTime), body 0x00e5b790-0x00e5ba01",
+            "Ghidra xref total 1, from the per-frame cell body FUN_00e806b0 at 0x00e8083b"
+          ]
+        },
+        {
+          "va": "0x00e806b0",
+          "name": "FUN_00e806b0 / cell_update_body",
+          "classification": "unknown",
+          "role": "per-frame Cell state gate, movement, and interaction dispatch; body is not SDK-named",
+          "direct_evidence": [
+            "tools/re/data/decompiled/FUN_00e806b0.c:1-51",
+            "tools/observatory/probes/cell_movement.json:10-14 identifies it as the real per-frame update body",
+            "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl:33812 classifies it UNKNOWN with no SDK name"
+          ]
+        },
+        {
+          "va": "0x00b721d0 / 0x0069b600 / 0x00e4ce40 / 0x007c4900",
+          "name": "player pool lookup / orientation helper / camera-mode getter / camera-light-origin helper",
+          "classification": "unknown",
+          "role": "helper spine called by movement; meanings are structural or partially named only",
+          "direct_evidence": [
+            "tools/observatory/probes/cell_movement.json:36-58",
+            "tools/re/data/decompiled/MovePlayerToMousePosition.c:14-27",
+            "Ghidra function and xref lookups were used for the named helpers; no runtime Cell trace is available"
+          ]
+        }
+      ],
+      "minimal_modern_interface": {
+        "name": "ICellGameState + IEntityPool + ICameraRayProvider + IPlayerMovement",
+        "operations": [
+          "resetStage(config) and disposeStage()",
+          "getPlayerEntity() or getPlayerIndex() from a stable identity contract",
+          "createCell(resource_key, position, scale, orientation) returns EntityHandle",
+          "queryNear(position, radius) returns entity handles",
+          "getMovementPlane() and getCurrentWorld() for per-world state",
+          "updateMovement(delta, cameraRay, lockState) writes target, orientation, and moving state",
+          "applyInteraction(delta) returns ordered gameplay events"
+        ],
+        "design_rule": "Expose handles and typed gameplay state, not the original sCellGame offsets, DAT globals, or FUN helper names. Keep the real pool-index-to-entity relationship explicit; current POD replacement views are aliasing evidence, not a class-layout specification."
+      },
+      "openspore_mapping": {
+        "existing": ["src/sim/CellGame.cpp", "src/sim/CellPool.hpp", "src/sim/CellQuery.hpp", "src/sim/Advect.hpp", "src/sim/Combat.hpp", "src/replace/CellGameView.hpp:20-62"],
+        "gap": "The current pieces are not wired into a complete original-equivalent per-frame state machine. The current replacement status is replaced-approx and requires live Cell-mode evidence for promotion."
+      }
+    },
+    {
+      "id": "B-K-04",
+      "name": "Cell resource identity and content loading",
+      "classification": "required_for_semantics",
+      "priority": "P0",
+      "why_gameplay_depends": "Gameplay selects cells, worlds, populate records, effects, models, and textures by identity. The bytes and key selection are part of observable content behavior even though the original manager implementation is replaceable.",
+      "original_functions": [
+        {
+          "va": "0x008de530",
+          "name": "Resource::cResourceManager::Initialize",
+          "classification": "replaceable_infrastructure",
+          "role": "builds a hash/index structure for resource names and databases",
+          "direct_evidence": [
+            ".spore-analysis/ghidra-exports/decompiled_sdk/Resource__cResourceManager__Initialize.c:8-47",
+            ".spore-analysis/ghidra-exports/sdk_functions.tsv:841-845",
+            "Ghidra signature: bool Resource::cResourceManager::Initialize(cResourceManager *this), body 0x008de530-0x008de5d8",
+            "Ghidra xref total 1, from Resource::cResourceManager initialization path"
+          ]
+        },
+        {
+          "va": "0x008dfc10 / 0x008e0ee0 / 0x008e1750",
+          "name": "cResourceManager::GetPrivateResource / GetRecordKeyList2 / SetKeyName",
+          "classification": "required_for_semantics",
+          "role": "resource lookup, record enumeration, and key-name mapping",
+          "direct_evidence": [
+            ".spore-analysis/ghidra-exports/decompiled_sdk/Resource__cResourceManager__GetPrivateResource.c:8-40",
+            ".spore-analysis/ghidra-exports/decompiled_sdk/Resource__cResourceManager__GetRecordKeyList2.c:8-31",
+            ".spore-analysis/ghidra-exports/decompiled_sdk/Resource__cResourceManager__SetKeyName.c:8-129",
+            ".spore-analysis/ghidra-exports/sdk_functions.tsv:841-845 and the wider Resource namespace",
+            "Ghidra xrefs: GetPrivateResource 1; GetRecordKeyList2 1; SetKeyName 1 in the live program"
+          ]
+        },
+        {
+          "va": "0x008d84f0 / 0x008dbcc0",
+          "name": "Resource::DatabasePackedFile::Lock / PFIndexModifiable::Read",
+          "classification": "replaceable_infrastructure",
+          "role": "DBPF package locking and index reads; SDK labels are mid-body anchors in live Ghidra",
+          "direct_evidence": [
+            ".spore-analysis/ghidra-exports/sdk_functions.tsv:776-820",
+            "tools/observatory/probes/menu_transition.json:14-21",
+            "Ghidra function lookup shows the live function entries at 0x008d84d0 and 0x008dbc20, demonstrating SDK-label offset drift",
+            "Ghidra xref totals: Lock 10, PFIndexModifiable::Read 3"
+          ]
+        },
+        {
+          "va": "0x009317b0 / 0x0093c0c0",
+          "name": "IO::FileStream::SetPathCString / IO::MemoryStream::Write",
+          "classification": "os_runtime",
+          "role": "file and memory stream plumbing beneath resource and property data",
+          "direct_evidence": [
+            ".spore-analysis/ghidra-exports/decompiled_sdk/IO__FileStream__SetPathCString.c:6-13",
+            ".spore-analysis/ghidra-exports/decompiled_sdk/IO__MemoryStream__Write.c:6-37",
+            ".spore-analysis/ghidra-exports/sdk_functions.tsv:663-690 and :759-820",
+            "Ghidra xref total for FileStream::SetPathCString is 13"
+          ]
+        }
+      ],
+      "minimal_modern_interface": {
+        "name": "IContentStore + IRecordCodec",
+        "operations": [
+          "mount(package_source, priority) and unmount(package_source)",
+          "read(RecordKey{type, group, instance}, ByteSpan) with explicit errors",
+          "enumerate(RecordQuery, cursor) for type/group/name filters",
+          "read/write a named record through a versioned IRecordCodec",
+          "provide an IStream sink/source for streaming formats"
+        ],
+        "design_rule": "Keep the key triple and bytes at the boundary. Hide DBPF indexes, QFS, package priority, caches, and file paths. The existing B1 interface is the correct minimum: fetch by type/group/instance; extend it only for multi-package enumeration and priority when gameplay semantics require it."
+      },
+      "openspore_mapping": {
+        "existing": ["src/compat/ResourceProvider.hpp:24-59", "src/assets/Dbpf.cpp", "tools/spore/dbpf/dbpf.py", "tools/spore/asset_resolver.py:65-80"],
+        "gap": "B1 currently serves one package image and reparses its index. The original multi-package search, cache/registry behavior, directory semantics, and load order remain unresolved."
+      }
+    },
+    {
+      "id": "B-K-05",
+      "name": "Cell presentation world, layers, models, effects, and UI handles",
+      "classification": "required_for_semantics",
+      "priority": "P0",
+      "why_gameplay_depends": "The Cell mode's visible world composition is data-driven: it creates named worlds and layers, preloads models/populate/effects, and starts lighting and display state. The exact RenderWare implementation is not the gameplay contract, but the handles and resource associations are observable.",
+      "original_functions": [
+        {
+          "va": "0x00e5dba0",
+          "name": "Simulator::Cell::cCellGFX::Initialize",
+          "classification": "required_for_semantics",
+          "role": "creates the Cell GFX world/layer handle table",
+          "direct_evidence": [
+            ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__Initialize.c:8-277",
+            "lines 33-50 call the effects manager and Graphics::IRenderer/ILightingManager/IShadowWorld services; lines 54-67 create CellSkyboxEffectsWorld; lines 82-109 create CellBackgroundEffectsWorld; lines 144-159 create CellBeachEffectsWorld; lines 188-232 create CellEffectsWorld and CellGame-Main; lines 235-262 create CellForegroundEffectsWorld",
+            "Ghidra signature and body: void Simulator::Cell::cCellGFX::Initialize(void), 0x00e5dba0-0x00e5e2b0",
+            "Ghidra xref total 2, both from Cell lifecycle helpers"
+          ]
+        },
+        {
+          "va": "0x00e666f0 / 0x00e663b0 / 0x00e665c0 / 0x00e64980",
+          "name": "cCellGFX::PreloadResources / PreloadCellResource / PreloadPopulateResource / PreloadCreature",
+          "classification": "required_for_semantics",
+          "role": "binds stage resource identities to model/effect/populate state before display",
+          "direct_evidence": [
+            ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__PreloadResources.c:8-141",
+            ".spore-analysis/ghidra-exports/sdk_functions.tsv:1427-1430",
+            "Ghidra xref total 1 for PreloadResources, from Cell lifecycle helper 0x00e819b0",
+            "docs/analysis/campaigns/cell-stage-campaign.md:455-465 maps the preload chain and real world IDs"
+          ]
+        },
+        {
+          "va": "0x00e55120",
+          "name": "Simulator::Cell::cCellGFX::StartDisplay",
+          "classification": "required_for_semantics",
+          "role": "activates lighting/world layers and initializes audio-related presentation hooks",
+          "direct_evidence": [
+            ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__StartDisplay.c:8-47",
+            "lines 16-23 call ILightingManager; lines 24-31 enable/disable world handles; lines 32-35 reset shadow/effects state; lines 39-44 call named audio hooks",
+            "Ghidra xref total 2, including App::cCellModeStrategy::OnEnter at 0x00e5531c"
+          ]
+        },
+        {
+          "va": "0x0067dd10 / 0x0067dd20 / 0x0067dd30 / 0x0067dd50 / 0x0067dd80",
+          "name": "Graphics::IRenderer / ITextureManager / IMaterialManager / ILightingManager / IShadowWorld ::Get",
+          "classification": "thin_wrapper",
+          "role": "service accessors for rendering and lighting",
+          "direct_evidence": [
+            ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__IRenderer__Get.c:1-10",
+            ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__ILightingManager__Get.c:1-12",
+            ".spore-analysis/ghidra-exports/sdk_functions.tsv:307-314",
+            "Ghidra xref totals: IRenderer 416, ILightingManager 240, ITextureManager 31, IMaterialManager 197"
+          ]
+        }
+      ],
+      "minimal_modern_interface": {
+        "name": "ICellPresentation",
+        "operations": [
+          "createWorld(WorldID, layer_kind) and destroyWorld(handle)",
+          "preloadModel(CellRecordKey, ModelHandle)",
+          "preloadEffect/EffectMap(EffectRecordKey, EffectHandle)",
+          "bindPopulate(PopulateRecordKey, WorldHandle)",
+          "startDisplay() and stopDisplay()",
+          "setLayerVisibility(WorldID, bool)",
+          "drawCell(CellHandle, transform, material_handle)"
+        ],
+        "design_rule": "Preserve the Cell world/layer/resource association and ordering, not Graphics global Get functions or D3D objects. Use the existing B3 IRenderer/IMeshSource seam for host meshes and textures; add only world/effect semantics required by gameplay."
+      },
+      "openspore_mapping": {
+        "existing": ["src/apps/CellGfx.cpp:5-44", "src/renderer/Renderer.hpp:51-87", "src/compat/MeshSource.hpp:62-81", "src/assets/Texture.cpp"],
+        "gap": "The current CellGfx records world IDs and a main-model binding, but it does not reproduce the original world/layer/effect lifecycle or a live material/frame oracle."
+      }
+    },
+    {
+      "id": "B-K-06",
+      "name": "RenderWare draw state and graphics device implementation",
+      "classification": "renderware_third_party",
+      "priority": "P1",
+      "why_gameplay_depends": "Gameplay can observe which mesh/material/texture state is submitted, but should not depend on RenderWare object layouts, D3D vtables, or stream-cache internals. Preserve the semantic state sequence and replace the implementation.",
+      "original_functions": [
+        {
+          "va": "0x011f9710 / 0x011f9740 / 0x011f96a0 / 0x011f96e0",
+          "name": "RenderWare::Mesh::SetIndexBuffer / Render / SetVertexBuffer / SetIndicesCount",
+          "classification": "renderware_third_party",
+          "role": "RW mesh stream/index state and indexed draw",
+          "direct_evidence": [
+            ".spore-analysis/ghidra-exports/decompiled_sdk/RenderWare__Mesh__SetIndexBuffer.c:6-113",
+            "lines 23-65 read active shader vertex declarations and rebind only changed streams; lines 67-82 explicitly unbind surplus streams; lines 84-108 bind indices and issue the state transition",
+            ".spore-analysis/ghidra-exports/sdk_functions.tsv:1660-1664",
+            "Ghidra signature for SetIndexBuffer: void RenderWare::Mesh::SetIndexBuffer(Mesh *this, IndexBuffer *pBuffer), body 0x011f9710-0x011f9914; Ghidra reports 6 xrefs"
+          ]
+        },
+        {
+          "va": "0x011ee700 / 0x011ee8c0 / 0x011f2bf0",
+          "name": "RenderWare::CompiledState::SetRaster / GetRaster / VertexDescriptionBase::LoadDeclaration",
+          "classification": "renderware_third_party",
+          "role": "RW material texture-slot bindings and vertex declaration",
+          "direct_evidence": [
+            ".spore-analysis/ghidra-exports/decompiled_sdk/RenderWare__CompiledState__SetRaster.c:6-119",
+            ".spore-analysis/ghidra-exports/decompiled_sdk/RenderWare__CompiledState__GetRaster.c:6-115",
+            ".spore-analysis/ghidra-exports/decompiled_sdk/RenderWare__VertexDescriptionBase__LoadDeclaration.c:6-12",
+            ".spore-analysis/ghidra-exports/sdk_functions.tsv:1641-1655",
+            "Ghidra xref totals: SetRaster 1, GetRaster not separately inflated, VertexDescriptionBase::LoadDeclaration 1"
+          ]
+        },
+        {
+          "va": "0x011f7d30 / 0x011f86b0",
+          "name": "Graphics::RenderUtils::SetPresentationParameters / CreateDevice",
+          "classification": "replaceable_infrastructure",
+          "role": "D3D9 device and presentation setup",
+          "direct_evidence": [
+            ".spore-analysis/ghidra-exports/sdk_functions.tsv:1658-1659",
+            "docs/RENDERWARE-RESEARCH.md:113-139 documents the device path, RT/depth setup, state flag, and QPC stamp",
+            "Ghidra function lookup shows SDK labels at 0x011f7d00 and 0x011f8680 as the live bodies, so exact entry addresses are anchor-sensitive"
+          ]
+        }
+      ],
+      "minimal_modern_interface": {
+        "name": "IMeshDraw + IMaterialBindings + IGraphicsDevice",
+        "operations": [
+          "bindVertexStream(stream, vertexBuffer, offset, stride) and unbind surplus streams",
+          "bindIndexBuffer(indexBuffer) and setPrimitive(topology)",
+          "drawIndexed(indexCount)",
+          "setShader/MaterialState(shader_id, constants)",
+          "setTexture(slot, texture_handle) and clearTexture(slot)",
+          "init/resize device, create render targets, beginFrame, present"
+        ],
+        "design_rule": "Model the state transitions, not the RenderWare object graph. The modern renderer may use Vulkan or another backend and may use its own descriptor/pipeline machinery, but gameplay-facing material IDs, texture slots, mesh topology, and draw ordering remain the compatibility surface."
+      },
+      "openspore_mapping": {
+        "existing": ["src/renderer/Renderer.hpp:51-87", "src/renderer/VulkanRenderer.cpp", "docs/RENDERWARE-RESEARCH.md:372-419"],
+        "gap": "The current IRenderer has flat/textured mesh submission and a material approximation, but no full original shader/material/texture-slot contract or pixel oracle."
+      }
+    },
+    {
+      "id": "B-K-07",
+      "name": "Camera and input semantics at the stage boundary",
+      "classification": "required_for_semantics",
+      "priority": "P0",
+      "why_gameplay_depends": "Mouse position, keyboard actions, camera mode, camera origin, and view direction directly determine movement targets and navigation. The event shell can be replaced, but the normalized values and camera-ray contract cannot be discarded.",
+      "original_functions": [
+        {
+          "va": "0x007c6750 / 0x007c61a0",
+          "name": "App::cCameraManager::SetActiveCameraByID / SetViewer",
+          "classification": "required_for_semantics",
+          "role": "selects camera and viewer state used by Cell steering and view",
+          "direct_evidence": [
+            ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCameraManager__SetActiveCameraByID.c:9-172",
+            ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCameraManager__SetViewer.c:8-18",
+            "Ghidra xrefs are one vtable data reference for each manager method",
+            "docs/CELL-CONTRACT.md:45-66 records the current camera contract and marks fov as approximation"
+          ]
+        },
+        {
+          "va": "0x00e51010 / 0x00e818f0 / 0x00e6c860 / 0x00e5c0f0 / 0x00e7d660",
+          "name": "App::cCellModeStrategy::OnMouseMove / OnKeyDown / OnMouseDown / OnMouseUp / OnMouseWheel",
+          "classification": "required_for_semantics",
+          "role": "stage input callbacks; mouse move is primary for movement targeting and key/button/wheel paths are secondary or camera/UI actions",
+          "direct_evidence": [
+            ".spore-analysis/ghidra-exports/sdk_functions.tsv:1406-1436",
+            "tools/observatory/probes/cell_movement.json:17-29 byte-verifies the entry paths and records their intended roles",
+            "tools/re/data/decompiled/FUN_00e806b0.c:21-42 shows the per-frame movement and interaction gates",
+            "current OpenSpore input mapping: src/apps/CellInput.cpp:5-95 and src/apps/IGameMode.hpp:19-51"
+          ]
+        },
+        {
+          "va": "0x00e4ce40 / 0x007c4900",
+          "name": "FUN_00e4ce40 / FUN_007c4900",
+          "classification": "unknown",
+          "role": "camera mode and camera origin/view-ray helpers",
+          "direct_evidence": [
+            "tools/observatory/probes/cell_movement.json:41-58",
+            "tools/re/data/decompiled/MovePlayerToMousePosition.c:20-27",
+            "Ghidra xref and function lookups show these are the helper spine for the movement target; exact ownership is not runtime-observed"
+          ]
+        }
+      ],
+      "minimal_modern_interface": {
+        "name": "ICameraService + IInputRouter",
+        "operations": [
+          "setViewer(handle) and setActiveCamera(CameraID)",
+          "viewRay(pointerNdc) returns origin and normalized direction",
+          "cameraState() returns projection/view/position/zoom fields",
+          "pollInput() returns ordered key, mouse-position, button, and wheel events",
+          "route(event) to the active mode"
+        ],
+        "design_rule": "Use window coordinates or NDC consistently and retain the frame ordering of input polling, camera update, and gameplay update. Do not expose the original camera structs, lighting-world pointers, or global UI/camera registries."
+      },
+      "openspore_mapping": {
+        "existing": ["src/apps/CellInput.cpp", "src/sim/Sim.hpp:59-66", "src/sim/Sim.cpp:99-260", "src/apps/cell_stage.cpp:974-1135"],
+        "gap": "The current camera ray/plane model and input table are clean-room approximations; no successful original Cell trace has pinned camera state, pointer causality, or event ordering."
+      }
+    },
+    {
+      "id": "B-K-08",
+      "name": "UI message dispatch and editor shell",
+      "classification": "runtime_compatibility_only",
+      "priority": "P1",
+      "why_gameplay_depends": "Menu-to-stage transitions and UI events must be routed into the mode lifecycle, but the original UTFWin/editor object graph is not a gameplay semantic source. The event queue and stage switch are the boundary.",
+      "original_functions": [
+        {
+          "va": "0x00848210",
+          "name": "FUN_00848210 / message pump",
+          "classification": "os_runtime",
+          "role": "PeekMessageW/TranslateMessage/DispatchMessageW loop and frame dispatch",
+          "direct_evidence": [
+            "docs/RECON-3.1.0.22.md:25-44",
+            "tools/observatory/probes/menu_transition.json:12-13",
+            "No live menu-transition trace has been recorded; the probe is a proposed boundary observation, not observed gameplay behavior"
+          ]
+        },
+        {
+          "va": "0x00591fa0 / 0x00588570 / 0x0058be50",
+          "name": "Editors::cEditor::HandleMessage / OnMouseDown / Update",
+          "classification": "runtime_compatibility_only",
+          "role": "UI event dispatch and editor frame update",
+          "direct_evidence": [
+            "tools/observatory/probes/menu_transition.json:6-13",
+            "docs/BOUNDARIES.md:122-127 marks UTFWin message dispatch as an explicit non-boundary because the transition trace has not run",
+            "Ghidra xrefs for these SDK-labeled methods are vtable data references, consistent with editor dispatch"
+          ]
+        },
+        {
+          "va": "0x00960250",
+          "name": "UTFWin::Window::SendMsg",
+          "classification": "thin_wrapper",
+          "role": "window message forwarding",
+          "direct_evidence": [
+            ".spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__Window__SendMsg.c:8-18",
+            ".spore-analysis/ghidra-exports/sdk_functions.tsv:459-464 and :470-500",
+            "Ghidra xref total 1"
+          ]
+        }
+      ],
+      "minimal_modern_interface": {
+        "name": "IEventLoop + IStageEventRouter",
+        "operations": [
+          "poll OS events",
+          "dispatch key/mouse/window/resize events to the active mode",
+          "requestMode(mode_id)",
+          "requestQuit()",
+          "beginFrame/endFrame()"
+        ],
+        "design_rule": "Do not re-create UTFWin's window hierarchy or editor shell unless editor features become a product requirement. Preserve event identity and mode-transition ordering only."
+      },
+      "openspore_mapping": {
+        "existing": ["src/apps/IGameMode.hpp", "src/apps/CellModeStrategy.cpp:64-92", "src/apps/cell_stage.cpp:1000-1022"],
+        "gap": "The current interactive path consumes SDL events directly and has no traced original menu-to-mode bridge."
+      }
+    },
+    {
+      "id": "B-K-09",
+      "name": "Property, configuration, and script data",
+      "classification": "required_for_semantics",
+      "priority": "P1",
+      "why_gameplay_depends": "Configuration, data-driven behavior, resource metadata, and persistence are property-facing. The original property storage and script parser can be replaced, but the named typed values and stable stream behavior are semantic inputs.",
+      "original_functions": [
+        {
+          "va": "0x006a2f60 / 0x006a1540",
+          "name": "App::PropertyList::Read / App::PropertyList::Write",
+          "classification": "required_for_semantics",
+          "role": "stream property-list serialization",
+          "direct_evidence": [
+            ".spore-analysis/ghidra-exports/decompiled_sdk/App__PropertyList__Read.c:8-59",
+            ".spore-analysis/ghidra-exports/decompiled_sdk/App__PropertyList__Write.c:8-41",
+            ".spore-analysis/ghidra-exports/sdk_functions.tsv:388-418",
+            "Ghidra xref totals: Read 3, Write 2; the exported body calls IStream read/write helpers",
+            "docs/RECON-3.1.0.22.md:131-140 identifies App::Property serialization as the data-model spine"
+          ]
+        },
+        {
+          "va": "0x00407190 and App::Property getters/setters",
+          "name": "App::Property::Get*/Set* family",
+          "classification": "required_for_semantics",
+          "role": "typed value access for booleans, numbers, strings, vectors, colors, keys, transforms, and arrays",
+          "direct_evidence": [
+            "Ghidra search found 67 App::Property getter/setter functions in the live SDK-named set",
+            ".spore-analysis/ghidra-exports/sdk_functions.tsv:388-418 shows the surrounding PropertyList vocabulary",
+            "docs/BOUNDARIES.md:140-146 lists property serialization as an explicit non-boundary pending a .prop round-trip"
+          ]
+        },
+        {
+          "va": "0x008412f0 / 0x00841360 / 0x00841440 / 0x008414c0 / 0x00841570",
+          "name": "ArgScript::FormatParser::ProcessFileSafe / ProcessStreamSafe / CreateDefinitionSafe / ParseFloat / SetFlag",
+          "classification": "replaceable_infrastructure",
+          "role": "configuration/script parser",
+          "direct_evidence": [
+            ".spore-analysis/ghidra-exports/sdk_functions.tsv:667-708",
+            "docs/RECON-3.1.0.22.md:113-119 records Config/ConfigManager.txt and ArgScript as the configuration path",
+            "Ghidra search found 10 ArgScript functions; the parser's runtime body coverage is incomplete"
+          ]
+        }
+      ],
+      "minimal_modern_interface": {
+        "name": "IPropertyStore + IConfigCodec",
+        "operations": [
+          "get<T>(PropertyKey) and set<T>(PropertyKey, value)",
+          "has(PropertyKey), enumerate(prefix, cursor), remove(PropertyKey)",
+          "readPropertyRecord(IStream) and writePropertyRecord(IStream)",
+          "parse config/script into a property tree without exposing parser globals"
+        ],
+        "design_rule": "Expose typed property keys and a versioned stream codec. Do not reproduce all 67 original getter/setter methods, global property manager layout, or ArgScript parser internals."
+      },
+      "openspore_mapping": {
+        "existing": ["src/assets/CellResource.hpp:1-11", "src/assets/CellResource.hpp:124-163", "tools/spore/cellres/"],
+        "gap": "OpenSpore has typed Cell record readers but no general property serialization or .prop round-trip."
+      }
+    },
+    {
+      "id": "B-K-10",
+      "name": "Windows, CRT, input/audio device, and timing runtime",
+      "classification": "os_runtime",
+      "priority": "P1",
+      "why_gameplay_depends": "The original depends on platform event delivery, time, file/memory operations, and optional audio/input devices. Gameplay may depend on normalized event/time/audio values, but not on Win32 or D3D implementation details.",
+      "original_functions": [
+        {
+          "va": "0x00848210",
+          "name": "Win32 message pump and external PeekMessageW/TranslateMessage/DispatchMessageW",
+          "classification": "os_runtime",
+          "role": "window event source and frame dispatch",
+          "direct_evidence": ["docs/RECON-3.1.0.22.md:41-44", "tools/observatory/probes/menu_transition.json:12-13"]
+        },
+        {
+          "va": "0x00b63980",
+          "name": "Simulator::TimeAtStartOfFrame and QueryPerformanceCounter-backed device timing",
+          "classification": "os_runtime",
+          "role": "frame timing source; preserve monotonic delta and ordering",
+          "direct_evidence": ["docs/RECON-3.1.0.22.md:91-103", "docs/RENDERWARE-RESEARCH.md:129-139", "tools/observatory/probes/menu_transition.json:20-21"]
+        },
+        {
+          "va": "0x00a20670 / 0x00571f80 / 0x00572020",
+          "name": "Audio::AudioSystem::Get / PlayProceduralAudio / StopAudio",
+          "classification": "os_runtime",
+          "role": "audio service and cue playback; optional until runtime behavior is observed",
+          "direct_evidence": [
+            ".spore-analysis/ghidra-exports/sdk_functions.tsv:1183 and :74-76",
+            "docs/RECON-3.1.0.22.md:72-80 lists DSOUND and other runtime dependencies",
+            "Ghidra xref evidence for AudioSystem::Get is sparse, so this remains a low-confidence optional boundary"
+          ]
+        }
+      ],
+      "minimal_modern_interface": {
+        "name": "IPlatformHost + IAudioSink",
+        "operations": [
+          "pollEvents(EventSink&)",
+          "monotonicNow() and frameDelta()",
+          "read/write bounded byte streams",
+          "playCue(CueId) and stopCue(CueHandle)",
+          "log/trace structured diagnostics"
+        ],
+        "design_rule": "Use SDL, Vulkan, and the host filesystem as adapters. Preserve event order, monotonic timing, and cue identity; do not preserve Win32 message IDs, DSOUND, DINPUT8, CRT wrappers, or registry/config plumbing."
+      },
+      "openspore_mapping": {
+        "existing": ["src/apps/cell_stage.cpp:906-949", "src/apps/cell_stage.cpp:1000-1022", "src/observatory and tools/observatory evidence shell"],
+        "gap": "The current runtime path supports SDL3 presentation and deterministic fixed-step simulation, but original timing, audio, and input-device semantics are not live-observed."
+      }
+    },
+    {
+      "id": "B-K-11",
+      "name": "Unnamed high-fan-in Simulator shared-state roots",
+      "classification": "unknown",
+      "priority": "P0-characterize",
+      "why_gameplay_depends": "These roots sit beneath a dominant gameplay dependency component. The current readiness audit identifies them as shared-state accessors or lookup helpers, but their bodies and field meanings are not sufficiently exported to turn them into trusted interfaces.",
+      "original_functions": [
+        {
+          "va": "0x00b3d300",
+          "name": "FUN_00b3d300",
+          "classification": "unknown",
+          "role": "unnamed high-fan-in singleton-region root; triage v6 marks it Simulator global singleton accessors",
+          "direct_evidence": [
+            "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl:23963",
+            "docs/analysis/reconstruction-readiness.md:27-30 and :132-154",
+            "Ghidra/triage reports gl_fan_in 252 and total fan-in 1097; no decomp file"
+          ]
+        },
+        {
+          "va": "0x00b5b800",
+          "name": "FUN_00b5b800",
+          "classification": "unknown",
+          "role": "Simulator object lookup and abstract strategy region root",
+          "direct_evidence": [
+            "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl:24279",
+            "docs/analysis/reconstruction-readiness.md:27-30, :132-154, and :191-194",
+            "total fan-in 459, gameplay fan-in 142, no decomp file"
+          ]
+        },
+        {
+          "va": "0x00b1fdb0 / 0x00b21340 / 0x00b25fb0 / 0x00ba9370",
+          "name": "FUN_00b1fdb0 / FUN_00b21340 / FUN_00b25fb0 / FUN_00ba9370",
+          "classification": "unknown",
+          "role": "region-inferred game-mode/player/message/player-data/map lookup roots",
+          "direct_evidence": [
+            "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl:23578, :23618, :23671, :25293",
+            "docs/analysis/reconstruction-readiness.md:27-30 and :132-154",
+            "The triage v6 rationales identify game mode state to player ID, message-handler registration, player data accessors, and map lookup GetByID, but no bodies are available"
+          ]
+        },
+        {
+          "va": "0x01021260 / 0x01021300 / 0x01021080 / 0x00e5c780",
+          "name": "FUN_01021260 / FUN_01021300 / FUN_01021080 / map_int_whatever_find",
+          "classification": "unknown",
+          "role": "unnamed high-fan-in root and genuine map lookup helper",
+          "direct_evidence": [
+            "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl:38427, :38430, :38419, :33441",
+            "docs/analysis/reconstruction-readiness.md:28 and :191-194",
+            "Only map_int_whatever_find is identified as a genuine algorithm; the three 0x0102xxxx roots have no decomp coverage"
+          ]
+        }
+      ],
+      "minimal_modern_interface": {
+        "name": "blocked interface freeze",
+        "candidate_ports": [
+          "IServiceLocator: named service handles, not raw global addresses",
+          "IPlayerIdentity: stable player handle and current mode identity",
+          "IObjectRegistry: object handle lookup and ownership/lifetime",
+          "IWorldState: current world/advect references and per-world state",
+          "IIdMap: typed key-to-handle lookup",
+          "IEventRouter: message-handler registration and ordered dispatch"
+        ],
+        "status": "Do not merge these candidate ports into one concrete interface yet. Characterize each root's body, returned global, and side effects first. The current OpenSpore interfaces must continue to use typed local state rather than guessed aliases."
+      },
+      "openspore_mapping": {
+        "existing": ["src/apps/IGameMode.hpp", "src/sim/CellGame.hpp", "src/replace/CellGameView.hpp"],
+        "gap": "This is the first reverse-engineering blocker before broader Simulator gameplay reconstruction. It is intentionally a characterization target, not an implementation boundary."
+      }
+    }
+  ],
+  "deferred_or_non_boundaries": [
+    {
+      "item": "RenderWare/D3D9 device objects and vtable calls",
+      "classification": "renderware_third_party",
+      "decision": "Replace with the modern graphics device and draw-state interfaces in B-K-06. Preserve only state ordering, material/raster identity, and observable draw results."
+    },
+    {
+      "item": "Full RenderWare RW4 model, skin, skeleton, blend-shape, and shader payload emulation",
+      "classification": "replaceable_infrastructure",
+      "decision": "Keep the container contract behind the asset layer. Current structural RW4/GMDL support is narrow and not a reason to expose RW object layouts to gameplay."
+    },
+    {
+      "item": "Full ResourceManager cache, directory, and multi-package load-order behavior",
+      "classification": "unknown",
+      "decision": "Required for broader content semantics but not yet an interface. A menu-transition trace and multi-package evidence are still needed."
+    },
+    {
+      "item": "Full AppSystem/plugin bootstrap and UTFWin/editor hierarchy",
+      "classification": "runtime_compatibility_only",
+      "decision": "Keep only event, mode, and service contracts unless the product scope expands to the original editor/UI."
+    },
+    {
+      "item": "Pollinator online service",
+      "classification": "replaceable_infrastructure",
+      "decision": "Defunct service and explicitly non-goal; use a stub or omit it. It must not become a gameplay semantic interface."
+    },
+    {
+      "item": "Unnamed shared-state roots",
+      "classification": "unknown",
+      "decision": "Characterize before assigning semantics. Do not use OpenSpore's current approximations to backfill the original meanings."
+    }
+  ],
+  "recommended_interface_freeze_order": [
+    {
+      "rank": 1,
+      "boundary": "B-K-11",
+      "action": "Decompile/export and characterize the ten unnamed high-fan-in roots plus map_int_whatever_find; record returned globals, signatures, and side effects."
+    },
+    {
+      "rank": 2,
+      "boundary": "B-K-01 and B-K-02",
+      "action": "Freeze mode lifecycle, service access, input/camera, behavior, persistence, and frame-clock ports using current IGameMode/CellInput/CellSim contracts."
+    },
+    {
+      "rank": 3,
+      "boundary": "B-K-03 and B-K-04",
+      "action": "Freeze Cell state/entity/resource identity contracts and distinguish content bytes from original manager/cache behavior."
+    },
+    {
+      "rank": 4,
+      "boundary": "B-K-05 and B-K-07",
+      "action": "Freeze Cell presentation world/layer/resource associations and camera-ray/input values; keep RenderWare implementation outside gameplay."
+    },
+    {
+      "rank": 5,
+      "boundary": "B-K-06, B-K-08, B-K-09, B-K-10",
+      "action": "Keep modern renderer, event loop, property/codec, and platform adapters narrow. Add fields only when an original semantic or asset/tool differential requires them."
+    }
+  ],
+  "conclusion": {
+    "status": "complete",
+    "result": "Engine-boundary analysis completed without implementation. The highest-value semantic boundaries are the mode/game-service contracts, Cell state and movement state, content identity, Cell presentation world/resource bindings, and camera/input values. RenderWare and Windows/D3D details are replaceable implementation surfaces; singleton getters are wrappers, and the unnamed high-fan-in Simulator roots remain an explicit unknown requiring characterization.",
+    "promotion_rule": "No boundary claim in this report changes replacement status. Live Cell-mode evidence is still required before runtime-verifying the Cell ABI or original runtime ordering."
+  }
+}

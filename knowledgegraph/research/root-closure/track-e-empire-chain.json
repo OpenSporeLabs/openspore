@@ -1,0 +1,802 @@
+{
+  "$schema": "openspore-phase0-root-closure-track-e-empire-chain-1",
+  "schema": "openspore-phase0-root-closure-track-e-empire-chain-1",
+  "artifact": {
+    "track": "E",
+    "name": "political-id-player-data-registry-cache-cEmpire-chain",
+    "status": "static-research-complete",
+    "purpose": "Close the shared roots 01021300, 00ba9370, and 00b25fb0 without implementing or changing the Phase-0 interface.",
+    "runtime_performed": false,
+    "source_modified": false,
+    "spore_modified": false,
+    "historical_artifacts_modified": false
+  },
+  "snapshot": {
+    "binary": "SPORE/SporeBin/SporeApp.exe 3.1.0.22",
+    "architecture": "x86:LE:32:windows",
+    "image_base": "0x00400000",
+    "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+    "analysis_snapshot": "f0e310e0c83fc960ed38d490ff6d2a78d53925969206b4c4db7a012ddbf8b54b",
+    "canonical_xref_snapshot": "2540f2ca7cd361a72b559448fa5cf247eff3cee20d375b14ed0dd256c45229c8",
+    "canonical_xrefs": "knowledgegraph/triage/xrefs-2540f2ca.tsv",
+    "sdk": {
+      "path": "/home/juanr/apps/Spore-ModAPI/SDKtoGhidra/SporeGhidra_march2017.xml",
+      "commit": "cbf9206b9a823f0911cd9be0217104a49d72380b",
+      "sha256": "5d894677c1835082da0392e8b794f3c93a0251733898c3c5b81cf7945f458f09",
+      "role": "reference-only names, declarations, and field offsets"
+    },
+    "static_instruction_ranges": [
+      {
+        "purpose": "01021300 cache validation and reference ordering",
+        "va_start": "0x01021300",
+        "va_end_exclusive": "0x01021369"
+      },
+      {
+        "purpose": "00ba9370 registry wrapper and missing-ID sentinel",
+        "va_start": "0x00ba9370",
+        "va_end_exclusive": "0x00ba93ab"
+      },
+      {
+        "purpose": "00e5c780 unsigned lower-bound semantics",
+        "va_start": "0x00e5c780",
+        "va_end_exclusive": "0x00e5c7c6"
+      },
+      {
+        "purpose": "00b25f40 noun lookup and GetPoliticalID scan",
+        "va_start": "0x00b25f40",
+        "va_end_exclusive": "0x00b25fa1"
+      },
+      {
+        "purpose": "00b25fb0 current-empire-to-game-data bridge and fallback",
+        "va_start": "0x00b25fb0",
+        "va_end_exclusive": "0x00b25fd5"
+      },
+      {
+        "purpose": "00b21340 noun map materialization mechanics",
+        "va_start": "0x00b21340",
+        "va_end_exclusive": "0x00b2140a"
+      }
+    ]
+  },
+  "evidence_policy": {
+    "levels": ["CONFIRMED", "SUPPORTED", "INFERRED", "UNKNOWN"],
+    "static_only": true,
+    "confidence_meaning": "Confidence applies to the bounded static contract, not live gameplay behavior.",
+    "source_precedence": [
+      "pinned binary bytes and instruction-level static verification",
+      "canonical xrefs and SDK XML declarations/field maps",
+      "committed baseline docs/JSON and exported structs/fields",
+      "triage readiness and unknown-high artifacts",
+      "committed decompilation snapshots"
+    ]
+  },
+  "executive_resolution": {
+    "chain": "Simulator::sSpacePlayerData.mPlayerEmpireID -> 00ba9370 lower_bound over cStarManager.mEmpires -> cEmpire -> SpacePlayerData.mpPlayerEmpire owned cache -> 01021300 validation/return -> 00b25fb0 reads cEmpire.mPoliticalID -> 00b25f40 selects kCivilization game data by cGameData::GetPoliticalID -> returned borrowed cCivilization-compatible pointer or one stack fallback",
+    "exact_root_roles": {
+      "01021300": "no-argument lazy current-player cEmpire cache accessor with ID validation, ceiling lookup, and intrusive reference transfer",
+      "00ba9370": "cStarManager-layout empire registry wrapper with UINT32_MAX sentinel, unsigned lower-bound, and no equality check",
+      "00b25fb0": "one-stack-fallback political-ID bridge from the current cEmpire to a kCivilization game-data instance"
+    },
+    "key_corrections": [
+      "00ba9370 is not an exact-find wrapper. 00e5c780 returns the first node whose unsigned key is greater than or equal to the request, and 00ba9370 does not compare that node key with the request.",
+      "For a missing non-0xffffffff ID, 00ba9370 can return the next higher empire rather than null.",
+      "01021300 does not reject a lower-bound successor in the same call. It caches the returned pointer, then subsequent calls continue to fail the cEmpire+0x84 equality check and repeat the lookup.",
+      "The virtual calls in 01021300 are AddRef at primary-vtable+0x00 and Release at primary-vtable+0x04, not a destructor as summarized by the older unknown-high dossier.",
+      "00b25fb0 has an exact one-argument fallback path: when 01021300 returns null it returns the caller's four-byte stack fallback unchanged. It does not use that fallback when a current empire exists but no matching civilization exists.",
+      "00b25fb0 is a separate function after 0x00b25fa1. The imported SDK GetPlayerCivilization symbol at 0x00b25f90 is a boundary-repaired tail alias inside 00b25f40 and must not be assigned to 00b25fb0."
+    ],
+    "dynamic_subtype_resolution": {
+      "static_base_contract": "cGameData*",
+      "resolved_registry_subtype": "cCivilization*",
+      "confidence": 0.93,
+      "reason": "The bridge queries GameNounIDs::kCivilization (0x018c816a), the vector elements expose cGameData::GetPoliticalID at vtable+0x4c, the SDK GetPlayerCivilization return type is cCivilization*, and cCity::SpawnVehicle compares the bridge result with cCity.mpCivilization at +0x590.",
+      "remaining_limit": "No MSVC RTTI or runtime observation exists. The fallback parameter remains type-open and must obey the caller-side cCivilization-compatible contract when 01021300 returns null."
+    }
+  },
+  "identity_semantics": {
+    "political_id_domain": {
+      "storage": {
+        "SpacePlayerData.mPlayerEmpireID": "uint32_t at +0x18",
+        "cEmpire.mPoliticalID": "int at +0x84",
+        "cGameData.mPoliticalID": "uint32_t at +0x30",
+        "cStarManager.mEmpires key": "uint32_t"
+      },
+      "comparison": "01021300 and 00b25f40 compare raw 32-bit values. The cEmpire field is declared int in the SDK, but the registry key and player ID are unsigned. 0xffffffff is the sole explicit no-ID sentinel in the two roots.",
+      "evidence_level": "CONFIRMED"
+    },
+    "current_player_empire": {
+      "global": "Simulator::sSpacePlayerData",
+      "global_address": "0x016dda8c",
+      "global_type": "SpacePlayerData*",
+      "id_field": "+0x18",
+      "owned_cache_field": "+0x1c",
+      "cache_type": "intrusive_ptr<cEmpire>",
+      "null_global_behavior": "01021300 immediately dereferences the global and has no null guard.",
+      "evidence_level": "CONFIRMED"
+    },
+    "empire_registry": {
+      "container": "cStarManager-compatible receiver",
+      "map": "mEmpires at +0x150",
+      "map_type": "map<uint32_t,intrusive_ptr<cEmpire>>",
+      "operation": "unsigned lower_bound/ceiling",
+      "special_sentinel": "UINT32_MAX returns null without a map walk",
+      "missing_key": "Returns the next higher key's cEmpire* when a successor exists; otherwise null.",
+      "exact_key_required": false,
+      "evidence_level": "CONFIRMED"
+    },
+    "current_player_game_data": {
+      "context": "cGameNounManager-layout receiver in ECX; exact accessor/global identity remains unresolved",
+      "noun_key": "0x018c816a = GameNounIDs::kCivilization",
+      "selection": "First element in the materialized kCivilization vector whose cGameData::GetPoliticalID equals cEmpire.mPoliticalID",
+      "no_match": "00b25f40 returns null",
+      "evidence_level": "SUPPORTED"
+    }
+  },
+  "cache_validation_and_invalidation": {
+    "owner": "SpacePlayerData.mpPlayerEmpire at +0x1c",
+    "validation_predicate": "cached != null && cached->mPoliticalID(+0x84) == mPlayerEmpireID(+0x18)",
+    "hit": "Return the cached raw pointer without AddRef.",
+    "miss": "Call 00b3d2a0 to obtain the registry context, then 00ba9370 with mPlayerEmpireID; do not validate the returned empire's +0x84 in that call.",
+    "replacement_order": [
+      "newEmpire = 00ba9370(registryContext, requestedId)",
+      "oldEmpire = SpacePlayerData.mpPlayerEmpire",
+      "if newEmpire != oldEmpire and newEmpire != null: newEmpire->vtable[+0x00] AddRef",
+      "SpacePlayerData.mpPlayerEmpire = newEmpire",
+      "if oldEmpire != null: oldEmpire->vtable[+0x04] Release"
+    ],
+    "same_pointer": "No AddRef and no Release when newEmpire == oldEmpire.",
+    "new_null_old_live": "Store null and Release old exactly once.",
+    "new_live_old_null": "AddRef new, store new, and do not Release.",
+    "id_minus_one": "Return null immediately. The old cache pointer and its reference are left untouched; 01021300 does not clear or Release it.",
+    "stale_registry_entry": "If mPlayerEmpireID is unchanged and the cached cEmpire still has the same +0x84 value, the cache hits even if the empire was removed from mEmpires. There is no generation, registry-membership, or version check.",
+    "threading": "No lock, atomic generation check, or synchronization is observed.",
+    "evidence_level": "CONFIRMED"
+  },
+  "ownership": {
+    "registry_value": "mEmpires stores intrusive_ptr<cEmpire>; 00ba9370 returns its raw pointer without AddRef.",
+    "cache_value": "SpacePlayerData.mpPlayerEmpire is intrusive_ptr<cEmpire>; 01021300 maintains one cache-owned reference and returns a borrowed raw pointer.",
+    "game_data_value": "The kCivilization vector stores intrusive_ptr<cGameData>; 00b25f40 and 00b25fb0 return a borrowed raw pointer without AddRef or Release.",
+    "caller_rule": "Consumers must not Release a pointer merely because a root returned it. A consumer retaining a registry/cache/game-data pointer beyond the owning container's stability must AddRef explicitly.",
+    "evidence_level": "CONFIRMED"
+  },
+  "roots": [
+    {
+      "address": "0x01021300",
+      "rva": "0x00c21300",
+      "name": "FUN_01021300",
+      "function_size_bytes": 105,
+      "call_shape": "no explicit arguments; returns raw cEmpire* in EAX",
+      "return_contract": "Borrowed pointer from SpacePlayerData.mpPlayerEmpire, or null.",
+      "exact_fields": [
+        {
+          "structure": "global",
+          "name": "Simulator::sSpacePlayerData",
+          "offset": "absolute 0x016dda8c",
+          "access": "read"
+        },
+        {
+          "structure": "SpacePlayerData",
+          "name": "mPlayerEmpireID",
+          "offset": "0x18",
+          "access": "read"
+        },
+        {
+          "structure": "SpacePlayerData",
+          "name": "mpPlayerEmpire",
+          "offset": "0x1c",
+          "access": "read/write"
+        },
+        {
+          "structure": "cEmpire",
+          "name": "mPoliticalID",
+          "offset": "0x84",
+          "access": "read"
+        },
+        {
+          "structure": "cEmpire primary vtable",
+          "name": "AddRef",
+          "offset": "0x00",
+          "access": "virtual call on new pointer"
+        },
+        {
+          "structure": "cEmpire primary vtable",
+          "name": "Release",
+          "offset": "0x04",
+          "access": "virtual call on old pointer"
+        }
+      ],
+      "direct_caller_count": 182,
+      "gameplay_caller_count": 47,
+      "semantic_role": "Lazy current-player empire identity cache.",
+      "confidence": {
+        "mechanics": 0.99,
+        "identity": 0.96,
+        "basis": "Instruction-level static behavior plus SDK SpacePlayerData, cEmpire, and ISimulatorSerializable layouts."
+      },
+      "evidence": [
+        "docs/analysis/simulator-shared-state-interface.md:143-156",
+        "knowledgegraph/triage/simulator-shared-state-interface-f0e310e0.json:1465-1541",
+        "docs/analysis/dossiers/unknown-high/space-player-data-accessors-2.md:36-70",
+        "SporeGhidra_march2017.xml:1929-1946,24618-24653,25374-25384",
+        "static instructions 0x01021300-0x01021368"
+      ]
+    },
+    {
+      "address": "0x00ba9370",
+      "rva": "0x007a9370",
+      "name": "FUN_00ba9370",
+      "function_size_bytes": 59,
+      "call_shape": "ECX registry context plus one caller-cleaned uint32_t stack ID; returns raw cEmpire*",
+      "return_contract": "Borrowed mEmpires payload for the first key >= ID, except UINT32_MAX and end return null.",
+      "exact_fields": [
+        {
+          "structure": "registry context",
+          "name": "mEmpires",
+          "offset": "0x150",
+          "access": "read"
+        },
+        {
+          "structure": "EASTL map",
+          "name": "mCompare",
+          "offset": "0x00 relative to mEmpires / 0x150 absolute",
+          "access": "container metadata"
+        },
+        {
+          "structure": "EASTL map",
+          "name": "mAnchor",
+          "offset": "0x04 relative to mEmpires / 0x154 absolute",
+          "access": "end sentinel and tree navigation"
+        },
+        {
+          "structure": "EASTL map",
+          "name": "root through mAnchor",
+          "offset": "0x0c relative to mEmpires / 0x15c absolute",
+          "access": "read"
+        },
+        {
+          "structure": "EASTL map",
+          "name": "mnSize",
+          "offset": "0x14 relative to mEmpires / 0x164 absolute",
+          "access": "not used by this root"
+        },
+        {
+          "structure": "EASTL map",
+          "name": "mAllocator",
+          "offset": "0x18 relative to mEmpires / 0x168 absolute",
+          "access": "not used by this root"
+        },
+        {
+          "structure": "EASTL map node",
+          "name": "key",
+          "offset": "0x10",
+          "access": "read by 00e5c780; not equality-checked by 00ba9370"
+        },
+        {
+          "structure": "EASTL map node",
+          "name": "intrusive_ptr<cEmpire> payload",
+          "offset": "0x14",
+          "access": "read and returned"
+        }
+      ],
+      "direct_caller_count": 136,
+      "gameplay_caller_count": 35,
+      "semantic_role": "Read-only empire-registry ceiling lookup, despite the older GetByID label.",
+      "missing_id_matrix": [
+        {
+          "condition": "ID == 0xffffffff",
+          "result": "null",
+          "confidence": "CONFIRMED"
+        },
+        {
+          "condition": "ID exists",
+          "result": "that exact cEmpire*",
+          "confidence": "CONFIRMED"
+        },
+        {
+          "condition": "ID absent and a greater key exists",
+          "result": "cEmpire* for the first greater key",
+          "confidence": "CONFIRMED"
+        },
+        {
+          "condition": "ID absent and no greater key exists",
+          "result": "null",
+          "confidence": "CONFIRMED"
+        }
+      ],
+      "caller_constraint": "Direct callers that require exact identity must compare returned cEmpire->mPoliticalID with the requested ID or only pass IDs known to exist. 00ba9370 itself does not guarantee exact identity.",
+      "context_identity_limit": "The receiver is structurally cStarManager at +0x150, but 01021300 obtains it from 00b3d2a0 -> DAT_0167eae4. The SDK maps cStarManager::Get to 0x00b3d3a0 -> DAT_0167eb0c, so the exact service/accessor identity remains unresolved.",
+      "confidence": {
+        "mechanics": 0.99,
+        "container_identity": 0.94,
+        "named_accessor_identity": 0.62
+      },
+      "evidence": [
+        "docs/analysis/simulator-shared-state-interface.md:188-201",
+        "knowledgegraph/triage/simulator-shared-state-interface-f0e310e0.json:1671-1759",
+        "SporeGhidra_march2017.xml:24877-24929",
+        ".spore-analysis/ghidra-exports/structs_fields.tsv:11458-11514",
+        "static instructions 0x00ba9370-0x00ba93aa and 0x00e5c780-0x00e5c7c5"
+      ]
+    },
+    {
+      "address": "0x00b25fb0",
+      "rva": "0x00725fb0",
+      "name": "FUN_00b25fb0",
+      "function_size_bytes": 37,
+      "call_shape": "ECX cGameNounManager-layout context plus one caller-cleaned four-byte stack fallback; returns raw pointer in EAX",
+      "return_contract": "If 01021300 returns cEmpire*, return the kCivilization cGameData whose political ID matches cEmpire+0x84. If 01021300 returns null, return the stack fallback unchanged.",
+      "fallback_semantics": {
+        "used_when_current_empire_null": true,
+        "used_when_civilization_match_missing": false,
+        "reference_operation": "none",
+        "type": "UNKNOWN; caller must supply a cCivilization-compatible fallback",
+        "evidence_level": "SUPPORTED"
+      },
+      "exact_fields": [
+        {
+          "structure": "cEmpire",
+          "name": "mPoliticalID",
+          "offset": "0x84",
+          "access": "read"
+        },
+        {
+          "structure": "call frame",
+          "name": "fallback pointer",
+          "offset": "caller stack +0x04 at function entry",
+          "access": "read and returned only when 01021300 returns null"
+        }
+      ],
+      "direct_caller_count": 100,
+      "gameplay_caller_count": 36,
+      "semantic_role": "Current-player political-ID bridge into the kCivilization noun registry.",
+      "identity_boundary": "Do not rename this function cGameNounManager::GetPlayerCivilization. The SDK address 0x00b25f90 is an adjudicated tail alias inside 00b25f40 with no xrefs; 0x00b25fb0 begins after padding at 0x00b25fa1.",
+      "confidence": {
+        "mechanics": 0.98,
+        "base_type": 0.97,
+        "resolved_subtype": 0.93,
+        "named_function_identity": 0.35
+      },
+      "evidence": [
+        "docs/analysis/simulator-shared-state-interface.md:173-186",
+        "knowledgegraph/triage/simulator-shared-state-interface-f0e310e0.json:1602-1668",
+        "knowledgegraph/triage/sdk-boundary-repairs-2540f2ca.tsv:873",
+        "SporeGhidra_march2017.xml:23408-23425,52672-52674",
+        "static instructions 0x00b25f90-0x00b25fd4"
+      ]
+    }
+  ],
+  "helpers": [
+    {
+      "address": "0x00b25f40",
+      "name": "FUN_00b25f40",
+      "function_size_bytes": 97,
+      "call_shape": "ECX cGameNounManager-layout context plus one uint32_t political ID; returns raw cGameData* or null",
+      "exact_sequence": [
+        "Call 00b21340 with five callback-shaped arguments and noun key 0x018c816a.",
+        "Read tGameDataVectorT begin +0x04 and end +0x08.",
+        "For each intrusive_ptr<cGameData> element, call primary-vtable+0x4c.",
+        "Compare the returned uint32_t political ID with the requested ID.",
+        "Return the first matching cGameData*; otherwise return null."
+      ],
+      "callback_arguments": [
+        {
+          "sdk_role": "create",
+          "address": "0x00b21080",
+          "semantic_identity": "UNKNOWN"
+        },
+        {
+          "sdk_role": "clear",
+          "address": "0x00d3d420",
+          "semantic_identity": "UNKNOWN"
+        },
+        {
+          "sdk_role": "add",
+          "address": "0x00b236c0",
+          "semantic_identity": "UNKNOWN"
+        },
+        {
+          "sdk_role": "filter",
+          "address": "0x00b1e500",
+          "semantic_identity": "UNKNOWN"
+        },
+        {
+          "sdk_role": "nounID",
+          "address": "0x018c816a",
+          "semantic_identity": "GameNounIDs::kCivilization",
+          "evidence_level": "CONFIRMED"
+        }
+      ],
+      "vtable_call": {
+        "offset": "0x4c",
+        "identity": "cGameData::GetPoliticalID",
+        "evidence_level": "CONFIRMED"
+      },
+      "ownership": "Returns a borrowed intrusive_ptr payload without AddRef or Release.",
+      "null_constraints": [
+        "The receiver is dereferenced through 00b21340 without a null check.",
+        "The returned tGameDataVectorT pointer is dereferenced without a null check.",
+        "Each vector element is dereferenced and virtually called without a null check."
+      ]
+    },
+    {
+      "address": "0x00b21340",
+      "name": "FUN_00b21340",
+      "role": "noun map lookup/materialization bridge; mechanics match the SDK GetData shape but exact SDK address identity is not asserted",
+      "fields": [
+        {
+          "structure": "cGameNounManager",
+          "name": "mNouns",
+          "offset": "0x78",
+          "access": "read/traverse"
+        },
+        {
+          "structure": "cGameNounManager",
+          "name": "mNounMap",
+          "offset": "0x98",
+          "access": "read/maybe insert"
+        },
+        {
+          "structure": "EASTL map",
+          "name": "end sentinel",
+          "offset": "0x9c",
+          "access": "read",
+          "note": "Internal mNounMap anchor, not a standalone SDK field."
+        },
+        {
+          "structure": "tGameDataVectorT<cGameData>",
+          "name": "needsUpdate",
+          "offset": "0x00",
+          "access": "read/write"
+        },
+        {
+          "structure": "tGameDataVectorT<cGameData>",
+          "name": "begin",
+          "offset": "0x04",
+          "access": "read/return through vector"
+        },
+        {
+          "structure": "tGameDataVectorT<cGameData>",
+          "name": "end",
+          "offset": "0x08",
+          "access": "read/return through vector"
+        },
+        {
+          "structure": "tGameDataVectorT<cGameData>",
+          "name": "capacity",
+          "offset": "0x0c",
+          "access": "container metadata"
+        }
+      ],
+      "evidence_level": "SUPPORTED"
+    },
+    {
+      "address": "0x00e5c780",
+      "name": "map_int_whatever_find",
+      "role": "generic EASTL unsigned lower-bound helper",
+      "exact_semantics": "Return the first node with key >= requested unsigned key, or the map end sentinel. It does not require equality.",
+      "fields": [
+        {
+          "structure": "map",
+          "name": "end/anchor",
+          "offset": "0x04",
+          "access": "read"
+        },
+        {
+          "structure": "map",
+          "name": "root",
+          "offset": "0x0c",
+          "access": "read"
+        },
+        {
+          "structure": "node",
+          "name": "key",
+          "offset": "0x10",
+          "access": "unsigned compare"
+        }
+      ],
+      "evidence_level": "CONFIRMED"
+    }
+  ],
+  "field_map": {
+    "SpacePlayerData": {
+      "size_bytes": 52,
+      "fields": [
+        {"offset": "0x00", "name": "mMillisecondsSinceLastUpdate", "type": "int", "relation": "not used by this chain"},
+        {"offset": "0x04", "name": "mpActivePlanet", "type": "intrusive_ptr<cPlanet>", "relation": "not used by this chain"},
+        {"offset": "0x10", "name": "mCurrentContext", "type": "SpaceContext", "relation": "not used by this chain"},
+        {"offset": "0x18", "name": "mPlayerEmpireID", "type": "uint32_t", "relation": "political ID request key"},
+        {"offset": "0x1c", "name": "mpPlayerEmpire", "type": "intrusive_ptr<cEmpire>", "relation": "owned lazy cache"},
+        {"offset": "0x20", "name": "mPlayerColonies", "type": "vector<intrusive_ptr<cPlanet>>", "relation": "not used by this chain"}
+      ],
+      "evidence_level": "CONFIRMED"
+    },
+    "cEmpire": {
+      "size_bytes": 344,
+      "fields": [
+        {"offset": "0x00", "name": "primary vtable", "type": "ISimulatorSerializable__vftable*", "relation": "AddRef +0x00; Release +0x04"},
+        {"offset": "0x04", "name": "secondary vtable", "type": "RefCountTemplate__vftable*", "relation": "not the vtable used by 01021300's +0/+4 calls"},
+        {"offset": "0x08", "name": "mnRefCount", "type": "int", "relation": "reference count"},
+        {"offset": "0x84", "name": "mPoliticalID", "type": "int", "relation": "cache validation key and 00b25fb0 input"}
+      ],
+      "evidence_level": "CONFIRMED"
+    },
+    "cStarManager": {
+      "size_bytes": 556,
+      "fields": [
+        {"offset": "0x150", "name": "mEmpires", "type": "map<uint32_t,intrusive_ptr<cEmpire>>", "relation": "registry"},
+        {"offset": "0x154", "name": "mEmpires.mAnchor", "type": "rbtree_node_base", "relation": "end/tree anchor"},
+        {"offset": "0x15c", "name": "mEmpires root through anchor", "type": "node pointer", "relation": "tree root"},
+        {"offset": "0x164", "name": "mEmpires.mnSize", "type": "uint", "relation": "not read by 00ba9370"},
+        {"offset": "0x168", "name": "mEmpires.mAllocator", "type": "allocator", "relation": "not read by 00ba9370"}
+      ],
+      "evidence_level": "CONFIRMED for layout; INFERRED for unnamed 00b3d2a0 receiver identity"
+    },
+    "cGameData": {
+      "size_bytes": 52,
+      "fields": [
+        {"offset": "0x00", "name": "primary vtable", "type": "cGameData__vftable*", "relation": "AddRef +0x00; Release +0x04; GetPoliticalID +0x4c"},
+        {"offset": "0x04", "name": "secondary vtable", "type": "DefaultRefCounted__vftable*", "relation": "not the vtable used by 00b25f40"},
+        {"offset": "0x08", "name": "mnRefCount", "type": "int", "relation": "reference count"},
+        {"offset": "0x24", "name": "mID", "type": "uint32_t", "relation": "object ID; not the political key"},
+        {"offset": "0x28", "name": "mDefinitionID", "type": "uint32_t", "relation": "definition ID; not the political key"},
+        {"offset": "0x2c", "name": "mpGameDataOwner", "type": "intrusive_ptr<cGameData>", "relation": "owner"},
+        {"offset": "0x30", "name": "mPoliticalID", "type": "uint32_t", "relation": "returned by virtual +0x4c and matched to cEmpire+0x84"}
+      ],
+      "evidence_level": "CONFIRMED"
+    },
+    "cCivilization": {
+      "size_bytes": 1240,
+      "fields": [
+        {"offset": "0x00", "name": "cGameData primary vtable", "type": "cGameData__vftable*", "relation": "base-type dispatch"},
+        {"offset": "0x08", "name": "mnRefCount", "type": "int", "relation": "reference count"},
+        {"offset": "0x30", "name": "mPoliticalID", "type": "uint32_t", "relation": "same value domain as cEmpire+0x84"},
+        {"offset": "0x34", "name": "secondary vtable", "type": "INameableEntity__vftable*", "relation": "civilization-specific identity"},
+        {"offset": "0x40", "name": "mIDColorID", "type": "uint32_t", "relation": "civilization identity color"},
+        {"offset": "0x6c", "name": "mCultureSet", "type": "cCultureSet", "relation": "culture consumer"},
+        {"offset": "0x88", "name": "mIsPlayerOwned", "type": "bool", "relation": "ownership flag"}
+      ],
+      "evidence_level": "CONFIRMED for layout; INFERRED for exact dynamic result of 00b25fb0"
+    },
+    "cGameNounManager": {
+      "size_bytes": 284,
+      "fields": [
+        {"offset": "0x78", "name": "mNouns", "type": "intrusive_list<cGameData>", "relation": "live noun list"},
+        {"offset": "0x98", "name": "mNounMap", "type": "map<uint32_t,tGameDataVectorT<cGameData>>", "relation": "noun materialization registry"},
+        {"offset": "0x9c", "name": "mNounMap anchor/end", "type": "rbtree_node_base", "relation": "internal map layout, not standalone field"}
+      ],
+      "evidence_level": "CONFIRMED for layout; INFERRED for unnamed receiver source"
+    },
+    "cCity": {
+      "size_bytes": 2072,
+      "fields": [
+        {"offset": "0x590", "name": "mpCivilization", "type": "intrusive_ptr<cCivilization>", "relation": "cCity::SpawnVehicle compares this with 00b25fb0's result"}
+      ],
+      "evidence_level": "CONFIRMED"
+    }
+  },
+  "caller_matrix": {
+    "unique_all_three_direct_caller": {
+      "address": "0x00aebe90",
+      "triage": "subsystem UTFWin; category ENGINE_IMPLEMENTATION; evidence INFERRED",
+      "callsites": {
+        "00b25fb0": ["0x00aec5bd"],
+        "00ba9370": ["0x00aebf35", "0x00aec128"],
+        "01021300": ["0x00aebf44", "0x00aebf4e", "0x00aebf70", "0x00aec212", "0x00aec29a", "0x00aec2e9", "0x00aec305", "0x00aec327", "0x00aec33f", "0x00aec34d"]
+      },
+      "selection_reason": "It is the only direct caller in the canonical xref closure that calls all three roots.",
+      "constraint": "Its direct 00ba9370 lookups rely on requested IDs existing or accepting ceiling behavior; it does not universally validate the returned empire key before use."
+    },
+    "representative_cross_subsystem_callers": [
+      {
+        "address": "0x00bf9820",
+        "sdk_name": "Simulator::cCultureSet::PickCreation",
+        "root": "0x00b25fb0",
+        "callsite": "0x00bf985d",
+        "consumer_constraint": "Null-checks the returned pointer and uses it as the current civilization in culture candidate selection.",
+        "subtype_evidence": "Result is passed to civilization/culture helpers and compared with culture-set state.",
+        "evidence_level": "SUPPORTED"
+      },
+      {
+        "address": "0x00bdde70",
+        "sdk_name": "Simulator::cCity::SpawnVehicle",
+        "root": "0x00b25fb0",
+        "callsite": "0x00bde22f",
+        "consumer_constraint": "Compares the bridge result to cCity.mpCivilization at +0x590; this is the strongest caller-side cCivilization identity evidence.",
+        "evidence_level": "SUPPORTED"
+      },
+      {
+        "address": "0x00d06270",
+        "sdk_name": "Simulator::cRelationshipManager::ApplyRelationship",
+        "root": "0x00b25fb0",
+        "callsite": "0x00d06298",
+        "consumer_constraint": "Rejects a null bridge result, then uses only the cGameData::GetPoliticalID contract at vtable+0x4c.",
+        "evidence_level": "CONFIRMED"
+      },
+      {
+        "address": "0x00d01ff0",
+        "sdk_name": "Simulator::cRelationshipManager::IsAllied2",
+        "root": "0x01021300",
+        "callsite": "0x00d01ff3",
+        "consumer_constraint": "Uses 01021300 as the defaulted empire source and then reads cEmpire.mPoliticalID before relationship lookup; it assumes a live defaulted empire in the normal path.",
+        "evidence_level": "CONFIRMED",
+        "decomp_snapshot": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cRelationshipManager__IsAllied2.c:19-34"
+      },
+      {
+        "address": "0x00c32cd0",
+        "sdk_name": "FUN_00c32cd0",
+        "label": "cEmpire identity-color picker",
+        "roots": ["0x01021300", "0x00ba9370"],
+        "callsites": {
+          "01021300": ["0x00c32d19", "0x00c32d34"],
+          "00ba9370": ["0x00c3310f"]
+        },
+        "consumer_constraint": "Uses current-empire identity to exclude/select among registry empires while writing cEmpire.mIDColorID and mCachedColor.",
+        "evidence_level": "SUPPORTED"
+      },
+      {
+        "address": "0x00febce0",
+        "sdk_name": "Simulator::cMissionManager::GetMissionTrackColor",
+        "root": "0x01021300",
+        "callsite": "0x00febd0b",
+        "consumer_constraint": "Uses current-empire pointer identity to constrain mission-track color validation.",
+        "evidence_level": "CONFIRMED",
+        "decomp_snapshot": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cMissionManager__GetMissionTrackColor.c:30-33"
+      },
+      {
+        "address": "0x00feb770",
+        "sdk_name": "Simulator::cMissionManager::Get",
+        "roots": ["0x00ba9370", "0x01021300"],
+        "callsites": {
+          "00ba9370": ["0x00feb951"],
+          "01021300": ["0x00feb980"]
+        },
+        "consumer_constraint": "Shared mission-side user of both registry and cache; exact field purpose is not individually reconstructed.",
+        "evidence_level": "SUPPORTED"
+      },
+      {
+        "address": "0x0102df20",
+        "sdk_name": null,
+        "roots": ["0x00ba9370", "0x01021300"],
+        "triage": "Simulator GAMEPLAY_LOGIC; high fan-out shared orchestrator",
+        "consumer_constraint": "Multiple calls to both roots make exact-vs-ceiling and cache lifetime constraints shared-state-critical, but the function is not individually decompiled in the committed evidence.",
+        "evidence_level": "SUPPORTED for call closure; UNKNOWN for exact use"
+      }
+    ]
+  },
+  "caller_constraints": [
+    "Do not assume 00ba9370 is exact-find. Direct callers must either guarantee key existence or compare cEmpire+0x84 to the requested key.",
+    "01021300 requires Simulator::sSpacePlayerData to be non-null; it has no global null guard.",
+    "00ba9370 requires a live initialized registry context and map; it has no receiver null guard.",
+    "00b25f40 assumes 00b21340 returns a live vector record and every intrusive_ptr element is non-null.",
+    "00b25fb0's no-empire path depends on a valid one-word caller fallback. The fallback is returned without validation and is not a fallback for a missing civilization match.",
+    "Pointers returned by 00ba9370, 01021300 on cache hit, 00b25f40, and 00b25fb0 are borrowed. Only SpacePlayerData.mpPlayerEmpire carries a cache-owned intrusive reference maintained by 01021300.",
+    "A ceiling-successor cached by 01021300 can propagate through 00b25fb0 because the bridge reads the successor's actual cEmpire+0x84, not the original mPlayerEmpireID.",
+    "cRelationshipManager::ApplyRelationship requires a non-null bridge result; cCity::SpawnVehicle and cCultureSet::PickCreation demonstrate consumer-side cCivilization assumptions."
+  ],
+  "contradictions_resolved": [
+    {
+      "prior_claim": "00ba9370 returns null when the ID is absent.",
+      "resolution": "False except for 0xffffffff or lower-bound end. A missing key with a successor returns the successor empire.",
+      "impact": "01021300 can cache and expose a successor empire under a mismatched player ID."
+    },
+    {
+      "prior_claim": "The old cache is destroyed through vtable slot +0x04.",
+      "resolution": "False. cEmpire's primary ISimulatorSerializable vtable names +0x00 AddRef and +0x04 Release. The secondary RefCountTemplate vtable is stored at object+0x04 but is not the table used by the call.",
+      "impact": "Ownership and replacement ordering are now exact."
+    },
+    {
+      "prior_claim": "00b25fb0 has an ambiguous stack fallback.",
+      "resolution": "The function reads exactly the caller stack word at entry+0x04 and returns it when 01021300 is null.",
+      "impact": "The bridge has a deterministic no-current-empire fallback contract."
+    },
+    {
+      "prior_claim": "The downstream dynamic subtype is wholly unknown.",
+      "resolution": "The stable ABI is cGameData*, but the registry key is kCivilization and named consumers establish cCivilization* with high confidence. Only the fallback's caller-side type remains open.",
+      "impact": "The bridge can be represented as a cCivilization-compatible game-data boundary without claiming runtime RTTI."
+    }
+  ],
+  "remaining_ambiguities": [
+    {
+      "id": "registry-accessor-alias",
+      "question": "Why does 00b3d2a0 return DAT_0167eae4 while the SDK maps cStarManager::Get to 00b3d3a0/DAT_0167eb0c?",
+      "bounded_claim": "Both accessors may be phase- or subsystem-specific aliases; 00ba9370 is structurally cStarManager-compatible at +0x150.",
+      "next_action": "Trace writers and lifecycle owners of DAT_0167eae4 and DAT_0167eb0c and compare object initialization paths without modifying Ghidra types prematurely."
+    },
+    {
+      "id": "noun-manager-accessor-source",
+      "question": "Which named accessor is the authoritative source of the cGameNounManager-layout ECX passed to 00b25fb0?",
+      "bounded_claim": "Representative callers obtain it from 00b3d300, while the SDK maps cGameNounManager::Get to 00b3d400; the layout and noun-map mechanics are established.",
+      "next_action": "Trace the writers and consumers of DAT_0167eae0 and DAT_0167eb60 and establish whether these are aliases, wrappers, or mode-specific instances."
+    },
+    {
+      "id": "fallback-type-and-caller-prep",
+      "question": "What exact cCivilization-compatible object is supplied as 00b25fb0's stack fallback at every caller?",
+      "bounded_claim": "The return ABI is one four-byte pointer and no validation occurs; at least one inspected call site has no obvious adjacent push and requires caller-frame reconstruction.",
+      "next_action": "Recover complete caller stack frames for representative diplomacy, city, culture, and shared-state consumers before freezing a replacement interface."
+    },
+    {
+      "id": "callback-semantics",
+      "question": "What do callbacks 00b21080, 00d3d420, 00b236c0, and 00b1e500 materialize and filter?",
+      "bounded_claim": "Their SDK roles are create, clear, add, and filter by the five-argument shape; exact behavior is unresolved.",
+      "next_action": "Decompile the four callbacks and 00ba8420 as a bounded noun-registry package."
+    },
+    {
+      "id": "runtime-lifetime",
+      "question": "How are sSpacePlayerData, mEmpires, and kCivilization vectors torn down or rekeyed in live play?",
+      "bounded_claim": "No runtime evidence exists; the three roots provide no complete invalidation hook.",
+      "next_action": "If runtime work is later authorized, trace mode transitions and registry erasure without using runtime to rewrite this static contract."
+    }
+  ],
+  "next_actions_static": [
+    {
+      "order": 1,
+      "action": "Promote the corrected lower-bound/null matrix and cache replacement order into any later root-closure consumer; do not reuse the older exact-find/null wording."
+    },
+    {
+      "order": 2,
+      "action": "Resolve DAT_0167eae4 versus DAT_0167eb0c and DAT_0167eae0 versus DAT_0167eb60 as accessor/global aliases before assigning named service interfaces."
+    },
+    {
+      "order": 3,
+      "action": "Characterize 00b21080, 00d3d420, 00b236c0, 00b1e500, and 00ba8420 to close kCivilization materialization."
+    },
+    {
+      "order": 4,
+      "action": "Recover full call-frame contracts for 00b25fb0 fallback values in 00bf9820, 00bdde70, 00d06270, and 00aebe90."
+    },
+    {
+      "order": 5,
+      "action": "Audit registry mutation sites against 01021300's identity-only validation to document stale-cache risks without implementing mitigation."
+    }
+  ],
+  "sources": [
+    {
+      "path": "docs/analysis/simulator-shared-state-interface.md",
+      "use": "baseline root contracts, offsets, fan-in, and prior unresolved questions"
+    },
+    {
+      "path": "knowledgegraph/triage/simulator-shared-state-interface-f0e310e0.json",
+      "use": "machine-readable baseline evidence and snapshot identity"
+    },
+    {
+      "path": "knowledgegraph/triage/xrefs-2540f2ca.tsv",
+      "use": "canonical direct caller/callee closure and callsite validation"
+    },
+    {
+      "path": "knowledgegraph/triage/reconstruction-readiness-f0e310e0.json",
+      "use": "root fan-in/readiness baseline"
+    },
+    {
+      "path": "knowledgegraph/triage/unknown-high-investigation-f0e310e0.json",
+      "use": "target triage records and representative consumer classification"
+    },
+    {
+      "path": "knowledgegraph/triage/sdk-boundary-repairs-2540f2ca.tsv",
+      "use": "GetPlayerCivilization tail-alias boundary correction"
+    },
+    {
+      "path": ".spore-analysis/ghidra-exports/structs_fields.tsv",
+      "use": "exported SDK structure and vtable field offsets"
+    },
+    {
+      "path": ".spore-analysis/ghidra-exports/spore_sdk.xml",
+      "use": "pinned SDK export corresponding to SDKtoGhidra/SporeGhidra_march2017.xml"
+    },
+    {
+      "path": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cRelationshipManager__IsAllied2.c",
+      "use": "committed diplomacy consumer snapshot"
+    },
+    {
+      "path": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cMissionManager__GetMissionTrackColor.c",
+      "use": "committed mission consumer snapshot"
+    },
+    {
+      "path": "docs/analysis/dossiers/unknown-high/space-player-data-accessors-2.json",
+      "use": "historical cache summary retained as evidence and corrected where it conflicts with static instructions"
+    },
+    {
+      "path": "SPORE/SporeBin/SporeApp.exe",
+      "use": "read-only pinned-byte static instruction verification; not modified and not executed"
+    }
+  ]
+}

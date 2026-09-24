@@ -1,0 +1,2720 @@
+{
+  "$schema": "state-machine-research-1",
+  "callbacks": [
+    {
+      "address": "0x008df700",
+      "boundary": "original_static",
+      "confidence": {
+        "gaps": [
+          "The live Ghidra function is rebounded at 0x008df460; the SDK address 0x008df700 is an anchor rather than a clean entry.",
+          "Exact cache-hit, database-search, factory, and output-handle precedence is only partially recovered."
+        ],
+        "level": "medium"
+      },
+      "consumers": [
+        "Resource::cResourceManager::GetPrivateResource",
+        "Resource::cResourceManager::ReloadResource",
+        "Resource::cResourceManager::GetResourceAsync",
+        "Cell and other gameplay content consumers"
+      ],
+      "evidence": [
+        {
+          "address": "0x008df700",
+          "basis": "SDK signature declares GetResource and the Ghidra export identifies the resource-manager lookup anchor; the live body at 0x008df460 visibly checks a cache-like path, falls back to database/factory paths, and creates an output object through an indirect service call.",
+          "boundary": "original_static",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/sdk_functions.tsv:851; .spore-analysis/ghidra-exports/decompiled_sdk/Resource__cResourceManager__GetPrivateResource.c:8-40; live Ghidra decompile of FUN_008df460"
+        },
+        {
+          "address": null,
+          "basis": "SDK documents cache use, optional database/factory overrides, optional alternate cache key, synchronous return, and ResourceObjectPtr output.",
+          "boundary": "sdk_interface",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore ModAPI/Spore/Resource/IResourceManager.h:84-104"
+        }
+      ],
+      "name": "Resource::cResourceManager::GetResource",
+      "parameters": [
+        "ResourceKey name",
+        "ResourceObjectPtr* output",
+        "factory data",
+        "optional Database",
+        "optional IResourceFactory",
+        "optional alternate cache key"
+      ],
+      "returns": "bool",
+      "semantics": "Synchronous record/resource acquisition surface; cache, database selection, record creation, and factory creation are separate replaceable layers around a successful ResourceObject handle."
+    },
+    {
+      "address": "0x008df730",
+      "boundary": "original_static",
+      "confidence": {
+        "gaps": [
+          "Scheduling, worker, cancellation, and polling order are not recovered."
+        ],
+        "level": "medium"
+      },
+      "consumers": [
+        "IAsyncRequest::IsReady",
+        "IAsyncRequest::GetResource",
+        "Callers that poll or wait for completion"
+      ],
+      "evidence": [
+        {
+          "address": "0x008df730",
+          "basis": "SDK signature exposes synchronous output, IAsyncRequestPtr output, optional database/factory/cache overrides, and immediate-return semantics.",
+          "boundary": "sdk_interface",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore ModAPI/Spore/Resource/IResourceManager.h:106-125; .spore-analysis/ghidra-exports/sdk_functions.tsv:852"
+        },
+        {
+          "address": null,
+          "basis": "IAsyncRequest exposes IsReady and GetResource, but the implementation and ordering are not present in the captured decompilation set.",
+          "boundary": "sdk_interface",
+          "level": "SUPPORTED",
+          "source": "Spore-ModAPI/Spore ModAPI/Spore/Resource/ResourceObject.h:82-90"
+        }
+      ],
+      "name": "Resource::cResourceManager::GetResourceAsync",
+      "parameters": [
+        "ResourceKey name",
+        "ResourceObjectPtr* output",
+        "IAsyncRequestPtr* request output",
+        "optional database/factory/cache overrides"
+      ],
+      "returns": "bool",
+      "semantics": "Asynchronous acquisition surface; readiness is represented by a separate request object, not by the synchronous cache state."
+    },
+    {
+      "address": "0x008dfa70",
+      "boundary": "original_static",
+      "confidence": {
+        "gaps": [
+          "Whether reload reuses, replaces, or invalidates cache entries is not established by the captured body."
+        ],
+        "level": "medium"
+      },
+      "consumers": [
+        "Resource::DatabasePackedFile index/record machinery",
+        "IResourceFactory::ReadResource",
+        "Cache and database change consumers"
+      ],
+      "evidence": [
+        {
+          "address": "0x008dfa70",
+          "basis": "SDK exposes ReloadResource with an existing ResourceObject and optional database/factory overrides; Ghidra SDK export pins the function anchor but the live body is not a reliable exact entry.",
+          "boundary": "sdk_interface",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore ModAPI/Spore/Resource/IResourceManager.h:134-139; .spore-analysis/ghidra-exports/sdk_functions.tsv:853"
+        }
+      ],
+      "name": "Resource::cResourceManager::ReloadResource",
+      "parameters": [
+        "ResourceKey name",
+        "ResourceObject* existing object",
+        "optional factory data",
+        "optional Database",
+        "optional IResourceFactory"
+      ],
+      "returns": "bool",
+      "semantics": "Reload is a first-class lifecycle operation in the original interface; the replacement seam currently exposes no reload operation."
+    },
+    {
+      "address": "0x008dfc10",
+      "boundary": "original_static",
+      "confidence": {
+        "gaps": [
+          "The exported body is boundary-damaged and does not establish the complete acquire edge or output ownership transfer.",
+          "The SDK documentation, not this body, is the strongest evidence for cache bypass."
+        ],
+        "level": "medium"
+      },
+      "consumers": [
+        "Resource::ResourceObject owners",
+        "resource factory and database loaders"
+      ],
+      "evidence": [
+        {
+          "address": "0x008dfc10",
+          "basis": "SDK explicitly defines GetPrivateResource as a cache-bypassing path that always generates a new resource; Ghidra identifies the same SDK anchor but warns that the body is incomplete.",
+          "boundary": "sdk_interface",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore ModAPI/Spore/Resource/IResourceManager.h:141-156; .spore-analysis/ghidra-exports/decompiled_sdk/Resource__cResourceManager__GetPrivateResource.c:8-40"
+        }
+      ],
+      "name": "Resource::cResourceManager::GetPrivateResource",
+      "parameters": [
+        "ResourceKey name",
+        "ResourceObjectPtr* output",
+        "factory data",
+        "optional Database",
+        "optional IResourceFactory",
+        "optional alternate cache key"
+      ],
+      "returns": "bool",
+      "semantics": "Private/unshared acquisition bypasses the normal cache check according to the SDK contract; exact output-handle ownership and factory/database order remain unresolved."
+    },
+    {
+      "address": "0x008de6c0",
+      "boundary": "original_static",
+      "confidence": {
+        "gaps": [
+          "Which cache accepts a resource and whether the boolean controls insertion or replacement is not recovered."
+        ],
+        "level": "medium"
+      },
+      "consumers": [
+        "Resource::ICache::CanCacheResource",
+        "Resource::ICache::CacheResource",
+        "CachedResourceObject final-release path"
+      ],
+      "evidence": [
+        {
+          "address": "0x008de6c0",
+          "basis": "SDK exposes RegisterCache, FindCache, CacheResource, FlushCache, and GetCacheList; ICache exposes CacheResource, CanCacheResource, GetResource, and Flush.",
+          "boundary": "sdk_interface",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore ModAPI/Spore/Resource/IResourceManager.h:283-299; Spore-ModAPI/Spore ModAPI/Spore/Resource/ICache.h:29-44; .spore-analysis/ghidra-exports/sdk_functions.tsv:847-848"
+        }
+      ],
+      "name": "Resource::cResourceManager::CacheResource",
+      "parameters": [
+        "ResourceObject* resource",
+        "boolean cache-policy flag"
+      ],
+      "returns": "bool",
+      "semantics": "Manager-mediated cache insertion surface; cache eligibility and eviction are delegated to registered ICache implementations."
+    },
+    {
+      "address": "0x008de710",
+      "boundary": "original_static",
+      "confidence": {
+        "gaps": [
+          "The filter semantics and whether flush releases or only removes cache references are not fully recovered."
+        ],
+        "level": "medium"
+      },
+      "consumers": [
+        "Resource::ICache::Flush",
+        "CachedResourceObject release callback",
+        "database-change notification consumers"
+      ],
+      "evidence": [
+        {
+          "address": "0x008de710",
+          "basis": "SDK exposes FlushCache(ICache*, IKeyFilter*) and ICache::Flush(IKeyFilter*); the captured decompilation does not establish an eviction policy.",
+          "boundary": "sdk_interface",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore ModAPI/Spore/Resource/IResourceManager.h:291-299; Spore-ModAPI/Spore ModAPI/Spore/Resource/ICache.h:35-44; .spore-analysis/ghidra-exports/sdk_functions.tsv:848"
+        }
+      ],
+      "name": "Resource::cResourceManager::FlushCache",
+      "parameters": [
+        "ICache* cache",
+        "optional IKeyFilter* filter"
+      ],
+      "returns": "void",
+      "semantics": "Filtered cache invalidation/removal surface; exact reference-release and eviction timing remain unresolved."
+    },
+    {
+      "address": "0x008da6f0",
+      "boundary": "original_static",
+      "confidence": {
+        "gaps": [
+          "The live Ghidra function is rebounded at 0x008da3d0; the SDK address is a structural anchor.",
+          "The exact QFS branch is not visible in the SDK/Ghidra body."
+        ],
+        "level": "medium"
+      },
+      "consumers": [
+        "Resource::PFRecordRead",
+        "IResourceFactory::CreateResource",
+        "IResourceFactory::ReadResource"
+      ],
+      "evidence": [
+        {
+          "address": "0x008da6f0",
+          "basis": "Database and DatabasePackedFile vtables expose OpenRecord(ResourceKey, IRecord**, access, create disposition, optional info); PFRecordBase/PFRecordRead expose key, stream, database, RecordOpen, and RecordClose.",
+          "boundary": "sdk_interface",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore ModAPI/Spore/Resource/Database.h:54-63; Spore-ModAPI/Spore ModAPI/Spore/Resource/DatabasePackedFile.h:91-103; .spore-analysis/ghidra-exports/structs_fields.tsv:1370-1374,4356-4358"
+        },
+        {
+          "address": "0x008da3d0",
+          "basis": "Live Ghidra body resolves a key against database index state, consults record information, and selects record creation/read helpers; decompiler types and access flags are not authoritative.",
+          "boundary": "original_static",
+          "level": "SUPPORTED",
+          "source": "live Ghidra decompile of FUN_008da3d0; .spore-analysis/ghidra-exports/sdk_functions.tsv:804-805"
+        }
+      ],
+      "name": "Resource::DatabasePackedFile::OpenRecord",
+      "parameters": [
+        "ResourceKey name",
+        "IRecord** output",
+        "IO access flags",
+        "create disposition",
+        "optional record-info output"
+      ],
+      "returns": "bool",
+      "semantics": "Opens a package record by the full resource identity and returns a record/stream lease; it is distinct from decoding the record into a ResourceObject."
+    },
+    {
+      "address": "0x008d9d30",
+      "boundary": "original_static",
+      "confidence": {
+        "gaps": [
+          "The live function is rebounded at 0x008d9a10 and the decompiled body is not a clean exact entry."
+        ],
+        "level": "medium"
+      },
+      "consumers": [
+        "Resource::PFRecordRead::DoPostClose",
+        "DatabaseDirectoryFiles record maps",
+        "ResourceObject and ResourceManager caches"
+      ],
+      "evidence": [
+        {
+          "address": "0x008d9d30",
+          "basis": "Database and DatabasePackedFile vtables expose CloseRecord(IRecord*) and record open counts; DatabaseDirectoryFiles has a record-list data map keyed by ResourceKey.",
+          "boundary": "sdk_interface",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore ModAPI/Spore/Resource/Database.h:61-63; .spore-analysis/ghidra-exports/structs_fields.tsv:1372-1373,4452-4455"
+        },
+        {
+          "address": "0x0069d3f0",
+          "basis": "The exported DatabaseDirectoryFiles::CloseRecord body visibly computes/refers to record reference counts and returns a boolean; exact cleanup ordering is decompiler-sensitive.",
+          "boundary": "original_static",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Resource__DatabaseDirectoryFiles__CloseRecord.c:8-81; .spore-analysis/ghidra-exports/decompiled_sdk/Resource__DatabaseDirectoryFiles__GetRefCount.c:8-21"
+        }
+      ],
+      "name": "Resource::Database::CloseRecord",
+      "parameters": [
+        "IRecord* record"
+      ],
+      "returns": "bool",
+      "semantics": "Closes a record lease and is coupled to record/reference bookkeeping; callers must not retain a record stream after close without an owned copy."
+    },
+    {
+      "address": "0x00e666f0",
+      "boundary": "original_static",
+      "confidence": {
+        "gaps": [
+          "Exact recursive traversal order, cache de-duplication, wait behavior, and atomicity are not runtime-observed."
+        ],
+        "level": "high"
+      },
+      "consumers": [
+        "Simulator::Cell::cCellGFX::PreloadCellResource",
+        "Simulator::Cell::cCellGFX::PreloadPopulateResource",
+        "AddPreloadedModel",
+        "AddPreloadedEffect",
+        "AddPreloadedTexture",
+        "PreloadCreature"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e666f0",
+          "basis": "Ghidra decompilation shows recursive cell and populate preloads, nested resource traversal, and model/effect/creature preload calls; the SDK declares the corresponding preload collection and helper methods.",
+          "boundary": "original_static",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__PreloadResources.c:8-141; .spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__PreloadCellResource.c:8-159; .spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__PreloadPopulateResource.c:8-174; Spore-ModAPI/Spore ModAPI/Spore/Simulator/Cell/cCellGFX.h:60-74"
+        }
+      ],
+      "name": "Simulator::Cell::cCellGFX::PreloadResources",
+      "parameters": [],
+      "returns": "void",
+      "semantics": "Resource-driven stage transition that recursively preloads models, textures, effects, creatures, and populate/cell associations before display; it has no rich error return."
+    },
+    {
+      "address": "0x00e55120",
+      "boundary": "original_static",
+      "confidence": {
+        "gaps": [
+          "The exact relationship between all preload helpers finishing and StartDisplay being called is static/contract evidence, not a positive runtime trace."
+        ],
+        "level": "high"
+      },
+      "consumers": [
+        "Cell worlds, layers, lighting, shadow, effect, and audio hooks",
+        "App::cCellModeStrategy::OnEnter"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e55120",
+          "basis": "Ghidra decompilation calls lighting-world setup, toggles world/layer handles, resets shadow state, and creates named audio tracks; SDK StartDisplay documents visible world/layer/UI/audio activation.",
+          "boundary": "original_static",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__StartDisplay.c:8-47; Spore-ModAPI/Spore ModAPI/Spore/Simulator/Cell/cCellGFX.h:75-79; .spore-analysis/ghidra-exports/structs_fields.tsv:163-205"
+        }
+      ],
+      "name": "Simulator::Cell::cCellGFX::StartDisplay",
+      "parameters": [],
+      "returns": "void",
+      "semantics": "Activates the Cell presentation graph after the world/layer and preload work; it is a display boundary, not a content decode boundary."
+    },
+    {
+      "address": null,
+      "boundary": "openspore_current",
+      "confidence": {
+        "gaps": [
+          "No cache, priority, name resolution, factory, async request, reload, or record lease is present in this interface."
+        ],
+        "level": "high"
+      },
+      "consumers": [
+        "openspore::compat::fetchGmdlModel",
+        "asset tests and future content loaders"
+      ],
+      "evidence": [
+        {
+          "address": null,
+          "basis": "The current B1 interface fetches owned bytes by (type, group, instance); DbpfResourceProvider reparses the index on every fetch, and MemoryResourceProvider is a deterministic test stub.",
+          "boundary": "openspore_current",
+          "level": "VERIFIED",
+          "source": "src/compat/ResourceProvider.hpp:21-85; src/assets/tests/assets_test.cpp:326-364"
+        }
+      ],
+      "name": "openspore::compat::IResourceProvider::fetch",
+      "parameters": [
+        "type",
+        "group",
+        "instance",
+        "output bytes",
+        "error string"
+      ],
+      "returns": "bool",
+      "semantics": "Current clean-room byte boundary: false plus an error for absent or unreadable records, true plus owned bytes for a successful fetch. It deliberately does not claim original manager behavior."
+    }
+  ],
+  "domain": "Resource and content lifecycle",
+  "events": [
+    {
+      "boundary": "original_static",
+      "confidence": {
+        "level": "medium"
+      },
+      "consumers": [
+        "Resource::cResourceManager registries",
+        "later database/factory/cache registration"
+      ],
+      "evidence": [
+        {
+          "address": "0x008de530",
+          "basis": "Ghidra function body allocates/initializes a hash-table-like structure and writes a sentinel; SDK field export exposes manager maps and registry fields.",
+          "boundary": "original_static",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Resource__cResourceManager__Initialize.c:8-47; .spore-analysis/ghidra-exports/structs_fields.tsv:22437-22453"
+        }
+      ],
+      "id": "resource_manager_initialize",
+      "kind": "manager_transition",
+      "producers": [
+        "Resource::cResourceManager::Initialize",
+        "0x008de530"
+      ],
+      "state_effect": "uninitialized -> partially configured manager"
+    },
+    {
+      "boundary": "sdk_interface",
+      "confidence": {
+        "level": "high"
+      },
+      "consumers": [
+        "Resource::cResourceManager::GetResource",
+        "Resource::cResourceManager::FindDatabase",
+        "Resource::cResourceManager::FindRecord"
+      ],
+      "evidence": [
+        {
+          "address": "0x008e1000",
+          "basis": "SDK RegisterDatabase accepts add/remove, Database pointer, and priority; the manager field export contains database-list and cache-list state.",
+          "boundary": "sdk_interface",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore ModAPI/Spore/Resource/IResourceManager.h:245-275; .spore-analysis/ghidra-exports/sdk_functions.tsv:869"
+        }
+      ],
+      "id": "database_registered",
+      "kind": "registry_transition",
+      "producers": [
+        "Resource::cResourceManager::RegisterDatabase",
+        "0x008e1000"
+      ],
+      "state_effect": "manager gains or loses a database candidate and priority association"
+    },
+    {
+      "boundary": "sdk_interface",
+      "confidence": {
+        "level": "high"
+      },
+      "consumers": [
+        "Resource::cResourceManager::GetResource",
+        "Resource::cResourceManager::GetPrivateResource",
+        "Resource::cResourceManager::GetResourceAsync"
+      ],
+      "evidence": [
+        {
+          "address": "0x008e1d20",
+          "basis": "SDK RegisterFactory adds/removes factories and exposes supported record types and CanConvert; manager fields include resource-type and record-type maps.",
+          "boundary": "sdk_interface",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore ModAPI/Spore/Resource/IResourceManager.h:221-243; Spore-ModAPI/Spore ModAPI/Spore/Resource/IResourceFactory.h:37-87; .spore-analysis/ghidra-exports/structs_fields.tsv:22445-22448"
+        }
+      ],
+      "id": "factory_registered",
+      "kind": "registry_transition",
+      "producers": [
+        "Resource::cResourceManager::RegisterFactory",
+        "0x008e1d20"
+      ],
+      "state_effect": "manager gains or loses a record-type/resource-type decoder"
+    },
+    {
+      "boundary": "sdk_interface",
+      "confidence": {
+        "level": "high"
+      },
+      "consumers": [
+        "Resource::cResourceManager::GetResource",
+        "Resource::cResourceManager::GetPrivateResource",
+        "Resource::cResourceManager::FlushCache"
+      ],
+      "evidence": [
+        {
+          "address": "0x008e2020",
+          "basis": "SDK RegisterCache accepts add/remove and cache priority; manager field export exposes CacheVector_t and ICache list/vtable methods.",
+          "boundary": "sdk_interface",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore ModAPI/Spore/Resource/IResourceManager.h:283-299; .spore-analysis/ghidra-exports/structs_fields.tsv:2157-2182,22448"
+        }
+      ],
+      "id": "cache_registered",
+      "kind": "registry_transition",
+      "producers": [
+        "Resource::cResourceManager::RegisterCache",
+        "0x008e2020"
+      ],
+      "state_effect": "manager gains or loses a cache implementation and priority"
+    },
+    {
+      "boundary": "original_static",
+      "confidence": {
+        "level": "medium"
+      },
+      "consumers": [
+        "Resource::cResourceManager::GetResource",
+        "Resource::cResourceManager::GetPrivateResource",
+        "Resource::cResourceManager::ReloadResource"
+      ],
+      "evidence": [
+        {
+          "address": "0x008df460",
+          "basis": "Live Ghidra GetResource body first probes a cache-like helper with the requested or alternate key, then falls through to database/factory work; decompiler register names are not used as truth.",
+          "boundary": "original_static",
+          "level": "SUPPORTED",
+          "source": "live Ghidra decompile of FUN_008df460; Spore-ModAPI/Spore ModAPI/Spore/Resource/IResourceManager.h:84-104"
+        }
+      ],
+      "id": "resource_requested",
+      "kind": "acquisition_transition",
+      "producers": [
+        "Resource::cResourceManager::GetResource",
+        "Resource::cResourceManager::GetPrivateResource",
+        "Resource::cResourceManager::GetResourceAsync"
+      ],
+      "state_effect": "cache lookup or package/factory load path is entered for a ResourceKey"
+    },
+    {
+      "boundary": "sdk_interface",
+      "confidence": {
+        "level": "high"
+      },
+      "consumers": [
+        "Resource::cResourceManager::GetResource",
+        "Resource::cResourceManager::GetLoadedResource"
+      ],
+      "evidence": [
+        {
+          "address": "0x008de670",
+          "basis": "SDK exposes FindCache and GetLoadedResource; ICache exposes GetResource(ResourceKey&, ResourceObjectPtr*).",
+          "boundary": "sdk_interface",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore ModAPI/Spore/Resource/IResourceManager.h:127-132,283-288; Spore-ModAPI/Spore ModAPI/Spore/Resource/ICache.h:35-43"
+        }
+      ],
+      "id": "resource_cache_hit",
+      "kind": "cache_transition",
+      "producers": [
+        "Resource::cResourceManager::GetResource",
+        "Resource::ICache::GetResource"
+      ],
+      "state_effect": "existing ResourceObject is returned without a new package record load"
+    },
+    {
+      "boundary": "original_static",
+      "confidence": {
+        "level": "medium"
+      },
+      "consumers": [
+        "Database::FindRecord",
+        "DatabasePackedFile::OpenRecord",
+        "IResourceFactory::CreateResource"
+      ],
+      "evidence": [
+        {
+          "address": "0x008df460",
+          "basis": "The GetResource body falls back after the initial lookup and invokes database/factory-related helpers; exact database-priority order is unresolved.",
+          "boundary": "original_static",
+          "level": "SUPPORTED",
+          "source": "live Ghidra decompile of FUN_008df460; Spore-ModAPI/Spore ModAPI/Spore/Resource/IResourceManager.h:84-104,195-201"
+        }
+      ],
+      "id": "resource_cache_miss",
+      "kind": "cache_transition",
+      "producers": [
+        "Resource::cResourceManager::GetResource",
+        "Resource::cResourceManager::GetPrivateResource"
+      ],
+      "state_effect": "database search and record/factory construction are attempted"
+    },
+    {
+      "boundary": "original_static",
+      "confidence": {
+        "level": "medium"
+      },
+      "consumers": [
+        "Resource::DatabasePackedFile",
+        "Resource::PFIndexModifiable",
+        "record identity lookup"
+      ],
+      "evidence": [
+        {
+          "address": "0x008d84d0",
+          "basis": "Live Ghidra database lock path enumerates PFIndex files and sets a database flag; SDK/Ghidra fields expose mnIndexOffset, mnIndexCount, mnIndexSize, mpIndex, and index mutexes.",
+          "boundary": "original_static",
+          "level": "SUPPORTED",
+          "source": "live Ghidra decompile of FUN_008d84d0; .spore-analysis/ghidra-exports/structs_fields.tsv:4401-4425; .spore-analysis/ghidra-exports/decompiled_sdk/Resource__PFIndexModifiable__GetFiles.c:7-69"
+        }
+      ],
+      "id": "package_index_loaded",
+      "kind": "storage_transition",
+      "producers": [
+        "Resource::DatabasePackedFile::Lock",
+        "Resource::PFIndexModifiable::Read",
+        "Resource::DatabasePackedFile::ReadIndexRecord"
+      ],
+      "state_effect": "package index becomes available for full ResourceKey lookup"
+    },
+    {
+      "boundary": "original_static",
+      "confidence": {
+        "level": "high"
+      },
+      "consumers": [
+        "Resource::DatabasePackedFile::OpenRecord",
+        "Resource::PFIndexModifiable::GetFileInfo",
+        "Resource::DatabasePackedFile field_2E8"
+      ],
+      "evidence": [
+        {
+          "address": "0x008da3d0",
+          "basis": "The live DatabasePackedFile body resolves a key through the index and consults record metadata; SDK ResourceKey is a 12-byte instance/type/group triple and RecordInfo carries offset/sizes/flags.",
+          "boundary": "original_static",
+          "level": "SUPPORTED",
+          "source": "live Ghidra decompile of FUN_008da3d0; .spore-analysis/ghidra-exports/structs_fields.tsv:1074-1076,1347-1351,4415-4418"
+        }
+      ],
+      "id": "record_identity_matched",
+      "kind": "identity_transition",
+      "producers": [
+        "Resource::DatabasePackedFile::OpenRecord",
+        "openspore::assets::findDbpfEntry"
+      ],
+      "state_effect": "a single package record candidate is selected by the full (type, group, instance) identity"
+    },
+    {
+      "boundary": "original_static",
+      "confidence": {
+        "level": "medium"
+      },
+      "consumers": [
+        "IResourceFactory::CreateResource",
+        "IResourceFactory::ReadResource",
+        "ResourceObject parser"
+      ],
+      "evidence": [
+        {
+          "address": "0x008da3d0",
+          "basis": "The live OpenRecord body creates/opens a record through the database and record factory surface; the exact QFS call site is not recovered.",
+          "boundary": "original_static",
+          "level": "SUPPORTED",
+          "source": "live Ghidra decompile of FUN_008da3d0; Spore-ModAPI/Spore ModAPI/Spore/Resource/IResourceFactory.h:46-62"
+        }
+      ],
+      "id": "record_opened",
+      "kind": "record_lease_transition",
+      "producers": [
+        "Resource::DatabasePackedFile::OpenRecord",
+        "Resource::PFRecordRead::RecordOpen"
+      ],
+      "state_effect": "a record/stream lease exists for the selected identity"
+    },
+    {
+      "boundary": "openspore_current",
+      "confidence": {
+        "level": "high"
+      },
+      "consumers": [
+        "openspore::compat::fetchGmdlModel",
+        "cell_stage record decoding"
+      ],
+      "evidence": [
+        {
+          "address": null,
+          "basis": "Current B1 parses the DBPF index, finds the exact key, checks the extent, and copies the record; compressed records are decompressed and must match memSize.",
+          "boundary": "openspore_current",
+          "level": "VERIFIED",
+          "source": "src/assets/Dbpf.cpp:37-224; src/compat/ResourceProvider.hpp:40-53"
+        }
+      ],
+      "id": "record_bytes_extracted",
+      "kind": "decode_transition",
+      "producers": [
+        "openspore::assets::extractDbpfRecord",
+        "openspore::compat::DbpfResourceProvider::fetch"
+      ],
+      "state_effect": "owned decompressed record bytes are available to a codec/consumer"
+    },
+    {
+      "boundary": "openspore_current",
+      "confidence": {
+        "level": "high"
+      },
+      "consumers": [
+        "openspore::assets::GMDL/raster/cell decoders",
+        "cell_stage"
+      ],
+      "evidence": [
+        {
+          "address": null,
+          "basis": "Current QFS decoder accepts 10FB/50FB, reads a 24-bit big-endian output size, rejects invalid back-references, and checks output against DBPF memSize.",
+          "boundary": "openspore_current",
+          "level": "VERIFIED",
+          "source": "src/assets/Dbpf.cpp:103-223; tests/fixtures/mini_package.dbpf; src/assets/tests/assets_test.cpp:192-222"
+        }
+      ],
+      "id": "qfs_decompressed",
+      "kind": "decode_transition",
+      "producers": [
+        "openspore::assets::qfsDecompress"
+      ],
+      "state_effect": "stored DBPF bytes become uncompressed record bytes"
+    },
+    {
+      "boundary": "sdk_interface",
+      "confidence": {
+        "level": "high"
+      },
+      "consumers": [
+        "Resource::cResourceManager::GetResource",
+        "Resource::cResourceManager::GetPrivateResource",
+        "Cell preload helpers"
+      ],
+      "evidence": [
+        {
+          "address": "0x008df700",
+          "basis": "GetResource returns false when the requested record/resource cannot be found or generated; the SDK does not expose a distinct error enum for absent versus unreadable content.",
+          "boundary": "sdk_interface",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore ModAPI/Spore/Resource/IResourceManager.h:84-104,141-156"
+        }
+      ],
+      "id": "resource_unavailable",
+      "kind": "failure_transition",
+      "producers": [
+        "Resource::cResourceManager::GetResource",
+        "Resource::Database::OpenRecord",
+        "openspore::compat::IResourceProvider::fetch"
+      ],
+      "state_effect": "no usable ResourceObject/record handle is produced; original error reason remains lossy"
+    },
+    {
+      "boundary": "original_static",
+      "confidence": {
+        "level": "high"
+      },
+      "consumers": [
+        "Cell world/model/effect/creature presentation state"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e666f0",
+          "basis": "The preload body recursively calls cell/populate preloads and nested model/effect/creature helpers; it is a void operation with no rich failure return.",
+          "boundary": "original_static",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__PreloadResources.c:8-141; live Ghidra call graph for 0x00e666f0"
+        }
+      ],
+      "id": "cell_preload_started",
+      "kind": "stage_transition",
+      "producers": [
+        "Simulator::Cell::cCellGFX::PreloadResources"
+      ],
+      "state_effect": "stage preload traversal and handle association begin"
+    },
+    {
+      "boundary": "original_static",
+      "confidence": {
+        "level": "high"
+      },
+      "consumers": [
+        "AddPreloadedModel",
+        "AddPreloadedEffect",
+        "AddPreloadedTexture",
+        "PreloadCreature"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e653a0",
+          "basis": "AddPreloadedModel2 appends model pointers and performs field_40 retain/release-style bookkeeping; AddPreloadedTexture and AddPreloadedEffect have analogous collection updates.",
+          "boundary": "original_static",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__AddPreloadedModel2.c:8-41; .spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__AddPreloadedTexture.c:8-60; .spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__AddPreloadedEffect.c:8-74"
+        }
+      ],
+      "id": "cell_content_preloaded",
+      "kind": "stage_transition",
+      "producers": [
+        "Simulator::Cell::cCellGFX::AddPreloadedModel",
+        "Simulator::Cell::cCellGFX::AddPreloadedEffect",
+        "Simulator::Cell::cCellGFX::AddPreloadedTexture",
+        "Simulator::Cell::cCellGFX::PreloadCreature"
+      ],
+      "state_effect": "preloaded model/effect/texture/creature handles are retained or skipped according to helper-specific rules"
+    },
+    {
+      "boundary": "original_static",
+      "confidence": {
+        "level": "medium"
+      },
+      "consumers": [
+        "Cell effect-map state",
+        "cell entity effect instances"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e63560",
+          "basis": "LoadEffectMap releases/disables invalid slots, starts effects, applies parameters, and logs \"couldn't start effect\" when an effect cannot start; InstanceEffectOnCell selects a world, creates an instance, and releases a previous temporary/instance path.",
+          "boundary": "original_static",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__LoadEffectMap.c:38-155; .spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__InstanceEffectOnCell.c:30-73"
+        }
+      ],
+      "id": "cell_effect_instance_replaced",
+      "kind": "resource_driven_stage_transition",
+      "producers": [
+        "Simulator::Cell::cCellGFX::LoadEffectMap",
+        "Simulator::Cell::cCellGFX::InstanceEffectOnCell"
+      ],
+      "state_effect": "world effect association or entity-scoped effect instance is created/replaced/released"
+    },
+    {
+      "boundary": "original_static",
+      "confidence": {
+        "level": "high"
+      },
+      "consumers": [
+        "Cell display and renderer"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e55120",
+          "basis": "StartDisplay toggles lighting, world/layer handles, shadow/effect state, and audio hooks; the SDK and current mode source place it after initialization/preload contract.",
+          "boundary": "original_static",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__StartDisplay.c:8-47; Spore-ModAPI/Spore ModAPI/Spore/Simulator/Cell/cCellGFX.h:75-79; src/apps/CellModeStrategy.cpp:32-36"
+        }
+      ],
+      "id": "cell_display_started",
+      "kind": "stage_transition",
+      "producers": [
+        "Simulator::Cell::cCellGFX::StartDisplay",
+        "App::cCellModeStrategy::OnEnter"
+      ],
+      "state_effect": "Cell presentation becomes display-active"
+    },
+    {
+      "boundary": "original_static",
+      "confidence": {
+        "level": "high"
+      },
+      "consumers": [
+        "Cell stage globals and presentation shutdown"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e7fc00",
+          "basis": "SDK vtable/decompilation identifies OnExit as a mode transition; current source resets Cell presentation/background state and clears the entered flag.",
+          "boundary": "original_static",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnExit.c:8-31; src/apps/CellModeStrategy.cpp:38-42"
+        }
+      ],
+      "id": "cell_display_exited",
+      "kind": "stage_transition",
+      "producers": [
+        "App::cCellModeStrategy::OnExit",
+        "GameModeManager::setActiveModeAt"
+      ],
+      "state_effect": "display/entered state is disabled before mode teardown or next mode entry"
+    }
+  ],
+  "scope": {
+    "binary": {
+      "architecture": "x86:LE:32:windows",
+      "image_base": "0x00400000",
+      "path": "SPORE/SporeBin/SporeApp.exe",
+      "product": "Spore 3.1.0.22 GOG no-DRM build",
+      "sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e"
+    },
+    "current_boundary": {
+      "consumer": "openspore::compat::fetchGmdlModel and future loaders",
+      "failure_contract": "false plus error string for absent or unreadable record",
+      "producer": "openspore::compat::DbpfResourceProvider",
+      "scope": "one borrowed DBPF package image, reparse index per fetch, exact linear key lookup, optional QFS decode, owned output bytes",
+      "source": "src/compat/ResourceProvider.hpp:21-59; docs/BOUNDARIES.md:48-69"
+    },
+    "evidence_policy": {
+      "current_source": "Current C++ is evidence of OpenSpore behavior only and is never promoted to original runtime fidelity.",
+      "decompilation": "Ghidra pseudocode is direct static evidence but decompiler calling conventions, register recovery, and SDK mid-body anchors are not authoritative.",
+      "levels": [
+        "UNKNOWN",
+        "APPROXIMATION",
+        "INFERRED",
+        "SUPPORTED",
+        "OBSERVED",
+        "CONFIRMED",
+        "VERIFIED"
+      ],
+      "runtime": "No positive original resource or Cell-stage resource trace exists in the inspected evidence. Existing menu/Cell runtime records are negative or absent."
+    },
+    "excluded": [
+      "No implementation or patch was produced.",
+      "SPORE/ and historical triage artifacts were not modified.",
+      "No original runtime behavior is claimed from OpenSpore source, tests, decompilation alone, or empty traces.",
+      "Exact original multi-package priority, cache eviction, async scheduling, QFS call site, and full teardown order remain unresolved."
+    ],
+    "included": [
+      "ResourceManager, database, directory-file, packed-file, record, factory, cache, key-name, and change-notification surfaces",
+      "DBPF v3 index identity, stored/memory extents, saved/compression metadata, and QFS decode",
+      "Original Cell GFX preload/effect/display/teardown transitions",
+      "Current B1 provider and the current Cell GFX/mode lifecycle approximation",
+      "Content absence, malformed-record, unsupported decode, and preload-skip failure paths"
+    ],
+    "kg_queries": [
+      {
+        "query": "neighbors(struct:Simulator::Cell::cCellGFX)",
+        "result": "static associations to 0x00628450, 0x00e4fbb0, 0x00e55120, 0x00e5dba0, 0x00e63560, 0x00e64980, 0x00e653a0, 0x00e65410, 0x00e65970, 0x00e66280, 0x00e663b0, 0x00e665c0, 0x00e666f0, and 0x00e66840"
+      },
+      {
+        "query": "neighbors(cls:01436ae8)",
+        "result": "vtable association to struct:/Spore/Resource/cResourceManager"
+      },
+      {
+        "query": "resource/dbp/cache/content nodes",
+        "result": "PKG-03-RESOURCE-IO, DBPFv3, Resource/IResourceManager/DatabasePackedFile/ICache structures, current B1 implementation, asset records, and test nodes"
+      }
+    ],
+    "runtime_status": {
+      "cell_stage_reached": false,
+      "menu_transition": "tools/observatory/probes/menu_transition.json is defined but not run under the tracer",
+      "original_trace_available": false,
+      "trace_evidence": "docs/CELLSTAGE-VALIDATION.md:25-34 records zero events in the bounded main-menu run and no Cell-mode trace"
+    },
+    "sources": [
+      {
+        "boundary": "sdk_interface",
+        "path": "Spore-ModAPI/Spore ModAPI/Spore/ResourceKey.h",
+        "symbol": "ResourceKey"
+      },
+      {
+        "boundary": "sdk_interface",
+        "path": "Spore-ModAPI/Spore ModAPI/Spore/Resource/IResourceManager.h",
+        "symbol": "IResourceManager"
+      },
+      {
+        "boundary": "sdk_interface",
+        "path": "Spore-ModAPI/Spore ModAPI/Spore/Resource/cResourceManager.h",
+        "symbol": "cResourceManager"
+      },
+      {
+        "boundary": "sdk_interface",
+        "path": "Spore-ModAPI/Spore ModAPI/Spore/Resource/Database.h",
+        "symbol": "Database"
+      },
+      {
+        "boundary": "sdk_interface",
+        "path": "Spore-ModAPI/Spore ModAPI/Spore/Resource/DatabasePackedFile.h",
+        "symbol": "DatabasePackedFile"
+      },
+      {
+        "boundary": "sdk_interface",
+        "path": "Spore-ModAPI/Spore ModAPI/Spore/Resource/DatabaseDirectoryFiles.h",
+        "symbol": "DatabaseDirectoryFiles"
+      },
+      {
+        "boundary": "sdk_interface",
+        "path": "Spore-ModAPI/Spore ModAPI/Spore/Resource/ICache.h",
+        "symbol": "ICache"
+      },
+      {
+        "boundary": "sdk_interface",
+        "path": "Spore-ModAPI/Spore ModAPI/Spore/Resource/IResourceFactory.h",
+        "symbol": "IResourceFactory"
+      },
+      {
+        "boundary": "sdk_interface",
+        "path": "Spore-ModAPI/Spore ModAPI/Spore/Resource/ResourceObject.h",
+        "symbol": "ResourceObject/CachedResourceObject/IAsyncRequest"
+      },
+      {
+        "boundary": "sdk_interface",
+        "path": "Spore-ModAPI/Spore ModAPI/Spore/Resource/IRecord.h",
+        "symbol": "IRecord"
+      },
+      {
+        "boundary": "sdk_interface",
+        "path": "Spore-ModAPI/Spore ModAPI/Spore/Simulator/Cell/cCellGFX.h",
+        "symbol": "cCellGFX"
+      },
+      {
+        "boundary": "sdk_interface",
+        "path": "Spore-ModAPI/Spore ModAPI/Spore/App/cCellModeStrategy.h",
+        "symbol": "cCellModeStrategy"
+      },
+      {
+        "boundary": "original_static",
+        "path": ".spore-analysis/ghidra-exports/decompiled_sdk/Resource__cResourceManager__Initialize.c",
+        "symbol": "Resource::cResourceManager::Initialize"
+      },
+      {
+        "boundary": "original_static",
+        "path": ".spore-analysis/ghidra-exports/decompiled_sdk/Resource__cResourceManager__GetPrivateResource.c",
+        "symbol": "Resource::cResourceManager::GetPrivateResource"
+      },
+      {
+        "boundary": "original_static",
+        "path": ".spore-analysis/ghidra-exports/decompiled_sdk/Resource__DatabaseDirectoryFiles__CloseRecord.c",
+        "symbol": "Resource::DatabaseDirectoryFiles::CloseRecord"
+      },
+      {
+        "boundary": "original_static",
+        "path": ".spore-analysis/ghidra-exports/decompiled_sdk/Resource__PFIndexModifiable__GetFiles.c",
+        "symbol": "Resource::PFIndexModifiable::GetFiles"
+      },
+      {
+        "boundary": "original_static",
+        "path": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__PreloadResources.c",
+        "symbol": "Simulator::Cell::cCellGFX::PreloadResources"
+      },
+      {
+        "boundary": "original_static",
+        "path": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__LoadEffectMap.c",
+        "symbol": "Simulator::Cell::cCellGFX::LoadEffectMap"
+      },
+      {
+        "boundary": "original_static",
+        "path": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__InstanceEffectOnCell.c",
+        "symbol": "Simulator::Cell::cCellGFX::InstanceEffectOnCell"
+      },
+      {
+        "boundary": "original_static",
+        "path": ".spore-analysis/ghidra-exports/structs_fields.tsv",
+        "symbol": "ResourceKey, ResourceObject, CachedResourceObject, RecordInfo, IResourceManager, ICache, PFRecordBase, PFRecordRead, DatabasePackedFile, DatabaseDirectoryFiles, PFIndexModifiable"
+      },
+      {
+        "boundary": "original_static",
+        "path": ".spore-analysis/ghidra-exports/sdk_functions.tsv",
+        "symbol": "Resource and Cell function anchors"
+      },
+      {
+        "boundary": "openspore_current",
+        "path": "src/assets/Dbpf.cpp",
+        "symbol": "parseDbpfIndex/qfsDecompress/extractDbpfRecord/findDbpfEntry"
+      },
+      {
+        "boundary": "openspore_current",
+        "path": "src/compat/ResourceProvider.hpp",
+        "symbol": "IResourceProvider/DbpfResourceProvider/MemoryResourceProvider"
+      },
+      {
+        "boundary": "openspore_current",
+        "path": "src/assets/CellResource.hpp",
+        "symbol": "typed Cell content records and nested references"
+      },
+      {
+        "boundary": "openspore_current",
+        "path": "src/apps/CellGfx.cpp",
+        "symbol": "CellGfx world slots, preload collections, display flag"
+      },
+      {
+        "boundary": "openspore_current",
+        "path": "src/apps/CellModeStrategy.cpp",
+        "symbol": "Cell mode initialize/enter/exit/dispose"
+      },
+      {
+        "boundary": "test",
+        "path": "src/assets/tests/assets_test.cpp",
+        "symbol": "synthetic DBPF/QFS and B1 substitutability tests"
+      },
+      {
+        "boundary": "research_dossier",
+        "path": "knowledgegraph/research/data-model/01-dbpf-resource-formats.json",
+        "symbol": "DBPF/QFS/manager evidence synthesis"
+      },
+      {
+        "boundary": "research_dossier",
+        "path": "knowledgegraph/research/render-boundary/07-resource-lifetime.json",
+        "symbol": "resource lifetime and Cell presentation boundary"
+      },
+      {
+        "boundary": "research_dossier",
+        "path": "knowledgegraph/research/global-campaign-2026/track-o-packages-testability.json",
+        "symbol": "PKG-03 resource I/O evidence and validation gates"
+      },
+      {
+        "boundary": "research_dossier",
+        "path": "docs/BOUNDARIES.md",
+        "symbol": "B1 scope limit"
+      },
+      {
+        "boundary": "research_dossier",
+        "path": "docs/CELLSTAGE-VALIDATION.md",
+        "symbol": "asset validation and absent runtime trace"
+      },
+      {
+        "boundary": "read_only_kg",
+        "path": "knowledgegraph/spore.db",
+        "symbol": "resource, DBPF, CellGFX, asset, package, and test nodes"
+      }
+    ]
+  },
+  "state_machines": [
+    {
+      "confidence": {
+        "basis": [
+          "cResourceManager fields expose notification, database, factory, type-mapping, cache, extension, and filename registries.",
+          "IResourceManager exposes Initialize/Dispose plus explicit database/factory/cache registration and lookup methods.",
+          "The Initialize body visibly constructs a hash/index structure, but exact initialization and teardown ordering is not runtime-observed."
+        ],
+        "gaps": [
+          "No positive original trace establishes which database, factory, or cache is registered first.",
+          "Original Dispose body is not a reliable exact entry in the captured export.",
+          "The current B1 provider does not implement any of these registries."
+        ],
+        "level": "medium"
+      },
+      "enter_actions": [
+        "Initialize registry/hash storage before registration or lookup.",
+        "Register factories and caches before dependent resource requests.",
+        "Register databases before requesting records from them."
+      ],
+      "evidence": [
+        {
+          "address": "0x008de530",
+          "basis": "Ghidra Initialize body builds a hash table and writes a sentinel; manager structure export exposes registry fields.",
+          "boundary": "original_static",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Resource__cResourceManager__Initialize.c:8-47; .spore-analysis/ghidra-exports/structs_fields.tsv:22437-22453"
+        },
+        {
+          "address": null,
+          "basis": "SDK explicitly separates manager Initialize/Dispose, RegisterDatabase, RegisterFactory, RegisterCache, and lookup methods.",
+          "boundary": "sdk_interface",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore ModAPI/Spore/Resource/IResourceManager.h:73-357"
+        }
+      ],
+      "exit_actions": [
+        "Stop new resource acquisition before releasing manager-owned registries and cached objects.",
+        "Release database/cache/factory associations during manager teardown; exact order is unresolved."
+      ],
+      "guards": [
+        "A manager request is valid only after the required database/factory/cache state exists.",
+        "Database priority and duplicate-registration behavior are not determined by current evidence.",
+        "Current B1 requests are valid only for a live borrowed package image; the provider does not manage databases."
+      ],
+      "name": "resource_manager_registry_lifecycle",
+      "possible_states": [
+        {
+          "actions": [
+            "No resource or database operation is guaranteed available."
+          ],
+          "guards": [
+            "Manager has not been initialized or is being disposed."
+          ],
+          "name": "uninitialized"
+        },
+        {
+          "actions": [
+            "Hash/index storage and manager state can exist while databases, factories, or caches are still empty."
+          ],
+          "guards": [
+            "Initialize has completed enough to allocate manager lookup storage; exact completion semantics are partial."
+          ],
+          "name": "initialized_unconfigured"
+        },
+        {
+          "actions": [
+            "Database, factory, cache, type-mapping, and name-mapping registries may be queried or extended."
+          ],
+          "guards": [
+            "Required registration has occurred for the requested record/resource."
+          ],
+          "name": "configured"
+        },
+        {
+          "actions": [
+            "Disposal invalidates manager-owned lookup state; residual behavior is not fully recovered."
+          ],
+          "guards": [
+            "Dispose has been requested or completed."
+          ],
+          "name": "disposed_or_unavailable"
+        }
+      ],
+      "side_effects": [
+        "Manager registries, database priority state, factory mappings, cache implementations, extension mappings, and filename mappings can change.",
+        "A successful request can create a ResourceObject, update a cache, or open a database record.",
+        "The current B1 provider has no manager registry side effects."
+      ],
+      "state_variable": {
+        "expression": "manager_ready && database_registry && factory_registry && cache_registry && filename_mapping",
+        "owner": "Resource::cResourceManager",
+        "raw_fields": [
+          "cResourceManager+0x0c mChangeNotifications",
+          "cResourceManager+0x30 mResourceFactories",
+          "cResourceManager+0x54 mResourceTypeToRecordType",
+          "cResourceManager+0x78 mRecordTypeToResourceType",
+          "cResourceManager+0x9c mCacheVector",
+          "cResourceManager+0xb0 mExtensionMappings",
+          "cResourceManager+0xf4 mFilenameMapping"
+        ],
+        "support": "SDK field/vtable export and live Ghidra function body; state labels are reconstructed, not original enum states."
+      },
+      "structures": [
+        "Resource::cResourceManager",
+        "Resource::IResourceManager",
+        "Resource::Database",
+        "Resource::IResourceFactory",
+        "Resource::ICache",
+        "ResourceKey"
+      ],
+      "transitions": [
+        {
+          "actions": [
+            "Allocate/initialize manager hash/index storage.",
+            "Expose the manager as initialized enough for registration/lookup work."
+          ],
+          "cause": "resource manager initialization request",
+          "entry_actions": [
+            "Acquire/initialize manager allocator and registry storage."
+          ],
+          "event": "resource_manager_initialize",
+          "exit_actions": [
+            "Return initialization result to bootstrap/owner."
+          ],
+          "from_state": "uninitialized",
+          "guard": "Initialize is invoked on a valid manager object.",
+          "side_effects": [
+            "Manager-owned lookup storage is allocated or rebuilt."
+          ],
+          "source": "0x008de530",
+          "to_state": "initialized_unconfigured"
+        },
+        {
+          "actions": [
+            "Add or remove a database and associate its priority."
+          ],
+          "cause": "database registration request",
+          "entry_actions": [
+            "Validate database pointer and requested add/remove operation."
+          ],
+          "event": "database_registered",
+          "exit_actions": [
+            "Make the database candidate visible to manager lookup."
+          ],
+          "from_state": "initialized_unconfigured",
+          "guard": "Manager can accept database registration; duplicate/priority behavior is unresolved.",
+          "side_effects": [
+            "Database list and search order can change."
+          ],
+          "source": "0x008e1000",
+          "to_state": "configured"
+        },
+        {
+          "actions": [
+            "Add or remove a factory and update supported record/resource type mappings."
+          ],
+          "cause": "factory registration request",
+          "entry_actions": [
+            "Resolve factory supported types and conversion capability."
+          ],
+          "event": "factory_registered",
+          "exit_actions": [
+            "Make the factory available to matching resource requests."
+          ],
+          "from_state": "initialized_unconfigured",
+          "guard": "Factory implements the SDK lifecycle/conversion surface.",
+          "side_effects": [
+            "Factory registry and record-to-resource mappings can change."
+          ],
+          "source": "0x008e1d20",
+          "to_state": "configured"
+        },
+        {
+          "actions": [
+            "Add or remove an ICache and its priority/filter association."
+          ],
+          "cause": "cache registration request",
+          "entry_actions": [
+            "Validate cache pointer and add/remove operation."
+          ],
+          "event": "cache_registered",
+          "exit_actions": [
+            "Make the cache visible to resource lookup/flush operations."
+          ],
+          "from_state": "initialized_unconfigured",
+          "guard": "Manager can accept cache registration; exact duplicate behavior is unresolved.",
+          "side_effects": [
+            "Cache vector and cache key filter/priority state can change."
+          ],
+          "source": "0x008e2020",
+          "to_state": "configured"
+        },
+        {
+          "actions": [
+            "Look up the requested key, select cache/database/factory, and return a ResourceObject handle."
+          ],
+          "cause": "synchronous or asynchronous resource request",
+          "entry_actions": [
+            "Normalize the requested resource type and optional alternate cache key."
+          ],
+          "event": "resource_requested",
+          "exit_actions": [
+            "Return success/failure or an async request according to the selected path."
+          ],
+          "from_state": "configured",
+          "guard": "A matching database/factory/cache path exists for the requested ResourceKey.",
+          "side_effects": [
+            "Cache hit/miss, record open, factory creation, and object ownership can change."
+          ],
+          "source": "0x008df700/0x008df730",
+          "to_state": "configured"
+        },
+        {
+          "actions": [
+            "Invalidate manager-owned lookup state and release manager registries."
+          ],
+          "cause": "resource manager shutdown",
+          "entry_actions": [
+            "Stop new requests and begin teardown."
+          ],
+          "event": "resource_manager_dispose",
+          "exit_actions": [
+            "Manager is unavailable to new callers."
+          ],
+          "from_state": "configured",
+          "guard": "Dispose is invoked after owners release dependent handles.",
+          "side_effects": [
+            "Database/factory/cache/name registries are dismantled; exact order is unresolved."
+          ],
+          "source": "0x008e19d0",
+          "to_state": "disposed_or_unavailable"
+        }
+      ],
+      "validation": [
+        "Run a positive original menu-to-stage trace and record whether Initialize, database registration, factory registration, and cache registration occur before the first request.",
+        "Use SDK/Ghidra function-body cross-checks to pin each registry mutation and duplicate handling.",
+        "Record manager object and registry state before/after Dispose; the current B1 provider must remain outside this state machine."
+      ]
+    },
+    {
+      "confidence": {
+        "basis": [
+          "DBPF v3 header/index/extents and QFS behavior are byte-verified in current readers, synthetic tests, and real package records.",
+          "SDK DatabasePackedFile, PFIndexModifiable, IRecord, PFRecordRead, and RecordInfo structures establish original package/index/record/lease surfaces.",
+          "Live Ghidra bodies show key/index/record selection and index enumeration, but exact QFS call site and complete error behavior are not recovered."
+        ],
+        "gaps": [
+          "Original multi-package database search and exact package priority.",
+          "Original record lease/reference behavior and error distinction.",
+          "Original QFS decompression call site."
+        ],
+        "level": "high"
+      },
+      "enter_actions": [
+        "Mount or bind a package image and parse its header/index before record lookup.",
+        "For current B1, retain the borrowed package pointer for the entire provider lifetime."
+      ],
+      "evidence": [
+        {
+          "address": null,
+          "basis": "Current parseDbpfIndex validates DBPF magic/size/count/offset and reads identity/extent/compression fields; extractDbpfRecord enforces extent bounds and decompressed size.",
+          "boundary": "openspore_current",
+          "level": "VERIFIED",
+          "source": "src/assets/Dbpf.cpp:37-224; knowledgegraph/research/data-model/01-dbpf-resource-formats.json:139-186"
+        },
+        {
+          "address": null,
+          "basis": "SDK ResourceKey is 12 bytes (instance/type/group), RecordInfo is 16 bytes (offset/stored size/memory size/flags/saved), and DatabasePackedFile stores index state and a ResourceKey-to-record map.",
+          "boundary": "sdk_interface",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv:1074-1076,1347-1351,4382-4438; Spore-ModAPI/Spore ModAPI/Spore/Resource/DatabasePackedFile.h:109-174"
+        },
+        {
+          "address": "0x008da3d0",
+          "basis": "Live Ghidra body resolves a key through index metadata and creates/opens a record through database helpers; the live function start differs from the SDK anchor.",
+          "boundary": "original_static",
+          "level": "SUPPORTED",
+          "source": "live Ghidra decompile of FUN_008da3d0; .spore-analysis/ghidra-exports/sdk_functions.tsv:804-805"
+        }
+      ],
+      "exit_actions": [
+        "Close the record lease before releasing or unmounting its database/index.",
+        "For current B1, discard the owned output bytes after the consumer has copied/parsed them."
+      ],
+      "guards": [
+        "DBPF package must be at least 96 bytes and have DBPF magic.",
+        "Index offset and rows must remain within the package image.",
+        "Record extent must remain within the image.",
+        "A compressed record must decompress to the indexed memory size.",
+        "Lookup requires the full type/group/instance triple; instance alone is insufficient."
+      ],
+      "name": "dbpf_package_record_lifecycle",
+      "possible_states": [
+        {
+          "actions": [
+            "No record is addressable."
+          ],
+          "guards": [
+            "Package image is absent, not mounted, or not yet bound to a provider."
+          ],
+          "name": "package_absent"
+        },
+        {
+          "actions": [
+            "Package header is available for index parsing."
+          ],
+          "guards": [
+            "Package image has a valid DBPF header prefix."
+          ],
+          "name": "header_valid"
+        },
+        {
+          "actions": [
+            "Typed record rows can be searched by the full identity."
+          ],
+          "guards": [
+            "Index count/offset and every row are structurally valid."
+          ],
+          "name": "index_ready"
+        },
+        {
+          "actions": [
+            "One exact record candidate is selected."
+          ],
+          "guards": [
+            "A row has matching type, group, and instance."
+          ],
+          "name": "record_found"
+        },
+        {
+          "actions": [
+            "Record stream/lease is available for reading."
+          ],
+          "guards": [
+            "Original OpenRecord succeeds, or current extraction has a validated extent."
+          ],
+          "name": "record_open"
+        },
+        {
+          "actions": [
+            "Owned record bytes can be handed to a format decoder."
+          ],
+          "guards": [
+            "Raw copy or QFS decompression succeeds and size checks pass."
+          ],
+          "name": "bytes_ready"
+        },
+        {
+          "actions": [
+            "No usable record output is produced; the failure reason is retained separately from absent identity."
+          ],
+          "guards": [
+            "Malformed header/index, missing key, invalid extent, QFS error, or size mismatch."
+          ],
+          "name": "failed_or_unavailable"
+        },
+        {
+          "actions": [
+            "Record lease is closed; package/index remains reusable."
+          ],
+          "guards": [
+            "Consumer no longer needs the record stream."
+          ],
+          "name": "record_closed"
+        }
+      ],
+      "side_effects": [
+        "Current B1 reparses the index on each fetch and performs an exact linear scan.",
+        "Current QFS decoding allocates decompressed output and rejects hostile back-references.",
+        "Original index reads populate database/index structures and may update open/refcount bookkeeping.",
+        "Record close may alter open counts, record maps, and stream references."
+      ],
+      "state_variable": {
+        "expression": "package_present && header_valid && index_ready && identity_found && record_lease && bytes_valid",
+        "owner": "package database/index and current provider",
+        "raw_fields": [
+          "DatabasePackedFile.mnIndexOffset",
+          "DatabasePackedFile.mnIndexCount",
+          "DatabasePackedFile.mnIndexSize",
+          "DatabasePackedFile.mpIndex",
+          "DatabasePackedFile.field_2E8",
+          "PFRecordRead.mDBPFItem",
+          "PFRecordRead.mnOffset/mnSize",
+          "DbpfEntry.type/group/instance/offset/storedSize/memSize/compressed"
+        ],
+        "support": "Current reader plus SDK/Ghidra layouts; state labels are a lifecycle model, not original enum values."
+      },
+      "structures": [
+        "Resource::DatabasePackedFile",
+        "Resource::DatabaseDirectoryFiles",
+        "Resource::PFIndexModifiable",
+        "Resource::RecordInfo",
+        "Resource::PFRecordBase",
+        "Resource::PFRecordRead",
+        "Resource::IRecord",
+        "openspore::assets::DbpfEntry"
+      ],
+      "transitions": [
+        {
+          "actions": [
+            "Bind package image and validate the 96-byte DBPF header."
+          ],
+          "cause": "package image available",
+          "entry_actions": [
+            "Retain package pointer/ownership for the provider or database."
+          ],
+          "event": "package_image_available",
+          "exit_actions": [
+            "Proceed to index parsing or report header failure."
+          ],
+          "from_state": "package_absent",
+          "guard": "Package image is non-null and has expected size/magic.",
+          "side_effects": [
+            "Package binding or current provider construction occurs."
+          ],
+          "source": "src/compat/ResourceProvider.hpp:35-38; Spore-ModAPI/Spore ModAPI/Spore/Resource/DatabasePackedFile.h:75-86",
+          "to_state": "header_valid"
+        },
+        {
+          "actions": [
+            "Read index offset/count/flags and materialize record rows."
+          ],
+          "cause": "header/index read",
+          "entry_actions": [
+            "Validate index offset and row boundaries before lookup."
+          ],
+          "event": "package_index_loaded",
+          "exit_actions": [
+            "Expose typed index rows for identity lookup."
+          ],
+          "from_state": "header_valid",
+          "guard": "Index offset and all rows are within package bounds and structurally complete.",
+          "side_effects": [
+            "Original index map/objects or current temporary DbpfEntry vector is populated."
+          ],
+          "source": "src/assets/Dbpf.cpp:37-100; 0x008d84d0/0x008daa70",
+          "to_state": "index_ready"
+        },
+        {
+          "actions": [
+            "Match requested type/group/instance against index rows."
+          ],
+          "cause": "record request",
+          "entry_actions": [
+            "Normalize record identity and choose package/database scope."
+          ],
+          "event": "record_identity_matched",
+          "exit_actions": [
+            "Select the first/current matching row or report missing key."
+          ],
+          "from_state": "index_ready",
+          "guard": "Exact full triple match exists in the selected package index.",
+          "side_effects": [
+            "Original record candidate or current index position is selected."
+          ],
+          "source": "src/assets/Dbpf.cpp:226-235; live Ghidra FUN_008da3d0",
+          "to_state": "record_found"
+        },
+        {
+          "actions": [
+            "Open or validate the selected record extent."
+          ],
+          "cause": "record candidate selected",
+          "entry_actions": [
+            "Check offset plus stored extent against package size."
+          ],
+          "event": "record_opened",
+          "exit_actions": [
+            "Return a record/stream lease or an explicit extent failure."
+          ],
+          "from_state": "record_found",
+          "guard": "Record extent is valid; original access/create policy is not fully recovered.",
+          "side_effects": [
+            "Original PFRecordRead/record map/open count may change; current B1 has no open lease."
+          ],
+          "source": "0x008da3d0; src/assets/Dbpf.cpp:200-213",
+          "to_state": "record_open"
+        },
+        {
+          "actions": [
+            "Copy raw bytes or decompress QFS payload into owned output."
+          ],
+          "cause": "record read",
+          "entry_actions": [
+            "Select raw or QFS path from the index compression flag."
+          ],
+          "event": "record_bytes_extracted",
+          "exit_actions": [
+            "Return owned bytes to the codec/consumer."
+          ],
+          "from_state": "record_open",
+          "guard": "Stored extent and decoder bounds are valid.",
+          "side_effects": [
+            "Allocated output buffer contains decompressed record bytes."
+          ],
+          "source": "src/assets/Dbpf.cpp:200-224; 0x008dc820",
+          "to_state": "bytes_ready"
+        },
+        {
+          "actions": [
+            "Close the original record/stream lease or discard current owned bytes after consumer parsing."
+          ],
+          "cause": "consumer finished reading",
+          "entry_actions": [
+            "Ensure no decoder or renderer still borrows the record stream."
+          ],
+          "event": "record_closed",
+          "exit_actions": [
+            "Release record references/open count and return to index-ready."
+          ],
+          "from_state": "record_open",
+          "guard": "Consumer no longer needs the record stream.",
+          "side_effects": [
+            "Original record/stream references and open counts can change."
+          ],
+          "source": "0x008d9d30; Spore-ModAPI/Spore ModAPI/Spore/Resource/IRecord.h:35-41",
+          "to_state": "index_ready"
+        },
+        {
+          "actions": [
+            "Retain failure reason: absent identity, malformed index, invalid extent, QFS failure, or size mismatch."
+          ],
+          "cause": "package or record failure",
+          "entry_actions": [
+            "Stop before producing a usable record object."
+          ],
+          "event": "resource_unavailable",
+          "exit_actions": [
+            "Caller decides whether to skip, fall back, retry, or fail the stage."
+          ],
+          "from_state": "header_valid",
+          "guard": "A validation or decode guard fails.",
+          "side_effects": [
+            "No partial output is considered available by current B1."
+          ],
+          "source": "src/assets/Dbpf.cpp:40-61,103-197,200-224; src/compat/ResourceProvider.hpp:27-29,46-53",
+          "to_state": "failed_or_unavailable"
+        }
+      ],
+      "validation": [
+        "Use the committed mini_package.dbpf and tests/test_formats.py to preserve header/index/raw/QFS/size-failure behavior.",
+        "Run malformed/truncated DBPF and QFS cases and compare current error classes with a future original trace.",
+        "Instrument original OpenRecord/CloseRecord/ReadData/DoPostClose to establish QFS call site, lease lifetime, refcount, and open-count transitions.",
+        "Validate a real package record by full identity and compare stored/memory sizes; do not use index position as identity."
+      ]
+    },
+    {
+      "confidence": {
+        "basis": [
+          "ICache and IResourceManager interfaces explicitly define registration, lookup, insertion, filtering, listing, and flush operations.",
+          "CachedResourceObject has a final-release callback and ResourceObject has a ResourceKey plus refcount.",
+          "The live GetResource body shows an early cache-like probe before fallback, while exact eviction policy is absent."
+        ],
+        "gaps": [
+          "No original cache type, cache priority, eviction criterion, weak-reference policy, or finalizer ordering is recovered.",
+          "Current B1 has no cache at all."
+        ],
+        "level": "medium"
+      },
+      "enter_actions": [
+        "Register an ICache implementation and its filter/priority before cache lookup.",
+        "Treat ResourceObjectPtr/intrusive_ptr outputs as owner-bearing handles, not transient raw bytes."
+      ],
+      "evidence": [
+        {
+          "address": null,
+          "basis": "SDK ICache exposes Initialize/Dispose/GetResource/CacheResource/CanCacheResource/GetResourceList/Flush; manager exposes RegisterCache/FindCache/CacheResource/FlushCache/GetCacheList.",
+          "boundary": "sdk_interface",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore ModAPI/Spore/Resource/ICache.h:29-44; Spore-ModAPI/Spore ModAPI/Spore/Resource/IResourceManager.h:283-299"
+        },
+        {
+          "address": null,
+          "basis": "SDK ResourceObject is 20 bytes with refcount and ResourceKey; CachedResourceObject adds final-release callback.",
+          "boundary": "sdk_interface",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore ModAPI/Spore/Resource/ResourceObject.h:30-80; .spore-analysis/ghidra-exports/structs_fields.tsv:1317-1330"
+        },
+        {
+          "address": "0x008df460",
+          "basis": "Live GetResource body probes a cache-like helper before database/factory fallback; this is a static control-flow observation, not a complete cache policy.",
+          "boundary": "original_static",
+          "level": "SUPPORTED",
+          "source": "live Ghidra decompile of FUN_008df460; .spore-analysis/ghidra-exports/sdk_functions.tsv:851-854"
+        }
+      ],
+      "exit_actions": [
+        "Release or invalidate cache references only after consumer handles no longer need the ResourceObject.",
+        "Flush a cache by explicit cache/filter operation; automatic eviction timing is not established."
+      ],
+      "guards": [
+        "A cache hit requires a key/filter match and a live ResourceObject handle.",
+        "Cache insertion requires a resource accepted by CanCacheResource.",
+        "GetPrivateResource bypasses normal cache lookup according to the SDK contract.",
+        "Current B1 has no cache entry or eviction state."
+      ],
+      "name": "resource_cache_entry_lifecycle",
+      "possible_states": [
+        {
+          "actions": [
+            "No manager cache can satisfy a request."
+          ],
+          "guards": [
+            "No ICache is registered or manager is unavailable."
+          ],
+          "name": "unregistered"
+        },
+        {
+          "actions": [
+            "Cache implementation can be selected for key lookups and insertion."
+          ],
+          "guards": [
+            "RegisterCache has accepted the cache."
+          ],
+          "name": "registered"
+        },
+        {
+          "actions": [
+            "Request found an existing ResourceObject and returns its handle."
+          ],
+          "guards": [
+            "ICache::GetResource and manager key selection succeed."
+          ],
+          "name": "cache_hit"
+        },
+        {
+          "actions": [
+            "Request must fall back to database/factory or private load path."
+          ],
+          "guards": [
+            "No matching cache entry or GetPrivateResource bypasses cache."
+          ],
+          "name": "cache_miss_or_private_load"
+        },
+        {
+          "actions": [
+            "ResourceObject is retained by manager/cache and is available to later requests."
+          ],
+          "guards": [
+            "ICache::CanCacheResource accepts it and CacheResource succeeds."
+          ],
+          "name": "cached"
+        },
+        {
+          "actions": [
+            "Cached resource has been explicitly flushed or is being finalized."
+          ],
+          "guards": [
+            "FlushCache/ICache::Flush or CachedResourceObject final-release callback runs."
+          ],
+          "name": "flushed_or_released"
+        }
+      ],
+      "side_effects": [
+        "Cache hit can avoid package index/record/factory work and return a shared intrusive handle.",
+        "Cache miss can open a record and create a ResourceObject through a factory.",
+        "Flush/final release can remove manager/cache references and trigger object finalization.",
+        "Current B1 always repeats index parsing and has no retained cache state."
+      ],
+      "state_variable": {
+        "expression": "cache_registered && cache_entry_present && resource_owner_count > 0 && entry_not_flushed",
+        "owner": "Resource::cResourceManager and registered Resource::ICache",
+        "raw_fields": [
+          "cResourceManager+0x9c mCacheVector",
+          "cResourceManager+0x148 field_148",
+          "ResourceObject+0x04 mnRefCount",
+          "CachedResourceObject+0x14 mpFinalReleaseCallback"
+        ],
+        "support": "SDK and Ghidra structure exports; exact cache entry layout and eviction algorithm are unresolved."
+      },
+      "structures": [
+        "Resource::cResourceManager",
+        "Resource::ICache",
+        "Resource::ResourceObject",
+        "Resource::CachedResourceObject",
+        "Resource::IKeyFilter",
+        "openspore::compat::IResourceProvider"
+      ],
+      "transitions": [
+        {
+          "actions": [
+            "Add/remove ICache and associate cache priority/filter."
+          ],
+          "cause": "cache registration request",
+          "entry_actions": [
+            "Validate cache pointer and registration mode."
+          ],
+          "event": "cache_registered",
+          "exit_actions": [
+            "Expose cache to manager lookup/flush paths."
+          ],
+          "from_state": "unregistered",
+          "guard": "Cache implements SDK lifecycle and key-filter methods.",
+          "side_effects": [
+            "Manager cache vector changes."
+          ],
+          "source": "0x008e2020",
+          "to_state": "registered"
+        },
+        {
+          "actions": [
+            "Probe registered cache using requested or alternate cache key."
+          ],
+          "cause": "resource request",
+          "entry_actions": [
+            "Select cache candidate using manager priority/filter."
+          ],
+          "event": "resource_cache_hit",
+          "exit_actions": [
+            "Return existing ResourceObject handle."
+          ],
+          "from_state": "registered",
+          "guard": "A cache contains a matching live resource.",
+          "side_effects": [
+            "Reference count/owner handles may increase; no new record load is required."
+          ],
+          "source": "0x008df460; IResourceManager::GetLoadedResource",
+          "to_state": "cache_hit"
+        },
+        {
+          "actions": [
+            "Fall through to database/factory or private acquisition path."
+          ],
+          "cause": "cache lookup miss or private request",
+          "entry_actions": [
+            "Select the requested database/factory or bypass cache for private request."
+          ],
+          "event": "resource_cache_miss",
+          "exit_actions": [
+            "Begin record/factory load or private load."
+          ],
+          "from_state": "registered",
+          "guard": "No matching cache entry, or GetPrivateResource explicitly bypasses cache.",
+          "side_effects": [
+            "Package/index/factory work may occur."
+          ],
+          "source": "0x008df460; SDK GetPrivateResource",
+          "to_state": "cache_miss_or_private_load"
+        },
+        {
+          "actions": [
+            "Test CanCacheResource and insert the resource into an eligible cache."
+          ],
+          "cause": "successful resource creation",
+          "entry_actions": [
+            "Acquire the ResourceObject owner handle for cache insertion."
+          ],
+          "event": "cache_resource_inserted",
+          "exit_actions": [
+            "Make the cached object available to later requests."
+          ],
+          "from_state": "cache_miss_or_private_load",
+          "guard": "Cache policy accepts the resource.",
+          "side_effects": [
+            "Cache entry and object owner/refcount bookkeeping change."
+          ],
+          "source": "0x008de6c0; ICache::CanCacheResource/CacheResource",
+          "to_state": "cached"
+        },
+        {
+          "actions": [
+            "Remove matching entries or invoke cached-object final-release callback."
+          ],
+          "cause": "explicit flush, database change, or last-owner release",
+          "entry_actions": [
+            "Apply cache/filter and ensure dependent owners are released."
+          ],
+          "event": "cache_entry_flushed_or_released",
+          "exit_actions": [
+            "Remove cache association; future requests miss or use another source."
+          ],
+          "from_state": "cached",
+          "guard": "Flush/filter or finalizer path is selected.",
+          "side_effects": [
+            "Object refcount/cache list may decrease; automatic eviction timing is not proven."
+          ],
+          "source": "0x008de710; ICache::Flush; CachedResourceObject",
+          "to_state": "flushed_or_released"
+        }
+      ],
+      "validation": [
+        "Run an original trace that records GetResource cache probe, FindCache, CacheResource, Release, and FlushCache in one request cycle.",
+        "Force duplicate requests and filtered flushes to identify cache type, priority, eviction, and final-release behavior.",
+        "Use Ghidra call/xref evidence to resolve any cache implementation after the manager interface is pinned.",
+        "Keep current B1 behavior separately classified: it has no cache and must not be used as evidence for original cache transitions."
+      ]
+    },
+    {
+      "confidence": {
+        "basis": [
+          "Current B1 provides explicit absent/unreadable/error-string outcomes for record fetch and decode paths.",
+          "Original SDK bool APIs lack a distinct error taxonomy; Cell preload helpers are void and visibly skip null/zero or log missing effects.",
+          "Original Cell GFX preloads and effect-map replacement paths are directly visible in Ghidra decompilation."
+        ],
+        "gaps": [
+          "Original absent versus unreadable distinction is not reliably exposed to callers.",
+          "Original preload atomicity and whether a missing optional asset can still reach display are not fully recovered.",
+          "Current stage content is partly hard-coded and not a runtime original oracle."
+        ],
+        "level": "high"
+      },
+      "enter_actions": [
+        "Resolve the complete content identity and select the package/provider source.",
+        "Preserve failure reason and requested key for the consumer."
+      ],
+      "evidence": [
+        {
+          "address": null,
+          "basis": "Current IResourceProvider explicitly documents false plus error when identity is absent or record unreadable; DbpfResourceProvider has distinct parse, missing, extraction, and QFS errors.",
+          "boundary": "openspore_current",
+          "level": "VERIFIED",
+          "source": "src/compat/ResourceProvider.hpp:24-59; src/assets/Dbpf.cpp:37-224"
+        },
+        {
+          "address": "0x00e663b0",
+          "basis": "Original PreloadCellResource calls AddPreloadedModel2 only for non-null model results, dispatches nested effect/creature references, and has void/no rich error return.",
+          "boundary": "original_static",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__PreloadCellResource.c:40-157"
+        },
+        {
+          "address": "0x00e65410",
+          "basis": "AddPreloadedModel ignores a null model result; AddPreloadedEffect ignores zero instance/group identity; PreloadCreature stores only non-null returned creature handles.",
+          "boundary": "original_static",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__AddPreloadedModel.c:8-31; .spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__AddPreloadedEffect.c:8-74; .spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__PreloadCreature.c:6-34"
+        },
+        {
+          "address": "0x00e63560",
+          "basis": "LoadEffectMap logs when an effect cannot start and skips that entry; InstanceEffectOnCell returns a nullable effect handle.",
+          "boundary": "original_static",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__LoadEffectMap.c:76-103; .spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__InstanceEffectOnCell.c:52-73"
+        }
+      ],
+      "exit_actions": [
+        "Bind successful decoded content to a presentation/consumer handle.",
+        "Release or discard failed/partial content without allowing a stale handle to masquerade as available."
+      ],
+      "guards": [
+        "A full type/group/instance identity is required before a record can be considered available.",
+        "A successful record read is not a successful typed decode.",
+        "Preload helpers may treat optional child content as skippable; exact required/optional classification is unresolved.",
+        "Display activation must not be inferred from a current hard-coded scene or a partial preload list."
+      ],
+      "name": "content_availability_and_decode",
+      "possible_states": [
+        {
+          "actions": [
+            "Content is only a requested identity or nested reference."
+          ],
+          "guards": [
+            "No key resolution or package lookup has completed."
+          ],
+          "name": "key_unresolved"
+        },
+        {
+          "actions": [
+            "Full numeric identity is known and can be sent to a provider/database."
+          ],
+          "guards": [
+            "Type, group, and instance are present; nested Cell references can supply instance IDs and fixed type/group context."
+          ],
+          "name": "key_resolved"
+        },
+        {
+          "actions": [
+            "Record bytes are available to a decoder."
+          ],
+          "guards": [
+            "Provider/database record read succeeds."
+          ],
+          "name": "bytes_available"
+        },
+        {
+          "actions": [
+            "Typed Cell/GMDL/raster/value is available to a consumer."
+          ],
+          "guards": [
+            "Format-specific decoder succeeds and reference validation passes where implemented."
+          ],
+          "name": "decoded"
+        },
+        {
+          "actions": [
+            "Content is associated with a world, entity, effect, texture, or renderer input."
+          ],
+          "guards": [
+            "A presentation/consumer owner accepts the decoded handle."
+          ],
+          "name": "bound"
+        },
+        {
+          "actions": [
+            "No record exists for the exact identity."
+          ],
+          "guards": [
+            "Index lookup returns absent; current B1 error is record-not-in-package."
+          ],
+          "name": "unavailable_absent"
+        },
+        {
+          "actions": [
+            "A record or decode failed due to malformed/corrupt/unsupported data."
+          ],
+          "guards": [
+            "Header/index/extent/QFS/format failure or domain/reference issue."
+          ],
+          "name": "unavailable_failed"
+        },
+        {
+          "actions": [
+            "Optional preload child is ignored/skipped; a parent may continue under helper-specific rules."
+          ],
+          "guards": [
+            "Null model/effect/creature result or zero effect identity."
+          ],
+          "name": "skipped_optional_or_partial"
+        },
+        {
+          "actions": [
+            "Handle is released or removed from presentation/cache state."
+          ],
+          "guards": [
+            "No remaining consumer requires the content."
+          ],
+          "name": "released"
+        }
+      ],
+      "side_effects": [
+        "Current B1 returns explicit error strings and does not leave partial output on failure.",
+        "Original preload helpers can mutate preload collections without returning a failure status.",
+        "Original effect map can release/disable old effect slots before replacement.",
+        "Current CellModeStrategy/CellGfx teardown clears stage-owned preload and world collections, but this is current behavior only."
+      ],
+      "state_variable": {
+        "expression": "identity_resolved && record_bytes_valid && decoder_ok && consumer_handle_valid",
+        "owner": "resource consumer and Cell presentation state",
+        "raw_fields": [
+          "cCellGFX+0x00 mPreloadedModels",
+          "cCellGFX+0x14 mPreloadedTextures",
+          "cCellGFX+0x28 mPreloadedCreatures",
+          "cCellGFX+0x5c effect map entries",
+          "cCellGFX+0x161dc mEffectInstances",
+          "current CellModeStrategy.mInitialized/mEntered",
+          "current CellGfx.displayActive"
+        ],
+        "support": "SDK cCellGFX fields and Ghidra preloads; current flags are explicitly current-only."
+      },
+      "structures": [
+        "ResourceKey",
+        "Resource::ResourceObject",
+        "Resource::CachedResourceObject",
+        "openspore::compat::IResourceProvider",
+        "openspore::assets::DbpfEntry",
+        "Simulator::Cell::cCellDataReference",
+        "Simulator::Cell::cCellGFX",
+        "Simulator::Cell::cCellGFX::EffectInstance"
+      ],
+      "transitions": [
+        {
+          "actions": [
+            "Normalize requested content to a full ResourceKey."
+          ],
+          "cause": "consumer names a record or follows a nested content reference",
+          "entry_actions": [
+            "Retain source type/group context where the nested record stores only an instance reference."
+          ],
+          "event": "content_key_requested",
+          "exit_actions": [
+            "Submit key to provider/database or report unresolved identity."
+          ],
+          "from_state": "key_unresolved",
+          "guard": "The consumer has a resolvable full identity path.",
+          "side_effects": [
+            "A request identity is associated with a content consumer."
+          ],
+          "source": "ResourceKey SDK; .spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__GetModelKeyForCellResource.c:26-71",
+          "to_state": "key_resolved"
+        },
+        {
+          "actions": [
+            "Fetch record bytes by exact identity."
+          ],
+          "cause": "key resolution",
+          "entry_actions": [
+            "Select package/provider and handle optional cache/private path where original."
+          ],
+          "event": "resource_requested",
+          "exit_actions": [
+            "Return bytes, absent error, or failure."
+          ],
+          "from_state": "key_resolved",
+          "guard": "A provider/database lookup is available.",
+          "side_effects": [
+            "Cache hit/miss, record lease, or current index parse/extraction can occur."
+          ],
+          "source": "IResourceManager::GetResource; IResourceProvider::fetch",
+          "to_state": "bytes_available"
+        },
+        {
+          "actions": [
+            "Decode record into a typed content value or host representation."
+          ],
+          "cause": "record bytes available",
+          "entry_actions": [
+            "Choose a format-specific codec and validate nested references."
+          ],
+          "event": "content_decoded",
+          "exit_actions": [
+            "Expose decoded value or explicit decoder failure."
+          ],
+          "from_state": "bytes_available",
+          "guard": "Decoder recognizes the record format and all required fields are valid.",
+          "side_effects": [
+            "Typed content, buffers, handles, or validation issues are created."
+          ],
+          "source": "src/assets/CellResource.cpp:124-1222; src/compat/MeshSource.hpp:50-60",
+          "to_state": "decoded"
+        },
+        {
+          "actions": [
+            "Associate decoded content with a world/entity/effect/renderer owner."
+          ],
+          "cause": "consumer accepts decoded content",
+          "entry_actions": [
+            "Resolve destination world/entity/handle and retain owner lifetime."
+          ],
+          "event": "content_bound",
+          "exit_actions": [
+            "Make content available to draw/update/use consumers."
+          ],
+          "from_state": "decoded",
+          "guard": "Destination presentation or simulation owner accepts the handle.",
+          "side_effects": [
+            "Preload collections, world associations, or effect instance arrays change."
+          ],
+          "source": "cCellGFX preload/effect Ghidra bodies; current CellGfx.cpp:23-28",
+          "to_state": "bound"
+        },
+        {
+          "actions": [
+            "Return an explicit current error or skip the original optional helper."
+          ],
+          "cause": "missing key, invalid record, unsupported decode, or null child handle",
+          "entry_actions": [
+            "Do not publish a partial result as available."
+          ],
+          "event": "resource_unavailable",
+          "exit_actions": [
+            "Caller chooses retry, fallback, skip, or stage failure."
+          ],
+          "from_state": "key_resolved",
+          "guard": "Lookup/decode/consumer guard fails.",
+          "side_effects": [
+            "Current B1 records error text; original void helpers may log or silently skip."
+          ],
+          "source": "src/compat/ResourceProvider.hpp:27-53; 0x00e63560",
+          "to_state": "unavailable_absent"
+        },
+        {
+          "actions": [
+            "Skip optional model/effect/creature child and continue helper traversal."
+          ],
+          "cause": "optional nested content unavailable",
+          "entry_actions": [
+            "Check null/zero identity and helper-specific optionality."
+          ],
+          "event": "cell_preload_skipped",
+          "exit_actions": [
+            "Return to parent preload traversal without publishing child handle."
+          ],
+          "from_state": "bytes_available",
+          "guard": "Original helper sees null model/effect/creature or zero effect identity.",
+          "side_effects": [
+            "Preload collection remains without that child; exact required/optional behavior is unresolved."
+          ],
+          "source": "0x00e65410; 0x00e66280; 0x00e64980",
+          "to_state": "skipped_optional_or_partial"
+        },
+        {
+          "actions": [
+            "Release owner handle/cache reference and clear presentation association."
+          ],
+          "cause": "teardown, replacement, or last consumer release",
+          "entry_actions": [
+            "Wait for no draw/update use of the handle."
+          ],
+          "event": "content_released",
+          "exit_actions": [
+            "Content is no longer available to this owner."
+          ],
+          "from_state": "bound",
+          "guard": "No remaining owner requires the content.",
+          "side_effects": [
+            "Current stage clears vectors/world slots; original release fanout is not fully recovered."
+          ],
+          "source": "src/apps/CellModeStrategy.cpp:18-29; Render resource lifetime dossier:697-704",
+          "to_state": "released"
+        }
+      ],
+      "validation": [
+        "Inject missing, malformed, unsupported, and null-handle cases into current B1/typed decoders and assert no partial output is published.",
+        "Run a future original trace with a known missing optional effect/model and a required missing asset to distinguish skip from stage-failure behavior.",
+        "Correlate content acquisition, preload collection mutation, StartDisplay, and first draw in one trace.",
+        "Keep current hard-coded cell_stage scene identities and skipped-SPOLORE behavior labeled as current-only."
+      ]
+    },
+    {
+      "confidence": {
+        "basis": [
+          "SDK/Ghidra cCellGFX fields and decompilation directly expose world/layer construction, recursive preloads, effect replacement, StartDisplay, and mode teardown.",
+          "Current source provides a clean-room approximation with explicit initialized/entered/display flags and cleanup ordering.",
+          "The resource-to-display ordering is strong static contract evidence but not a positive original runtime trace."
+        ],
+        "gaps": [
+          "Original mode manager/runtime handoff and exact preload completion barrier are not observed.",
+          "Original cCellGFX resource ownership and full teardown fanout are incomplete.",
+          "Current CellGfx.preloadResources only stores key collections and does not fetch/parse assets."
+        ],
+        "level": "high"
+      },
+      "enter_actions": [
+        "Create/replace the world/layer/shadow handle table before any resource is visible.",
+        "Preload stage content and retain semantic handles until display shutdown."
+      ],
+      "evidence": [
+        {
+          "address": "0x00e5dba0",
+          "basis": "Ghidra cCellGFX::Initialize creates named skybox/background/beach/effects/model/foreground worlds and named layers, releasing replaced handles before storing new ones.",
+          "boundary": "original_static",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__Initialize.c:8-277; Spore-ModAPI/Spore ModAPI/Spore/Simulator/Cell/cCellGFX.h:44-58,163-205"
+        },
+        {
+          "address": "0x00e666f0",
+          "basis": "Ghidra PreloadResources recursively preloads cell/populate records and nested models/effects/creatures; current CellGfx::preloadResources only moves key vectors.",
+          "boundary": "original_static",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__PreloadResources.c:8-141; src/apps/CellGfx.cpp:23-28"
+        },
+        {
+          "address": "0x00e55120",
+          "basis": "Ghidra StartDisplay activates lighting/world/layer/effect/shadow/audio hooks; current CellModeStrategy::onEnter calls startDisplay and sets entered=true.",
+          "boundary": "original_static",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__StartDisplay.c:8-47; src/apps/CellModeStrategy.cpp:32-36"
+        }
+      ],
+      "exit_actions": [
+        "Stop display and clear presentation globals before releasing world/model/effect associations.",
+        "Dispose Cell GFX/UI/game state after dependent content owners release their handles."
+      ],
+      "guards": [
+        "World/layer handles must exist before display activation.",
+        "Preload traversal is resource-driven and may contain skipped optional children.",
+        "Current CellModeStrategy's mInitialized/mEntered flags are current-only, not original state variables.",
+        "A current displayActive flag must not be treated as original runtime evidence."
+      ],
+      "name": "cell_resource_preload_display_lifecycle",
+      "possible_states": [
+        {
+          "actions": [
+            "No Cell presentation graph is guaranteed ready."
+          ],
+          "guards": [
+            "Cell mode/GFX initialization has not completed."
+          ],
+          "name": "stage_uninitialized"
+        },
+        {
+          "actions": [
+            "World/layer/shadow handle table exists; content is not yet display-active."
+          ],
+          "guards": [
+            "cCellGFX::Initialize completed enough to create the world/layer associations."
+          ],
+          "name": "gfx_initialized"
+        },
+        {
+          "actions": [
+            "Cell/populate/nested content is being converted into model/effect/texture/creature associations."
+          ],
+          "guards": [
+            "PreloadResources or a caller has begun recursive resource traversal."
+          ],
+          "name": "preloading"
+        },
+        {
+          "actions": [
+            "Preload traversal has returned; some child assets may have been skipped."
+          ],
+          "guards": [
+            "No positive original readiness flag is recovered; current code has no content-ready barrier."
+          ],
+          "name": "preload_complete_or_partial"
+        },
+        {
+          "actions": [
+            "Cell display/layer/effect/audio hooks are active."
+          ],
+          "guards": [
+            "StartDisplay has run after stage initialization and the caller's preload contract."
+          ],
+          "name": "display_active"
+        },
+        {
+          "actions": [
+            "Display is being stopped; dependent owners must release before final dispose."
+          ],
+          "guards": [
+            "OnExit or mode transition has begun."
+          ],
+          "name": "exiting"
+        },
+        {
+          "actions": [
+            "Cell GFX/UI/game state has been cleared and no display handle is available."
+          ],
+          "guards": [
+            "Dispose completed or the mode is being rebuilt."
+          ],
+          "name": "disposed"
+        }
+      ],
+      "side_effects": [
+        "Initialize creates and replaces world/layer/shadow handles; replacement releases old handles before storing new ones.",
+        "Preload traversal mutates preloaded model/texture/creature/effect collections and can skip unavailable optional children.",
+        "StartDisplay changes world/layer visibility, lighting/shadow/effect state, and audio track fields.",
+        "Current CellModeStrategy::dispose clears preloaded vectors, world slots, display state, frame/input/UI state; this is current behavior only.",
+        "Original OnExit/Dispose ordering is vtable/static evidence and not a live trace."
+      ],
+      "state_variable": {
+        "expression": "gfx_worlds_ready && preload_traversal_complete && display_active && !exiting",
+        "owner": "Simulator::Cell::cCellGFX plus App::cCellModeStrategy",
+        "raw_fields": [
+          "cCellGFX+0x161a0..0x161d8 world/layer slots",
+          "cCellGFX+0x00 mPreloadedModels",
+          "cCellGFX+0x14 mPreloadedTextures",
+          "cCellGFX+0x28 mPreloadedCreatures",
+          "cCellGFX+0x161dc mEffectInstances",
+          "current CellModeStrategy.mInitialized",
+          "current CellModeStrategy.mEntered",
+          "current CellGfx.displayActive"
+        ],
+        "support": "SDK/Ghidra structure and function evidence; current flags are explicitly separated."
+      },
+      "structures": [
+        "App::cCellModeStrategy",
+        "App::cGameModeManager",
+        "Simulator::Cell::cCellGFX",
+        "Simulator::Cell::cCellDataReference",
+        "Simulator::Cell::cCellGFX::CellGFXObjectData",
+        "Simulator::Cell::cCellGFX::EffectInstance",
+        "Graphics world/layer/shadow/effect handles"
+      ],
+      "transitions": [
+        {
+          "actions": [
+            "Create/replace ordered world/layer/shadow handles and reset presentation fields."
+          ],
+          "cause": "Cell GFX initialization",
+          "entry_actions": [
+            "Obtain renderer/effects/lighting services."
+          ],
+          "event": "gfx_initialized",
+          "exit_actions": [
+            "Expose a world/layer table to preload and display paths."
+          ],
+          "from_state": "stage_uninitialized",
+          "guard": "Graphics service calls can create the named handles.",
+          "side_effects": [
+            "World/layer/shadow slots and associated presentation state are populated."
+          ],
+          "source": "0x00e5dba0",
+          "to_state": "gfx_initialized"
+        },
+        {
+          "actions": [
+            "Recursively walk cell/populate content and acquire/preload model/effect/texture/creature associations."
+          ],
+          "cause": "stage resource preload request",
+          "entry_actions": [
+            "Resolve nested data references and preserve requested world associations."
+          ],
+          "event": "cell_preload_started",
+          "exit_actions": [
+            "Return to stage lifecycle after helper-specific skips/releases."
+          ],
+          "from_state": "gfx_initialized",
+          "guard": "A valid cell/populate/content root is available.",
+          "side_effects": [
+            "Preload collections, model/effect handles, and refcount-like field_40 bookkeeping may change."
+          ],
+          "source": "0x00e666f0/0x00e663b0/0x00e665c0",
+          "to_state": "preloading"
+        },
+        {
+          "actions": [
+            "Return from recursive preload traversal."
+          ],
+          "cause": "preload traversal returns",
+          "entry_actions": [
+            "No original readiness flag is directly proven; retain partial/skipped status in the reconstructed state."
+          ],
+          "event": "cell_preload_completed",
+          "exit_actions": [
+            "Permit caller to decide whether to start display."
+          ],
+          "from_state": "preloading",
+          "guard": "The preload root traversal returns; optional child failures may have been skipped.",
+          "side_effects": [
+            "Stage holds the associations that successfully preloaded; missing optional children are not published."
+          ],
+          "source": "0x00e666f0; current CellGfx::preloadResources",
+          "to_state": "preload_complete_or_partial"
+        },
+        {
+          "actions": [
+            "Activate lighting, world/layer handles, shadow/effects, and named audio hooks."
+          ],
+          "cause": "mode OnEnter / StartDisplay",
+          "entry_actions": [
+            "Ensure current mode is being entered after initialization/preload contract."
+          ],
+          "event": "cell_display_started",
+          "exit_actions": [
+            "Expose display-active state to frame/update/draw consumers."
+          ],
+          "from_state": "preload_complete_or_partial",
+          "guard": "Display start is called after stage initialization; exact original readiness barrier is unresolved.",
+          "side_effects": [
+            "Visibility, lighting, shadow, effect, and audio state changes."
+          ],
+          "source": "0x00e55120; App::cCellModeStrategy::OnEnter",
+          "to_state": "display_active"
+        },
+        {
+          "actions": [
+            "Create/replace effect-map slots or entity effect instances."
+          ],
+          "cause": "effect map update or cell effect instance request",
+          "entry_actions": [
+            "Select background/foreground effects world and transform."
+          ],
+          "event": "cell_effect_instance_replaced",
+          "exit_actions": [
+            "Release previous temporary/instance path after replacement is registered."
+          ],
+          "from_state": "display_active",
+          "guard": "Effect identity and selected entity/world are available.",
+          "side_effects": [
+            "Effect slot, effect-instance array, and transform/parameter state change."
+          ],
+          "source": "0x00e63560/0x00e66840",
+          "to_state": "display_active"
+        },
+        {
+          "actions": [
+            "Stop display and reset stage presentation state."
+          ],
+          "cause": "mode transition or OnExit",
+          "entry_actions": [
+            "Stop new presentation work before teardown."
+          ],
+          "event": "cell_display_exited",
+          "exit_actions": [
+            "Enter teardown/release scope."
+          ],
+          "from_state": "display_active",
+          "guard": "Mode transition or OnExit is invoked.",
+          "side_effects": [
+            "Current display/entered flags and background globals reset; original reset fanout is only partially known."
+          ],
+          "source": "0x00e7fc00; src/apps/CellModeStrategy.cpp:38-42",
+          "to_state": "exiting"
+        },
+        {
+          "actions": [
+            "Release GFX/UI/game singletons and clear preload/world/frame state."
+          ],
+          "cause": "mode Dispose or stage rebuild",
+          "entry_actions": [
+            "Ensure entity/effect/model owners are released before world/device teardown."
+          ],
+          "event": "cell_stage_disposed",
+          "exit_actions": [
+            "No Cell display handle remains available."
+          ],
+          "from_state": "exiting",
+          "guard": "Dispose is called after dependent content owners release.",
+          "side_effects": [
+            "Current preload vectors, world slots, UI, and stage flags clear; original full release order unresolved."
+          ],
+          "source": "0x00e81f30; src/apps/CellModeStrategy.cpp:18-29",
+          "to_state": "disposed"
+        }
+      ],
+      "validation": [
+        "Use the SDK/Ghidra cCellGFX and mode vtable layouts to pin world slot order, named layers, and teardown anchors.",
+        "Run a future original trace from cCellGFX::Initialize through PreloadResources, StartDisplay, first draw, OnExit, and Dispose.",
+        "Instrument preload helpers with success/skip/release counts and compare them to display activation.",
+        "Keep current CellModeStrategy/CellGfx flags and current hard-coded scene as clean-room observations, never original evidence."
+      ]
+    }
+  ],
+  "temporal_semantics": {
+    "async_and_reload": {
+      "current": "No async or reload operation exists at the B1 provider boundary; each fetch is synchronous and reparses the package index.",
+      "original": "GetResourceAsync returns an IAsyncRequest surface with IsReady/GetResource; ReloadResource is separate from GetResource. Worker scheduling, cancellation, polling cadence, and cache invalidation are unresolved.",
+      "sources": [
+        "Spore-ModAPI/Spore ModAPI/Spore/Resource/IResourceManager.h:106-156",
+        "Spore-ModAPI/Spore ModAPI/Spore/Resource/ResourceObject.h:82-90",
+        ".spore-analysis/ghidra-exports/sdk_functions.tsv:851-854"
+      ]
+    },
+    "availability_and_failure": {
+      "current": "B1 distinguishes parse/index, missing identity, extent, QFS, and size errors through false plus error text; typed decoders add their own format/domain errors.",
+      "original": "Manager and database APIs return bool/nullable handles without a stable captured error taxonomy. Cell preload helpers are void and can skip null/zero child content; effect-map failure can log and continue.",
+      "sources": [
+        "src/compat/ResourceProvider.hpp:24-59",
+        "src/assets/Dbpf.cpp:37-224",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__AddPreloadedModel.c:14-31",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__LoadEffectMap.c:76-103"
+      ]
+    },
+    "cache_temporality": {
+      "current": "No cache or eviction. DbpfResourceProvider reparses the index per fetch and owns only the output vector; MemoryResourceProvider is a test-only map.",
+      "original": "The SDK exposes cache-before-load GetResource, explicit private bypass, cache insertion, filtered flush, and cache lists. Exact eviction and final-release timing are not recovered.",
+      "sources": [
+        "src/compat/ResourceProvider.hpp:32-85",
+        "Spore-ModAPI/Spore ModAPI/Spore/Resource/ICache.h:29-44",
+        "Spore-ModAPI/Spore ModAPI/Spore/Resource/IResourceManager.h:127-156,283-299",
+        "live Ghidra decompile of FUN_008df460"
+      ]
+    },
+    "current_openspore_order": [
+      "Caller resolves a full (type, group, instance) key.",
+      "DbpfResourceProvider::fetch parses the DBPF index for every request.",
+      "findDbpfEntry performs an exact linear identity scan.",
+      "extractDbpfRecord validates extent and copies raw bytes or runs QFS decompression.",
+      "The output vector is passed to a format decoder/consumer.",
+      "CellGfx::preloadResources currently stores key pairs only; it does not acquire the records.",
+      "CellModeStrategy::onEnter calls CellGfx::startDisplay; this is current clean-room behavior, not original runtime evidence."
+    ],
+    "dependency_order": [
+      "Initialize the resource manager before registering databases/factories/caches.",
+      "Mount or register package databases and load their indexes before identity lookup.",
+      "Resolve the complete ResourceKey before record selection; nested instance-only Cell references need type/group context.",
+      "Open a record and read/decode bytes before factory creation and cache insertion.",
+      "Retain ResourceObject/record/presentation handles until all consumers release them.",
+      "Initialize Cell world/layer handles before preload, preload associations before display, and stop display before final dispose.",
+      "Release entity/effect/model/presentation owners before world/database/renderer teardown."
+    ],
+    "original_static_order": [
+      "The SDK/interface and current live Ghidra call graph support a manager/registry -> database/index -> record/factory -> ResourceObject/cache chain.",
+      "The cCellGFX Initialize body creates ordered world/layer/shadow handles before the SDK-described preload phase.",
+      "PreloadResources recursively walks Cell and populate references and invokes model/effect/texture/creature preload helpers.",
+      "StartDisplay activates lighting/world/layer/effect/shadow/audio state.",
+      "Mode OnExit and Dispose are the static teardown anchors; exact ordering and release fanout remain incomplete."
+    ],
+    "ownership_rules": [
+      "Original ResourceObject has a refcount and ResourceKey; CachedResourceObject adds a final-release callback.",
+      "Original IRecord/PFRecordRead expose key, database, stream, RecordOpen, RecordClose, RecordInfo, offset, size, and stream-refcount fields.",
+      "Original DatabasePackedFile stores index state, a ResourceKey-to-record map, and manager pointer; DatabaseDirectoryFiles stores a ResourceKey record-list map.",
+      "Current B1 returns owned bytes and therefore has no persistent record/resource handle cache.",
+      "Current CellModeStrategy owns CellGfx/UI value members, which differs from original global singleton ownership."
+    ],
+    "source": {
+      "level": "mixed_static_and_current",
+      "sources": [
+        ".spore-analysis/ghidra-exports/structs_fields.tsv:22437-22453,4382-4439",
+        "Spore-ModAPI/Spore ModAPI/Spore/Resource/ResourceObject.h:30-80",
+        "Spore-ModAPI/Spore ModAPI/Spore/Resource/IRecord.h:13-41",
+        "src/compat/ResourceProvider.hpp:32-59",
+        "src/apps/CellModeStrategy.cpp:18-42"
+      ]
+    }
+  },
+  "unresolved": [
+    {
+      "confidence": "high",
+      "id": "original-load-order",
+      "question": "What exact startup and menu-to-Cell order registers databases, factories, caches, and name mappings, and which package wins when a full key exists in multiple databases?",
+      "validation": "Run tools/observatory/probes/menu_transition.json under a positive original trace and correlate resource, package-lock, index-read, first-fetch, preload, and display timestamps."
+    },
+    {
+      "confidence": "high",
+      "id": "resource-manager-error-taxonomy",
+      "question": "How does the original distinguish absent key, malformed package, unsupported record, factory failure, and read failure when its public methods return bool or nullable handles?",
+      "validation": "Trace and disassemble the full GetResource/OpenRecord/Factory failure exits; compare with current B1 error strings without treating current errors as original."
+    },
+    {
+      "confidence": "high",
+      "id": "qfs-call-site",
+      "question": "At which original PFRecordRead/Factory/Database layer does QFS decompression occur, and what partial-read/state effects occur on failure?",
+      "validation": "Recover the full live bodies at DatabasePackedFile::OpenRecord, PFRecordRead::ReadData, and adjacent QFS helpers; identify decompression by call/data flow, not SDK names."
+    },
+    {
+      "confidence": "high",
+      "id": "cache-eviction",
+      "question": "What cache implementations, priorities, key filters, eviction criteria, weak-reference behavior, and finalizer ordering did the original use?",
+      "validation": "Correlate ICache vtable targets, GetResource, CacheResource, Release, FlushCache, and DoDatabaseChanged in a controlled trace."
+    },
+    {
+      "confidence": "medium",
+      "id": "async-ownership",
+      "question": "How are IAsyncRequest workers, readiness, cancellation, and ResourceObjectPtr output transfer synchronized?",
+      "validation": "Recover the concrete async request/factory bodies and run a positive multi-request trace."
+    },
+    {
+      "confidence": "medium",
+      "id": "record-lease",
+      "question": "How do OpenRecord, CloseRecord, record reference counts, stream reference counts, and caller-owned byte copies interact?",
+      "validation": "Trace one record through open/read/close with all PFRecordRead and DatabaseDirectoryFiles reference writes observed."
+    },
+    {
+      "confidence": "high",
+      "id": "preload-readiness",
+      "question": "Does original PreloadResources have a completion barrier, how does waitUntilLoaded behave, and can a required missing child prevent StartDisplay?",
+      "validation": "Instrument all preload helper exits, return paths, preload collection counts, and StartDisplay caller order in a positive Cell trace."
+    },
+    {
+      "confidence": "high",
+      "id": "effect-failure",
+      "question": "Which effect/model/creature failures are optional skips versus stage-fatal failures, and what fallback is used when an effect cannot start?",
+      "validation": "Run original traces with controlled missing effect/model identities and compare world-slot, effect-instance, and display state."
+    },
+    {
+      "confidence": "high",
+      "id": "teardown-order",
+      "question": "What is the exact original release order for cached ResourceObjects, records, model/effect instances, Cell worlds, database indices, and renderer services?",
+      "validation": "Correlate OnExit, Dispose, cCellModeStrategy release, Database::Close/Dispose, ICache::Flush, and renderer teardown with owner/refcount observations."
+    },
+    {
+      "confidence": "high",
+      "id": "name-mapping",
+      "question": "What exact name-to-key hash and extension/type mapping behavior is used at runtime, beyond the SDK API surface?",
+      "validation": "Recover ResourceKey::Parse and SetTypename/SetKeyName call paths; do not promote the existing FNV-1a research inference without a direct body or trace."
+    },
+    {
+      "confidence": "high",
+      "id": "current-seam-boundary",
+      "question": "Should the next implementation add multi-package priority, index caching, record leases, reload, async, and explicit cache ownership, or keep them outside B1?",
+      "validation": "Adjudicate against the first positive original resource trace and existing BOUNDARIES.md gate; this report makes no implementation recommendation."
+    }
+  ],
+  "validation": [
+    {
+      "id": "identity-pin",
+      "method": "Verify SporeApp.exe hash, Ghidra 12.1.2 export manifest, SDK revision cbf9206, and the xref snapshot before any promotion.",
+      "sources": [
+        ".spore-analysis/ghidra-exports/manifest.json:2-50",
+        "knowledgegraph/research/global-campaign-2026/track-k-engine-boundaries.json:8-23"
+      ],
+      "status": "available"
+    },
+    {
+      "id": "static-function-structure-crosscheck",
+      "method": "For each original function anchor, compare SDK signature, Ghidra function lookup/body range, decompilation, xref/call graph, and field layout; retain mid-body/address drift explicitly.",
+      "sources": [
+        ".spore-analysis/ghidra-exports/sdk_functions.tsv:755-877",
+        ".spore-analysis/ghidra-exports/structs_fields.tsv:1317-1379,2157-2220,22437-22502,4306-4507",
+        "live Ghidra SporeApp.exe function lookup and decompile"
+      ],
+      "status": "partially_complete"
+    },
+    {
+      "id": "current-b1-fixture",
+      "method": "Run synthetic DBPF raw/QFS records, malformed header/index/QFS cases, and package-versus-memory provider substitution.",
+      "sources": [
+        "src/assets/tests/assets_test.cpp:151-222,326-364",
+        "tests/test_formats.py",
+        "tests/fixtures/mini_package.dbpf"
+      ],
+      "status": "covered_by_existing_tests"
+    },
+    {
+      "id": "real-package-content",
+      "method": "When SPORE/ is available, validate exact identity, stored/memory sizes, QFS output, and decoder completion; otherwise record skipped, not success.",
+      "sources": [
+        "docs/ASSET-PATH.md:27-48",
+        "docs/CELLSTAGE-VALIDATION.md:10-23",
+        "knowledgegraph/spore.db:AssetRecord and Test nodes"
+      ],
+      "status": "environment_dependent"
+    },
+    {
+      "id": "original-resource-trace",
+      "method": "Run the defined menu_transition probes and capture manager initialize, database lock, index read, first resource request, cache/factory activity, preload, and display in one timeline.",
+      "sources": [
+        "tools/observatory/probes/menu_transition.json:3-21",
+        "docs/CELLSTAGE-VALIDATION.md:25-34"
+      ],
+      "status": "defined_not_run"
+    },
+    {
+      "id": "cache-and-eviction-oracle",
+      "method": "Force cache hit, miss, private bypass, insertion, filtered flush, last-owner release, and reload; record object/refcount and cache state.",
+      "sources": [
+        "Spore-ModAPI/Spore ModAPI/Spore/Resource/IResourceManager.h:84-156,283-299",
+        "Spore-ModAPI/Spore ModAPI/Spore/Resource/ICache.h:29-44",
+        ".spore-analysis/ghidra-exports/sdk_functions.tsv:841-877"
+      ],
+      "status": "not_yet_testable"
+    },
+    {
+      "id": "preload-display-oracle",
+      "method": "Record recursive preload success/skip/failure counts and correlate them with StartDisplay and first draw.",
+      "sources": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__PreloadResources.c:8-141",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__StartDisplay.c:8-47",
+        "src/apps/CellModeStrategy.cpp:18-42"
+      ],
+      "status": "not_yet_testable"
+    }
+  ]
+}

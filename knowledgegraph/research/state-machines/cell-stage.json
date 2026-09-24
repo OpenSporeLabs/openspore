@@ -1,0 +1,2720 @@
+{
+  "$schema": "state-machine-research-1",
+  "callbacks": [
+    {
+      "address": "0x00e51010",
+      "consumers": [
+        "App::cCellModeStrategy::OnMouseMove vtable dispatch",
+        "GameInput mouse state"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e51010",
+          "boundary": "original_static",
+          "claim": "OnMouseMove is a short adapter that forwards the mouse coordinates/state to GameInput::OnKeyUp-shaped input state and returns false",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP decompile; docs/analysis/dossiers/cell-movement.md"
+        }
+      ],
+      "name": "App::cCellModeStrategy::OnMouseMove",
+      "parameters": [
+        "this",
+        "mouseX",
+        "mouseY",
+        "mouseState"
+      ],
+      "returns": "bool",
+      "semantics": "Input callback; the current OpenSpore SDL path instead records the latest NDC mouse position and uses it for camera-ray steering"
+    },
+    {
+      "address": "0x00e5c0f0",
+      "consumers": [
+        "App::cCellModeStrategy::OnMouseUp vtable dispatch",
+        "cCellUI hover update"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e5c0f0",
+          "boundary": "original_static",
+          "claim": "OnMouseUp forwards mouse-up state, queries the foreground cell pool, writes sCellUI+0x900 with the hit count and sCellUI+0x904 with zero, and returns true",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP decompile"
+        }
+      ],
+      "name": "App::cCellModeStrategy::OnMouseUp",
+      "parameters": [
+        "this",
+        "mouseButton",
+        "mouseX",
+        "mouseY",
+        "mouseState"
+      ],
+      "returns": "bool",
+      "semantics": "Mouse-release callback; the original updates UI hover/cell-query state rather than directly changing cell health"
+    },
+    {
+      "address": "0x00e6c860",
+      "consumers": [
+        "App::cCellModeStrategy::OnMouseDown vtable dispatch",
+        "foreground cCellQueryLinkedPool",
+        "cCellUI selection state"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e6c860",
+          "boundary": "original_static",
+          "claim": "OnMouseDown first queries cells under the camera layer and can write the first hit to sCellUI+0xc0; otherwise it can write a candidate index to sCellUI+0xc4 or clear it",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP decompile"
+        }
+      ],
+      "name": "App::cCellModeStrategy::OnMouseDown",
+      "parameters": [
+        "this",
+        "mouseButton",
+        "mouseX",
+        "mouseY",
+        "mouseState"
+      ],
+      "returns": "bool",
+      "semantics": "Selection callback; camera-mode and mouse-button guards decide whether a query hit becomes a UI selection candidate"
+    },
+    {
+      "address": "0x00e7d660",
+      "consumers": [
+        "App::cCellModeStrategy::OnMouseWheel vtable dispatch",
+        "cCellUI/camera zoom path",
+        "health rollover trigger path"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e7d660",
+          "boundary": "original_static",
+          "claim": "OnMouseWheel forwards wheel state and has separate branches for a zoom-like call and a cell-state call that can reach FUN_00e7d070; decompiler parameter typing is unreliable",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP decompile"
+        }
+      ],
+      "name": "App::cCellModeStrategy::OnMouseWheel",
+      "parameters": [
+        "this",
+        "nWheelDelta",
+        "mouseX",
+        "mouseY",
+        "mouseState"
+      ],
+      "returns": "bool",
+      "semantics": "Wheel callback with zoom and UI/gameplay side effects; exact wheel-to-camera or wheel-to-health mapping is not fully resolved"
+    },
+    {
+      "address": "0x00e806b0",
+      "consumers": [
+        "App::cCellModeStrategy::Update vtable dispatch",
+        "FUN_00e7f3a0",
+        "FUN_00e7fd00 when stage reload is requested"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e806b0",
+          "boundary": "original_static",
+          "claim": "The per-frame cell body gates active updates on sCellGame+0x51e0 == 0 and sCellGame+0x515c == 0, scales delta time, calls MovePlayerToMousePosition and FUN_00e7f3a0, then handles the sCellGame+0x51d8 reload branch",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP decompile; docs/analysis/dossiers/cell-movement.md; tools/re/data/decompiled/FUN_00e806b0.c"
+        }
+      ],
+      "name": "Cell-mode per-frame orchestrator FUN_00e806b0",
+      "parameters": [
+        "this",
+        "deltaTime",
+        "deltaGameTime"
+      ],
+      "returns": "void",
+      "semantics": "Original frame boundary; decompiler parameter types are guesses, but the direct call order and state gates are observed"
+    },
+    {
+      "address": "0x00e7a190",
+      "consumers": [
+        "FUN_00e7c8c0 per-cell gameplay update",
+        "cCellCellResource cAIData type dispatcher"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e7a190",
+          "boundary": "original_static",
+          "claim": "The per-cell behavior path dispatches by cAIData::Type, including Eater 0x1006, Parasite 0x1007, Caterpillar 0x1008, Sleeper 0x1009, Mosquito 0x100b, Dragon 0x100c, Poolball 0x100d, and Leak 0x100e",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP decompile; Spore-ModAPI cCellResource.h enum cAIData::Type"
+        }
+      ],
+      "name": "Cell behavior dispatcher FUN_00e7a190",
+      "parameters": [
+        "cell",
+        "deltaTime",
+        "attackDirectionData"
+      ],
+      "returns": "void",
+      "semantics": "AI type dispatcher; the current OpenSpore has no corresponding original cAIData execution path"
+    },
+    {
+      "address": "0x00e7a7c0",
+      "consumers": [
+        "attack and damage callers",
+        "cCellUI::ShowHealthRollover",
+        "FUN_00e7a4a0 death path"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e7a7c0",
+          "boundary": "original_static",
+          "claim": "The generic damage resolver checks ShouldNotAttack and invulnerability, calls GetDamageAmount, clamps mHealthPoints to zero, may show a health rollover, and invokes the death path when health reaches zero",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP decompile"
+        }
+      ],
+      "name": "Generic cell damage resolver FUN_00e7a7c0",
+      "parameters": [
+        "victim",
+        "attacker",
+        "contactPosition",
+        "damageType",
+        "damageFlags",
+        "effectFlags"
+      ],
+      "returns": "bool",
+      "semantics": "Observed damage/death decision; argument names and enums beyond the health write remain partially unresolved"
+    },
+    {
+      "address": "0x00e7a4a0",
+      "consumers": [
+        "FUN_00e7a7c0",
+        "death animation/effect path",
+        "FUN_00e72060 for player death"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e7a4a0",
+          "boundary": "original_static",
+          "claim": "Non-player death marks cCellObjectData+0x113, chooses scale-dependent death effects, updates nearby flee/chase reactions, and queues a duration-bearing action record; player death is diverted to FUN_00e72060",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP decompile; Spore-ModAPI cCellObjectData.h"
+        }
+      ],
+      "name": "Cell death path FUN_00e7a4a0",
+      "parameters": [
+        "cell",
+        "killerIndex",
+        "killerResource",
+        "playerRelated",
+        "effectFlags",
+        "damageFlags"
+      ],
+      "returns": "bool",
+      "semantics": "Death transition; exact duration and queued-effect completion are not yet reconstructed"
+    },
+    {
+      "address": "0x00e7e6c0",
+      "consumers": [
+        "FUN_00e7e7a0",
+        "queued cell interaction records",
+        "FUN_00e7ba30"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e7e6c0",
+          "boundary": "original_static",
+          "claim": "The per-cell behavior update decrements the four behavior timers, invokes AI/target update helpers, and dispatches the queued interaction state when timers expire",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP decompile"
+        }
+      ],
+      "name": "Cell behavior timer update FUN_00e7e6c0",
+      "parameters": [
+        "cell",
+        "deltaTime"
+      ],
+      "returns": "void",
+      "semantics": "Timer-driven AI/interaction update; the current deterministic sim uses a single per-frame flee check instead"
+    },
+    {
+      "address": "0x00e7e130",
+      "consumers": [
+        "FUN_00e7e6c0",
+        "FUN_00e7ba30",
+        "queued cell interaction pool"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e7e130",
+          "boundary": "original_static",
+          "claim": "The queued-record dispatcher switches on the record type at +0x24 and then releases the record after dispatch; observed types include 1, 2, 5, 6, 7, 0x0c, 0x0d, 0x13, 0x14, 0x1d, 0x1e, 0x2c, 0x32, and 0x33",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP decompile"
+        }
+      ],
+      "name": "Queued cell interaction dispatcher FUN_00e7e130",
+      "parameters": [
+        "deltaTime",
+        "flags",
+        "playerContext"
+      ],
+      "returns": "void",
+      "semantics": "Consumes a transient action/interaction record; this is stronger static evidence for original event transport than the current local SimEvent type"
+    },
+    {
+      "address": "0x00e780a0",
+      "consumers": [
+        "23 Cell-region callers found by Ghidra MCP",
+        "FUN_00e7e6c0 and despawn/eat/death callers",
+        "world rebuild path"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e780a0",
+          "boundary": "original_static",
+          "claim": "Despawn clears a matching avatar reference, removes the cell from its query, releases GFX/association state, optionally respawns a replacement when the stage scale changed, and finally releases the pooled object",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP decompile; docs/analysis/dossiers/unknown-high/cell-object-pool-lifecycle.md"
+        }
+      ],
+      "name": "Cell object despawn/rebuild FUN_00e780a0",
+      "parameters": [
+        "cellIndex",
+        "respawnIfScaled",
+        "deltaTime",
+        "effectFlags"
+      ],
+      "returns": "void",
+      "semantics": "Despawn boundary with optional scale-aware replacement; exact caller-specific respawn policy remains only partially named"
+    },
+    {
+      "address": "0x00e7fd00",
+      "consumers": [
+        "FUN_00e806b0 when sCellGame+0x51d8 is set",
+        "stage/world transition path"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e7fd00",
+          "boundary": "original_static",
+          "claim": "The stage rebuild path drains cell/UI/effect state, clears mAvatarCellIndex, reloads world references and UI constants, resets scale/advect state, and calls population/setup helpers before returning to gameplay",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP decompile; knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json"
+        }
+      ],
+      "name": "Cell stage rebuild FUN_00e7fd00",
+      "parameters": [
+        "playerScaleOrProgression",
+        "playerStateA",
+        "playerStateB",
+        "playerStateC",
+        "worldMode",
+        "worldReference",
+        "rebuildFlags"
+      ],
+      "returns": "void",
+      "semantics": "World/player reconstruction boundary; exact player-object construction and assignment subpath is unresolved"
+    },
+    {
+      "address": "0x00e7c8c0",
+      "consumers": [
+        "FUN_00e7f3a0",
+        "per-cell movement, AI, and query update"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e7c8c0",
+          "boundary": "original_static",
+          "claim": "The gameplay loop iterates live cells, updates background/foreground movement, invokes AI/behavior, target size, animation/effects, and cell-specific player checks",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP decompile"
+        }
+      ],
+      "name": "Per-cell gameplay iteration FUN_00e7c8c0",
+      "parameters": [
+        "deltaTime"
+      ],
+      "returns": "void",
+      "semantics": "Original cell population update; it is not equivalent to the current role-based CellSim loop"
+    }
+  ],
+  "domain": "Cell Stage",
+  "events": [
+    {
+      "boundary": "original_static",
+      "consumers": [
+        "FUN_00b721d0 lookup",
+        "FUN_00b72210 lookup",
+        "FUN_00b72260 release"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e74a20",
+          "boundary": "original_static",
+          "claim": "CreateCellObject allocates a cCellObjectData and initializes target, size, model, query, and resource state",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP decompile; .spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__CreateCellObject.c"
+        }
+      ],
+      "id": "cell_object_allocated",
+      "kind": "pool_transition",
+      "producers": [
+        "0x00e74a20",
+        "0x00e771d0",
+        "0x00e79720"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "boundary": "original_static",
+      "consumers": [
+        "query removal",
+        "GFX/association release",
+        "optional replacement spawn"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e780a0",
+          "boundary": "original_static",
+          "claim": "A valid pooled cell is detached from avatar/query/GFX state and released through the pool",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP decompile; docs/analysis/dossiers/unknown-high/cell-object-pool-lifecycle.md"
+        }
+      ],
+      "id": "cell_object_despawned",
+      "kind": "pool_transition",
+      "producers": [
+        "0x00e780a0",
+        "0x00e7a160",
+        "0x00e7add0",
+        "0x00e7d880"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "boundary": "original_static",
+      "consumers": [
+        "FUN_00e71ce0",
+        "FUN_00e70e30",
+        "FUN_00e70f20",
+        "FUN_00e79c30"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e71ce0",
+          "boundary": "original_static",
+          "claim": "Nearby damage/death reactions assign a chase target/time or flee target/time using the cell resource AI radii",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP decompile; Spore-ModAPI cCellObjectData.h"
+        }
+      ],
+      "id": "cell_flee_or_chase_selected",
+      "kind": "ai_reaction",
+      "producers": [
+        "0x00e71ce0",
+        "0x00e575f0",
+        "0x00e70cf0",
+        "0x00e59ab0"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "boundary": "original_static",
+      "consumers": [
+        "FUN_00e7a7c0",
+        "FUN_00e7dbd0",
+        "FUN_00e7dd90",
+        "FUN_00e7a770"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e58980",
+          "boundary": "original_static",
+          "claim": "GetDamageAmount returns an integer damage value used by the generic and collision damage paths",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "Ghidra MCP decompile; .spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__GetDamageAmount.c"
+        }
+      ],
+      "id": "cell_damage_resolved",
+      "kind": "combat_transition",
+      "producers": [
+        "0x00e7a7c0",
+        "0x00e7dbd0",
+        "0x00e7dd90"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "boundary": "original_static",
+      "consumers": [
+        "FUN_00e7a4a0",
+        "FUN_00e72060",
+        "FUN_00e72200",
+        "death effect and animation consumers"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e7a4a0",
+          "boundary": "original_static",
+          "claim": "Lethal damage marks a non-player cell terminal and starts death effects/animation; lethal player damage enters a separate player-death path",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP decompile"
+        }
+      ],
+      "id": "cell_death_started",
+      "kind": "lifecycle_transition",
+      "producers": [
+        "0x00e7a4a0",
+        "0x00e72060",
+        "0x00e72200"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "boundary": "original_static",
+      "consumers": [
+        "FUN_00e71520",
+        "FUN_00e725c0",
+        "FUN_00e727e0",
+        "queued interaction dispatcher"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e71520",
+          "boundary": "original_static",
+          "claim": "Contact/ingestion paths queue duration-bearing action records, play eat/death-related animations, and apply health/damage reconciliation",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP decompile"
+        }
+      ],
+      "id": "cell_eat_or_mouth_interaction",
+      "kind": "interaction_transition",
+      "producers": [
+        "0x00e71520",
+        "0x00e725c0",
+        "0x00e727e0"
+      ],
+      "status": "static_mechanics_enum_mapping_partial"
+    },
+    {
+      "boundary": "original_static",
+      "consumers": [
+        "FUN_00e806b0",
+        "FUN_00e7fd00",
+        "FUN_00e7f550"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e50940",
+          "boundary": "original_static",
+          "claim": "The rebuild request writes sCellGame+0x51d8 = 1 and stores a flag in sCellGame+0x51d9",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP decompile"
+        },
+        {
+          "address": "0x00e806b0",
+          "boundary": "original_static",
+          "claim": "The active frame branch tests sCellGame+0x51d8 and calls FUN_00e7fd00 when set",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP decompile"
+        }
+      ],
+      "id": "cell_stage_reload_requested",
+      "kind": "stage_transition",
+      "producers": [
+        "0x00e50940",
+        "0x00e72200",
+        "0x00e7b410"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "boundary": "original_static",
+      "consumers": [
+        "cCellUI::Load",
+        "cCellUI::ShowHealthRollover",
+        "FUN_00e73f60"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e62340",
+          "boundary": "original_static",
+          "claim": "ShowHealthRollover early-outs without a live GFX object, otherwise creates/updates a rollover with initialHealth/6 and sets mDisappearTime to 0.5f",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP decompile; .spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellUI__ShowHealthRollover.c"
+        }
+      ],
+      "id": "cell_health_rollover_shown",
+      "kind": "ui_transition",
+      "producers": [
+        "0x00e7a7c0",
+        "0x00e7dbd0",
+        "0x00e7dd90",
+        "0x00e7d070"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "boundary": "original_static",
+      "consumers": [
+        "cCellUI state",
+        "FUN_00e510f0"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e818f0",
+          "boundary": "original_static",
+          "claim": "OnKeyDown special-cases virtualKey 2 by toggling sCellUI+0x937",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP decompile; docs/analysis/dossiers/cell-movement.md"
+        }
+      ],
+      "id": "cell_health_display_toggled",
+      "kind": "input_transition",
+      "producers": [
+        "0x00e818f0"
+      ],
+      "status": "static_mechanics_virtual_key_meaning_unresolved"
+    },
+    {
+      "boundary": "original_static",
+      "consumers": [
+        "MovePlayerToMousePosition",
+        "FUN_00e5b2e0",
+        "camera ray and movement plane"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e5b790",
+          "boundary": "original_static",
+          "claim": "The player target is the camera-ray/movement-plane intersection, and a successful hit writes target position, target orientation, and a moving flag",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP decompile; docs/analysis/dossiers/cell-movement.md"
+        }
+      ],
+      "id": "cell_mouse_steering_sample",
+      "kind": "input_transition",
+      "producers": [
+        "0x00e5b790",
+        "0x00e5b2e0"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "boundary": "openspore_current",
+      "consumers": [
+        "CellSim::update",
+        "cell_stage buildFrameDraws",
+        "current sim event log"
+      ],
+      "evidence": [
+        {
+          "address": "src/sim/Sim.cpp:103",
+          "boundary": "openspore_current",
+          "claim": "Current OpenSpore emits local SimEvent records named eat and flee; it does not implement the original pooled interaction record ABI",
+          "kind": "source",
+          "level": "APPROXIMATION",
+          "source": "src/sim/Sim.cpp:141-163,237-251; knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json"
+        }
+      ],
+      "id": "openspore_eat_or_flee_event",
+      "kind": "current_local_event",
+      "producers": [
+        "src/sim/Sim.cpp:141-163,237-251"
+      ],
+      "status": "current_contract_only"
+    }
+  ],
+  "scope": {
+    "binary": "SPORE/SporeBin/SporeApp.exe",
+    "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+    "boundaries": [
+      "Read-only analysis; no OpenSpore, original binary, SPORE asset, or historical triage artifact is modified.",
+      "Original semantics come from pinned SporeApp.exe 3.1.0.22 static evidence, committed decompilation/dossiers, SDK declarations, Ghidra MCP structure/xref/decompile output, and repository knowledgegraph inventory.",
+      "Current source is reported only as OpenSpore behavior and is not promoted to original-game truth.",
+      "SDK field names and enum values establish layout and names; behavior is only assigned where a body, disassembly, or corroborated call path supports it.",
+      "No committed Cell-stage runtime trace exists; the S5 run reached the menu only and recorded no Cell events."
+    ],
+    "build": "SporeApp.exe 3.1.0.22",
+    "evidence_policy": {
+      "current_source": "Current C++ is evidence of implemented OpenSpore contracts, not original runtime fidelity.",
+      "decompilation": "Ghidra pseudocode is direct static evidence but decompiler parameter and type recovery is not authoritative.",
+      "levels": [
+        "APPROXIMATION",
+        "CONFIRMED",
+        "INFERRED",
+        "OBSERVED",
+        "SUPPORTED",
+        "UNKNOWN",
+        "VERIFIED"
+      ],
+      "runtime": "Only negative Cell-stage runtime evidence is available: S5 run 1 rendered the registration/menu path and all Cell probes recorded zero events; runs 2 and 3 did not boot.",
+      "sdk": "Spore-ModAPI names, offsets, and enum values are reference-only structural evidence unless corroborated by a body or call path."
+    },
+    "image_base": "0x00400000",
+    "method": [
+      "Queried CodeGraph for current CellStage implementation and blast radius.",
+      "Queried knowledgegraph/spore.db read-only for function, structure, field, and evidence records.",
+      "Read the committed Cell campaign, movement dossier, pool-lifecycle dossier, Cell runtime devlogs, and existing simulator state-machine schema.",
+      "Used Ghidra MCP decompilation, function callers, structure layouts, and a read-only inline scan of Cell-region decompilation for state-field access patterns.",
+      "Read SDK headers for cCellGame, cCellObjectData, cCellUI, cCellResource, and App::cCellModeStrategy without copying implementation text."
+    ],
+    "runtime": {
+      "cell_stage_reached": false,
+      "committed_trace_status": "negative",
+      "trace_run": "S5-20260922T212936Z-396838 and two additional no-boot runs",
+      "trace_source": "docs/devlog/018-s5-cell-runtime-evidence.md"
+    },
+    "sources": [
+      "docs/analysis/campaigns/cell-stage-campaign.md",
+      "docs/analysis/dossiers/cell-movement.md",
+      "docs/analysis/dossiers/unknown-high/cell-object-pool-lifecycle.md",
+      "docs/devlog/018-s5-cell-runtime-evidence.md",
+      "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json",
+      "knowledgegraph/research/state-machines/simulator-core.json",
+      "knowledgegraph/spore.db",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__CreateCellObject.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__GetDamageAmount.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__ShouldNotAttack.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellUI__ShowHealthRollover.c",
+      ".spore-analysis/ghidra-exports/structs_fields.tsv",
+      "Spore-ModAPI/Simulator/Cell/cCellGame.h",
+      "Spore-ModAPI/Simulator/Cell/cCellObjectData.h",
+      "Spore-ModAPI/Simulator/Cell/cCellResource.h",
+      "Spore-ModAPI/Simulator/Cell/cCellUI.h",
+      "Spore-ModAPI/Simulator/Cell/CellFunctions.h",
+      "Spore-ModAPI/App/cCellModeStrategy.h",
+      "src/sim/Sim.cpp",
+      "src/sim/Sim.hpp",
+      "src/sim/CellGame.cpp",
+      "src/sim/CellPool.hpp",
+      "src/sim/CellQuery.hpp",
+      "src/apps/CellInput.cpp",
+      "src/apps/CellModeStrategy.cpp",
+      "src/apps/CellUI.cpp",
+      "src/apps/CellAnim.cpp",
+      "src/apps/cell_stage.cpp"
+    ]
+  },
+  "state_machines": [
+    {
+      "confidence": {
+        "level": "high",
+        "reason": "Pool capacity, object size, first-word dual role, allocation/release calls, and despawn sequence are supported by SDK layout, Ghidra decompilation, committed dossier, and current tests; original sentinel/index details remain partially unresolved."
+      },
+      "consumers": [
+        "CreateCellObject 0x00e74a20",
+        "pool lookup 0x00b721d0",
+        "pool release 0x00b72260",
+        "despawn/rebuild 0x00e780a0",
+        "world population helpers 0x00e771d0 and 0x00e7d370"
+      ],
+      "current_openspore_approximation": {
+        "claim": "src/sim/CellPool.hpp models a clean-room free-list pool with 4096 elements, first-word self-index while allocated, null on exhaustion, and 0xffffffff as the invalid sentinel.",
+        "evidence": "src/sim/CellPool.hpp:31-56,66-162; src/sim/tests/cellpool_test.cpp",
+        "fidelity": "APPROXIMATION",
+        "gaps": [
+          "The current pool starts its free list at index 0 and uses 0xffffffff as invalid, while the original lookup helper rejects index 0; the original allocator/sentinel contract is not yet reconstructed.",
+          "The current CellGame projection has no GFX/query/association release or scale-aware replacement path.",
+          "The current cCellObjectData is a padded 920-byte subset and does not retain all original lifecycle fields."
+        ],
+        "sources": [
+          "src/sim/CellPool.hpp",
+          "src/sim/CellGame.cpp",
+          "src/sim/tests/cellpool_test.cpp",
+          "src/sim/tests/createcell_test.cpp"
+        ]
+      },
+      "entry_actions": [
+        {
+          "action": "initialize the main pool to 4096 cCellObjectData slots and reset allocation metadata",
+          "conditions": [
+            "cCellGame::Initialize"
+          ],
+          "evidence": "0x00e80ba0 and SDK cObjectPool layout"
+        }
+      ],
+      "evidence": [
+        {
+          "address": "0x00e80ba0",
+          "boundary": "original_static",
+          "claim": "cCellGame::Initialize initializes a 4096-element main pool",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP decompile; .spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGame__Initialize.c"
+        },
+        {
+          "address": "0x00e74a20",
+          "boundary": "original_static",
+          "claim": "CreateCellObject obtains a pooled object, initializes mIsIdle, position/orientation, size, model key, scale, resource and query-related state, and returns the pool index",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP decompile; .spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__CreateCellObject.c"
+        },
+        {
+          "address": "0x00e780a0",
+          "boundary": "original_static",
+          "claim": "Despawn clears a matching avatar reference, removes query/association state, releases GFX state, optionally rebuilds, and releases the object",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP decompile; docs/analysis/dossiers/unknown-high/cell-object-pool-lifecycle.md"
+        },
+        {
+          "address": "struct:/Spore/Simulator/cObjectPool<Simulator::Cell::cCellObjectData>",
+          "boundary": "original_static",
+          "claim": "SDK/KG structure is 28 bytes with data pointer, next available index, object count, allocated count, object size, and identifier fields",
+          "kind": "sdk_structure",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI cObjectPool; Ghidra MCP get_struct_layout; knowledgegraph/spore.db"
+        },
+        {
+          "address": "src/sim/CellPool.hpp",
+          "boundary": "openspore_current",
+          "claim": "Current OpenSpore implements a padded clean-room pool with capacity 4096 and tests exhaustion/refill",
+          "kind": "source",
+          "level": "OBSERVED",
+          "source": "src/sim/CellPool.hpp:66-162; src/sim/tests/cellpool_test.cpp"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "no persistent despawn state; release returns the slot to the free-list path after query, GFX, avatar, and association cleanup",
+          "conditions": [
+            "valid cell index"
+          ],
+          "evidence": "0x00e780a0 and 0x00b72260"
+        }
+      ],
+      "generated_events": [
+        "cell_object_allocated",
+        "cell_object_despawned"
+      ],
+      "guards": [
+        "pool allocation must have a free slot",
+        "despawn lookup must resolve the cell index",
+        "avatar reference is cleared only when it matches the despawned cell",
+        "scale-aware replacement is conditional on the caller's respawn flag and changed stage scale"
+      ],
+      "name": "cell_object_pool_lifecycle",
+      "possible_states": [
+        {
+          "actions": [
+            "first word links to another free slot or the allocator's free-list sentinel",
+            "slot is available for allocation"
+          ],
+          "guards": [
+            "slot is not allocated"
+          ],
+          "name": "free",
+          "raw_value": "first_word_is_free_link"
+        },
+        {
+          "actions": [
+            "first word stores its own index",
+            "mIsIdle is reset by allocation/create paths",
+            "object participates in query, AI, GFX, and render state"
+          ],
+          "guards": [
+            "pool reports the slot as allocated"
+          ],
+          "name": "allocated",
+          "raw_value": "first_word_is_self_index"
+        }
+      ],
+      "relevant_functions": [
+        "Simulator::Cell::cCellGame::Initialize",
+        "Simulator::Cell::CreateCellObject",
+        "FUN_00e780a0",
+        "FUN_00b721d0",
+        "FUN_00b72260",
+        "FUN_00e7d370"
+      ],
+      "relevant_structures": [
+        "cObjectPool<cCellObjectData>",
+        "cCellObjectData",
+        "cCellGame",
+        "cCellQueryLinkedPool",
+        "cCellQueryEntry"
+      ],
+      "side_effects": [
+        "changes mNumAllocatedObjects and free-list head",
+        "initializes cCellObjectData object state",
+        "removes cell from spatial query and GFX/association relationships",
+        "clears mAvatarCellIndex when the despawned object is the player",
+        "may allocate a replacement before releasing the old object"
+      ],
+      "state_variable": {
+        "address": "cCellObjectData+0x00",
+        "expression": "cCellObjectData.mObjectPoolIndex / free-list link",
+        "owner": "each main cell-pool element",
+        "support": "SDK and decompilation support the dual-purpose first word; the exact original free-list sentinel is unresolved",
+        "type": "cObjectPoolIndex / free-list next index"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "pop the free-list head",
+            "write the allocated slot's own index",
+            "increment allocated count",
+            "initialize CreateCellObject state"
+          ],
+          "cause": "cell creation or population request",
+          "entry_actions": [
+            "resolve the requested resource/query/scale inputs"
+          ],
+          "event": "cell_object_allocated",
+          "exit_actions": [
+            "return the pool index to the caller"
+          ],
+          "from_state": "free",
+          "guard": "free slot exists",
+          "side_effects": [
+            "new cell is query-visible and render/animation state is initialized"
+          ],
+          "source": "0x00e74a20",
+          "to_state": "allocated"
+        },
+        {
+          "actions": [
+            "clear avatar reference if matching",
+            "remove query/association and GFX state",
+            "optionally create a scale replacement",
+            "push the old slot to the free list"
+          ],
+          "cause": "despawn, death, invalid scale, or replacement request",
+          "entry_actions": [
+            "lookup the cell index"
+          ],
+          "event": "cell_object_despawned",
+          "exit_actions": [
+            "release the old slot"
+          ],
+          "from_state": "allocated",
+          "guard": "cell index resolves",
+          "side_effects": [
+            "query and GFX associations are released",
+            "replacement may be allocated before old release"
+          ],
+          "source": "0x00e780a0",
+          "to_state": "free"
+        },
+        {
+          "actions": [
+            "keep the current object allocated while creating a replacement"
+          ],
+          "cause": "stage scale change with respawn enabled",
+          "entry_actions": [
+            "compare old mScale with current player/stage scale"
+          ],
+          "event": "cell_object_despawned",
+          "exit_actions": [
+            "release the old object after replacement creation"
+          ],
+          "from_state": "allocated",
+          "guard": "respawnIfScaled != 0 and old scale differs",
+          "side_effects": [
+            "brief overlap of old and replacement state is possible"
+          ],
+          "source": "0x00e780a0",
+          "to_state": "free"
+        }
+      ],
+      "validation_strategy": [
+        "Byte-verify the original pool initializer, allocator pop/push helpers, and lookup rejection of index 0.",
+        "Trace a cell from CreateCellObject through all 23 known despawn callers and record first-word values before and after release.",
+        "Force a scale transition and record whether replacement allocation occurs before or after old release.",
+        "Compare current pool tests with the original sentinel and index domain before calling the current pool ABI-compatible."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "high",
+        "reason": "Avatar reference clearing, player-specific death branches, reload flag, orchestrator handoff, and stage rebuild are directly supported by multiple bodies; exact player construction subpath is not fully recovered."
+      },
+      "consumers": [
+        "MovePlayerToMousePosition",
+        "FUN_00e5b2e0 per-frame player update",
+        "FUN_00e73f60 UI update",
+        "FUN_00e7c8c0 per-cell gameplay update",
+        "FUN_00e806b0 stage reload branch"
+      ],
+      "current_openspore_approximation": {
+        "claim": "OpenSpore constructs a role-based scene player and uses CellModeStrategy lifecycle flags; CellSim never has an original-style avatar pool index, death state, or stage rebuild request.",
+        "evidence": "src/apps/cell_stage.cpp:947-968,1132-1135; src/sim/Sim.hpp:80-87,222-284; src/apps/CellModeStrategy.cpp",
+        "fidelity": "APPROXIMATION",
+        "gaps": [
+          "scene.json player identity and positions are procedural/approximate, not the original population path",
+          "OpenSpore health HUD is a fixed-render smoke overlay and is not live player damage/death UI",
+          "current interactive input uses SDL scancodes and an app-side CellInput table rather than the original mode vtable"
+        ],
+        "sources": [
+          "src/sim/Sim.cpp",
+          "src/sim/Sim.hpp",
+          "src/apps/cell_stage.cpp",
+          "src/apps/CellModeStrategy.cpp",
+          "src/apps/CellUI.cpp"
+        ]
+      },
+      "entry_actions": [
+        {
+          "action": "resolve the player through sCellGame+0x411c and validate the cell object before movement or update",
+          "conditions": [
+            "sCellGame initialized"
+          ],
+          "evidence": "0x00e5b790, 0x00e5b2e0, 0x00e73f60"
+        }
+      ],
+      "evidence": [
+        {
+          "address": "0x00e780a0",
+          "boundary": "original_static",
+          "claim": "Despawn clears sCellGame+0x411c when the index matches the player",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP decompile; docs/analysis/dossiers/unknown-high/cell-object-pool-lifecycle.md"
+        },
+        {
+          "address": "0x00e72060",
+          "boundary": "original_static",
+          "claim": "Player death marks field_113, queues an action with type 0x1d, sets sCellUI+0x936, stores a pending interaction at sCellGame+0x5194, and sets the avatar action field_18c to 7",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP decompile"
+        },
+        {
+          "address": "0x00e50940",
+          "boundary": "original_static",
+          "claim": "The reload request sets sCellGame+0x51d8 = 1 and sCellGame+0x51d9 to the supplied flag",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP decompile"
+        },
+        {
+          "address": "0x00e806b0",
+          "boundary": "original_static",
+          "claim": "The active frame path tests sCellGame+0x51d8 and calls FUN_00e7fd00 before continuing the frame",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP decompile; docs/analysis/dossiers/cell-movement.md"
+        },
+        {
+          "address": "0x00e7fd00",
+          "boundary": "original_static",
+          "claim": "The rebuild path clears avatar/cell state, reloads world/UI fields, resets scale/advect state, and invokes population/setup helpers",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP decompile"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "no centralized player exit; despawn/rebuild clears the avatar reference and stage teardown disposes the display/UI graph",
+          "conditions": [
+            "player object is despawned or stage exits"
+          ],
+          "evidence": "0x00e780a0, 0x00e7fc00, 0x00e81f30"
+        }
+      ],
+      "generated_events": [
+        "cell_object_allocated",
+        "cell_death_started",
+        "cell_stage_reload_requested",
+        "cell_mouse_steering_sample"
+      ],
+      "guards": [
+        "player index must resolve through the pool lookup",
+        "movement is blocked when sCellGame+0x5158 is nonzero",
+        "player death is diverted away from ordinary non-player death when the relevant player/cinematic guards allow",
+        "rebuild is deferred to the next active frame that observes sCellGame+0x51d8"
+      ],
+      "name": "player_cell_lifecycle",
+      "possible_states": [
+        {
+          "actions": [
+            "sCellGame+0x411c is zero",
+            "no live player can be resolved"
+          ],
+          "guards": [
+            "avatar index is absent"
+          ],
+          "name": "absent",
+          "raw_value": "mAvatarCellIndex == 0"
+        },
+        {
+          "actions": [
+            "player can be resolved",
+            "cell update, mouse steering, AI/combat, and UI update may run"
+          ],
+          "guards": [
+            "mAvatarCellIndex != 0",
+            "cell terminal/death flags do not block active update"
+          ],
+          "name": "active",
+          "raw_value": "mAvatarCellIndex resolves"
+        },
+        {
+          "actions": [
+            "player death animation/effect is queued",
+            "sCellUI+0x936 is set",
+            "sCellGame+0x5194 holds a pending interaction/action"
+          ],
+          "guards": [
+            "player death branch selected"
+          ],
+          "name": "dying_or_cinematic",
+          "raw_value": "UI+0x936 != 0"
+        },
+        {
+          "actions": [
+            "stage rebuild is pending",
+            "next active frame invokes FUN_00e7fd00"
+          ],
+          "guards": [
+            "sCellGame+0x51d8 == 1"
+          ],
+          "name": "stage_rebuild_pending",
+          "raw_value": "sCellGame+0x51d8 == 1"
+        }
+      ],
+      "relevant_functions": [
+        "Simulator::Cell::MovePlayerToMousePosition",
+        "FUN_00e5b2e0",
+        "FUN_00e73f60",
+        "FUN_00e780a0",
+        "FUN_00e72060",
+        "FUN_00e72200",
+        "FUN_00e7fd00",
+        "FUN_00e806b0"
+      ],
+      "relevant_structures": [
+        "cCellGame",
+        "cCellObjectData",
+        "cCellSerializableData",
+        "cCellUI",
+        "cCellUIRollover"
+      ],
+      "side_effects": [
+        "player target position/orientation and moving flag are updated",
+        "player death queues animation/effect/UI state",
+        "stage rebuild clears all cell/query/GFX state and reloads world references",
+        "player despawn can clear the avatar index and cause replacement construction"
+      ],
+      "state_variable": {
+        "address": "sCellGame+0x411c plus cCellObjectData+0x113 and sCellGame+0x51d8",
+        "expression": "mAvatarCellIndex / terminal player flag / stage reload request",
+        "owner": "cCellGame and the current player cCellObjectData",
+        "support": "The composite states are directly supported by multiple decompilation paths; the exact player object construction subpath is unresolved",
+        "type": "cObjectPoolIndex + bool/int32_t state fields"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "set avatar index to zero",
+            "reset player/state fields"
+          ],
+          "cause": "initialization or stage teardown",
+          "entry_actions": [
+            "initialize CellGame and pool"
+          ],
+          "event": "cell_stage_lifecycle_reset",
+          "exit_actions": [
+            "leave mode with no resolvable player"
+          ],
+          "from_state": "uninitialized",
+          "guard": "always during initialize/reset",
+          "side_effects": [
+            "player-dependent movement and UI consumers become no-ops"
+          ],
+          "source": "0x00e80ba0, 0x00e7fd00",
+          "to_state": "absent"
+        },
+        {
+          "actions": [
+            "construct or select the player object",
+            "store its pool index at sCellGame+0x411c",
+            "initialize player resource, transform, scale, and GFX state"
+          ],
+          "cause": "world/stage population or rebuild",
+          "entry_actions": [
+            "resolve world and start/populate resources"
+          ],
+          "event": "cell_object_allocated",
+          "exit_actions": [
+            "make the player available to movement/UI/AI consumers"
+          ],
+          "from_state": "absent",
+          "guard": "population/rebuild path supplies a valid player object",
+          "side_effects": [
+            "player is query-visible and can receive UI/combat updates"
+          ],
+          "source": "0x00e7fd00, 0x00e79720, 0x00e7d880",
+          "to_state": "active"
+        },
+        {
+          "actions": [
+            "subtract damage",
+            "clamp health to zero",
+            "queue player death animation/effect and UI state"
+          ],
+          "cause": "lethal damage to the avatar",
+          "entry_actions": [
+            "resolve attacker/victim and compute GetDamageAmount"
+          ],
+          "event": "cell_death_started",
+          "exit_actions": [
+            "leave ordinary active-player processing"
+          ],
+          "from_state": "active",
+          "guard": "victim is the avatar and player death branch is enabled",
+          "side_effects": [
+            "cCellObjectData+0x113 becomes true",
+            "sCellUI+0x936 becomes true",
+            "pending interaction/action is stored at sCellGame+0x5194"
+          ],
+          "source": "0x00e7a7c0 -> 0x00e7a4a0 -> 0x00e72060",
+          "to_state": "dying_or_cinematic"
+        },
+        {
+          "actions": [
+            "set sCellGame+0x51d8 = 1",
+            "store optional sCellGame+0x51d9 flag"
+          ],
+          "cause": "death/rebuild callback requests a new stage/world state",
+          "entry_actions": [
+            "queue or complete the player death interaction"
+          ],
+          "event": "cell_stage_reload_requested",
+          "exit_actions": [
+            "leave gameplay processing for the next frame"
+          ],
+          "from_state": "dying_or_cinematic",
+          "guard": "rebuild callback selects a new stage state",
+          "side_effects": [
+            "UI/cinematic state is cleared or updated by the caller"
+          ],
+          "source": "0x00e50940, 0x00e72200, 0x00e7b410",
+          "to_state": "stage_rebuild_pending"
+        },
+        {
+          "actions": [
+            "drain cell objects and associated GFX/query state",
+            "clear mAvatarCellIndex",
+            "reload world/UI/scale/advect state",
+            "invoke population/setup helpers"
+          ],
+          "cause": "active frame observes the reload request",
+          "entry_actions": [
+            "read sCellGame+0x51d8 and related player progression fields"
+          ],
+          "event": "cell_stage_reload_requested",
+          "exit_actions": [
+            "return to the gameplay frame"
+          ],
+          "from_state": "stage_rebuild_pending",
+          "guard": "sCellGame+0x51d8 == 1",
+          "side_effects": [
+            "all cell entities are transiently removed",
+            "world/background/UI state is reconstructed"
+          ],
+          "source": "0x00e806b0, 0x00e7fd00",
+          "to_state": "active"
+        },
+        {
+          "actions": [
+            "clear avatar index",
+            "release player GFX/query/association state",
+            "optionally create a replacement"
+          ],
+          "cause": "player object despawn outside the normal stage reload",
+          "entry_actions": [
+            "resolve the player index"
+          ],
+          "event": "cell_object_despawned",
+          "exit_actions": [
+            "player is no longer resolvable"
+          ],
+          "from_state": "active",
+          "guard": "FUN_00e780a0 receives the player index",
+          "side_effects": [
+            "mAvatarCellIndex becomes zero"
+          ],
+          "source": "0x00e780a0",
+          "to_state": "absent"
+        }
+      ],
+      "validation_strategy": [
+        "Trace sCellGame+0x411c writes and reads through a live world population and every rebuild callback.",
+        "Record the player object index immediately before and after FUN_00e72060, FUN_00e72200, FUN_00e50940, FUN_00e7fd00, and FUN_00e780a0.",
+        "Validate whether the original player can be absent while the mode is still active and which function assigns the replacement index.",
+        "Run a Cell-stage trace that reaches a lethal interaction and a scale transition; S5 currently provides no such runtime evidence."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "high",
+        "reason": "The health field, damage formula consumers, zero clamp, health cap, and death branch are directly supported by SDK fields and multiple original bodies; current OpenSpore does not model this machine."
+      },
+      "consumers": [
+        "FUN_00e7a7c0 generic damage",
+        "FUN_00e7dbd0 and FUN_00e7dd90 collision damage",
+        "FUN_00e71520 ingestion/contact path",
+        "cCellUI::ShowHealthRollover",
+        "FUN_00e7d070 healing"
+      ],
+      "current_openspore_approximation": {
+        "claim": "Current CellSim food consumption sets Entity::alive false and increments growMeter; it has no mHealthPoints, damage amount, attack resolution, death animation, or death state.",
+        "evidence": "src/sim/Sim.cpp:237-251; src/sim/Sim.hpp:49-87",
+        "fidelity": "APPROXIMATION",
+        "gaps": [
+          "the current food eat radius and growMeter rule are inferred contract choices",
+          "current prey flee is a per-frame player movement response, not the original flee/chase timers or damage reaction",
+          "the fixed HUD health bar is not driven by this current sim"
+        ],
+        "sources": [
+          "src/sim/Sim.cpp",
+          "src/sim/Sim.hpp",
+          "src/apps/cell_stage.cpp"
+        ]
+      },
+      "entry_actions": [
+        {
+          "action": "resolve victim/attacker and obtain integer damage from GetDamageAmount",
+          "conditions": [
+            "ShouldNotAttack is false",
+            "victim is not invulnerable",
+            "damage is positive"
+          ],
+          "evidence": "0x00e7a7c0, 0x00e58980, 0x00e57460"
+        }
+      ],
+      "evidence": [
+        {
+          "address": "cCellObjectData+0x244",
+          "boundary": "original_static",
+          "claim": "SDK/KG identify mHealthPoints as the cell health field with maximum six",
+          "kind": "sdk_structure",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI cCellObjectData.h:145-146; Ghidra MCP get_struct_layout; knowledgegraph/spore.db"
+        },
+        {
+          "address": "0x00e7a7c0",
+          "boundary": "original_static",
+          "claim": "Damage is subtracted from mHealthPoints, clamped at zero, and a zero value invokes the death path",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP decompile"
+        },
+        {
+          "address": "0x00e7d070",
+          "boundary": "original_static",
+          "claim": "Healing adds two or resource-defined health amounts only below six and caps the result at six",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP decompile"
+        },
+        {
+          "address": "0x00e58980",
+          "boundary": "original_static",
+          "claim": "GetDamageAmount is the named damage calculation consumed by the damage paths",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "Ghidra MCP decompile; .spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__GetDamageAmount.c"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "zero-health cells enter death animation/effect and player-specific rebuild paths",
+          "conditions": [
+            "mHealthPoints == 0"
+          ],
+          "evidence": "0x00e7a7c0 -> 0x00e7a4a0"
+        }
+      ],
+      "generated_events": [
+        "cell_damage_resolved",
+        "cell_death_started",
+        "cell_health_rollover_shown"
+      ],
+      "guards": [
+        "ShouldNotAttack suppresses the attack request",
+        "mIsInvulnerable suppresses damage",
+        "damage is positive before subtraction",
+        "health is clamped to the zero lower bound",
+        "healing is capped at six"
+      ],
+      "name": "cell_health_damage_death",
+      "possible_states": [
+        {
+          "actions": [
+            "cell remains active",
+            "damage can reduce health",
+            "health rollover may be shown for player-relevant damage"
+          ],
+          "guards": [
+            "1 <= mHealthPoints <= 6"
+          ],
+          "name": "living",
+          "raw_value": "mHealthPoints > 0"
+        },
+        {
+          "actions": [
+            "damage reaches zero",
+            "death animation/effect and terminal flags are started"
+          ],
+          "guards": [
+            "mHealthPoints == 0"
+          ],
+          "name": "dead_or_death_transition",
+          "raw_value": "mHealthPoints == 0"
+        }
+      ],
+      "relevant_functions": [
+        "Simulator::Cell::GetDamageAmount",
+        "Simulator::Cell::ShouldNotAttack",
+        "FUN_00e7a7c0",
+        "FUN_00e7a4a0",
+        "FUN_00e72060",
+        "FUN_00e7d070",
+        "FUN_00e71520",
+        "FUN_00e7dbd0",
+        "FUN_00e7dd90"
+      ],
+      "relevant_structures": [
+        "cCellObjectData",
+        "cCellCellResource",
+        "cCellUI",
+        "cCellUIRollover",
+        "Simulator::Cell::GetDamageAmount",
+        "Simulator::Cell::ShouldNotAttack"
+      ],
+      "side_effects": [
+        "mHealthPoints changes",
+        "health rollover records may be allocated/updated",
+        "death animations/effects and nearby flee/chase reactions are triggered",
+        "player death can set stage reload state",
+        "cCellSerializableData kill/death counters are updated in some player-kill paths"
+      ],
+      "state_variable": {
+        "address": "cCellObjectData+0x244",
+        "expression": "mHealthPoints",
+        "owner": "each cCellObjectData",
+        "support": "SDK, KG, Ghidra layout, and direct damage/death bodies agree",
+        "type": "int32_t health points, 0..6"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "subtract damage",
+            "clamp at zero"
+          ],
+          "cause": "attack/contact/ingestion damage",
+          "entry_actions": [
+            "resolve attacker and victim",
+            "check ShouldNotAttack and invulnerability"
+          ],
+          "event": "cell_damage_resolved",
+          "exit_actions": [
+            "continue active gameplay if health remains positive"
+          ],
+          "from_state": "living",
+          "guard": "damage > 0 and resulting health > 0",
+          "side_effects": [
+            "health rollover may be shown",
+            "damage animation/effect may be queued"
+          ],
+          "source": "0x00e7a7c0, 0x00e7dbd0, 0x00e7dd90",
+          "to_state": "living"
+        },
+        {
+          "actions": [
+            "set mHealthPoints to zero",
+            "invoke death path"
+          ],
+          "cause": "lethal damage",
+          "entry_actions": [
+            "apply damage and verify zero result"
+          ],
+          "event": "cell_death_started",
+          "exit_actions": [
+            "enter terminal/death processing"
+          ],
+          "from_state": "living",
+          "guard": "resulting health == 0",
+          "side_effects": [
+            "death effect, animation, and action record are created",
+            "player path may set sCellGame+0x51d8"
+          ],
+          "source": "0x00e7a7c0 -> 0x00e7a4a0",
+          "to_state": "dead_or_death_transition"
+        },
+        {
+          "actions": [
+            "add resource-defined health",
+            "cap at six"
+          ],
+          "cause": "healing/regeneration",
+          "entry_actions": [
+            "read health and optional resource health gain"
+          ],
+          "event": "cell_health_rollover_shown",
+          "exit_actions": [
+            "remain active"
+          ],
+          "from_state": "living",
+          "guard": "health < 6",
+          "side_effects": [
+            "health rollover may be shown for player"
+          ],
+          "source": "0x00e7d070",
+          "to_state": "living"
+        }
+      ],
+      "validation_strategy": [
+        "Run the current combat unit tables for GetDamageAmount and ShouldNotAttack, then compare each branch to a controlled original fixture.",
+        "Trace victim mHealthPoints before/after generic, collision, and ingestion damage with both player and NPC flags.",
+        "Validate whether every zero-health path reaches FUN_00e7a4a0 or whether a special player/ending path bypasses it.",
+        "Do not map current growMeter to original health without runtime or additional original state evidence."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "medium-high",
+        "reason": "SDK-named flee/chase fields, timer decrements, target cleanup, look-action values, and nearby reaction assignment are directly visible; the complete target-priority/cleanup ordering is not fully reconstructed."
+      },
+      "consumers": [
+        "FUN_00e71ce0",
+        "FUN_00e575f0",
+        "FUN_00e70cf0",
+        "FUN_00e70e30",
+        "FUN_00e70f20",
+        "FUN_00e79c30",
+        "FUN_00e6f800",
+        "FUN_00e6f940"
+      ],
+      "current_openspore_approximation": {
+        "claim": "Current CellSim tests prey within a fixed fleeRadius, emits a local flee event, turns the player away, and boosts forward for that frame; it does not store target indices, timers, rest time, or decision cooldown.",
+        "evidence": "src/sim/Sim.cpp:141-163; src/sim/Sim.hpp:191-204",
+        "fidelity": "APPROXIMATION",
+        "gaps": [
+          "current fleeRadius=4 and boost behavior are inferred contract choices",
+          "current prey never carries the original chase/flee state and the player is not the original NPC reaction agent",
+          "current SimEvent is not the original pooled action/interaction record"
+        ],
+        "sources": [
+          "src/sim/Sim.cpp",
+          "src/sim/Sim.hpp",
+          "src/sim/tests/sim_test.cpp"
+        ]
+      },
+      "entry_actions": [
+        {
+          "action": "query nearby cells and assign flee/chase target plus resource-defined timer",
+          "conditions": [
+            "nearby cell is not the reacting cell",
+            "resource reaction guards pass"
+          ],
+          "evidence": "0x00e71ce0, 0x00e575f0"
+        }
+      ],
+      "evidence": [
+        {
+          "address": "cCellObjectData+0x21c,0x220,0x22c,0x230",
+          "boundary": "original_static",
+          "claim": "SDK names mFleeCellTime, mFleeCellIndex, mChaseCellIndex, and mChaseCellTime",
+          "kind": "sdk_structure",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI cCellObjectData.h:131-140; Ghidra MCP get_struct_layout; knowledgegraph/spore.db"
+        },
+        {
+          "address": "0x00e71ce0",
+          "boundary": "original_static",
+          "claim": "Nearby damage/death reaction assigns a flee target/time or chase target/time based on AI awareness radii",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP decompile"
+        },
+        {
+          "address": "0x00e70e30",
+          "boundary": "original_static",
+          "claim": "Stale flee/chase targets are cleared and the decision cooldown is decremented before a new selection is attempted",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP decompile"
+        },
+        {
+          "address": "0x00e70f20",
+          "boundary": "original_static",
+          "claim": "Active flee/chase targets drive cell steering and decrement the active timer; a new target changes the look/action state",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP decompile"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "clear stale target indices and timers; no persistent flee/chase state remains",
+          "conditions": [
+            "target lookup fails or active timer is exhausted"
+          ],
+          "evidence": "0x00e70e30 and 0x00e70f20"
+        }
+      ],
+      "generated_events": [
+        "cell_flee_or_chase_selected",
+        "cell_eat_or_mouth_interaction"
+      ],
+      "guards": [
+        "target pool lookup must succeed",
+        "active timer must be positive",
+        "field_224/field_228 rest timers delay the next behavior",
+        "field_238 decision cooldown limits repeated target selection",
+        "cAIData fear/chase flags select flee versus chase"
+      ],
+      "name": "cell_flee_chase_reaction",
+      "possible_states": [
+        {
+          "actions": [
+            "no active flee/chase timer",
+            "cell can run ordinary AI or movement"
+          ],
+          "guards": [
+            "mFleeCellTime <= 0",
+            "mChaseCellTime <= 0"
+          ],
+          "name": "resting_or_neutral",
+          "raw_value": "no active target timer"
+        },
+        {
+          "actions": [
+            "steer away from mFleeCellIndex",
+            "play flee/scared look/action state",
+            "decrement mFleeCellTime"
+          ],
+          "guards": [
+            "mFleeCellTime > 0",
+            "mFleeCellIndex resolves"
+          ],
+          "name": "fleeing",
+          "raw_value": "mFleeCellTime > 0"
+        },
+        {
+          "actions": [
+            "steer toward mChaseCellIndex",
+            "play chase/mad look/action state",
+            "decrement mChaseCellTime"
+          ],
+          "guards": [
+            "mChaseCellTime > 0",
+            "mChaseCellIndex resolves"
+          ],
+          "name": "chasing",
+          "raw_value": "mChaseCellTime > 0"
+        },
+        {
+          "actions": [
+            "wait for field_238 decision interval",
+            "then request target selection"
+          ],
+          "guards": [
+            "field_238 > 0"
+          ],
+          "name": "selection_cooldown",
+          "raw_value": "field_238 > 0"
+        }
+      ],
+      "relevant_functions": [
+        "FUN_00e71ce0",
+        "FUN_00e575f0",
+        "FUN_00e70cf0",
+        "FUN_00e70e30",
+        "FUN_00e70f20",
+        "FUN_00e79c30",
+        "FUN_00e70950",
+        "FUN_00e70bc0"
+      ],
+      "relevant_structures": [
+        "cCellObjectData",
+        "cAIData",
+        "cLookAlgorithmResource",
+        "cLookTableResource",
+        "cCellQueryLinkedPool"
+      ],
+      "side_effects": [
+        "writes flee/chase target indices and timers",
+        "writes field_18c look/action value and queues flee/chase action records",
+        "changes movement target/steering",
+        "clears stale targets and schedules decision cooldown"
+      ],
+      "state_variable": {
+        "address": "cCellObjectData+0x21c,0x220,0x22c,0x230,0x224,0x228,0x238,0x18c",
+        "expression": "mFleeCellTime/mFleeCellIndex, mChaseCellIndex/mChaseCellTime, rest timers, decision cooldown, field_18c look/action state",
+        "owner": "each cCellObjectData",
+        "support": "SDK names and direct read/write bodies support the composite; field_18c is typed as CellAnimations in the SDK but functions use it as the look/action state",
+        "type": "float timers + cObjectPoolIndex targets + int32 field_18c"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "assign flee target and fleeTime",
+            "clear chase target/time",
+            "queue flee/scared action state"
+          ],
+          "cause": "nearby damage/death or AI fear condition",
+          "entry_actions": [
+            "query nearby cells and evaluate awareness radii"
+          ],
+          "event": "cell_flee_or_chase_selected",
+          "exit_actions": [
+            "enter flee steering"
+          ],
+          "from_state": "resting_or_neutral",
+          "guard": "flee radius/flag selects flee",
+          "side_effects": [
+            "field_18c becomes Scared 0x15 or MoveScared 0x13 in supported paths",
+            "movement target changes away from the threat"
+          ],
+          "source": "0x00e71ce0, 0x00e575f0, 0x00e70950",
+          "to_state": "fleeing"
+        },
+        {
+          "actions": [
+            "assign chase target and chaseTime",
+            "clear flee target/time",
+            "queue chase/mad action state"
+          ],
+          "cause": "nearby damage/death or AI chase condition",
+          "entry_actions": [
+            "query nearby cells and evaluate awareness radii"
+          ],
+          "event": "cell_flee_or_chase_selected",
+          "exit_actions": [
+            "enter chase steering"
+          ],
+          "from_state": "resting_or_neutral",
+          "guard": "chase radius/flag selects chase",
+          "side_effects": [
+            "field_18c becomes Mad 0x16 or MoveMad 0x14 in supported paths",
+            "movement target changes toward the target"
+          ],
+          "source": "0x00e71ce0, 0x00e575f0, 0x00e70bc0",
+          "to_state": "chasing"
+        },
+        {
+          "actions": [
+            "decrement mFleeCellTime",
+            "steer away while the target remains live"
+          ],
+          "cause": "behavior frame with active flee target",
+          "entry_actions": [
+            "lookup flee target"
+          ],
+          "event": "cell_flee_or_chase_selected",
+          "exit_actions": [
+            "remain fleeing until timer or target failure"
+          ],
+          "from_state": "fleeing",
+          "guard": "timer > 0 and target resolves",
+          "side_effects": [
+            "field_224 is set to resource fleeRestTime on expiry",
+            "cell position/target movement is updated"
+          ],
+          "source": "0x00e70f20, 0x00e79c30, 0x00e6f940",
+          "to_state": "fleeing"
+        },
+        {
+          "actions": [
+            "decrement mChaseCellTime",
+            "steer toward the target while it remains live"
+          ],
+          "cause": "behavior frame with active chase target",
+          "entry_actions": [
+            "lookup chase target"
+          ],
+          "event": "cell_flee_or_chase_selected",
+          "exit_actions": [
+            "remain chasing until timer or target failure"
+          ],
+          "from_state": "chasing",
+          "guard": "timer > 0 and target resolves",
+          "side_effects": [
+            "field_224 is set to resource chaseRestTime on expiry",
+            "cell position/target movement is updated"
+          ],
+          "source": "0x00e70f20, 0x00e79c30, 0x00e6f800",
+          "to_state": "chasing"
+        },
+        {
+          "actions": [
+            "clear target index and active timer",
+            "set the resource rest timer"
+          ],
+          "cause": "timer expiry or stale target",
+          "entry_actions": [
+            "detect non-positive timer or failed target lookup"
+          ],
+          "event": "cell_flee_or_chase_selected",
+          "exit_actions": [
+            "return to rest/neutral behavior"
+          ],
+          "from_state": "fleeing or chasing",
+          "guard": "timer <= 0 or target no longer resolves",
+          "side_effects": [
+            "field_238 may be set to the next decision interval"
+          ],
+          "source": "0x00e70e30, 0x00e70f20, 0x00e79c30",
+          "to_state": "selection_cooldown"
+        },
+        {
+          "actions": [
+            "attempt a new target selection when cooldown reaches zero"
+          ],
+          "cause": "decision cooldown expiry",
+          "entry_actions": [
+            "run target selection helper"
+          ],
+          "event": "cell_flee_or_chase_selected",
+          "exit_actions": [
+            "enter flee/chase or remain neutral"
+          ],
+          "from_state": "selection_cooldown",
+          "guard": "field_238 <= 0",
+          "side_effects": [
+            "field_238 is reset to approximately 0.25 seconds in the observed path"
+          ],
+          "source": "0x00e70e30",
+          "to_state": "resting_or_neutral"
+        }
+      ],
+      "validation_strategy": [
+        "Run original AI fixtures for each cAIData::Type and record mFleeCellTime, mChaseCellTime, field_224, field_228, field_238, and field_18c before/after update.",
+        "Force target-pool deletion to verify stale-target cleanup and timer-to-rest transitions.",
+        "Compare look/action values 0x15, 0x16, 0x13, and 0x14 against animation/effect consumers.",
+        "Treat current CellSim fleeRadius, boost, and local flee event as contract tests only, not original AI validation."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "high",
+        "reason": "The cAIData enum, per-cell dispatch, look/action states, movement timers, and queued record switch are directly supported; runtime ordering across every AI type remains incomplete."
+      },
+      "consumers": [
+        "FUN_00e7c8c0",
+        "FUN_00e7a190",
+        "FUN_00e7e6c0",
+        "FUN_00e7ba30",
+        "FUN_00e6f660",
+        "FUN_00e6f850"
+      ],
+      "current_openspore_approximation": {
+        "claim": "Current OpenSpore does not execute cAIData types; it has a single CellSim update with mouse steering, keyboard thrust, prey flee, and food eat.",
+        "evidence": "src/sim/Sim.cpp:103-260; src/sim/tests/sim_test.cpp",
+        "fidelity": "APPROXIMATION",
+        "gaps": [
+          "no Parts, SlowSeek, Orbit, Chomp, Eater, Parasite, Caterpillar, Sleeper, Waterballoon, Mosquito, Dragon, Poolball, or Leak runtime branches",
+          "no original field_18c look/action state or queued action pool",
+          "current keyboard/mouse movement is not a byte-compatible cCellGame AI state machine"
+        ],
+        "sources": [
+          "src/sim/Sim.cpp",
+          "src/sim/Sim.hpp",
+          "src/apps/cell_stage.cpp"
+        ]
+      },
+      "entry_actions": [
+        {
+          "action": "resolve the cell resource's selected cAIData and decrement the per-cell timer state",
+          "conditions": [
+            "cell object resolves",
+            "cell is not blocked by terminal/invulnerability flags"
+          ],
+          "evidence": "0x00e7a190, 0x00e7e6c0"
+        }
+      ],
+      "evidence": [
+        {
+          "address": "cCellCellResource.cAIData",
+          "boundary": "original_static",
+          "claim": "SDK defines cAIData::Type values None/Player/Straight/SlowSeek/Orbit/Chomp/Eater/Parasite/Caterpillar/Sleeper/Waterballoon/Mosquito/Dragon/Poolball/Leak/Parts and fields for movement, fear, spawn, flee, chase, digestion, and recharges",
+          "kind": "sdk_structure",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI cCellResource.h:288-388; .spore-analysis/ghidra-exports/structs_fields.tsv"
+        },
+        {
+          "address": "0x00e7a190",
+          "boundary": "original_static",
+          "claim": "Per-cell behavior dispatch branches on the resource AI type and routes to specialized movement/behavior helpers",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP decompile"
+        },
+        {
+          "address": "cCellObjectData+0x18c",
+          "boundary": "original_static",
+          "claim": "The field is read/written as a look/action state with values 0, 0x12, 0x13, 0x14, 0x15, 0x16 in supported paths",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "0x00e70950, 0x00e70bc0, 0x00e57a60, 0x00e7aee0; Spore-ModAPI cCellLookAlgorithmResource.h"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "return to ordinary idle/movement behavior after timers and queued records complete",
+          "conditions": [
+            "no active target and no queued interaction"
+          ],
+          "evidence": "0x00e7e6c0 and 0x00e7e130"
+        }
+      ],
+      "generated_events": [
+        "cell_flee_or_chase_selected",
+        "cell_eat_or_mouth_interaction",
+        "cell_damage_resolved"
+      ],
+      "guards": [
+        "AI type must be a decoded cAIData::Type",
+        "terminal cell fields +0x112/+0x113 suppress normal behavior",
+        "query results are filtered by target availability and resource flags",
+        "field_18c look/action transitions are request-driven, not arbitrary animation enum values"
+      ],
+      "name": "cell_ai_behavior_dispatch",
+      "possible_states": [
+        {
+          "actions": [
+            "ordinary idle or resource-specific movement"
+          ],
+          "guards": [
+            "field_18c == 0",
+            "no active flee/chase reaction"
+          ],
+          "name": "idle",
+          "raw_value": 0
+        },
+        {
+          "actions": [
+            "resource movement/AI helper drives the cell"
+          ],
+          "guards": [
+            "field_18c == 0x12"
+          ],
+          "name": "moving",
+          "raw_value": 18
+        },
+        {
+          "actions": [
+            "flee/scared behavior is selected"
+          ],
+          "guards": [
+            "field_18c == 0x15"
+          ],
+          "name": "scared",
+          "raw_value": 21
+        },
+        {
+          "actions": [
+            "flee steering is active"
+          ],
+          "guards": [
+            "field_18c == 0x13"
+          ],
+          "name": "move_scared",
+          "raw_value": 19
+        },
+        {
+          "actions": [
+            "chase/mad behavior is selected"
+          ],
+          "guards": [
+            "field_18c == 0x16"
+          ],
+          "name": "mad",
+          "raw_value": 22
+        },
+        {
+          "actions": [
+            "chase steering is active"
+          ],
+          "guards": [
+            "field_18c == 0x14"
+          ],
+          "name": "move_mad",
+          "raw_value": 20
+        }
+      ],
+      "relevant_functions": [
+        "FUN_00e7a190",
+        "FUN_00e7e6c0",
+        "FUN_00e7ba30",
+        "FUN_00e70950",
+        "FUN_00e70bc0",
+        "FUN_00e7c8c0"
+      ],
+      "relevant_structures": [
+        "cCellObjectData",
+        "cCellCellResource",
+        "cAIData",
+        "cLookAlgorithmResource",
+        "cLookTableResource",
+        "cCellQueryLinkedPool"
+      ],
+      "side_effects": [
+        "updates AI timers and movement targets",
+        "changes field_18c look/action state",
+        "queues flee/chase/eat/death action records",
+        "updates transform/animation/effect state"
+      ],
+      "state_variable": {
+        "address": "cCellObjectData+0x18c",
+        "expression": "field_18c, used by the original as a look/action state",
+        "owner": "each cCellObjectData",
+        "support": "SDK cLookAlgorithmResource::Action names and direct writes support the semantic labels; the Ghidra type is CellAnimations and is not a proof that every value is an animation",
+        "type": "int32_t / CellAnimations-typed field"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "invoke resource-specific behavior branch"
+          ],
+          "cause": "per-cell AI update",
+          "entry_actions": [
+            "resolve cAIData and timer state"
+          ],
+          "event": "cell_ai_behavior_dispatch",
+          "exit_actions": [
+            "return to the cell gameplay loop"
+          ],
+          "from_state": "idle",
+          "guard": "AI type and terminal flags permit behavior",
+          "side_effects": [
+            "movement and timers may change"
+          ],
+          "source": "0x00e7a190",
+          "to_state": "idle"
+        },
+        {
+          "actions": [
+            "set field_18c to Scared",
+            "queue flee action and target"
+          ],
+          "cause": "flee target selected",
+          "entry_actions": [
+            "resolve threat and fleeTime"
+          ],
+          "event": "cell_flee_or_chase_selected",
+          "exit_actions": [
+            "enter flee steering"
+          ],
+          "from_state": "idle or moving",
+          "guard": "flee reaction guard passes",
+          "side_effects": [
+            "flee animation/effect/action record is created"
+          ],
+          "source": "0x00e70950",
+          "to_state": "scared"
+        },
+        {
+          "actions": [
+            "set field_18c to MoveScared",
+            "steer away from target"
+          ],
+          "cause": "flee timer/target active",
+          "entry_actions": [
+            "lookup mFleeCellIndex"
+          ],
+          "event": "cell_flee_or_chase_selected",
+          "exit_actions": [
+            "continue active flee steering"
+          ],
+          "from_state": "scared",
+          "guard": "flee target resolves and timer is positive",
+          "side_effects": [
+            "target position and movement are updated"
+          ],
+          "source": "0x00e70f20, 0x00e6f940",
+          "to_state": "move_scared"
+        },
+        {
+          "actions": [
+            "set field_18c to Mad",
+            "queue chase action and target"
+          ],
+          "cause": "chase target selected",
+          "entry_actions": [
+            "resolve target and chaseTime"
+          ],
+          "event": "cell_flee_or_chase_selected",
+          "exit_actions": [
+            "enter chase steering"
+          ],
+          "from_state": "idle or moving",
+          "guard": "chase reaction guard passes",
+          "side_effects": [
+            "chase animation/effect/action record is created"
+          ],
+          "source": "0x00e70bc0",
+          "to_state": "mad"
+        },
+        {
+          "actions": [
+            "set field_18c to MoveMad",
+            "steer toward target"
+          ],
+          "cause": "chase timer/target active",
+          "entry_actions": [
+            "lookup mChaseCellIndex"
+          ],
+          "event": "cell_flee_or_chase_selected",
+          "exit_actions": [
+            "continue active chase steering"
+          ],
+          "from_state": "mad",
+          "guard": "chase target resolves and timer is positive",
+          "side_effects": [
+            "target position and movement are updated"
+          ],
+          "source": "0x00e70f20, 0x00e6f800",
+          "to_state": "move_mad"
+        }
+      ],
+      "validation_strategy": [
+        "Build a read-only table of every cAIData::Type observed in the 489 decoded cell records and compare it with dispatcher branches.",
+        "Trace one representative cell through each supported state and record field_18c, timers, target indices, and queued action type.",
+        "Check that state labels 0x12-0x16 are look/action values rather than blindly treating them as Ghidra CellAnimations values.",
+        "Do not claim current role-based movement is an implementation of this original AI machine."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "high",
+        "reason": "Transient action pool allocation, owner/cell fields, type dispatch, and release-after-dispatch are directly visible in several original bodies; the full enum-to-gameplay-event map is partial."
+      },
+      "consumers": [
+        "FUN_00e7e6c0",
+        "FUN_00e7ba30",
+        "FUN_00e7e130",
+        "FUN_00e70950",
+        "FUN_00e70bc0",
+        "FUN_00e71520",
+        "FUN_00e725c0",
+        "FUN_00e727e0"
+      ],
+      "current_openspore_approximation": {
+        "claim": "Current SimEvent is a vector-local event record with only frame, type, and entity; it does not model action duration, owner/target indices, resource references, effect parameters, or the original transient pool.",
+        "evidence": "src/sim/Sim.hpp:205-220; src/sim/Sim.cpp:141-163,237-251",
+        "fidelity": "APPROXIMATION",
+        "gaps": [
+          "no original action type enum is exposed",
+          "no queued lifetime/dispatch order",
+          "no original eat/flee/death/attack effect payload"
+        ],
+        "sources": [
+          "src/sim/Sim.hpp",
+          "src/sim/Sim.cpp"
+        ]
+      },
+      "entry_actions": [
+        {
+          "action": "allocate a transient action/interaction record from the Cell action pool and initialize type, owner/cell index, target, duration, and transform/effect fields",
+          "conditions": [
+            "a gameplay interaction requests an action"
+          ],
+          "evidence": "0x00e70950, 0x00e70bc0, 0x00e71520, 0x00e725c0, 0x00e727e0"
+        }
+      ],
+      "evidence": [
+        {
+          "address": "queued record +0x24",
+          "boundary": "original_static",
+          "claim": "Queued records carry a type word consumed by FUN_00e7e130; records are allocated, updated, dispatched, and released",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP decompile of FUN_00e7e130, FUN_00e7e6c0, FUN_00e70950, FUN_00e70bc0, FUN_00e71520"
+        },
+        {
+          "address": "0x00e7e130",
+          "boundary": "original_static",
+          "claim": "Observed dispatch types include 1 despawn-like, 2 multi-cell interaction, 5 despawn/eat path, 6 death effect path, 7 player death path, 0x0c flee, 0x0d chase, 0x13 collision damage, 0x14 collision push/damage, 0x1d player death, 0x1e transition action, 0x2c attack effect, and 0x32/0x33 spawn/timer actions",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP decompile"
+        },
+        {
+          "address": "0x00e7e130",
+          "boundary": "original_static",
+          "claim": "After type-specific work, the dispatcher releases the transient record through FUN_00b72260",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP decompile"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "release the transient action record after dispatch",
+          "conditions": [
+            "type branch completes or explicitly deallocates the record"
+          ],
+          "evidence": "0x00e7e130"
+        }
+      ],
+      "generated_events": [
+        "cell_eat_or_mouth_interaction",
+        "cell_damage_resolved",
+        "cell_death_started",
+        "cell_flee_or_chase_selected"
+      ],
+      "guards": [
+        "record type selects the dispatcher branch",
+        "owner/cell/target indices must resolve for type-specific effects",
+        "action lifetime is controlled by duration/timer fields",
+        "some branches return early or release the record when a target is missing"
+      ],
+      "name": "queued_cell_interaction_lifecycle",
+      "possible_states": [
+        {
+          "actions": [
+            "no transient interaction is pending"
+          ],
+          "guards": [
+            "no allocated action record"
+          ],
+          "name": "absent",
+          "raw_value": "no queued record"
+        },
+        {
+          "actions": [
+            "record is allocated and waits for timer/state dispatch",
+            "carries type and cell/target references"
+          ],
+          "guards": [
+            "action pool allocation succeeds"
+          ],
+          "name": "queued",
+          "raw_value": "record+0x24 != 0"
+        },
+        {
+          "actions": [
+            "type-specific handler mutates cell, query, health, animation, UI, or effect state"
+          ],
+          "guards": [
+            "timer/state branch selects the record"
+          ],
+          "name": "dispatching",
+          "raw_value": "FUN_00e7e130 active"
+        },
+        {
+          "actions": [
+            "record returns to the action pool free list"
+          ],
+          "guards": [
+            "handler completes or calls release"
+          ],
+          "name": "consumed",
+          "raw_value": "record released"
+        }
+      ],
+      "relevant_functions": [
+        "FUN_00b72160",
+        "FUN_00e7e6c0",
+        "FUN_00e7ba30",
+        "FUN_00e7e130",
+        "FUN_00e70950",
+        "FUN_00e70bc0",
+        "FUN_00e71520",
+        "FUN_00e725c0",
+        "FUN_00e727e0"
+      ],
+      "relevant_structures": [
+        "transient cObjectPool action record",
+        "cCellObjectData",
+        "cCellCellResource",
+        "cCellQueryLinkedPool"
+      ],
+      "side_effects": [
+        "queues animation/effect work",
+        "applies damage/eat/flee/chase/death effects",
+        "updates transforms, health, target indices, and query ownership",
+        "releases the transient record"
+      ],
+      "state_variable": {
+        "address": "transient action record +0x24 with owner index at +0x28",
+        "expression": "queued interaction/action type and owner cell index",
+        "owner": "the Cell action/interaction pool, not the 4096-cell object pool",
+        "support": "Direct write/read and switch dispatch support the type/owner fields; the record's SDK type is not named",
+        "type": "int32_t type + cObjectPoolIndex owner/target fields"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "allocate record",
+            "write type, owner, target, duration, transform/effect parameters"
+          ],
+          "cause": "eat, attack, flee, chase, death, damage, or spawn interaction",
+          "entry_actions": [
+            "resolve initiating cells and interaction parameters"
+          ],
+          "event": "cell_eat_or_mouth_interaction",
+          "exit_actions": [
+            "leave record queued for timer/state dispatch"
+          ],
+          "from_state": "absent",
+          "guard": "action pool has a free record",
+          "side_effects": [
+            "future UI/animation/effect state is scheduled"
+          ],
+          "source": "0x00e70950, 0x00e70bc0, 0x00e71520, 0x00e725c0, 0x00e727e0",
+          "to_state": "queued"
+        },
+        {
+          "actions": [
+            "switch on record type",
+            "invoke damage/eat/death/flee/chase/spawn handler"
+          ],
+          "cause": "timer or behavior state reaches dispatch condition",
+          "entry_actions": [
+            "read record type and cell indices"
+          ],
+          "event": "cell_eat_or_mouth_interaction",
+          "exit_actions": [
+            "complete type-specific work"
+          ],
+          "from_state": "queued",
+          "guard": "type branch and target guards pass",
+          "side_effects": [
+            "cell/UI/health/query/effect state changes"
+          ],
+          "source": "0x00e7e130",
+          "to_state": "dispatching"
+        },
+        {
+          "actions": [
+            "release record to pool"
+          ],
+          "cause": "type handler completes",
+          "entry_actions": [
+            "finish type-specific work"
+          ],
+          "event": "cell_eat_or_mouth_interaction",
+          "exit_actions": [
+            "no queued interaction remains"
+          ],
+          "from_state": "dispatching",
+          "guard": "always after handler",
+          "side_effects": [
+            "action pool allocated count decreases"
+          ],
+          "source": "0x00e7e130",
+          "to_state": "consumed"
+        }
+      ],
+      "validation_strategy": [
+        "Instrument the transient action pool and record +0x24 writes for every original eat/flee/attack/damage/death path.",
+        "Correlate each type branch with its target, duration, UI, animation, and pool release.",
+        "Compare the original action pool lifecycle with current SimEvent ordering and explicitly do not merge their schemas.",
+        "Resolve the unnamed type enum and any external message/event transport before implementing a replacement event bus."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "medium-high",
+        "reason": "UI constants, rollover formula/time, input toggle, and health/selection writes are directly supported; visible-versus-hidden meaning of several opaque UI booleans is unresolved."
+      },
+      "consumers": [
+        "App::cCellModeStrategy::OnKeyDown",
+        "App::cCellModeStrategy::OnMouseDown",
+        "App::cCellModeStrategy::OnMouseUp",
+        "FUN_00e73f60",
+        "cCellUI::ShowHealthRollover",
+        "FUN_00e62500"
+      ],
+      "current_openspore_approximation": {
+        "claim": "OpenSpore CellUI models GlobalUICell-3 constants and a rollover formula, but the fixed render path hard-codes initialHealth=100 and 75% fill; interactive CellSim does not call showHealthRollover or consume the health toggle.",
+        "evidence": "src/apps/CellUI.cpp:5-25; src/apps/cell_stage.cpp:551-583,864-1209",
+        "fidelity": "APPROXIMATION",
+        "gaps": [
+          "current health bar is not tied to CellSim player health or damage",
+          "current interactive path polls SDL mouse/wheel and does not implement original hover/selection UI callbacks",
+          "current CellInput kToggleHealth is an SDL/test abstraction and is not proven to be the same virtual key as original"
+        ],
+        "sources": [
+          "src/apps/CellUI.cpp",
+          "src/apps/CellUI.hpp",
+          "src/apps/cell_stage.cpp",
+          "src/apps/CellInput.cpp",
+          "src/apps/CellModeStrategy.cpp"
+        ]
+      },
+      "entry_actions": [
+        {
+          "action": "create a cCellUIRollover only when the target cell has a live GFX object",
+          "conditions": [
+            "mGFXObjectIndex != 0"
+          ],
+          "evidence": "0x00e62200, 0x00e62340"
+        }
+      ],
+      "evidence": [
+        {
+          "address": "sCellUI+0x9c, cCellUIRollover+0x24",
+          "boundary": "original_static",
+          "claim": "SDK/KG identify a 32-object rollover pool and mDisappearTime; ShowHealthRollover sets it to 0.5f",
+          "kind": "sdk_structure",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI cCellUI.h:37-81; Ghidra MCP get_struct_layout; knowledgegraph/spore.db"
+        },
+        {
+          "address": "0x00e818f0",
+          "boundary": "original_static",
+          "claim": "virtualKey 2 toggles sCellUI+0x937",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP decompile; .spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnKeyDown.c"
+        },
+        {
+          "address": "0x00e6c860,0x00e5c0f0",
+          "boundary": "original_static",
+          "claim": "Mouse callbacks query the cell pool and write UI selection/hover slots +0xc0, +0xc4, +0x900, and +0x904",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP decompile"
+        },
+        {
+          "address": "0x00e73f60",
+          "boundary": "original_static",
+          "claim": "The per-frame UI update reads avatar health/speed/position and publishes UI callback values, including health/6 and player-related state",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP decompile"
+        },
+        {
+          "address": "src/apps/CellUI.cpp",
+          "boundary": "openspore_current",
+          "claim": "Current implementation mirrors rollover formula and 0.5f but stores rollovers in a vector",
+          "kind": "source",
+          "level": "OBSERVED",
+          "source": "src/apps/CellUI.cpp:12-25"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "rollover lifetime is governed by mDisappearTime; the exact UI consumer that frees/updates it is not fully traced",
+          "conditions": [
+            "mDisappearTime reaches its expiry"
+          ],
+          "evidence": "0x00e62200, 0x00e62340, 0x00e58730"
+        }
+      ],
+      "generated_events": [
+        "cell_health_rollover_shown",
+        "cell_health_display_toggled"
+      ],
+      "guards": [
+        "no rollover is created when mGFXObjectIndex is zero",
+        "health toggle is handled only by the original key callback path",
+        "mouse selection writes depend on camera/button/query guards",
+        "UI byte +0x936 is used as an opaque transition/cinematic flag in multiple paths and is not safely renamed"
+      ],
+      "name": "cell_ui_health_and_selection_state",
+      "possible_states": [
+        {
+          "actions": [
+            "normal cell UI state",
+            "health rollover can be created by damage/healing",
+            "mouse hover/selection slots can change"
+          ],
+          "guards": [
+            "sCellUI+0x937 == 0",
+            "sCellUI+0x936 == 0"
+          ],
+          "name": "normal_or_health_enabled",
+          "raw_value": "toggle bit false"
+        },
+        {
+          "actions": [
+            "key callback toggles the health-display bit",
+            "FUN_00e510f0 returns a different UI decision path when the bit is nonzero"
+          ],
+          "guards": [
+            "virtualKey == 2 on the original OnKeyDown path"
+          ],
+          "name": "health_display_toggled",
+          "raw_value": "sCellUI+0x937 != 0"
+        },
+        {
+          "actions": [
+            "a live-GFX cell gets a rollover with initialHealth/6",
+            "mDisappearTime is set to 0.5f",
+            "damage/heal paths can update the visible health value"
+          ],
+          "guards": [
+            "cell mGFXObjectIndex != 0",
+            "UI/health event requested"
+          ],
+          "name": "rollover_active",
+          "raw_value": "cCellUIRollover.mDisappearTime > 0"
+        },
+        {
+          "actions": [
+            "mouse callbacks write query/hover/selection slots",
+            "current hovered cell name and UI progress state may be updated"
+          ],
+          "guards": [
+            "mouse query or selection branch passes"
+          ],
+          "name": "selection_or_hover",
+          "raw_value": "sCellUI+0xc0/+0xc4/+0x900 nonzero"
+        }
+      ],
+      "relevant_functions": [
+        "App::cCellModeStrategy::OnKeyDown",
+        "App::cCellModeStrategy::OnMouseDown",
+        "App::cCellModeStrategy::OnMouseUp",
+        "FUN_00e73f60",
+        "FUN_00e62200",
+        "Simulator::Cell::cCellUI::ShowHealthRollover",
+        "FUN_00e510f0"
+      ],
+      "relevant_structures": [
+        "cCellUI",
+        "cCellUIRollover",
+        "cObjectPool<cCellUIRollover>",
+        "cCellObjectData"
+      ],
+      "side_effects": [
+        "toggles health-display state",
+        "allocates or updates health rollovers",
+        "updates UI selection/hover fields",
+        "publishes player health/speed/position to UI callback consumers"
+      ],
+      "state_variable": {
+        "address": "sCellUI+0x937, sCellUI+0x936, sCellUIRollover+0x24",
+        "expression": "health-display bit, opaque transition flag, and rollover disappearance timer",
+        "owner": "cCellUI and cCellUIRollover pool",
+        "support": "Offsets, key toggle, and rollover writes are supported; visible-versus-hidden semantics of +0x936/+0x937 are not fully named",
+        "type": "bool bytes + float timer"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "toggle sCellUI+0x937"
+          ],
+          "cause": "virtual key 2 key-down event",
+          "entry_actions": [
+            "run original OnKeyDown action lookup and special-case"
+          ],
+          "event": "cell_health_display_toggled",
+          "exit_actions": [
+            "return handled/not-handled to input router"
+          ],
+          "from_state": "normal_or_health_enabled",
+          "guard": "virtualKey == 2 and key path reaches special case",
+          "side_effects": [
+            "UI decision path changes"
+          ],
+          "source": "0x00e818f0",
+          "to_state": "health_display_toggled"
+        },
+        {
+          "actions": [
+            "create/update rollover",
+            "write field_8 = initialHealth/6",
+            "write mDisappearTime = 0.5f"
+          ],
+          "cause": "damage, healing, or explicit health UI request",
+          "entry_actions": [
+            "resolve cell GFX object"
+          ],
+          "event": "cell_health_rollover_shown",
+          "exit_actions": [
+            "leave rollover pending for UI update"
+          ],
+          "from_state": "normal_or_health_enabled",
+          "guard": "mGFXObjectIndex != 0",
+          "side_effects": [
+            "health value and transient UI lifetime change"
+          ],
+          "source": "0x00e62200, 0x00e62340",
+          "to_state": "rollover_active"
+        },
+        {
+          "actions": [
+            "update or release rollover after lifetime"
+          ],
+          "cause": "rollover timer/update path",
+          "entry_actions": [
+            "read mDisappearTime"
+          ],
+          "event": "cell_health_rollover_shown",
+          "exit_actions": [
+            "return to normal UI"
+          ],
+          "from_state": "rollover_active",
+          "guard": "rollover update/expiry path",
+          "side_effects": [
+            "rollover pool/UI layout may be released"
+          ],
+          "source": "0x00e58730, 0x00e73f60",
+          "to_state": "normal_or_health_enabled"
+        },
+        {
+          "actions": [
+            "write query hit/candidate/hover state"
+          ],
+          "cause": "mouse down/up or per-frame UI query",
+          "entry_actions": [
+            "query foreground cell pool or update hover"
+          ],
+          "event": "cell_input_mouse_state",
+          "exit_actions": [
+            "return to input/UI processing"
+          ],
+          "from_state": "normal_or_health_enabled",
+          "guard": "mouse/query branch passes",
+          "side_effects": [
+            "UI selection/hover state changes"
+          ],
+          "source": "0x00e6c860, 0x00e5c0f0, 0x00e62500",
+          "to_state": "selection_or_hover"
+        }
+      ],
+      "validation_strategy": [
+        "Byte-verify sCellUI+0x936 and +0x937 writes in all original mode/input/death paths before assigning visible/hidden names.",
+        "Trace cCellUIRollover allocation, timer update, and release to establish the exact UI lifetime.",
+        "Compare current fixed health-bar raster and current rollover vector with original UI state snapshots; do not use the current hard-coded 100/75% values as original values.",
+        "Verify the original virtual key 2 mapping independently from the current SDL scancode abstraction."
+      ]
+    }
+  ],
+  "temporal_semantics": {
+    "current_openspore": {
+      "clock": "CellSim uses a fixed kDt and the interactive loop calls update once per approximately 16 ms frame",
+      "eat": "food within MovementParams.eatRadius is marked dead and emits a local eat event during the same update",
+      "flee": "any live prey within MovementParams.fleeRadius emits a local flee event, turns away, and boosts for the current frame",
+      "health": "no live health state; the fixed HUD is not driven by the sim",
+      "sources": [
+        "src/sim/Sim.cpp:103-260",
+        "src/apps/cell_stage.cpp:1124-1184"
+      ]
+    },
+    "event_transport": {
+      "current": "SimEvent is appended to CellSim::events_ and returned by update; it is a deterministic local contract",
+      "original": "transient action/interaction records are allocated from a separate pool, carry a type word and cell references, are timer/state dispatched by FUN_00e7e130, and released after dispatch; the original external message transport remains unresolved"
+    },
+    "movement": {
+      "current": "CellSim computes the same ray-plane shape but uses a deterministic player position, target stop radius, and speed/damping parameters; current target sizes and integration are contract approximations",
+      "original": "MovePlayerToMousePosition uses the camera ray against the movement plane, writes target position and target orientation, and sets a moving flag on a valid hit; per-cell gameplay integration is handled later in the frame"
+    },
+    "player_reload": {
+      "current": "CellModeStrategy lifecycle and CellSim have no equivalent original player reload request",
+      "original": "death/effect callbacks set sCellGame+0x51d8; the next active frame in FUN_00e806b0 invokes FUN_00e7fd00, then optionally runs a second gameplay update in the same frame"
+    },
+    "pool_lifetime": {
+      "current": "CellPool deallocates the 920-byte slot directly; no query/GFX/action cleanup is wired to the deterministic role entities",
+      "original": "cell objects and transient action records are pool-backed; query/GFX cleanup precedes release, and action records are released after type dispatch"
+    },
+    "runtime_evidence": "No Cell-stage runtime observations are available. S5 only reached the registration/menu path; all Cell probes recorded zero events."
+  },
+  "unresolved": [
+    {
+      "current_status": "UNRESOLVED",
+      "evidence": "Original lookup helper rejects index 0; current CellPool starts at 0 and uses 0xffffffff as invalid",
+      "id": "U1",
+      "impact": "A direct current/original pool ABI claim could be wrong for index 0 and exhaustion/sentinel behavior",
+      "next_validation": "Re-open the original generic pool allocator and byte-verify free-list initialization, sentinel, and first allocation before any replacement work",
+      "question": "What are the original cObjectPool invalid/free-list sentinel values and allocation index domain?"
+    },
+    {
+      "current_status": "UNRESOLVED",
+      "evidence": "FUN_00e7fd00 clears and reconstructs state but its full player-construction subpath is not isolated",
+      "id": "U2",
+      "impact": "Player spawn timing, identity, and placement cannot be reproduced from current scene.json",
+      "next_validation": "Trace every write to sCellGame+0x411c and correlate the selected world/populate resource with the assigned pool object",
+      "question": "Which exact function in the rebuild/population chain constructs and assigns the active avatar?"
+    },
+    {
+      "current_status": "UNKNOWN",
+      "evidence": "sCellGame+0x51e0 is cleared by Initialize and branched in FUN_00e806b0, but no original writer was identified in the Cell-region scan",
+      "id": "U3",
+      "impact": "The state word may be an external tool/configuration mode rather than a gameplay lifecycle state",
+      "next_validation": "Search outside the Cell function region for all writers and runtime readers, then correlate with texture/ID generation callbacks",
+      "question": "What writes sCellGame+0x51e0 and what do its nonzero values mean?"
+    },
+    {
+      "current_status": "PARTIAL",
+      "evidence": "FUN_00e7e130 switches on record+0x24 and many original bodies allocate records, but the full enum is unnamed",
+      "id": "U4",
+      "impact": "The original event/action ABI cannot yet be represented without inventing names or collapsing records into current SimEvent",
+      "next_validation": "Build a cross-reference from every record+0x24 write to its dispatcher branch and downstream side effects",
+      "question": "What is the complete original cell interaction/action type map and lifetime?"
+    },
+    {
+      "current_status": "UNRESOLVED",
+      "evidence": "cCellObjectData+0x112, +0x113, +0x178, +0x17c, +0x17e, +0x17f, and +0x18c are read/written by multiple paths but mostly unnamed",
+      "id": "U5",
+      "impact": "Some guards may represent dead, invulnerable, stunned, target, action-request, or event states; conflating them would corrupt lifecycle transitions",
+      "next_validation": "Build a write/read cross-reference for each byte/word and correlate with resource flags, death/eat branches, and animation/effect consumers",
+      "question": "What are the exact semantics of the unnamed cCellObjectData guard/queue fields?"
+    },
+    {
+      "current_status": "UNKNOWN",
+      "evidence": "FUN_00e59200, FUN_00e59170, FUN_00e59500, and related action completion helpers are called by death/eat paths but their final loot, spawn-output, and UI completion ordering is not reconstructed",
+      "id": "U6",
+      "impact": "Death drops, respawn output, and end-of-action UI transitions remain incomplete",
+      "next_validation": "Decompile the action completion callees and trace their callers from each queued record type",
+      "question": "When and how are death effects, spawnOutput, loot, and action completion finalized?"
+    },
+    {
+      "current_status": "UNKNOWN",
+      "evidence": "cCellQueryLinkedPool has insert/remove/partition functions, but original query ordering and removal contract are not fully mapped",
+      "id": "U7",
+      "impact": "Current CellQuery LIFO behavior may not match original flee/attack target selection order",
+      "next_validation": "Byte-verify e868f0/e86980 and all query helper callers; test ordering with multiple inserts/removals",
+      "question": "What are the original query entry ordering, removal, and foreground/background partition semantics?"
+    },
+    {
+      "current_status": "UNRESOLVED",
+      "evidence": "sCellUI+0x936 and +0x937 are set/cleared in death, key, load, and transition paths, but their visible layout effects are not named",
+      "id": "U8",
+      "impact": "UI-visible state cannot be reconstructed without guessing what the booleans control",
+      "next_validation": "Resolve layout/callback consumers and capture original UI state after each transition",
+      "question": "Which UI layers and gameplay behaviors are controlled by sCellUI+0x936 and +0x937?"
+    },
+    {
+      "current_status": "UNRESOLVED",
+      "evidence": "Original OnKeyDown is a vtable callback with virtualKey semantics; current CellInput maps SDL scancodes to an abstract action table",
+      "id": "U9",
+      "impact": "The current input mapping is a host approximation, not a proven original key map",
+      "next_validation": "Byte-verify FUN_00e82900 and per-handler branches and record runtime virtual keys in a reachable Cell stage",
+      "question": "What original virtual-key/action table and mouse button branches are used by each cell control method?"
+    },
+    {
+      "current_status": "BLOCKED",
+      "evidence": "S5 negative run reached the menu only; all 11 Cell probes recorded zero events",
+      "id": "U10",
+      "impact": "No transition ordering, UI value, player index, or effect lifetime is runtime-validated",
+      "next_validation": "After a read-only Wine/render diagnostic makes the original boot-stable, run the approved human-watched Cell trace and record the listed state fields",
+      "question": "What are the runtime values and transition ordering in an actual Cell Stage session?"
+    }
+  ]
+}

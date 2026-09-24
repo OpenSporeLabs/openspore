@@ -1,0 +1,925 @@
+{
+  "track": "animation-pose",
+  "scope": "SporeApp.exe 3.1.0.22 animation and pose boundary archaeology for Cell, editor creatures, vehicle state, RenderWare skeleton propagation, event callbacks, and Swarm/Anim. Static evidence only; 14 boundaries and 9 unresolved questions. No original runtime validation is claimed.",
+  "boundaries": [
+    {
+      "classification": "required_for_semantics",
+      "boundary": "AnimatedCreature animation state, clip mode, loop, blend, and animation-world ownership",
+      "gameplay_caller": "Editors::cEditorAnimWorld, EditorCreatureController, and SDK creature-stage animation callers; Cell-specific use is UNKNOWN",
+      "original_callee": "AnimatedCreature vtable slots PlayAnimation, LoadAnimation, SetAnimationMode, SetAnimationIdle, SetAnimationBlendInTime, StartAnimation, SetLoop, SetLoopTimes, SetAnimationID, GetCurrentAnimation, GetAnimationLength; IAnimWorld::Update, UpdateCreatures, PostUpdateCreatures",
+      "parameters": [
+        "AnimatedCreature handle",
+        "animation identifier or clip",
+        "mode, idle, loop, loop-count, and blend arguments UNKNOWN"
+      ],
+      "outputs": [
+        "current animation state",
+        "animation-world handle",
+        "evaluated visual result UNKNOWN"
+      ],
+      "state_changed": [
+        "AnimatedCreature.field_18C AnimIndex",
+        "animation mode, idle, loop, and blend state in AnimatedCreature or the animation manager UNKNOWN",
+        "AnimatedCreature.mpAnimWorld ownership reference"
+      ],
+      "structures": [
+        "Anim::AnimatedCreature",
+        "Anim::IAnimWorld",
+        "Anim::anim_query",
+        "Anim::anim_cid"
+      ],
+      "lifetime": "AnimatedCreature is an animation-world-owned or editor-owned creature object; the animation manager and animation world own or reference its clip and pose data for the lifetime of the creature binding.",
+      "failure_semantics": "UNKNOWN. SDK vtable and field evidence establish the interface, but no AnimatedCreature implementation body or runtime failure path is available in the local decomp set.",
+      "timing_order": "The vtable exposes Update, UpdateCreatures, and PostUpdateCreatures as distinct animation-world phases, but their exact relationship to creature gameplay, pose evaluation, and draw is UNKNOWN.",
+      "openspore_concept": "Keep typed creature animation state and ordered animation events as a gameplay-facing contract; hide the original animation-manager object and evaluator.",
+      "modern_abstraction": "IAnimationController with play, setMode, setIdle, setLoop, setBlend, currentClip, clipLength, and an IAnimationWorld service that updates creatures before presentation.",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/structs_fields.tsv",
+          "line": 5965,
+          "symbol": "Anim::AnimatedCreature vtable and state"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/structs_fields.tsv",
+          "line": 5998,
+          "symbol": "Anim::AnimatedCreature::mPosition, mOrientation, p_cid, mpModel, field_18C, mpAnimWorld"
+        },
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/track-g-editor-ui-input.json",
+          "line": 350,
+          "symbol": "sdk_animation_surface.AnimatedCreature"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 26871,
+          "symbol": "Simulator::cCreatureBase::PlayAnimation"
+        }
+      ],
+      "confidence": "medium",
+      "notes": "The interface is a strong SDK/vtable boundary, but this does not prove which animation state is read by gameplay. The original pose upload and callback ownership remain UNKNOWN."
+    },
+    {
+      "classification": "thin_wrapper",
+      "boundary": "Anim::IAnimManager service accessor",
+      "gameplay_caller": "Editors::cEditor::Update and Cell-side FUN_00e6c9f0; additional callers are UNKNOWN",
+      "original_callee": "DAT_015fcc5c, returned as IAnimManager*",
+      "parameters": [],
+      "outputs": [
+        "IAnimManager service pointer"
+      ],
+      "state_changed": [],
+      "structures": [
+        "Anim::IAnimManager"
+      ],
+      "lifetime": "Global service pointer returned from DAT_015fcc5c; service lifetime is external to this accessor.",
+      "failure_semantics": "The accessor has no explicit failure branch; it returns the current global value.",
+      "timing_order": "Callers fetch the service and then invoke animation operations; this wrapper does not itself tick or advance animation time.",
+      "openspore_concept": "Model a typed animation service dependency, not a global Anim::Get API.",
+      "modern_abstraction": "Inject IAnimationService into the mode, creature, and presentation composition roots.",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Anim__IAnimManager__Get.c",
+          "line": 8,
+          "symbol": "Anim::IAnimManager::Get"
+        },
+        {
+          "file": "knowledgegraph/triage/xrefs-2540f2ca.tsv",
+          "line": 158645,
+          "symbol": "FUN_00e6c9f0 direct call to Anim::IAnimManager::Get"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 7491,
+          "symbol": "Anim::IAnimManager::Get triage row"
+        }
+      ],
+      "confidence": "high",
+      "notes": "The body is a direct global return. The service may host semantic animation state, so the accessor itself is replaceable while the injected service contract is not."
+    },
+    {
+      "classification": "required_for_semantics",
+      "boundary": "Cell animation clip selection, blend transition, and animation state writes",
+      "gameplay_caller": "Forty-four direct-call xref rows target 0x00e6d200 from the Cell region, with GAMEPLAY_LOGIC and UNKNOWN callers mixed; exact runtime caller identities are partly UNKNOWN",
+      "original_callee": "FUN_00e6d180, FUN_00e563e0, FUN_00b72210, and FUN_00e4f330",
+      "parameters": [
+        "cCellObjectData* cell",
+        "cCellObjectData* otherCell",
+        "CellAnimations targetAnim",
+        "CellAnimations currentAnim"
+      ],
+      "outputs": [
+        "computed blend-in time",
+        "computed blend-out time",
+        "animation dispatch request",
+        "current animation state"
+      ],
+      "state_changed": [
+        "cCellObjectData.field_1B4 when the returned animation-state flag is set",
+        "cCellObjectData.mCurrentAnimation",
+        "cCellObjectData.field_1B8",
+        "animation-manager state and final pose state UNKNOWN"
+      ],
+      "structures": [
+        "Simulator::Cell::cCellObjectData",
+        "CellAnimations",
+        "cCellAnimDefinition"
+      ],
+      "lifetime": "The animation state belongs to a pooled cCellObjectData and remains associated with that cell until the cell is rebuilt, released, or its GFX/model binding changes.",
+      "failure_semantics": "No-op when mModelKey.instanceID is zero or mGFXObjectIndex is zero. Other callee failure and invalid-animation behavior is UNKNOWN.",
+      "timing_order": "Guard; derive base blend times; apply the current/target special cases; multiply all times by the cell animation-time factor; call the animation dispatch helper; write animation state fields. The decompiled body does not directly upload a pose.",
+      "openspore_concept": "Preserve animation selection and transition state as gameplay-adjacent event semantics, but keep the actual skeletal pose result behind presentation.",
+      "modern_abstraction": "IAnimationController.play(cell, targetClip, currentClip, transitionPolicy, timeScale) returning a typed animation state and a pose update handle.",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__PlayAnimation.c",
+          "line": 22,
+          "symbol": "Simulator::Cell::PlayAnimation"
+        },
+        {
+          "file": "knowledgegraph/triage/xrefs-2540f2ca.tsv",
+          "line": 158681,
+          "symbol": "PlayAnimation direct-call xref export"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 33645,
+          "symbol": "Simulator::Cell::PlayAnimation triage row"
+        },
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json",
+          "line": 584,
+          "symbol": "PlayAnimation static contract"
+        }
+      ],
+      "confidence": "high",
+      "notes": "Blend constants and state writes are directly decompiled, but no original runtime trace establishes caller-to-event ordering or final pose behavior. The current OpenSpore helper reproduces only the deterministic blend calculation, not this full dispatch/state mutation."
+    },
+    {
+      "classification": "unknown",
+      "boundary": "Cell event transport from gameplay events to animation and effect state",
+      "gameplay_caller": "Cell per-frame and interaction/event producers; the original event producer, message ID, and callback registration are UNKNOWN",
+      "original_callee": "PlayAnimation and unnamed Cell event/message paths; no direct original SimEvent-to-PlayAnimation edge is established",
+      "parameters": [
+        "event identity UNKNOWN",
+        "event payload and source entity UNKNOWN",
+        "target cell or animation clip UNKNOWN"
+      ],
+      "outputs": [
+        "animation transition request UNKNOWN",
+        "effect request UNKNOWN"
+      ],
+      "state_changed": [
+        "UNKNOWN",
+        "No original event queue or callback state is identified in the local evidence."
+      ],
+      "structures": [
+        "Anim::AnimationMessage exists for the editor animation path but is not proven to be the Cell event record",
+        "OpenSpore SimEvent is a current local contract and not an original ABI"
+      ],
+      "lifetime": "UNKNOWN. The original event allocation, queue ownership, and delivery lifetime are not characterized.",
+      "failure_semantics": "UNKNOWN. No original Cell event dispatch failure or replay/drop behavior is available.",
+      "timing_order": "UNKNOWN. The only current ordering is the deterministic OpenSpore CellSim update followed by event logging; it is not evidence of the original transport.",
+      "openspore_concept": "Do not infer the original event ABI from current SimEvent strings or animation helper names.",
+      "modern_abstraction": "IAnimationEventRouter with typed event values, ordered delivery, and separate animation/effect sinks; define the original mapping only after characterization.",
+      "evidence": [
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json",
+          "line": 423,
+          "symbol": "original_event_surfaces and current_sim_events"
+        },
+        {
+          "file": "src/sim/Sim.hpp",
+          "line": 208,
+          "symbol": "OpenSpore SimEvent"
+        },
+        {
+          "file": "src/apps/CellAnim.cpp",
+          "line": 44,
+          "symbol": "effectIDForEvent"
+        },
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/track-g-editor-ui-input.json",
+          "line": 381,
+          "symbol": "cell_animation_surface"
+        }
+      ],
+      "confidence": "low",
+      "notes": "The report explicitly preserves UNKNOWN here. Event-to-animation causality is the central unresolved boundary for Cell and Creature gameplay."
+    },
+    {
+      "classification": "required_for_semantics",
+      "boundary": "Cell gameplay transform intent versus final graphics transform",
+      "gameplay_caller": "Simulator::Cell::MovePlayerToMousePosition, FUN_00e5b2e0, and CreateCellObject",
+      "original_callee": "MovePlayerToMousePosition, FUN_00e5b2e0, CreateCellObject, and the later cell/graphics update path",
+      "parameters": [
+        "delta time",
+        "camera ray and movement plane",
+        "cell position, target position, orientation, and scale inputs"
+      ],
+      "outputs": [
+        "cell target position",
+        "cell target orientation",
+        "moving state",
+        "final graphics transform and pose output UNKNOWN"
+      ],
+      "state_changed": [
+        "cCellObjectData.mTargetPosition",
+        "cCellObjectData.mTargetOrientation",
+        "sCellGame moving-flag candidate",
+        "cCellObjectData.mTransform at offset 0x48 is a presentation transform field; its update path is UNKNOWN"
+      ],
+      "structures": [
+        "cCellObjectData",
+        "sCellGame",
+        "Vector3",
+        "Quaternion",
+        "Transform"
+      ],
+      "lifetime": "Gameplay target state lives in pooled cell objects; the final graphics transform and any bone/pose state are owned or derived by the GFX/model world lifetime.",
+      "failure_semantics": "Movement no-ops on lock, invalid player, camera/UI gate, invalid ray/plane, or negative intersection; exact final transform failure behavior is UNKNOWN.",
+      "timing_order": "Input/camera gates precede target/orientation writes; later per-frame cell/graphics updates consume those values, but the pose-upload order is not pinned.",
+      "openspore_concept": "Treat movement target and orientation as gameplay state; treat the final transform, skeleton matrices, and vertex deformation as presentation output unless a gameplay read is proven.",
+      "modern_abstraction": "ICellTransformState for target/current position, orientation, scale, and moving state; IPoseSink for the final presentation transform.",
+      "evidence": [
+        {
+          "file": "src/sim/CellPool.hpp",
+          "line": 31,
+          "symbol": "cCellObjectData target, orientation, and transform fields"
+        },
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json",
+          "line": 169,
+          "symbol": "original movement root"
+        },
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json",
+          "line": 264,
+          "symbol": "cCellObjectData state model"
+        },
+        {
+          "file": "docs/CELL-CONTRACT.md",
+          "line": 69,
+          "symbol": "CellSim per-frame order"
+        }
+      ],
+      "confidence": "medium",
+      "notes": "The intent fields are statically supported and gameplay-relevant. The mTransform-to-skeletal-pose propagation remains UNKNOWN; no evidence here promotes presentation transform writes to gameplay semantics."
+    },
+    {
+      "classification": "required_for_semantics",
+      "boundary": "Animation timing, phase, transition, and per-frame ordering",
+      "gameplay_caller": "App::cCellModeStrategy::Update, FUN_00e806b0, direct PlayAnimation callers, and IAnimWorld update slots",
+      "original_callee": "FUN_00e806b0, PlayAnimation, IAnimWorld::Update, IAnimWorld::UpdateCreatures, and IAnimWorld::PostUpdateCreatures",
+      "parameters": [
+        "delta time",
+        "current and target animation identifiers",
+        "blend-in and blend-out times",
+        "animation mode and loop state"
+      ],
+      "outputs": [
+        "per-frame animation state transition",
+        "updated pose or deformation result UNKNOWN",
+        "draw-time animation result UNKNOWN"
+      ],
+      "state_changed": [
+        "animation phase and transition state",
+        "current animation and blend fields",
+        "bone, morph, or pose buffers UNKNOWN"
+      ],
+      "structures": [
+        "cCellObjectData animation fields",
+        "Anim::anim_query",
+        "RenderWare::KeyframeAnim",
+        "Anim::IAnimWorld"
+      ],
+      "lifetime": "Timing state is per animation controller or cell and is reset/replaced on clip changes; pose buffers belong to the model/animation world lifetime.",
+      "failure_semantics": "UNKNOWN for phase completion, interruption, loop exhaustion, missing clips, and blend cancellation.",
+      "timing_order": "The mode Update forwards to FUN_00e806b0; PlayAnimation computes transition state on invocation; IAnimWorld exposes separate update phases, but the original ordering among gameplay, pose evaluation, and drawing is UNKNOWN.",
+      "openspore_concept": "Preserve deterministic transition and event ordering as a gameplay contract; do not expose RenderWare evaluator timing as a gameplay API.",
+      "modern_abstraction": "IAnimationClock plus IAnimationController transition state and an explicit phase enum; only the resulting pose snapshot crosses into presentation.",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__Update.c",
+          "line": 8,
+          "symbol": "App::cCellModeStrategy::Update"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__PlayAnimation.c",
+          "line": 26,
+          "symbol": "PlayAnimation blend defaults and special cases"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/structs_fields.tsv",
+          "line": 10630,
+          "symbol": "Anim::IAnimWorld vtable"
+        },
+        {
+          "file": "docs/analysis/reconstruction-packages.md",
+          "line": 1214,
+          "symbol": "PKG-17 unresolved timing and pose integration"
+        }
+      ],
+      "confidence": "medium",
+      "notes": "Blend timing is statically characterized. Phase, loop, interruption, callback, and pose-update runtime semantics are UNKNOWN."
+    },
+    {
+      "classification": "unknown",
+      "boundary": "Cell animation stage, renderer, and pose integration",
+      "gameplay_caller": "Current OpenSpore CellSim event output; original stage-to-animation caller is UNKNOWN",
+      "original_callee": "UNKNOWN; no original CellAnim-to-renderer or CellAnim-to-pose call path is identified",
+      "parameters": [
+        "Current SimEvent type and entity",
+        "cell position and transform",
+        "effect-map parameters",
+        "animation clip and blend request UNKNOWN"
+      ],
+      "outputs": [
+        "current source has no animation state mutation or pose submission from CellAnim",
+        "renderer output is static baked-mesh presentation"
+      ],
+      "state_changed": [
+        "No current cell_stage call to animBlend, instanceEffect, or effectIDForEvent",
+        "No current pose, skeleton, bone, morph, or animation-time stream"
+      ],
+      "structures": [
+        "OpenSpore SimEvent",
+        "OpenSpore CellSim",
+        "OpenSpore renderer mesh/scene state",
+        "original Cell object animation fields remain unrepresented in the current integration"
+      ],
+      "lifetime": "Current event records live in CellSim events_; original animation event/pose lifetime is UNKNOWN.",
+      "failure_semantics": "The current helpers are deterministic and return no original failure semantics; unknown event strings map to no effect in the current helper only.",
+      "timing_order": "Current source runs simulation and renders static scene data; CellAnim helper tests run separately. The claimed original integration is not present in the current call graph.",
+      "openspore_concept": "This is a missing boundary, not a completed animation feature. Keep the current pure helper contract explicitly partial.",
+      "modern_abstraction": "IAnimationEventRouter feeding an IAnimationController and IPoseSink before frame submission.",
+      "evidence": [
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/track-g-editor-ui-input.json",
+          "line": 381,
+          "symbol": "cell_animation_surface current_tree and pose_gap"
+        },
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/verify-semantic.json",
+          "line": 54,
+          "symbol": "F-001 test-only CellAnim callers"
+        },
+        {
+          "file": "src/apps/cell_stage.cpp",
+          "line": 820,
+          "symbol": "current CellSim event output"
+        },
+        {
+          "file": "src/apps/cellanim_test.cpp",
+          "line": 103,
+          "symbol": "current CellAnim event test"
+        }
+      ],
+      "confidence": "low",
+      "notes": "This boundary must remain UNKNOWN until a provenance-bearing SimEvent-to-animation-to-pose/render trace establishes ownership, ordering, and pose lifetime."
+    },
+    {
+      "classification": "renderware_third_party",
+      "boundary": "Cell visual effect-map selection and effect instance presentation",
+      "gameplay_caller": "Simulator::Cell::cCellGFX::LoadEffectMap, cCellGFX::InstanceEffectOnCell, and the current effect mapping helper",
+      "original_callee": "cCellGFX effect slots, Swarm or RenderWare visual-effect service, and the unknown effect-instance renderer",
+      "parameters": [
+        "record type",
+        "effect-map parameter record",
+        "current swim-plane point",
+        "cell transform position"
+      ],
+      "outputs": [
+        "selected effect-map slot",
+        "visual effect instance",
+        "effect placement"
+      ],
+      "state_changed": [
+        "sCellGFX effect-map slot state",
+        "effect instance active state and parameters",
+        "no proven gameplay health, damage, movement, or animation-state write"
+      ],
+      "structures": [
+        "cCellEffectMapResource",
+        "cCellGFX effect slots",
+        "Swarm::IVisualEffect",
+        "cCellObjectData.mTransform"
+      ],
+      "lifetime": "Effect-map slots belong to sCellGFX; individual visual effects live for the presentation instance and are destroyed or replaced by the GFX/service path.",
+      "failure_semantics": "Unknown record type produces no selected slot in the current helper; original missing-resource, failed-effect, and teardown behavior is UNKNOWN.",
+      "timing_order": "Static original evidence supports record selection, parameter construction, and placement at the cell transform; the event-to-effect callback time is UNKNOWN.",
+      "openspore_concept": "Keep effect identity, parameter association, and placement observable if gameplay or UI depends on them, but replace the renderer implementation.",
+      "modern_abstraction": "IEffectPresenter with typed effect IDs, effect parameters, world placement, and explicit failure/no-effect results.",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__PreloadCreature.c",
+          "line": 6,
+          "symbol": "Simulator::Cell::cCellGFX::PreloadCreature"
+        },
+        {
+          "file": "src/apps/CellAnim.hpp",
+          "line": 58,
+          "symbol": "EffectInstance and effect-map contract"
+        },
+        {
+          "file": "src/apps/CellAnim.cpp",
+          "line": 25,
+          "symbol": "selectEffectMapSlot"
+        },
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json",
+          "line": 594,
+          "symbol": "LoadEffectMap and InstanceEffectOnCell contracts"
+        }
+      ],
+      "confidence": "medium",
+      "notes": "This is presentation behavior with a narrow resource/transform association. It must not be treated as proof that animation state or gameplay combat is encoded in RenderWare effects."
+    },
+    {
+      "classification": "runtime_compatibility_only",
+      "boundary": "Editor animation event callbacks and message routing",
+      "gameplay_caller": "Editors::cEditor::HandleMessage, cEditor::PostEventToActors, cEditor::SetCreatureToNeutralPose, and other editor command paths",
+      "original_callee": "Editors::cEditorAnimEvent::MessagePost and MessageSend, which pack records and call recovered IAppSystem InitPlugins and Init slots",
+      "parameters": [
+        "eventID",
+        "EditorModel pointer",
+        "event object",
+        "integer and float callback parameters",
+        "apply/ignore flags"
+      ],
+      "outputs": [
+        "animation or editor command message",
+        "target editor creature event"
+      ],
+      "state_changed": [
+        "editor actor event fields and temporary message state",
+        "editor neutral-pose field at cEditor+0x70",
+        "no proven Cell gameplay state write"
+      ],
+      "structures": [
+        "Anim::AnimationMessage",
+        "Editors::cEditorAnimEvent",
+        "Editors::cEditor"
+      ],
+      "lifetime": "The cEditorAnimEvent object is temporary in the observed call sites; delivery lifetime and queue ownership are UNKNOWN.",
+      "failure_semantics": "MessageSend and MessagePost no-op when App::IAppSystem::Get returns null. Exact queue, priority, dispatch, and event-ID failure semantics are UNKNOWN.",
+      "timing_order": "Observed editor call shapes construct or pack an event, call MessagePost or MessageSend, then mutate editor state. Queue order and completion callbacks are UNKNOWN.",
+      "openspore_concept": "Preserve editor event identity and target only if editor functionality is in scope; do not treat the editor message path as the Cell gameplay event ABI.",
+      "modern_abstraction": "IAnimationEventRouter and IEditorCommandSink with typed event IDs, target handles, ordered delivery, and completion/error results.",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditorAnimEvent__MessagePost.c",
+          "line": 8,
+          "symbol": "Editors::cEditorAnimEvent::MessagePost"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditorAnimEvent__MessageSend.c",
+          "line": 8,
+          "symbol": "Editors::cEditorAnimEvent::MessageSend"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__SetCreatureToNeutralPose.c",
+          "line": 16,
+          "symbol": "Editors::cEditor::SetCreatureToNeutralPose"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__PostEventToActors.c",
+          "line": 31,
+          "symbol": "Editors::cEditor::PostEventToActors"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/structs_fields.tsv",
+          "line": 6096,
+          "symbol": "Anim::AnimationMessage"
+        }
+      ],
+      "confidence": "medium",
+      "notes": "The editor event path is structurally visible, but the recovered IAppSystem slot names and event payload mapping are decompiler-sensitive. Exact dispatch order remains UNKNOWN."
+    },
+    {
+      "classification": "runtime_compatibility_only",
+      "boundary": "Editor creature controller target, position, angle, and shadow-world propagation",
+      "gameplay_caller": "Editors::cEditorAnimWorld::SetTargetPosition, SetTargetAngle, and EditorCreatureController::Update",
+      "original_callee": "EditorCreatureController, AnimatedCreature, and Graphics::IShadowWorld",
+      "parameters": [
+        "creatureID",
+        "target position",
+        "target angle",
+        "dt",
+        "applyNow and ignoreZ flags"
+      ],
+      "outputs": [
+        "current and target controller position",
+        "current and target angle",
+        "look-at and shadow-world state",
+        "editor creature transform output"
+      ],
+      "state_changed": [
+        "EditorCreatureController.mRealTargetPosition, mTargetPosition, mCurrentPosition, mTargetAngle, mCurrentAngle, mMovementSpeed, and mRotateSpeed",
+        "EditorCreatureController target/current look-at fields",
+        "AnimatedCreature or shadow-world transform state"
+      ],
+      "structures": [
+        "Editors::cEditorAnimWorld",
+        "Editors::EditorCreatureController",
+        "Anim::AnimatedCreature",
+        "Graphics::IShadowWorld"
+      ],
+      "lifetime": "The editor world map owns or references a creature controller and its AnimatedCreature; destroy calls release and remove the creature binding.",
+      "failure_semantics": "GetAnimatedCreature and GetCreatureController return null for invalid or missing map entries; SetTargetPosition and SetTargetAngle are no-ops without a controller. More detailed controller failure paths are UNKNOWN.",
+      "timing_order": "The controller update scales dt by 0.001, reads animation/world state, computes movement and target vectors, writes current/target fields, and conditionally updates shadow/look-at state. Event and draw ordering is UNKNOWN.",
+      "openspore_concept": "This is an editor/scene controller boundary, not proof of Cell gameplay semantics. Preserve it only if editor simulation is a product requirement.",
+      "modern_abstraction": "IEditorCreatureController with target/current transform, angle, look-at, update, and explicit apply-now behavior.",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditorAnimWorld__GetAnimatedCreature.c",
+          "line": 8,
+          "symbol": "Editors::cEditorAnimWorld::GetAnimatedCreature"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__EditorCreatureController__Update.c",
+          "line": 58,
+          "symbol": "Editors::EditorCreatureController::Update"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__EditorCreatureController__SetTargetPosition.c",
+          "line": 42,
+          "symbol": "Editors::EditorCreatureController::SetTargetPosition"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/structs_fields.tsv",
+          "line": 19726,
+          "symbol": "EditorCreatureController fields"
+        }
+      ],
+      "confidence": "medium",
+      "notes": "Creature coupling is directly visible in the editor path. It is not evidence that the Cell creature runtime uses the same controller or pose policy."
+    },
+    {
+      "classification": "required_for_semantics",
+      "boundary": "Vehicle position, orientation, locomotion, and model-transform state",
+      "gameplay_caller": "Simulator::cCity::SpawnVehicle, Simulator::cVehicle::Load, and cLocomotiveObject movement/model virtuals",
+      "original_callee": "cVehicle, cLocomotiveObject, and Graphics::Model/IModelWorld setters and movement virtuals",
+      "parameters": [
+        "vehicle or city identity",
+        "position, orientation, scale, direction, and desired speed",
+        "model and model-world handles"
+      ],
+      "outputs": [
+        "vehicle position and orientation",
+        "velocity, angular velocity, desired and standard speed",
+        "model-transform-dirty state"
+      ],
+      "state_changed": [
+        "cVehicle.mPosition",
+        "cVehicle.mOrientation",
+        "cVehicle.mVelocity",
+        "cVehicle.mAngularVelocity",
+        "cVehicle.mDesiredSpeed",
+        "cVehicle.mbTransformDirty",
+        "cVehicle.mbModelChanged"
+      ],
+      "structures": [
+        "Simulator::cVehicle",
+        "Simulator::cVehicleData",
+        "Simulator::cLocomotiveObject",
+        "Graphics::Model",
+        "Graphics::IModelWorld"
+      ],
+      "lifetime": "Vehicle objects are spawned and loaded by city/game-data ownership and persist across locomotion updates until destroyed or released by their owning city or game-data container.",
+      "failure_semantics": "UNKNOWN. cVehicle::Load has no local decomp, and the exact invalid-reference, unloaded-model, and teleport failure paths are not available.",
+      "timing_order": "Vehicle load/spawn precedes locomotion and model updates; the order of transform propagation, animation, and rendering is UNKNOWN.",
+      "openspore_concept": "Preserve vehicle identity, locomotion state, and transform intent as gameplay semantics. Do not infer skeletal pose ownership from the vehicle model fields.",
+      "modern_abstraction": "IVehicleState with position, orientation, velocity, angular velocity, desired speed, model binding, and an explicit transform-dirty signal.",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/structs_fields.tsv",
+          "line": 8272,
+          "symbol": "Simulator::cVehicle base and identity fields"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/structs_fields.tsv",
+          "line": 8288,
+          "symbol": "Simulator::cVehicle transform and locomotion fields"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/sdk_functions.tsv",
+          "line": 1302,
+          "symbol": "Simulator::cCity::SpawnVehicle"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/sdk_functions.tsv",
+          "line": 1360,
+          "symbol": "Simulator::cVehicle::Load"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 29185,
+          "symbol": "cVehicle::Load triage row"
+        }
+      ],
+      "confidence": "medium",
+      "notes": "Vehicle locomotion is gameplay-facing state, but the local evidence does not show a vehicle animation interface. Vehicle-to-skeletal-pose coupling remains UNKNOWN."
+    },
+    {
+      "classification": "unknown",
+      "boundary": "Vehicle-to-AnimatedCreature, animation, or pose coupling",
+      "gameplay_caller": "cCity::SpawnVehicle and cVehicle::Load; no direct animation caller is identified",
+      "original_callee": "UNKNOWN; no committed decomp or xref path links cVehicle or cLocomotiveObject to AnimatedCreature, IAnimWorld, AnimationMessage, or PlayAnimation",
+      "parameters": [
+        "vehicle identity UNKNOWN",
+        "animation clip or pose request UNKNOWN"
+      ],
+      "outputs": [
+        "vehicle animation or pose output UNKNOWN"
+      ],
+      "state_changed": [
+        "UNKNOWN"
+      ],
+      "structures": [
+        "Simulator::cVehicle",
+        "Simulator::cLocomotiveObject",
+        "Anim::AnimatedCreature is a separate SDK type with no proven vehicle link"
+      ],
+      "lifetime": "UNKNOWN. Vehicle and creature lifetimes are separately represented in the SDK, but their binding lifetime is not established.",
+      "failure_semantics": "UNKNOWN. No vehicle animation failure, unloaded model, missing clip, or pose fallback path is available.",
+      "timing_order": "UNKNOWN. Vehicle locomotion and animation update order cannot be inferred from the SDK field layout or function names.",
+      "openspore_concept": "Do not add a vehicle pose contract until a vehicle-to-animation call edge or runtime observation is available.",
+      "modern_abstraction": "Candidate only: IVehicleAnimationBinding that binds a vehicle handle to an animation clip/pose sink; not a reconstruction requirement yet.",
+      "evidence": [
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 26128,
+          "symbol": "Simulator::cCity::SpawnVehicle triage row"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 29185,
+          "symbol": "Simulator::cVehicle::Load triage row"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/structs_fields.tsv",
+          "line": 8288,
+          "symbol": "cVehicle transform and locomotion fields"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/structs_fields.tsv",
+          "line": 5998,
+          "symbol": "Separate AnimatedCreature transform and animation fields"
+        }
+      ],
+      "confidence": "low",
+      "notes": "This is an explicit UNKNOWN result. The absence of a proven coupling is not evidence that vehicles are unanimated."
+    },
+    {
+      "classification": "replaceable_infrastructure",
+      "boundary": "RenderWare skeleton, keyframe, skin, and pose/deformation propagation",
+      "gameplay_caller": "Graphics::cModelInstanceAnimations and cModelInstance model/animation asset layers; no direct gameplay read of bone matrices or deformed vertices is shown",
+      "original_callee": "RenderWare::Skeleton, KeyframeAnim, AnimationSkin, RW4 model-animation sections, and the unknown pose evaluator",
+      "parameters": [
+        "model and animation identifiers",
+        "animation time and blend state",
+        "skeleton, skin, bone, and morph data"
+      ],
+      "outputs": [
+        "bone transforms or pose matrices",
+        "deformed vertices",
+        "blend-shape or morph output",
+        "model-to-world transform"
+      ],
+      "state_changed": [
+        "internal pose and deformation buffers",
+        "RenderWare or model-instance animation state",
+        "model-to-world transform"
+      ],
+      "structures": [
+        "RenderWare::KeyframeAnim",
+        "RenderWare::Skeleton",
+        "RenderWare::AnimationSkin",
+        "RenderWare::BlendShape",
+        "RenderWare::BlendShapeBuffer",
+        "Graphics::cModelInstanceAnimations",
+        "Graphics::cModelInstance"
+      ],
+      "lifetime": "Keyframe, skeleton, skin, and morph data live with the model/animation asset; evaluated pose buffers live with the model instance or animation world until update or destruction.",
+      "failure_semantics": "UNKNOWN. Unsupported RW4 sections, missing bones, missing clips, and evaluator fallback behavior are not runtime-characterized.",
+      "timing_order": "Asset load precedes animation evaluation; IAnimWorld exposes Update, UpdateCreatures, PostUpdateCreatures, and DrawLayer, but the exact pose-to-draw order is UNKNOWN.",
+      "openspore_concept": "Replace RenderWare evaluation with a provider-neutral skeletal and morph pose evaluator. Preserve only animation IDs, transition state, pose lifetime, and observable transforms required by gameplay.",
+      "modern_abstraction": "IPoseEvaluator with load, evaluate(time, blendState), poseSnapshot, and deform(mesh) operations, backed by IPoseSink and a modern renderer.",
+      "evidence": [
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 306,
+          "symbol": "RW4 animation sections and OpenSpore animation plan"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/structs_fields.tsv",
+          "line": 3491,
+          "symbol": "RenderWare::KeyframeAnim"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/structs_fields.tsv",
+          "line": 3503,
+          "symbol": "RenderWare::Skeleton"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/structs_fields.tsv",
+          "line": 3535,
+          "symbol": "Graphics::cModelInstanceAnimations"
+        },
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/track-g-editor-ui-input.json",
+          "line": 386,
+          "symbol": "pose_gap"
+        }
+      ],
+      "confidence": "medium",
+      "notes": "RW4 section existence and structural fields are supported, but the original evaluator, pose memory, and gameplay-read policy are UNKNOWN. RenderWare object layouts must stay behind the asset/renderer boundary."
+    },
+    {
+      "classification": "unknown",
+      "boundary": "Swarm animation state, events, and gameplay coupling",
+      "gameplay_caller": "Swarm/Anim/Math cluster callers and unknown-vtable implementations; no local decomp identifies a gameplay caller",
+      "original_callee": "Swarm, Anim, and Math functions UNKNOWN; Swarm::IVisualEffect structures are present",
+      "parameters": [
+        "swarm identity UNKNOWN",
+        "animation/event payload UNKNOWN"
+      ],
+      "outputs": [
+        "swarm animation or effect output UNKNOWN"
+      ],
+      "state_changed": [
+        "UNKNOWN"
+      ],
+      "structures": [
+        "Spore/Swarm",
+        "Spore/Anim",
+        "Spore/Math",
+        "Swarm::IVisualEffect"
+      ],
+      "lifetime": "UNKNOWN. The cluster is struct-heavy and function-thin, with no characterized owner or callback lifetime.",
+      "failure_semantics": "UNKNOWN. No swarm animation failure, event drop, missing-agent, or state-reset behavior is available.",
+      "timing_order": "UNKNOWN. The cluster inventory exposes no proven event, phase, or per-frame caller order.",
+      "openspore_concept": "Keep Swarm/Anim semantics as an investigation target rather than treating the cluster as gameplay or RenderWare by namespace alone.",
+      "modern_abstraction": "No interface is defined. If later characterized, start with IAnimationWorld/ISwarmPresentation rather than exposing Swarm structures.",
+      "evidence": [
+        {
+          "file": "knowledgegraph/triage/clusters-f0e310e0-v6.json",
+          "line": 614,
+          "symbol": "swarm-anim cluster"
+        },
+        {
+          "file": "docs/analysis/semantic-atlas.md",
+          "line": 67,
+          "symbol": "Subsystem coverage for Anim and Swarm"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/structs.tsv",
+          "line": 769,
+          "symbol": "Anim and Swarm structures"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/structs_fields.tsv",
+          "line": 6102,
+          "symbol": "Swarm::IVisualEffect pairs"
+        }
+      ],
+      "confidence": "low",
+      "notes": "The committed cluster counts 70 functions, including 1 Anim and 2 Swarm functions, while most rows are Math/UNKNOWN. All swarm animation semantics remain UNKNOWN."
+    }
+  ],
+  "unresolved": [
+    {
+      "id": "U-ANIM-01",
+      "status": "UNKNOWN",
+      "question": "What original event or message ID carries eat, flee, damage, death, and animation requests into Simulator::Cell::PlayAnimation?",
+      "evidence": [
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json",
+          "line": 439,
+          "symbol": "transport_boundary"
+        }
+      ]
+    },
+    {
+      "id": "U-ANIM-02",
+      "status": "UNKNOWN",
+      "question": "What exact pose/skeleton upload and transform propagation path connects cCellObjectData.mTransform, mTargetOrientation, AnimatedCreature, IAnimWorld, RenderWare, and draw submission?",
+      "evidence": [
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/track-g-editor-ui-input.json",
+          "line": 386,
+          "symbol": "pose_gap"
+        }
+      ]
+    },
+    {
+      "id": "U-ANIM-03",
+      "status": "UNKNOWN",
+      "question": "What is the original ordering among IAnimWorld::Update, UpdateCreatures, PostUpdateCreatures, Cell gameplay updates, and presentation draw?",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/structs_fields.tsv",
+          "line": 10630,
+          "symbol": "Anim::IAnimWorld vtable"
+        }
+      ]
+    },
+    {
+      "id": "U-ANIM-04",
+      "status": "UNKNOWN",
+      "question": "What are the parameter, state, and failure contracts of Simulator::cCreatureBase::PlayAnimation and PlayAnimationTo without persisted bodies?",
+      "evidence": [
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 26871,
+          "symbol": "cCreatureBase::PlayAnimation triage row"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 26896,
+          "symbol": "cCreatureBase::PlayAnimationTo triage row"
+        }
+      ]
+    },
+    {
+      "id": "U-ANIM-05",
+      "status": "UNKNOWN",
+      "question": "What are the editor animation event IDs, queue priorities, delivery order, completion callbacks, and exact target dispatch rules?",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditorAnimEvent__MessagePost.c",
+          "line": 18,
+          "symbol": "MessagePost packing and IAppSystem call"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditorAnimEvent__MessageSend.c",
+          "line": 18,
+          "symbol": "MessageSend packing and IAppSystem call"
+        }
+      ]
+    },
+    {
+      "id": "U-ANIM-06",
+      "status": "UNKNOWN",
+      "question": "Does vehicle locomotion bind to an animation controller, AnimatedCreature, IAnimWorld, or a distinct vehicle pose representation?",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/structs_fields.tsv",
+          "line": 8288,
+          "symbol": "cVehicle locomotion and transform fields"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/structs_fields.tsv",
+          "line": 5998,
+          "symbol": "Separate AnimatedCreature state"
+        }
+      ]
+    },
+    {
+      "id": "U-ANIM-07",
+      "status": "UNKNOWN",
+      "question": "What are the Swarm animation state machine, event semantics, owner lifetime, and relationship to gameplay?",
+      "evidence": [
+        {
+          "file": "knowledgegraph/triage/clusters-f0e310e0-v6.json",
+          "line": 622,
+          "symbol": "struct-heavy, function-thin swarm-anim note"
+        }
+      ]
+    },
+    {
+      "id": "U-ANIM-08",
+      "status": "UNKNOWN",
+      "question": "What original SimEvent-to-CellAnim-to-stage/renderer/pose path, if any, does the current OpenSpore source omit?",
+      "evidence": [
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/verify-semantic.json",
+          "line": 54,
+          "symbol": "F-001 test-only helper callers"
+        },
+        {
+          "file": "docs/analysis/reconstruction-packages.md",
+          "line": 1224,
+          "symbol": "PKG-17 partial existing contract"
+        }
+      ]
+    },
+    {
+      "id": "U-ANIM-09",
+      "status": "UNKNOWN",
+      "question": "What are the original blend completion, interruption, loop, phase, and transition callback semantics beyond the static blend-time calculation?",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__PlayAnimation.c",
+          "line": 24,
+          "symbol": "static blend and state mutation body"
+        },
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/verify-semantic.json",
+          "line": 78,
+          "symbol": "runtime trace stopping condition"
+        }
+      ]
+    }
+  ]
+}

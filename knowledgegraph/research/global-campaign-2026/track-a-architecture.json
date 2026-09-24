@@ -1,0 +1,994 @@
+{
+  "$schema": "openspore-track-a-architecture-1",
+  "assumptions_to_preserve": [
+    {
+      "assumption": "OpenSpore remains clean-room authored; no proprietary EA source, decompiled source, binary assets, models, textures, sounds, or scripts are copied into the repository.",
+      "classification": ["existing", "infrastructure"],
+      "current_evidence": ["AGENTS.md:1-17", "README.md:7-12", "src/assets/Stream.hpp:1-4"],
+      "original_semantic_correspondence": "SUPPORTED",
+      "confidence": "high",
+      "reason": "This is a legal and repository-wide invariant."
+    },
+    {
+      "assumption": "SPORE and GOG package data are user-owned oracle inputs and remain read-only, ignored, and outside the OpenSpore runtime dependency graph.",
+      "classification": ["infrastructure", "direct_reusable"],
+      "current_evidence": ["AGENTS.md:9-17", "src/apps/asset_view.cpp:97-103", "tools/mcp/asset_tools.py:47-64"],
+      "original_semantic_correspondence": "SUPPORTED",
+      "confidence": "high",
+      "reason": "Runtime and asset tooling can inspect bounded inputs but does not mutate them."
+    },
+    {
+      "assumption": "Current source, tests, and generated reports establish OpenSpore implementation behavior only; original-game semantics require independent evidence.",
+      "classification": ["existing", "infrastructure"],
+      "current_evidence": ["docs/BOUNDARIES.md:9-21", "docs/REPLACEMENT-DIFF.md:7-24", "knowledgegraph/scale.py:1-73"],
+      "original_semantic_correspondence": "SUPPORTED",
+      "confidence": "high",
+      "reason": "The repository separates repository facts from pinned binary, SDK, byte, decompilation, and runtime evidence."
+    },
+    {
+      "assumption": "The canonical evidence scale is UNKNOWN < APPROXIMATION < INFERRED < SUPPORTED < OBSERVED < CONFIRMED < VERIFIED; replacement status is a separate nine-value vocabulary.",
+      "classification": ["infrastructure", "direct_reusable"],
+      "current_evidence": ["knowledgegraph/scale.py:8-46", "docs/replacement-status.json:1-5", "tools/re/dossier.py:32-37"],
+      "original_semantic_correspondence": "SUPPORTED",
+      "confidence": "high",
+      "reason": "The KG, dossier, MCP, and status tooling share the canonical scale."
+    },
+    {
+      "assumption": "Simulation determinism is fixed-step, no-time, no-rand, and same-host/toolchain scoped; libm behavior is not promised across platforms.",
+      "classification": ["existing", "direct_reusable"],
+      "current_evidence": ["src/sim/Sim.hpp:222-284", "src/sim/Sim.cpp:99-260", "docs/CELL-CONTRACT.md:28-36"],
+      "original_semantic_correspondence": "INFERRED",
+      "confidence": "high",
+      "reason": "The contract and replay fixtures pin local behavior, not original runtime timing or numeric values."
+    },
+    {
+      "assumption": "Compatibility boundaries B1/B2/B3 are narrow, substitutable seams and should be extended rather than duplicated.",
+      "classification": ["existing", "direct_reusable"],
+      "current_evidence": ["src/compat/ResourceProvider.hpp:1-92", "src/compat/MeshSource.hpp:1-86", "docs/BOUNDARIES.md:48-120"],
+      "original_semantic_correspondence": "SUPPORTED",
+      "confidence": "high",
+      "reason": "They isolate resource identity, mesh supply, and renderer submission from source-specific implementations."
+    },
+    {
+      "assumption": "Unsupported formats, versions, pointers, and structures fail explicitly instead of being silently accepted.",
+      "classification": ["existing", "direct_reusable"],
+      "current_evidence": ["src/assets/Stream.hpp:13-109", "src/assets/Dbpf.cpp:37-235", "src/assets/Gmdl.cpp:95-271", "src/assets/WorldObject.cpp:23-112"],
+      "original_semantic_correspondence": "SUPPORTED",
+      "confidence": "high",
+      "reason": "Readers are bounds-checked, errors are returned, and full-byte accounting is used where documented."
+    },
+    {
+      "assumption": "Shared display, GPU, Wine, and trace work serializes through the machine lock; write-like runtime operations remain human-gated.",
+      "classification": ["infrastructure"],
+      "current_evidence": ["tools/observatory/lock.py:39-112", "tools/mcp/safety.py:21-75", "tools/mcp/runtime_tools.py:159-216"],
+      "original_semantic_correspondence": "SUPPORTED",
+      "confidence": "high",
+      "reason": "The lock and approval contracts are implemented and tested as fail-closed infrastructure."
+    },
+    {
+      "assumption": "Ghidra, SDK XML, committed snapshots, decompilation captures, and runtime traces are evidence artifacts; they are not original implementation source and must not be copied into runtime code.",
+      "classification": ["infrastructure", "direct_reusable"],
+      "current_evidence": ["tools/ghidra/ImportSporeSDK.java:67-86", "tools/re/dossier.py:132-141", "docs/RECON-3.1.0.22.md:1-23"],
+      "original_semantic_correspondence": "SUPPORTED",
+      "confidence": "high",
+      "reason": "The source tree stores independent interfaces and evidence references, not proprietary source payloads."
+    },
+    {
+      "assumption": "The viewer is a local read-only evidence browser and never becomes a writer, game runtime, or original-semantic oracle.",
+      "classification": ["infrastructure"],
+      "current_evidence": ["tools/viewer/README.md:1-10", "tools/viewer/query.py:104-167", "tools/viewer/server.py:88-157"],
+      "original_semantic_correspondence": "INFERRED",
+      "confidence": "high",
+      "reason": "The API reads SQLite per request and exposes only KG/evidence projections."
+    }
+  ],
+  "confidence_model": {
+    "confidence_levels": [
+      {"level": "high", "meaning": "Directly present in current source, build manifests, tests, or committed artifacts; original claims are separately labeled."},
+      {"level": "medium", "meaning": "Supported by multiple current or evidence artifacts but bounded by an unverified runtime or format path."},
+      {"level": "low", "meaning": "Historical intent, narrow evidence, or unresolved inference; must not drive promotion without new evidence."}
+    ],
+    "current_code_evidence_levels": ["OBSERVED", "SUPPORTED", "INFERRED"],
+    "original_semantic_levels": ["UNKNOWN", "APPROXIMATION", "INFERRED", "SUPPORTED", "OBSERVED", "CONFIRMED", "VERIFIED"],
+    "rule": "Current implementation confidence and original-game semantic confidence are independent fields."
+  },
+  "data_flows": [
+    {
+      "id": "asset_decode",
+      "classification": ["existing", "direct_reusable"],
+      "inputs": ["DBPF v3 package image", "type/group/instance identity", "compressed or uncompressed record bytes", "GMDL or other record bytes"],
+      "steps": ["parseDbpfIndex", "findDbpfEntry", "extractDbpfRecord", "qfsDecompress when flagged", "parseGmdl or other decoder", "validate supported layout"],
+      "outputs": ["record bytes", "GmdlModel", "Rw4", "WorldObject", "typed CellResource values"],
+      "dependencies": ["src/assets/Stream.hpp", "src/assets/Dbpf.hpp", "src/assets/Gmdl.hpp", "src/assets/Rw4.hpp", "src/assets/CellResource.hpp", "src/assets/WorldObject.hpp"],
+      "current_evidence": ["src/assets/Dbpf.cpp:37-235", "src/assets/Gmdl.cpp:95-271", "src/assets/Rw4.cpp:107-220", "src/assets/WorldObject.cpp:23-112", "src/assets/CellResource.cpp:124-1297"],
+      "original_semantic_correspondence": {"level": "SUPPORTED", "scope": "Byte layouts and structural contracts within tested record families; runtime resource orchestration is separate."},
+      "replacement_needed": ["full multi-package ResourceManager", "unsupported GMDL/RW4/CellResource runtime consumers"],
+      "confidence": "high"
+    },
+    {
+      "id": "mesh_and_texture_conversion",
+      "classification": ["existing", "direct_reusable"],
+      "inputs": ["GmdlModel", "Mesh", "raster envelope bytes", "DXT5 mip chain", "IRenderer value types"],
+      "steps": ["meshFromGmdl", "computeMeshBounds", "toRendererMesh or toRendererTexMesh", "parseRasterEnvelope", "decodeRasterMips", "IRenderer::createTexture"],
+      "outputs": ["host Mesh", "RendererMesh", "TexMesh", "ImageRGBA", "device mesh/texture handles"],
+      "dependencies": ["src/assets/Mesh.cpp", "src/assets/Texture.cpp", "src/assets/Dxt5.cpp", "src/renderer/Renderer.hpp", "src/renderer/VulkanRenderer.cpp"],
+      "current_evidence": ["src/assets/Mesh.cpp:49-248", "src/assets/Texture.cpp:26-113", "src/assets/Dxt5.cpp:42-127", "src/renderer/Renderer.hpp:40-87"],
+      "original_semantic_correspondence": {"level": "SUPPORTED", "scope": "Static GMDL v8 and DXT5 path; renderer material/light choices are modern approximations."},
+      "replacement_needed": ["full material/shader system", "animation and non-static model paths"],
+      "confidence": "high"
+    },
+    {
+      "id": "deterministic_cell_simulation",
+      "classification": ["existing", "direct_reusable"],
+      "inputs": ["Entity list", "MovementParams", "MovementPlane", "CameraState", "InputFrame sequence"],
+      "steps": ["optional camera update", "mouse camera-ray to movement-plane target", "keyboard secondary thrust", "flee response", "turn and target velocity", "damping and integration", "eat proximity and alive mutation", "camera follow", "state/event snapshot"],
+      "outputs": ["PlayerState", "per-frame SimEvent list", "entity alive flags", "stateString", "deterministic replay snapshots"],
+      "dependencies": ["src/sim/Sim.hpp", "src/sim/Sim.cpp", "src/sim/CMakeLists.txt", "src/sim/tests/contract_scenarios.hpp"],
+      "current_evidence": ["src/sim/Sim.hpp:136-284", "src/sim/Sim.cpp:99-356", "src/sim/tests/sim_contract_test.cpp:469-545"],
+      "original_semantic_correspondence": {"level": "INFERRED", "scope": "Ray-plane structure is evidence-backed; movement parameters, eat/flee behavior, and camera constants are bounded approximations."},
+      "replacement_needed": ["original manager state transitions", "AI, damage, advect, spawn, pause, and stage integration"],
+      "confidence": "high"
+    },
+    {
+      "id": "static_cell_rule_reconstruction",
+      "classification": ["existing", "direct_reusable"],
+      "inputs": ["CellResourceSpec", "cell scale table", "pool capacity", "CellQueryEntry", "AdvectEntry", "combat constants"],
+      "steps": ["CellGame::initialize", "CreateCellObject writes", "cObjectPool free-list allocation", "surface-reaching query", "advect bucket lookup", "combat table selection"],
+      "outputs": ["CellGame state", "pool indices", "cell object fields", "query candidates", "advect metadata", "combat decisions"],
+      "dependencies": ["src/sim/CellGame.hpp", "src/sim/CellGame.cpp", "src/sim/CellPool.hpp", "src/sim/CellQuery.hpp", "src/sim/Advect.hpp", "src/sim/Combat.hpp"],
+      "current_evidence": ["src/sim/CellGame.cpp:22-152", "src/sim/CellPool.hpp:66-162", "src/sim/CellQuery.hpp:1-84", "src/sim/Advect.hpp:29-106", "src/sim/Combat.hpp:14-128"],
+      "original_semantic_correspondence": {"level": "SUPPORTED", "scope": "Selected decompilation-derived fields and predicates; not a complete original state machine."},
+      "replacement_needed": ["wire components into the live CellSim loop", "runtime manager singletons and side effects"],
+      "confidence": "high"
+    },
+    {
+      "id": "cell_stage_composition",
+      "classification": ["existing", "prototype"],
+      "inputs": ["scene.json", "Spore_Content.package", "optional background package", "decoded meshes/textures", "CellSim state", "VulkanRenderer"],
+      "steps": ["loadSceneConfig", "load records", "decode meshes and backdrop", "build baked view/projection", "update simulation or fixed state", "upload/draw meshes", "read back or present", "emit manifest", "apply minimal HUD overlay"],
+      "outputs": ["cell_stage.ppm", "CELLSTAGE-MANIFEST v1", "CELLSTAGE-SIMMANIFEST v1", "interactive swapchain frames", "HUD rollover state"],
+      "dependencies": ["src/apps/cell_stage.cpp", "src/apps/SceneConfig.cpp", "src/apps/CellGfx.cpp", "src/apps/CellUI.cpp", "src/apps/CellInput.cpp", "src/apps/CellModeStrategy.cpp", "src/apps/CellAnim.cpp", "src/assets", "src/renderer", "src/sim"],
+      "current_evidence": ["src/apps/cell_stage.cpp:122-189", "src/apps/cell_stage.cpp:451-642", "src/apps/cell_stage.cpp:653-720", "src/apps/cell_stage.cpp:722-1435", "src/CMakeLists.txt:88-178"],
+      "original_semantic_correspondence": {"level": "APPROXIMATION", "scope": "Real record-backed vertical slice; original placement, role identity, app lifecycle, HUD, and material rendering are not fully reproduced."},
+      "replacement_needed": ["procedural world/populate placement", "original Cell mode manager and stage transitions", "original material/lighting and animation state"],
+      "confidence": "high"
+    },
+    {
+      "id": "replacement_differential",
+      "classification": ["existing", "direct_reusable", "prototype"],
+      "inputs": ["SCellGameView stand-in", "SPlayerView stand-in", "CameraView", "MovementPlane", "deterministic cases"],
+      "steps": ["initialize POD views", "apply lock/null/parallel/behind guards", "intersect camera ray and plane", "write target and moving flag", "compute travel orientation", "compare replacement and decompilation reference field by field"],
+      "outputs": ["8 cases x 8 fields", "64/64 decompilation-reference match", "replaced-approx status"],
+      "dependencies": ["src/replace/CellGameView.hpp", "src/replace/Replace.cpp", "src/replace/Reference.cpp", "src/replace/tests/diff_test.cpp", "src/sim/Sim.hpp"],
+      "current_evidence": ["src/replace/CellGameView.hpp:20-62", "src/replace/Replace.cpp:25-68", "src/replace/Reference.cpp:41-94", "src/replace/tests/diff_test.cpp:101-234", "docs/REPLACEMENT-DIFF.md:105-120"],
+      "original_semantic_correspondence": {"level": "SUPPORTED", "scope": "Bounded target behavior against a decompilation-derived reference; no live original oracle."},
+      "replacement_needed": ["real 32-bit pool lookup in installed replacement", "cell-mode runtime trace", "runtime field verification"],
+      "confidence": "high"
+    },
+    {
+      "id": "reverse_engineering_evidence",
+      "classification": ["infrastructure", "direct_reusable"],
+      "inputs": ["Ghidra program", "SDK XML", "vtable/export artifacts", "probe definitions", "optional Wine target", "committed snapshots", "optional runtime traces"],
+      "steps": ["headless SDK import", "vtable candidate scan", "xref export", "decompilation capture", "dossier generation", "ptrace observation", "trace analysis", "triage projection"],
+      "outputs": ["SDK-named functions", "structures", "vtable candidates", "xref TSV", "dossiers", "JSONL traces", "readiness and debt artifacts"],
+      "dependencies": ["tools/ghidra", "tools/re", "tools/observatory", "tools/triage", "tools/recon_worker", "knowledgegraph"],
+      "current_evidence": ["tools/ghidra/ImportSporeSDK.java:67-86", "tools/ghidra/VtableDetect.java:84-185", "tools/ghidra/ExportXrefs.java:67-260", "tools/re/dossier.py:264-397", "tools/observatory/probe_tracer.cpp:159-477"],
+      "original_semantic_correspondence": {"level": "SUPPORTED", "scope": "Evidence acquisition and organization; no evidence source is automatically original truth."},
+      "replacement_needed": ["fresh runtime evidence for unresolved systems", "more decompilation and vtable resolution"],
+      "confidence": "high"
+    },
+    {
+      "id": "mcp_orchestration",
+      "classification": ["existing", "infrastructure", "direct_reusable"],
+      "inputs": ["newline-delimited JSON-RPC", "tool arguments", "KG DB", "Ghidra REST", "asset resolver", "observatory", "ctest"],
+      "steps": ["initialize/list/call", "registry dispatch", "schema/domain validation", "safety gate", "SQLite, REST, or subprocess facade", "structured envelope", "provenance and evidence labeling"],
+      "outputs": ["uniform success/error envelopes", "live/cache/snapshot/offline modes", "queue records", "approval_required/machine_locked/no_spo responses"],
+      "dependencies": ["tools/mcp/server.py", "tools/mcp/registry.py", "tools/mcp/kg_tools.py", "tools/mcp/ghidra_tools.py", "tools/mcp/asset_tools.py", "tools/mcp/runtime_tools.py", "tools/mcp/safety.py"],
+      "current_evidence": ["tools/mcp/server.py:70-257", "tools/mcp/registry.py:97-391", "tools/mcp/safety.py:21-75", "tools/mcp/runtime_tools.py:129-216", "opencode.json:31-38"],
+      "original_semantic_correspondence": {"level": "INFERRED", "scope": "Agent-facing workflow infrastructure; it does not implement original game behavior."},
+      "replacement_needed": ["none for Track A infrastructure; evidence promotion remains gated by provenance"],
+      "confidence": "high"
+    },
+    {
+      "id": "read_only_kg_view",
+      "classification": ["existing", "infrastructure", "direct_reusable"],
+      "inputs": ["SQLite DB", "committed KG and analysis artifacts", "loopback HTTP requests"],
+      "steps": ["validate loopback bind", "open SQLite read-only per request", "probe schema", "run bounded query", "return JSON/degraded envelope", "serve static HTML/JS/CSS"],
+      "outputs": ["summary/evidence/label/investigation views", "node and investigation details", "degraded envelopes", "static dashboard"],
+      "dependencies": ["tools/viewer/server.py", "tools/viewer/query.py", "tools/viewer/static/index.html", "tools/viewer/static/viewer.js", "tools/viewer/static/viewer.css", "knowledgegraph/schema.sql"],
+      "current_evidence": ["tools/viewer/server.py:31-216", "tools/viewer/query.py:47-329", "tools/viewer/README.md:1-75", "tests/viewer/test_server.py:48-226"],
+      "original_semantic_correspondence": {"level": "INFERRED", "scope": "Evidence visualization only."},
+      "replacement_needed": ["none for the viewer; future additions must preserve read-only behavior"],
+      "confidence": "high"
+    },
+    {
+      "id": "runtime_observatory",
+      "classification": ["existing", "infrastructure", "prototype"],
+      "inputs": ["probe JSON", "32-bit target or Wine game", "machine lock", "display and runtime availability"],
+      "steps": ["approval/trust gate", "lock acquisition", "fork/exec and attach", "module discovery", "INT3 planting", "bounded event loop", "JSONL output", "trace analysis", "cleanup"],
+      "outputs": ["JSONL register snapshots", "per-function timing summaries", "synthetic m32 evidence", "negative or blocked runtime observations"],
+      "dependencies": ["tools/observatory/probe_tracer.cpp", "tools/observatory/observe.py", "tools/observatory/analyze.py", "tools/observatory/lock.py", "tools/observatory/menu_walk.sh", "tools/observatory/cell_trace.sh", "tools/observatory/agent_overlay.py"],
+      "current_evidence": ["tools/observatory/probe_tracer.cpp:376-477", "tools/observatory/observe.py:13-90", "tools/observatory/analyze.py:43-140", "tools/observatory/README.md:20-176"],
+      "original_semantic_correspondence": {"level": "SUPPORTED", "scope": "Runtime-evidence mechanics; no successful Cell-mode trace is recorded."},
+      "replacement_needed": ["Wine boot-stability diagnostic", "approved Cell trace", "runtime field and event observations"],
+      "confidence": "high"
+    }
+  ],
+  "dependency_observations": [
+    {
+      "from": "SPORE plus pinned Ghidra/SDK evidence",
+      "to": "tools/ghidra, tools/re, tools/triage, tools/observatory",
+      "direction": "one-way read-only evidence input",
+      "confidence": "high",
+      "evidence": ["AGENTS.md:9-17", "docs/RECON-3.1.0.22.md:18-32"]
+    },
+    {
+      "from": "tools/spore and committed fixtures",
+      "to": "src/assets and asset tests",
+      "direction": "test and oracle dependency",
+      "confidence": "high",
+      "evidence": ["tests/test_formats.py:38-41", "tests/test_rw4.py:1-51", "src/assets/CMakeLists.txt:15-165"]
+    },
+    {
+      "from": "src/sim",
+      "to": "standard C++ only",
+      "direction": "pure lower-level simulation",
+      "confidence": "high",
+      "evidence": ["src/sim/CMakeLists.txt:1-90", "src/sim/Sim.cpp:10-356"]
+    },
+    {
+      "from": "src/assets",
+      "to": "src/renderer value types",
+      "direction": "asset-to-render conversion",
+      "confidence": "high",
+      "evidence": ["src/assets/Mesh.hpp:13-15", "src/assets/Mesh.cpp:181-248"]
+    },
+    {
+      "from": "src/compat",
+      "to": "src/assets and src/renderer",
+      "direction": "boundary adapters",
+      "confidence": "high",
+      "evidence": ["src/compat/ResourceProvider.hpp:17-90", "src/compat/MeshSource.hpp:17-80"]
+    },
+    {
+      "from": "src/renderer",
+      "to": "Vulkan, GLSL, SPIR-V, optional SDL3",
+      "direction": "presentation infrastructure",
+      "confidence": "high",
+      "evidence": ["CMakeLists.txt:11-25", "src/CMakeLists.txt:1-52", "src/renderer/VulkanRenderer.hpp:15-70"]
+    },
+    {
+      "from": "src/apps",
+      "to": "src/assets, src/sim, src/renderer, and app components",
+      "direction": "composition and executable entrypoint",
+      "confidence": "high",
+      "evidence": ["src/CMakeLists.txt:94-110", "src/apps/cell_stage.cpp:451-1435"]
+    },
+    {
+      "from": "src/replace",
+      "to": "src/sim and standalone POD views",
+      "direction": "narrow replacement target",
+      "confidence": "high",
+      "evidence": ["src/replace/CMakeLists.txt:1-16", "src/replace/Replace.hpp:39-82"]
+    },
+    {
+      "from": "tools/mcp",
+      "to": "KG, Ghidra, asset tools, observatory, ctest",
+      "direction": "process facade and orchestration",
+      "confidence": "high",
+      "evidence": ["tools/mcp/registry.py:315-347", "tools/mcp/runtime_tools.py:662-930", "opencode.json:31-38"]
+    },
+    {
+      "from": "tools/viewer",
+      "to": "KG and committed analysis artifacts",
+      "direction": "parallel read-only reader",
+      "confidence": "high",
+      "evidence": ["tools/viewer/server.py:88-157", "tools/viewer/query.py:150-167"]
+    },
+    {
+      "from": "tools/observatory",
+      "to": "ptrace, /proc, X11 helpers, Wine, and probe definitions",
+      "direction": "bounded runtime evidence acquisition",
+      "confidence": "high",
+      "evidence": ["tools/observatory/README.md:20-61", "tools/observatory/probe_tracer.cpp:376-477"]
+    },
+    {
+      "from": "knowledgegraph",
+      "to": "MCP, viewer, dossier generation, triage, seed, and tests",
+      "direction": "shared cross-tool memory",
+      "confidence": "high",
+      "evidence": ["knowledgegraph/schema.sql:1-172", "knowledgegraph/kg.py:317-420", "tools/mcp/kg_tools.py:802-863"]
+    }
+  ],
+  "direct_reusable": [
+    {
+      "piece": "Bounds-checked Reader",
+      "classification": ["existing", "direct_reusable"],
+      "location": "src/assets/Stream.hpp:13-109",
+      "reuse": "Common little-endian cursor with big-endian exception, float reads, skip, and borrowed views.",
+      "boundary": "Low-level byte access only; format-specific interpretation remains in callers.",
+      "original_semantic_correspondence": "SUPPORTED",
+      "confidence": "high"
+    },
+    {
+      "piece": "DBPF v3 and QFS reader",
+      "classification": ["existing", "direct_reusable"],
+      "location": "src/assets/Dbpf.hpp:28-47; src/assets/Dbpf.cpp:37-235",
+      "reuse": "Record identity lookup, bounds-checked extraction, compressed and uncompressed record access.",
+      "boundary": "One borrowed package image per provider; not the original multi-package manager.",
+      "original_semantic_correspondence": "SUPPORTED",
+      "confidence": "high"
+    },
+    {
+      "piece": "GMDL v8 static walker and mesh conversion",
+      "classification": ["existing", "direct_reusable"],
+      "location": "src/assets/Gmdl.hpp:1-83; src/assets/Gmdl.cpp:95-271; src/assets/Mesh.cpp:49-248",
+      "reuse": "Versioned model walk, BE refCount handling, static mesh extraction, bounds, renderer conversion.",
+      "boundary": "v8, static, stream 0, triangle list, u16 indices only.",
+      "original_semantic_correspondence": "SUPPORTED",
+      "confidence": "high"
+    },
+    {
+      "piece": "RW4 structural walker",
+      "classification": ["existing", "direct_reusable"],
+      "location": "src/assets/Rw4.hpp:31-88; src/assets/Rw4.cpp:66-220",
+      "reuse": "Magic/header/manifest/type/section validation, adjusted BaseResource pointers, canonical descriptions.",
+      "boundary": "Structural validation only; no complete section payload, animation, skeleton, or material execution.",
+      "original_semantic_correspondence": "SUPPORTED",
+      "confidence": "high"
+    },
+    {
+      "piece": "DXT5 and raster envelope decoders",
+      "classification": ["existing", "direct_reusable"],
+      "location": "src/assets/Texture.hpp:19-49; src/assets/Texture.cpp:26-113; src/assets/Dxt5.cpp:42-127",
+      "reuse": "Independent mip sizing, DXT5 decode, RGBA8 output, texture upload input.",
+      "boundary": "Verified DXT5 envelope only; unsupported FourCCs fail explicitly.",
+      "original_semantic_correspondence": "SUPPORTED",
+      "confidence": "high"
+    },
+    {
+      "piece": "Cell resource value objects and parsers",
+      "classification": ["existing", "direct_reusable"],
+      "location": "src/assets/CellResource.hpp:32-500; src/assets/CellResource.cpp:1-1297",
+      "reuse": "Typed globals, cell, world, advect, effect/background, random creature, powers, look, loot, structure, and populate records with domain checks.",
+      "boundary": "Decoding and validation are reusable; original runtime consumption is incomplete.",
+      "original_semantic_correspondence": "SUPPORTED",
+      "confidence": "high"
+    },
+    {
+      "piece": "WorldObject structural walker",
+      "classification": ["existing", "direct_reusable"],
+      "location": "src/assets/WorldObject.hpp:31-71; src/assets/WorldObject.cpp:23-112",
+      "reuse": "Version/magic validation, lowercase part names, plausible vectors, full-byte accounting.",
+      "boundary": "Field order and placement semantics are not derived; not a scene executor.",
+      "original_semantic_correspondence": "SUPPORTED",
+      "confidence": "medium"
+    },
+    {
+      "piece": "Compatibility seams B1/B2/B3",
+      "classification": ["existing", "direct_reusable"],
+      "location": "src/compat/ResourceProvider.hpp:21-90; src/compat/MeshSource.hpp:24-80; src/renderer/Renderer.hpp:53-87",
+      "reuse": "Provider-independent record access, model fetch, renderer submission, DBPF and memory producers.",
+      "boundary": "Narrow host-side seams; they do not reproduce original managers or APIs.",
+      "original_semantic_correspondence": "SUPPORTED",
+      "confidence": "high"
+    },
+    {
+      "piece": "Deterministic CellSim and scripted input",
+      "classification": ["existing", "direct_reusable"],
+      "location": "src/sim/Sim.hpp:222-284; src/sim/Sim.cpp:99-356",
+      "reuse": "Fixed-step contract, camera-ray intersection, input replay, event log, state dump.",
+      "boundary": "Original runtime state, AI, damage, and resource-driven behavior are outside this core.",
+      "original_semantic_correspondence": "INFERRED",
+      "confidence": "high"
+    },
+    {
+      "piece": "Static Cell state and rule components",
+      "classification": ["existing", "direct_reusable"],
+      "location": "src/sim/CellGame.cpp:22-152; src/sim/CellPool.hpp:66-162; src/sim/CellQuery.hpp:27-82; src/sim/Advect.hpp:29-106; src/sim/Combat.hpp:14-128",
+      "reuse": "Typed initialization, free-list pool, surface-reaching query, advect lookup, combat tables.",
+      "boundary": "Pure selected-function components; not a wired original gameplay loop.",
+      "original_semantic_correspondence": "SUPPORTED",
+      "confidence": "high"
+    },
+    {
+      "piece": "Vulkan renderer and IRenderer",
+      "classification": ["existing", "direct_reusable", "infrastructure"],
+      "location": "src/renderer/Renderer.hpp:46-87; src/renderer/VulkanRenderer.hpp:15-70; src/renderer/VulkanRenderer.cpp:230-383",
+      "reuse": "Offscreen flat/textured rendering, readback, and optional swapchain presentation.",
+      "boundary": "Modern fixed-function approximation; no original material cache, D3D bytecode, or full RenderWare state model.",
+      "original_semantic_correspondence": "SUPPORTED",
+      "confidence": "high"
+    },
+    {
+      "piece": "Cell mode, GFX, UI, input, and animation shell",
+      "classification": ["existing", "direct_reusable", "prototype"],
+      "location": "src/apps/IGameMode.hpp:28-52; src/apps/CellModeStrategy.cpp:7-91; src/apps/CellGfx.cpp:5-44; src/apps/CellUI.cpp:5-25; src/apps/CellInput.cpp:5-95; src/apps/CellAnim.cpp:7-83",
+      "reuse": "Lifecycle manager, world/preload table, input mapping, HUD rollover formula, blend/effect state.",
+      "boundary": "Records and switches state; it is not the original application system or full Cell runtime.",
+      "original_semantic_correspondence": "SUPPORTED",
+      "confidence": "high"
+    },
+    {
+      "piece": "Replacement POD views and function pair",
+      "classification": ["existing", "direct_reusable", "prototype"],
+      "location": "src/replace/CellGameView.hpp:20-62; src/replace/Replace.cpp:25-68; src/replace/Reference.cpp:41-94",
+      "reuse": "Per-target replacement workflow, offset assertions, deterministic behavior comparison.",
+      "boundary": "Installed replacement still needs real 32-bit pool lookup and runtime verification.",
+      "original_semantic_correspondence": "SUPPORTED",
+      "confidence": "high"
+    },
+    {
+      "piece": "Python format oracles and asset resolver",
+      "classification": ["existing", "direct_reusable", "infrastructure"],
+      "location": "tools/spore/README.md:17-87; tools/spore/dbpf/dbpf.py; tools/spore/rw4/rw4.py; tools/spore/gmdl/gmdl.py; tools/spore/raster/raster.py; tools/spore/dxt5/dxt5.py; tools/spore/asset_resolver.py:1-225",
+      "reuse": "Independent semantic parsing, package inspection, type/group resolution, and cross-language C++ validation.",
+      "boundary": "Research/oracle tools; they are not linked runtime dependencies.",
+      "original_semantic_correspondence": "SUPPORTED",
+      "confidence": "high"
+    },
+    {
+      "piece": "MCP, observatory, KG, and viewer infrastructure",
+      "classification": ["existing", "direct_reusable", "infrastructure"],
+      "location": "tools/mcp/server.py:70-257; tools/mcp/registry.py:97-391; tools/observatory/probe_tracer.cpp:376-477; tools/viewer/server.py:31-216; knowledgegraph/schema.sql:1-172",
+      "reuse": "Agent facade, bounded runtime evidence, cross-tool memory, and read-only inspection.",
+      "boundary": "Workflow infrastructure; must retain read-only, approval, and lock boundaries.",
+      "original_semantic_correspondence": "INFERRED",
+      "confidence": "high"
+    }
+  ],
+  "existing_components": [
+    {
+      "area": "sim",
+      "classification": ["existing", "direct_reusable", "prototype"],
+      "components": ["CellSim", "ScriptedInputSource", "CellGame", "cObjectPool", "CellQuery", "Advect", "Combat", "contract scenarios"],
+      "entry_points": ["CellSim::update", "ScriptedInputSource", "CellGame::initialize", "cObjectPool::initialize/allocate", "CellQuery::queryNear", "Advect lookup", "Combat helpers"],
+      "current_evidence": ["src/sim/CMakeLists.txt:1-90", "src/sim/Sim.cpp:99-356", "src/sim/CellGame.cpp:22-152"],
+      "original_semantic_correspondence": {"level": "INFERRED", "scope": "Simulation structure and selected fields are evidence-backed; live Cell runtime is not present."},
+      "replacement_needed": ["live Cell manager and state integration", "runtime-verified parameters"],
+      "test_evidence": ["src/sim/tests/sim_test.cpp", "src/sim/tests/sim_contract_test.cpp", "src/sim/tests/cellgame_test.cpp", "src/sim/tests/cellpool_test.cpp", "src/sim/tests/createcell_test.cpp", "src/sim/tests/cellquery_test.cpp", "src/sim/tests/advect_test.cpp", "src/sim/tests/combat_test.cpp", "src/sim/tests/plane_constants_test.cpp"],
+      "confidence": "high"
+    },
+    {
+      "area": "assets",
+      "classification": ["existing", "direct_reusable"],
+      "components": ["Stream Reader", "DBPF/QFS", "GMDL", "Mesh", "DXT5", "Texture", "RW4", "WorldObject", "CellResource"],
+      "entry_points": ["parseDbpfIndex", "extractDbpfRecord", "parseGmdl", "meshFromGmdl", "decodeDxt5Mip", "decodeRasterMips", "parseRw4", "parseWorldObject", "CellResource parse functions"],
+      "current_evidence": ["src/assets/CMakeLists.txt:1-165", "src/assets/Dbpf.cpp:37-235", "src/assets/Gmdl.cpp:95-271", "src/assets/Texture.cpp:26-113", "src/assets/Rw4.cpp:107-220", "src/assets/WorldObject.cpp:23-112"],
+      "original_semantic_correspondence": {"level": "SUPPORTED", "scope": "Narrow decoders have real-byte and Python-oracle support; unsupported families are explicit."},
+      "replacement_needed": ["GMDL v9/32-bit/non-static families", "complete RW4 payload/animation/material execution", "full resource manager"],
+      "test_evidence": ["src/assets/tests/assets_test.cpp", "src/assets/tests/real_asset_test.cpp", "src/assets/tests/cell_*_test.cpp", "src/assets/tests/worldobj_test.cpp", "src/assets/tests/rw4_test.cpp", "tests/test_formats.py", "tests/test_rw4.py", "tests/test_textures.py", "tests/test_asset_resolver.py"],
+      "confidence": "high"
+    },
+    {
+      "area": "compat",
+      "classification": ["existing", "direct_reusable", "infrastructure"],
+      "components": ["IResourceProvider", "DbpfResourceProvider", "MemoryResourceProvider", "IMeshSource", "GmdlMeshSource", "fetchGmdlModel", "submitMeshSource"],
+      "entry_points": ["IResourceProvider::fetch", "fetchGmdlModel", "submitMeshSource"],
+      "current_evidence": ["src/compat/ResourceProvider.hpp:21-90", "src/compat/MeshSource.hpp:24-80"],
+      "original_semantic_correspondence": {"level": "SUPPORTED", "scope": "Host-side compatibility architecture, not original implementation."},
+      "replacement_needed": ["resource-manager orchestration and original load order"],
+      "test_evidence": ["src/assets/tests/assets_test.cpp:295-322", "docs/BOUNDARIES.md:48-120"],
+      "confidence": "high"
+    },
+    {
+      "area": "renderer",
+      "classification": ["existing", "direct_reusable", "infrastructure"],
+      "components": ["IRenderer", "VulkanRenderer", "flat pipeline", "lit textured pipeline", "SPIR-V embedding", "offscreen readback", "WSI present"],
+      "entry_points": ["IRenderer::init", "VulkanRenderer::init", "createMesh/createTexMesh", "beginFrame/drawMesh/drawTextured/endFrame", "initPresent/resizePresent"],
+      "current_evidence": ["src/renderer/Renderer.hpp:53-87", "src/renderer/VulkanRenderer.hpp:15-70", "src/renderer/VulkanRenderer.cpp:69-110", "src/CMakeLists.txt:1-52"],
+      "original_semantic_correspondence": {"level": "SUPPORTED", "scope": "Renderer lifecycle and draw concepts are modern replacements; fixed-function materials are approximations."},
+      "replacement_needed": ["original RenderWare/D3D material and animation behavior", "pixel oracle"],
+      "test_evidence": ["src/apps/triangle.cpp", "src/apps/asset_view.cpp", "src/apps/material_smoke.cpp", "tests/test_cellstage.py", "tests/test_textures.py"],
+      "confidence": "high"
+    },
+    {
+      "area": "replace",
+      "classification": ["existing", "direct_reusable", "prototype"],
+      "components": ["CellGameView", "Replace", "Reference", "diff_test", "synthetic inline hook"],
+      "entry_points": ["replacement_MovePlayerToMousePosition", "reference_MovePlayerToMousePosition", "replace_diff_test", "synthetic/test_hook.py"],
+      "current_evidence": ["src/replace/CMakeLists.txt:1-16", "src/replace/Replace.cpp:25-68", "src/replace/Reference.cpp:41-94", "tools/replace/synthetic/test_hook.py:60-85"],
+      "original_semantic_correspondence": {"level": "SUPPORTED", "scope": "Differential is against decompilation reference, not the live original."},
+      "replacement_needed": ["real pool lookup and runtime trace", "installed SporeApp replacement"],
+      "test_evidence": ["src/replace/tests/diff_test.cpp:101-234", "tools/replace/synthetic/test_hook.py:60-85"],
+      "confidence": "high"
+    },
+    {
+      "area": "apps",
+      "classification": ["existing", "direct_reusable", "prototype"],
+      "components": ["CellModeStrategy", "GameModeManager", "CellGfx", "CellUI", "CellInput", "CellAnim", "SceneConfig", "cell_stage", "triangle", "asset_view", "material_smoke"],
+      "entry_points": ["cell_stage main", "runFixedFrame", "run scripted simulation", "runInteractive", "SceneConfig loader", "triangle main", "asset_view main", "material_smoke main"],
+      "current_evidence": ["src/apps/cell_stage.cpp:122-189", "src/apps/cell_stage.cpp:451-1435", "src/apps/CellModeStrategy.cpp:7-91", "src/CMakeLists.txt:59-178"],
+      "original_semantic_correspondence": {"level": "APPROXIMATION", "scope": "Playable Cell slice and modern app composition, not original bootstrap or game loop."},
+      "replacement_needed": ["full application bootstrap, UTFWin, non-Cell modes, original resource and UI systems"],
+      "test_evidence": ["src/apps/cellgfx_test.cpp", "src/apps/cellui_test.cpp", "src/apps/cellmode_test.cpp", "src/apps/cellinput_test.cpp", "src/apps/cellanim_test.cpp", "src/apps/scene_config_test.cpp", "tests/test_cellstage.py", "tests/test_sim.py"],
+      "confidence": "high"
+    },
+    {
+      "area": "mcp",
+      "classification": ["existing", "infrastructure"],
+      "components": ["JSON-RPC stdio server", "21-tool registry", "KG/queue facade", "Ghidra facade", "asset tools", "runtime/validation tools", "cache", "safety", "provenance"],
+      "entry_points": ["python3 tools/mcp/server.py", "tools/mcp/registry.py:dispatch", "tools/mcp/server.py:Server.run"],
+      "current_evidence": ["tools/mcp/server.py:38-257", "tools/mcp/registry.py:97-391", "opencode.json:31-38"],
+      "original_semantic_correspondence": {"level": "INFERRED", "scope": "Agent workflow and evidence automation only."},
+      "replacement_needed": ["none for infrastructure; evidence promotion requires new evidence"],
+      "test_evidence": ["tests/mcp/test_core.py", "tests/mcp/test_contract.py", "tests/mcp/test_ghidra.py", "tests/mcp/test_assets_runtime.py", "tests/mcp/test_server.py", "tests/mcp/test_wire_contract.py", "tests/mcp/test_protocol_errors.py", "tests/mcp/test_kg.py"],
+      "confidence": "high"
+    },
+    {
+      "area": "viewer",
+      "classification": ["existing", "infrastructure"],
+      "components": ["loopback HTTP server", "read-only query layer", "static HTML/JS/CSS"],
+      "entry_points": ["python3 tools/viewer/server.py", "tools/viewer/query.py CLI", "GET /api/*"],
+      "current_evidence": ["tools/viewer/server.py:31-216", "tools/viewer/query.py:47-329", "tools/viewer/README.md:1-75"],
+      "original_semantic_correspondence": {"level": "INFERRED", "scope": "KG/evidence browser only."},
+      "replacement_needed": ["none; preserve read-only contract"],
+      "test_evidence": ["tests/viewer/test_server.py:48-226"],
+      "confidence": "high"
+    },
+    {
+      "area": "observatory",
+      "classification": ["existing", "infrastructure", "prototype"],
+      "components": ["probe_tracer", "observe.py", "analyze.py", "lock.py", "machine_lock.sh", "menu_walk.sh", "cell_trace.sh", "agent_overlay.py", "probe sets"],
+      "entry_points": ["make -C tools/observatory", "python3 tools/observatory/observe.py", "tools/observatory/menu_walk.sh", "tools/observatory/cell_trace.sh"],
+      "current_evidence": ["tools/observatory/probe_tracer.cpp:376-477", "tools/observatory/observe.py:13-90", "tools/observatory/README.md:20-176"],
+      "original_semantic_correspondence": {"level": "SUPPORTED", "scope": "Evidence mechanics and negative runtime observations; no successful Cell trace."},
+      "replacement_needed": ["Wine boot diagnostic", "approved Cell trace", "runtime field/event capture"],
+      "test_evidence": ["tests/test_lock.py", "tests/test_observe_lock.py", "tests/test_menu_walk.py", "tests/test_cell_trace.py", "tests/test_agent_overlay.py", "tools/observatory/test/probes_m32.json"],
+      "confidence": "high"
+    },
+    {
+      "area": "knowledge_graph_and_triage",
+      "classification": ["existing", "infrastructure", "direct_reusable"],
+      "components": ["SQLite schema", "kg.py CLI", "scale.py", "seed.py", "seed-literals.json", "kg_ingest.py", "triage classifiers", "debt map", "readiness projections"],
+      "entry_points": ["knowledgegraph/kg.py", "knowledgegraph/seed.py", "tools/kg_ingest.py", "tools/triage/classify.py", "tools/triage/debt_map.py", "tools/triage/export_xrefs.py"],
+      "current_evidence": ["knowledgegraph/schema.sql:1-172", "knowledgegraph/kg.py:317-420", "knowledgegraph/seed.py:178-444", "tools/kg_ingest.py:75-175", "tools/triage/classify.py:418-879"],
+      "original_semantic_correspondence": {"level": "INFERRED", "scope": "Cross-tool evidence memory and projections, not game semantics."},
+      "replacement_needed": ["v5/triage projection ingest and fresh runtime/function evidence when approved"],
+      "test_evidence": ["tests/test_kg_schema.py", "tests/test_kg_scale.py", "tests/test_kg_seed.py", "tests/mcp/test_kg.py"],
+      "confidence": "high"
+    },
+    {
+      "area": "spore_oracles",
+      "classification": ["existing", "direct_reusable", "infrastructure"],
+      "components": ["Python DBPF/QFS", "RW4", "GMDL", "raster", "DXT5", "CellResource oracles", "WorldObject oracle", "manifest", "asset_resolver", "type/group maps"],
+      "entry_points": ["tools/spore/manifest/manifest.py", "tools/spore/asset_resolver.py", "tools/spore/dbpf/dbpf.py", "tools/spore/rw4/rw4.py", "tools/spore/gmdl/gmdl.py", "tools/spore/raster/raster.py", "tools/spore/dxt5/dxt5.py"],
+      "current_evidence": ["tools/spore/README.md:17-87", "tools/spore/asset_resolver.py:1-225", "tests/test_formats.py:1-263", "tests/test_asset_resolver.py:1-107"],
+      "original_semantic_correspondence": {"level": "SUPPORTED", "scope": "Independent byte/semantic oracles for tested records."},
+      "replacement_needed": ["additional record families and runtime consumption"],
+      "test_evidence": ["tests/test_formats.py", "tests/test_rw4.py", "tests/test_textures.py", "tests/test_asset_resolver.py", "tests/diff_real.py"],
+      "confidence": "high"
+    }
+  ],
+  "infrastructure": [
+    {
+      "area": "build_and_quality",
+      "classification": ["infrastructure"],
+      "responsibilities": ["C++17 build", "Vulkan and shader generation", "optional SDL3", "warning-as-error compile policy", "CTest registration", "Python stdlib test discovery"],
+      "dependencies": ["CMakeLists.txt:1-38", "src/CMakeLists.txt:1-182", "src/assets/CMakeLists.txt:1-165", "src/sim/CMakeLists.txt:1-90", "src/replace/CMakeLists.txt:1-16"],
+      "current_evidence": ["CMakeLists.txt:8-38", "src/CMakeLists.txt:1-52"],
+      "confidence": "high"
+    },
+    {
+      "area": "knowledge_graph",
+      "classification": ["infrastructure", "direct_reusable"],
+      "responsibilities": ["versioned SQLite schema", "evidence level validation", "node/edge/test/field/trace/investigation/triage/xref storage", "idempotent migration and seed"],
+      "dependencies": ["knowledgegraph/schema.sql", "knowledgegraph/kg.py", "knowledgegraph/seed.py", "knowledgegraph/scale.py"],
+      "current_evidence": ["knowledgegraph/schema.sql:1-172", "knowledgegraph/kg.py:32-215", "knowledgegraph/seed.py:60-200"],
+      "confidence": "high"
+    },
+    {
+      "area": "mcp",
+      "classification": ["infrastructure", "direct_reusable"],
+      "responsibilities": ["single-connection stdio JSON-RPC", "21 stable tool schemas", "domain error envelopes", "Ghidra live/cache/snapshot/offline modes", "approval and path confinement", "queue and KG operations"],
+      "dependencies": ["tools/mcp/server.py", "tools/mcp/registry.py", "tools/mcp/ghidra_client.py", "tools/mcp/ghidra_tools.py", "tools/mcp/kg_tools.py", "tools/mcp/asset_tools.py", "tools/mcp/runtime_tools.py", "tools/mcp/cache.py", "tools/mcp/safety.py"],
+      "current_evidence": ["tools/mcp/registry.py:97-391", "tools/mcp/server.py:70-257", "tools/mcp/safety.py:21-75"],
+      "confidence": "high"
+    },
+    {
+      "area": "runtime_evidence",
+      "classification": ["infrastructure", "direct_reusable"],
+      "responsibilities": ["bounded ptrace INT3 capture", "module discovery", "JSONL traces", "offline analysis", "machine lock", "approval-gated GUI automation"],
+      "dependencies": ["tools/observatory", "tools/mcp/runtime_tools.py", "tools/replace/synthetic"],
+      "current_evidence": ["tools/observatory/README.md:20-176", "tools/observatory/probe_tracer.cpp:376-477"],
+      "confidence": "high"
+    },
+    {
+      "area": "viewer",
+      "classification": ["infrastructure", "direct_reusable"],
+      "responsibilities": ["loopback validation", "read-only SQLite connections", "bounded API queries", "static dashboard", "degraded fresh-clone behavior"],
+      "dependencies": ["tools/viewer", "knowledgegraph/schema.sql"],
+      "current_evidence": ["tools/viewer/server.py:31-216", "tools/viewer/query.py:47-167"],
+      "confidence": "high"
+    },
+    {
+      "area": "evidence_provenance",
+      "classification": ["infrastructure", "direct_reusable"],
+      "responsibilities": ["Ghidra SDK import", "vtable candidate scan", "xref export", "dossier generation", "evidence vocabulary", "replacement status separation"],
+      "dependencies": ["tools/ghidra", "tools/re", "docs/replacement-status.json", "knowledgegraph/scale.py"],
+      "current_evidence": ["tools/ghidra/ImportSporeSDK.java:67-86", "tools/ghidra/VtableDetect.java:84-185", "tools/re/dossier.py:264-397"],
+      "confidence": "high"
+    }
+  ],
+  "layer_map": [
+    {"id": "analysis_evidence", "contents": ["tools/ghidra", "tools/re", "tools/recon_worker", "committed snapshots", "docs/RECON-3.1.0.22.md"], "responsibility": "Preserve addresses, SDK anchors, decompilation, vtable candidates, and provenance."},
+    {"id": "asset_oracles", "contents": ["tools/spore", "tests/fixtures", "tests/test_formats.py", "tests/test_rw4.py", "tests/test_textures.py"], "responsibility": "Independent format readers, semantic oracles, and deterministic fixtures."},
+    {"id": "simulation", "contents": ["src/sim", "src/sim/tests"], "responsibility": "Deterministic Cell simulation and selected Cell state/rule reconstructions."},
+    {"id": "asset_runtime", "contents": ["src/assets", "src/compat"], "responsibility": "Decode records and provide host meshes/images through narrow seams."},
+    {"id": "presentation", "contents": ["src/renderer", "src/apps"], "responsibility": "Modern renderer, scene composition, input, HUD, mode lifecycle, and runnable slices."},
+    {"id": "replacement", "contents": ["src/replace", "tools/replace/synthetic"], "responsibility": "Clean-room target replacement, reference differential, and hook mechanism proof."},
+    {"id": "knowledge_and_triage", "contents": ["knowledgegraph", "tools/triage", "knowledgegraph/triage"], "responsibility": "Persist evidence, queue state, projections, fields, traces, and tests."},
+    {"id": "evidence_automation", "contents": ["tools/mcp", "tools/observatory", "tools/viewer", "tools/re"], "responsibility": "Agent workflow, runtime observation, dossiers, and human inspection."},
+    {"id": "validation", "contents": ["CMakeLists.txt", "src/*/tests", "tests", "tools/gen_cell_fixtures.py"], "responsibility": "CTest, Python unittest, fixture replay, differential checks, and safety-shell tests."}
+  ],
+  "method": {
+    "codegraph_first": true,
+    "codegraph_project": "/home/juanr/Proyectos/OpenSpore",
+    "inspection_sequence": ["codegraph architecture and call-path exploration", "targeted codegraph source/call-path queries", "config/build/doc inspection", "cross-reference against current tests and committed evidence"],
+    "source_precedence": ["current source and tests for OpenSpore behavior", "pinned Ghidra/SDK/byte/runtime artifacts for original evidence", "docs for intent and historical context"],
+    "commands_run": ["codegraph_explore", "targeted Read", "Glob inventory", "parent-directory verification before report creation"],
+    "commands_not_run": ["implementation or edits", "test suite execution", "lint or typecheck execution", "build execution", "runtime or Wine execution"],
+    "constraints": ["No existing file was modified.", "No proprietary source or asset payload was reproduced.", "No timestamp or wall-clock field was written.", "Current-code observations are separated from original-game semantic claims."]
+  },
+  "prototype_status": [
+    {
+      "component": "triangle",
+      "classification": ["existing", "infrastructure", "prototype"],
+      "status": "renderer_boot_pixel_smoke",
+      "evidence": ["src/apps/triangle.cpp:40-76", "src/CMakeLists.txt:59-66"],
+      "original_semantic_correspondence": "INFERRED",
+      "original_fidelity": "No game semantics; renderer boot and pixel smoke only.",
+      "confidence": "high"
+    },
+    {
+      "component": "asset_view",
+      "classification": ["existing", "prototype"],
+      "status": "real_asset_vertical_slice",
+      "evidence": ["src/apps/asset_view.cpp:94-142", "src/CMakeLists.txt:68-76"],
+      "original_semantic_correspondence": "SUPPORTED",
+      "original_fidelity": "Real DBPF/GMDL bytes bounded to one selected static model.",
+      "confidence": "high"
+    },
+    {
+      "component": "material_smoke",
+      "classification": ["existing", "prototype"],
+      "status": "textured_renderer_vertical_slice",
+      "evidence": ["src/apps/material_smoke.cpp:141-180", "src/CMakeLists.txt:78-86"],
+      "original_semantic_correspondence": "SUPPORTED",
+      "original_fidelity": "Real DXT5/mat path with approximate lighting and no original pixel oracle.",
+      "confidence": "high"
+    },
+    {
+      "component": "cell_stage",
+      "classification": ["existing", "prototype"],
+      "status": "playable_vertical_slice",
+      "evidence": ["src/apps/cell_stage.cpp:451-1435", "src/CMakeLists.txt:88-178", "docs/CELLSTAGE.md:1-154"],
+      "original_semantic_correspondence": "APPROXIMATION",
+      "original_fidelity": "Real records and deterministic rendering; placement, roles, lifecycle, HUD, and materials are not original runtime behavior.",
+      "confidence": "high"
+    },
+    {
+      "component": "MovePlayerToMousePosition replacement",
+      "classification": ["existing", "direct_reusable", "prototype"],
+      "status": "replaced_approx_prototype",
+      "evidence": ["src/replace/Replace.cpp:25-68", "src/replace/tests/diff_test.cpp:101-234", "docs/REPLACEMENT-DIFF.md:105-120"],
+      "original_semantic_correspondence": "SUPPORTED",
+      "original_fidelity": "64/64 fields against decompilation reference only; not live-runtime verification.",
+      "confidence": "high"
+    },
+    {
+      "component": "synthetic inline hook",
+      "classification": ["existing", "infrastructure", "prototype"],
+      "status": "mechanism_verified_prototype",
+      "evidence": ["tools/replace/synthetic/test_hook.py:60-85", "tools/replace/synthetic/target.c:1-34"],
+      "original_semantic_correspondence": "SUPPORTED",
+      "original_fidelity": "32-bit 0xE9 rel32 plus RWX mprotect mechanism proven on a native target; not installed in SporeApp.exe.",
+      "confidence": "high"
+    },
+    {
+      "component": "MCP, KG, observatory, and viewer platform",
+      "classification": ["existing", "infrastructure"],
+      "status": "implemented_workflow_infrastructure",
+      "evidence": ["tools/mcp/registry.py:97-391", "tools/observatory/README.md:20-176", "tools/viewer/README.md:1-75", "knowledgegraph/schema.sql:1-172"],
+      "original_semantic_correspondence": "INFERRED",
+      "original_fidelity": "Workflow and evidence infrastructure, not game semantics.",
+      "confidence": "high"
+    }
+  ],
+  "replacement_needed": [
+    {
+      "priority": 1,
+      "area": "cell_runtime",
+      "classification": ["replacement_needed", "semantic_gap"],
+      "current": "CellSim plus static CellGame/pool/query/advect/combat components and a mode shell.",
+      "missing": "Original manager singletons, live state transitions, AI/advect application, damage/attack frame flow, pause/lock behavior, and stage transitions.",
+      "current_status": "replaced-stub / static support",
+      "required_evidence": "Approved Cell-mode trace plus stage-transition and manager field observations.",
+      "source_evidence": ["src/sim/Sim.cpp:103-260", "src/sim/CellGame.cpp:22-152", "docs/STATE.md:93-98"],
+      "confidence": "high"
+    },
+    {
+      "priority": 2,
+      "area": "resource_manager",
+      "classification": ["replacement_needed", "semantic_gap"],
+      "current": "One borrowed DBPF package provider with re-parsed linear lookup.",
+      "missing": "Multi-package search and priority, directory/prop semantics, factory/registry behavior, cache behavior, and load order.",
+      "current_status": "inferred",
+      "required_evidence": "Menu-transition trace and original load-path order.",
+      "source_evidence": ["src/compat/ResourceProvider.hpp:32-59", "docs/replacement-status.json:45-51", "tools/observatory/probes/menu_transition.json"],
+      "confidence": "high"
+    },
+    {
+      "priority": 3,
+      "area": "scene_population",
+      "classification": ["replacement_needed", "semantic_gap"],
+      "current": "Declarative scene.json with per-value provenance and role-based entities.",
+      "missing": "Original world/populate procedural placement, exact player identity, record-driven role mapping, and population execution.",
+      "current_status": "approximated",
+      "required_evidence": "WorldObject field-order decode plus original world/populate execution or equivalent record-driven placement.",
+      "source_evidence": ["src/apps/scene.json:1-75", "src/apps/SceneConfig.hpp:1-49", "src/assets/WorldObject.hpp:1-20", "docs/STATE.md:93-98"],
+      "confidence": "high"
+    },
+    {
+      "priority": 4,
+      "area": "gmdl_rw4_materials_animation",
+      "classification": ["replacement_needed", "semantic_gap"],
+      "current": "GMDL v8 static path, RW4 structural walker, DXT5 raster, and fixed-function lit Vulkan path.",
+      "missing": "GMDL v9, 32-bit indices, non-trilist, multi-stream, complete RW4 sections, skins, skeletons, keyframes/blend shapes, material/shader cache, original lighting, and pixel oracle.",
+      "current_status": "supported / partial",
+      "required_evidence": "Additional parser families and original frame/material or pixel differential.",
+      "source_evidence": ["src/assets/Gmdl.hpp:1-12", "src/assets/Rw4.hpp:31-85", "src/renderer/Renderer.hpp:34-44", "docs/STATE.md:81-89"],
+      "confidence": "high"
+    },
+    {
+      "priority": 5,
+      "area": "application_bootstrap",
+      "classification": ["replacement_needed", "semantic_gap"],
+      "current": "Cell-specific IGameMode shell and GUI automation shell.",
+      "missing": "Original AppSystem bootstrap, UTFWin message dispatch, editor, creature/tribe/civ/space managers, and non-Cell stages.",
+      "current_status": "supported / hypothesis only",
+      "required_evidence": "Main-menu and menu-transition traces followed by manager/message-dispatch mapping.",
+      "source_evidence": ["src/apps/IGameMode.hpp:1-52", "src/apps/CellModeStrategy.cpp:7-91", "docs/RECON-3.1.0.22.md:25-70"],
+      "confidence": "high"
+    },
+    {
+      "priority": 6,
+      "area": "property_serialization",
+      "classification": ["replacement_needed", "semantic_gap"],
+      "current": "No OpenSpore property implementation; Python and C++ asset readers only.",
+      "missing": "App::Property data model, serialization/deserialization, and round-trip compatibility.",
+      "current_status": "inferred",
+      "required_evidence": "Targeted SDK/decompilation mapping and a property serialize/deserialize/compare round trip.",
+      "source_evidence": ["docs/replacement-status.json:132-138", "docs/RECON-3.1.0.22.md:94-103"],
+      "confidence": "high"
+    },
+    {
+      "priority": 7,
+      "area": "unsupported_original_systems",
+      "classification": ["replacement_needed", "semantic_gap"],
+      "current": "Names/status or infrastructure only.",
+      "missing": "Audio, Havok/physics, original input, services, editors, and non-Cell gameplay.",
+      "current_status": "unknown or non-goal",
+      "required_evidence": "Per-subsystem static inventory and bounded runtime observation; Pollinator remains a stub/non-goal.",
+      "source_evidence": ["docs/replacement-status.json:140-153", "docs/BOUNDARIES.md:122-146"],
+      "confidence": "high"
+    }
+  ],
+  "repository_inventory": {
+    "source_tree": ["src/assets", "src/apps", "src/compat", "src/renderer", "src/replace", "src/sim"],
+    "tooling_tree": ["tools/ghidra", "tools/mcp", "tools/observatory", "tools/re", "tools/replace", "tools/spore", "tools/triage", "tools/viewer", "tools/gen_cell_fixtures.py", "tools/kg_ingest.py"],
+    "knowledge_tree": ["knowledgegraph/schema.sql", "knowledgegraph/kg.py", "knowledgegraph/scale.py", "knowledgegraph/seed.py", "knowledgegraph/seed_sprint.py", "knowledgegraph/research", "knowledgegraph/triage"],
+    "schema_and_config_tree": ["CMakeLists.txt", "src/CMakeLists.txt", "src/assets/CMakeLists.txt", "src/sim/CMakeLists.txt", "src/replace/CMakeLists.txt", "opencode.json", "src/apps/scene.json", "docs/replacement-status.json", "docs/RE-DOSSIER-SCHEMA.md", "tools/observatory/probes/*.json", "tests/fixtures/cell/fixtures.json"],
+    "test_tree": ["src/assets/tests", "src/sim/tests", "src/replace/tests", "src/apps/*_test.cpp", "tests", "tests/mcp", "tests/viewer", "tools/observatory/test", "tools/replace/synthetic"],
+    "external_or_generated_inputs": ["SPORE/", ".spore-analysis/ghidra-exports/", "build/", "tools/mcp/cache/", "tools/observatory/out/", "knowledgegraph/spore.db", "pycache/"],
+    "documentation_consulted": ["README.md", "AGENTS.md", "docs/STATE.md", "docs/SPORE-RECONSTRUCTION-ROADMAP.md", "docs/replacement-status.json", "docs/BOUNDARIES.md", "docs/CELL-CONTRACT.md", "docs/CELLSTAGE.md", "docs/CELLSTAGE-RECON.md", "docs/CELLSTAGE-VALIDATION.md", "docs/RENDERER-DESIGN.md", "docs/RENDERWARE-RESEARCH.md", "docs/ASSET-PATH.md", "docs/MATERIALS-DESIGN.md", "docs/REPLACEMENT-ABI.md", "docs/REPLACEMENT-DIFF.md", "docs/RE-AUTOMATION-ARCHITECTURE.md", "docs/RE-DOSSIER-SCHEMA.md", "tools/viewer/README.md", "tools/observatory/README.md", "tests/README.md"]
+  },
+  "semantic_gaps": [
+    {
+      "id": "cell_movement_parameters",
+      "classification": ["semantic_gap", "replacement_needed"],
+      "gap": "Forward, strafe, boost, turn, damping, camera fov/orbit, and keyboard-secondary values are not original observed values.",
+      "current_code": "src/sim/Sim.hpp:189-205",
+      "original_evidence": "docs/CELL-CONTRACT.md:51-98",
+      "level": "APPROXIMATION",
+      "confidence": "high"
+    },
+    {
+      "id": "cell_interactions",
+      "classification": ["semantic_gap", "replacement_needed"],
+      "gap": "Eat/flee radii, damage, attack target selection, timing, and event ordering are inferred rather than runtime-pinned.",
+      "current_code": "src/sim/Sim.cpp:141-251",
+      "original_evidence": "docs/CELLSTAGE-RECON.md:83-99; docs/CELL-CONTRACT.md:81-98",
+      "level": "INFERRED",
+      "confidence": "high"
+    },
+    {
+      "id": "runtime_plane_point",
+      "classification": ["semantic_gap"],
+      "gap": "Movement-plane normal is statically pinned to {0,0,1}; the per-world point is load-time {0,0,0}, but runtime value is unread.",
+      "current_code": "src/sim/Sim.hpp:136-142; src/replace/CellGameView.hpp:10-12",
+      "original_evidence": "docs/REPLACEMENT-ABI.md:40-52",
+      "level": "INFERRED",
+      "confidence": "high"
+    },
+    {
+      "id": "cell_state_integration",
+      "classification": ["semantic_gap", "replacement_needed"],
+      "gap": "CellGame, pool, query, advect, and combat components are not integrated into the current CellSim frame loop.",
+      "current_code": "src/sim/CellGame.cpp:22-152; src/sim/Sim.cpp:103-260",
+      "original_evidence": "docs/replacement-status.json:86-101",
+      "level": "INFERRED",
+      "confidence": "high"
+    },
+    {
+      "id": "scene_placement_and_identity",
+      "classification": ["semantic_gap", "replacement_needed"],
+      "gap": "Scene positions and role assignments are declarative approximations; original population is procedural and exact player-cell identity is not fully represented by the current scene.",
+      "current_code": "src/apps/scene.json:1-75; src/apps/SceneConfig.hpp:1-49; src/apps/cell_stage.cpp:109-130",
+      "original_evidence": "docs/CELLSTAGE-RECON.md:64-81; docs/STATE.md:93-98",
+      "level": "APPROXIMATION",
+      "confidence": "high"
+    },
+    {
+      "id": "world_object_layout",
+      "classification": ["semantic_gap", "replacement_needed"],
+      "gap": "WorldObject walker accounts for bytes and extracts names/vectors but does not derive per-entry field order or placement semantics.",
+      "current_code": "src/assets/WorldObject.hpp:1-20; src/assets/WorldObject.cpp:74-112",
+      "original_evidence": "docs/CELLSTAGE-RECON.md:64-74; docs/STATE.md:88-89",
+      "level": "INFERRED",
+      "confidence": "high"
+    },
+    {
+      "id": "gmdl_and_rw4_scope",
+      "classification": ["semantic_gap", "replacement_needed"],
+      "gap": "GMDL v9, 32-bit indices, non-trilist, multi-stream, animation, and complete RW4 payload/material execution are not implemented.",
+      "current_code": "src/assets/Gmdl.hpp:1-12; src/assets/Rw4.hpp:64-85; src/assets/Mesh.hpp:48-52",
+      "original_evidence": "docs/STATE.md:81-89; docs/RENDERWARE-RESEARCH.md:177-242",
+      "level": "SUPPORTED",
+      "confidence": "high"
+    },
+    {
+      "id": "material_renderer",
+      "classification": ["semantic_gap", "replacement_needed"],
+      "gap": "Lighting/material values are fixed-function approximations and no original rendered frame exists for pixel matching.",
+      "current_code": "src/renderer/Renderer.hpp:34-38; src/apps/cell_stage.cpp:551-583",
+      "original_evidence": "docs/CELLSTAGE-VALIDATION.md:14-23; docs/BOUNDARIES.md:89-120",
+      "level": "APPROXIMATION",
+      "confidence": "high"
+    },
+    {
+      "id": "application_and_non_cell",
+      "classification": ["semantic_gap", "replacement_needed"],
+      "gap": "AppSystem bootstrap, UTFWin dispatch, editor, creature/tribe/civ/space stages, properties, audio, Havok, and original input are not implemented.",
+      "current_code": "src/apps/IGameMode.hpp:28-52; src/CMakeLists.txt:59-110",
+      "original_evidence": "docs/RECON-3.1.0.22.md:25-70; docs/BOUNDARIES.md:122-146",
+      "level": "INFERRED",
+      "confidence": "high"
+    },
+    {
+      "id": "runtime_oracle",
+      "classification": ["semantic_gap", "replacement_needed"],
+      "gap": "No successful Cell-mode trace is recorded; menu traces are negative or capped before Cell Stage.",
+      "current_code": "tools/observatory/README.md:104-176; tools/observatory/cell_trace.sh",
+      "original_evidence": "docs/STATE.md:81-91; docs/CELLSTAGE-VALIDATION.md:25-51",
+      "level": "SUPPORTED",
+      "confidence": "high"
+    },
+    {
+      "id": "rtti_and_vtable_completeness",
+      "classification": ["semantic_gap"],
+      "gap": "No MSVC RTTI; vtable candidates and SDK association are partial, so class hierarchy and this-type claims remain bounded.",
+      "current_code": "tools/ghidra/VtableDetect.java:84-185; tools/mcp/ghidra_tools.py:1220-1270",
+      "original_evidence": "AGENTS.md:25-32; docs/STATE.md:81-91",
+      "level": "INFERRED",
+      "confidence": "high"
+    },
+    {
+      "id": "full_triaging",
+      "classification": ["semantic_gap", "infrastructure"],
+      "gap": "Large anonymous/unknown function populations remain projections or queued work; v5/triage ingest and semantic reconstruction are not complete.",
+      "current_code": "tools/triage/classify.py:418-879; knowledgegraph/triage",
+      "original_evidence": "docs/STATE.md:211-282; knowledgegraph/triage/reconstruction-readiness-f0e310e0.json",
+      "level": "INFERRED",
+      "confidence": "high"
+    }
+  ],
+  "test_coverage": {
+    "commands": [
+      {"command": "cmake -S . -B build && cmake --build build -j", "purpose": "C++17/Vulkan/GLSL/SDL3 build; first-party warnings are errors", "evidence": ["CMakeLists.txt:1-38", "src/CMakeLists.txt:1-182"], "executed_by_this_analysis": false},
+      {"command": "ctest --test-dir build -V", "purpose": "CTest coverage for renderer, apps, assets, simulation, and replacement", "evidence": ["CMakeLists.txt:27-36", "src/CMakeLists.txt:63-178", "src/assets/CMakeLists.txt:15-165", "src/sim/CMakeLists.txt:9-90", "src/replace/CMakeLists.txt:11-16"], "executed_by_this_analysis": false},
+      {"command": "python3 -m unittest discover -s tests -t . -v", "purpose": "Python stdlib suites for formats, simulation, KG, MCP, viewer, dossiers, and observatory safety", "evidence": ["tests/README.md:7-13", "docs/STATE.md:66-79"], "executed_by_this_analysis": false},
+      {"command": "python3 tests/diff_real.py", "purpose": "Opt-in real package semantic differential; clean skip without SPORE", "evidence": ["tests/README.md:43-59", "tests/diff_real.py:20-112"], "executed_by_this_analysis": false},
+      {"command": "python3 tools/gen_cell_fixtures.py --rebuild", "purpose": "Intentional contract fixture rebuild with double-run identity check", "evidence": ["tools/gen_cell_fixtures.py:1-75", "docs/CELL-CONTRACT.md:134-141"], "executed_by_this_analysis": false},
+      {"command": "make -C tools/observatory", "purpose": "Build standalone ptrace tracer", "evidence": ["tools/observatory/README.md:63-69", "tools/observatory/Makefile"], "executed_by_this_analysis": false},
+      {"command": "make -C tools/replace/synthetic test", "purpose": "Build and run native 32-bit inline-hook proof", "evidence": ["tools/replace/synthetic/README.md:32-69", "tools/replace/synthetic/Makefile"], "executed_by_this_analysis": false}
+    ],
+    "coverage_map": [
+      {
+        "area": "apps_and_renderer",
+        "classification": ["existing", "infrastructure", "prototype"],
+        "test_files": ["src/apps/cellgfx_test.cpp", "src/apps/cellui_test.cpp", "src/apps/cellmode_test.cpp", "src/apps/cellinput_test.cpp", "src/apps/cellanim_test.cpp", "src/apps/scene_config_test.cpp", "src/apps/triangle.cpp", "src/apps/asset_view.cpp", "src/apps/material_smoke.cpp", "tests/test_cellstage.py", "tests/test_sim.py"],
+        "assertions": ["GFX world/preload table", "UI constants/rollover", "mode lifecycle", "key mapping", "animation/effect mapping", "scene provenance round trip", "pixel windows", "manifest determinism", "no-display graceful path"],
+        "current_evidence_level": "OBSERVED",
+        "original_fidelity_limit": "OpenSpore presentation and current app behavior only.",
+        "confidence": "high"
+      },
+      {
+        "area": "assets",
+        "classification": ["existing", "direct_reusable"],
+        "test_files": ["src/assets/tests/assets_test.cpp", "src/assets/tests/real_asset_test.cpp", "src/assets/tests/cell_gmdl_test.cpp", "src/assets/tests/worldobj_test.cpp", "src/assets/tests/cellres_test.cpp", "src/assets/tests/cell_cell_test.cpp", "src/assets/tests/cell_world_test.cpp", "src/assets/tests/cell_populate_test.cpp", "src/assets/tests/cell_structure_test.cpp", "src/assets/tests/cell_loot_test.cpp", "src/assets/tests/cell_look_test.cpp", "src/assets/tests/randcreature_test.cpp", "src/assets/tests/effectmap_test.cpp", "src/assets/tests/rw4_test.cpp", "tests/test_formats.py", "tests/test_rw4.py", "tests/test_textures.py", "tests/test_asset_resolver.py"],
+        "assertions": ["synthetic QFS round trip", "semantic format fields", "real record domains", "byte accounting", "double decode", "DXT5/hash oracle", "cross-language oracle agreement", "RW4 structural closure", "resolver type/group maps"],
+        "current_evidence_level": "OBSERVED",
+        "original_fidelity_limit": "Real-asset tests skip without SPORE and cover only supported format paths.",
+        "confidence": "high"
+      },
+      {
+        "area": "simulation",
+        "classification": ["existing", "direct_reusable", "prototype"],
+        "test_files": ["src/sim/tests/sim_test.cpp", "src/sim/tests/sim_contract_test.cpp", "src/sim/tests/plane_constants_test.cpp", "src/sim/tests/cellgame_test.cpp", "src/sim/tests/cellpool_test.cpp", "src/sim/tests/createcell_test.cpp", "src/sim/tests/cellquery_test.cpp", "src/sim/tests/advect_test.cpp", "src/sim/tests/combat_test.cpp", "tests/test_sim.py"],
+        "assertions": ["fixed-step movement", "ray-plane guards", "keyboard fallback", "eat/flee", "double-run determinism", "bit-exact fixture replay", "pool exhaustion/refill", "CreateCellObject fields", "query border predicate", "advect/default lookup", "damage/attack tables"],
+        "current_evidence_level": "OBSERVED",
+        "original_fidelity_limit": "Frozen local contract; not an original runtime oracle.",
+        "confidence": "high"
+      },
+      {
+        "area": "replacement",
+        "classification": ["existing", "direct_reusable", "prototype"],
+        "test_files": ["src/replace/tests/diff_test.cpp", "tools/replace/synthetic/test_hook.py", "docs/REPLACEMENT-DIFF.md"],
+        "assertions": ["8 cases x 8 fields", "64/64 differential match", "float tolerance and exact flag", "synthetic hook before/after and tracer visibility"],
+        "current_evidence_level": "SUPPORTED",
+        "original_fidelity_limit": "Reference differential and synthetic mechanism, not live original verification.",
+        "confidence": "high"
+      },
+      {
+        "area": "mcp_kg_viewer",
+        "classification": ["existing", "infrastructure"],
+        "test_files": ["tests/mcp/test_core.py", "tests/mcp/test_contract.py", "tests/mcp/test_ghidra.py", "tests/mcp/test_assets_runtime.py", "tests/mcp/test_server.py", "tests/mcp/test_wire_contract.py", "tests/mcp/test_protocol_errors.py", "tests/mcp/test_kg.py", "tests/viewer/test_server.py", "tests/test_kg_schema.py", "tests/test_kg_scale.py", "tests/test_kg_seed.py", "tests/test_dossier.py"],
+        "assertions": ["JSON-RPC protocol errors", "21-tool inventory", "real handlers", "provenance modes", "Ghidra cache/fallback", "approval gates", "path constraints", "read-only viewer identity", "queue/schema migration", "dossier schema and evidence vocabulary"],
+        "current_evidence_level": "OBSERVED",
+        "original_fidelity_limit": "Tests validate evidence infrastructure, not original semantics.",
+        "confidence": "high"
+      },
+      {
+        "area": "observatory",
+        "classification": ["existing", "infrastructure", "prototype"],
+        "test_files": ["tests/test_lock.py", "tests/test_observe_lock.py", "tests/test_menu_walk.py", "tests/test_cell_trace.py", "tests/test_agent_overlay.py", "tools/observatory/test/m32target.c", "tools/observatory/test/probes_m32.json"],
+        "assertions": ["approval/trust gates", "deterministic dry runs", "key allowlist", "window confinement/geometry drift", "lock parking/release", "overlay visibility/cleanup", "m32 tracer", "bounded runtime evidence"],
+        "current_evidence_level": "OBSERVED",
+        "original_fidelity_limit": "Shell mechanics and synthetic target behavior only; no successful Cell trace.",
+        "confidence": "high"
+      },
+      {
+        "area": "python_oracles",
+        "classification": ["existing", "direct_reusable", "infrastructure"],
+        "test_files": ["tests/test_formats.py", "tests/test_rw4.py", "tests/test_textures.py", "tests/test_asset_resolver.py", "tests/diff_real.py", "tests/fixtures/gen_fixtures.py", "tests/fixtures/cell/fixtures.json"],
+        "assertions": ["stdlib-only parsing", "semantic snapshots", "real-record differentials", "resolver metadata", "fixture byte identity", "fixture regeneration guard"],
+        "current_evidence_level": "OBSERVED",
+        "original_fidelity_limit": "Oracles are strongest for tested formats and selected real records.",
+        "confidence": "high"
+      }
+    ],
+    "documented_baselines": [
+      "docs/STATE.md reports a 36/36 CTest baseline and Python suite milestones, but this analysis did not rerun them.",
+      "Real-asset tests are environment-dependent and skip without SPORE.",
+      "No repository-wide standalone lint or typecheck command is documented; C++ warning enforcement is compile-time -Werror and Python quality is unittest-based.",
+      "The current report is architectural coverage analysis, not a fresh test result."
+    ],
+    "known_gaps": [
+      "No original runtime trace for Cell Stage, so no original pixel or event oracle for the playable slice.",
+      "The current simulation fixture contract is generated from current OpenSpore code and cannot establish original constants or behavior.",
+      "Float determinism is same-host/toolchain scoped because sinf, cosf, and atan2f are libm-dependent.",
+      "No full C++ RW4 payload, animation, material, or pixel differential test family exists.",
+      "Coverage of the 58,757-function original binary is represented by triage/readiness projections, not by implemented source code."
+    ]
+  },
+  "track_a_summary": {
+    "conclusion": "Track A is a layered, evidence-aware vertical-slice architecture: deterministic simulation, narrow asset decoders, compatibility seams, a modern renderer, a Cell composition root, a narrow replacement, and substantial analysis automation. The strongest direct-reuse areas are assets, compatibility, selected Cell state/rule components, deterministic local contracts, and evidence tooling. The largest replacement gaps are the original runtime resource manager, live Cell manager/gameplay loop, procedural scene population, full model/animation/material pipelines, application bootstrap, and non-Cell systems.",
+    "highest_confidence_existing": ["DBPF/QFS", "GMDL v8 narrow path", "DXT5 narrow path", "RW4 structural validation", "Cell resource decoding", "compatibility seams", "MCP contracts", "KG schema/scale", "viewer read-only routes", "observatory safety and tracer mechanics"],
+    "highest_confidence_gaps": ["no successful Cell runtime oracle", "scene placement remains declarative", "movement/interaction values remain bounded", "no full resource manager", "no full RenderWare/D3D material model", "no application bootstrap or non-Cell systems"],
+    "reconstruction_order": ["diagnose Wine boot stability and obtain approved Cell trace", "wire the original Cell manager/state loop into current components", "complete procedural world/populate placement and identity", "complete RW4/GMDL animation/material families", "implement full resource manager and property serialization", "generalize bootstrap/message/UI architecture beyond Cell"],
+    "boundary_preservation": ["do not promote OpenSpore tests to original-game verification", "do not bypass B1/B2/B3 seams", "do not copy EA/Ghidra-derived source into runtime", "do not write SPORE or KG from viewer paths", "do not run gated runtime/status operations without approval and lock"],
+    "confidence": "high",
+    "report_path": "knowledgegraph/research/global-campaign-2026/track-a-architecture.json"
+  }
+}

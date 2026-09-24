@@ -1,0 +1,1965 @@
+{
+  "$schema": "state-machine-research-1",
+  "callbacks": [
+    {
+      "address": "0x007d8c80",
+      "consumers": [
+        "App::cGameModeManager::SetActiveMode",
+        "App::cGameModeManager::SetActiveModeByName",
+        "direct IGameModeManager callers"
+      ],
+      "evidence": [
+        {
+          "address": "0x007d8c80",
+          "claim": "The concrete IGameModeManager vtable slot +0x40 points to this body; it range-checks the requested index and calls FUN_007d85b0.",
+          "kind": "live_ghidra_vtable_data_and_decompilation",
+          "level": "CONFIRMED",
+          "source": "ghidra://SporeApp.exe@0x01412598+0x40,0x007d8c80"
+        },
+        {
+          "address": "0x007d8d40",
+          "claim": "The SDK label SetActiveModeAt at 0x007d8d40 is contradicted by the concrete vtable: that body tears down the manager vtable, clears its ModeEntry vector, and restores base vtables.",
+          "kind": "live_ghidra_disassembly",
+          "level": "CONFIRMED",
+          "source": "ghidra://SporeApp.exe@0x007d8d40"
+        }
+      ],
+      "name": "App::cGameModeManager::SetActiveModeAt",
+      "parameters": [
+        "this",
+        "int32 mode_index"
+      ],
+      "returns": "bool; false for an index outside [0, mode_count)",
+      "semantics": "Validates a mode index and delegates the actual transition to FUN_007d85b0."
+    },
+    {
+      "address": "IGameMode+0x18",
+      "consumers": [
+        "App::cGameModeManager::FUN_007d85b0"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e552f0",
+          "claim": "App::cCellModeStrategy::OnEnter resets mode/UI flags, starts CellGFX display, and invokes gameplay/UI services.",
+          "kind": "committed_decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnEnter.c"
+        },
+        {
+          "address": null,
+          "claim": "The SDK IGameMode vtable places OnEnter at +0x18.",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv"
+        }
+      ],
+      "name": "App::IGameMode::OnEnter",
+      "parameters": [
+        "this"
+      ],
+      "returns": "bool-like in concrete Cell implementation",
+      "semantics": "Commits entry into the selected mode after mnActiveIndex has been changed."
+    },
+    {
+      "address": "IGameMode+0x1c",
+      "consumers": [
+        "App::cGameModeManager::FUN_007d85b0"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e7fc00",
+          "claim": "App::cCellModeStrategy::OnExit restores background globals, iterates a cleanup path, disables a service state, and releases UI/world state.",
+          "kind": "committed_decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnExit.c"
+        },
+        {
+          "address": null,
+          "claim": "The SDK IGameMode vtable places OnExit at +0x1c.",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv"
+        }
+      ],
+      "name": "App::IGameMode::OnExit",
+      "parameters": [
+        "this"
+      ],
+      "returns": "void in SDK; concrete Cell body is void",
+      "semantics": "Invoked on the old valid mode before mnActiveIndex is overwritten."
+    },
+    {
+      "address": "IMessageManager+0x14",
+      "consumers": [
+        "App::cMessageManager listeners and handlers"
+      ],
+      "evidence": [
+        {
+          "address": "0x007d85b0",
+          "claim": "Mode-transition code calls the message-manager vtable at +0x14 for both 0x0212d3e7 and 0x022d1adc.",
+          "kind": "live_ghidra_disassembly",
+          "level": "CONFIRMED",
+          "source": "ghidra://SporeApp.exe@0x007d8660,0x007d86e7"
+        },
+        {
+          "address": null,
+          "claim": "SDK IMessageManager operation at this slot is MessageSend.",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv"
+        }
+      ],
+      "name": "App::IMessageManager::MessageSend",
+      "parameters": [
+        "message_id",
+        "message_payload",
+        "post_or_send_flag"
+      ],
+      "returns": "bool-like dispatch result; exact semantics unresolved",
+      "semantics": "Synchronous-looking send surface named by the SDK; exact queue, consume, and callback timing remain unresolved."
+    },
+    {
+      "address": "cGameInputManager+0x4c..+0x60",
+      "consumers": [
+        "active IGameMode",
+        "camera consumers",
+        "input-region consumers"
+      ],
+      "evidence": [
+        {
+          "address": "0x00b3d350",
+          "claim": "Simulator::cGameInputManager::Get returns DAT_0167eaf8; the SDK structure has a 27-slot vtable with six input callbacks at +0x4c through +0x60.",
+          "kind": "decompilation_and_sdk_layout",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cGameInputManager__Get.c"
+        },
+        {
+          "address": "0x00e818f0",
+          "claim": "The concrete Cell mode handles key input, updates GameInput, and dispatches to gameplay/UI helpers.",
+          "kind": "committed_decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnKeyDown.c"
+        }
+      ],
+      "name": "Simulator::cGameInputManager::input_callbacks",
+      "parameters": [
+        "this",
+        "normalized key or mouse event"
+      ],
+      "returns": "callback-dependent",
+      "semantics": "The central input-to-mode surface is structurally established, but its concrete router body, region map semantics, and camera fan-out are unresolved."
+    },
+    {
+      "address": "0x00b1dbd0",
+      "consumers": [
+        "Simulator transition-effect and application-manager callbacks"
+      ],
+      "evidence": [
+        {
+          "address": "0x00b1dbd0",
+          "claim": "When mpTransitionEffectWorld is non-null, the body invokes its +0x7c callback with (1,0), then application-manager slots +0x5c with the effect world and zero.",
+          "kind": "live_ghidra_decompilation",
+          "level": "SUPPORTED",
+          "source": "ghidra://SporeApp.exe@0x00b1dbd0"
+        }
+      ],
+      "name": "Simulator::cGameModeManager::OnModeEntered",
+      "parameters": [
+        "this"
+      ],
+      "returns": "void",
+      "semantics": "Transition-effect callback after current-mode commit; it does not directly write mCurrentGameMode."
+    },
+    {
+      "address": "0x00b1db60",
+      "consumers": [
+        "Simulator transition-effect and application-manager callbacks"
+      ],
+      "evidence": [
+        {
+          "address": "0x00b1db60",
+          "claim": "When mpTransitionEffectWorld is non-null, the body invokes its +0x7c callback with (1,1), then application-manager +0x58 with the effect world and zero.",
+          "kind": "live_ghidra_decompilation",
+          "level": "SUPPORTED",
+          "source": "ghidra://SporeApp.exe@0x00b1db60"
+        }
+      ],
+      "name": "Simulator::cGameModeManager::OnModeExited",
+      "parameters": [
+        "this"
+      ],
+      "returns": "void",
+      "semantics": "Transition-effect callback after last-mode commit; it does not directly write mLastGameMode."
+    },
+    {
+      "address": "IWinProc+0x10..+0x18",
+      "consumers": [
+        "UTFWin::Window message routing"
+      ],
+      "evidence": [
+        {
+          "address": null,
+          "claim": "The SDK IWinProc vtable is GetPriority at +0x10, GetEventFlags at +0x14, and HandleUIMessage at +0x18.",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv"
+        },
+        {
+          "address": "0x00835380",
+          "claim": "UTFWin::SporeTooltipWinProc::GetEventFlags provides a concrete IWinProc event-flag implementation.",
+          "kind": "sdk_named_function",
+          "level": "CONFIRMED_NAME_ONLY",
+          "source": ".spore-analysis/ghidra-exports/sdk_functions.tsv"
+        }
+      ],
+      "name": "UTFWin::IWinProc::dispatch",
+      "parameters": [
+        "this",
+        "UTFWin::Message"
+      ],
+      "returns": "bool-like handled result",
+      "semantics": "Priority and event-flag filtering precede HandleUIMessage; exact order, bubbling, and consume rules are unresolved."
+    },
+    {
+      "address": "InteractiveWindow+0x30..+0x7c",
+      "consumers": [
+        "UTFWin::InteractiveWindow"
+      ],
+      "evidence": [
+        {
+          "address": null,
+          "claim": "SDK InteractiveWindow exposes OnKeyDown2, OnKeyUp2, OnKeyDown, OnKeyUp, OnKeyPress, mouse callbacks, refresh/update, layout/transform, button, and enter/leave callbacks.",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv:25082-25115"
+        }
+      ],
+      "name": "UTFWin::InteractiveWindow::input_callbacks",
+      "parameters": [
+        "this",
+        "UTFWin::Message payload"
+      ],
+      "returns": "callback-dependent",
+      "semantics": "Event-specific convenience surface reached after or through UTFWin window/proc dispatch; exact bridge body remains unresolved."
+    },
+    {
+      "address": "0x00960250",
+      "consumers": [
+        "UTFWin::Window and registered IWinProc objects"
+      ],
+      "evidence": [
+        {
+          "address": "0x00960250",
+          "claim": "The SDK-named SendMsg body is type-unsafe and calls unresolved indirect targets; it is not sufficient to recover traversal order.",
+          "kind": "decompilation",
+          "level": "UNKNOWN",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__Window__SendMsg.c"
+        },
+        {
+          "address": null,
+          "claim": "IWindow places SendMsg at +0x114; Window owns an intrusive WinProc list at +0x64.",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv"
+        }
+      ],
+      "name": "UTFWin::Window::SendMsg",
+      "parameters": [
+        "this",
+        "UTFWin::Message"
+      ],
+      "returns": "bool-like",
+      "semantics": "Window-local UI message forwarding surface; exact proc traversal and return handling are unresolved."
+    }
+  ],
+  "domain": "UI / Gameplay State",
+  "events": [
+    {
+      "consumers": [
+        "Simulator::Cell::cCellUIRollover pool",
+        "Cell UI layout"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e62340",
+          "claim": "ShowHealthRollover creates a rollover only when cCellObjectData.mGFXObjectIndex is nonzero, passes health/6 to the pool helper, and writes 0.5 to mDisappearTime at +0x24.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellUI__ShowHealthRollover.c"
+        }
+      ],
+      "id": "cell_health_rollover",
+      "kind": "gameplay_to_hud_state_change",
+      "producers": [
+        "Cell damage/health presentation path"
+      ],
+      "status": "static_mechanics_expiry_unresolved"
+    },
+    {
+      "consumers": [
+        "UI::EditorNamePanel::HandleUIMessage",
+        "hashed UTFWin/editor services"
+      ],
+      "evidence": [
+        {
+          "address": "0x005c0380",
+          "claim": "SetExtended writes EditorNamePanel+0x10 and applies distinct enable and disable service/window state changes.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "ghidra://SporeApp.exe@0x005c0380"
+        }
+      ],
+      "id": "editor_name_panel_extended_change",
+      "kind": "ui_state_change",
+      "producers": [
+        "EditorNamePanel callers and UI message handlers"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "consumers": [
+        "0x00b63510 mode-message listener",
+        "Simulator cStrategy current-mode commit helpers",
+        "Simulator::cGameModeManager::OnModeEntered"
+      ],
+      "evidence": [
+        {
+          "address": "0x007d86ee",
+          "claim": "After the new mode OnEnter call, FUN_007d85b0 sends message 0x022d1adc with the new and prior mode-ID words.",
+          "kind": "disassembly",
+          "level": "CONFIRMED",
+          "source": "ghidra://SporeApp.exe@0x007d85b0"
+        },
+        {
+          "address": null,
+          "claim": "SDK names 0x022d1adc kMsgOnModeEnter and OnModeEnterMessage.",
+          "kind": "sdk_name_only",
+          "level": "CONFIRMED",
+          "source": "knowledgegraph/research/types/07-event-message.json"
+        }
+      ],
+      "id": "mode_enter_announcement",
+      "kind": "app_message",
+      "producers": [
+        "App::cGameModeManager::FUN_007d85b0"
+      ],
+      "status": "static_send_order_confirmed"
+    },
+    {
+      "consumers": [
+        "0x00b63510 mode-message listener",
+        "Simulator cStrategy last-mode commit helpers",
+        "Simulator::cGameModeManager::OnModeExited"
+      ],
+      "evidence": [
+        {
+          "address": "0x007d866d",
+          "claim": "After old OnExit and active-index overwrite, FUN_007d85b0 sends message 0x0212d3e7 before invoking the new mode OnEnter.",
+          "kind": "disassembly",
+          "level": "CONFIRMED",
+          "source": "ghidra://SporeApp.exe@0x007d85b0"
+        },
+        {
+          "address": null,
+          "claim": "SDK names 0x0212d3e7 kMsgOnModeExit and OnModeExitMessage.",
+          "kind": "sdk_name_only",
+          "level": "CONFIRMED",
+          "source": "knowledgegraph/research/types/07-event-message.json"
+        }
+      ],
+      "id": "mode_exit_announcement",
+      "kind": "app_message",
+      "producers": [
+        "App::cGameModeManager::FUN_007d85b0"
+      ],
+      "status": "static_send_order_confirmed"
+    },
+    {
+      "consumers": [
+        "App::cGameModeManager message listener",
+        "App::cGameModeManager::SetActiveModeByName"
+      ],
+      "evidence": [
+        {
+          "address": "0x007d8060",
+          "claim": "Game-mode-manager Initialize registers message 0x00e11333; Dispose unregisters it.",
+          "kind": "decompilation_and_disassembly",
+          "level": "SUPPORTED",
+          "source": "ghidra://SporeApp.exe@0x007d8060,0x007d9120"
+        },
+        {
+          "address": "0x007d8360",
+          "claim": "SetActiveModeByName performs a case-insensitive ModeEntry name comparison and calls vtable slot +0x40 with the matching index.",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "ghidra://SporeApp.exe@0x007d8360"
+        }
+      ],
+      "id": "mode_set_by_name",
+      "kind": "app_message",
+      "producers": [
+        "UI/menu/command producers remain unresolved"
+      ],
+      "status": "consumer_and_activation_static_producer_unresolved"
+    },
+    {
+      "consumers": [
+        "UI::SpaceGameUI::SetActivePalette"
+      ],
+      "evidence": [
+        {
+          "address": "0x0106e3e0",
+          "claim": "SetActivePalette changes mActivePaletteID only when the requested ID differs, then refreshes old/new palette panels and foodweb-dependent state.",
+          "kind": "decompilation_and_disassembly",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/decomp-gap/ui-shell-00.json"
+        }
+      ],
+      "id": "space_active_palette_change",
+      "kind": "hud_palette_state_change",
+      "producers": [
+        "Space tool/menu selection paths"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "consumers": [
+        "UTFWin::Window",
+        "IWinProc::HandleUIMessage",
+        "InteractiveWindow::OnKeyDown"
+      ],
+      "evidence": [
+        {
+          "address": null,
+          "claim": "SDK MessageType names kMsgKeyDown=1 and kMsgKeyUp=2.",
+          "kind": "sdk_enum",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/spore_sdk.xml"
+        }
+      ],
+      "id": "ui_key_down",
+      "kind": "utfwin_message",
+      "producers": [
+        "UTFWin input conversion"
+      ],
+      "status": "interface_confirmed_dispatch_order_unresolved"
+    },
+    {
+      "consumers": [
+        "UTFWin::Window",
+        "IWinProc::HandleUIMessage",
+        "InteractiveWindow::OnKeyUp"
+      ],
+      "evidence": [
+        {
+          "address": null,
+          "claim": "SDK MessageType names kMsgKeyUp=2.",
+          "kind": "sdk_enum",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/spore_sdk.xml"
+        }
+      ],
+      "id": "ui_key_up",
+      "kind": "utfwin_message",
+      "producers": [
+        "UTFWin input conversion"
+      ],
+      "status": "interface_confirmed_dispatch_order_unresolved"
+    },
+    {
+      "consumers": [
+        "UTFWin::Window",
+        "IWinProc::HandleUIMessage",
+        "InteractiveWindow::OnMouseDown"
+      ],
+      "evidence": [
+        {
+          "address": null,
+          "claim": "SDK MessageType names kMsgMouseDown=6.",
+          "kind": "sdk_enum",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/spore_sdk.xml"
+        }
+      ],
+      "id": "ui_mouse_down",
+      "kind": "utfwin_message",
+      "producers": [
+        "UTFWin input conversion"
+      ],
+      "status": "interface_confirmed_dispatch_order_unresolved"
+    },
+    {
+      "consumers": [
+        "UTFWin::Window",
+        "IWinProc::HandleUIMessage",
+        "InteractiveWindow::OnMouseMove"
+      ],
+      "evidence": [
+        {
+          "address": null,
+          "claim": "SDK MessageType names kMsgMouseMove=8.",
+          "kind": "sdk_enum",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/spore_sdk.xml"
+        }
+      ],
+      "id": "ui_mouse_move",
+      "kind": "utfwin_message",
+      "producers": [
+        "UTFWin input conversion"
+      ],
+      "status": "interface_confirmed_dispatch_order_unresolved"
+    },
+    {
+      "consumers": [
+        "UTFWin::Window",
+        "IWinProc::HandleUIMessage",
+        "InteractiveWindow::OnMouseUp"
+      ],
+      "evidence": [
+        {
+          "address": null,
+          "claim": "SDK MessageType names kMsgMouseUp=7.",
+          "kind": "sdk_enum",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/spore_sdk.xml"
+        }
+      ],
+      "id": "ui_mouse_up",
+      "kind": "utfwin_message",
+      "producers": [
+        "UTFWin input conversion"
+      ],
+      "status": "interface_confirmed_dispatch_order_unresolved"
+    },
+    {
+      "consumers": [
+        "UTFWin::Window",
+        "IWinProc::HandleUIMessage",
+        "InteractiveWindow::OnMouseWheel"
+      ],
+      "evidence": [
+        {
+          "address": null,
+          "claim": "SDK MessageType names kMsgMouseWheel=9.",
+          "kind": "sdk_enum",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/spore_sdk.xml"
+        }
+      ],
+      "id": "ui_mouse_wheel",
+      "kind": "utfwin_message",
+      "producers": [
+        "UTFWin input conversion"
+      ],
+      "status": "interface_confirmed_dispatch_order_unresolved"
+    },
+    {
+      "consumers": [
+        "UTFWin::Window state observers",
+        "IWinProc::HandleUIMessage"
+      ],
+      "evidence": [
+        {
+          "address": null,
+          "claim": "SDK MessageType names kMsgStateChanged=19.",
+          "kind": "sdk_enum",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/spore_sdk.xml"
+        }
+      ],
+      "id": "ui_state_changed",
+      "kind": "utfwin_message",
+      "producers": [
+        "UTFWin::Window state/layout paths"
+      ],
+      "status": "interface_confirmed_dispatch_order_unresolved"
+    },
+    {
+      "consumers": [
+        "UI::EditorNamePanel::HandleUIMessage",
+        "UTFWin text controls"
+      ],
+      "evidence": [
+        {
+          "address": "0x005c0100",
+          "claim": "EditorNamePanel handles kMsgButtonSelect and kMsgComponentActivated branches from the UTFWin message type.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "ghidra://SporeApp.exe@0x005c0100"
+        },
+        {
+          "address": null,
+          "claim": "SDK MessageType names kMsgButtonSelect=24 and kMsgComponentActivated=0x287259f6.",
+          "kind": "sdk_enum",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/spore_sdk.xml"
+        }
+      ],
+      "id": "ui_component_activated",
+      "kind": "utfwin_message",
+      "producers": [
+        "UTFWin buttons and controls"
+      ],
+      "status": "static_consumer_mechanics"
+    },
+    {
+      "consumers": [
+        "UTFWin button handlers"
+      ],
+      "evidence": [
+        {
+          "address": null,
+          "claim": "SDK MessageType names kMsgButtonClick=23.",
+          "kind": "sdk_enum",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/spore_sdk.xml"
+        }
+      ],
+      "id": "ui_button_click",
+      "kind": "utfwin_message",
+      "producers": [
+        "UTFWin button controls"
+      ],
+      "status": "interface_confirmed_dispatch_order_unresolved"
+    },
+    {
+      "consumers": [
+        "UTFWin selection handlers"
+      ],
+      "evidence": [
+        {
+          "address": "0x005c0100",
+          "claim": "EditorNamePanel handles message type 0x18, SDK kMsgButtonSelect, and forwards its boolean payload.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "ghidra://SporeApp.exe@0x005c0100"
+        }
+      ],
+      "id": "ui_button_select",
+      "kind": "utfwin_message",
+      "producers": [
+        "UTFWin button controls"
+      ],
+      "status": "static_consumer_mechanics"
+    },
+    {
+      "consumers": [
+        "UTFWin text controls and editor UI"
+      ],
+      "evidence": [
+        {
+          "address": null,
+          "claim": "SDK MessageType names kMsgTextChanged=0x09b1552da.",
+          "kind": "sdk_enum",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/spore_sdk.xml"
+        }
+      ],
+      "id": "ui_text_changed",
+      "kind": "utfwin_message",
+      "producers": [
+        "UTFWin text controls"
+      ],
+      "status": "interface_confirmed_dispatch_order_unresolved"
+    }
+  ],
+  "scope": {
+    "binary": "SPORE/SporeBin/SporeApp.exe",
+    "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+    "boundaries": [
+      "No proprietary source or asset is copied or inferred beyond SDK names, layouts, and static behavior.",
+      "No SPORE/ file, Ghidra program, KG row, source implementation, or historical triage artifact is modified.",
+      "SDK names and imported vtables establish interfaces; behavior is claimed only when supported by a body, disassembly, vtable data, or explicit contradiction handling.",
+      "Current OpenSpore source is comparison context only and is not evidence of original SporeApp.exe behavior."
+    ],
+    "build": "GOG 3.1.0.22",
+    "covered": [
+      "App game-mode registry and activation",
+      "mode enter/exit messages and Simulator mode commits",
+      "UTFWin window hierarchy, state flags, WinProc interface, and message families",
+      "UI shell, EditorNamePanel state, SpaceGameUI palette state, Cell HUD rollover, and UTFWin dialog interfaces",
+      "central input manager surface and concrete Cell input callbacks",
+      "App, Simulator, UI, and UTFWin subsystem/class KG corroboration"
+    ],
+    "evidence_policy": {
+      "confidence": {
+        "high": "Direct current Ghidra control/data flow or multiple agreeing static sources; no original runtime trace required for mechanics claims.",
+        "low": "Interface, naming, or bounded inference with missing behavior or runtime evidence.",
+        "medium": "One direct body plus structural support, or exact mechanics with important identity/order gaps."
+      },
+      "levels": [
+        "CONFIRMED",
+        "INFERRED",
+        "OBSERVED",
+        "SUPPORTED",
+        "UNKNOWN",
+        "VERIFIED"
+      ],
+      "runtime": "The only committed positive original trace covers startup/main-menu presence, not menu-to-gameplay transition behavior. No new runtime trace was obtained."
+    },
+    "image_base": "0x00400000",
+    "kg_queries": [
+      "Subsystem: App, GameInput, Simulator, UI, and UTFWin exist as distinct KG nodes.",
+      "Class: UTFWin::Window candidates are structural, non-RTTI associations; the cGameModeManager concrete vtable is separately read from live Ghidra data.",
+      "neighbors(struct:/Spore/UTFWin/Window) links Window functions and many candidate classes.",
+      "neighbors(struct:/Spore/App/cGameModeManager) links manager functions including 0x007d8060, 0x007d8230, 0x007d8360, 0x007d8d40, and 0x007d90a0.",
+      "neighbors(struct:/Spore/Simulator/cGameInputManager) links 0x00b3d350 as return/accessor association."
+    ],
+    "live_ghidra": "Read-only decompilation, disassembly, memory, structure, enum, xref, and vtable queries were used before the bridge lost the open program; no Ghidra mutation or save was requested.",
+    "method": [
+      "Used CodeGraph to locate current clean-room mode/input counterparts and research partitions.",
+      "Queried the read-only KG for subsystem, class, function, and structure associations.",
+      "Read existing state-machine, event/message, editor/UI, lifecycle, UI-shell, and engine-boundary dossiers.",
+      "Decompiled and disassembled concrete mode activation, Cell input/lifecycle, UTFWin/editor handlers, and transition callbacks in live Ghidra.",
+      "Resolved the App game-mode concrete vtable at 0x01412598 to correct the misleading SDK address label for SetActiveModeAt."
+    ],
+    "not_covered": [
+      "A complete original main-menu controller or menu resource graph",
+      "A complete original menu-to-Cell positive trace",
+      "Concrete cGameInputManager router body and input-region map semantics",
+      "Exact UTFWin proc priority, bubbling, focus, and handled-result rules",
+      "A complete message-box/dialog presentation, focus, and dismissal machine",
+      "cUIEventLog ShowEvent/HideEvent bodies and feedback-expiry ordering",
+      "Full Cell rollover expiry/reuse and cCellUI update behavior"
+    ],
+    "sources": [
+      ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnEnter.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnExit.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnKeyDown.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnMouseDown.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnMouseMove.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnMouseUp.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnMouseWheel.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/App__cGameModeManager__SetActiveModeAt.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/GameInput__OnKeyDown.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/GameInput__OnKeyUp.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellUI__ShowHealthRollover.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__Window__SendMsg.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__Window__SetState.c",
+      ".spore-analysis/ghidra-exports/sdk_functions.tsv",
+      ".spore-analysis/ghidra-exports/spore_sdk.xml",
+      ".spore-analysis/ghidra-exports/structs_fields.tsv",
+      "docs/analysis/GUI-BOUNDARY.md",
+      "docs/analysis/dossiers/unknown-high/gamemode-state-player-id.json",
+      "knowledgegraph/research/decomp-gap/ui-shell-00.json",
+      "knowledgegraph/research/global-campaign-2026/track-f-empire-economy.json",
+      "knowledgegraph/research/global-campaign-2026/track-g-editor-ui-input.json",
+      "knowledgegraph/research/global-campaign-2026/track-k-engine-boundaries.json",
+      "knowledgegraph/research/state-machines/simulator-core.json",
+      "knowledgegraph/research/types/06-editor-ui.json",
+      "knowledgegraph/research/types/07-event-message.json",
+      "knowledgegraph/research/types/11-vtable-archaeology.json",
+      "knowledgegraph/research/types/13-lifecycle.json",
+      "knowledgegraph/spore.db"
+    ]
+  },
+  "state_machines": [
+    {
+      "confidence": {
+        "level": "high",
+        "reason": "The concrete vtable, range guard, old-exit/new-enter virtual calls, active-index write, and two message sends are directly observed. The prior SDK label at 0x007d8d40 is demonstrably a teardown body, not the activation body."
+      },
+      "entry_actions": [
+        {
+          "action": "Initialize creates/updates camera manager state, installs an id-generator helper, and registers messages 0x00d3c602, 0x00e11332, and 0x00e11333.",
+          "conditions": [
+            "field_10 is initially false"
+          ],
+          "evidence": "0x007d8060"
+        }
+      ],
+      "event_consumers": [
+        "mode_set_by_name",
+        "mode_exit_announcement",
+        "mode_enter_announcement"
+      ],
+      "event_producers": [
+        "mode_exit_announcement",
+        "mode_enter_announcement"
+      ],
+      "evidence": [
+        {
+          "address": "0x01412598",
+          "claim": "Concrete IGameModeManager vtable: +0x28 SetActiveMode=0x007d8c30, +0x40 SetActiveModeAt=0x007d8c80, +0x4c SetActiveModeByName=0x007d8360.",
+          "kind": "live_ghidra_vtable_data",
+          "level": "CONFIRMED",
+          "source": "ghidra://SporeApp.exe@0x01412598"
+        },
+        {
+          "address": "0x007d85b0",
+          "claim": "If new index differs, call old mode slot +0x1c (OnExit), capture old mode ID, write +0x28, send 0x0212d3e7, call new mode slot +0x18 (OnEnter), then send 0x022d1adc.",
+          "kind": "live_ghidra_disassembly",
+          "level": "CONFIRMED",
+          "source": "ghidra://SporeApp.exe@0x007d85b0"
+        },
+        {
+          "address": "0x007d8c80",
+          "claim": "SetActiveModeAt rejects negative/out-of-range indices and otherwise delegates to the transition helper.",
+          "kind": "live_ghidra_decompilation",
+          "level": "CONFIRMED",
+          "source": "ghidra://SporeApp.exe@0x007d8c80"
+        },
+        {
+          "address": "0x007d8d40",
+          "claim": "SDK-labeled SetActiveModeAt body is actually vtable teardown: it writes base vtables, clears the entry vector, and optionally calls slot +0x0c on the object at +0x2c.",
+          "kind": "live_ghidra_disassembly",
+          "level": "CONFIRMED",
+          "source": "ghidra://SporeApp.exe@0x007d8d40"
+        },
+        {
+          "address": "0x007d8360",
+          "claim": "SetActiveModeByName scans 24-byte ModeEntry records, compares names case-insensitively, and calls SetActiveModeAt with the matching index.",
+          "kind": "live_ghidra_decompilation",
+          "level": "CONFIRMED",
+          "source": "ghidra://SporeApp.exe@0x007d8360"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "Dispose unregisters manager messages, exits a valid active mode, disposes every registered mode, clears ModeEntry storage, sets mnActiveIndex to -1, and clears manager references.",
+          "conditions": [
+            "Dispose called after Initialize"
+          ],
+          "evidence": "0x007d9120"
+        }
+      ],
+      "generated_events": [
+        "mode_exit_announcement",
+        "mode_enter_announcement"
+      ],
+      "guards": [
+        "Requested index must satisfy 0 <= index < mode_count.",
+        "A request for mnActiveIndex is a no-op.",
+        "Old OnExit is called only when the current index is valid.",
+        "Mode entry stores mpMode, mModeID, and a 16-byte name string."
+      ],
+      "name": "app_game_mode_activation",
+      "possible_states": [
+        {
+          "actions": [
+            "No active mode is selected after teardown; mnActiveIndex is -1."
+          ],
+          "guards": [
+            "mnActiveIndex == -1"
+          ],
+          "name": "no_active_mode",
+          "raw_value": -1
+        },
+        {
+          "actions": [
+            "Selected mode receives lifecycle callbacks and per-frame/input dispatch."
+          ],
+          "guards": [
+            "0 <= mnActiveIndex < mode_count"
+          ],
+          "name": "active_mode_index",
+          "raw_value": "0..mode_count-1"
+        },
+        {
+          "actions": [
+            "Manager has not completed construction or has completed Dispose."
+          ],
+          "guards": [
+            "field_10 is false"
+          ],
+          "name": "manager_uninitialized_or_disposed",
+          "raw_value": null
+        }
+      ],
+      "relevant_functions": [
+        "0x007d8060",
+        "0x007d8230",
+        "0x007d8360",
+        "0x007d8470",
+        "0x007d8c30",
+        "0x007d8c80",
+        "0x007d85b0",
+        "0x007d8d40",
+        "0x007d8ff0",
+        "0x007d9120",
+        "0x007d9260"
+      ],
+      "relevant_structures": [
+        "App::cGameModeManager",
+        "App::cGameModeManager::ModeEntry",
+        "App::IGameMode",
+        "App::IGameModeManager"
+      ],
+      "side_effects": [
+        "old mode OnExit runs before the active-index write",
+        "mnActiveIndex changes before the new mode OnEnter",
+        "mode-exit message is sent before new OnEnter",
+        "mode-enter message is sent after new OnEnter",
+        "camera manager, viewer, and per-mode difficulty/property state are manager-owned concerns"
+      ],
+      "state_variable": {
+        "expression": "App::cGameModeManager+0x28",
+        "owner": "App::cGameModeManager",
+        "type": "int32_t active index into mEntries"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "Initialize manager and register mode messages"
+          ],
+          "cause": "manager initialization",
+          "event": "constructor_and_initialize",
+          "from_state": "manager_uninitialized_or_disposed",
+          "guard": "field_10 is false",
+          "to_state": "no_active_mode"
+        },
+        {
+          "actions": [
+            "self-transition is a no-op"
+          ],
+          "cause": "same mode requested",
+          "event": "SetActiveModeAt",
+          "from_state": "active_mode_index",
+          "guard": "requested index equals mnActiveIndex",
+          "to_state": "active_mode_index"
+        },
+        {
+          "actions": [
+            "call old OnExit when current index is valid",
+            "save old mode ID",
+            "write requested index",
+            "send mode-exit message",
+            "call new OnEnter",
+            "send mode-enter message"
+          ],
+          "cause": "different mode requested",
+          "event": "SetActiveModeAt_or_SetActiveMode_or_SetActiveModeByName",
+          "from_state": "no_active_mode or active_mode_index",
+          "guard": "requested index is valid and differs from mnActiveIndex",
+          "to_state": "active_mode_index"
+        },
+        {
+          "actions": [
+            "exit valid active mode",
+            "dispose all modes",
+            "clear entries",
+            "set index to -1"
+          ],
+          "cause": "manager disposal",
+          "event": "Dispose",
+          "from_state": "active_mode_index",
+          "guard": "field_10 is true",
+          "to_state": "manager_uninitialized_or_disposed"
+        }
+      ],
+      "validation_strategy": [
+        "Instrument concrete vtable slot +0x40 and helper 0x007d85b0 on a hash-pinned binary.",
+        "Record mnActiveIndex, selected mode ID/name, OnExit/OnEnter calls, and both message sends in one transition trace.",
+        "Exercise same-index, invalid-index, no-active, and valid-to-valid cases.",
+        "Resolve the UI producer of 0x00e11333 before promoting the main-menu path."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "medium",
+        "reason": "Rollover allocation gate, health conversion, and mDisappearTime write are direct; pool exhaustion, update, expiry, and removal mechanics are unresolved."
+      },
+      "entry_actions": [
+        {
+          "action": "ShowHealthRollover calls the Cell rollover pool helper with the cell index and initialHealth/6, then sets mDisappearTime to 0.5.",
+          "conditions": [
+            "cell->mGFXObjectIndex != 0",
+            "pool helper returns non-null"
+          ],
+          "evidence": "0x00e62340"
+        }
+      ],
+      "event_consumers": [
+        "cell_health_rollover"
+      ],
+      "event_producers": [
+        "cell health/damage presentation path"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e62340",
+          "claim": "Missing GFX object suppresses rollover; successful creation writes 0.5 at rollover+0x24.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellUI__ShowHealthRollover.c"
+        },
+        {
+          "address": null,
+          "claim": "cCellUIRollover is 56 bytes with mCellIndex@0x04, health-like field@0x08, mDisappearTime@0x24, and mpLayout@0x34; cCellUI owns a 28-byte object pool at +0x9c.",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "No supported exit action is recovered.",
+          "conditions": [],
+          "evidence": "unresolved"
+        }
+      ],
+      "generated_events": [
+        "cell_health_rollover"
+      ],
+      "guards": [
+        "A rollover cannot be created for a cell with mGFXObjectIndex == 0.",
+        "Pool exhaustion returns no rollover."
+      ],
+      "name": "cell_health_rollover_lifecycle",
+      "possible_states": [
+        {
+          "actions": [
+            "No rollover record represents the damage presentation."
+          ],
+          "guards": [
+            "no active pool record for the cell"
+          ],
+          "name": "rollover_absent",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "Rollover carries health-derived value and disappear timer for later layout/update work."
+          ],
+          "guards": [
+            "allocated rollover record exists"
+          ],
+          "name": "rollover_active",
+          "raw_value": "pool record"
+        }
+      ],
+      "relevant_functions": [
+        "0x00e62200",
+        "0x00e62340"
+      ],
+      "relevant_structures": [
+        "Simulator::Cell::cCellUI",
+        "Simulator::Cell::cCellUIRollover",
+        "cObjectPool<Simulator::Cell::cCellUIRollover>"
+      ],
+      "side_effects": [
+        "allocates or reuses a 56-byte rollover record",
+        "stores a health-derived value",
+        "sets disappear time to 0.5",
+        "references a UTFWin layout"
+      ],
+      "state_variable": {
+        "expression": "membership in Simulator::Cell::cCellUI+0x9c rollover pool",
+        "owner": "Simulator::Cell::cCellUI",
+        "type": "object-pool occupancy plus cCellUIRollover fields"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "remain absent"
+          ],
+          "cause": "cell has no GFX object or pool allocation fails",
+          "event": "cell_health_rollover",
+          "from_state": "rollover_absent",
+          "guard": "mGFXObjectIndex == 0 or pool helper returns null",
+          "to_state": "rollover_absent"
+        },
+        {
+          "actions": [
+            "create/reuse rollover",
+            "set health-derived field",
+            "set mDisappearTime to 0.5"
+          ],
+          "cause": "valid health rollover request",
+          "event": "cell_health_rollover",
+          "from_state": "rollover_absent",
+          "guard": "mGFXObjectIndex != 0 and pool helper returns non-null",
+          "to_state": "rollover_active"
+        }
+      ],
+      "validation_strategy": [
+        "Trace the pool helper and every writer of rollover+0x24 and cCellUI+0x9c.",
+        "Record frame timestamps from creation through disappearance and pool release.",
+        "Exercise missing GFX, pool exhaustion, repeated damage, and simultaneous rollovers."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "high",
+        "reason": "The boolean state, equality guard, and both enable/disable side-effect sets are directly decompiled."
+      },
+      "entry_actions": [
+        {
+          "action": "Initialize stores the extended-support flag in field_11, derives mRandomNameType, and initializes field_10 to false.",
+          "conditions": [
+            "EditorNamePanel initialization succeeds"
+          ],
+          "evidence": "0x005bfd40"
+        }
+      ],
+      "event_consumers": [
+        "editor_name_panel_extended_change",
+        "ui_button_select",
+        "ui_component_activated"
+      ],
+      "event_producers": [
+        "EditorNamePanel callers and UTFWin handlers"
+      ],
+      "evidence": [
+        {
+          "address": "0x005c0380",
+          "claim": "SetExtended writes this+0x10, returns when unchanged, and has distinct nonzero and zero branches.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "ghidra://SporeApp.exe@0x005c0380"
+        },
+        {
+          "address": null,
+          "claim": "EditorNamePanel is 56 bytes with field_10@0x10, field_11@0x11, layout@0x18, entity@0x1c, name type@0x20, text@0x24, and container@0x34.",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "Disable restores text through helper 0x005bf950, resets child/editor state, turns off service states, and emits the same application message used by enable.",
+          "conditions": [
+            "field_10 changes from true to false"
+          ],
+          "evidence": "0x005c0380"
+        }
+      ],
+      "generated_events": [
+        "editor_name_panel_extended_change"
+      ],
+      "guards": [
+        "A repeated SetExtended call with the same value has no effect.",
+        "Some enable/disable child changes are conditional on field_11 and mRandomNameType."
+      ],
+      "name": "editor_name_panel_extended_state",
+      "possible_states": [
+        {
+          "actions": [
+            "Short/base text and validation presentation is active."
+          ],
+          "guards": [
+            "field_10 == false"
+          ],
+          "name": "basic",
+          "raw_value": 0
+        },
+        {
+          "actions": [
+            "Extended text, validation, and child-panel services are enabled or updated."
+          ],
+          "guards": [
+            "field_10 == true"
+          ],
+          "name": "extended",
+          "raw_value": 1
+        }
+      ],
+      "relevant_functions": [
+        "0x005bf9d0",
+        "0x005bfd40",
+        "0x005c0100",
+        "0x005c0380"
+      ],
+      "relevant_structures": [
+        "UI::EditorNamePanel",
+        "UTFWin::IWinProc",
+        "UTFWin::UILayout",
+        "INameableEntity"
+      ],
+      "side_effects": [
+        "toggles multiple hashed service/window states",
+        "rebuilds or updates text/validation state",
+        "forwards selection/component-activation payloads",
+        "registers four application message IDs during initialization"
+      ],
+      "state_variable": {
+        "expression": "UI::EditorNamePanel+0x10",
+        "owner": "UI::EditorNamePanel",
+        "type": "bool field_10 (extended mode)"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "self-transition is a no-op"
+          ],
+          "cause": "same extended value",
+          "event": "SetExtended",
+          "from_state": "basic or extended",
+          "guard": "requested value equals field_10",
+          "to_state": "same"
+        },
+        {
+          "actions": [
+            "enable text/validation/child services",
+            "optionally update random-name state",
+            "emit application message 0x0716d445"
+          ],
+          "cause": "enable extended panel",
+          "event": "SetExtended(true)",
+          "from_state": "basic",
+          "guard": "field_10 is false",
+          "to_state": "extended"
+        },
+        {
+          "actions": [
+            "restore text",
+            "reset child/editor state",
+            "disable extended services",
+            "emit application message 0x0716d446"
+          ],
+          "cause": "disable extended panel",
+          "event": "SetExtended(false)",
+          "from_state": "extended",
+          "guard": "field_10 is true",
+          "to_state": "basic"
+        }
+      ],
+      "validation_strategy": [
+        "Trace SetExtended and the four registered App messages with field_10 snapshots.",
+        "Record every service/window callback and identify the concrete owners of hashes 0xc7ceb1bd and 0xd0e6d04b.",
+        "Drive basic/extended transitions through the actual UTFWin button path and verify text/validation deltas."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "high",
+        "reason": "Pending-state writes, first-request-wins semantics, commit helpers, and stable predicate are exact static mechanics from the existing simulator-core characterization."
+      },
+      "entry_actions": [
+        {
+          "action": "cStrategy construction initializes mLastGameMode, mCurrentGameMode, and pending mode to 0xffffffff and pending path to 0.",
+          "conditions": [
+            "cStrategy construction"
+          ],
+          "evidence": "0x00b5b960"
+        }
+      ],
+      "event_consumers": [
+        "mode_exit_announcement",
+        "mode_enter_announcement"
+      ],
+      "event_producers": [
+        "cStrategy internal request helpers"
+      ],
+      "evidence": [
+        {
+          "address": "0x00b5b880",
+          "claim": "Request path 1 writes pending state 1 and preserves the first requested identifier.",
+          "kind": "disassembly",
+          "level": "CONFIRMED",
+          "source": "knowledgegraph/research/state-machines/simulator-core.json"
+        },
+        {
+          "address": "0x00b5b8c0",
+          "claim": "Commit-last copies pending ID to mLastGameMode, clears pending, and writes state 0.",
+          "kind": "disassembly",
+          "level": "CONFIRMED",
+          "source": "knowledgegraph/research/state-machines/simulator-core.json"
+        },
+        {
+          "address": "0x00b63510",
+          "claim": "The unidentified concrete simulator listener handles both mode messages, reads payload words +0x08/+0x10, normalizes them, and calls different commit helpers for exit versus enter.",
+          "kind": "live_ghidra_disassembly",
+          "level": "SUPPORTED",
+          "source": "ghidra://SporeApp.exe@0x00b63510"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "Each commit clears the pending identifier to 0xffffffff and pending path to 0.",
+          "conditions": [
+            "commit-last or commit-current completes"
+          ],
+          "evidence": "0x00b5b8c0, 0x00b5b8e0"
+        }
+      ],
+      "generated_events": [
+        "simulator_last_mode_commit",
+        "simulator_current_mode_commit"
+      ],
+      "guards": [
+        "Pending identifier -1 means no request.",
+        "First request wins while pending.",
+        "Mode identity is stable only when current and last IDs are equal and no request is pending.",
+        "0x00b63510 ignores equal normalized IDs before committing."
+      ],
+      "name": "simulator_strategy_mode_commit",
+      "possible_states": [
+        {
+          "actions": [
+            "Represent no pending mode request."
+          ],
+          "guards": [
+            "field_18 == 0"
+          ],
+          "name": "no_pending_request",
+          "raw_value": 0
+        },
+        {
+          "actions": [
+            "Record first pending mode identifier for request path 1."
+          ],
+          "guards": [
+            "field_18 == 1"
+          ],
+          "name": "pending_path_1",
+          "raw_value": 1
+        },
+        {
+          "actions": [
+            "Record first pending mode identifier for request path 2."
+          ],
+          "guards": [
+            "field_18 == 2"
+          ],
+          "name": "pending_path_2",
+          "raw_value": 2
+        }
+      ],
+      "relevant_functions": [
+        "0x00b1db60",
+        "0x00b1dbd0",
+        "0x00b5b840",
+        "0x00b5b880",
+        "0x00b5b8a0",
+        "0x00b5b8c0",
+        "0x00b5b8e0",
+        "0x00b5b960",
+        "0x00b63510"
+      ],
+      "relevant_structures": [
+        "Simulator::cStrategy",
+        "Simulator::ISimulatorStrategy",
+        "Simulator::cGameModeManager",
+        "Simulator::cGameInputManager",
+        "Simulator::cUIEventLog"
+      ],
+      "side_effects": [
+        "commits last mode independently from current mode",
+        "transition-effect callbacks react to committed mode changes",
+        "first pending request wins"
+      ],
+      "state_variable": {
+        "expression": "cStrategy+0x18 with pending identifier cStrategy+0x14",
+        "owner": "Simulator::cStrategy-derived manager",
+        "type": "int32 request path plus uint32 pending mode identifier"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "initialize mode slots to -1 and clear pending state"
+          ],
+          "cause": "strategy construction",
+          "event": "constructor",
+          "from_state": "uninitialized",
+          "guard": "always",
+          "to_state": "no_pending_request"
+        },
+        {
+          "actions": [
+            "set pending path 1",
+            "store identifier only if none is pending"
+          ],
+          "cause": "request path 1",
+          "event": "strategy_mode_request",
+          "from_state": "any",
+          "guard": "always",
+          "to_state": "pending_path_1"
+        },
+        {
+          "actions": [
+            "set pending path 2",
+            "store identifier only if none is pending"
+          ],
+          "cause": "request path 2",
+          "event": "strategy_mode_request",
+          "from_state": "any",
+          "guard": "always",
+          "to_state": "pending_path_2"
+        },
+        {
+          "actions": [
+            "copy pending mode ID to mLastGameMode",
+            "clear pending state"
+          ],
+          "cause": "mode-exit commit helper",
+          "event": "mode_exit_announcement",
+          "from_state": "pending_path_1 or pending_path_2",
+          "guard": "0x00b63510 sees differing normalized IDs and its guard permits commit",
+          "to_state": "no_pending_request"
+        },
+        {
+          "actions": [
+            "copy pending mode ID to mCurrentGameMode",
+            "clear pending state"
+          ],
+          "cause": "mode-enter commit helper",
+          "event": "mode_enter_announcement",
+          "from_state": "pending_path_1 or pending_path_2",
+          "guard": "0x00b63510 sees differing normalized IDs and its guard permits commit",
+          "to_state": "no_pending_request"
+        }
+      ],
+      "validation_strategy": [
+        "Trace 0x00b63510 and both commit helpers during a real App mode switch.",
+        "Record raw message payload words and normalized IDs before/after FUN_00b5c9d0.",
+        "Verify whether the transition-effect callbacks are reached directly by commit helpers or through another strategy update phase."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "high",
+        "reason": "The changed-value guard, mActivePaletteID write, panel iteration, and dependent callbacks are directly characterized in the targeted ui-shell recovery."
+      },
+      "entry_actions": [
+        {
+          "action": "The broader SpaceGameUI setup body at 0x01073700 creates UI resources and initializes mActivePaletteID to -1.",
+          "conditions": [
+            "SpaceGameUI allocation and factories succeed"
+          ],
+          "evidence": "0x01073700"
+        }
+      ],
+      "event_consumers": [
+        "space_active_palette_change"
+      ],
+      "event_producers": [
+        "Space tool/menu selection paths"
+      ],
+      "evidence": [
+        {
+          "address": "0x0106e3e0",
+          "claim": "SetActivePalette writes mActivePaletteID only when changed and refreshes old/new panels plus foodweb-dependent state.",
+          "kind": "decompilation_and_disassembly",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/decomp-gap/ui-shell-00.json"
+        },
+        {
+          "address": null,
+          "claim": "SpaceGameUI stores mActivePaletteID@0x23c, mToolPaletteIDs@0x240, mPalettePanels@0x25c, and mFoodwebPaletteIDs@0x27c.",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv"
+        }
+      ],
+      "exit_actions": [],
+      "generated_events": [
+        "space_active_palette_change"
+      ],
+      "guards": [
+        "Requested ID equal to mActivePaletteID suppresses panel transition callbacks.",
+        "Old/new panel callbacks run only for palette records found in mPalettePanels.",
+        "Foodweb selection uses a binary search over mFoodwebPaletteIDs."
+      ],
+      "name": "space_tool_palette_selection",
+      "possible_states": [
+        {
+          "actions": [
+            "No tool palette is active after setup before first selection."
+          ],
+          "guards": [
+            "mActivePaletteID == 0xffffffff"
+          ],
+          "name": "no_active_palette",
+          "raw_value": 4294967295
+        },
+        {
+          "actions": [
+            "One palette is active; old/new panel state is refreshed on change."
+          ],
+          "guards": [
+            "mActivePaletteID != 0xffffffff"
+          ],
+          "name": "active_palette_id",
+          "raw_value": "uint32 palette ID"
+        }
+      ],
+      "relevant_functions": [
+        "0x0106e3e0",
+        "0x0106e5e0",
+        "0x0106e630",
+        "0x0106e680",
+        "0x0106f1a0",
+        "0x01070290",
+        "0x01072d40",
+        "0x01073700"
+      ],
+      "relevant_structures": [
+        "UI::SpaceGameUI",
+        "UI::SpaceToolPanelUI",
+        "UTFWin::UILayout"
+      ],
+      "side_effects": [
+        "updates mActivePaletteID",
+        "refreshes old and new palette panels",
+        "updates foodweb palette state",
+        "calls unidentified service and panel vtable callbacks"
+      ],
+      "state_variable": {
+        "expression": "UI::SpaceGameUI+0x23c",
+        "owner": "UI::SpaceGameUI",
+        "type": "uint32_t active palette ID"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "self-transition is a no-op"
+          ],
+          "cause": "same palette requested",
+          "event": "space_active_palette_change",
+          "from_state": "no_active_palette or active_palette_id",
+          "guard": "requested ID equals mActivePaletteID",
+          "to_state": "same"
+        },
+        {
+          "actions": [
+            "disable/update old panel when present",
+            "write new mActivePaletteID",
+            "enable/update new panel",
+            "update foodweb-dependent state"
+          ],
+          "cause": "different palette requested",
+          "event": "space_active_palette_change",
+          "from_state": "no_active_palette or active_palette_id",
+          "guard": "requested ID differs and panel lookup succeeds",
+          "to_state": "active_palette_id"
+        }
+      ],
+      "validation_strategy": [
+        "Trace SetActivePalette from all six direct callers with mActivePaletteID snapshots.",
+        "Identify panel +0x24/+0x28 callbacks and service keys 0x8ed27e7a and 0x453ef531.",
+        "Record old/new panel and foodweb state before/after each palette change."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "low",
+        "reason": "IDialog exposes window/flags/dimensions and cSPUIMessageBox exports ShowDialog, but no usable ShowDialog body or runtime focus/dismissal evidence was recovered."
+      },
+      "entry_actions": [
+        {
+          "action": "Create a UTFWin IDialog-compatible object and obtain its associated IWindow.",
+          "conditions": [
+            "concrete dialog implementation exists"
+          ],
+          "evidence": "UTFWin::IDialog vtable"
+        }
+      ],
+      "event_consumers": [
+        "UTFWin::Message",
+        "MessageBoxCallback::OnButtonPress"
+      ],
+      "event_producers": [
+        "UTFWin::cSPUIMessageBox::ShowDialog",
+        "button controls"
+      ],
+      "evidence": [
+        {
+          "address": "0x00809e60",
+          "claim": "SDK exports UTFWin::cSPUIMessageBox::ShowDialog at this address; no body was persisted for behavioral analysis.",
+          "kind": "sdk_name_only",
+          "level": "CONFIRMED_NAME_ONLY",
+          "source": ".spore-analysis/ghidra-exports/sdk_functions.tsv"
+        },
+        {
+          "address": null,
+          "claim": "IDialog exposes ToWindow, dialog flags, per-flag setter, min/max dimensions, title text/style/color/border, and close-button border/drawable; MessageBoxCallback exposes OnButtonPress.",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv:24893-25048"
+        }
+      ],
+      "exit_actions": [],
+      "generated_events": [
+        "dialog_button_press"
+      ],
+      "guards": [
+        "Concrete dialog flags and modality rules are unresolved.",
+        "No focus owner, stacking, input-capture, or dismissal guard is recovered."
+      ],
+      "name": "utfwin_message_box_dialog",
+      "possible_states": [
+        {
+          "actions": [
+            "No dialog instance is presented."
+          ],
+          "guards": [
+            "no active dialog object"
+          ],
+          "name": "not_instantiated",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "Dialog exists with an associated window and flags."
+          ],
+          "guards": [
+            "IDialog object exists"
+          ],
+          "name": "instantiated",
+          "raw_value": "IDialog object"
+        },
+        {
+          "actions": [
+            "Dialog window is requested/shown; focus and input ownership are unresolved."
+          ],
+          "guards": [
+            "ShowDialog completed"
+          ],
+          "name": "shown",
+          "raw_value": "associated IWindow"
+        }
+      ],
+      "relevant_functions": [
+        "0x00809e60",
+        "0x0096d620"
+      ],
+      "relevant_structures": [
+        "UTFWin::IDialog",
+        "UTFWin::DialogDrawable",
+        "UTFWin::cSPUIMessageBox",
+        "UTFWin::MessageBoxCallback"
+      ],
+      "side_effects": [
+        "shows an associated UTFWin window",
+        "may deliver button presses to MessageBoxCallback::OnButtonPress",
+        "owns dialog flags/dimensions/title/close-button presentation state"
+      ],
+      "state_variable": {
+        "expression": "IDialog object presence plus its associated IWindow and DialogFlags",
+        "owner": "UTFWin dialog implementation",
+        "type": "object/window/flag state; no recovered concrete state field"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "construct dialog object"
+          ],
+          "cause": "dialog construction",
+          "event": "factory",
+          "from_state": "not_instantiated",
+          "guard": "allocation succeeds",
+          "to_state": "instantiated"
+        },
+        {
+          "actions": [
+            "show associated UTFWin window"
+          ],
+          "cause": "show request",
+          "event": "ShowDialog",
+          "from_state": "instantiated",
+          "guard": "unknown",
+          "to_state": "shown"
+        }
+      ],
+      "validation_strategy": [
+        "Recover a typed ShowDialog body and concrete cSPUIMessageBox implementation.",
+        "Trace focus changes, input capture, button presses, and window disposal.",
+        "Record whether dismissal is button-driven, Escape-driven, owner-driven, or timer-driven."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "medium",
+        "reason": "The window hierarchy, state field, recursive SetState structure, proc list, and message families are established; exact state values, bit writes, and traversal order are not."
+      },
+      "entry_actions": [
+        {
+          "action": "Window is inserted into a parent/child intrusive hierarchy and may own a WinProc list.",
+          "conditions": [
+            "AddWindow succeeds"
+          ],
+          "evidence": "UTFWin::Window layout and SDK methods"
+        }
+      ],
+      "event_consumers": [
+        "ui_button_click",
+        "ui_button_select",
+        "ui_component_activated",
+        "ui_key_down",
+        "ui_key_up",
+        "ui_mouse_down",
+        "ui_mouse_move",
+        "ui_mouse_up",
+        "ui_mouse_wheel",
+        "ui_state_changed",
+        "ui_text_changed"
+      ],
+      "event_producers": [
+        "UTFWin input conversion",
+        "UTFWin controls and state changes"
+      ],
+      "evidence": [
+        {
+          "address": null,
+          "claim": "Window is 524 bytes with manager@0x34, parent@0x38, children@0x3c, WinProcs@0x64, control ID@0x80, command ID@0x84, areas@0x88/+0x98, cursor@0xa8, state flags@0xac, caption/font, and drawable@0x1e0.",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv"
+        },
+        {
+          "address": "0x0095fcc0",
+          "claim": "SetState walks child boundaries, calls a child state getter, returns on a match, and otherwise recurses; the recovered decompiler does not preserve the exact field write.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__Window__SetState.c"
+        },
+        {
+          "address": "0x00961300",
+          "claim": "GetNextWinProc manipulates the intrusive proc list and has a list-priority path, but recovered types are too noisy for exact ordering.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__Window__GetNextWinProc.c"
+        },
+        {
+          "address": "0x00960250",
+          "claim": "SendMsg is a forwarding surface with unresolved indirect calls.",
+          "kind": "decompilation",
+          "level": "UNKNOWN",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__Window__SendMsg.c"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "RemoveWindow/DisposeWindowFamily/DisposeAllWindowFamilies remove hierarchy and proc-owned state.",
+          "conditions": [
+            "window or family is disposed"
+          ],
+          "evidence": "UTFWin::Window methods; exact full teardown remains partial"
+        }
+      ],
+      "generated_events": [
+        "ui_state_changed"
+      ],
+      "guards": [
+        "SetState returns early when a traversed window already reports the requested state.",
+        "Child propagation is recursive and depends on a termination flag whose decompiler recovery is noisy.",
+        "WinProc priority direction and handled-result consumption are unresolved."
+      ],
+      "name": "utfwin_window_state",
+      "possible_states": [
+        {
+          "actions": [
+            "Window state is represented only by the opaque int32 mnStateFlags word; no complete enum or bit catalog is recovered."
+          ],
+          "guards": [
+            "mnStateFlags is any value"
+          ],
+          "name": "opaque_state_word",
+          "raw_value": "int32"
+        },
+        {
+          "actions": [
+            "During SetState propagation, this node matches the requested state and recursion stops."
+          ],
+          "guards": [
+            "child state getter equals requested state"
+          ],
+          "name": "requested_state_match",
+          "raw_value": "requested int32"
+        }
+      ],
+      "relevant_functions": [
+        "0x00960050",
+        "0x00960250",
+        "0x00960310",
+        "0x00961300",
+        "0x00961980",
+        "0x00961f10",
+        "0x00962780",
+        "0x00962830",
+        "0x0095fcc0",
+        "0x0098f870"
+      ],
+      "relevant_structures": [
+        "UTFWin::Window",
+        "UTFWin::IWindow",
+        "UTFWin::IWinProc",
+        "UTFWin::Message",
+        "UTFWin::UILayout"
+      ],
+      "side_effects": [
+        "inserts/removes child windows",
+        "adds/removes/reorders WinProc entries",
+        "stores control/command IDs and state flags",
+        "updates areas, cursor, caption, font, drawable, and colors",
+        "dispatches or relays UI messages",
+        "disposes window families"
+      ],
+      "state_variable": {
+        "expression": "UTFWin::Window+0xac",
+        "owner": "UTFWin::Window",
+        "type": "int32 mnStateFlags"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "stop propagation"
+          ],
+          "cause": "window already has requested state",
+          "event": "SetState",
+          "from_state": "opaque_state_word",
+          "guard": "current state equals requested state",
+          "to_state": "requested_state_match"
+        },
+        {
+          "actions": [
+            "apply state to current/child window and recurse according to recovered control flow"
+          ],
+          "cause": "state change request",
+          "event": "SetState",
+          "from_state": "opaque_state_word",
+          "guard": "current state differs; exact write and stop condition unresolved",
+          "to_state": "opaque_state_word"
+        },
+        {
+          "actions": [
+            "remove hierarchy, proc, drawable, and family state"
+          ],
+          "cause": "dispose request",
+          "event": "RemoveWindow_or_DisposeWindowFamily",
+          "from_state": "any",
+          "guard": "window is owned by the target family",
+          "to_state": "not_present"
+        }
+      ],
+      "validation_strategy": [
+        "Recover corrected Add/RemoveWinProc and SendMsg/DoMessage bodies with this typed as Window.",
+        "Trace SetState and GetState in assembly to recover exact flag writes, recursion, and stop conditions.",
+        "Instrument a focused window tree with two procs at distinct priorities and record message order/handled results."
+      ]
+    }
+  ],
+  "temporal_semantics": {
+    "app_mode_switch": [
+      "Validate requested index.",
+      "Return without side effects when requested index equals mnActiveIndex.",
+      "Call old mode OnExit when mnActiveIndex is valid.",
+      "Capture the old mode ID and write requested index to mnActiveIndex.",
+      "Send kMsgOnModeExit with new/prior mode-ID words.",
+      "Call new mode OnEnter.",
+      "Send kMsgOnModeEnter with new/prior mode-ID words."
+    ],
+    "input_order": [
+      "The exact OS-to-cGameInputManager and UI-vs-gameplay priority order is unresolved.",
+      "GameInput key down/up mutates a 256-bit key set when the key code is below 0x100.",
+      "Concrete Cell mode callbacks mutate GameInput/UI state and return a handled result after gameplay/UI helper fan-out.",
+      "UTFWin key/mouse events are a separate message family; whether they are consumed before active-mode input is unresolved."
+    ],
+    "message_bus_order": [
+      "The App manager uses IMessageManager vtable +0x14, SDK-named MessageSend, for mode-exit and mode-enter records.",
+      "The App message manager's listener priority, queue record, send/post distinction, and handled-result consume rule remain unresolved.",
+      "UTFWin::Window::SendMsg and IWinProc dispatch are not proven to be the same bus as App::cMessageManager."
+    ],
+    "simulator_mode_effects": [
+      "0x00b63510 reads both mode-announcement IDs, compares normalized ID pairs, and dispatches exit and enter commits differently.",
+      "Last/current commit helpers may drive cGameModeManager OnModeExited/OnModeEntered callbacks; the exact helper-to-vtable hop is static but not runtime observed.",
+      "OnModeExited and OnModeEntered drive transition-effect/application callbacks only when mpTransitionEffectWorld is non-null."
+    ],
+    "ui_window_order": [
+      "Window construction establishes parent/child and WinProc ownership before messages are sent.",
+      "The established interface order is message construction, Window::SendMsg, priority/event-flag filtering, HandleUIMessage, and optional event-specific callback.",
+      "Exact bubble order, focus/capture rules, and whether false stops later procs are unresolved."
+    ]
+  },
+  "unresolved": [
+    {
+      "evidence": [
+        "knowledgegraph/research/types/06-editor-ui.json",
+        "knowledgegraph/research/types/07-event-message.json"
+      ],
+      "id": "U-CELL-ROLLOVER",
+      "needed_evidence": "Pool-helper decompilation, every rollover field writer, frame-update trace, and pool release trace.",
+      "question": "When and how do Cell health rollovers expire, hide, and return to the pool?"
+    },
+    {
+      "evidence": [
+        ".spore-analysis/ghidra-exports/structs_fields.tsv",
+        ".spore-analysis/ghidra-exports/sdk_functions.tsv"
+      ],
+      "id": "U-DIALOG-BEHAVIOR",
+      "needed_evidence": "Typed cSPUIMessageBox::ShowDialog body, concrete IDialog implementation, focus/input-capture trace, and button/dismissal paths.",
+      "question": "What are the concrete dialog states, modality, focus owner, stacking, and dismissal rules?"
+    },
+    {
+      "evidence": [
+        "knowledgegraph/research/global-campaign-2026/track-g-editor-ui-input.json"
+      ],
+      "id": "U-GAME-INPUT-ROUTER",
+      "needed_evidence": "Concrete cGameInputManager vtable address and corrected bodies for all 27 slots, especially maps at +0x2c/+0x44 and input-region fields.",
+      "question": "How are normalized key/mouse events partitioned among UI, camera, active mode, and input regions?"
+    },
+    {
+      "evidence": [
+        ".spore-analysis/ghidra-exports/sdk_functions.tsv",
+        "knowledgegraph/research/types/06-editor-ui.json"
+      ],
+      "id": "U-HUD-COMPOSITION",
+      "needed_evidence": "Rendered original frames plus cCellUI/SpaceGameUI/GlobalUI layout and visibility traces.",
+      "question": "What is the exact original HUD composition and per-mode visibility matrix across Cell, Space, and global UI?"
+    },
+    {
+      "evidence": [
+        "docs/analysis/GUI-BOUNDARY.md",
+        "knowledgegraph/research/types/06-editor-ui.json"
+      ],
+      "id": "U-MAIN-MENU",
+      "needed_evidence": "A positive hash-pinned menu-to-gameplay trace, window/layout resource identities, command IDs, and concrete producer for 0x00e11333.",
+      "question": "Which concrete UTFWin windows, controls, and callbacks implement the main menu and emit the mode-change request?"
+    },
+    {
+      "evidence": [
+        "ghidra://SporeApp.exe@0x007d8c80",
+        "ghidra://SporeApp.exe@0x007d8d40"
+      ],
+      "id": "U-MODE-LABEL-DRIFT",
+      "needed_evidence": "Historical artifact correction is deliberately not made; future probes should use concrete vtable slot +0x40 rather than SDK address label 0x007d8d40.",
+      "question": "Why do SDK/committed labels map SetActiveModeAt to 0x007d8d40 when the concrete vtable maps it to 0x007d8c80?"
+    },
+    {
+      "evidence": [
+        "ghidra://SporeApp.exe@0x007d85b0",
+        "knowledgegraph/research/types/07-event-message.json"
+      ],
+      "id": "U-MODE-MESSAGE-PAYLOAD",
+      "needed_evidence": "Typed OnModeExitMessage/OnModeEnterMessage body or runtime payload trace.",
+      "question": "Are the two payload words formally (newModeID, previousModeID), and what are the remaining StandardMessage parameter slots?"
+    },
+    {
+      "evidence": [
+        "tools/observatory/examples/obs_main_menu_example.jsonl",
+        "tools/observatory/out/obs_main_menu.jsonl"
+      ],
+      "id": "U-MODE-TRANSITION-RUNTIME",
+      "needed_evidence": "A successful positive menu-to-Cell trace with mode-manager, message-manager, and active-mode probes active.",
+      "question": "Does the static old-exit/index-write/exit-message/new-enter/enter-message order match observed runtime execution?"
+    },
+    {
+      "evidence": [
+        "knowledgegraph/research/types/07-event-message.json"
+      ],
+      "id": "U-SCREEN-STATE-BITS",
+      "needed_evidence": "Corrected GetState/SetState assembly and all writers/readers of Window.mnStateFlags.",
+      "question": "Which bits and named values constitute window visible/enabled/focused/active state?"
+    },
+    {
+      "evidence": [
+        "knowledgegraph/research/types/07-event-message.json"
+      ],
+      "id": "U-UI-FEEDBACK",
+      "needed_evidence": "Typed ShowEvent/HideEvent/SetVisible bodies, cFeedbackEvent ownership, fade/remove timestamps, and a gameplay trace.",
+      "question": "What are the cUIEventLog event visibility, timeout, context-change, and removal transitions?"
+    },
+    {
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__Window__SendMsg.c",
+        "knowledgegraph/research/types/07-event-message.json"
+      ],
+      "id": "U-UTFWIN-DISPATCH",
+      "needed_evidence": "Corrected Window::SendMsg/DoMessage and IWinProc traversal with typed Message payload.",
+      "question": "What are proc priority direction, tie order, parent/child bubbling, capture/focus, and handled-result semantics?"
+    }
+  ]
+}

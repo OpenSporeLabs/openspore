@@ -1,0 +1,900 @@
+{
+  "boundaries": [
+    {
+      "boundary": "cell-effect-map-and-display-visibility",
+      "classification": "PRESENTATION_ONLY",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__LoadEffectMap.c",
+          "line": 53,
+          "symbol": "Simulator::Cell::cCellGFX::LoadEffectMap"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__LoadEffectMap.c",
+          "line": 57,
+          "symbol": "Simulator::Cell::cCellGFX::LoadEffectMap"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__LoadEffectMap.c",
+          "line": 96,
+          "symbol": "Simulator::Cell::cCellGFX::LoadEffectMap"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__StartDisplay.c",
+          "line": 16,
+          "symbol": "Simulator::Cell::cCellGFX::StartDisplay"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__StartDisplay.c",
+          "line": 24,
+          "symbol": "Simulator::Cell::cCellGFX::StartDisplay"
+        },
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json",
+          "line": 593,
+          "symbol": "Simulator::Cell::cCellGFX::LoadEffectMap contract"
+        },
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json",
+          "line": 621,
+          "symbol": "Simulator::Cell::cCellGFX::StartDisplay contract"
+        }
+      ],
+      "failure_semantics": "A failed effect creation path logs a couldn't start effect message and leaves the slot empty; StartDisplay has no explicit status return, and missing lighting or shadow service behavior is not runtime-observed.",
+      "gameplay_caller": "Simulator::Cell::cCellGFX::LoadEffectMap and Simulator::Cell::cCellModeStrategy::OnEnter through cCellGFX::StartDisplay; these functions configure presentation state rather than gameplay state.",
+      "lifetime": "Effect instances persist in the foreground/background effect slots until replaced, disabled, or released during Cell presentation teardown; lighting, shadow, and motion/audio handles follow the display lifecycle.",
+      "modern_abstraction": "IPresentationState with createWorld, loadEffectMap, setLayerVisibility, startDisplay, stopDisplay, and explicit effect-instance replacement; expose typed EffectHandle and layer state rather than renderer objects.",
+      "notes": "This is presentation-only. The resource and object associations are useful to a clean-room scene model, but the original effect parameters and visual meaning are not gameplay contracts.",
+      "openspore_concept": "CellGfx world and effect slot state, including foreground/background effect selection, layer visibility, and display activation.",
+      "original_callee": "Simulator::Cell::cCellGFX::LoadEffectMap and StartDisplay; their IVisualEffect, ILightingManager, and IShadowWorld interface calls",
+      "outputs": [
+        "Cell display and layer state",
+        "active foreground and background effect instances",
+        "motion, ambient, and music presentation handles"
+      ],
+      "parameters": [
+        "cell geometry and background bounding box",
+        "current foreground or background cell query",
+        "effect-map records and effect identifiers",
+        "world, effect, lighting, and shadow handles"
+      ],
+      "state_changed": [
+        "Cell world and layer visibility",
+        "effect parameters derived from cell and background geometry",
+        "shadow reset and effect display activation",
+        "three persistent effect slots selected by record type"
+      ],
+      "structures": [
+        "Graphics::IShadowWorld",
+        "IVisualEffect",
+        "Simulator::Cell::cCellGFX",
+        "Simulator::Cell::cCellObjectData",
+        "Simulator::Cell::cCellUI"
+      ],
+      "timing_order": "Resolve and replace effect-map slots, apply cell and background parameters, then activate lighting, layer visibility, shadow reset, and motion/ambient/music handles before rendering."
+    },
+    {
+      "boundary": "cell-gfx-model-key-resolution",
+      "classification": "GAMEPLAY_SEMANTIC",
+      "confidence": "high",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__CreateCellObject.c",
+          "line": 167,
+          "symbol": "Simulator::Cell::CreateCellObject"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__GetModelKeyForCellResource.c",
+          "line": 8,
+          "symbol": "Simulator::Cell::GetModelKeyForCellResource"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__GetModelKeyForCellResource.c",
+          "line": 34,
+          "symbol": "Simulator::Cell::GetModelKeyForCellResource"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__GetModelKeyForCellResource.c",
+          "line": 44,
+          "symbol": "Simulator::Cell::GetModelKeyForCellResource"
+        },
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json",
+          "line": 277,
+          "symbol": "cCellObjectData.mModelKey"
+        },
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json",
+          "line": 702,
+          "symbol": "Simulator::Cell::GetModelKeyForCellResource contract"
+        }
+      ],
+      "failure_semantics": "Unknown record types use the stored default model key. The function has no explicit error return; missing nested resource records fail earlier in resource traversal and are not converted into a gameplay result here.",
+      "gameplay_caller": "Simulator::Cell::CreateCellObject and the Cell GFX preload path use the resolved key to associate gameplay cell data with its visual model.",
+      "lifetime": "The returned ResourceKey is value data copied into the cell object; it does not own a model or renderer handle and remains valid as long as the referenced content identity remains available.",
+      "modern_abstraction": "IContentIdentity or IModelKeyResolver with resolveModelKey(cellResource) returning a typed ResourceKey; keep the key separate from the loaded ModelHandle.",
+      "notes": "The record-type meanings are only partially recovered, but the gameplay-relevant invariant is strong: cell resource identity selects a stable model identity before graphics object creation.",
+      "openspore_concept": "Cell resource to model key selection, with ResourceKey kept as data and ModelHandle acquired later through the content/model adapter.",
+      "original_callee": "Simulator::Cell::GetModelKeyForCellResource",
+      "outputs": [
+        "ResourceKey instance, type, and group values",
+        "fallback default model key",
+        "model key for record type 3",
+        "model key selected for record types 4 and 5"
+      ],
+      "parameters": [
+        "cCellCellResource data reference",
+        "cell resource manager availability",
+        "nested cell resource records"
+      ],
+      "state_changed": [
+        "caller-provided ResourceKey output"
+      ],
+      "structures": [
+        "ResourceKey",
+        "cCellCellResource",
+        "nested cell resource references"
+      ],
+      "timing_order": "Resolve the model key while constructing or preparing a cell object, before registering a preloaded Graphics::Model or rendering the cell."
+    },
+    {
+      "boundary": "cell-gfx-world-and-layer-initialization",
+      "classification": "GAMEPLAY_SEMANTIC",
+      "confidence": "high",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__Initialize.c",
+          "line": 28,
+          "symbol": "Simulator::Cell::cCellGFX::Initialize"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__Initialize.c",
+          "line": 47,
+          "symbol": "Simulator::Cell::cCellGFX::Initialize"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__Initialize.c",
+          "line": 110,
+          "symbol": "Simulator::Cell::cCellGFX::Initialize"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__Initialize.c",
+          "line": 217,
+          "symbol": "Simulator::Cell::cCellGFX::Initialize"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__Initialize.c",
+          "line": 235,
+          "symbol": "Simulator::Cell::cCellGFX::Initialize"
+        },
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json",
+          "line": 611,
+          "symbol": "Simulator::Cell::cCellGFX::Initialize contract"
+        },
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/track-k-engine-boundaries.json",
+          "line": 374,
+          "symbol": "Cell presentation world and layer contract"
+        }
+      ],
+      "failure_semantics": "The decompilation shows replacement of old handles with release calls when factories differ, but no explicit initialization status. Null service or factory results are not assigned a gameplay-level error; display remains a separate StartDisplay operation.",
+      "gameplay_caller": "Simulator::Cell::cCellGFX::Initialize, called during Cell mode presentation setup, followed by StartDisplay when the stage becomes visible.",
+      "lifetime": "World and layer handles are stored in the cCellGFX table and are replaced or released on a later initialization or teardown; the semantic world IDs and ordering are longer-lived than any backend object.",
+      "modern_abstraction": "ICellPresentation with createWorld, createLayer, attachLayer, destroyWorld, and opaque WorldHandle/LayerHandle values; preserve IDs and parent/child ordering but not original vtable objects.",
+      "notes": "This is the principal Cell object-to-scene attachment boundary. The named world/layer order is high-confidence; host handle identity is intentionally abstracted.",
+      "openspore_concept": "CellGfx world-handle table with SkyboxEffectsWorld, BackgroundEffectsWorld, BeachEffectsWorld, EffectsWorld, ForegroundEffectsWorld, CellGame-Background, and CellGame-Main.",
+      "original_callee": "Simulator::Cell::cCellGFX::Initialize; Graphics::IRenderer::Layer and UnregisterLayer, Graphics::IShadowWorld::SetShadowMapLayer, and effects-manager world creation",
+      "outputs": [
+        "Cell world and layer handles",
+        "inactive display state",
+        "main model layer association",
+        "shadow layer handles"
+      ],
+      "parameters": [
+        "CellGfx receiver and graphics service instances",
+        "named Cell world IDs",
+        "shadow layer IDs",
+        "view transform"
+      ],
+      "state_changed": [
+        "CellGame-Background and CellGame-Main layer handles",
+        "CellSkyboxEffectsWorld, CellBackgroundEffectsWorld, CellBeachEffectsWorld, CellEffectsWorld, and CellForegroundEffectsWorld handles",
+        "display flags at cCellGFX+0x16204 and cCellGFX+0x16205",
+        "old layer and world handles released and replaced",
+        "shadow layers 0x1010010, 0x1010015, and 0x1010020"
+      ],
+      "structures": [
+        "Graphics::ILayer",
+        "Graphics::IShadowWorld",
+        "Simulator::Cell::cCellGFX",
+        "Transform",
+        "effects world handle"
+      ],
+      "timing_order": "Set the view transform, acquire graphics/effects services, unregister the old layer, create named effect worlds and shadow layers, attach background/main layers, clear stale handles, then wait for StartDisplay."
+    },
+    {
+      "boundary": "cell-object-effect-transform-attachment",
+      "classification": "GAMEPLAY_SEMANTIC",
+      "confidence": "high",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__InstanceEffectOnCell.c",
+          "line": 8,
+          "symbol": "Simulator::Cell::cCellGFX::InstanceEffectOnCell"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__InstanceEffectOnCell.c",
+          "line": 30,
+          "symbol": "Simulator::Cell::cCellGFX::InstanceEffectOnCell"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__InstanceEffectOnCell.c",
+          "line": 37,
+          "symbol": "Simulator::Cell::cCellGFX::InstanceEffectOnCell"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__InstanceEffectOnCell.c",
+          "line": 56,
+          "symbol": "Simulator::Cell::cCellGFX::InstanceEffectOnCell"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__InstanceEffectOnCell.c",
+          "line": 67,
+          "symbol": "Simulator::Cell::cCellGFX::InstanceEffectOnCell"
+        },
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json",
+          "line": 267,
+          "symbol": "cCellObjectData role and transform fields"
+        },
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json",
+          "line": 603,
+          "symbol": "Simulator::Cell::cCellGFX::InstanceEffectOnCell contract"
+        }
+      ],
+      "failure_semantics": "The effect factory can return a null instance; the function has no explicit status and returns the resulting IVisualEffect pointer. Cell transform and effect-map inputs are required for a valid placement.",
+      "gameplay_caller": "Simulator::Cell::cCellGFX::InstanceEffectOnCell and the Cell animation/effect event path; the cell object supplies its gameplay transform to the presentation effect.",
+      "lifetime": "The returned visual effect is attached to the cell transform and tracked in the Cell GFX effect list; temporary factory references are released through the effect interface after use.",
+      "modern_abstraction": "IObjectPresentation with attachEffect(EntityHandle, EffectKey, Transform) returning EffectHandle, plus detach/release and explicit foreground/background selection.",
+      "notes": "This is a direct object-attachment seam rather than a general renderer call. Preserve foreground/background selection and cell-transform propagation, not the original effect vtable.",
+      "openspore_concept": "Object-scoped effect instance bound to a cell transform, with a foreground/background world selector.",
+      "original_callee": "FUN_00628450 (cCellGFX::CreateEffect anchor) and IVisualEffect virtual methods; Graphics world handle selected from cCellGFX",
+      "outputs": [
+        "cell-transformed visual effect instance",
+        "effect instance registered in the Cell GFX list",
+        "null or non-null effect handle"
+      ],
+      "parameters": [
+        "cCellObjectData cell",
+        "cell mTransform",
+        "current cell query and foreground/background world selection",
+        "effect identifier"
+      ],
+      "state_changed": [
+        "Cell GFX effect instance list",
+        "cell transform copied into the effect",
+        "effect instance start state",
+        "foreground or background effect world association"
+      ],
+      "structures": [
+        "IVisualEffect",
+        "Simulator::Cell::cCellGFX",
+        "Simulator::Cell::cCellObjectData",
+        "Transform",
+        "cCellQueryLinkedPool"
+      ],
+      "timing_order": "Select the world from the cell query, copy the cell transform, create the effect, set its transform, start or register it, then return or release the temporary result."
+    },
+    {
+      "boundary": "cell-resource-preload-model-handles",
+      "classification": "GAMEPLAY_RELEVANT_ENGINE_INTERFACE",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__AddPreloadedModel.c",
+          "line": 8,
+          "symbol": "Simulator::Cell::cCellGFX::AddPreloadedModel"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__AddPreloadedModel2.c",
+          "line": 8,
+          "symbol": "Simulator::Cell::cCellGFX::AddPreloadedModel2"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__PreloadCellResource.c",
+          "line": 57,
+          "symbol": "Simulator::Cell::cCellGFX::PreloadCellResource"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__PreloadCellResource.c",
+          "line": 75,
+          "symbol": "Simulator::Cell::cCellGFX::PreloadCellResource"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__PreloadResources.c",
+          "line": 50,
+          "symbol": "Simulator::Cell::cCellGFX::PreloadResources"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__PreloadResources.c",
+          "line": 60,
+          "symbol": "Simulator::Cell::cCellGFX::PreloadResources"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__PreloadResources.c",
+          "line": 77,
+          "symbol": "Simulator::Cell::cCellGFX::PreloadResources"
+        },
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json",
+          "line": 629,
+          "symbol": "Simulator::Cell::cCellGFX::PreloadResources contract"
+        }
+      ],
+      "failure_semantics": "A model factory result of null is skipped by AddPreloadedModel. The exported decompilation has malformed locals and does not expose a reliable aggregate error, so load failure must remain an explicit preload status in the replacement rather than a guessed sentinel.",
+      "gameplay_caller": "Simulator::Cell::cCellGFX::PreloadResources, PreloadCellResource, and PreloadPopulateResource during Cell presentation preparation.",
+      "lifetime": "Preloaded model and creature references are retained in Cell GFX collections until preload replacement or GFX teardown. AddPreloadedModel uses a transient field_40 count to avoid adding a duplicate while a recursive preload is active.",
+      "modern_abstraction": "IModelPreloader or IContentPreloadCatalog with preloadModel(key), preloadCreature(key), and explicit preload result status; return ModelHandle values separate from gameplay object identity.",
+      "notes": "The recursive traversal and model/creature/effect dispatch are gameplay-adjacent, but the decompiler's temporary map representation is not a stable ABI. Preserve resource-key association and ordering, not those temporary containers.",
+      "openspore_concept": "CellGfx preload catalog binding Cell and Populate resource records to model, creature, texture, and effect handles before display.",
+      "original_callee": "Simulator::Cell::cCellGFX::PreloadResources, PreloadCellResource, PreloadPopulateResource, AddPreloadedModel, AddPreloadedModel2, and PreloadCreature",
+      "outputs": [
+        "preload completion state",
+        "preloaded Graphics::Model intrusive handles",
+        "preloaded creature handles",
+        "preloaded effect and texture entries"
+      ],
+      "parameters": [
+        "cell and populate resource references",
+        "cell resource instance, group, and type keys",
+        "effect, model, and creature record discriminators",
+        "preload map and preload counters"
+      ],
+      "state_changed": [
+        "mPreloadedModels collection",
+        "model, effect, and creature list membership",
+        "recursive preload traversal state",
+        "transient field_40 reference/preload counter"
+      ],
+      "structures": [
+        "Graphics::Model",
+        "IsPreloadedMap_t",
+        "cCellCellResource",
+        "cCellPopulateResource",
+        "intrusive_ptr<Graphics::Model>"
+      ],
+      "timing_order": "Enumerate cell and populate references, recurse through dependent resources, dispatch model/creature/effect/texture preload entries, then release temporary traversal objects before display starts."
+    },
+    {
+      "boundary": "graphics-global-transform-state",
+      "classification": "RENDERER_INFRASTRUCTURE",
+      "confidence": "high",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__GlobalState__SetTransform.c",
+          "line": 8,
+          "symbol": "Graphics::GlobalState::SetTransform"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__GlobalState__SetTransform.c",
+          "line": 11,
+          "symbol": "Graphics::GlobalState::SetTransform"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__GlobalState__SetTransform.c",
+          "line": 29,
+          "symbol": "Graphics::GlobalState::SetTransform"
+        },
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 163,
+          "symbol": "active shader and vertex declaration draw path"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 2938,
+          "symbol": "Graphics::GlobalState::SetTransform"
+        }
+      ],
+      "failure_semantics": "The function has no status return and no null-matrix guard in the exported body. Invalid matrix input is therefore a backend contract violation rather than a gameplay failure result.",
+      "gameplay_caller": "Camera, world, model, terrain, and Cell presentation render passes; gameplay supplies transform values but does not own the global render-state slot.",
+      "lifetime": "The transform and matrix type are process-global renderer state, overwritten for subsequent draws and invalidated by the soft-state dirty bit until the renderer consumes the change.",
+      "modern_abstraction": "IRenderState::setTransform with a typed transform kind and invalidation tracking, or a per-render-pass state object; keep Matrix4/MatrixType semantics without the original global storage.",
+      "notes": "This is a Graphics engine state writer, not RenderWare implementation. It is relevant to the object boundary because model and scene attachment eventually feed this state.",
+      "openspore_concept": "Render-state transform upload separate from gameplay Transform values and object handles.",
+      "original_callee": "Graphics::GlobalState::SetTransform",
+      "outputs": [
+        "active render transform",
+        "transform type for subsequent state dispatch"
+      ],
+      "parameters": [
+        "Matrix4 matrix",
+        "MatrixType type"
+      ],
+      "state_changed": [
+        "sSoftStateDirty bit 0",
+        "sTransform and sTransformType"
+      ],
+      "structures": [
+        "Graphics::GlobalState",
+        "Matrix4",
+        "MatrixType"
+      ],
+      "timing_order": "Compute the world, view, or projection transform, call SetTransform before binding or drawing dependent geometry, then allow renderer state dispatch to consume the dirty bit."
+    },
+    {
+      "boundary": "graphics-manager-handle-accessors",
+      "classification": "GAMEPLAY_RELEVANT_ENGINE_INTERFACE",
+      "confidence": "high",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__ILightingManager__Get.c",
+          "line": 8,
+          "symbol": "Graphics::ILightingManager::Get"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__IMaterialManager__Get.c",
+          "line": 8,
+          "symbol": "Graphics::IMaterialManager::Get"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__IModelManager__Get.c",
+          "line": 8,
+          "symbol": "Graphics::IModelManager::Get"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__IRenderTargetManager__Get.c",
+          "line": 8,
+          "symbol": "Graphics::IRenderTargetManager::Get"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__IRenderer__Get.c",
+          "line": 6,
+          "symbol": "Graphics::IRenderer::Get"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__IShadowWorld__Get.c",
+          "line": 8,
+          "symbol": "Graphics::IShadowWorld::Get"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__ITextureManager__Get.c",
+          "line": 8,
+          "symbol": "Graphics::ITextureManager::Get"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__IThumbnailManager__Get.c",
+          "line": 8,
+          "symbol": "Graphics::IThumbnailManager::Get"
+        },
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/track-k-engine-boundaries.json",
+          "line": 410,
+          "symbol": "Graphics service accessors"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 7539,
+          "symbol": "Graphics::IRenderer::Get"
+        }
+      ],
+      "failure_semantics": "Each function simply returns a process-global service pointer and has no status or initialization side effect. A null pointer means the graphics subsystem was not initialized; callers must validate service availability.",
+      "gameplay_caller": "Cell GFX, camera/mouse, editor lifecycle, terrain, and other render-facing gameplay code obtains these services through the original global accessors.",
+      "lifetime": "The service objects are process/application lifetime and are owned by the graphics subsystem, not by the caller. Original callers do not release these returned manager pointers.",
+      "modern_abstraction": "IRenderServices with renderer, textures, materials, models, lighting, render targets, thumbnails, and shadow-world subinterfaces; inject the service bundle instead of reproducing DAT_* singleton addresses.",
+      "notes": "These are gameplay-facing engine wrappers, not RenderWare implementation. The getter itself carries no rendering semantics; it maps the service dependency for the modern interface.",
+      "openspore_concept": "Injected presentation services used by CellGfx, camera/input presentation, and model/resource presentation code.",
+      "original_callee": "Graphics::IRenderer::Get, ITextureManager::Get, IMaterialManager::Get, IModelManager::Get, ILightingManager::Get, IRenderTargetManager::Get, IThumbnailManager::Get, and IShadowWorld::Get",
+      "outputs": [
+        "ILightingManager pointer",
+        "IMaterialManager pointer",
+        "IModelManager pointer",
+        "IRenderTargetManager pointer",
+        "IRenderer pointer",
+        "IShadowWorld pointer",
+        "ITextureManager pointer",
+        "IThumbnailManager pointer"
+      ],
+      "parameters": [
+        "implicit graphics subsystem initialization"
+      ],
+      "state_changed": [],
+      "structures": [
+        "Graphics::ILightingManager",
+        "Graphics::IMaterialManager",
+        "Graphics::IModelManager",
+        "Graphics::IRenderTargetManager",
+        "Graphics::IRenderer",
+        "Graphics::IShadowWorld",
+        "Graphics::ITextureManager",
+        "Graphics::IThumbnailManager"
+      ],
+      "timing_order": "Fetch the service handle at the point a render or presentation operation needs it; the original getter itself has no ordering side effect."
+    },
+    {
+      "boundary": "graphics-model-handle-release",
+      "classification": "GAMEPLAY_RELEVANT_ENGINE_INTERFACE",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__Dispose.c",
+          "line": 107,
+          "symbol": "Graphics::Model reference release in cEditor::Dispose"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__Model__Release.c",
+          "line": 9,
+          "symbol": "Graphics::Model::Release"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__Model__Release.c",
+          "line": 15,
+          "symbol": "Graphics::Model::Release"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__Model__Release.c",
+          "line": 20,
+          "symbol": "Graphics::Model::Release"
+        },
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/track-g-editor-ui-input.json",
+          "line": 358,
+          "symbol": "AnimatedCreature.mpModel"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 134,
+          "symbol": "Graphics::Model::Release"
+        }
+      ],
+      "failure_semantics": "There is no error return. The body decrements the reference count and invokes a virtual terminal operation at the model vtable offset 0x170 when the count reaches the destruction condition; null or double release is not validated in this wrapper.",
+      "gameplay_caller": "Cell GFX preload ownership, editor model holders, and model-world consumers that retain a Graphics::Model handle for an object or scene.",
+      "lifetime": "The model is reference-counted: each owner releases one reference, and only the final release dispatches destruction. A preload list or scene attachment must hold a reference for as long as it can issue model draws.",
+      "modern_abstraction": "ModelHandle with RAII/shared ownership and explicit retain/release discipline; return an invalid-handle result rather than reproducing the original vtable terminal slot.",
+      "notes": "The exact refcount offset and terminal vtable semantics are statically supported but the receiver is decompiled with thiscall ambiguity. Preserve ownership behavior, not the original ABI.",
+      "openspore_concept": "Reference-counted model handles shared by CellGfx preload, model-world, and object presentation owners.",
+      "original_callee": "Graphics::Model::Release",
+      "outputs": [
+        "remaining reference count",
+        "terminal model destruction dispatch"
+      ],
+      "parameters": [
+        "implicit Graphics::Model *this"
+      ],
+      "state_changed": [
+        "model lifetime after final release",
+        "model reference count at the recovered offset 0x10"
+      ],
+      "structures": [
+        "Graphics::Model"
+      ],
+      "timing_order": "Release the model after detaching it from the owning preload list, model world, or scene object and before replacing it with a newly loaded model."
+    },
+    {
+      "boundary": "model-world-lod-selection",
+      "classification": "UNKNOWN",
+      "confidence": "low",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/sdk_functions.tsv",
+          "line": 495,
+          "symbol": "Graphics::cModelWorld::UpdateWithLODMeshes"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/sdk_functions.tsv",
+          "line": 496,
+          "symbol": "Graphics::IModelWorld::LoadModelProperties"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/sdk_functions.tsv",
+          "line": 497,
+          "symbol": "Graphics::cModelWorld::FinishBackgroundLoad"
+        },
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 322,
+          "symbol": "cTerrainSphere and cModelWorld::UpdateWithLODMeshes"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 10473,
+          "symbol": "Graphics::cModelWorld::UpdateWithLODMeshes"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 10485,
+          "symbol": "Graphics::IModelWorld::LoadModelProperties"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 10537,
+          "symbol": "Graphics::cModelWorld::FinishBackgroundLoad"
+        }
+      ],
+      "failure_semantics": "No decompilation or runtime failure path is available for these three SDK-named functions. Do not assign gameplay-visible LOD selection, async-load failure, or object culling semantics from the names alone.",
+      "gameplay_caller": "Graphics model-world owners used by terrain, editor creature, and model presentation; exact gameplay callers are not exported in the frozen triage data.",
+      "lifetime": "The model world owns model/LOD/load state for its scene or object presentation, but the original object lifetime and background-load completion protocol are not characterized.",
+      "modern_abstraction": "IModelWorld with loadModelProperties, finishBackgroundLoad, and updateLOD(viewProjection); keep ModelHandle and LOD selection separate from Cell gameplay object state.",
+      "notes": "This is a meaningful but unresolved object boundary. The SDK anchors establish the intended vocabulary, while the absent body and xref projection prevent a stronger semantic claim.",
+      "openspore_concept": "A future model-world/LOD service behind CellGfx or terrain presentation, not a replacement for gameplay entity state.",
+      "original_callee": "Graphics::cModelWorld::UpdateWithLODMeshes, Graphics::IModelWorld::LoadModelProperties, and Graphics::cModelWorld::FinishBackgroundLoad",
+      "outputs": [
+        "LOD-selected model or mesh set (inferred)",
+        "background-load completion state"
+      ],
+      "parameters": [
+        "background-load and model-property state (inferred)",
+        "camera or view-projection state (inferred)",
+        "model world and model handles"
+      ],
+      "state_changed": [
+        "model-world LOD state (not characterized)",
+        "model-world background-load state (not characterized)"
+      ],
+      "structures": [
+        "Graphics::IModelWorld",
+        "Graphics::Model",
+        "Graphics::cModelWorld",
+        "RenderWare LOD objects (not exposed)"
+      ],
+      "timing_order": "Load model properties in the background, finish or reconcile the load, then update LOD state before the owning scene/model-world render pass; exact ordering is inferred from the SDK vocabulary."
+    },
+    {
+      "boundary": "renderware-object-draw-implementation",
+      "classification": "THIRD_PARTY_IMPLEMENTATION",
+      "confidence": "high",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__ActiveState__SetShaderData.c",
+          "line": 6,
+          "symbol": "Graphics::ActiveState::SetShaderData"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/RenderWare__CompiledState__GetRaster.c",
+          "line": 6,
+          "symbol": "RenderWare::CompiledState::GetRaster"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/RenderWare__CompiledState__SetRaster.c",
+          "line": 6,
+          "symbol": "RenderWare::CompiledState::SetRaster"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/RenderWare__Mesh__SetIndexBuffer.c",
+          "line": 6,
+          "symbol": "RenderWare::Mesh::SetIndexBuffer"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/RenderWare__Mesh__SetIndexBuffer.c",
+          "line": 22,
+          "symbol": "RenderWare::Mesh::SetIndexBuffer"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/RenderWare__Mesh__SetIndexBuffer.c",
+          "line": 52,
+          "symbol": "RenderWare::Mesh::SetIndexBuffer"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/RenderWare__Mesh__SetIndexBuffer.c",
+          "line": 93,
+          "symbol": "RenderWare::Mesh::SetIndexBuffer"
+        },
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 160,
+          "symbol": "RenderWare::Mesh::SetIndexBuffer draw path"
+        },
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 295,
+          "symbol": "MaterialShader, CompiledState, and raster bindings"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 43466,
+          "symbol": "RenderWare::CompiledState::SetRaster"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 43656,
+          "symbol": "RenderWare::Mesh::SetIndexBuffer"
+        }
+      ],
+      "failure_semantics": "Negative device calls return early and stale index-scope state can suppress a rebind. The third-party path does not define a gameplay-level error; gameplay observes only whether its requested model/material draw is available.",
+      "gameplay_caller": "RenderWare terrain, model-world, editor, and Cell presentation draw infrastructure; no direct gameplay caller owns RenderWare mesh or raster objects.",
+      "lifetime": "RenderWare mesh, index, shader, and raster objects follow asset/device lifetime, while stream, index, and material caches are per-draw or per-frame state.",
+      "modern_abstraction": "IMeshDraw and IMaterialBindings with bindVertexStream, bindIndexBuffer, setTopology, drawIndexed, bindTextureSlot, and clearTexture; preserve stable mesh/material identity and state ordering without RenderWare object layouts.",
+      "notes": "This is explicitly third-party implementation, not a gameplay-facing wrapper. The replacement should retain topology, stream/index binding order, material/raster identity, and draw visibility, while replacing the D3D9/RenderWare backend.",
+      "openspore_concept": "Backend mesh upload/draw and material/texture binding, behind the existing renderer and asset seams.",
+      "original_callee": "RenderWare::Mesh::SetIndexBuffer, SetVertexBuffer, SetIndicesCount, and Render; RenderWare::CompiledState::SetRaster/GetRaster; Graphics::ActiveState::SetTexture/SetShaderData",
+      "outputs": [
+        "backend stream and index bindings",
+        "indexed draw submission",
+        "material and raster bindings",
+        "shader constant upload"
+      ],
+      "parameters": [
+        "index buffer and mesh handle",
+        "material raster and texture-slot binding",
+        "shader constants and material state",
+        "vertex declaration, stream, and index state"
+      ],
+      "state_changed": [
+        "active raster and shader bindings",
+        "index-buffer binding and index-scope cache",
+        "on-change vertex stream cache",
+        "surplus vertex streams unbound"
+      ],
+      "structures": [
+        "Graphics::ActiveState",
+        "RenderWare::CompiledState",
+        "RenderWare::IndexBuffer",
+        "RenderWare::Mesh",
+        "RenderWare::Raster",
+        "RenderWare::VertexDescriptionBase"
+      ],
+      "timing_order": "Select active material and vertex declaration, rebind only changed streams, unbind surplus streams, bind indices when changed and in scope, then issue the indexed draw."
+    },
+    {
+      "boundary": "scene-layer-shadow-model-attachment",
+      "classification": "GAMEPLAY_RELEVANT_ENGINE_INTERFACE",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__Dispose.c",
+          "line": 155,
+          "symbol": "Editors::cEditor::Dispose"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__Initialize.c",
+          "line": 150,
+          "symbol": "Editors::cEditor::Initialize"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__Initialize.c",
+          "line": 197,
+          "symbol": "Editors::cEditor::Initialize"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__Initialize.c",
+          "line": 47,
+          "symbol": "Simulator::Cell::cCellGFX::Initialize"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__Initialize.c",
+          "line": 110,
+          "symbol": "Simulator::Cell::cCellGFX::Initialize"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__Initialize.c",
+          "line": 140,
+          "symbol": "Simulator::Cell::cCellGFX::Initialize"
+        },
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/track-g-editor-ui-input.json",
+          "line": 371,
+          "symbol": "IAnimWorld interface and SetModelWorld"
+        }
+      ],
+      "failure_semantics": "The interface methods have no explicit status in the recovered call sites. Handle replacement and release calls are present, but exact null, attachment-conflict, and shadow-layer error behavior is not runtime-observed.",
+      "gameplay_caller": "Simulator::Cell::cCellGFX::Initialize and StartDisplay for Cell scenes; Editors::cEditor::Initialize, Dispose, and OnExit for editor creature/model worlds when that presentation shell is in scope.",
+      "lifetime": "World and layer attachments follow the owning scene/cell/editor lifecycle. Model-world registrations are removed or replaced during teardown, after relevant scene pause or mode shutdown steps.",
+      "modern_abstraction": "ISceneAttachment with attachLayer, attachModelWorld, detachModelWorld, setLayerVisibility, and setShadowLayer; keep opaque WorldHandle, LayerHandle, and ModelWorldHandle values.",
+      "notes": "This is the engine-facing scene attachment seam. The editor evidence shows IShadowWorld::AddModelWorld and Cell evidence shows shadow/layer registration; neither should expose a raw RenderWare world object.",
+      "openspore_concept": "Typed scene graph attachment of Cell/editor layers, model worlds, and shadow layers with explicit teardown ordering.",
+      "original_callee": "Graphics::IRenderer::Layer and UnregisterLayer; Graphics::IShadowWorld::SetShadowMapLayer and AddModelWorld; ILayer/IModelWorld vtable operations",
+      "outputs": [
+        "active or inactive layer state",
+        "bound model-world and layer handles",
+        "registered shadow layers",
+        "scene attachment records"
+      ],
+      "parameters": [
+        "Cell or editor world and layer identifiers",
+        "model world handles",
+        "pause, initialization, or shutdown state",
+        "shadow layer handles and active flags"
+      ],
+      "state_changed": [
+        "Cell main and background layer relationships",
+        "layer parent and child attachments",
+        "model-world registration during scene setup and teardown",
+        "shadow layer active bitmaps",
+        "world and layer handle replacement"
+      ],
+      "structures": [
+        "Editors::cEditor",
+        "Graphics::ILayer",
+        "Graphics::IModelWorld",
+        "Graphics::IShadowWorld",
+        "Simulator::Cell::cCellGFX"
+      ],
+      "timing_order": "Create or acquire world and layer handles, attach shadow/model relationships, populate scene objects, pause or leave the mode when teardown begins, then detach or release attachments."
+    },
+    {
+      "boundary": "transform-composition",
+      "classification": "GAMEPLAY_SEMANTIC",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Transform__PreTransformBy.c",
+          "line": 6,
+          "symbol": "Transform::PreTransformBy"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Transform__PreTransformBy.c",
+          "line": 18,
+          "symbol": "Transform::PreTransformBy"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Transform__PreTransformBy.c",
+          "line": 28,
+          "symbol": "Transform::PreTransformBy"
+        },
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json",
+          "line": 271,
+          "symbol": "cCellObjectData.mTargetOrientation"
+        },
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json",
+          "line": 273,
+          "symbol": "cCellObjectData.mTransform"
+        },
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/track-g-editor-ui-input.json",
+          "line": 378,
+          "symbol": "EditorCreatureController transform fields"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 113,
+          "symbol": "Transform::PreTransformBy"
+        }
+      ],
+      "failure_semantics": "Helper return values are assigned but not branched in the exported body, and the thiscall receiver is partially represented by in_ECX. The mathematical composition is supported, while invalid/degenerate transform failure behavior is unresolved.",
+      "gameplay_caller": "Cell object orientation and transform code, plus editor creature target-position/angle and model/animation attachment paths; exact original fan-in is not exported in the pinned triage projection.",
+      "lifetime": "Transform is value state composed into an output transform; parent and child transforms may outlive individual draw calls, while the composed result is valid until recomputed.",
+      "modern_abstraction": "Transform::composeParent or composeLocal with offset, rotation matrix, scale, flags, and typed transform count; pass values explicitly and avoid the original implicit-this ABI.",
+      "notes": "This is a gameplay-facing transform concept even though the implementation is an engine SDK function. Preserve the composed mathematical state and ordering, not the helper-function layout.",
+      "openspore_concept": "Entity and presentation transform composition, with gameplay orientation and renderer transform state kept as separate typed values.",
+      "original_callee": "Transform::PreTransformBy and its FUN_0041dca0, FUN_0041ddb0, and matrix-copy helpers",
+      "outputs": [
+        "OR-ed transform flags",
+        "composed transform",
+        "updated transform count"
+      ],
+      "parameters": [
+        "implicit output transform receiver",
+        "offset, rotation, and scale of the source transform",
+        "parent or other transform",
+        "transform flags and transform count"
+      ],
+      "state_changed": [
+        "mOffset",
+        "mRotation",
+        "mfScale",
+        "mnFlags",
+        "mnTransformCount"
+      ],
+      "structures": [
+        "Matrix3",
+        "Transform"
+      ],
+      "timing_order": "Compose parent/local transform state, update rotation and scale, OR flags, increment the transform count, and pass the resulting transform to object attachment or renderer state upload."
+    }
+  ],
+  "scope": "RenderWare/D3D/presentation object boundary archaeology limited to original engine-facing Graphics/model/mesh handles, Cell object-to-world and model associations, object transforms, visibility/state, scene attachment, and the narrow third-party draw contract. Static SDK/decomp/triage evidence is used; no RenderWare implementation reconstruction, runtime claim, or modern implementation is included.",
+  "track": "renderware-objects",
+  "unresolved": [
+    "IShadowWorld::AddModelWorld and layer attachment calls are recovered through editor and Cell vtables, but conflict handling, null-service behavior, and runtime detach ordering are not runtime-observed.",
+    "No positive Cell-mode runtime trace or original pixel oracle verifies model/world visibility, effect attachment, LOD selection, material bindings, or final transform submission; current OpenSpore counterparts are static mappings only.",
+    "The concrete Graphics::IModelManager methods behind the accessor are not characterized; ModelManager should remain a narrow model/content adapter until load identity, cache, and failure behavior are traced.",
+    "The exact cCellGFX AddPreloadedTexture container and reference semantics are decompiler-ambiguous; only its call position and relationship to the preload path are reliable.",
+    "The original Graphics::cModelWorld::UpdateWithLODMeshes, IModelWorld::LoadModelProperties, and cModelWorld::FinishBackgroundLoad bodies and caller edges are not exported, so LOD selection and background-load semantics remain uncharacterized.",
+    "Transform::PreTransformBy has a partially ambiguous thiscall receiver; preserve composed offset, rotation, scale, flags, and count without claiming the original ABI layout."
+  ]
+}

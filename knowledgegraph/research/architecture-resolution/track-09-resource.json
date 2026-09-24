@@ -1,0 +1,984 @@
+{
+  "$schema": "openspore-track-09-architecture-resolution-1",
+  "artifact": "track-09-resource",
+  "track": "Track 9",
+  "date": "2026-09-24",
+  "conflict_id": "CONFLICT-RESOURCE-IDENTITY-CACHE",
+  "scope": {
+    "binary": "SporeApp.exe",
+    "version": "3.1.0.22",
+    "architecture": "x86:LE:32:windows",
+    "image_base": "0x00400000",
+    "ghidra_program": "SporeApp.exe",
+    "ghidra_mode": "read-only static queries; no mutation, re-analysis, or runtime",
+    "historical_artifacts": "read-only",
+    "implementation": false,
+    "runtime_trace": "not_performed",
+    "runtime_reason": "No narrow positive original trace was available in the permitted corpus. Historical runtime evidence did not reach a resource hit/miss/open/release sequence, so runtime identity is not promoted.",
+    "excluded": [
+      "SPORE/ filesystem inspection",
+      "knowledgegraph/spore.db access",
+      "Ghidra mutation or analysis-state changes",
+      "implementation or source changes",
+      "runtime promotion from static evidence"
+    ],
+    "targets": [
+      "ResourceKey",
+      "DBPF identity and index order",
+      "cCellResource",
+      "cCellDataReference_",
+      "DAT_016b44f0",
+      "0x01436ae8",
+      "0x008da3d0",
+      "0x00e821d0",
+      "0x00e82280",
+      "0x00e822c0",
+      "0x00e82340",
+      "0x00e823a0",
+      "0x00e82420",
+      "0x008de530",
+      "0x008df0b0",
+      "0x008df460",
+      "0x008df700",
+      "0x008df9b0",
+      "0x008dfb20",
+      "0x008de360",
+      "0x008de3b0",
+      "0x008e0d30",
+      "0x008e1d20",
+      "0x008e1750"
+    ]
+  },
+  "question": "What is the stable resource identity, how do DBPF, manager registries, caches, Cell serializer references, leases, and runtime objects differ, and what provider/cache semantics are safe to freeze?",
+  "executive_resolution": {
+    "mechanics": "resolved",
+    "conceptual_identity": "Manager/provider content requests use the full numeric ResourceKey triple (instanceID, typeID, groupID). Cell local cCellDataReference_ lookup is a separate (instanceID, serializer*) pair identity, not a manager/provider request key.",
+    "architecture_decision": "Keep the manager/provider ResourceKey, Cell local pair identity, representation order, package order, cache identity, lease/reference state, and runtime object identity as separate layers. Do not flatten them into one global map or one pointer identity.",
+    "overall_status": "RESOLVED_SUPPORTED",
+    "semantic_layering_status": "RESOLVED_SUPPORTED",
+    "runtime_package_precedence_status": "PROVISIONAL",
+    "cache_eviction_status": "PROVISIONAL",
+    "async_status": "PROVISIONAL",
+    "runtime_resolution": "INSUFFICIENT_EVIDENCE",
+    "architecture_dependence": "yes",
+    "minimum_provider_cache_contract": "Manager/provider requests carry a full numeric ResourceKey. Cell local cCellDataReference_ lookup uses (instanceID, serializer*) and is outside that provider contract. Cache entries, record leases, and runtime objects remain separate identities; the provider returns a value/record/resource outcome without promising a particular runtime object or DBPF row order."
+  },
+  "classification_vocabulary": [
+    "required_for_semantics",
+    "runtime_compatibility_only",
+    "replaceable_infrastructure",
+    "unknown"
+  ],
+  "classification": "required_for_semantics",
+  "hypotheses": [
+    {
+      "id": "H1",
+      "name": "single_global_identity",
+      "claim": "One identity value is incorrectly treated as the contract for every layer: the full numeric ResourceKey is the manager/provider request identity, while the Cell local cCellDataReference_ list uses (instanceID, serializer*) and cache, lease, and runtime object identities are separate.",
+      "predictions": [
+        "Every layer would compare or hash the same instance/type/group triple.",
+        "A Cell reference would search by the full ResourceKey rather than by a serializer pointer.",
+        "A ResourceObject pointer would not be independently meaningful from its mNameKey."
+      ],
+      "evidence_for": [
+        "ResourceKey is the manager and database content contract.",
+        "DatabasePackedFile stores a map<ResourceKey, PFRecordBase*> at +0x2e8.",
+        "ResourceObject embeds a ResourceKey at +0x08."
+      ],
+      "evidence_against": [
+        "cCellDataReference_::Create at 0x00e82420 searches only instanceID and serializer pointer, not typeID or groupID.",
+        "ICache methods receive a ResourceKey, but the returned object is a separate pointer and reference-counted object.",
+        "The record lease is an IRecord/open-count object, not a ResourceKey."
+      ],
+      "independence": "The manager/database structures, Cell list body, cache vtable calls, and lease APIs are independent evidence streams.",
+      "repetition": "The full triple repeats across manager and database layers; repetition confirms the content contract but does not erase the Cell pair or runtime pointer distinctions.",
+      "status": "REJECTED_AS_GLOBAL_COLLAPSE"
+    },
+    {
+      "id": "H2",
+      "name": "layered_identity",
+      "claim": "Manager/provider requests use the stable full numeric ResourceKey, while Cell local cCellDataReference_ lookup intentionally uses the separate (instanceID, serializer*) pair; representation, database, factory, cache, lease, and runtime-object identities remain separate layers with explicit translation or ownership boundaries.",
+      "predictions": [
+        "Memory key order, DBPF row order, and serializer order can differ without changing conceptual equality.",
+        "Database priority and cache registration order can select a provider independently of key ordering.",
+        "A Cell serializer pointer can identify a local Cell reference entry, but it does not replace the full ResourceKey in manager/provider requests; the loaded cCellResource retains its own mNameKey."
+      ],
+      "evidence_for": [
+        "ResourceKey memory layout is instance/type/group; DBPF rows are type/group/instance.",
+        "Manager mappings at +0x54 and +0x78 translate resource type to record type and back.",
+        "Database list insertion and FindDatabase traversal are priority ordered.",
+        "ICache and cCellDataReference_ expose different key contracts and lifetimes."
+      ],
+      "evidence_against": [
+        "The exact public semantics of some SDK/live address aliases remain boundary-sensitive.",
+        "Runtime hit/miss, async, and rekey behavior were not observed."
+      ],
+      "independence": "The conclusion combines direct layouts, vtable bytes, map/list algorithms, and independent Cell lifecycle bodies; it is not a single narrative source.",
+      "repetition": "The same layered distinction is visible in several APIs, but repeated API naming is not counted as independent runtime proof.",
+      "status": "RESOLVED_SUPPORTED"
+    },
+    {
+      "id": "H3",
+      "name": "cache_key_is_runtime_object",
+      "claim": "The report conflates manager/provider request identity with Cell-local and runtime identities by treating a runtime ResourceObject pointer or Cell reference node as the manager/provider key.",
+      "predictions": [
+        "ICache::GetResource would receive or compare an object pointer rather than a key.",
+        "A cache miss would be defined by a new object address even when the numeric key is equal.",
+        "cCellDataReference_ would be an alias for the manager cache rather than a separate local list."
+      ],
+      "evidence_for": [
+        "The manager stores cache implementations and returns ResourceObject handles.",
+        "ResourceObject and Cell data references are intrusive/reference-counted."
+      ],
+      "evidence_against": [
+        "ICache::GetResource and CacheResource use ResourceKey/ResourceObject metadata, and the manager supports an alternate pCacheName.",
+        "0x00e82420 maintains a separate global circular list keyed by instance and serializer.",
+        "0x00e82280 and 0x00e823e0 release local resource pointers independently of manager cache traversal."
+      ],
+      "independence": "The cache vtable contract, manager cache traversal, and Cell list lifecycle are separate bodies and structures.",
+      "repetition": "Pointer use in return values is not repeated as proof of pointer-keyed lookup; the key-bearing call contracts are the separator.",
+      "status": "REJECTED_AS_CACHE_IDENTITY"
+    },
+    {
+      "id": "H4",
+      "name": "dbpf_row_order_is_identity",
+      "claim": "The order of rows in a DBPF index defines conceptual resource identity and duplicate-key precedence.",
+      "predictions": [
+        "Changing only the DBPF row order would change the resource identity or its canonical key.",
+        "DatabasePackedFile would expose raw row order rather than a key map.",
+        "Cross-package precedence would be irrelevant if the first row in one package always won."
+      ],
+      "evidence_for": [
+        "The current OpenSpore parser scans one package's index in file order and returns the first exact T:G:I match.",
+        "DBPF rows contain a concrete serialized order."
+      ],
+      "evidence_against": [
+        "DatabasePackedFile has an explicit map<ResourceKey, PFRecordBase*> at +0x2e8.",
+        "The original manager has a priority-sorted database list and a first-match database traversal.",
+        "The SDK ResourceKey equality is a numeric triple comparison, not a row-position comparison."
+      ],
+      "independence": "The current parser is a separate implementation comparison; the original map and database-list algorithms are independent Ghidra evidence.",
+      "repetition": "Repeated first-match observations in one package describe enumeration behavior, not conceptual identity or multi-package precedence.",
+      "status": "REJECTED_AS_IDENTITY"
+    },
+    {
+      "id": "H5",
+      "name": "one_global_provider",
+      "claim": "A single global provider owns package bytes, factories, caches, Cell references, and runtime objects.",
+      "predictions": [
+        "All record lookup would bypass separate database/factory/cache layers.",
+        "Cell data references would call the same global cache and expose the same object identity.",
+        "Database priority and cache registration would not be architecture-visible."
+      ],
+      "evidence_for": [
+        "cResourceManager is a global service with registries and a vtable.",
+        "Many gameplay consumers eventually reach resource APIs."
+      ],
+      "evidence_against": [
+        "cResourceManager fields separately expose database, factory, type-mapping, cache, and filename registries.",
+        "DatabasePackedFile owns the package index and record lease operations.",
+        "cCellDataReference_ owns a separate lazy reference list and serializer-specific loading path."
+      ],
+      "independence": "The manager constructor/fields, database structures, Cell list, and cache vtable are independent ownership evidence.",
+      "repetition": "The manager's central fan-in establishes a coordination role, not ownership of every layer.",
+      "status": "REJECTED_AS_GLOBAL_PROVIDIDER"
+    },
+    {
+      "id": "H6",
+      "name": "runtime_object_is_content_identity",
+      "claim": "The runtime ResourceObject pointer is the durable content identity and can replace the numeric key.",
+      "predictions": [
+        "Equal numeric keys always return the same object pointer.",
+        "A private/reload request can be represented solely by replacing the pointer.",
+        "The embedded mNameKey is redundant or ignored for lookup."
+      ],
+      "evidence_for": [
+        "Runtime consumers receive pointer handles and use Cast/AddRef/Release operations."
+      ],
+      "evidence_against": [
+        "ResourceObject embeds mNameKey at +0x08 and is reference-counted.",
+        "The SDK exposes private acquisition, reload, cache lookup, and separate cache identity overrides.",
+        "cCellDataReference_ stores an intrusive cCellResource pointer separately from its instance/serializer key."
+      ],
+      "independence": "The object layout, manager acquisition surfaces, and Cell pointer lifecycle are separate from the key-bearing database/cache operations.",
+      "repetition": "Repeated pointer returns are evidence of runtime handles, not proof of pointer-based content identity.",
+      "status": "REJECTED_AS_DURABLE_IDENTITY"
+    }
+  ],
+  "identity_matrices": {
+    "representation_and_order": [
+      {
+        "layer": "conceptual gameplay/content identity",
+        "identity": "full triple (instanceID, typeID, groupID)",
+        "memory_order": "instanceID, typeID, groupID",
+        "ordering": "numeric equality over all three fields; wildcard is 0xffffffff",
+        "owner": "public content/resource contract",
+        "classification": "required_for_semantics",
+        "evidence": ["ResourceKey SDK layout", "current DBPF/provider contract"]
+      },
+      {
+        "layer": "manager/provider request",
+        "identity": "full numeric ResourceKey (instanceID, typeID, groupID)",
+        "memory_order": "field-aware key passed through manager, database, factory, cache, and record APIs",
+        "ordering": "provider/priority selection, not Cell-local list membership",
+        "owner": "cResourceManager/provider layer",
+        "scope": "Manager/provider requests only; excludes the Cell local cCellDataReference_ list.",
+        "classification": "required_for_semantics",
+        "evidence": ["IResourceManager.h:84-104,195-236", "0x008df9b0", "0x008dfb20", "0x008de360"]
+      },
+      {
+        "layer": "ResourceKey in memory",
+        "identity": "same full triple",
+        "memory_order": "instanceID at +0x00, typeID at +0x04, groupID at +0x08",
+        "ordering": "SDK operator< compares instance, then type, then group",
+        "owner": "manager/database/cache call boundary",
+        "classification": "required_for_semantics",
+        "evidence": ["ghidra structure ResourceKey", "ResourceKey.h:32-48,138-167"]
+      },
+      {
+        "layer": "DBPF v3 index row",
+        "identity": "same full triple",
+        "memory_order": "typeID, groupID, instanceID in the standard row",
+        "ordering": "row position is serialization/enumeration order; not key equality order",
+        "owner": "DatabasePackedFile/PFIndexModifiable",
+        "classification": "replaceable_infrastructure",
+        "evidence": ["knowledgegraph/research/data-model/01-dbpf-resource-formats.json:153-175", "src/assets/Dbpf.cpp"]
+      },
+      {
+        "layer": "DatabasePackedFile record map",
+        "identity": "ResourceKey",
+        "memory_order": "map key uses ResourceKey's native instance/type/group layout",
+        "ordering": "map lookup/lower-bound semantics; raw DBPF row order is not authoritative",
+        "owner": "DatabasePackedFile+0x2e8",
+        "classification": "required_for_semantics",
+        "evidence": ["Ghidra DatabasePackedFile layout", "DatabasePackedFile.h:153-174"]
+      },
+      {
+        "layer": "serializer identity",
+        "identity": "CellSerializer pointer, with concrete type encoded by the template serializer",
+        "memory_order": "pointer",
+        "ordering": "pointer equality in cCellDataReference_::Create",
+        "owner": "cCellDataReference_/Cell content type family",
+        "classification": "required_for_semantics",
+        "evidence": ["cCellResource.h:69-94", "0x00e82420"]
+      },
+      {
+        "layer": "Cell local reference key",
+        "identity": "(instanceID, serializer pointer); this is the Cell local lookup key, not the manager/provider request key",
+        "memory_order": "instanceID +0x08 in the 24-byte node, serializer +0x0c",
+        "ordering": "first matching node in the global circular list",
+        "owner": "DAT_016b44f0 list",
+        "classification": "required_for_semantics",
+        "evidence": ["0x00e82420", "0x00e82340", "ghidra cCellDataReference_ layout"]
+      },
+      {
+        "layer": "manager cache key",
+        "identity": "ResourceKey or explicit alternate pCacheName; manager cache identity, not the Cell local pair",
+        "memory_order": "ResourceKey passed to ICache",
+        "ordering": "first cache implementation returning a hit/success",
+        "owner": "cResourceManager mCacheVector and ICache",
+        "classification": "required_for_semantics",
+        "evidence": ["IResourceManager.h:84-104,127-156,283-299", "0x008de280", "0x008de360", "0x008de3b0"]
+      },
+      {
+        "layer": "record lease",
+        "identity": "IRecord pointer plus Database open-count/ref bookkeeping",
+        "memory_order": "pointer",
+        "ordering": "lifetime is open/close, not key ordering",
+        "owner": "Database/DatabasePackedFile/PFRecordRead",
+        "classification": "runtime_compatibility_only",
+        "evidence": ["Database.h:54-63", "0x008da3d0", "0x008d9d30 historical anchor"]
+      },
+      {
+        "layer": "runtime object",
+        "identity": "ResourceObject/CachedResourceObject pointer with embedded mNameKey and refcount",
+        "memory_order": "vtable + refcount + ResourceKey",
+        "ordering": "allocation/ownership order, not content precedence",
+        "owner": "factory/cache/consumer",
+        "classification": "runtime_compatibility_only",
+        "evidence": ["ResourceObject.h:32-80", "0x00e82340", "0x00e823e0"]
+      }
+    ],
+    "provider_layers": [
+      {
+        "layer": "package/DBPF provider",
+        "owns": "serialized T:G:I row, offset, stored/memory sizes, compression metadata",
+        "identity": "full triple",
+        "order": "DBPF row/file order",
+        "lifetime": "borrowed package/index",
+        "classification": "replaceable_infrastructure"
+      },
+      {
+        "layer": "DatabasePackedFile",
+        "owns": "package stream, index, RecordInfo, record map, open/close lease",
+        "identity": "ResourceKey map and record metadata",
+        "order": "key map lookup; package row order is serialization detail",
+        "lifetime": "database lifetime",
+        "classification": "required_for_semantics"
+      },
+      {
+        "layer": "cResourceManager",
+        "owns": "database list, factory registry, type mappings, cache vector, filename mappings",
+        "identity": "full numeric ResourceKey plus provider overrides and pCacheName for manager/provider requests",
+        "order": "priority-sorted database/cache/factory providers",
+        "lifetime": "manager lifetime",
+        "classification": "replaceable_infrastructure"
+      },
+      {
+        "layer": "IResourceFactory",
+        "owns": "record/resource-type conversion and ResourceObject construction",
+        "identity": "resourceTypeID/recordTypeID selection plus key",
+        "order": "first matching factory in the registered list",
+        "lifetime": "factory registration",
+        "classification": "replaceable_infrastructure"
+      },
+      {
+        "layer": "ICache",
+        "owns": "loaded resource lookup and insertion",
+        "identity": "ResourceKey/alternate cache key",
+        "order": "first cache hit or first successful insertion",
+        "lifetime": "cache registration and resource release",
+        "classification": "replaceable_infrastructure"
+      },
+      {
+        "layer": "cCellDataReference_",
+        "owns": "lazy Cell content reference and serializer-specific local node",
+        "identity": "instanceID + serializer pointer",
+        "order": "global circular-list lookup",
+        "lifetime": "Cell mode/content context",
+        "classification": "required_for_semantics"
+      },
+      {
+        "layer": "runtime ResourceObject",
+        "owns": "decoded object data, embedded mNameKey, refcount/final-release callback",
+        "identity": "runtime pointer plus metadata key",
+        "order": "allocation/ownership order",
+        "lifetime": "intrusive references/cache policy",
+        "classification": "runtime_compatibility_only"
+      }
+    ],
+    "cache_layers": [
+      {
+        "address": "0x008de280",
+        "role": "GetLoadedResource",
+        "observed_operation": "iterates mCacheVector and calls ICache vtable +0x18 (GetResource) until the first hit",
+        "identity": "ResourceKey",
+        "result": "existing ResourceObject handle",
+        "classification": "replaceable_infrastructure"
+      },
+      {
+        "address": "0x008de360",
+        "role": "FindCache",
+        "observed_operation": "iterates mCacheVector and calls ICache +0x18 with key and null output; returns the first cache containing the key",
+        "identity": "ResourceKey",
+        "result": "ICache pointer",
+        "classification": "replaceable_infrastructure"
+      },
+      {
+        "address": "0x008de3b0",
+        "role": "CacheResource",
+        "observed_operation": "iterates mCacheVector and calls ICache +0x1c (CacheResource) until the first successful insertion",
+        "identity": "ResourceObject embedded key",
+        "result": "boolean success",
+        "classification": "replaceable_infrastructure"
+      },
+      {
+        "address": "0x008de400",
+        "role": "FlushCache",
+        "observed_operation": "calls ICache +0x28 for the selected cache or every registered cache",
+        "identity": "cache pointer plus optional filter",
+        "result": "cache removal/flush; exact release timing unresolved",
+        "classification": "replaceable_infrastructure"
+      },
+      {
+        "address": "0x008e1d50",
+        "role": "RegisterCache",
+        "observed_operation": "adds/removes cache entries, maintains reference counts, and inserts by priority",
+        "identity": "ICache pointer",
+        "result": "ordered cache vector",
+        "classification": "replaceable_infrastructure"
+      },
+      {
+        "address": "0x00e82420",
+        "role": "cCellDataReference_::Create",
+        "observed_operation": "searches DAT_016b44f0 by instanceID and serializer; allocates/relinks a node on miss",
+        "identity": "instanceID + serializer pointer",
+        "result": "embedded 16-byte cCellDataReference_ payload",
+        "classification": "required_for_semantics"
+      }
+    ]
+  },
+  "manager_and_address_resolution": {
+    "vtable": {
+      "address": "0x01436ae8",
+      "slots": 38,
+      "constructor": "0x008e20c0",
+      "destructor": "0x008e1f10",
+      "fields_observed": {
+        "+0x2c": "database list/root used by FindDatabase and RegisterDatabase",
+        "+0x30": "resource factory registry",
+        "+0x54": "resource-type to record-type mapping",
+        "+0x78": "record-type to resource-type mapping",
+        "+0x9c": "cache vector begin",
+        "+0xa0": "cache vector end",
+        "+0xb0": "extension mappings",
+        "+0xf4": "filename/key-name mappings"
+      },
+      "evidence": "Read-only memory inspection of 0x01436ae8 and read-only structure layout of cResourceManager; no RTTI inference."
+    },
+    "address_aliases": [
+      {
+        "requested": "0x008de530 Initialize",
+        "observed": "SDK/Ghidra-associated hash-table allocation/relink body with one static caller at 0x008ded8c; current vtable +0x04 is 0x008de220, which only sets mbNeedsToRelease.",
+        "decision": "Preserve 0x008de530 as an SDK-associated initialization/hash helper anchor, not as proof of a complete manager boot. Freeze the manager constructor/registry state separately."
+      },
+      {
+        "requested": "0x008df0b0, 0x008df460, 0x008df700",
+        "observed": "0x008df430 is a short vtable wrapper that calls 0x008df0b0. 0x008df460 is a separate current body with the same cache-first/database/factory shape; 0x008df700 is an interior SDK anchor in that body.",
+        "decision": "Treat 0x008df0b0 as a common load body and 0x008df460/0x008df700 as the rebounded request body/anchor. Do not create three identity types or treat 0x008df700 as an independent function entry."
+      },
+      {
+        "requested": "0x008e1d20 RegisterFactory",
+        "observed": "The current vtable slot +0x44 points to 0x008e1a50, whose add/remove body manages factory lists and calls a helper. 0x008e1d20 is an SDK-associated interior/helper body with map traversal and a boundary-sensitive recursive-looking tail.",
+        "decision": "Freeze factory registration semantics, not address aliasing. Use 0x008dfb20 as the clean first-matching FindFactory body and retain 0x008e1d20 as a separate SDK/helper label."
+      },
+      {
+        "requested": "0x008e1750 SetKeyName",
+        "observed": "The SDK-named body accepts a ResourceKey/name shape and rebuilds/cleans filename mapping structures. The current vtable slot +0x80 is 0x008e1480, so the exact wrapper/helper boundary is not a reliable identity claim.",
+        "decision": "Freeze the existence and direction of key-name mapping; defer hash derivation, rekey policy, and exact wrapper/entry identity."
+      },
+      {
+        "requested": "0x008e0d30 RegisterDatabase",
+        "observed": "The requested address is a clean current disassembly entry and current vtable slot +0x50. It checks duplicate registration, inserts a database node by priority, attaches the database, and supports removal.",
+        "decision": "Use 0x008e0d30 as the current RegisterDatabase body; keep 0x008e1000 as a historical SDK anchor only."
+      }
+    ]
+  },
+  "package_precedence": {
+    "register": "0x008e0d30",
+    "sorted_insert": "0x008de940",
+    "remove": "0x008e07b0",
+    "find_database": "0x008de310",
+    "find_record": "0x008df9b0",
+    "static_rule": "FUN_008de940 stores database pointer at node+4 and priority at node+8, then inserts before the first node whose priority is lower than the new priority. Equal priorities are traversed and therefore remain after existing equal entries.",
+    "lookup_rule": "The database list is traversed in list order; the first database whose record lookup/open operation succeeds wins. An explicit database override bypasses the global list.",
+    "record_mapping_rule": "0x008df9b0 first consults the manager resource-type-to-record-type mapping at +0x54, then calls the database path; on success it can write the corrected real record key to pDst.",
+    "factory_rule": "0x008dfb20 walks the resource factory map and returns the first factory whose CanConvert(resourceType, recordType) succeeds; wildcard record type is represented by the special -1 path.",
+    "runtime_status": "Static priority/list behavior is supported as a provisional model; actual boot registration order and duplicate content selection remain provisional pending runtime evidence."
+  },
+  "cell_reference_resolution": {
+    "global": {
+      "address": "0x016b44f0",
+      "initial_value": "zero in the static image",
+      "initialization": "0x00e82490 allocates a 12-byte circular-list sentinel and links it to itself",
+      "initialization_caller": "0x00e4c8c0",
+      "teardown": "0x00e824d0 clears resource pointers, destroys/free nodes through 0x00e823e0, then frees the sentinel"
+    },
+    "node_layout": [
+      {"offset": "+0x00", "role": "previous/list link"},
+      {"offset": "+0x04", "role": "next/list link"},
+      {"offset": "+0x08", "role": "mInstanceID"},
+      {"offset": "+0x0c", "role": "mpSerializer"},
+      {"offset": "+0x10", "role": "intrusive cCellResource pointer"},
+      {"offset": "+0x14", "role": "mCounter"}
+    ],
+    "payload_layout": [
+      {"offset": "+0x00", "role": "mInstanceID"},
+      {"offset": "+0x04", "role": "mpSerializer"},
+      {"offset": "+0x08", "role": "mpResource"},
+      {"offset": "+0x0c", "role": "mCounter"}
+    ],
+    "create": "0x00e82420 searches by (instanceID, serializer), calls 0x00e82340 on a miss, links the new 24-byte node into DAT_016b44f0, and returns node+8.",
+    "allocation_helper": "0x00e82340 allocates exactly 0x18 bytes, copies the 16-byte payload to node+0x08, retains a non-null resource pointer, and returns the node base. It is not an alias of Create.",
+    "lazy_load": "0x00e823a0 increments the payload counter, calls 0x00e822c0 if the resource pointer is null, then uses the resource object/Cast path to expose the data.",
+    "failure_and_release": "0x00e822c0 releases an existing pointer, attempts the asset/mode load gate, logs failure through 0x00e84e40, and releases/cleans the pointer on failure. 0x00e82280 releases all live payload resource pointers while retaining nodes; 0x00e823e0 releases and frees nodes during teardown.",
+    "identity_conclusion": "The Cell list is a local lazy-reference cache keyed by instanceID plus serializer, not a manager ICache and not a full ResourceKey. The underlying cCellResource retains its own mNameKey and serializer."
+  },
+  "cache_and_request_trace": {
+    "request_key_contract": "All manager/provider request surfaces use the full numeric ResourceKey. Cell local cCellDataReference_::Create is not a manager/provider request and uses (instanceID, serializer*) for its local list lookup. Manager cache, record lease, and runtime object identities remain separate from both.",
+    "normal_request_shape": [
+      "0x008df460/0x008df700 probes the loaded/cache path first.",
+      "On a hit, the existing resource handle is returned without a package record load.",
+      "On a miss, manager mapping and database selection are attempted.",
+      "The selected database/factory path opens a record and constructs a ResourceObject/cCellResource.",
+      "The manager may insert the result into a cache through CacheResource."
+    ],
+    "common_loader": "0x008df0b0 contains the same database/factory/record-construction family and is reached by the short 0x008df430 wrapper; the exact SDK anchor 0x008df700 is an interior label of the rebounded 0x008df460 body.",
+    "cache_key_override": "The SDK GetResource surface accepts pCacheName; when supplied it is the cache identity, while the requested name remains the content lookup identity. No evidence shows that pCacheName changes the DBPF record key.",
+    "invalidations": [
+      "SDK interfaces expose GetPrivateResource, ReloadResource, CacheResource, FlushCache, and database-change notification.",
+      "0x008de400 invokes ICache::Flush on one cache or all caches.",
+      "The Cell local list has independent clear/destroy paths at 0x00e82280, 0x00e823e0, and 0x00e824d0.",
+      "Exact manager cache replacement during ReloadResource and exact release timing after Flush remain unresolved."
+    ]
+  },
+  "adversarial_steps": [
+    {
+      "step": 1,
+      "name": "one-global-identity-collapse-test",
+      "hypothesis": "H1",
+      "prediction": "A single full ResourceKey comparison would be sufficient in the Cell list, cache, record lease, and runtime object.",
+      "evidence_for": [
+        "ResourceKey is consistently embedded in ResourceObject and used by manager/database APIs.",
+        "DatabasePackedFile has an explicit ResourceKey map."
+      ],
+      "evidence_against": [
+        "0x00e82420 compares only instanceID and serializer pointer.",
+        "ICache calls are key-based but return separate object pointers.",
+        "Database OpenRecord returns a record lease rather than the key itself."
+      ],
+      "independence": "The contradiction comes from a different Cell list algorithm and separate cache/lease contracts, not from re-reading the manager narrative.",
+      "repetition": "Full-triple use is repeated in manager/database code, but the pair-based Cell hit is a direct counterexample.",
+      "separator_result": "Global identity collapse rejected; the stable full triple is only the conceptual content identity.",
+      "classification": "required_for_semantics"
+    },
+    {
+      "step": 2,
+      "name": "global-versus-layered-provider-test",
+      "hypothesis": "H5",
+      "prediction": "A global provider would own the package index, factory, cache, Cell reference, and runtime object without translation boundaries.",
+      "evidence_for": [
+        "cResourceManager is a global coordination service with a 38-slot vtable.",
+        "Many consumers reach resource APIs through manager calls."
+      ],
+      "evidence_against": [
+        "cResourceManager has separate database, factory, type-mapping, cache, and filename fields.",
+        "DatabasePackedFile owns the index and record operations.",
+        "cCellDataReference_ has a separate global list and lazy loader."
+      ],
+      "independence": "Manager fields, database structure, Cell list, and cache vector are independent owner evidence.",
+      "repetition": "Manager fan-in is coordination evidence, not ownership proof.",
+      "separator_result": "Layered providers are supported; a single global provider is rejected.",
+      "classification": "replaceable_infrastructure"
+    },
+    {
+      "step": 3,
+      "name": "dbpf-order-test",
+      "hypothesis": "H4",
+      "prediction": "Changing DBPF row order would change conceptual identity or global duplicate precedence.",
+      "evidence_for": [
+        "The current OpenSpore provider is a first-match linear scan of one parsed index."
+      ],
+      "evidence_against": [
+        "DatabasePackedFile stores a ResourceKey map at +0x2e8.",
+        "The manager's database list is priority ordered independently of row order.",
+        "ResourceKey equality is full-field numeric equality."
+      ],
+      "independence": "Current parser behavior and original database/list mechanics are independent implementation paths.",
+      "repetition": "First-match behavior is not repeated as evidence that row order is identity.",
+      "separator_result": "DBPF order is serialization/enumeration infrastructure; key equality and database priority are authoritative.",
+      "classification": "replaceable_infrastructure"
+    },
+    {
+      "step": 4,
+      "name": "resourcekey-memory-order-test",
+      "hypothesis": "H2",
+      "prediction": "The conceptual triple may be serialized or compared in a different field order without becoming a different content identity.",
+      "evidence_for": [
+        "Ghidra ResourceKey layout is instance/type/group.",
+        "DBPF standard row order is type/group/instance.",
+        "The SDK ResourceKey operator< compares instance, type, then group."
+      ],
+      "evidence_against": [
+        "A raw byte comparison without field-aware decoding would be architecture-specific and unsafe."
+      ],
+      "independence": "The Ghidra structure, SDK operator, and DBPF reader are separate sources.",
+      "repetition": "The repeated triple is semantic equivalence, not permission to flatten byte layouts.",
+      "separator_result": "Conceptual identity is field-aware and representation order is explicit.",
+      "classification": "required_for_semantics"
+    },
+    {
+      "step": 5,
+      "name": "serializer-versus-key-test",
+      "hypothesis": "H2",
+      "prediction": "Cell local reference lookup can use (instanceID, serializer*) as its pair identity, while manager/provider requests continue to use the full numeric ResourceKey; the loaded cCellResource still carries mNameKey.",
+      "evidence_for": [
+        "0x00e82420 searches the list by instanceID and serializer only.",
+        "cCellDataReference_ payload stores serializer, intrusive cCellResource, and counter.",
+        "cCellResource embeds mNameKey and mDataSerializer."
+      ],
+      "evidence_against": [
+        "The serializer pointer is process-address identity and does not describe group or package precedence.",
+        "The same instance with different serializer pointers must not be assumed to share a local node."
+      ],
+      "independence": "The Create loop, node copy helper, and cCellResource layout are independent bodies/structures.",
+      "repetition": "Serializer use in typed Create wrappers supports the type-discriminator role but does not prove global type identity.",
+      "separator_result": "Cell local identity is (instance, serializer); manager identity remains the full triple.",
+      "classification": "required_for_semantics"
+    },
+    {
+      "step": 6,
+      "name": "cache-key-versus-lease-reference-test",
+      "hypothesis": "H3",
+      "prediction": "A cache hit should be keyed by ResourceKey, while an open record and a ResourceObject are separately owned runtime handles.",
+      "evidence_for": [
+        "ICache::GetResource/CacheResource take ResourceKey/ResourceObject contracts.",
+        "0x008de280, 0x008de360, and 0x008de3b0 iterate caches by key and return the first hit/success.",
+        "DatabasePackedFile OpenRecord and PFRecordRead expose record/stream state separate from ResourceKey."
+      ],
+      "evidence_against": [
+        "The same object pointer can be returned through an intrusive reference and may outlive a particular record lease.",
+        "A pointer address is not a stable package identity."
+      ],
+      "independence": "Cache traversal, database OpenRecord, and object refcount layout are separate evidence paths.",
+      "repetition": "Multiple cache call sites repeat key-bearing lookup, not pointer identity.",
+      "separator_result": "Cache key, record lease, and runtime object identity are separate; pointer equality cannot replace key semantics.",
+      "classification": "runtime_compatibility_only"
+    },
+    {
+      "step": 7,
+      "name": "package-precedence-separator",
+      "hypothesis": "H2",
+      "prediction": "A higher-priority database should be inserted before a lower-priority database, and FindDatabase/FindRecord should select the first successful database in that order.",
+      "evidence_for": [
+        "0x008de940 stores database and priority in list nodes and inserts before the first lower-priority node.",
+        "0x008de310 traverses the database list in order and tests the record path.",
+        "0x008df9b0 supports an explicit database override and otherwise uses the manager database path."
+      ],
+      "evidence_against": [
+        "Boot registration order and actual duplicate-record hits were not runtime-observed.",
+        "Equal-priority behavior is static from insertion traversal, not a dynamic event trace."
+      ],
+      "independence": "The insertion comparator and consumer traversal are separate function bodies.",
+      "repetition": "The same ordering rule is visible in register/find, but repetition does not replace a runtime event trace.",
+      "separator_result": "Static insertion and traversal support a provisional descending-priority model; runtime package precedence, duplicate selection, and boot order remain provisional.",
+      "classification": "runtime_compatibility_only"
+    },
+    {
+      "step": 8,
+      "name": "cell-hit-miss-and-invalidation-separator",
+      "hypothesis": "H2 and H3",
+      "prediction": "Create(instance, serializer) should return the same embedded node on a pair hit, allocate/relink on a miss, and lazy-load only when the payload resource pointer is null.",
+      "evidence_for": [
+        "0x00e82420 has an explicit pair-match branch and a miss path calling 0x00e82340.",
+        "0x00e82340 allocates 0x18 bytes and copies the 16-byte payload.",
+        "0x00e823a0 increments the counter and calls 0x00e822c0 when mpResource is null.",
+        "0x00e82280 and 0x00e823e0 distinguish resource release from node destruction."
+      ],
+      "evidence_against": [
+        "No live process was available to observe pointer values, counters, or release timing.",
+        "The manager cache and Cell list can both be active, so a Cell hit does not prove a manager cache hit."
+      ],
+      "independence": "The Create branch, allocator size, lazy-load branch, and teardown bodies are separate static separators.",
+      "repetition": "The same pair key is repeated in two Create callers, which confirms reuse shape but not runtime object identity.",
+      "separator_result": "Static hit/miss/open/release separator completed. Cell local cache semantics are supported independently of manager cache semantics.",
+      "classification": "required_for_semantics"
+    },
+    {
+      "step": 9,
+      "name": "architecture-dependency-and-runtime-test",
+      "hypothesis": "H2",
+      "prediction": "The semantic layering should survive a provider replacement, but concrete x86 offsets, pointer serializer identity, vtable slots, and package registration order are binary-specific and require a narrow runtime trace before compatibility promotion.",
+      "evidence_for": [
+        "The value triple and explicit provider layers can be represented without the original classes.",
+        "The current B1 provider already fetches one package by the full triple while omitting original manager orchestration.",
+        "Runtime identity and exact invalidation are not proven by static bodies."
+      ],
+      "evidence_against": [
+        "The current B1 path has one borrowed package, reparses its index per fetch, and has no manager/database/factory/cache layer.",
+        "The original binary is x86 32-bit with vtable and pointer-based serializer identity."
+      ],
+      "independence": "The architecture test compares the current clean-room seam with original static layers and separately checks historical runtime availability.",
+      "repetition": "The current provider and historical reports are corroboration, not a second original runtime observation.",
+      "separator_result": "Architecture dependency is yes at representation/provider/order boundaries; no runtime promotion is justified.",
+      "classification": "runtime_compatibility_only"
+    }
+  ],
+  "smallest_separator": {
+    "performed": true,
+    "kind": "static identity/provider/cache separator",
+    "runtime_performed": false,
+    "observations": [
+      {
+        "separator": "Cell Create hit versus miss",
+        "address": "0x00e82420",
+        "result": "same instanceID+serializer returns node+8; a different pair allocates via 0x00e82340 and links into DAT_016b44f0"
+      },
+      {
+        "separator": "Cell lazy resource open versus release",
+        "addresses": ["0x00e823a0", "0x00e822c0", "0x00e82280", "0x00e823e0"],
+        "result": "null mpResource triggers load; clear releases payload pointers; teardown frees nodes and sentinel"
+      },
+      {
+        "separator": "Database registration versus lookup",
+        "addresses": ["0x008e0d30", "0x008de940", "0x008de310", "0x008df9b0"],
+        "result": "static comparator supports a provisional descending-priority/first-successful database model with explicit override and resource-type mapping; runtime package precedence remains provisional"
+      },
+      {
+        "separator": "Cache hit versus insertion",
+        "addresses": ["0x008de280", "0x008de360", "0x008de3b0", "0x008de400"],
+        "result": "first cache hit/first successful insertion/selected or all-cache flush; eviction and release timing remain provisional"
+      }
+    ],
+    "runtime_gap": "No original-process hit/miss/open/factory/preload/release trace was available; runtime object identity remains unpromoted."
+  },
+  "architecture_dependency": {
+    "depends": true,
+    "scope": [
+      "field order of ResourceKey memory representation",
+      "DBPF row serialization order",
+      "database and cache registration/priority order",
+      "factory first-match order",
+      "Cell serializer pointer identity",
+      "record lease and intrusive object lifetime",
+      "x86 vtable slot interpretation"
+    ],
+    "does_not_depend_for_contract": [
+      "the conceptual full triple",
+      "explicit separation of content identity from provider and runtime object",
+      "field-aware equality rather than raw serialized-byte equality",
+      "first-success provider policy as an implementation policy"
+    ],
+    "decision": "Keep the semantic contract portable, but preserve original ordering and object lifetime only as compatibility/infrastructure details until runtime evidence exists."
+  },
+  "minimum_provider_cache_semantics": {
+    "provider": [
+      "Manager/provider request input is a field-aware full numeric ResourceKey, not a package row position or runtime pointer.",
+      "Cell local cCellDataReference_ lookup is outside this provider contract and uses (instanceID, serializer*) pair identity.",
+      "A provider may expose one package or multiple database candidates.",
+      "Database candidates are explicit and ordered; an override wins over global candidate order.",
+      "Type/resource mapping occurs before record/factory selection and may return a corrected real record key.",
+      "Record open, decode, and ResourceObject construction are separate operations.",
+      "A provider failure is distinct from an absent key only at the implementation boundary; the original public boolean is lossy."
+    ],
+    "cache": [
+      "Manager cache lookup identity is the full numeric ResourceKey or an explicit alternate cache key; it is not the Cell local pair identity.",
+      "A cache hit returns a runtime resource handle, not a new on-disk identity.",
+      "Cache insertion is a separate policy operation and may be first-success across registered caches.",
+      "Flush/reload/private acquisition must not be inferred to preserve or replace the same runtime object without evidence.",
+      "Cell local references are a separate cache keyed by instanceID+serializer and must not be merged into manager ICache semantics."
+    ],
+    "runtime": [
+      "ResourceObject/CellResource pointer identity is runtime-only.",
+      "IRecord/stream open state is a lease identity.",
+      "Serializer pointer identity is process-local and type-discriminating, not portable content identity."
+    ]
+  },
+  "exact_decisions": [
+    {
+      "id": "D1",
+      "decision": "Use the full (instanceID,typeID,groupID) triple as the conceptual content identity; expose it field-aware.",
+      "depends_on": ["ResourceKey layout", "DBPF index identity", "DatabasePackedFile+0x2e8"]
+    },
+    {
+      "id": "D2",
+      "decision": "Keep ResourceKey memory order (instance,type,group) distinct from DBPF row order (type,group,instance).",
+      "depends_on": ["ResourceKey.h:32-48", "01-dbpf-resource-formats.json:153-195"]
+    },
+    {
+      "id": "D3",
+      "decision": "Model package/database/provider selection as a layered resolver with an explicit priority/override boundary; freeze only the static list policy and keep runtime package precedence provisional.",
+      "depends_on": ["0x008e0d30", "0x008de940", "0x008de310", "0x008df9b0"]
+    },
+    {
+      "id": "D4",
+      "decision": "Apply resource-type to record-type mapping before database/factory lookup and permit the resolved real key to differ from the requested key.",
+      "depends_on": ["0x008df9b0", "0x008dfb20", "IResourceManager.h:176-236"]
+    },
+    {
+      "id": "D5",
+      "decision": "Keep manager cache identity key-based and separate from the Cell local pair, record leases, and runtime object pointers; treat eviction/release timing as provisional.",
+      "depends_on": ["0x008de280", "0x008de360", "0x008de3b0", "0x008da3d0", "ResourceObject layout"]
+    },
+    {
+      "id": "D6",
+      "decision": "Preserve cCellDataReference_ as a separate lazy local-reference layer keyed by instanceID+serializer; 0x00e82340 is its allocator/helper and 0x00e82420 is Create.",
+      "depends_on": ["0x00e82340", "0x00e82420", "DAT_016b44f0", "cCellResource.h:69-94"]
+    },
+    {
+      "id": "D7",
+      "decision": "Do not use package path, DBPF row position, vtable address, serializer pointer, or ResourceObject pointer as durable content identity.",
+      "depends_on": ["ResourceKey map", "0x00e82420", "0x00e82340", "0x008da3d0"]
+    },
+    {
+      "id": "D8",
+      "decision": "Treat ReloadResource, GetPrivateResource, FlushCache, and Cell local clear/destroy as explicit lifecycle operations; do not infer same-object reuse or replacement without a trace.",
+      "depends_on": ["IResourceManager.h:127-156,283-299", "0x00e82280", "0x00e823e0", "0x00e824d0"]
+    },
+    {
+      "id": "D9",
+      "decision": "Keep the current OpenSpore B1 boundary as a one-package exact-T:G:I byte provider; do not claim original manager/cache parity from it.",
+      "depends_on": ["src/compat/ResourceProvider.hpp:32-59", "src/assets/Dbpf.cpp", "knowledgegraph/research/data-model/01-dbpf-resource-formats.json:286-294"]
+    }
+  ],
+  "freeze": [
+    "ResourceKey conceptual identity is the full instance/type/group triple.",
+    "ResourceKey memory order is instance/type/group and DBPF row order is type/group/instance.",
+    "DatabasePackedFile owns a ResourceKey-to-record map and separate record lease state.",
+    "cResourceManager separates database, factory, type-mapping, cache, and filename registries.",
+    "Database registration has a static priority/list policy and explicit override support; runtime package precedence and duplicate selection remain provisional.",
+    "FindRecord maps resource type to record type before database selection and may return a corrected real key.",
+    "FindFactory returns the first registered matching factory; wildcard record type is a special selection path.",
+    "Manager cache lookup/insertion is key-based and first-hit/first-success across registered caches; eviction and final-release timing remain provisional.",
+    "Manager/provider requests use full numeric ResourceKey; Cell local cCellDataReference_ lookup uses (instanceID, serializer*) and is not a manager/provider key.",
+    "0x00e82420 is cCellDataReference_::Create and returns the embedded 16-byte payload; 0x00e82340 is its separate 24-byte node allocator/helper.",
+    "cCellResource and ResourceObject embed a ResourceKey while runtime pointer/refcount state remains separate.",
+    "Cell local clear/destroy paths are distinct from manager cache flush and from database record close.",
+    "The current B1 provider is exact T:G:I over one package and does not implement original orchestration."
+  ],
+  "defer": [
+    "The exact public-wrapper mapping for 0x008de530 versus current vtable entry 0x008de220.",
+    "Exact SDK/live boundary aliases for 0x008e1d20 versus vtable target 0x008e1a50 and 0x008e1750 versus 0x008e1480.",
+    "ResourceKey name parsing/hash derivation and exact rekey behavior.",
+    "Runtime package precedence, boot registration order, and duplicate selection across packages.",
+    "Original cache eviction, flush/reload release timing, and runtime hit/miss/factory/preload ordering.",
+    "Async request scheduling, completion, and cancellation order.",
+    "Original ReloadResource replacement policy and post-Flush refcount timing.",
+    "Original QFS decode call site and all non-0xFFFF compression variants.",
+    "Duplicate same-key rows within one package and exact package build-order effects.",
+    "Exact concrete ResourceObject factory ownership and final-release callback behavior.",
+    "Whether serializer pointer identity is stable across any future process boundary; it is only process-local evidence.",
+    "Any replacement implementation or interface change."
+  ],
+  "blockers": [
+    {
+      "id": "B1",
+      "priority": "critical",
+      "blocker": "No positive original resource trace records RegisterDatabase, FindRecord, cache hit/miss, factory selection, record open, ResourceObject construction, preload, and release for one key.",
+      "next_observation": "One narrow hash-pinned trace over a known key with database pointer/priority, corrected ResourceKey, cache pointer, IRecord pointer/open count, factory pointer, ResourceObject pointer, and release timestamp."
+    },
+    {
+      "id": "B2",
+      "priority": "high",
+      "blocker": "The public API labels and current live function boundaries disagree at several requested addresses, especially 0x008de530, 0x008df0b0/0x008df460/0x008df700, 0x008e1d20, and 0x008e1750.",
+      "next_observation": "Rebuild a vtable-slot-to-function-boundary map from the current binary and compare constructor/vtable/xref edges; do not merge interior labels by adjacency."
+    },
+    {
+      "id": "B3",
+      "priority": "high",
+      "blocker": "Static cache traversal proves first-hit/first-success policy but not cache eviction, replacement, or final-release timing.",
+      "next_observation": "Trace one cache hit followed by ReloadResource or FlushCache and record pointer/refcount transitions."
+    },
+    {
+      "id": "B4",
+      "priority": "high",
+      "blocker": "The Cell local list is pair-keyed, but the original runtime relationship between a Cell reference and manager cache/provider precedence is not observed.",
+      "next_observation": "Trace cCellDataReference_::Create hit/miss, 0x00e823a0 lazy load, manager GetResource result, and mode teardown for one serializer/instance."
+    },
+    {
+      "id": "B5",
+      "priority": "medium",
+      "blocker": "DBPF row order, ResourceKey ordering, and database list order are distinct but the original serializer/index write order is not fully characterized.",
+      "next_observation": "Inspect a controlled package write/read cycle and one duplicate-key package pair without modifying SPORE/."
+    },
+    {
+      "id": "B6",
+      "priority": "high",
+      "blocker": "Async request scheduling, completion, and cancellation remain provisional and are not covered by the static cache-first request body.",
+      "next_observation": "Trace one asynchronous request from submission through readiness and final release, including the request object and ResourceObject pointer."
+    }
+  ],
+  "supporting_evidence_streams": [
+    {
+      "id": "E-manager",
+      "scope": ["0x01436ae8", "0x008e20c0", "0x008e1f10", "0x008de530", "0x008e0d30", "0x008df9b0", "0x008dfb20", "0x008e1750"],
+      "result": "Separates manager registries, current vtable slots, type mapping, factory selection, database registration, and name mapping from cache/lease layers."
+    },
+    {
+      "id": "E-record",
+      "scope": ["0x008da3d0", "DatabasePackedFile", "PFRecordRead", "RecordInfo"],
+      "result": "Shows full-key record metadata lookup and a distinct record/stream lease before factory/resource construction."
+    },
+    {
+      "id": "E-cache",
+      "scope": ["0x008de280", "0x008de360", "0x008de3b0", "0x008de400", "0x008e1d50", "0x008df460", "0x008df700"],
+      "result": "Shows key-based first-hit lookup, first-success insertion, cache flush, ordered registration, and cache-first request structure."
+    },
+    {
+      "id": "E-cell",
+      "scope": ["0x00e82340", "0x00e82420", "0x00e823a0", "0x00e82280", "0x00e823e0", "0x00e824d0", "DAT_016b44f0", "cCellResource", "cCellDataReference_"],
+      "result": "Shows pair-keyed Cell local references, lazy loading, separate resource-pointer release, and node/sentinel destruction."
+    },
+    {
+      "id": "E-current",
+      "scope": ["src/assets/Dbpf.cpp", "src/compat/ResourceProvider.hpp", "knowledgegraph/research/data-model/01-dbpf-resource-formats.json", "knowledgegraph/research/types/09-asset-content.md"],
+      "result": "Provides bounded current comparison: exact T:G:I, one package, reparse per fetch, no original registry/cache orchestration, and known historical gaps."
+    }
+  ],
+  "independence": {
+    "independent_observations": [
+      "Ghidra structure layouts for ResourceKey, cCellDataReference_, ResourceObject, cCellResource, and DatabasePackedFile.",
+      "Ghidra disassembly/decompilation of manager vtable bytes and cache/database list algorithms.",
+      "Ghidra xrefs/call graphs for cCellDataReference_ initialization, Create callers, lazy loader, and teardown.",
+      "SDK interface contracts for IResourceManager, ICache, Database, ResourceObject, and ResourceKey.",
+      "Current clean-room DBPF/provider source as a separate comparison path."
+    ],
+    "correlated_not_independent": [
+      "Repeated ResourceKey mentions in SDK and historical reports are not separate runtime observations.",
+      "The SDK address and current vtable/body relationship can share the same original implementation but are not independent address proofs.",
+      "The current parser and historical parser summaries share the T:G:I contract but do not prove original multi-package behavior.",
+      "Call-graph fan-in is not a substitute for a value/pointer trace."
+    ],
+    "repeated_assumptions_removed": [
+      "Same numeric triple does not mean same runtime pointer.",
+      "Same instance does not mean same Cell reference when serializer differs.",
+      "Same instance+serializer in Cell does not prove a manager cache hit.",
+      "First DBPF row does not define conceptual identity or cross-package precedence.",
+      "A priority-sorted database list does not prove boot registration order without runtime evidence.",
+      "A vtable-adjacent SDK label is not automatically a clean current function entry.",
+      "A serializer pointer is not a portable content identity."
+    ]
+  },
+  "repetition": {
+    "full_key_repetition": "The full triple recurs in ResourceKey, DatabasePackedFile, ICache calls, and ResourceObject metadata; this is convergent contract evidence, not independent runtime proof.",
+    "cell_pair_repetition": "The pair lookup appears in the complete Create body and two direct caller families; it confirms the local key shape but not runtime object values.",
+    "priority_repetition": "The descending-priority insertion and first-match traversal are separate algorithms; repeated provider behavior is still static.",
+    "pointer_repetition": "Runtime pointers recur in cache/resource/lease returns; pointer presence does not establish pointer-based identity.",
+    "negative_boundary_repetition": "Function-boundary contradictions must be stated per address; repeated SDK labels cannot overwrite current disassembly."
+  },
+  "runtime": {
+    "performed": false,
+    "justification": "The static separator directly answers the identity and provider/cache architecture question, while the permitted corpus lacks a positive original resource trace. Runtime promotion would require a narrow known-key hit/miss/open/release trace and is not justified here.",
+    "if_run_later": "Capture one known ResourceKey through cResourceManager request, database priority selection, cache hit/miss, factory, Database::OpenRecord/PFRecordRead, ResourceObject construction, Cell reference, preload, and release with pointers and counters."
+  },
+  "citations": [
+    {"kind": "ghidra", "source": "SporeApp.exe@0x01436ae8", "use": "38-slot manager vtable bytes and current function targets"},
+    {"kind": "ghidra", "source": "SporeApp.exe@0x008e20c0", "use": "manager constructor, allocator, DB list, factory/type/cache/filename registry initialization"},
+    {"kind": "ghidra", "source": "SporeApp.exe@0x008de530", "use": "SDK-associated hash-table allocation/relink body and static caller"},
+    {"kind": "ghidra", "source": "SporeApp.exe@0x008de360", "use": "FindCache first-cache-hit traversal"},
+    {"kind": "ghidra", "source": "SporeApp.exe@0x008de3b0", "use": "CacheResource first-success insertion traversal"},
+    {"kind": "ghidra", "source": "SporeApp.exe@0x008df0b0", "use": "database/factory/record construction load body"},
+    {"kind": "ghidra", "source": "SporeApp.exe@0x008df460 and 0x008df700", "use": "cache-first request body and SDK interior anchor"},
+    {"kind": "ghidra", "source": "SporeApp.exe@0x008df9b0", "use": "FindRecord type mapping, database path, corrected key output"},
+    {"kind": "ghidra", "source": "SporeApp.exe@0x008dfb20", "use": "FindFactory first CanConvert match and wildcard path"},
+    {"kind": "ghidra", "source": "SporeApp.exe@0x008e0d30", "use": "RegisterDatabase duplicate check, priority insert, attach, removal"},
+    {"kind": "ghidra", "source": "SporeApp.exe@0x008de940 and 0x008de310", "use": "descending database list insertion and first-match traversal"},
+    {"kind": "ghidra", "source": "SporeApp.exe@0x008e1d20", "use": "SDK-associated factory registration/helper body and address-boundary caveat"},
+    {"kind": "ghidra", "source": "SporeApp.exe@0x008e1750", "use": "SDK-named key-name mapping implementation and map cleanup/rebuild caveat"},
+    {"kind": "ghidra", "source": "SporeApp.exe@0x008da3d0", "use": "DatabasePackedFile record metadata/open/lease path"},
+    {"kind": "ghidra", "source": "SporeApp.exe@0x00e82340", "use": "24-byte cCellDataReference node allocation/helper"},
+    {"kind": "ghidra", "source": "SporeApp.exe@0x00e82420", "use": "pair-keyed cCellDataReference Create, DAT_016b44f0 list, node linking"},
+    {"kind": "ghidra", "source": "SporeApp.exe@0x00e823a0", "use": "lazy resource load and counter behavior"},
+    {"kind": "ghidra", "source": "SporeApp.exe@0x00e82280, 0x00e823e0, 0x00e824d0", "use": "Cell local resource release, node destruction, sentinel teardown"},
+    {"kind": "ghidra", "source": "SporeApp.exe@0x00e82490 and 0x00e4c8c0", "use": "Cell reference list initialization and mode initialization caller"},
+    {"kind": "ghidra", "source": "SporeApp.exe@0x00e4c9e0", "use": "Cell mode teardown caller for local reference destruction"},
+    {"kind": "ghidra", "source": "SporeApp.exe@structure:ResourceKey", "use": "12-byte field order instance/type/group"},
+    {"kind": "ghidra", "source": "SporeApp.exe@structure:cCellDataReference_", "use": "16-byte instance/serializer/resource/counter payload"},
+    {"kind": "ghidra", "source": "SporeApp.exe@structure:cCellResource", "use": "ResourceObject prefix plus data size and serializer"},
+    {"kind": "ghidra", "source": "SporeApp.exe@structure:DatabasePackedFile", "use": "904-byte object and ResourceKey map at +0x2e8"},
+    {"kind": "ghidra", "source": "SporeApp.exe@structure:cResourceManager", "use": "separate DB/factory/type/cache/name registry fields"},
+    {"kind": "sdk", "source": "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/ResourceKey.h:32-90,138-167", "use": "conceptual fields, wildcard, equality/order, hash"},
+    {"kind": "sdk", "source": "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Resource/IResourceManager.h:84-156,176-299,301-331", "use": "manager, mapping, database priority, cache, and name API contracts"},
+    {"kind": "sdk", "source": "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Resource/ICache.h:29-45", "use": "ICache key lookup, insertion, flush contract"},
+    {"kind": "sdk", "source": "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Resource/ResourceObject.h:32-80", "use": "runtime object key/refcount/final-release distinction"},
+    {"kind": "sdk", "source": "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Resource/Database.h:37-69", "use": "OpenRecord/CloseRecord lease contract"},
+    {"kind": "sdk", "source": "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/Cell/cCellResource.h:55-94", "use": "cCellResource and cCellDataReference_ pair key/template serializer"},
+    {"kind": "sdk", "source": "/home/juanr/apps/Spore-ModAPI/SDKtoGhidra/SporeGhidra_march2017.xml:53505-53541", "use": "historical SDK anchors and known address skew"},
+    {"kind": "historical", "source": "knowledgegraph/research/data-model/01-dbpf-resource-formats.json:153-175,188-233,248-264,286-311", "use": "DBPF layout, key/order distinction, current one-package comparison, historical gaps"},
+    {"kind": "historical", "source": "knowledgegraph/research/types/09-asset-content.md:31-40,61-75,92-120", "use": "resource topology, vtable association, unresolved original orchestration"},
+    {"kind": "historical", "source": "knowledgegraph/research/conflicts/track-a-type-signature.json:241-420", "use": "independent cCellDataReference Create-versus-helper conflict resolution"},
+    {"kind": "tracked", "source": "src/compat/ResourceProvider.hpp:32-59", "use": "current B1 one-package exact T:G:I provider boundary"},
+    {"kind": "tracked", "source": "src/assets/Dbpf.cpp", "use": "current DBPF row parser, first-match lookup, extraction/QFS path"}
+  ],
+  "limitations": [
+    "All Ghidra queries explicitly targeted SporeApp.exe and were read-only; no Ghidra state, labels, types, functions, comments, or project data were mutated.",
+    "No SPORE/ filesystem traversal, package inspection, or knowledgegraph/spore.db query was performed.",
+    "No implementation was performed and no existing source or interface was changed.",
+    "No runtime or Wine trace was performed; runtime identity, cache timing, and invalidation order remain static-only.",
+    "Ghidra decompiler register recovery, hidden arguments, enum names, and SDK/live address boundaries are not authoritative without cross-checking.",
+    "SporeApp.exe has no MSVC RTTI; vtable ownership is bounded by current vtable bytes, SDK layout, and call behavior.",
+    "The binary-specific x86 offsets and pointer serializer identity must not be treated as portable ABI.",
+    "Historical artifacts are used as corroboration and limitations, not as current runtime observations."
+  ],
+  "subagent_status": "No subagent interface was exposed in this session. Independent evidence streams were collected through parallel read-only Ghidra queries, SDK/historical artifact reads, and current-source comparison; no supporter claims were treated as independent runtime evidence."
+}

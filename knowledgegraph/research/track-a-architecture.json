@@ -1,0 +1,1160 @@
+{
+  "$schema": "openspore-track-a-architecture-1",
+  "assumptions_to_preserve": [
+    {
+      "assumption": "Clean-room authorship is mandatory; no proprietary EA source, decompiled source, assets, models, textures, sounds, or scripts are copied into OpenSpore.",
+      "current_code_evidence": ["AGENTS.md:1-7", "README.md:7-12", "src/assets/Stream.hpp:1-4"],
+      "original_game_claim_level": "SUPPORTED",
+      "reason": "This is a legal, ethical, and repository-wide invariant."
+    },
+    {
+      "assumption": "SPORE is a read-only, user-owned oracle input and remains ignored; tools may inspect metadata or bounded runtime evidence but must not write into it.",
+      "current_code_evidence": ["AGENTS.md:9-17", "tools/mcp/runtime_tools.py:21-40", "tools/viewer/query.py:1-10"],
+      "original_game_claim_level": "SUPPORTED",
+      "reason": "Runtime and asset tooling is explicitly separated from the OpenSpore runtime."
+    },
+    {
+      "assumption": "Current source and tests establish OpenSpore implementation behavior only; they do not by themselves establish original-game semantics.",
+      "current_code_evidence": ["docs/BOUNDARIES.md:9-21", "docs/REPLACEMENT-DIFF.md:7-24"],
+      "original_game_claim_level": "SUPPORTED",
+      "reason": "The repository repeatedly labels decompilation as evidence, not truth, and separates OpenSpore fixtures from live original behavior."
+    },
+    {
+      "assumption": "The canonical evidence scale is UNKNOWN < APPROXIMATION < INFERRED < SUPPORTED < OBSERVED < CONFIRMED < VERIFIED; replacement status is a separate nine-value vocabulary.",
+      "current_code_evidence": ["knowledgegraph/scale.py:8-35", "docs/replacement-status.json:1-5"],
+      "original_game_claim_level": "SUPPORTED",
+      "reason": "The current KG, dossier, and status tools use the canonical mapping."
+    },
+    {
+      "assumption": "Simulation determinism is fixed-step, no-time/no-rand, and same-host/toolchain scoped; cross-platform libm behavior is not promised.",
+      "current_code_evidence": ["src/sim/Sim.hpp:1-5", "docs/CELL-CONTRACT.md:28-36"],
+      "original_game_claim_level": "SUPPORTED",
+      "reason": "The contract and replay tests pin the local contract, not original runtime timing."
+    },
+    {
+      "assumption": "The current compatibility seams B1/B2/B3 are intentionally narrow and should be extended rather than duplicated.",
+      "current_code_evidence": ["src/compat/ResourceProvider.hpp:1-6", "src/compat/MeshSource.hpp:1-8", "docs/BOUNDARIES.md:48-120"],
+      "original_game_claim_level": "SUPPORTED",
+      "reason": "The seams isolate resource, mesh, and renderer concepts from original implementation details."
+    },
+    {
+      "assumption": "Unsupported formats and structures fail explicitly instead of being silently accepted.",
+      "current_code_evidence": ["src/assets/Dbpf.cpp:37-51", "src/assets/Gmdl.cpp:95-112", "src/assets/WorldObject.cpp:23-46"],
+      "original_game_claim_level": "SUPPORTED",
+      "reason": "The parsers validate bounds, versions, record accounting, and documented layouts."
+    },
+    {
+      "assumption": "Shared display/GPU work serializes through the machine lock, and runtime trace/status/fixture rebuild writes remain human-gated.",
+      "current_code_evidence": ["tools/observatory/lock.py:1-29", "tools/mcp/safety.py:1-17"],
+      "original_game_claim_level": "SUPPORTED",
+      "reason": "The safety and lock contracts are implemented and tested in the tooling."
+    }
+  ],
+  "data_flows": [
+    {
+      "flow": "asset_decode",
+      "current_code_evidence": ["src/apps/cell_stage.cpp:1214-1435", "src/assets/Dbpf.cpp:37-235", "src/assets/Gmdl.cpp:95-271", "src/assets/Mesh.cpp:49-142"],
+      "inputs": ["DBPF package image", "record identity", "QFS-compressed or uncompressed record bytes", "GMDL bytes"],
+      "outputs": ["record bytes", "GmdlModel", "assets::Mesh", "renderer vertex/tex-vertex buffers"],
+      "steps": ["parseDbpfIndex", "extractDbpfRecord", "qfsDecompress", "parseGmdl", "meshFromGmdl", "toRendererMesh or toRendererTexMesh"],
+      "current_code_evidence_level": "OBSERVED",
+      "original_game_semantic_level": "SUPPORTED",
+      "original_scope_limit": "Narrow v8/static/single-stream/trilist/u16 path; not the complete original ResourceManager or RenderWare model system."
+    },
+    {
+      "flow": "texture_decode",
+      "current_code_evidence": ["src/assets/Texture.cpp:19-113", "src/assets/Dxt5.cpp:42-127", "src/apps/cell_stage.cpp:1300-1330"],
+      "inputs": ["raster record bytes", "32-byte raster envelope", "DXT5 mip chain"],
+      "outputs": ["row-major RGBA8 ImageRGBA per mip", "Vulkan texture handle"],
+      "steps": ["parseRasterEnvelope", "rasterLayerCount", "decodeDxt5Mip", "decodeRasterMips", "IRenderer::createTexture"],
+      "current_code_evidence_level": "OBSERVED",
+      "original_game_semantic_level": "SUPPORTED",
+      "original_scope_limit": "DXT5 raster path and alpha-mask behavior are supported; raster header words 0x10/0x18 and other formats remain unresolved."
+    },
+    {
+      "flow": "deterministic_cell_simulation",
+      "current_code_evidence": ["src/sim/Sim.cpp:99-260", "src/sim/Sim.cpp:282-354", "src/sim/tests/sim_contract_test.cpp:469-545"],
+      "inputs": ["Entity list", "MovementPlane", "MovementParams", "CameraState", "InputFrame sequence"],
+      "outputs": ["PlayerState", "current-frame SimEvent list", "alive flags", "stateString", "frozen fixture snapshots"],
+      "steps": ["optional camera update", "turn and ray-plane mouse target", "flee check", "target velocity", "damping", "integration", "eat check", "camera follow"],
+      "current_code_evidence_level": "OBSERVED",
+      "original_game_semantic_level": "INFERRED",
+      "original_scope_limit": "Ray-plane steering structure is supported by decompilation; speeds, damping, radii, eat/flee behavior, and camera values are contract approximations or inferences."
+    },
+    {
+      "flow": "cell_stage_render",
+      "current_code_evidence": ["src/apps/cell_stage.cpp:486-641", "src/apps/cell_stage.cpp:725-856", "src/apps/cell_stage.cpp:1214-1435"],
+      "inputs": ["scene.json", "decoded meshes", "decoded backdrop texture", "sim state", "VulkanRenderer"],
+      "outputs": ["offscreen PPM", "CELLSTAGE-MANIFEST v1", "CELLSTAGE-SIMMANIFEST v1", "interactive swapchain frames"],
+      "steps": ["loadSceneConfig", "extract and decode records", "initialize CellModeStrategy", "bake CPU view/projection", "upload meshes", "draw and readback or present"],
+      "current_code_evidence_level": "OBSERVED",
+      "original_game_semantic_level": "APPROXIMATION",
+      "original_scope_limit": "The vertical slice is real-record-backed and deterministic, but scene placement, player/role identity, camera/HUD choices, and original stage transitions are not fully evidenced."
+    },
+    {
+      "flow": "replacement_differential",
+      "current_code_evidence": ["src/replace/Replace.cpp:25-68", "src/replace/Reference.cpp:41-94", "src/replace/tests/diff_test.cpp:101-234"],
+      "inputs": ["SCellGameView stand-in", "SPlayerView stand-in", "CameraView", "MovementPlane", "deterministic cases"],
+      "outputs": ["eight compared output fields per case", "64/64 field comparison result", "replaced-approx status"],
+      "steps": ["replacement function", "decompilation reference", "identical state initialization", "per-field float tolerance/exact comparison"],
+      "current_code_evidence_level": "OBSERVED",
+      "original_game_semantic_level": "SUPPORTED",
+      "original_scope_limit": "The differential is against decompilation evidence, not the running original; field meanings and runtime plane point remain gated."
+    },
+    {
+      "flow": "reverse_engineering_evidence",
+      "current_code_evidence": ["tools/ghidra/ImportSporeSDK.java:34-79", "tools/ghidra/VtableDetect.java:25-48", "tools/ghidra/ExportXrefs.java:24-67", "tools/re/dossier.py:1-18", "tools/observatory/probe_tracer.cpp:1-22"],
+      "inputs": ["Ghidra program", "SDK XML", "vtable/export artifacts", "probe definitions", "optional Wine target", "optional SPORE metadata"],
+      "outputs": ["SDK imports", "vtable candidates", "xref exports", "dossiers", "JSONL traces", "negative runtime observations", "triage projections"],
+      "steps": ["headless Ghidra scripts", "REST/MCP read-only calls", "snapshot/capture", "dossier generation", "bounded ptrace observation", "deterministic analysis"],
+      "current_code_evidence_level": "OBSERVED",
+      "original_game_semantic_level": "SUPPORTED",
+      "original_scope_limit": "Ghidra output is evidence; no RTTI means decompiler types and many vtable relationships remain inferred."
+    },
+    {
+      "flow": "mcp_orchestration",
+      "current_code_evidence": ["tools/mcp/server.py:1-25", "tools/mcp/registry.py:90-347", "tools/mcp/runtime_tools.py:1-45"],
+      "inputs": ["newline-delimited JSON-RPC messages", "tool arguments", "KG DB", "Ghidra REST", "asset tools", "ctest/observatory subprocesses"],
+      "outputs": ["uniform result envelopes", "provenance and evidence labels", "cache hits/misses", "queue records", "approval_required/machine_locked/no_spo results"],
+      "steps": ["initialize/list/call", "registry dispatch", "safety gate", "subprocess or SQLite/REST facade", "structured response"],
+      "current_code_evidence_level": "OBSERVED",
+      "original_game_semantic_level": "INFERRED",
+      "original_scope_limit": "MCP is workflow infrastructure, not a model of original game behavior."
+    },
+    {
+      "flow": "read_only_kg_view",
+      "current_code_evidence": ["tools/viewer/server.py:1-18", "tools/viewer/query.py:104-168", "tools/viewer/server.py:167-173"],
+      "inputs": ["SQLite DB", "committed KG and analysis artifacts", "HTTP GET"],
+      "outputs": ["loopback JSON API", "static HTML/JS/CSS UI", "degraded envelopes"],
+      "steps": ["validate loopback bind", "open read-only DB per call", "run bounded query", "return JSON or degraded result"],
+      "current_code_evidence_level": "OBSERVED",
+      "original_game_semantic_level": "INFERRED",
+      "original_scope_limit": "The viewer presents evidence and never asserts original semantics."
+    }
+  ],
+  "directly_reusable": [
+    {
+      "piece": "DBPF v3 and QFS reader",
+      "location": "src/assets/Dbpf.hpp:28-47; src/assets/Dbpf.cpp:37-235",
+      "reuse": "Record identity lookup, bounds-checked extraction, compressed and uncompressed record access.",
+      "reuse_boundary": "One package image per provider; no original multi-package registry/cache behavior."
+    },
+    {
+      "piece": "Bounds-checked byte Reader",
+      "location": "src/assets/Stream.hpp:13-109",
+      "reuse": "Common LE cursor with explicit BE and float reads for format decoders."
+    },
+    {
+      "piece": "GMDL v8 static walker and mesh conversion",
+      "location": "src/assets/Gmdl.hpp:1-83; src/assets/Gmdl.cpp:95-271; src/assets/Mesh.cpp:49-248",
+      "reuse": "Versioned model decode, BE refCount quirk, static mesh extraction, bounds, renderer conversion.",
+      "reuse_boundary": "v8, static, stream 0, triangle list, u16 indices; deeper model families require extension."
+    },
+    {
+      "piece": "DXT5 and raster envelope decoders",
+      "location": "src/assets/Dxt5.hpp:14-26; src/assets/Texture.hpp:19-49",
+      "reuse": "Independent mip sizing, block decode, RGBA8 output, and texture upload input.",
+      "reuse_boundary": "Only the verified DXT5 raster envelope; other raster encodings are rejected."
+    },
+    {
+      "piece": "Cell resource value objects and parsers",
+      "location": "src/assets/CellResource.hpp:32-500; src/assets/CellResource.cpp:1-1050",
+      "reuse": "Typed globals, cell, world, advect, effect/background, random creature, powers, look, loot, structure, and populate records with domain checks.",
+      "reuse_boundary": "Decoding and validation are reusable; original runtime consumption of every field is not complete."
+    },
+    {
+      "piece": "World-object structural walker",
+      "location": "src/assets/WorldObject.hpp:31-71; src/assets/WorldObject.cpp:23-112",
+      "reuse": "Version/magic validation, name extraction, plausible vector extraction, and full byte accounting.",
+      "reuse_boundary": "Field order and placement semantics are not derived; this is not a scene executor."
+    },
+    {
+      "piece": "Compatibility seams",
+      "location": "src/compat/ResourceProvider.hpp:24-90; src/compat/MeshSource.hpp:26-86",
+      "reuse": "Provider-independent record access, model fetch, and renderer submission with DBPF and memory producers.",
+      "reuse_boundary": "B1/B2/B3 are deliberately narrow and need no interface fork for the current slice."
+    },
+    {
+      "piece": "Deterministic CellSim and scripted input",
+      "location": "src/sim/Sim.hpp:222-284; src/sim/Sim.cpp:99-356",
+      "reuse": "Fixed-step simulation contract, camera-ray intersection, input replay, event log, and state dump.",
+      "reuse_boundary": "Original runtime state, AI, damage, and resource-driven behavior are outside this core."
+    },
+    {
+      "piece": "Static Cell state/rule components",
+      "location": "src/sim/CellGame.cpp:22-152; src/sim/CellPool.hpp:66-162; src/sim/CellQuery.hpp:27-82; src/sim/Advect.hpp:29-106; src/sim/Combat.hpp:14-128",
+      "reuse": "Typed initialization, free-list pool, spatial query, advect bucket lookup, and combat tables.",
+      "reuse_boundary": "These are decompilation-derived building blocks, not a wired original gameplay loop."
+    },
+    {
+      "piece": "Vulkan renderer and IRenderer",
+      "location": "src/renderer/Renderer.hpp:46-87; src/renderer/VulkanRenderer.hpp:15-70",
+      "reuse": "Offscreen flat/textured rendering, readback, and SDL-compatible WSI present path.",
+      "reuse_boundary": "Modern fixed-function approximation; no original material cache, D3D bytecode, or complete RenderWare state model."
+    },
+    {
+      "piece": "Cell mode/input/UI shell",
+      "location": "src/apps/IGameMode.hpp:28-52; src/apps/CellModeStrategy.cpp:7-91; src/apps/CellInput.cpp:5-95; src/apps/CellUI.cpp:5-25",
+      "reuse": "Reusable lifecycle manager, table-driven input mapping, HUD rollover formula, and testable mode boundary.",
+      "reuse_boundary": "The current strategy records events and ticks; it does not implement the original application system."
+    },
+    {
+      "piece": "Replacement POD views and function pair",
+      "location": "src/replace/CellGameView.hpp:20-62; src/replace/Replace.cpp:25-68; src/replace/Reference.cpp:41-94",
+      "reuse": "Per-target replacement workflow, address/offset assertions, deterministic behavior comparison.",
+      "reuse_boundary": "The installed replacement still needs a real 32-bit pool lookup and runtime verification."
+    },
+    {
+      "piece": "Evidence automation",
+      "location": "tools/mcp/server.py:70-257; tools/re/dossier.py:333-397; tools/observatory/probe_tracer.cpp:159-220; tools/viewer/server.py:88-173",
+      "reuse": "Stdlib-only agent facade, evidence dossier generation, bounded ptrace observation, and read-only inspection.",
+      "reuse_boundary": "These tools are not game runtime components and must retain their read-only/gated boundaries."
+    }
+  ],
+  "evidence_policy": {
+    "current_code_observed": "A current source file, test, build manifest, or committed artifact directly establishes repository shape or OpenSpore behavior. It does not establish original-game semantics.",
+    "original_supported": "A claim supported by pinned binary/asset bytes, SDK symbols, decompilation plus independent evidence, or a deterministic differential. It is still bounded to the tested scope.",
+    "original_inferred": "A claim reasoned from one or more decompilation, SDK, animation, or structural sources without direct runtime confirmation.",
+    "original_approximation": "A value chosen for the OpenSpore contract because no original value was observed.",
+    "original_unknown": "No reliable semantic evidence exists; absence is recorded rather than filled in.",
+    "status_source": "docs/replacement-status.json is the current machine-readable status board; historical design documents are not treated as current implementation truth."
+  },
+  "existing_components": [
+    {
+      "area": "apps",
+      "components": ["CellModeStrategy", "GameModeManager", "CellGfx", "CellUI", "CellInput", "CellAnim", "SceneConfig", "cell_stage", "triangle", "asset_view", "material_smoke"],
+      "current_code_evidence": ["src/apps/CMakeLists.txt:59-178", "src/apps/cell_stage.cpp:1214-1435"],
+      "current_status": "playable vertical slice and smoke executables",
+      "original_semantic_level": "APPROXIMATION",
+      "notes": "The app composes real records, deterministic simulation, and Vulkan, but is not the original bootstrap or Cell Stage runtime."
+    },
+    {
+      "area": "assets",
+      "components": ["DBPF/QFS", "Reader", "GMDL", "Mesh", "DXT5", "Texture", "RW4", "WorldObject", "CellResource"],
+      "current_code_evidence": ["src/assets/CMakeLists.txt:1-165", "src/assets/Dbpf.cpp:37-235", "src/assets/CellResource.hpp:32-500"],
+      "current_status": "narrow decoders implemented and tested",
+      "original_semantic_level": "SUPPORTED",
+      "notes": "Strongest reusable implementation area; unsupported versions and sections are explicit errors."
+    },
+    {
+      "area": "compat",
+      "components": ["IResourceProvider", "DbpfResourceProvider", "MemoryResourceProvider", "IMeshSource", "GmdlMeshSource", "fetchGmdlModel", "submitMeshSource"],
+      "current_code_evidence": ["src/compat/ResourceProvider.hpp:24-90", "src/compat/MeshSource.hpp:26-86"],
+      "current_status": "reusable narrow seams",
+      "original_semantic_level": "SUPPORTED",
+      "notes": "B1/B2/B3 substitute OpenSpore consumers, not the original implementation."
+    },
+    {
+      "area": "evidence",
+      "components": ["Ghidra SDK import", "VtableDetect", "ExportXrefs", "dossier generator", "committed snapshots/decompiled captures", "triage classifiers", "debt map", "readiness artifacts"],
+      "current_code_evidence": ["tools/ghidra/ImportSporeSDK.java:34-79", "tools/triage/classify.py:1-30", "tools/re/dossier.py:333-397"],
+      "current_status": "production-shaped analysis infrastructure",
+      "original_semantic_level": "SUPPORTED",
+      "notes": "No-RTTI and decompiler-output limitations are carried forward explicitly."
+    },
+    {
+      "area": "knowledge_graph",
+      "components": ["SQLite schema", "kg.py CLI", "scale.py", "seed.py", "seed-literals.json", "triage projections", "kg_ingest.py"],
+      "current_code_evidence": ["knowledgegraph/schema.sql:8-172", "knowledgegraph/seed.py:1-25", "knowledgegraph/kg.py:212-315"],
+      "current_status": "versioned, rebuildable, partially populated",
+      "original_semantic_level": "INFERRED",
+      "notes": "The binary analysis graph lives in Ghidra; the KG is cross-tool memory and projections."
+    },
+    {
+      "area": "mcp",
+      "components": ["JSON-RPC stdio server", "21-tool registry", "Ghidra facade", "KG/queue facade", "asset tools", "runtime/validation tools", "cache", "safety", "provenance"],
+      "current_code_evidence": ["tools/mcp/registry.py:90-347", "tools/mcp/server.py:70-257", "tools/mcp/runtime_tools.py:1-45"],
+      "current_status": "implemented and tested",
+      "original_semantic_level": "INFERRED",
+      "notes": "The registry has a stub factory as a safety scaffold, but all 21 names are rebound to real handlers at lines 324-347."
+    },
+    {
+      "area": "observatory",
+      "components": ["probe_tracer", "observe.py", "analyze.py", "lock.py", "machine_lock.sh", "menu_walk.sh", "cell_trace.sh", "agent_overlay.py", "probe sets"],
+      "current_code_evidence": ["tools/observatory/README.md:1-176", "tools/observatory/probe_tracer.cpp:1-22", "tools/observatory/cell_trace.sh:1-44"],
+      "current_status": "safe runtime-evidence shell; Cell reachability negative",
+      "original_semantic_level": "SUPPORTED",
+      "notes": "The shell proves capture discipline, not original Cell behavior; recorded zero-event runs remain evidence."
+    },
+    {
+      "area": "renderer",
+      "components": ["IRenderer", "VulkanRenderer", "flat and lit pipelines", "SPIR-V build embedding", "offscreen readback", "WSI present"],
+      "current_code_evidence": ["src/renderer/Renderer.hpp:46-87", "src/renderer/VulkanRenderer.hpp:15-70", "src/CMakeLists.txt:1-52"],
+      "current_status": "modern renderer vertical slice",
+      "original_semantic_level": "SUPPORTED",
+      "notes": "Preserves lifecycle/draw concepts while intentionally replacing D3D9/RenderWare implementation details."
+    },
+    {
+      "area": "replace",
+      "components": ["CellGameView", "Replace", "Reference", "diff_test", "synthetic inline hook target and patcher"],
+      "current_code_evidence": ["src/replace/Replace.hpp:28-82", "src/replace/tests/diff_test.cpp:101-234", "tools/replace/synthetic/README.md:1-69"],
+      "current_status": "one replaced-approx target and proven hook mechanism",
+      "original_semantic_level": "SUPPORTED",
+      "notes": "No patch is installed into SporeApp.exe in the current evidence set."
+    },
+    {
+      "area": "sim",
+      "components": ["CellSim", "ScriptedInputSource", "CellGame", "cObjectPool", "CellQuery", "Advect", "Combat", "contract scenarios"],
+      "current_code_evidence": ["src/sim/CMakeLists.txt:1-90", "src/sim/Sim.cpp:99-260", "src/sim/CellGame.cpp:22-152"],
+      "current_status": "deterministic contract plus static state/rule prototypes",
+      "original_semantic_level": "INFERRED",
+      "notes": "The pure simulation and typed decompilation-derived components are implemented; the original live loop is not."
+    },
+    {
+      "area": "spore_tools",
+      "components": ["Python DBPF/QFS", "RW4", "GMDL", "raster", "DXT5", "CellResource oracles", "WorldObject oracle", "manifest", "asset_resolver", "type/group maps"],
+      "current_code_evidence": ["tools/spore/README.md:17-87", "tools/spore/manifest/manifest.py:1-215", "tools/spore/asset_resolver.py:1-225"],
+      "current_status": "stdlib-only independent oracles and metadata tools",
+      "original_semantic_level": "SUPPORTED",
+      "notes": "These are validation/research tools, not linked runtime dependencies."
+    },
+    {
+      "area": "viewer",
+      "components": ["loopback HTTP server", "read-only query layer", "static HTML/JS/CSS"],
+      "current_code_evidence": ["tools/viewer/server.py:1-18", "tools/viewer/query.py:104-168", "tools/viewer/README.md:31-75"],
+      "current_status": "minimal read-only local browser",
+      "original_semantic_level": "INFERRED",
+      "notes": "The current implementation exposes a bounded API and degrades when DB/schema is unavailable."
+    }
+  ],
+  "implemented_semantics_vs_infrastructure": [
+    {
+      "id": "cell_sim_contract",
+      "classification": "implemented_semantics",
+      "current_behavior": "Fixed 1/60 CellSim update with camera-ray/movement-plane mouse steering, keyboard fallback, damping, eat/flee events, and camera follow.",
+      "original_fidelity_limit": "Mouse ray-plane structure is supported; numerical movement, interaction, and camera values are not fully observed."
+    },
+    {
+      "id": "cell_static_rules",
+      "classification": "implemented_semantics",
+      "current_behavior": "Static CellGame initialization, 4096 object pool, CreateCellObject sizing/orientation writes, spatial query, advect lookup, and combat tables.",
+      "original_fidelity_limit": "These are tested reconstructions of selected functions/fields, not a complete original state machine."
+    },
+    {
+      "id": "asset_contracts",
+      "classification": "implemented_semantics",
+      "current_behavior": "DBPF/QFS, GMDL v8, DXT5 raster, CellResource, WorldObject, and RW4 structural decoding with explicit errors and accounting.",
+      "original_fidelity_limit": "Version-9/32-bit/index/animation/material paths and original resource-manager orchestration remain incomplete."
+    },
+    {
+      "id": "cell_mode_shell",
+      "classification": "implemented_semantics",
+      "current_behavior": "IGameMode lifecycle, CellModeStrategy, GFX world/preload state, UI rollover formula, key table, animation/effect maps.",
+      "original_fidelity_limit": "The mode records and switches state but does not reproduce the original app bootstrap or all manager side effects."
+    },
+    {
+      "id": "replacement_math",
+      "classification": "implemented_semantics",
+      "current_behavior": "MovePlayerToMousePosition replacement and decompilation reference compare deterministically across 64 fields.",
+      "original_fidelity_limit": "Differential status is replaced-approx; no live Cell-mode oracle."
+    },
+    {
+      "id": "vulkan_runtime",
+      "classification": "infrastructure",
+      "current_behavior": "Vulkan device/render-pass/frame/readback path and optional SDL3 swapchain presentation.",
+      "original_fidelity_limit": "Modern fixed-function approximation, not RenderWare/D3D9 replacement."
+    },
+    {
+      "id": "re_analysis_platform",
+      "classification": "infrastructure",
+      "current_behavior": "Ghidra scripts, xref/triage projections, dossiers, ptrace probes, KG schema/seed, MCP facade, read-only viewer, and safe GUI shell.",
+      "original_fidelity_limit": "These systems acquire, organize, and inspect evidence; they do not implement game semantics."
+    }
+  ],
+  "layer_dependency_direction": [
+    {
+      "from": "SPORE plus pinned Ghidra/SDK evidence",
+      "to": "analysis artifacts and evidence tooling",
+      "direction": "one-way read-only evidence input",
+      "rule": "Original binary/assets are external oracle inputs, not OpenSpore runtime libraries."
+    },
+    {
+      "from": "tools/spore and committed fixtures",
+      "to": "src/assets validation and semantic cross-checks",
+      "direction": "test/oracle dependency",
+      "rule": "Python readers validate C++ ports; the C++ runtime does not import Python."
+    },
+    {
+      "from": "src/sim",
+      "to": "no package, GPU, or renderer dependency",
+      "direction": "pure lower-level simulation",
+      "rule": "src/sim is independently testable and owns deterministic state/rule components."
+    },
+    {
+      "from": "src/renderer",
+      "to": "Vulkan and GLSL/SPIR-V build tools",
+      "direction": "presentation infrastructure",
+      "rule": "The renderer owns device resources and exposes IRenderer; it does not parse game assets."
+    },
+    {
+      "from": "src/assets",
+      "to": "src/renderer value types",
+      "direction": "asset-to-render conversion",
+      "rule": "Mesh.hpp includes Renderer.hpp for host vertex/tex-vertex conversion; it does not depend on the original D3D9 API."
+    },
+    {
+      "from": "src/compat",
+      "to": "src/assets and src/renderer",
+      "direction": "boundary adapters",
+      "rule": "B1/B2 hide record/model source; B3 references the existing IRenderer rather than duplicating it."
+    },
+    {
+      "from": "src/replace",
+      "to": "src/sim and standalone POD views",
+      "direction": "narrow replacement target",
+      "rule": "The replacement is a pure differential unit; it is not a general runtime dependency."
+    },
+    {
+      "from": "src/apps",
+      "to": "src/assets, src/sim, src/renderer, and mode/input/UI components",
+      "direction": "composition/presentation",
+      "rule": "cell_stage is the executable composition root; it owns scene loading and render orchestration."
+    },
+    {
+      "from": "tools/mcp",
+      "to": "Ghidra, KG, asset scripts, observatory, and ctest",
+      "direction": "facade/orchestration",
+      "rule": "MCP is an agent-facing process and is not linked into the C++ game runtime."
+    },
+    {
+      "from": "tools/viewer",
+      "to": "KG and committed artifacts",
+      "direction": "parallel read-only reader",
+      "rule": "The viewer never calls MCP and cannot write the DB."
+    },
+    {
+      "from": "tools/observatory",
+      "to": "ptrace, X11 helpers, Wine target, and probe definitions",
+      "direction": "runtime evidence acquisition",
+      "rule": "Bounded, approved, lock-protected observation; no game-process replacement."
+    }
+  ],
+  "layers": [
+    {
+      "id": "analysis_evidence",
+      "contents": ["tools/ghidra", "tools/re", "committed snapshots/decompiled captures", "docs/RECON-3.1.0.22.md"],
+      "responsibility": "Preserve addresses, SDK anchors, decompiler output, vtable candidates, and provenance."
+    },
+    {
+      "id": "asset_oracles",
+      "contents": ["tools/spore", "tests/fixtures", "tests/test_formats.py", "tests/test_textures.py", "tests/test_rw4.py"],
+      "responsibility": "Independent format readers, semantic oracles, and deterministic fixtures."
+    },
+    {
+      "id": "simulation",
+      "contents": ["src/sim"],
+      "responsibility": "Deterministic Cell simulation and selected Cell state/rule reconstructions."
+    },
+    {
+      "id": "asset_runtime",
+      "contents": ["src/assets", "src/compat"],
+      "responsibility": "Decode records and provide host meshes/images plus narrow compatibility seams."
+    },
+    {
+      "id": "presentation",
+      "contents": ["src/renderer", "src/apps"],
+      "responsibility": "Modern renderer, scene composition, input, HUD, mode lifecycle, and runnable vertical slices."
+    },
+    {
+      "id": "replacement",
+      "contents": ["src/replace", "tools/replace/synthetic"],
+      "responsibility": "Clean-room target replacement, reference differential, and hook-mechanism proof."
+    },
+    {
+      "id": "knowledge_and_triage",
+      "contents": ["knowledgegraph", "tools/triage", "docs/analysis triage artifacts"],
+      "responsibility": "Persist cross-tool evidence, queue state, triage projections, fields, traces, and tests."
+    },
+    {
+      "id": "evidence_automation",
+      "contents": ["tools/mcp", "tools/observatory", "tools/viewer", "tools/re"],
+      "responsibility": "Agent workflow, runtime observation, dossiers, and human inspection."
+    },
+    {
+      "id": "validation",
+      "contents": ["CMakeLists.txt", "src/*/tests", "tests", "tools/gen_cell_fixtures.py"],
+      "responsibility": "CTest, Python unittest, fixture replay, differential checks, and safety-shell tests."
+    }
+  ],
+  "method": {
+    "codegraph_first": true,
+    "sources": [
+      "CodeGraph exploration of current indexed C++ symbols and call paths",
+      "direct reads of current CMake, source, Python, Java, shell, SQL, and committed JSON/Markdown artifacts",
+      "current tests and build manifests for coverage pointers",
+      "committed analysis docs and status artifacts for original-game evidence and historical intent"
+    ],
+    "constraints": [
+      "No implementation, final-doc, triage, KG DB, SPORE, or other agent file was edited.",
+      "No proprietary source or asset payload is reproduced.",
+      "Current-code observations are separated from original-game semantic levels.",
+      "No test or runtime command was used to promote a claim beyond its evidence."
+    ],
+    "source_precedence": "Current source/tests establish OpenSpore implementation shape; pinned Ghidra/SDK/byte/runtime artifacts establish original evidence; stale design documents are retained only as context."
+  },
+  "prototype_status": [
+    {
+      "component": "triangle",
+      "status": "infrastructure_prototype",
+      "evidence": ["src/apps/triangle.cpp", "docs/RENDERER-DESIGN.md:19-46"],
+      "original_fidelity": "None; renderer boot/pixel smoke only."
+    },
+    {
+      "component": "asset_view",
+      "status": "vertical_slice",
+      "evidence": ["src/apps/asset_view.cpp", "docs/ASSET-PATH.md:86-105"],
+      "original_fidelity": "Real DBPF/GMDL bytes, bounded to a selected static model."
+    },
+    {
+      "component": "material_smoke",
+      "status": "vertical_slice",
+      "evidence": ["src/apps/material_smoke.cpp", "docs/MATERIALS-DESIGN.md:119-129"],
+      "original_fidelity": "Real DXT5/mat path with approximate lighting; no original pixel oracle."
+    },
+    {
+      "component": "cell_stage",
+      "status": "playable_vertical_slice",
+      "evidence": ["src/apps/cell_stage.cpp:1-31", "docs/CELLSTAGE.md:1-154"],
+      "original_fidelity": "Real records and static mappings, but approximate placement/roles and no original runtime trace."
+    },
+    {
+      "component": "MovePlayerToMousePosition replacement",
+      "status": "replaced_approx_prototype",
+      "evidence": ["src/replace/Replace.cpp:25-68", "docs/REPLACEMENT-DIFF.md:105-120"],
+      "original_fidelity": "64/64 against decompilation reference only."
+    },
+    {
+      "component": "synthetic inline hook",
+      "status": "verified_mechanism_prototype",
+      "evidence": ["tools/replace/synthetic/README.md:32-69", "tools/replace/synthetic/hooker.c:31-70"],
+      "original_fidelity": "Mechanism proven on native 32-bit target; not installed in SporeApp.exe."
+    },
+    {
+      "component": "MCP/observatory/viewer/KG platform",
+      "status": "implemented_infrastructure",
+      "evidence": ["tools/mcp/registry.py:90-347", "tools/observatory/README.md:20-61", "tools/viewer/README.md:1-75", "knowledgegraph/schema.sql:8-172"],
+      "original_fidelity": "Workflow and evidence infrastructure, not game semantics."
+    }
+  ],
+  "replacement_needs": [
+    {
+      "priority": 1,
+      "area": "cell_runtime",
+      "current": "CellSim plus static CellGame/pool/query/advect/combat components",
+      "missing": "Original manager singletons, live state transitions, AI/advect application, damage/attack frame flow, pause/lock behavior, and stage transitions.",
+      "current_status": "replaced-stub / static support",
+      "required_evidence": "Cell-mode trace plus stage-transition/manager observations and runtime field reads.",
+      "source_to_evidence": ["src/sim/Sim.cpp:103-260", "src/sim/CellGame.cpp:22-152", "docs/BOUNDARIES.md:122-146"]
+    },
+    {
+      "priority": 2,
+      "area": "resource_manager",
+      "current": "One borrowed DBPF package provider with linear lookup",
+      "missing": "Original multi-package search/priority, directory/prop semantics, cache/registry behavior, and load order.",
+      "current_status": "inferred",
+      "required_evidence": "Menu-transition trace and observed original load path.",
+      "source_to_evidence": ["src/compat/ResourceProvider.hpp:32-59", "docs/replacement-status.json:45-51", "tools/observatory/probes/menu_transition.json"]
+    },
+    {
+      "priority": 3,
+      "area": "scene_population",
+      "current": "Declarative scene.json with per-value provenance and role-based entities",
+      "missing": "Original world/populate procedural placement, exact player identity, record-driven role mapping, and population execution.",
+      "current_status": "approximated",
+      "required_evidence": "WorldObject field-order decode plus original world/populate execution or equivalent record-driven placement.",
+      "source_to_evidence": ["src/apps/scene.json:1-75", "src/apps/SceneConfig.hpp:1-49", "src/assets/WorldObject.hpp:1-20", "docs/STATE.md:93-98"]
+    },
+    {
+      "priority": 4,
+      "area": "gmdl_rw4_materials_animation",
+      "current": "GMDL v8 static path, RW4 structural walker, DXT5, fixed-function lit Vulkan path",
+      "missing": "GMDL v9/32-bit/non-trilist/multi-stream, full RW4 sections, skins, skeletons, keyframes/blend shapes, material/shader cache, original lighting, and pixel oracle.",
+      "current_status": "supported / partial",
+      "required_evidence": "Additional parser families and original frame/material or pixel differential.",
+      "source_to_evidence": ["src/assets/Gmdl.hpp:1-12", "src/assets/Rw4.hpp:1-22", "src/renderer/Renderer.hpp:34-44", "docs/BOUNDARIES.md:128-136"]
+    },
+    {
+      "priority": 5,
+      "area": "application_bootstrap",
+      "current": "Cell-specific IGameMode shell and GUI automation shell",
+      "missing": "Original AppSystem bootstrap, UTFWin message dispatch, editor, creature/tribe/civ/space managers, and non-Cell stages.",
+      "current_status": "supported/hypothesis only",
+      "required_evidence": "Main-menu and menu-transition traces, then manager/message-dispatch mapping.",
+      "source_to_evidence": ["src/apps/IGameMode.hpp:1-52", "src/apps/CellModeStrategy.cpp:7-91", "docs/RECON-3.1.0.22.md:25-44", "docs/BOUNDARIES.md:122-146"]
+    },
+    {
+      "priority": 6,
+      "area": "property_serialization",
+      "current": "No OpenSpore property implementation; Python and C++ asset readers only",
+      "missing": "App::Property data model, property serialization/deserialization, and round-trip compatibility.",
+      "current_status": "inferred",
+      "required_evidence": "Targeted SDK/decompilation mapping and a property record serialize/deserialize/compare round trip.",
+      "source_to_evidence": ["docs/replacement-status.json:132-138", "docs/RECON-3.1.0.22.md:94-103"]
+    },
+    {
+      "priority": 7,
+      "area": "unsupported_original_systems",
+      "current": "Names/status only",
+      "missing": "Audio, Havok/physics, original input, services, editors, and non-Cell gameplay.",
+      "current_status": "unknown or non-goal",
+      "required_evidence": "Per-subsystem static inventory and bounded runtime observation; Pollinator remains a stub/non-goal.",
+      "source_to_evidence": ["docs/replacement-status.json:140-153", "docs/BOUNDARIES.md:137-146"]
+    }
+  ],
+  "repository_inventory": {
+    "build_and_constraints": {
+      "evidence": ["CMakeLists.txt:1-38", "src/CMakeLists.txt:1-182", "README.md:41-59"],
+      "facts": [
+        "C++17 project with -Wall -Wextra -Werror for first-party code.",
+        "Vulkan and glslangValidator are required; SDL3 is optional for interactive mode.",
+        "Python tooling is stdlib-only and no package.json is present.",
+        "SPORE, packages, build outputs, PPMs, caches, databases, and pycache are ignored/generated."
+      ]
+    },
+    "source_tree": [
+      "src/sim",
+      "src/renderer",
+      "src/assets",
+      "src/compat",
+      "src/replace",
+      "src/apps"
+    ],
+    "tooling_tree": [
+      "tools/ghidra",
+      "tools/mcp",
+      "tools/observatory",
+      "tools/re",
+      "tools/replace",
+      "tools/spore",
+      "tools/triage",
+      "tools/viewer",
+      "tools/kg_ingest.py",
+      "tools/gen_cell_fixtures.py"
+    ],
+    "analysis_doc_tree": [
+      "docs/STATE.md",
+      "docs/BOUNDARIES.md",
+      "docs/CELL-CONTRACT.md",
+      "docs/ASSET-PATH.md",
+      "docs/CELLSTAGE.md",
+      "docs/CELLSTAGE-RECON.md",
+      "docs/CELLSTAGE-VALIDATION.md",
+      "docs/MATERIALS-DESIGN.md",
+      "docs/RENDERER-DESIGN.md",
+      "docs/RENDERWARE-RESEARCH.md",
+      "docs/REPLACEMENT-ABI.md",
+      "docs/REPLACEMENT-DIFF.md",
+      "docs/replacement-boundaries.md",
+      "docs/replacement-status.json",
+      "docs/RECON-3.1.0.22.md",
+      "docs/RE-AUTOMATION-ARCHITECTURE.md",
+      "docs/analysis",
+      "docs/devlog"
+    ],
+    "viewer_and_observatory": [
+      "tools/viewer/server.py",
+      "tools/viewer/query.py",
+      "tools/viewer/static",
+      "tools/observatory/probe_tracer.cpp",
+      "tools/observatory/observe.py",
+      "tools/observatory/analyze.py",
+      "tools/observatory/menu_walk.sh",
+      "tools/observatory/cell_trace.sh",
+      "tools/observatory/agent_overlay.py",
+      "tools/observatory/lock.py"
+    ],
+    "mcp_registration": [
+      "opencode.json:4-39",
+      "tools/mcp/registry.py:90-347",
+      "tools/mcp/server.py:1-25"
+    ],
+    "schemas": [
+      "knowledgegraph/schema.sql",
+      "docs/RE-DOSSIER-SCHEMA.md",
+      "tests/fixtures/cell/README.md",
+      "docs/replacement-status.json",
+      "src/apps/scene.json"
+    ]
+  },
+  "runtime_entrypoints": [
+    {
+      "entrypoint": "build/src/cell_stage",
+      "modes": ["fixed offscreen", "scripted simulation", "SDL3 interactive"],
+      "current_code_evidence": ["src/apps/cell_stage.cpp:1214-1435", "src/CMakeLists.txt:88-178"],
+      "current_status": "playable OpenSpore vertical slice",
+      "original_game_semantic_level": "APPROXIMATION"
+    },
+    {
+      "entrypoint": "build/src/asset_view",
+      "modes": ["DBPF/GMDL decode and offscreen render"],
+      "current_code_evidence": ["src/CMakeLists.txt:68-76", "src/apps/asset_view.cpp"],
+      "current_status": "real asset smoke executable",
+      "original_game_semantic_level": "SUPPORTED"
+    },
+    {
+      "entrypoint": "build/src/material_smoke",
+      "modes": ["real DXT5 raster and normal-lit mesh"],
+      "current_code_evidence": ["src/CMakeLists.txt:78-86", "src/apps/material_smoke.cpp"],
+      "current_status": "textured renderer smoke executable",
+      "original_game_semantic_level": "SUPPORTED"
+    },
+    {
+      "entrypoint": "build/src/triangle",
+      "modes": ["offscreen Vulkan triangle"],
+      "current_code_evidence": ["src/CMakeLists.txt:59-66", "src/apps/triangle.cpp"],
+      "current_status": "renderer boot and pixel smoke",
+      "original_game_semantic_level": "INFERRED"
+    },
+    {
+      "entrypoint": "python3 tools/mcp/server.py",
+      "modes": ["JSON-RPC 2.0 over stdio", "21 tool calls"],
+      "current_code_evidence": ["tools/mcp/server.py:1-25", "tools/mcp/registry.py:90-347"],
+      "current_status": "long-lived evidence automation process",
+      "original_game_semantic_level": "INFERRED"
+    },
+    {
+      "entrypoint": "python3 tools/viewer/server.py",
+      "modes": ["loopback read-only HTTP", "static UI"],
+      "current_code_evidence": ["tools/viewer/server.py:1-18", "tools/viewer/server.py:88-173"],
+      "current_status": "local KG/artifact browser",
+      "original_game_semantic_level": "INFERRED"
+    },
+    {
+      "entrypoint": "python3 tools/observatory/observe.py",
+      "modes": ["launch", "trace", "analyze"],
+      "current_code_evidence": ["tools/observatory/observe.py:1-94", "tools/observatory/probe_tracer.cpp:1-22"],
+      "current_status": "approval/lock-protected runtime evidence helper",
+      "original_game_semantic_level": "SUPPORTED"
+    },
+    {
+      "entrypoint": "tools/observatory/menu_walk.sh and cell_trace.sh",
+      "modes": ["dry-run", "approved focused-window walk", "Cell trace manifest"],
+      "current_code_evidence": ["tools/observatory/menu_walk.sh:1-31", "tools/observatory/cell_trace.sh:1-44"],
+      "current_status": "safe GUI automation shell; runtime reachability remains negative",
+      "original_game_semantic_level": "SUPPORTED"
+    },
+    {
+      "entrypoint": "Ghidra postScripts",
+      "modes": ["ImportSporeSDK", "VtableDetect", "ExportXrefs"],
+      "current_code_evidence": ["tools/ghidra/ImportSporeSDK.java:34-79", "tools/ghidra/VtableDetect.java:25-48", "tools/ghidra/ExportXrefs.java:24-67"],
+      "current_status": "read-only/analysis batch entrypoints",
+      "original_game_semantic_level": "SUPPORTED"
+    }
+  ],
+  "semantic_gaps": [
+    {
+      "id": "cell_movement_parameters",
+      "gap": "Forward/strafe/boost/turn/damping, camera fov/orbit constants, and keyboard-secondary weighting are not original observed values.",
+      "current_code": "src/sim/Sim.hpp:89-205",
+      "original_game_evidence": "docs/CELL-CONTRACT.md:51-67; docs/CELL-CONTRACT.md:75-98",
+      "level": "APPROXIMATION"
+    },
+    {
+      "id": "cell_interactions",
+      "gap": "Eat/flee radius, damage, target selection, timing, and event ordering are inferred from animation/resource names.",
+      "current_code": "src/sim/Sim.cpp:141-251",
+      "original_game_evidence": "docs/CELL-CONTRACT.md:81-98; docs/CELLSTAGE-RECON.md:83-99",
+      "level": "INFERRED"
+    },
+    {
+      "id": "runtime_plane_point",
+      "gap": "Movement-plane normal is statically pinned to {0,0,1}; the per-world point is load-time {0,0,0} but runtime value is unread.",
+      "current_code": "src/sim/Sim.hpp:132-165; src/replace/Replace.hpp:43-65",
+      "original_game_evidence": "docs/CELL-CONTRACT.md:51-58; docs/REPLACEMENT-ABI.md:40-52",
+      "level": "INFERRED"
+    },
+    {
+      "id": "cell_state_integration",
+      "gap": "CellGame, pool, query, advect, and combat components are not integrated into the live CellSim frame loop.",
+      "current_code": "src/sim/CellGame.cpp:22-152; src/sim/Sim.cpp:103-260",
+      "original_game_evidence": "docs/replacement-status.json:86-101",
+      "level": "INFERRED"
+    },
+    {
+      "id": "resource_manager",
+      "gap": "B1 does not model multi-package selection, directory records, caching, or original load order.",
+      "current_code": "src/compat/ResourceProvider.hpp:32-59",
+      "original_game_evidence": "docs/BOUNDARIES.md:48-69; docs/replacement-status.json:45-51",
+      "level": "INFERRED"
+    },
+    {
+      "id": "scene_placement",
+      "gap": "Scene positions and role assignments are declarative approximations; procedural world/populate execution is absent.",
+      "current_code": "src/apps/scene.json:1-75; src/apps/cell_stage.cpp:109-130",
+      "original_game_evidence": "docs/CELLSTAGE-RECON.md:64-81; docs/STATE.md:94-98",
+      "level": "APPROXIMATION"
+    },
+    {
+      "id": "gmdl_and_rw4_scope",
+      "gap": "GMDL v9, 32-bit indices, non-trilist, multi-stream, animation, and complete RW4 sections are not implemented.",
+      "current_code": "src/assets/Gmdl.hpp:1-12; src/assets/Rw4.hpp:64-85",
+      "original_game_evidence": "docs/STATE.md:81-89; docs/BOUNDARIES.md:128-136",
+      "level": "SUPPORTED"
+    },
+    {
+      "id": "world_object_layout",
+      "gap": "WorldObject parser accounts for bytes and extracts names/vectors but does not derive per-entry field order or placement semantics.",
+      "current_code": "src/assets/WorldObject.hpp:1-20; src/assets/WorldObject.cpp:74-111",
+      "original_game_evidence": "docs/CELLSTAGE-RECON.md:64-74; docs/STATE.md:88-89",
+      "level": "INFERRED"
+    },
+    {
+      "id": "material_renderer",
+      "gap": "Lighting/material values are fixed-function approximations and no original frame exists for pixel matching.",
+      "current_code": "src/renderer/Renderer.hpp:34-38; src/apps/cell_stage.cpp:1407-1435",
+      "original_game_evidence": "docs/CELLSTAGE-VALIDATION.md:14-23; docs/BOUNDARIES.md:89-120",
+      "level": "APPROXIMATION"
+    },
+    {
+      "id": "application_and_non_cell",
+      "gap": "AppSystem bootstrap, UTFWin dispatch, editor, creature/tribe/civ/space stages, properties, audio, Havok, and original input are not implemented.",
+      "current_code": "src/apps/IGameMode.hpp:28-52",
+      "original_game_evidence": "docs/RECON-3.1.0.22.md:25-70; docs/BOUNDARIES.md:122-146",
+      "level": "INFERRED"
+    },
+    {
+      "id": "original_runtime_oracle",
+      "gap": "No successful Cell-mode trace has been recorded; main-menu traces are negative or capped before Cell Stage.",
+      "current_code": "tools/observatory/README.md:104-134; tools/observatory/cell_trace.sh:1-44",
+      "original_game_evidence": "docs/STATE.md:81-91; docs/CELLSTAGE-VALIDATION.md:25-51",
+      "level": "SUPPORTED"
+    }
+  ],
+  "source_to_evidence_mapping": [
+    {
+      "source": "CMakeLists.txt:1-38",
+      "current_fact": "C++17, warning-as-error policy, Vulkan/SDL3 discovery, manifest test, and subdirectory build graph.",
+      "current_evidence_level": "OBSERVED",
+      "original_evidence": [],
+      "original_claim_level": "NOT_APPLICABLE"
+    },
+    {
+      "source": "src/CMakeLists.txt:46-182",
+      "current_fact": "Builds renderer, shader embedding, four renderer/asset/app smoke executables, Cell Stage, and app component tests.",
+      "current_evidence_level": "OBSERVED",
+      "original_evidence": ["docs/RENDERER-DESIGN.md:1-63", "docs/CELLSTAGE.md:1-154"],
+      "original_claim_level": "SUPPORTED"
+    },
+    {
+      "source": "src/sim/Sim.cpp:99-260",
+      "current_fact": "Implements fixed-step CellSim processing order, mouse ray-plane target, secondary keys, flee, damping, eat, and camera follow.",
+      "current_evidence_level": "OBSERVED",
+      "original_evidence": ["docs/analysis/dossiers/cell-movement.md", "docs/CELL-CONTRACT.md:69-100", "docs/REPLACEMENT-ABI.md:64-82"],
+      "original_claim_level": "INFERRED",
+      "original_claim_limit": "Ray-plane behavior is supported by decompilation; all other local values remain approximated or inferred."
+    },
+    {
+      "source": "src/sim/CellGame.cpp:22-152",
+      "current_fact": "Initializes 4096 pool, time-scale fields, background bounds, and CreateCellObject writes.",
+      "current_evidence_level": "OBSERVED",
+      "original_evidence": ["docs/REPLACEMENT-ABI.md:40-82", "docs/CELLSTAGE-RECON.md:83-99"],
+      "original_claim_level": "SUPPORTED",
+      "original_claim_limit": "Selected static fields and writes, not a complete runtime state machine."
+    },
+    {
+      "source": "src/sim/CellPool.hpp:66-162; src/sim/CellQuery.hpp:27-82; src/sim/Advect.hpp:29-106; src/sim/Combat.hpp:14-128",
+      "current_fact": "Implements free-list allocation, surface-reaching query, advect bucket/default lookup, and combat/damage tables.",
+      "current_evidence_level": "OBSERVED",
+      "original_evidence": ["docs/BOUNDARIES.md:122-146", "docs/replacement-status.json:86-110"],
+      "original_claim_level": "SUPPORTED",
+      "original_claim_limit": "Pure functions/components; not integrated into the current CellSim update."
+    },
+    {
+      "source": "src/assets/Dbpf.cpp:37-235",
+      "current_fact": "Parses DBPF v3, QFS decompresses, extracts by extent, and looks up by identity.",
+      "current_evidence_level": "OBSERVED",
+      "original_evidence": ["docs/ASSET-PATH.md:27-36", "tools/spore/dbpf/dbpf.py"],
+      "original_claim_level": "SUPPORTED"
+    },
+    {
+      "source": "src/assets/Gmdl.cpp:95-271",
+      "current_fact": "Walks version-8 GMDL with BE refCount, bounded mesh/material walk, and explicit unsupported-version errors.",
+      "current_evidence_level": "OBSERVED",
+      "original_evidence": ["docs/ASSET-PATH.md:37-49", "docs/CELLSTAGE-RECON.md:26-41", "docs/MATERIALS-DESIGN.md:52-70"],
+      "original_claim_level": "SUPPORTED",
+      "original_claim_limit": "Version 8/static path only."
+    },
+    {
+      "source": "src/assets/Mesh.cpp:49-248",
+      "current_fact": "Extracts supported vertex elements, validates indices, computes bounds, and creates flat/textured renderer inputs.",
+      "current_evidence_level": "OBSERVED",
+      "original_evidence": ["docs/ASSET-PATH.md:44-75", "src/assets/tests/assets_test.cpp"],
+      "original_claim_level": "SUPPORTED",
+      "original_claim_limit": "Color mapping and default normals/UVs are OpenSpore visualization choices."
+    },
+    {
+      "source": "src/assets/Texture.cpp:19-113; src/assets/Dxt5.cpp:42-127",
+      "current_fact": "Parses the raster envelope, derives layer count, decodes DXT5 mips, and produces RGBA8 images.",
+      "current_evidence_level": "OBSERVED",
+      "original_evidence": ["docs/MATERIALS-DESIGN.md:10-42", "tests/test_textures.py"],
+      "original_claim_level": "SUPPORTED",
+      "original_claim_limit": "Unknown envelope words and non-DXT5 formats remain unresolved."
+    },
+    {
+      "source": "src/assets/Rw4.hpp:1-85; src/assets/WorldObject.cpp:23-112; src/assets/CellResource.hpp:32-500",
+      "current_fact": "Provides structural RW4 validation, world-object byte accounting/name/vector extraction, and typed Cell resource decoders.",
+      "current_evidence_level": "OBSERVED",
+      "original_evidence": ["docs/RENDERWARE-RESEARCH.md:177-242", "docs/CELLSTAGE-RECON.md:64-81", "src/assets/tests/cell_*_test.cpp"],
+      "original_claim_level": "SUPPORTED",
+      "original_claim_limit": "WorldObject field order, RW4 payload semantics, and runtime consumption remain incomplete."
+    },
+    {
+      "source": "src/compat/ResourceProvider.hpp:24-90; src/compat/MeshSource.hpp:26-86",
+      "current_fact": "Defines B1/B2/B3 consumers and DBPF/memory producers with in-tree substitutability tests.",
+      "current_evidence_level": "OBSERVED",
+      "original_evidence": ["docs/BOUNDARIES.md:48-120", "src/assets/tests/assets_test.cpp:295-322"],
+      "original_claim_level": "SUPPORTED",
+      "original_claim_limit": "The seams are compatibility architecture, not original implementation."
+    },
+    {
+      "source": "src/renderer/Renderer.hpp:46-87; src/renderer/VulkanRenderer.cpp:69-110; src/renderer/VulkanRenderer.hpp:48-70",
+      "current_fact": "Implements offscreen and WSI renderer modes, flat/textured draws, readback, swapchain resize/present, and build-time SPIR-V.",
+      "current_evidence_level": "OBSERVED",
+      "original_evidence": ["docs/RENDERER-DESIGN.md:10-63", "docs/RENDERWARE-RESEARCH.md:45-173", "docs/BOUNDARIES.md:89-120"],
+      "original_claim_level": "SUPPORTED",
+      "original_claim_limit": "Modern fixed-function implementation intentionally differs from D3D9/RenderWare."
+    },
+    {
+      "source": "src/apps/CellModeStrategy.cpp:7-91; src/apps/CellInput.cpp:5-95; src/apps/CellUI.cpp:5-25; src/apps/CellAnim.cpp:7-83",
+      "current_fact": "Implements lifecycle switching, mode tick, GFX preload table, key-action table, UI rollover formula, and animation/effect mapping.",
+      "current_evidence_level": "OBSERVED",
+      "original_evidence": ["docs/CELLSTAGE-RECON.md:83-99", "docs/REPLACEMENT-ABI.md:64-82", "src/apps/*_test.cpp"],
+      "original_claim_level": "SUPPORTED",
+      "original_claim_limit": "Documented components and formulas only; most original side effects are not reproduced."
+    },
+    {
+      "source": "src/apps/cell_stage.cpp:1214-1435",
+      "current_fact": "Runtime entrypoint loads scene/package, optional background map, stage mode, assets, Vulkan, and chooses fixed/sim/interactive mode.",
+      "current_evidence_level": "OBSERVED",
+      "original_evidence": ["docs/CELLSTAGE.md:1-154", "docs/CELLSTAGE-VALIDATION.md:10-51"],
+      "original_claim_level": "APPROXIMATION",
+      "original_claim_limit": "Vertical slice, not original game."
+    },
+    {
+      "source": "src/replace/Replace.cpp:25-68; src/replace/Reference.cpp:41-94",
+      "current_fact": "Implements replacement/reference ray-plane math with lock/null/parallel/behind guards and 32-bit POD offsets.",
+      "current_evidence_level": "OBSERVED",
+      "original_evidence": ["docs/REPLACEMENT-ABI.md:13-127", "docs/REPLACEMENT-DIFF.md:26-120"],
+      "original_claim_level": "SUPPORTED",
+      "original_claim_limit": "Differential is against decompilation reference, not live original."
+    },
+    {
+      "source": "tools/ghidra/ImportSporeSDK.java:34-79; tools/ghidra/VtableDetect.java:25-48; tools/ghidra/ExportXrefs.java:24-67",
+      "current_fact": "Provides defensive SDK import, cautious vtable candidate scan, and deterministic read-only xref export.",
+      "current_evidence_level": "OBSERVED",
+      "original_evidence": ["docs/RECON-3.1.0.22.md:1-23", "docs/analysis/vtables.json"],
+      "original_claim_level": "SUPPORTED",
+      "original_claim_limit": "Vtable candidates and Ghidra decompilation are structural evidence, not RTTI truth."
+    },
+    {
+      "source": "tools/re/dossier.py:1-18; tools/re/dossier.py:333-397",
+      "current_fact": "Generates deterministic dossiers from committed snapshots, KG, vtable scan, optional package index, and optional traces; missing runtime stays explicit.",
+      "current_evidence_level": "OBSERVED",
+      "original_evidence": ["docs/RE-DOSSIER-SCHEMA.md", "docs/analysis/dossiers/cell-movement.json"],
+      "original_claim_level": "SUPPORTED"
+    },
+    {
+      "source": "tools/observatory/probe_tracer.cpp:1-22; tools/observatory/observe.py:1-94; tools/observatory/lock.py:1-29",
+      "current_fact": "Provides bounded 32-bit ptrace INT3 capture, deterministic analysis, machine lock, and explicit module discovery.",
+      "current_evidence_level": "OBSERVED",
+      "original_evidence": ["tools/observatory/README.md:20-61", "docs/analysis/CELL-RUNTIME-OBSERVATION.md"],
+      "original_claim_level": "SUPPORTED",
+      "original_claim_limit": "No Cell-mode success has been observed."
+    },
+    {
+      "source": "tools/mcp/registry.py:90-347; tools/mcp/server.py:1-257; tools/mcp/safety.py:1-95",
+      "current_fact": "Implements 21-tool stdio JSON-RPC surface, real handler table, protocol error handling, provenance, caches, approval gates, and degradation.",
+      "current_evidence_level": "OBSERVED",
+      "original_evidence": ["docs/analysis/MCP-DESIGN.md:34-176", "docs/RE-AUTOMATION-ARCHITECTURE.md:154-217"],
+      "original_claim_level": "INFERRED"
+    },
+    {
+      "source": "knowledgegraph/schema.sql:8-172; knowledgegraph/seed.py:1-25; knowledgegraph/scale.py:8-73",
+      "current_fact": "Defines versioned KG schema, additive migrations, deterministic seed, evidence scale, triage/xref tables, and field/trace/investigation records.",
+      "current_evidence_level": "OBSERVED",
+      "original_evidence": ["docs/KNOWLEDGE-GRAPH.md", "docs/RE-AUTOMATION-ARCHITECTURE.md:219-305"],
+      "original_claim_level": "INFERRED",
+      "original_claim_limit": "KG records evidence and workflow state, not original semantics."
+    },
+    {
+      "source": "tools/viewer/server.py:1-216; tools/viewer/query.py:104-168",
+      "current_fact": "Serves loopback read-only JSON/static views, validates bind/path boundaries, probes schema features, and degrades without a DB.",
+      "current_evidence_level": "OBSERVED",
+      "original_evidence": ["tools/viewer/README.md:1-75", "docs/analysis/VIEWER.md:28-55"],
+      "original_claim_level": "INFERRED"
+    },
+    {
+      "source": "tools/triage/classify.py:1-30; tools/triage/debt_map.py:1-40; tools/triage/repair_sdk_boundaries.py:1-37",
+      "current_fact": "Provides deterministic full-function classification, xref-aware debt scoring, and read-only SDK boundary adjudication.",
+      "current_evidence_level": "OBSERVED",
+      "original_evidence": ["knowledgegraph/triage/*", "docs/analysis/function-triage-v5-handoff.md", "docs/analysis/reconstruction-readiness.md"],
+      "original_claim_level": "SUPPORTED",
+      "original_claim_limit": "Categories and readiness are projections, not semantics."
+    },
+    {
+      "source": "tools/spore/README.md:17-87; tools/spore/asset_resolver.py:1-225; tools/spore/manifest/manifest.py:1-215",
+      "current_fact": "Provides stdlib-only package, format, type/group resolution, and idempotent manifest tooling with metadata-only boundaries.",
+      "current_evidence_level": "OBSERVED",
+      "original_evidence": ["docs/ASSET-PATH.md:1-105", "docs/CELLSTAGE-RECON.md:8-81"],
+      "original_claim_level": "SUPPORTED"
+    },
+    {
+      "source": "tools/gen_cell_fixtures.py:1-75; tests/fixtures/cell/README.md:1-81",
+      "current_fact": "Freezes current CellSim outputs through a double-run byte-identity generator and documents fixture schema.",
+      "current_evidence_level": "OBSERVED",
+      "original_evidence": ["docs/CELL-CONTRACT.md:120-152"],
+      "original_claim_level": "SUPPORTED",
+      "original_claim_limit": "The fixture is an OpenSpore contract oracle, not an original-game oracle."
+    }
+  ],
+  "test_coverage": {
+    "commands": [
+      {
+        "command": "cmake -S . -B build && cmake --build build -j",
+        "purpose": "C++17/Vulkan/GLSL/SDL3 build; first-party warnings are errors",
+        "evidence": ["CMakeLists.txt:1-38", "src/CMakeLists.txt:1-182"]
+      },
+      {
+        "command": "ctest --test-dir build -V",
+        "purpose": "36 CTest targets covering renderer/apps, simulation/contracts, assets, and replacement",
+        "evidence": ["CMakeLists.txt:27-36", "src/CMakeLists.txt:63-178", "src/assets/CMakeLists.txt:15-165", "src/sim/CMakeLists.txt:9-90", "src/replace/CMakeLists.txt:11-16"]
+      },
+      {
+        "command": "python3 -m unittest discover -s tests -t . -v",
+        "purpose": "Python stdlib suites for formats, simulation, KG, MCP, viewer, dossiers, and observatory safety",
+        "evidence": ["tests/README.md:7-13", "docs/STATE.md:66-79"]
+      },
+      {
+        "command": "python3 tests/diff_real.py",
+        "purpose": "Opt-in real package semantic differential; clean skip without SPORE",
+        "evidence": ["tests/README.md:43-59", "tests/diff_real.py"]
+      },
+      {
+        "command": "python3 tools/gen_cell_fixtures.py --rebuild",
+        "purpose": "Intentional contract fixture rebuild with double-run identity check",
+        "evidence": ["tools/gen_cell_fixtures.py:1-75", "docs/CELL-CONTRACT.md:134-141"]
+      },
+      {
+        "command": "make -C tools/observatory",
+        "purpose": "Build the standalone ptrace tracer",
+        "evidence": ["tools/observatory/README.md:63-69", "tools/observatory/Makefile"]
+      },
+      {
+        "command": "make -C tools/replace/synthetic test",
+        "purpose": "Build and run the native 32-bit inline-hook proof",
+        "evidence": ["tools/replace/synthetic/README.md:32-69", "tools/replace/synthetic/Makefile"]
+      }
+    ],
+    "coverage_map": [
+      {
+        "area": "apps_and_renderer",
+        "current_test_files": ["src/apps/cellgfx_test.cpp", "src/apps/cellui_test.cpp", "src/apps/cellmode_test.cpp", "src/apps/cellinput_test.cpp", "src/apps/cellanim_test.cpp", "src/apps/scene_config_test.cpp", "src/apps/triangle.cpp", "src/apps/asset_view.cpp", "src/apps/material_smoke.cpp", "tests/test_cellstage.py"],
+        "assertions": ["GFX world/preload table", "UI constants/rollover", "mode lifecycle", "key mapping", "animation/effect mapping", "scene provenance round trip", "pixel windows", "manifest determinism", "no-display graceful path"],
+        "current_evidence_level": "OBSERVED",
+        "original_fidelity_limit": "OpenSpore presentation and current app behavior only."
+      },
+      {
+        "area": "assets",
+        "current_test_files": ["src/assets/tests/assets_test.cpp", "src/assets/tests/real_asset_test.cpp", "src/assets/tests/cell_gmdl_test.cpp", "src/assets/tests/worldobj_test.cpp", "src/assets/tests/cellres_test.cpp", "src/assets/tests/cell_cell_test.cpp", "src/assets/tests/cell_world_test.cpp", "src/assets/tests/cell_populate_test.cpp", "src/assets/tests/cell_structure_test.cpp", "src/assets/tests/cell_loot_test.cpp", "src/assets/tests/cell_look_test.cpp", "src/assets/tests/randcreature_test.cpp", "src/assets/tests/effectmap_test.cpp", "src/assets/tests/rw4_test.cpp", "tests/test_formats.py", "tests/test_textures.py", "tests/test_rw4.py", "tests/test_asset_resolver.py"],
+        "assertions": ["synthetic QFS round trip", "semantic format fields", "real record domains", "byte accounting", "double decode", "DXT5/hash oracle", "cross-language oracle agreement", "RW4 structural closure"],
+        "current_evidence_level": "OBSERVED",
+        "original_fidelity_limit": "Real-asset tests skip without SPORE and cover only supported format paths."
+      },
+      {
+        "area": "mcp_kg_viewer",
+        "current_test_files": ["tests/mcp/test_core.py", "tests/mcp/test_contract.py", "tests/mcp/test_ghidra.py", "tests/mcp/test_assets_runtime.py", "tests/mcp/test_server.py", "tests/mcp/test_wire_contract.py", "tests/mcp/test_protocol_errors.py", "tests/mcp/test_kg.py", "tests/viewer/test_server.py", "tests/test_kg_schema.py", "tests/test_kg_scale.py", "tests/test_kg_seed.py"],
+        "assertions": ["JSON-RPC protocol errors", "21-tool inventory", "real handlers", "provenance modes", "Ghidra cache/fallback", "approval gates", "path constraints", "read-only viewer identity", "queue/schema migration"],
+        "current_evidence_level": "OBSERVED",
+        "original_fidelity_limit": "Tests validate evidence infrastructure, not original semantics."
+      },
+      {
+        "area": "observatory",
+        "current_test_files": ["tests/test_lock.py", "tests/test_observe_lock.py", "tests/test_menu_walk.py", "tests/test_cell_trace.py", "tests/test_agent_overlay.py", "tools/observatory/test/m32target.c", "tools/replace/synthetic/test_hook.py"],
+        "assertions": ["approval/trust gates", "deterministic dry runs", "key allowlist", "window confinement/geometry drift", "lock parking/release", "overlay visibility/cleanup", "m32 tracer", "inline hook before/after"],
+        "current_evidence_level": "OBSERVED",
+        "original_fidelity_limit": "Shell mechanics and synthetic target behavior only; no successful Cell trace."
+      },
+      {
+        "area": "replacement",
+        "current_test_files": ["src/replace/tests/diff_test.cpp", "docs/REPLACEMENT-DIFF.md", "tools/replace/synthetic/test_hook.py"],
+        "assertions": ["8 cases x 8 fields", "64/64 differential match", "float tolerance and exact flag", "synthetic hook readback and output shift"],
+        "current_evidence_level": "SUPPORTED",
+        "original_fidelity_limit": "Reference differential and synthetic mechanism, not live original verification."
+      },
+      {
+        "area": "simulation",
+        "current_test_files": ["src/sim/tests/sim_test.cpp", "src/sim/tests/sim_contract_test.cpp", "src/sim/tests/plane_constants_test.cpp", "src/sim/tests/cellgame_test.cpp", "src/sim/tests/cellpool_test.cpp", "src/sim/tests/createcell_test.cpp", "src/sim/tests/cellquery_test.cpp", "src/sim/tests/advect_test.cpp", "src/sim/tests/combat_test.cpp", "tests/test_sim.py"],
+        "assertions": ["fixed-step movement", "ray-plane guards", "keyboard fallback", "eat/flee", "double-run determinism", "bit-exact fixture replay", "pool exhaustion/refill", "CreateCellObject fields", "query border predicate", "advect/default lookup", "damage/attack tables"],
+        "current_evidence_level": "OBSERVED",
+        "original_fidelity_limit": "Frozen local contract; not an original runtime oracle."
+      }
+    ],
+    "inventory_counts": {
+      "ctest_add_test_declarations": 36,
+      "cxx_test_source_files": 30,
+      "python_test_modules": 25,
+      "python_hook_test_modules": 1
+    },
+    "documented_baselines": [
+      "Historical project docs report Python 373/373 at S2.1 and 392/392 after S3, plus CTest 36/36; this research did not rerun those suites.",
+      "Real-asset tests are intentionally environment-dependent and skip without SPORE.",
+      "No repository-wide standalone lint/typecheck command is documented; C++ warning enforcement is compile-time -Werror and Python quality is unittest-based."
+    ],
+    "known_gaps": [
+      "No original runtime trace for Cell Stage, so no original pixel or event oracle for the playable slice.",
+      "The current simulation fixture contract is generated from current OpenSpore code and cannot establish original constants or behavior.",
+      "Float determinism is same-host/toolchain scoped because sinf/cosf/atan2f are libm-dependent.",
+      "No full C++ RW4 payload/animation/material test family exists."
+    ]
+  },
+  "unresolved_questions": [
+    {
+      "id": "q01",
+      "question": "What is the original multi-package ResourceManager search, priority, cache, and load order?",
+      "why_it_matters": "B1 is only a record provider and cannot replace resource orchestration.",
+      "needed_evidence": "Traced menu transition plus package identity/order observations."
+    },
+    {
+      "id": "q02",
+      "question": "Can the original Cell-mode trace be obtained after the Wine boot-stability blocker is diagnosed?",
+      "why_it_matters": "It gates runtime verification of movement, field meanings, and replacement promotion.",
+      "needed_evidence": "Approved human-watched trace reaching cell_movement probes."
+    },
+    {
+      "id": "q03",
+      "question": "What is the runtime value of the per-world movement-plane point and how does camera mode gate steering?",
+      "why_it_matters": "The current load-time point and default camera are not original runtime values.",
+      "needed_evidence": "Cell-mode register/memory observation of the plane globals and camera mode word."
+    },
+    {
+      "id": "q04",
+      "question": "What are the original Cell interaction, damage, AI, advect, and spawn semantics?",
+      "why_it_matters": "Current CellSim only models movement, eat, flee, and selected static rules.",
+      "needed_evidence": "Decompilation of connected manager functions plus runtime event/field traces."
+    },
+    {
+      "id": "q05",
+      "question": "What are the exact WorldObject and cMarker/populate field orders and procedural placement rules?",
+      "why_it_matters": "Current scene positions and food/prey/player roles are declarative approximations.",
+      "needed_evidence": "Original loader decompilation and/or record-driven placement trace."
+    },
+    {
+      "id": "q06",
+      "question": "Which GMDL/RW4 families and material/animation sections must be supported for the next playable slice?",
+      "why_it_matters": "The current GMDL and RW4 paths are intentionally narrow.",
+      "needed_evidence": "Representative real records plus differential decoders and a second mesh/material family."
+    },
+    {
+      "id": "q07",
+      "question": "How should AppSystem/UTFWin/bootstrap be represented for non-Cell stages and editors?",
+      "why_it_matters": "IGameMode is a Cell shell, not a general application runtime.",
+      "needed_evidence": "Startup/message-dispatch traces and mapped manager interfaces."
+    },
+    {
+      "id": "q08",
+      "question": "Which historical docs are stale after the current S1/S2/S3/S4/S5 changes?",
+      "why_it_matters": "MCP-DESIGN says 20 tools while the current registry has 21; viewer/cell-stage docs contain older state.",
+      "needed_evidence": "A deliberate documentation reconciliation pass using current source as authority."
+    }
+  ]
+}

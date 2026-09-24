@@ -1,0 +1,2085 @@
+{
+  "schema_version": "asset-registry-archaeology-1",
+  "track": {
+    "id": "TRACK-12-ASSET-REGISTRY",
+    "name": "Original asset lookup, resource manager, registry, preload, and runtime ownership archaeology",
+    "status": "INFERRED",
+    "boundary": "Static SDK/Ghidra/KG/source characterization; no original runtime trace and no replacement claim."
+  },
+  "scope": {
+    "included": [
+      "Resource::cResourceManager, IResourceManager, DatabasePackedFile, DatabaseDirectoryFiles, PFIndexModifiable, PFRecordRead, IResourceFactory, and ResourceKey",
+      "Cell resource references, key construction, preload traversal, world/layer handles, typed resource ownership, and gameplay handoff",
+      "Central Cell and geometry/texture record types recovered from committed SDK/Ghidra, KG, research, docs, and current source",
+      "Producer/consumer graph and static lifecycle/event chain",
+      "OpenSpore B1 IResourceProvider, DBPF linear lookup, CellGfx, CellResource, and CellModeStrategy comparison"
+    ],
+    "excluded": [
+      "SPORE/** inspection or mutation",
+      "proprietary asset bytes, models, textures, sounds, scripts, or decompiled source copying",
+      "runtime execution, patch/injection, save operations, or historical-artifact mutation",
+      "RTTI-based inheritance claims; SporeApp.exe has no MSVC RTTI",
+      "exact original multi-package priority, cache eviction, property serialization, and untraced event ordering"
+    ],
+    "questions": [
+      "How are type/group/instance keys constructed, resolved, cached, and passed to factories?",
+      "Where are database, factory, filename, extension, type-map, and record registries stored?",
+      "How do DatabasePackedFile and DatabaseDirectoryFiles differ in ownership and lookup?",
+      "How do Cell references become models, textures, effects, creatures, world handles, and gameplay state?",
+      "Which parts are VERIFIED as structure or call shape versus INFERRED original semantics?"
+    ],
+    "evidence_rule": "Use VERIFIED only for directly present SDK/Ghidra layout, exact addresses, committed bytes, or current-source behavior; use INFERRED for reasoned original semantics; use UNKNOWN where the artifact does not establish the claim."
+  },
+  "evidence_base": {
+    "binary": {
+      "program": "SporeApp.exe",
+      "image_base": "0x00400000",
+      "language": "x86:LE:32:default",
+      "compiler_spec": "windows",
+      "snapshot": "SporeProject / SporeApp.exe rebuilt 2026-09-20",
+      "binary_sha256": "25d42a7a48431d37524656d669354108272047e7e507391c686299122c1d914e",
+      "status": "VERIFIED",
+      "sources": [
+        "docs/RECON-3.1.0.22.md:3-23",
+        "knowledgegraph/triage/unknown-high-investigation-f0e310e0.json:2-4"
+      ]
+    },
+    "pinned_exports": [
+      {
+        "id": "PIN-GHIDRA-CELL-SNAPSHOT",
+        "path": "tools/re/data/ghidra_snapshot_cell_movement.json",
+        "role": "Pinned function, vtable, global, and address-convention evidence for Cell runtime and movement.",
+        "status": "VERIFIED",
+        "sources": [
+          "tools/re/data/ghidra_snapshot_cell_movement.json:1-5",
+          "tools/re/data/ghidra_snapshot_cell_movement.json:160-191"
+        ]
+      },
+      {
+        "id": "PIN-CANONICAL-XREFS",
+        "path": "knowledgegraph/triage/xrefs-2540f2ca.tsv",
+        "role": "Canonical direct-call and thunk edges used for resource and Cell function producer/consumer accounting.",
+        "status": "VERIFIED",
+        "sources": [
+          "knowledgegraph/research/global-campaign-2026/00-source-inventory.json:182-209",
+          "knowledgegraph/triage/xrefs-2540f2ca.tsv:71106-71114",
+          "knowledgegraph/triage/xrefs-2540f2ca.tsv:71358-71462"
+        ]
+      },
+      {
+        "id": "PIN-TRIAGE-V6",
+        "path": "knowledgegraph/triage/summary-f0e310e0.triage-v6.json",
+        "role": "Pinned canonical function-universe and Resource-family classification counts.",
+        "status": "VERIFIED",
+        "sources": [
+          "knowledgegraph/triage/summary-f0e310e0.triage-v6.json:1-55",
+          "knowledgegraph/triage/summary-f0e310e0.triage-v6.json:216-289"
+        ]
+      },
+      {
+        "id": "PIN-RESEARCH-TRACK-K",
+        "path": "knowledgegraph/research/global-campaign-2026/track-k-engine-boundaries.json",
+        "role": "Pinned engine-boundary characterization of Cell resource identity, presentation preload, and deferred manager behavior.",
+        "status": "VERIFIED",
+        "sources": [
+          "knowledgegraph/research/global-campaign-2026/track-k-engine-boundaries.json:294-364",
+          "knowledgegraph/research/global-campaign-2026/track-k-engine-boundaries.json:367-437",
+          "knowledgegraph/research/global-campaign-2026/track-k-engine-boundaries.json:793-855"
+        ]
+      },
+      {
+        "id": "PIN-RESEARCH-TRACK-D",
+        "path": "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json",
+        "role": "Pinned Cell function inventory, event surfaces, and lifecycle contracts.",
+        "status": "VERIFIED",
+        "sources": [
+          "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json:420-480",
+          "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json:482-519"
+        ]
+      },
+      {
+        "id": "PIN-CAMPAIGN-CELL",
+        "path": "docs/analysis/campaigns/cell-stage-campaign.md",
+        "role": "Pinned resource decode, central type counts, preload order, and clean-room mapping evidence.",
+        "status": "VERIFIED",
+        "sources": [
+          "docs/analysis/campaigns/cell-stage-campaign.md:250-289",
+          "docs/analysis/campaigns/cell-stage-campaign.md:291-345",
+          "docs/analysis/campaigns/cell-stage-campaign.md:455-465"
+        ]
+      }
+    ],
+    "kg": {
+      "database": "knowledgegraph/spore.db",
+      "queries": [
+        {
+          "id": "KG-ASSET-RECORD",
+          "query": "label=AssetRecord",
+          "finding": "Six committed AssetRecord rows include the verified geometry identity, raster identity, GMDL family, and rejected player-cell stand-in.",
+          "status": "VERIFIED",
+          "source": "knowledgegraph/kg.py query --label AssetRecord"
+        },
+        {
+          "id": "KG-ASSET-FINDINGS",
+          "query": "label=Finding",
+          "finding": "The KG preserves the rejected building-category stand-in and the ray-plane movement finding; neither promotes original runtime asset order.",
+          "status": "VERIFIED",
+          "source": "knowledgegraph/kg.py query --label Finding"
+        },
+        {
+          "id": "KG-READINESS-MAP",
+          "query": "map_int_whatever_find / reconstruction readiness",
+          "finding": "The map helper is a high-fan-in, no-body, NEEDS_RE GameGlobal root; it is used by Cell preload/model-key paths but its full contract is unresolved.",
+          "status": "VERIFIED",
+          "source": "knowledgegraph/triage/reconstruction-readiness-f0e310e0.json:116-127"
+        },
+        {
+          "id": "KG-RESOURCE-CENSUS",
+          "query": "triage Resource family",
+          "finding": "The pinned triage summary assigns 200 Resource-family rows; 87 are ENGINE_IMPLEMENTATION in the attribution projection.",
+          "status": "VERIFIED",
+          "source": "knowledgegraph/triage/summary-f0e310e0.triage-v6.json:26-55; knowledgegraph/triage/attribution-f0e310e0.json:149-153"
+        }
+      ],
+      "status": "VERIFIED"
+    },
+    "ghidra_queries": [
+      {
+        "id": "GHIDRA-CRM-VTABLE",
+        "query": "read_memory(0x01436ae8, 152); get_struct_layout(IResourceManager__vftable)",
+        "finding": "The cResourceManager/IResourceManager vtable is a 38-slot table at 0x01436ae8; the SDK layout names Initialize, GetResource, GetLoadedResource, FindRecord, RegisterFactory, RegisterDatabase, cache methods, and type/name methods.",
+        "status": "VERIFIED",
+        "source": "read-only Ghidra MCP query against SporeApp.exe"
+      },
+      {
+        "id": "GHIDRA-DBPF-VTABLE",
+        "query": "read_memory(0x014367e0, 148); get_struct_layout(DatabasePackedFile__vftable)",
+        "finding": "The DatabasePackedFile vtable is at 0x014367e0 and has 37 slots including Lock, OpenRecord, CreateRecordRead, ReadIndexRecord, VerifyIndexRecordIntegrity, CreateIndex, and MakeIndexModifiable.",
+        "status": "VERIFIED",
+        "source": "read-only Ghidra MCP query against SporeApp.exe"
+      },
+      {
+        "id": "GHIDRA-STRUCTURES",
+        "query": "get_struct_layout(ResourceKey, cResourceManager, DatabasePackedFile, DatabaseDirectoryFiles, PFIndexModifiable, PFRecordRead, cCellGFX, cCellDataReference_)",
+        "finding": "Exact SDK-derived sizes, offsets, pointer ownership fields, vector/map members, and vtable members were returned without mutating the program.",
+        "status": "VERIFIED",
+        "source": "read-only Ghidra MCP query against SporeApp.exe"
+      },
+      {
+        "id": "GHIDRA-CELL-PATHS",
+        "query": "decompile/callers/callees for cCellGFX, cCellDataReference_, GetGlobalsData, GetModelKeyForCellResource, CreateCellObject, PlayAnimation, InstanceEffectOnCell",
+        "finding": "Cell reference creation, lazy resolution, preload traversal, world initialization, display activation, model-key derivation, and gameplay handoff call shapes were recovered.",
+        "status": "VERIFIED",
+        "source": "read-only Ghidra MCP queries against SporeApp.exe"
+      },
+      {
+        "id": "GHIDRA-RESOURCE-HELPERS",
+        "query": "decompile/callers/callees for FUN_008ded00, FUN_008de9d0, FUN_008df0b0, FUN_008d5d00, PFRecordRead, PFIndexModifiable",
+        "finding": "The resource helper path includes hash/index insertion, a first lookup helper, the shared load body, database verification, and record stream plumbing.",
+        "status": "VERIFIED",
+        "source": "read-only Ghidra MCP queries against SporeApp.exe"
+      }
+    ],
+    "docs": [
+      {
+        "id": "DOC-RECON",
+        "path": "docs/RECON-3.1.0.22.md",
+        "role": "Binary architecture, namespace census, resource pipeline, and known gaps.",
+        "status": "VERIFIED",
+        "sources": ["docs/RECON-3.1.0.22.md:46-69", "docs/RECON-3.1.0.22.md:113-169"]
+      },
+      {
+        "id": "DOC-BOUNDARIES",
+        "path": "docs/BOUNDARIES.md",
+        "role": "B1 provider seam and explicit non-goals for original manager/cache/priority behavior.",
+        "status": "VERIFIED",
+        "sources": ["docs/BOUNDARIES.md:48-69", "docs/BOUNDARIES.md:122-146"]
+      },
+      {
+        "id": "DOC-ASSET-PATH",
+        "path": "docs/ASSET-PATH.md",
+        "role": "Verified DBPF/QFS/GMDL byte path and bounded geometry evidence.",
+        "status": "VERIFIED",
+        "sources": ["docs/ASSET-PATH.md:27-51", "docs/ASSET-PATH.md:63-84"]
+      },
+      {
+        "id": "DOC-CELL-RECON",
+        "path": "docs/CELLSTAGE-RECON.md",
+        "role": "Cell package inventory, group scheme, type inventory, and old/open reconstruction gaps.",
+        "status": "VERIFIED",
+        "sources": ["docs/CELLSTAGE-RECON.md:8-24", "docs/CELLSTAGE-RECON.md:64-81", "docs/CELLSTAGE-RECON.md:118-144"]
+      },
+      {
+        "id": "DOC-RECON-PACKAGES",
+        "path": "docs/analysis/reconstruction-packages.md",
+        "role": "PKG-03 through PKG-09 package boundaries and lifecycle/evidence policy.",
+        "status": "VERIFIED",
+        "sources": ["docs/analysis/reconstruction-packages.md:271-336", "docs/analysis/reconstruction-packages.md:409-485", "docs/analysis/reconstruction-packages.md:704-777"]
+      },
+      {
+        "id": "DOC-RESEARCH-QUEUE",
+        "path": "docs/analysis/reconstruction-research-queue.md",
+        "role": "Pinned resource/IO function anchors and unresolved M5 menu/resource trace contract.",
+        "status": "VERIFIED",
+        "sources": ["docs/analysis/reconstruction-research-queue.md:35-61", "docs/analysis/reconstruction-research-queue.md:192-256"]
+      }
+    ],
+    "source": [
+      {
+        "id": "SRC-RESOURCE-PROVIDER",
+        "path": "src/compat/ResourceProvider.hpp",
+        "role": "Current B1 provider seam and memory substitution boundary.",
+        "status": "VERIFIED",
+        "sources": ["src/compat/ResourceProvider.hpp:24-59", "src/compat/ResourceProvider.hpp:61-88"]
+      },
+      {
+        "id": "SRC-DBPF",
+        "path": "src/assets/Dbpf.hpp",
+        "role": "Current flat DBPF entry schema and linear identity lookup contract.",
+        "status": "VERIFIED",
+        "sources": ["src/assets/Dbpf.hpp:16-46"]
+      },
+      {
+        "id": "SRC-DBPF-IMPL",
+        "path": "src/assets/Dbpf.cpp",
+        "role": "Current DBPF index, QFS extraction, and linear lookup implementation.",
+        "status": "VERIFIED",
+        "sources": ["src/assets/Dbpf.cpp:37-101", "src/assets/Dbpf.cpp:200-234"]
+      },
+      {
+        "id": "SRC-CELL-RESOURCE",
+        "path": "src/assets/CellResource.hpp",
+        "role": "Current central Cell record value objects, type IDs, reference fields, and decoder contracts.",
+        "status": "VERIFIED",
+        "sources": ["src/assets/CellResource.hpp:124-181", "src/assets/CellResource.hpp:210-240", "src/assets/CellResource.hpp:366-480"]
+      },
+      {
+        "id": "SRC-CELL-GFX",
+        "path": "src/apps/CellGfx.hpp",
+        "role": "Current clean-room world/layer and preload state shape.",
+        "status": "VERIFIED",
+        "sources": ["src/apps/CellGfx.hpp:1-11", "src/apps/CellGfx.hpp:21-78"]
+      },
+      {
+        "id": "SRC-CELL-GFX-IMPL",
+        "path": "src/apps/CellGfx.cpp",
+        "role": "Current world slot construction, preload storage, and display flag implementation.",
+        "status": "VERIFIED",
+        "sources": ["src/apps/CellGfx.cpp:5-44"]
+      },
+      {
+        "id": "SRC-CELL-STAGE",
+        "path": "src/apps/cell_stage.cpp",
+        "role": "Current scene identity, direct DBPF record extraction, model decode, and preload assertion.",
+        "status": "VERIFIED",
+        "sources": ["src/apps/cell_stage.cpp:78-123", "src/apps/cell_stage.cpp:1354-1400"]
+      },
+      {
+        "id": "SRC-CELL-MODE",
+        "path": "src/apps/CellModeStrategy.cpp",
+        "role": "Current Initialize/OnEnter/OnExit/Dispose lifecycle shell.",
+        "status": "VERIFIED",
+        "sources": ["src/apps/CellModeStrategy.cpp:7-43", "src/apps/CellModeStrategy.cpp:80-92"]
+      }
+    ]
+  },
+  "asset_types": [
+    {
+      "id": "TYPE-CELL-CELL",
+      "type_id": "0xDFAD9F51",
+      "name": "cCellCellResource",
+      "kind": "Cell content record",
+      "record_shape": "796 B / 0x31C; 489 records, 266 unique in completed census",
+      "reference_fields": ["structure", "loot", "ai", "friendGroup", "populate/related cell references"],
+      "runtime_owner": "cCellDataReference_ and cCellGame/CellGFX preload path",
+      "status": "VERIFIED",
+      "sources": ["docs/analysis/campaigns/cell-stage-campaign.md:296-303", "src/assets/CellResource.hpp:124-166", "src/assets/CellResource.cpp:1126-1179"]
+    },
+    {
+      "id": "TYPE-CELL-WORLD",
+      "type_id": "0x9B8E862F",
+      "name": "cCellWorldResource",
+      "kind": "Cell world/advect record",
+      "record_shape": "16 B header plus cLevelEntry[12 B] and cAdvectEntry[24 B]; 37 records, 13 unique in completed census",
+      "reference_fields": ["populate", "advectID"],
+      "runtime_owner": "cCellGame current-world/current-background state and advect lookup",
+      "status": "VERIFIED",
+      "sources": ["docs/analysis/campaigns/cell-stage-campaign.md:304-309", "src/assets/CellResource.hpp:156-181", "src/assets/CellResource.cpp:1050-1124"]
+    },
+    {
+      "id": "TYPE-CELL-POPULATE",
+      "type_id": "0xDA141C1B",
+      "name": "cCellPopulateResource",
+      "kind": "Cell scene/spawner record",
+      "record_shape": "16 B header plus cMarker[76 B]; 21 unique records, including one EP1-only record",
+      "reference_fields": ["distributeCell", "clusterCell", "encounterPopulate"],
+      "runtime_owner": "cCellGFX::PreloadPopulateResource and procedural Cell placement",
+      "status": "VERIFIED",
+      "sources": ["docs/analysis/campaigns/cell-stage-campaign.md:310-312", "src/assets/CellResource.hpp:442-480"]
+    },
+    {
+      "id": "TYPE-CELL-STRUCTURE",
+      "type_id": "0x4B9EF6DC",
+      "name": "cCellStructureResource",
+      "kind": "Cell attachment/effect record",
+      "record_shape": "28 B header plus cSPAttachment[40 B]; 376 instances, 149 unique in completed census",
+      "reference_fields": ["onDeath", "onDeathSmall", "onDeathLarge", "onHatch", "randomCreature", "effectID"],
+      "runtime_owner": "cCellCellResource.structure and cCellGFX/effect preload",
+      "status": "VERIFIED",
+      "sources": ["docs/analysis/campaigns/cell-stage-campaign.md:314-316", "src/assets/CellResource.hpp:406-440"]
+    },
+    {
+      "id": "TYPE-CELL-LOOT",
+      "type_id": "0xD92AF091",
+      "name": "cCellLootTableResource",
+      "kind": "Cell reward/effect record",
+      "record_shape": "36 B header plus cLootTableEntry[28 B]; 115 instances, 45 unique in completed census",
+      "reference_fields": ["cell", "table", "effect"],
+      "runtime_owner": "Cell gameplay interaction/effect path; exact original consumer order unresolved",
+      "status": "VERIFIED",
+      "sources": ["docs/analysis/campaigns/cell-stage-campaign.md:318-320", "src/assets/CellResource.hpp:366-404"]
+    },
+    {
+      "id": "TYPE-CELL-LOOK-TABLE",
+      "type_id": "0x8C042499",
+      "name": "cCellLookTableResource",
+      "kind": "Cell look/variant table",
+      "record_shape": "8 B header plus cLookTableEntry[8 B]; 10 instances, 9 unique in completed census",
+      "reference_fields": ["look-table lookups from player/NPC/epic algorithm records"],
+      "runtime_owner": "Cell appearance/look selection; exact original runtime function chain unresolved",
+      "status": "VERIFIED",
+      "sources": ["docs/analysis/campaigns/cell-stage-campaign.md:322-325", "src/assets/CellResource.hpp:314-330"]
+    },
+    {
+      "id": "TYPE-CELL-LOOK-ALGORITHM",
+      "type_id": "0xDBA35AE2",
+      "name": "cCellLookAlgorithmResource",
+      "kind": "Cell look-selection algorithm",
+      "record_shape": "8 B header plus cLookAlgorithmEntry[20 B]; one instance/unique record",
+      "reference_fields": ["player", "npc", "epic"],
+      "runtime_owner": "Cell look-selection path; exact original runtime function chain unresolved",
+      "status": "VERIFIED",
+      "sources": ["docs/analysis/campaigns/cell-stage-campaign.md:322-325", "src/assets/CellResource.hpp:332-364"]
+    },
+    {
+      "id": "TYPE-CELL-RANDOM-CREATURE",
+      "type_id": "0xF9C3D770",
+      "name": "cCellRandomCreatureResource",
+      "kind": "Cell spawn table",
+      "record_shape": "8 B header plus cRandomCreatureEntry[28 B]; 10 instances/unique records",
+      "reference_fields": ["creatureID is a soft ID, not a Cell record reference"],
+      "runtime_owner": "Cell spawn selection and cCellGFX::PreloadCreature",
+      "status": "VERIFIED",
+      "sources": ["docs/analysis/campaigns/cell-stage-campaign.md:326-329", "src/assets/CellResource.hpp:269-289", "ghidra:Simulator::Cell::cCellGFX::PreloadCreature@0x00e64980"]
+    },
+    {
+      "id": "TYPE-CELL-POWERS",
+      "type_id": "0x754BE343",
+      "name": "cCellPowersResource",
+      "kind": "Cell power/teleport record",
+      "record_shape": "Fixed 8 B; one instance",
+      "reference_fields": [],
+      "runtime_owner": "Cell power/interaction path; exact original function owner unresolved",
+      "status": "VERIFIED",
+      "sources": ["docs/analysis/campaigns/cell-stage-campaign.md:326-329", "src/assets/CellResource.hpp:292-301"]
+    },
+    {
+      "id": "TYPE-CELL-EFFECT-MAP",
+      "type_id": "0x433FB70C",
+      "name": "cCellEffectMapResource",
+      "kind": "Cell effect lookup table",
+      "record_shape": "8 B header plus cEffectMapEntry[28 B]; one instance, 24 entries",
+      "reference_fields": ["effectID is a soft ID, mostly absent from the inspected packages"],
+      "runtime_owner": "cCellGFX::LoadEffectMap and cCellGFX::InstanceEffectOnCell",
+      "status": "VERIFIED",
+      "sources": ["docs/analysis/campaigns/cell-stage-campaign.md:330-333", "src/assets/CellResource.hpp:192-220", "ghidra:Simulator::Cell::cCellGFX::InstanceEffectOnCell@0x00e66840"]
+    },
+    {
+      "id": "TYPE-CELL-BACKGROUND-MAP",
+      "type_id": "0x612B3191",
+      "name": "cCellBackgroundMapResource",
+      "kind": "Cell background color/geometry table",
+      "record_shape": "8 B header plus cBackgroundMapEntry[16 B]; one instance, 12 entries",
+      "reference_fields": ["geometric scale ladder field_C"],
+      "runtime_owner": "Cell presentation/background color setup; current OpenSpore samples it in cell_stage",
+      "status": "VERIFIED",
+      "sources": ["docs/analysis/campaigns/cell-stage-campaign.md:330-333", "src/assets/CellResource.hpp:222-240", "src/apps/cell_stage.cpp:141-178"]
+    },
+    {
+      "id": "TYPE-CELL-GLOBALS",
+      "type_id": "0x2A3CE5B7",
+      "name": "cCellGlobalsResource",
+      "kind": "Cell stage tuning/global record",
+      "record_shape": "Direct 276 B record with 69 decoded fields; one globals record",
+      "reference_fields": ["u32 resource-reference fields in the runtime struct"],
+      "runtime_owner": "cCellGame initialization and global Cell tuning",
+      "status": "VERIFIED",
+      "sources": ["docs/analysis/campaigns/cell-stage-campaign.md:250-268", "src/assets/CellResource.cpp:14-110", "ghidra:Simulator::Cell::GetGlobalsData@0x00e4ce20"]
+    },
+    {
+      "id": "TYPE-GMDL",
+      "type_id": "0x00E6BCE5",
+      "name": "GMDL model",
+      "kind": "RenderWare model record",
+      "record_shape": "GMDL v8/static/single-stream/trilist in current bounded decoder; sample 794 B stored / 1156 B decompressed",
+      "reference_fields": ["material ID 0x407DFDDB", "texture-set references in material trailer"],
+      "runtime_owner": "Graphics::Model preload and cCellObjectData.mModelKey",
+      "status": "VERIFIED",
+      "sources": ["docs/ASSET-PATH.md:3-25", "docs/ASSET-PATH.md:27-51", "src/assets/Gmdl.hpp:58-74", "knowledgegraph/kg.py query --label AssetRecord"]
+    },
+    {
+      "id": "TYPE-RW4",
+      "type_id": "0x2F4E681B",
+      "name": "RW4 container",
+      "kind": "RenderWare section container",
+      "record_shape": "28 B header, section manifest/types, section infos; 1,131 records byte-accounted",
+      "reference_fields": ["section-local buffers and manifests"],
+      "runtime_owner": "RenderWare/material/animation path; full original runtime owner unresolved",
+      "status": "VERIFIED",
+      "sources": ["docs/analysis/campaigns/cell-stage-campaign.md:270-289", "docs/RENDERWARE-RESEARCH.md:331-350"]
+    },
+    {
+      "id": "TYPE-RASTER",
+      "type_id": "0x2F4E681C",
+      "name": "Raster texture",
+      "kind": "Raster/DXT5 texture record",
+      "record_shape": "Raster envelope with layers/mips; sample 512x512, 10 mips, 349,616 B",
+      "reference_fields": ["layer/mip records"],
+      "runtime_owner": "Graphics::Texture preload and renderer texture creation",
+      "status": "VERIFIED",
+      "sources": ["docs/CELLSTAGE-RECON.md:47-62", "docs/BOUNDARIES.md:40-46", "knowledgegraph/kg.py query --label AssetRecord"]
+    },
+    {
+      "id": "TYPE-PNG32",
+      "type_id": "0x2F7D0004",
+      "name": "PNG/UI raster",
+      "kind": "UI raster record",
+      "record_shape": "PNG/UI family; count varies by package",
+      "reference_fields": [],
+      "runtime_owner": "UI/graphics consumers; not central Cell gameplay",
+      "status": "VERIFIED",
+      "sources": ["docs/CELLSTAGE-RECON.md:12-16", "docs/CELLSTAGE-RECON.md:47-62"]
+    },
+    {
+      "id": "TYPE-WORLD-OBJECT",
+      "type_id": "0x0F43029A",
+      "name": "World-object part definition",
+      "kind": "Creature/cell model part-definition record",
+      "record_shape": "20 B header plus variable structural body; 1,365 records, fully byte-accounted",
+      "reference_fields": ["part-name strings and vector-like entries"],
+      "runtime_owner": "Model/scene composition, not direct per-entity x/y placement",
+      "status": "VERIFIED",
+      "sources": ["docs/analysis/campaigns/cell-stage-campaign.md:218-248", "src/apps/SceneConfig.hpp:1-14"]
+    }
+  ],
+  "schemas": [
+    {
+      "id": "SCHEMA-RESOURCE-KEY",
+      "name": "ResourceKey",
+      "size": 12,
+      "status": "VERIFIED",
+      "fields": [
+        {"name": "instanceID", "offset": 0, "type": "uint32_t", "status": "VERIFIED"},
+        {"name": "typeID", "offset": 4, "type": "Names/uint32", "status": "VERIFIED"},
+        {"name": "groupID", "offset": 8, "type": "Names/uint32", "status": "VERIFIED"}
+      ],
+      "sources": ["ghidra:get_struct_layout(ResourceKey)", "docs/ASSET-PATH.md:29-33"]
+    },
+    {
+      "id": "SCHEMA-CELL-DATA-REFERENCE",
+      "name": "cCellDataReference_",
+      "size": 16,
+      "status": "VERIFIED",
+      "fields": [
+        {"name": "mInstanceID", "offset": 0, "type": "uint32_t", "status": "VERIFIED"},
+        {"name": "mpSerializer", "offset": 4, "type": "CellSerializer *", "status": "VERIFIED"},
+        {"name": "mpResource", "offset": 8, "type": "intrusive_ptr<cCellResource>", "status": "VERIFIED"},
+        {"name": "mCounter", "offset": 12, "type": "int", "status": "VERIFIED"}
+      ],
+      "sources": ["ghidra:get_struct_layout(cCellDataReference_)", "ghidra:Simulator::Cell::cCellDataReference_::Create@0x00e82420"]
+    },
+    {
+      "id": "SCHEMA-CRM",
+      "name": "Resource::cResourceManager",
+      "size": 376,
+      "status": "VERIFIED",
+      "fields": [
+        {"name": "mbNeedsToRelease", "offset": 4, "type": "bool", "status": "VERIFIED"},
+        {"name": "mChangeNotifications", "offset": 12, "type": "map<int,int>", "status": "VERIFIED"},
+        {"name": "field_2C", "offset": 44, "type": "void *", "status": "VERIFIED"},
+        {"name": "mResourceFactories", "offset": 48, "type": "FactoriesMap_t", "status": "VERIFIED"},
+        {"name": "mResourceTypeToRecordType", "offset": 84, "type": "ResourceTypeToRecordTypeMap_t", "status": "VERIFIED"},
+        {"name": "mRecordTypeToResourceType", "offset": 120, "type": "RecordTypeToResourceTypeMap_t", "status": "VERIFIED"},
+        {"name": "mCacheVector", "offset": 156, "type": "CacheVector_t", "status": "VERIFIED"},
+        {"name": "mExtensionMappings", "offset": 176, "type": "ExtensionsMap_t", "status": "VERIFIED"},
+        {"name": "mFilenameMapping", "offset": 244, "type": "FilenamesMap_t", "status": "VERIFIED"},
+        {"name": "field_118", "offset": 280, "type": "Mutex", "status": "VERIFIED"},
+        {"name": "field_148", "offset": 328, "type": "Mutex", "status": "VERIFIED"}
+      ],
+      "sources": ["ghidra:get_struct_layout(cResourceManager)", "ghidra:get_struct_layout(IResourceManager__vftable)"]
+    },
+    {
+      "id": "SCHEMA-DBPF",
+      "name": "Resource::DatabasePackedFile",
+      "size": 904,
+      "status": "VERIFIED",
+      "fields": [
+        {"name": "mFilePath", "offset": 32, "type": "string16", "status": "VERIFIED"},
+        {"name": "mFileStream", "offset": 48, "type": "FileStream", "status": "VERIFIED"},
+        {"name": "mFileOffset", "offset": 604, "type": "size_t", "status": "VERIFIED"},
+        {"name": "mpCurrentStream", "offset": 608, "type": "intrusive_ptr<IO::IStream>", "status": "VERIFIED"},
+        {"name": "mpDataBuffer", "offset": 612, "type": "char *", "status": "VERIFIED"},
+        {"name": "mpBufferSize", "offset": 616, "type": "size_t", "status": "VERIFIED"},
+        {"name": "mnBufferOffset", "offset": 620, "type": "size_t", "status": "VERIFIED"},
+        {"name": "mIndexMutex", "offset": 624, "type": "Mutex", "status": "VERIFIED"},
+        {"name": "mReadWriteMutex", "offset": 672, "type": "Mutex", "status": "VERIFIED"},
+        {"name": "mpIndex", "offset": 720, "type": "PFIndexModifiable *", "status": "VERIFIED"},
+        {"name": "field_2E8", "offset": 744, "type": "map<ResourceKey, PFRecordBase *>", "status": "VERIFIED"},
+        {"name": "mnIndexOffset", "offset": 804, "type": "size_t", "status": "VERIFIED"},
+        {"name": "mnIndexCount", "offset": 808, "type": "size_t", "status": "VERIFIED"},
+        {"name": "mnIndexSize", "offset": 812, "type": "size_t", "status": "VERIFIED"},
+        {"name": "field_37C", "offset": 892, "type": "bool", "status": "VERIFIED"},
+        {"name": "mpResourceMan", "offset": 896, "type": "cResourceManager *", "status": "VERIFIED"}
+      ],
+      "sources": ["ghidra:get_struct_layout(DatabasePackedFile)", "ghidra:get_struct_layout(DatabasePackedFile__vftable)"]
+    },
+    {
+      "id": "SCHEMA-DIRECTORY-DATABASE",
+      "name": "Resource::DatabaseDirectoryFiles",
+      "size": 360,
+      "status": "VERIFIED",
+      "fields": [
+        {"name": "mnRefCount", "offset": 8, "type": "int", "status": "VERIFIED"},
+        {"name": "mAccessFlags", "offset": 24, "type": "AccessFlags", "status": "VERIFIED"},
+        {"name": "mLocation", "offset": 28, "type": "string16", "status": "VERIFIED"},
+        {"name": "mExtensionMap", "offset": 108, "type": "map<string16,uint>", "status": "VERIFIED"},
+        {"name": "mRecordListDataMap", "offset": 140, "type": "map<ResourceKey,int>", "status": "VERIFIED"},
+        {"name": "mDefaultGroupID", "offset": 172, "type": "uint32_t", "status": "VERIFIED"},
+        {"name": "mpResourceManager", "offset": 176, "type": "IResourceManager *", "status": "VERIFIED"},
+        {"name": "mFileNameToKeyConverter", "offset": 180, "type": "FileNameToKeyConverter_t", "status": "VERIFIED"},
+        {"name": "mMutex", "offset": 312, "type": "Mutex", "status": "VERIFIED"}
+      ],
+      "sources": ["ghidra:get_struct_layout(DatabaseDirectoryFiles)", "ghidra:get_struct_layout(DatabaseDirectoryFiles__vftable)"]
+    },
+    {
+      "id": "SCHEMA-PACKED-INDEX",
+      "name": "Resource::PFIndexModifiable",
+      "size": 76,
+      "status": "VERIFIED",
+      "fields": [
+        {"name": "mpParentAllocator", "offset": 4, "type": "ICoreAllocator *", "status": "VERIFIED"},
+        {"name": "mAllocator", "offset": 8, "type": "FixedPoolAllocator", "status": "VERIFIED"},
+        {"name": "mItemsMap", "offset": 40, "type": "ItemsMap", "status": "VERIFIED"}
+      ],
+      "sources": ["ghidra:get_struct_layout(PFIndexModifiable)", "ghidra:get_struct_layout(PFIndexModifiable__vftable)"]
+    },
+    {
+      "id": "SCHEMA-RECORD-READ",
+      "name": "Resource::PFRecordRead",
+      "size": 112,
+      "status": "VERIFIED",
+      "fields": [
+        {"name": "mnRefCount", "offset": 4, "type": "int", "status": "VERIFIED"},
+        {"name": "mType", "offset": 8, "type": "uint32_t", "status": "VERIFIED"},
+        {"name": "mNameKey", "offset": 12, "type": "ResourceKey", "status": "VERIFIED"},
+        {"name": "mpParentDBPF", "offset": 24, "type": "DatabasePackedFile *", "status": "VERIFIED"},
+        {"name": "mFileAccess", "offset": 28, "type": "AccessFlags", "status": "VERIFIED"},
+        {"name": "mInternalBuffer", "offset": 44, "type": "MemoryStream", "status": "VERIFIED"},
+        {"name": "mDBPFItem", "offset": 80, "type": "RecordInfo", "status": "VERIFIED"},
+        {"name": "mnOffset", "offset": 96, "type": "size_t", "status": "VERIFIED"},
+        {"name": "mnSize", "offset": 100, "type": "size_t", "status": "VERIFIED"},
+        {"name": "mnFlags", "offset": 104, "type": "char", "status": "VERIFIED"},
+        {"name": "mnStreamRefCount", "offset": 108, "type": "int", "status": "VERIFIED"}
+      ],
+      "sources": ["ghidra:get_struct_layout(PFRecordRead)", "ghidra:get_struct_layout(RecordInfo)"]
+    },
+    {
+      "id": "SCHEMA-RESOURCE-OBJECT",
+      "name": "Resource::ResourceObject",
+      "size": 20,
+      "status": "VERIFIED",
+      "fields": [
+        {"name": "mnRefCount", "offset": 4, "type": "int", "status": "VERIFIED"},
+        {"name": "mNameKey", "offset": 8, "type": "ResourceKey", "status": "VERIFIED"}
+      ],
+      "sources": ["ghidra:get_struct_layout(ResourceObject)", "ghidra:get_struct_layout(ResourceObject__vftable)"]
+    },
+    {
+      "id": "SCHEMA-CELL-GFX",
+      "name": "Simulator::Cell::cCellGFX",
+      "size": 90716,
+      "status": "VERIFIED",
+      "fields": [
+        {"name": "mPreloadedModels", "offset": 0, "type": "vector<intrusive_ptr<Graphics::Model>>", "status": "VERIFIED"},
+        {"name": "mPreloadedTextures", "offset": 20, "type": "vector<intrusive_ptr<Graphics::Texture>>", "status": "VERIFIED"},
+        {"name": "mPreloadedCreatures", "offset": 40, "type": "vector<Anim::AnimatedCreature *>", "status": "VERIFIED"},
+        {"name": "field_40", "offset": 64, "type": "int", "status": "VERIFIED"},
+        {"name": "mpPreloadedEffectWorld", "offset": 80, "type": "intrusive_ptr<Swarm::IEffectsWorld>", "status": "VERIFIED"},
+        {"name": "mpPreloadedModelWorld", "offset": 84, "type": "intrusive_ptr<Graphics::IModelWorld>", "status": "VERIFIED"},
+        {"name": "mpPreloadedAnimWorld", "offset": 88, "type": "intrusive_ptr<Anim::IAnimWorld>", "status": "VERIFIED"},
+        {"name": "field_5C", "offset": 92, "type": "intrusive_ptr<Swarm::IVisualEffect>[64]", "status": "VERIFIED"},
+        {"name": "mCellGFXObjects", "offset": 360, "type": "cObjectPool<CellGFXObjectData>", "status": "VERIFIED"},
+        {"name": "mpLightingWorld", "offset": 90528, "type": "intrusive_ptr<Graphics::ILightingWorld>", "status": "VERIFIED"},
+        {"name": "mpBeachModelWorld", "offset": 90536, "type": "intrusive_ptr<Graphics::IModelWorld>", "status": "VERIFIED"},
+        {"name": "mpBeachEffectWorld", "offset": 90540, "type": "intrusive_ptr<Swarm::IEffectsWorld>", "status": "VERIFIED"},
+        {"name": "mpSkyboxEffectWorld", "offset": 90548, "type": "intrusive_ptr<Swarm::IEffectsWorld>", "status": "VERIFIED"},
+        {"name": "mpBackgroundEffectWorld", "offset": 90556, "type": "intrusive_ptr<Swarm::IEffectsWorld>", "status": "VERIFIED"},
+        {"name": "mpBackgroundModelWorld", "offset": 90560, "type": "intrusive_ptr<Graphics::IModelWorld>", "status": "VERIFIED"},
+        {"name": "mpBackgroundAnimWorld", "offset": 90564, "type": "intrusive_ptr<Anim::IAnimWorld>", "status": "VERIFIED"},
+        {"name": "mpEffectWorld", "offset": 90568, "type": "intrusive_ptr<Swarm::IEffectsWorld>", "status": "VERIFIED"},
+        {"name": "mpModelWorld", "offset": 90572, "type": "intrusive_ptr<Graphics::IModelWorld>", "status": "VERIFIED"},
+        {"name": "mpAnimWorld", "offset": 90576, "type": "intrusive_ptr<Anim::IAnimWorld>", "status": "VERIFIED"},
+        {"name": "mpForegroundEffectWorld", "offset": 90580, "type": "intrusive_ptr<Swarm::IEffectsWorld>", "status": "VERIFIED"},
+        {"name": "mEffectInstances", "offset": 90588, "type": "vector<EffectInstance>", "status": "VERIFIED"},
+        {"name": "mCellMotionAudioTrack", "offset": 90632, "type": "AudioTrack", "status": "VERIFIED"},
+        {"name": "mCellgameSeedMusicAudioTrack", "offset": 90636, "type": "AudioTrack", "status": "VERIFIED"},
+        {"name": "mCellAmbAudioTrack", "offset": 90640, "type": "AudioTrack", "status": "VERIFIED"}
+      ],
+      "sources": ["ghidra:get_struct_layout(cCellGFX)", "ghidra:Simulator::Cell::cCellGFX::Initialize@0x00e5dba0", "ghidra:Simulator::Cell::cCellGFX::PreloadResources@0x00e666f0"]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "REL-01-DBPF-TO-MANAGER",
+      "from": "Resource::DatabasePackedFile",
+      "to": "Resource::cResourceManager",
+      "relation": "owns_or_reports_to",
+      "evidence": "DatabasePackedFile.mpResourceMan is at +0x380; database vtable exposes Attach/CloseRecord and manager registration path.",
+      "status": "INFERRED",
+      "sources": ["ghidra:get_struct_layout(DatabasePackedFile)", "ghidra:get_struct_layout(DatabasePackedFile__vftable)"]
+    },
+    {
+      "id": "REL-02-DIRECTORY-TO-MANAGER",
+      "from": "Resource::DatabaseDirectoryFiles",
+      "to": "Resource::cResourceManager",
+      "relation": "registers_name_and_type_database",
+      "evidence": "Directory database stores extension map, ResourceKey-to-record map, default group, resource-manager back-pointer, and filename converter.",
+      "status": "INFERRED",
+      "sources": ["ghidra:get_struct_layout(DatabaseDirectoryFiles)", "ghidra:get_struct_layout(DatabaseDirectoryFiles__vftable)"]
+    },
+    {
+      "id": "REL-03-KEY-TO-DBPF-ROW",
+      "from": "ResourceKey",
+      "to": "DbpfEntry",
+      "relation": "identity_match",
+      "evidence": "Current DBPF rows are type/group/instance plus offset/size/compression; original key carries the same three IDs.",
+      "status": "VERIFIED",
+      "sources": ["src/assets/Dbpf.hpp:16-26", "src/assets/Dbpf.cpp:81-98", "ghidra:get_struct_layout(ResourceKey)"]
+    },
+    {
+      "id": "REL-04-KEY-TO-FACTORY",
+      "from": "cResourceManager",
+      "to": "IResourceFactory",
+      "relation": "type_mapping_and_factory_dispatch",
+      "evidence": "Factory map at +0x30, resource-to-record map at +0x54, record-to-resource map at +0x78, and vtable slots FindFactory/RegisterFactory.",
+      "status": "INFERRED",
+      "sources": ["ghidra:get_struct_layout(cResourceManager)", "ghidra:get_struct_layout(IResourceManager__vftable)", "ghidra:get_struct_layout(IResourceFactory__vftable)"]
+    },
+    {
+      "id": "REL-05-CELL-REF-CACHE",
+      "from": "cCellDataReference_",
+      "to": "CellSerializer",
+      "relation": "lazy_cached_reference",
+      "evidence": "Create scans DAT_016b44f0 for matching instanceID and serializer, then stores an intrusive resource pointer; mCounter is incremented by the resolver.",
+      "status": "VERIFIED",
+      "sources": ["ghidra:Simulator::Cell::cCellDataReference_::Create@0x00e82420", "ghidra:FUN_00e823a0@0x00e823a0", "ghidra:get_struct_layout(cCellDataReference_)"]
+    },
+    {
+      "id": "REL-06-CELL-REF-LOAD",
+      "from": "cCellDataReference_",
+      "to": "cResourceManager/CellSerializer",
+      "relation": "lazy_load_on_null_resource",
+      "evidence": "FUN_00e822c0 clears/release existing pointer, calls FUN_00e821d0 for a new resource, and reports a typed load error on failure.",
+      "status": "INFERRED",
+      "sources": ["ghidra:FUN_00e822c0@0x00e822c0", "ghidra:FUN_00e821d0@0x00e821d0", "ghidra:FUN_00e84e40@0x00e84e40"]
+    },
+    {
+      "id": "REL-07-MODEL-KEY",
+      "from": "cCellCellResource",
+      "to": "ResourceKey",
+      "relation": "derives_model_key",
+      "evidence": "GetModelKeyForCellResource scans cell-resource entries and returns a ResourceKey from fixed defaults, a map-backed helper, or current CellGame state.",
+      "status": "INFERRED",
+      "sources": ["ghidra:Simulator::Cell::GetModelKeyForCellResource@0x00e65640", "ghidra:FUN_00e655c0@0x00e655c0"]
+    },
+    {
+      "id": "REL-08-PRELOAD-MODEL",
+      "from": "cCellGFX::PreloadResources",
+      "to": "Graphics::Model",
+      "relation": "preloads_and_retains",
+      "evidence": "PreloadCellResource/AddPreloadedModel and cCellGFX.mPreloadedModels vector establish the static preload producer/consumer path.",
+      "status": "INFERRED",
+      "sources": ["ghidra:Simulator::Cell::cCellGFX::PreloadResources@0x00e666f0", "ghidra:Simulator::Cell::cCellGFX::PreloadCellResource@0x00e663b0", "ghidra:get_struct_layout(cCellGFX)"]
+    },
+    {
+      "id": "REL-09-PRELOAD-POPULATE",
+      "from": "cCellGFX::PreloadResources",
+      "to": "Graphics::Model/Effects/Cell",
+      "relation": "recursive_resource_walk",
+      "evidence": "PreloadPopulateResource dispatches marker kinds to cell preload, nested populate preload, or indexed cell-resource variants.",
+      "status": "INFERRED",
+      "sources": ["ghidra:Simulator::Cell::cCellGFX::PreloadPopulateResource@0x00e665c0", "ghidra:FUN_00e4fc20@0x00e4fc20"]
+    },
+    {
+      "id": "REL-10-WORLD-HANDLE",
+      "from": "cCellGFX",
+      "to": "cCellModeStrategy::OnEnter",
+      "relation": "display_activation",
+      "evidence": "cCellGFX::Initialize creates world/layer handles; OnEnter calls StartDisplay, which enables world/shadow/lighting state.",
+      "status": "INFERRED",
+      "sources": ["ghidra:Simulator::Cell::cCellGFX::Initialize@0x00e5dba0", "ghidra:Simulator::Cell::cCellGFX::StartDisplay@0x00e55120", "ghidra:App::cCellModeStrategy::OnEnter@0x00e552f0"]
+    },
+    {
+      "id": "REL-11-CELL-STATE",
+      "from": "cCellDataReference_",
+      "to": "cCellObjectData",
+      "relation": "feeds_pool_state",
+      "evidence": "CreateCellObject writes model/resource fields and creates a cell object in the 4096-entry pool; current OpenSpore mirrors a typed subset.",
+      "status": "INFERRED",
+      "sources": ["ghidra:Simulator::Cell::CreateCellObject@0x00e74a20", "docs/analysis/campaigns/cell-stage-campaign.md:386-393", "src/sim/CellGame.cpp:22-80"]
+    },
+    {
+      "id": "REL-12-GAMEPLAY-EVENT",
+      "from": "cCellObjectData",
+      "to": "animation/effect/movement",
+      "relation": "gameplay_event_chain",
+      "evidence": "PlayAnimation writes current animation/blend state; InstanceEffectOnCell binds effect placement to the cell transform; movement writes target/orientation state.",
+      "status": "INFERRED",
+      "sources": ["ghidra:Simulator::Cell::PlayAnimation@0x00e6d200", "ghidra:Simulator::Cell::cCellGFX::InstanceEffectOnCell@0x00e66840", "tools/re/data/ghidra_snapshot_cell_movement.json:102-135"]
+    }
+  ],
+  "functions": [
+    {
+      "id": "FN-0069D3F0",
+      "address": "0x0069D3F0",
+      "name": "Resource::DatabaseDirectoryFiles::GetRefCount",
+      "role": "Directory database reference-count accessor",
+      "status": "VERIFIED",
+      "sources": ["ghidra:search_functions", "ghidra:get_struct_layout(DatabaseDirectoryFiles)"]
+    },
+    {
+      "id": "FN-008D60D0",
+      "address": "0x008D60D0",
+      "name": "Resource::DatabaseDirectoryFiles::Dispose",
+      "role": "Directory database teardown",
+      "status": "VERIFIED",
+      "sources": ["ghidra:search_functions", "ghidra:decompile_function"]
+    },
+    {
+      "id": "FN-008D65E0",
+      "address": "0x008D65E0",
+      "name": "Resource::DatabaseDirectoryFiles::GetTypenameFromType",
+      "role": "Directory type-name resolution",
+      "status": "VERIFIED",
+      "sources": ["ghidra:search_functions", "ghidra:get_struct_layout(DatabaseDirectoryFiles__vftable)"]
+    },
+    {
+      "id": "FN-008D69F0",
+      "address": "0x008D69F0",
+      "name": "Resource::DatabaseDirectoryFiles::CloseRecord",
+      "role": "Close/release a directory-backed record",
+      "status": "VERIFIED",
+      "sources": ["ghidra:search_functions", "ghidra:get_function_callers"]
+    },
+    {
+      "id": "FN-008D84D0",
+      "address": "0x008D84D0",
+      "name": "DatabasePackedFile::Lock (live entry; SDK anchor 0x008D84F0)",
+      "role": "Package/index lock and record preparation helper",
+      "status": "VERIFIED",
+      "sources": ["ghidra:get_function_by_address", "knowledgegraph/research/global-campaign-2026/track-k-engine-boundaries.json:326-334"]
+    },
+    {
+      "id": "FN-008D86B0",
+      "address": "0x008D86B0",
+      "name": "Resource::DatabasePackedFile::DestroyIndex",
+      "role": "Package index teardown",
+      "status": "VERIFIED",
+      "sources": ["ghidra:search_functions", "ghidra:decompile_function"]
+    },
+    {
+      "id": "FN-008D9320",
+      "address": "0x008D9320",
+      "name": "Resource::DatabasePackedFile::VerifyIndexRecordIntegrity",
+      "role": "Package index integrity verification",
+      "status": "VERIFIED",
+      "sources": ["ghidra:search_functions", "ghidra:decompile_function"]
+    },
+    {
+      "id": "FN-008DBC20",
+      "address": "0x008DBC20",
+      "name": "Resource::PFIndexModifiable::Read (live entry; SDK anchor 0x008DBCC0)",
+      "role": "Package index interval/file lookup and insertion",
+      "status": "VERIFIED",
+      "sources": ["ghidra:get_function_by_address", "knowledgegraph/research/global-campaign-2026/track-k-engine-boundaries.json:326-334"]
+    },
+    {
+      "id": "FN-008DCE80",
+      "address": "0x008DCE80",
+      "name": "Resource::PFRecordRead::Read",
+      "role": "Read record stream bytes",
+      "status": "VERIFIED",
+      "sources": ["ghidra:search_functions", "ghidra:get_struct_layout(PFRecordRead)"]
+    },
+    {
+      "id": "FN-008DC820",
+      "address": "0x008DC820",
+      "name": "Resource::PFRecordRead::ReadData",
+      "role": "Materialize/read a record through the stream abstraction",
+      "status": "VERIFIED",
+      "sources": ["ghidra:search_functions", "ghidra:decompile_function"]
+    },
+    {
+      "id": "FN-008DCAB0",
+      "address": "0x008DCAB0",
+      "name": "Resource::PFRecordWrite::GetType",
+      "role": "Record write type/position contract",
+      "status": "VERIFIED",
+      "sources": ["ghidra:search_functions", "ghidra:get_struct_layout(PFRecordRead)"]
+    },
+    {
+      "id": "FN-008DCB70",
+      "address": "0x008DCB70",
+      "name": "Resource::PFRecordWrite::GetAvailable",
+      "role": "Record write available-byte contract",
+      "status": "VERIFIED",
+      "sources": ["ghidra:search_functions", "ghidra:decompile_function"]
+    },
+    {
+      "id": "FN-008DE220",
+      "address": "0x008DE220",
+      "name": "cResourceManager vtable slot 1 Initialize wrapper",
+      "role": "Sets the manager initialization/release flag",
+      "status": "VERIFIED",
+      "sources": ["ghidra:read_memory(0x01436ae8)", "ghidra:decompile_function"]
+    },
+    {
+      "id": "FN-008DE2D0",
+      "address": "0x008DE2D0",
+      "name": "cResourceManager vtable slot 21 IsDatabaseRegistered",
+      "role": "Database registration query",
+      "status": "VERIFIED",
+      "sources": ["ghidra:IResourceManager__vftable", "ghidra:read_memory(0x01436ae8)"]
+    },
+    {
+      "id": "FN-008DE310",
+      "address": "0x008DE310",
+      "name": "cResourceManager vtable slot 22 FindDatabase",
+      "role": "Find registered database object",
+      "status": "INFERRED",
+      "sources": ["ghidra:IResourceManager__vftable", "ghidra:read_memory(0x01436ae8)"]
+    },
+    {
+      "id": "FN-008DE360",
+      "address": "0x008DE360",
+      "name": "cResourceManager vtable slot 26 FindCache",
+      "role": "Find cache entry",
+      "status": "INFERRED",
+      "sources": ["ghidra:IResourceManager__vftable", "ghidra:read_memory(0x01436ae8)"]
+    },
+    {
+      "id": "FN-008DE3B0",
+      "address": "0x008DE3B0",
+      "name": "cResourceManager vtable slot 27 CacheResource",
+      "role": "Insert/retain loaded resource in cache",
+      "status": "INFERRED",
+      "sources": ["ghidra:IResourceManager__vftable", "ghidra:read_memory(0x01436ae8)"]
+    },
+    {
+      "id": "FN-008DE400",
+      "address": "0x008DE400",
+      "name": "cResourceManager vtable slot 28 FlushCache",
+      "role": "Flush cache contents",
+      "status": "INFERRED",
+      "sources": ["ghidra:IResourceManager__vftable", "ghidra:read_memory(0x01436ae8)"]
+    },
+    {
+      "id": "FN-008DE530",
+      "address": "0x008DE530",
+      "name": "Resource::cResourceManager::Initialize",
+      "role": "Build/rebuild manager hash/index structures",
+      "status": "VERIFIED",
+      "sources": ["ghidra:decompile_function", "knowledgegraph/research/global-campaign-2026/track-k-engine-boundaries.json:300-310"]
+    },
+    {
+      "id": "FN-008DE9D0",
+      "address": "0x008DE9D0",
+      "name": "FUN_008DE9D0",
+      "role": "First resource/database lookup helper used by the shared load path",
+      "status": "INFERRED",
+      "sources": ["ghidra:decompile_function", "ghidra:get_function_callers"]
+    },
+    {
+      "id": "FN-008DEBF0",
+      "address": "0x008DEBF0",
+      "name": "cResourceManager vtable slot 24 DoDatabaseChanged",
+      "role": "Database change notification/refresh boundary",
+      "status": "INFERRED",
+      "sources": ["ghidra:IResourceManager__vftable", "ghidra:read_memory(0x01436ae8)"]
+    },
+    {
+      "id": "FN-008DED00",
+      "address": "0x008DED00",
+      "name": "FUN_008DED00",
+      "role": "Hash/modulo bucket insertion and rehash helper",
+      "status": "VERIFIED",
+      "sources": ["ghidra:decompile_function", "ghidra:get_function_xrefs"]
+    },
+    {
+      "id": "FN-008DF0B0",
+      "address": "0x008DF0B0",
+      "name": "FUN_008DF0B0",
+      "role": "Shared resource load body: existing lookup, factory dispatch, read/create, and cache/release handoff",
+      "status": "INFERRED",
+      "sources": ["ghidra:decompile_function", "ghidra:get_function_callers", "ghidra:get_function_xrefs"]
+    },
+    {
+      "id": "FN-008DF430",
+      "address": "0x008DF430",
+      "name": "cResourceManager vtable slot 3 GetResource wrapper",
+      "role": "Synchronous resource load entry wrapper",
+      "status": "INFERRED",
+      "sources": ["ghidra:IResourceManager__vftable", "ghidra:disassemble_bytes(0x008DF430)"]
+    },
+    {
+      "id": "FN-008DF460",
+      "address": "0x008DF460",
+      "name": "cResourceManager vtable slot 4 GetResourceAsync",
+      "role": "Asynchronous/alternate resource load entry",
+      "status": "INFERRED",
+      "sources": ["ghidra:decompile_function", "ghidra:get_function_xrefs"]
+    },
+    {
+      "id": "FN-008DF7A0",
+      "address": "0x008DF7A0",
+      "name": "cResourceManager vtable slot 6 ReloadResource",
+      "role": "Reload an existing typed resource",
+      "status": "INFERRED",
+      "sources": ["ghidra:decompile_function", "ghidra:IResourceManager__vftable"]
+    },
+    {
+      "id": "FN-008DF940",
+      "address": "0x008DF940",
+      "name": "cResourceManager vtable slot 7 GetPrivateResource wrapper",
+      "role": "Private-resource load wrapper into the shared loader",
+      "status": "INFERRED",
+      "sources": ["ghidra:read_memory(0x01436ae8)", "ghidra:disassemble_bytes(0x008DF940)"]
+    },
+    {
+      "id": "FN-008DF9B0",
+      "address": "0x008DF9B0",
+      "name": "cResourceManager vtable slot 12 FindRecord",
+      "role": "Record-key lookup across registered databases/factories",
+      "status": "INFERRED",
+      "sources": ["ghidra:IResourceManager__vftable", "ghidra:disassemble_bytes(0x008DF9B0)"]
+    },
+    {
+      "id": "FN-008DFB20",
+      "address": "0x008DFB20",
+      "name": "cResourceManager vtable slot 18 FindFactory",
+      "role": "Find a factory for a resource/type mapping",
+      "status": "INFERRED",
+      "sources": ["ghidra:decompile_function", "ghidra:IResourceManager__vftable"]
+    },
+    {
+      "id": "FN-008DFF30",
+      "address": "0x008DFF30",
+      "name": "Resource::cResourceManager::GetTypenameFromType",
+      "role": "Reverse type-ID to type-name resolution",
+      "status": "VERIFIED",
+      "sources": ["ghidra:decompile_function", "ghidra:search_functions"]
+    },
+    {
+      "id": "FN-008E0140",
+      "address": "0x008E0140",
+      "name": "cResourceManager vtable slot 29 GetCacheList",
+      "role": "Expose cache list",
+      "status": "INFERRED",
+      "sources": ["ghidra:IResourceManager__vftable", "ghidra:read_memory(0x01436ae8)"]
+    },
+    {
+      "id": "FN-008E01C0",
+      "address": "0x008E01C0",
+      "name": "cResourceManager vtable slot 31 GetNameFromKey",
+      "role": "ResourceKey to filename/name mapping",
+      "status": "INFERRED",
+      "sources": ["ghidra:IResourceManager__vftable", "ghidra:read_memory(0x01436ae8)"]
+    },
+    {
+      "id": "FN-008E04A0",
+      "address": "0x008E04A0",
+      "name": "cResourceManager vtable slot 16 RegisterChangeNotification",
+      "role": "Register database/resource change callback",
+      "status": "INFERRED",
+      "sources": ["ghidra:IResourceManager__vftable", "ghidra:disassemble_bytes(0x008E04A0)"]
+    },
+    {
+      "id": "FN-008E08C0",
+      "address": "0x008E08C0",
+      "name": "cResourceManager vtable slot 10 GetRecordTypesFromResourceType",
+      "role": "Resource-type to record-type set materialization",
+      "status": "INFERRED",
+      "sources": ["ghidra:decompile_function", "ghidra:IResourceManager__vftable"]
+    },
+    {
+      "id": "FN-008E0950",
+      "address": "0x008E0950",
+      "name": "cResourceManager vtable slot 13 GetResourceKeyList",
+      "role": "Enumerate ResourceKeys through factories",
+      "status": "INFERRED",
+      "sources": ["ghidra:decompile_function", "ghidra:IResourceManager__vftable"]
+    },
+    {
+      "id": "FN-008E0A30",
+      "address": "0x008E0A30",
+      "name": "cResourceManager vtable slot 14 GetRecordKeyList",
+      "role": "Enumerate record keys from registered databases",
+      "status": "INFERRED",
+      "sources": ["ghidra:decompile_function", "ghidra:IResourceManager__vftable"]
+    },
+    {
+      "id": "FN-008E0C10",
+      "address": "0x008E0C10",
+      "name": "cResourceManager vtable slot 15 GetRecordKeyList2 entry",
+      "role": "Record-key enumeration implementation; SDK-named body is separately anchored at 0x008E0EE0",
+      "status": "INFERRED",
+      "sources": ["ghidra:disassemble_bytes(0x008E0C10)", "knowledgegraph/research/global-campaign-2026/track-k-engine-boundaries.json:313-323"]
+    },
+    {
+      "id": "FN-008E0D30",
+      "address": "0x008E0D30",
+      "name": "cResourceManager vtable slot 20 RegisterDatabase",
+      "role": "Register a DatabaseDirectoryFiles/DatabasePackedFile source",
+      "status": "INFERRED",
+      "sources": ["ghidra:disassemble_bytes(0x008E0D30)", "ghidra:IResourceManager__vftable"]
+    },
+    {
+      "id": "FN-008E0EE0",
+      "address": "0x008E0EE0",
+      "name": "Resource::cResourceManager::GetRecordKeyList2",
+      "role": "SDK-named record-key enumeration body",
+      "status": "VERIFIED",
+      "sources": ["ghidra:search_functions", "ghidra:decompile_function"]
+    },
+    {
+      "id": "FN-008E1480",
+      "address": "0x008E1480",
+      "name": "cResourceManager vtable slot 32 SetKeyName wrapper",
+      "role": "Attach filename/name to ResourceKey",
+      "status": "INFERRED",
+      "sources": ["ghidra:IResourceManager__vftable", "ghidra:read_memory(0x01436ae8)"]
+    },
+    {
+      "id": "FN-008E1750",
+      "address": "0x008E1750",
+      "name": "Resource::cResourceManager::SetKeyName",
+      "role": "Update filename mapping and notify/refresh dependent manager state",
+      "status": "VERIFIED",
+      "sources": ["ghidra:decompile_function", "ghidra:search_functions"]
+    },
+    {
+      "id": "FN-008E1930",
+      "address": "0x008E1930",
+      "name": "cResourceManager vtable slot 9 SetTypeMapping",
+      "role": "Register resource-type/record-type mapping entries",
+      "status": "INFERRED",
+      "sources": ["ghidra:decompile_function", "ghidra:IResourceManager__vftable"]
+    },
+    {
+      "id": "FN-008E1A50",
+      "address": "0x008E1A50",
+      "name": "cResourceManager vtable slot 17 RegisterFactory entry",
+      "role": "Register or remove an IResourceFactory",
+      "status": "INFERRED",
+      "sources": ["ghidra:decompile_function", "ghidra:IResourceManager__vftable"]
+    },
+    {
+      "id": "FN-008E1D20",
+      "address": "0x008E1D20",
+      "name": "Resource::cResourceManager::RegisterFactory",
+      "role": "SDK-named factory registration body",
+      "status": "VERIFIED",
+      "sources": ["ghidra:decompile_function", "ghidra:search_functions"]
+    },
+    {
+      "id": "FN-008E1D50",
+      "address": "0x008E1D50",
+      "name": "cResourceManager vtable slot 25 RegisterCache",
+      "role": "Register a cache backend/object",
+      "status": "INFERRED",
+      "sources": ["ghidra:IResourceManager__vftable", "ghidra:read_memory(0x01436ae8)"]
+    },
+    {
+      "id": "FN-008E22A0",
+      "address": "0x008E22A0",
+      "name": "cResourceManager destructor / vtable slot 0",
+      "role": "Destroy manager-owned containers and release resources",
+      "status": "VERIFIED",
+      "sources": ["ghidra:read_memory(0x01436ae8)", "ghidra:decompile_function"]
+    },
+    {
+      "id": "FN-008E1700",
+      "address": "0x008E1700",
+      "name": "cResourceManager vtable slot 2 Dispose",
+      "role": "Clear manager-owned cache/factory/notification state",
+      "status": "INFERRED",
+      "sources": ["ghidra:decompile_function", "ghidra:read_memory(0x01436ae8)"]
+    },
+    {
+      "id": "FN-00E4CCE0",
+      "address": "0x00E4CCE0",
+      "name": "FUN_00E4CCE0",
+      "role": "Return a central ResourceKey from DAT_015A758C indexed table",
+      "status": "VERIFIED",
+      "sources": ["ghidra:decompile_function", "ghidra:get_function_by_address"]
+    },
+    {
+      "id": "FN-00E4CDE0",
+      "address": "0x00E4CDE0",
+      "name": "FUN_00E4CDE0",
+      "role": "Initialize CellGame data references from DAT_015A7584 table and CellGame/ namespace",
+      "status": "VERIFIED",
+      "sources": ["ghidra:decompile_function", "ghidra:search_strings(CellGame/)"]
+    },
+    {
+      "id": "FN-00E4CE20",
+      "address": "0x00E4CE20",
+      "name": "Simulator::Cell::GetGlobalsData",
+      "role": "Initialize CellGame globals context and obtain the globals resource",
+      "status": "VERIFIED",
+      "sources": ["ghidra:decompile_function", "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json:441-445"]
+    },
+    {
+      "id": "FN-00E4FC20",
+      "address": "0x00E4FC20",
+      "name": "FUN_00E4FC20",
+      "role": "Recursively preload referenced Cell resources",
+      "status": "VERIFIED",
+      "sources": ["ghidra:decompile_function", "ghidra:get_function_callers"]
+    },
+    {
+      "id": "FN-00E5C780",
+      "address": "0x00E5C780",
+      "name": "map_int_whatever_find",
+      "role": "High-fan-in integer map lookup used by Cell preload/model-key paths",
+      "status": "INFERRED",
+      "sources": ["ghidra:search_functions", "knowledgegraph/triage/reconstruction-readiness-f0e310e0.json:116-127", "docs/analysis/simulator-shared-state-interface.md:300-320"]
+    },
+    {
+      "id": "FN-00E64980",
+      "address": "0x00E64980",
+      "name": "Simulator::Cell::cCellGFX::PreloadCreature",
+      "role": "Construct a creature/model reference and append it to cCellGFX preload state",
+      "status": "VERIFIED",
+      "sources": ["ghidra:decompile_function", "docs/analysis/campaigns/cell-stage-campaign.md:455-465"]
+    },
+    {
+      "id": "FN-00E653A0",
+      "address": "0x00E653A0",
+      "name": "Simulator::Cell::cCellGFX::AddPreloadedModel2",
+      "role": "Add model variant to preload state",
+      "status": "VERIFIED",
+      "sources": ["ghidra:search_functions", "ghidra:get_function_callers"]
+    },
+    {
+      "id": "FN-00E65410",
+      "address": "0x00E65410",
+      "name": "Simulator::Cell::cCellGFX::AddPreloadedModel",
+      "role": "Add model to preload state and manage pending count",
+      "status": "VERIFIED",
+      "sources": ["ghidra:decompile_function", "ghidra:get_function_callers"]
+    },
+    {
+      "id": "FN-00E655C0",
+      "address": "0x00E655C0",
+      "name": "FUN_00E655C0",
+      "role": "Map-backed model-key helper used by GetModelKeyForCellResource",
+      "status": "INFERRED",
+      "sources": ["ghidra:decompile_function", "ghidra:get_function_callers"]
+    },
+    {
+      "id": "FN-00E65640",
+      "address": "0x00E65640",
+      "name": "Simulator::Cell::GetModelKeyForCellResource",
+      "role": "Derive model ResourceKey from a cCellCellResource reference",
+      "status": "VERIFIED",
+      "sources": ["ghidra:decompile_function", "docs/analysis/campaigns/cell-stage-campaign.md:438-447"]
+    },
+    {
+      "id": "FN-00E65970",
+      "address": "0x00E65970",
+      "name": "Simulator::Cell::cCellGFX::AddPreloadedTexture",
+      "role": "Add texture to cCellGFX preload state",
+      "status": "VERIFIED",
+      "sources": ["ghidra:search_functions", "ghidra:get_function_callers"]
+    },
+    {
+      "id": "FN-00E66280",
+      "address": "0x00E66280",
+      "name": "Simulator::Cell::cCellGFX::AddPreloadedEffect",
+      "role": "Add visual effect to cCellGFX preload state",
+      "status": "VERIFIED",
+      "sources": ["ghidra:search_functions", "ghidra:get_function_callers"]
+    },
+    {
+      "id": "FN-00E663B0",
+      "address": "0x00E663B0",
+      "name": "Simulator::Cell::cCellGFX::PreloadCellResource",
+      "role": "Walk Cell resource references and preload model/effect/creature dependencies",
+      "status": "VERIFIED",
+      "sources": ["ghidra:decompile_function", "ghidra:get_function_callers"]
+    },
+    {
+      "id": "FN-00E665C0",
+      "address": "0x00E665C0",
+      "name": "Simulator::Cell::cCellGFX::PreloadPopulateResource",
+      "role": "Walk populate markers and recursively preload cell/effect resources",
+      "status": "VERIFIED",
+      "sources": ["ghidra:decompile_function", "ghidra:get_function_callers"]
+    },
+    {
+      "id": "FN-00E666F0",
+      "address": "0x00E666F0",
+      "name": "Simulator::Cell::cCellGFX::PreloadResources",
+      "role": "Entry preload graph: central cell refs, populate refs, and effect maps",
+      "status": "VERIFIED",
+      "sources": ["ghidra:decompile_function", "ghidra:get_function_callers", "docs/analysis/campaigns/cell-stage-campaign.md:455-465"]
+    },
+    {
+      "id": "FN-00E66840",
+      "address": "0x00E66840",
+      "name": "Simulator::Cell::cCellGFX::InstanceEffectOnCell",
+      "role": "Create/place a visual effect instance using cell transform and effect ID",
+      "status": "VERIFIED",
+      "sources": ["ghidra:decompile_function", "docs/analysis/campaigns/cell-stage-campaign.md:502-508"]
+    },
+    {
+      "id": "FN-00E6D200",
+      "address": "0x00E6D200",
+      "name": "Simulator::Cell::PlayAnimation",
+      "role": "Update cell animation target/current state and blend weights",
+      "status": "VERIFIED",
+      "sources": ["ghidra:decompile_function", "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json:423-433"]
+    },
+    {
+      "id": "FN-00E74A20",
+      "address": "0x00E74A20",
+      "name": "Simulator::Cell::CreateCellObject",
+      "role": "Allocate/fill a cell object from a resource key, position, scale, and orientation",
+      "status": "VERIFIED",
+      "sources": ["ghidra:search_functions", "docs/analysis/campaigns/cell-stage-campaign.md:386-393"]
+    },
+    {
+      "id": "FN-00E80BA0",
+      "address": "0x00E80BA0",
+      "name": "Simulator::Cell::cCellGame::Initialize",
+      "role": "Initialize CellGame state, 4096 pool, current world/background, and gameplay services",
+      "status": "VERIFIED",
+      "sources": ["ghidra:decompile_function", "docs/analysis/campaigns/cell-stage-campaign.md:357-367"]
+    },
+    {
+      "id": "FN-00E819B0",
+      "address": "0x00E819B0",
+      "name": "FUN_00E819B0",
+      "role": "Cell lifecycle helper: data refs, cCellGFX Initialize/PreloadResources, UI Load, CellGame Initialize",
+      "status": "VERIFIED",
+      "sources": ["ghidra:decompile_function", "ghidra:get_function_callers"]
+    },
+    {
+      "id": "FN-00E81CF0",
+      "address": "0x00E81CF0",
+      "name": "App::cCellModeStrategy::Initialize",
+      "role": "Allocate/establish sCellGame, sCellGFX, sCellUI and mode state",
+      "status": "VERIFIED",
+      "sources": ["ghidra:decompile_function", "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json:493-501"]
+    },
+    {
+      "id": "FN-00E552F0",
+      "address": "0x00E552F0",
+      "name": "App::cCellModeStrategy::OnEnter",
+      "role": "Start Cell display and activate mode/game services",
+      "status": "VERIFIED",
+      "sources": ["ghidra:decompile_function", "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json:511-519"]
+    },
+    {
+      "id": "FN-00E55120",
+      "address": "0x00E55120",
+      "name": "Simulator::Cell::cCellGFX::StartDisplay",
+      "role": "Enable lighting/world/shadow/effect state and initialize presentation audio hooks",
+      "status": "VERIFIED",
+      "sources": ["ghidra:decompile_function", "docs/analysis/campaigns/cell-stage-campaign.md:455-465"]
+    },
+    {
+      "id": "FN-00E7FC00",
+      "address": "0x00E7FC00",
+      "name": "App::cCellModeStrategy::OnExit",
+      "role": "Restore Cell globals, tear down gameplay/effect state, and disable Cell mode",
+      "status": "VERIFIED",
+      "sources": ["ghidra:decompile_function", "docs/analysis/campaigns/cell-stage-campaign.md:475-485"]
+    },
+    {
+      "id": "FN-00E81F30",
+      "address": "0x00E81F30",
+      "name": "App::cCellModeStrategy::Dispose",
+      "role": "Release CellGame/CellGFX/CellUI objects and reset graphics state",
+      "status": "VERIFIED",
+      "sources": ["ghidra:decompile_function", "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json:501-509"]
+    },
+    {
+      "id": "FN-00E821D0",
+      "address": "0x00E821D0",
+      "name": "FUN_00E821D0",
+      "role": "Serializer/resource resolution helper used by lazy CellDataReference loading",
+      "status": "INFERRED",
+      "sources": ["ghidra:decompile_function", "ghidra:get_function_callers"]
+    },
+    {
+      "id": "FN-00E822C0",
+      "address": "0x00E822C0",
+      "name": "FUN_00E822C0",
+      "role": "Lazy CellDataReference load: release old pointer, resolve resource, report failure",
+      "status": "INFERRED",
+      "sources": ["ghidra:decompile_function", "ghidra:get_function_callers"]
+    },
+    {
+      "id": "FN-00E823A0",
+      "address": "0x00E823A0",
+      "name": "FUN_00E823A0",
+      "role": "Acquire/increment a CellDataReference and resolve its resource on null",
+      "status": "VERIFIED",
+      "sources": ["ghidra:decompile_function", "ghidra:get_function_callers"]
+    },
+    {
+      "id": "FN-00E82420",
+      "address": "0x00E82420",
+      "name": "Simulator::Cell::cCellDataReference_::Create",
+      "role": "Find or create cached (instanceID, serializer) Cell data reference",
+      "status": "VERIFIED",
+      "sources": ["ghidra:decompile_function", "ghidra:get_function_callers"]
+    }
+  ],
+  "lifecycle": {
+    "manager": {
+      "status": "INFERRED",
+      "ordered_steps": {
+        "01_construct": {
+          "address": "0x008E22A0",
+          "symbol": "cResourceManager destructor/vtable slot 0",
+          "operation": "Initialize vtable/container state for manager-owned maps, lists, mutexes, and cache/factory slots.",
+          "status": "INFERRED"
+        },
+        "02_initialize": {
+          "address": "0x008DE530",
+          "symbol": "Resource::cResourceManager::Initialize",
+          "operation": "Build/rebuild a modulo-bucket hash/index structure; helper FUN_008DED00 inserts and can trigger rehash.",
+          "status": "VERIFIED"
+        },
+        "03_register_databases": {
+          "address": "0x008E0D30",
+          "symbol": "cResourceManager::RegisterDatabase vtable entry",
+          "operation": "Register DatabasePackedFile and DatabaseDirectoryFiles sources in manager database state.",
+          "status": "INFERRED"
+        },
+        "04_register_factories": {
+          "address": "0x008E1A50 / 0x008E1D20",
+          "symbol": "RegisterFactory vtable entry / SDK-named body",
+          "operation": "Associate resource types with IResourceFactory objects and supported type sets.",
+          "status": "INFERRED"
+        },
+        "05_key_lookup": {
+          "address": "0x008DF9B0",
+          "symbol": "cResourceManager::FindRecord",
+          "operation": "Resolve ResourceKey identity through registered database/factory state; the shared loader first calls FUN_008DE9D0 and then dispatches factory/read paths.",
+          "status": "INFERRED"
+        },
+        "06_load_and_cache": {
+          "address": "0x008DF0B0",
+          "symbol": "Shared resource load body",
+          "operation": "Use existing lookup when available; otherwise dispatch factory read/create, populate the typed object, and hand off to cache/release paths.",
+          "status": "INFERRED"
+        },
+        "07_cache_query": {
+          "address": "0x008DE280 / 0x008DE3B0 / 0x008DE400",
+          "symbol": "GetLoadedResource / CacheResource / FlushCache vtable entries",
+          "operation": "Query, retain, and flush loaded resource state. mCacheVector is at cResourceManager+0x9C; exact eviction and ownership are not fully recovered.",
+          "status": "INFERRED"
+        },
+        "08_dispose": {
+          "address": "0x008E1700 / 0x008E22A0",
+          "symbol": "cResourceManager Dispose / destructor",
+          "operation": "Release manager-owned cache, factory, notification, mapping, and database state.",
+          "status": "INFERRED"
+        }
+      }
+    },
+    "cell": {
+      "status": "INFERRED",
+      "ordered_steps": {
+        "01_mode_initialize": {
+          "address": "0x00E81CF0",
+          "symbol": "App::cCellModeStrategy::Initialize",
+          "operation": "Allocate/establish sCellGame, sCellGFX, sCellUI and initialize mode state.",
+          "status": "VERIFIED"
+        },
+        "02_cell_data_refs": {
+          "address": "0x00E4CDE0 / 0x00E4CE20",
+          "symbol": "FUN_00E4CDE0 / Simulator::Cell::GetGlobalsData",
+          "operation": "Create central CellDataReference entries from the CellGame/ namespace/key table and obtain globals.",
+          "status": "VERIFIED"
+        },
+        "03_gfx_initialize": {
+          "address": "0x00E5DBA0",
+          "symbol": "Simulator::Cell::cCellGFX::Initialize",
+          "operation": "Create world/layer/shadow/lighting handles, including CellGame-Main and CellGame-Background.",
+          "status": "VERIFIED"
+        },
+        "04_preload": {
+          "address": "0x00E666F0",
+          "symbol": "Simulator::Cell::cCellGFX::PreloadResources",
+          "operation": "Walk central cell and populate references, recursively preload cell dependencies, effects, textures, and creatures.",
+          "status": "VERIFIED"
+        },
+        "05_game_initialize": {
+          "address": "0x00E80BA0",
+          "symbol": "Simulator::Cell::cCellGame::Initialize",
+          "operation": "Initialize 4096-cell pool, current world/background references, timing, collectable state, and service hooks.",
+          "status": "VERIFIED"
+        },
+        "06_enter": {
+          "address": "0x00E552F0",
+          "symbol": "App::cCellModeStrategy::OnEnter",
+          "operation": "Reset mode/UI flags, call cCellGFX::StartDisplay, and activate gameplay/presentation services.",
+          "status": "VERIFIED"
+        },
+        "07_update_and_gameplay": {
+          "address": "0x00E80980 / 0x00E806B0 / 0x00E5B790",
+          "symbol": "cCellModeStrategy::Update / FUN_00E806B0 / MovePlayerToMousePosition",
+          "operation": "Per-frame Cell update, movement target/orientation/moving writes, pool/query/gameplay use.",
+          "status": "INFERRED"
+        },
+        "08_effect_and_animation": {
+          "address": "0x00E66840 / 0x00E6D200",
+          "symbol": "InstanceEffectOnCell / PlayAnimation",
+          "operation": "Bind effects to cell transform and update animation target/current state for gameplay events.",
+          "status": "VERIFIED"
+        },
+        "09_exit_dispose": {
+          "address": "0x00E7FC00 / 0x00E81F30",
+          "symbol": "cCellModeStrategy::OnExit / Dispose",
+          "operation": "Restore globals, release gameplay/presentation state, and free Cell singleton objects.",
+          "status": "VERIFIED"
+        }
+      }
+    },
+    "runtime_ownership": [
+      {
+        "id": "OWN-CRM",
+        "object": "Resource::cResourceManager",
+        "owns": ["factory registry", "database registry", "type/name maps", "filename/extension maps", "cache vector", "mutexes"],
+        "released_by": ["cResourceManager Dispose @ 0x008E1700", "cResourceManager destructor @ 0x008E22A0"],
+        "status": "INFERRED",
+        "sources": ["ghidra:get_struct_layout(cResourceManager)", "ghidra:get_struct_layout(IResourceManager__vftable)"]
+      },
+      {
+        "id": "OWN-DBPF",
+        "object": "Resource::DatabasePackedFile",
+        "owns": ["file path/stream", "current record stream", "index", "record map", "index/read-write mutexes"],
+        "released_by": ["DatabasePackedFile Dispose/Close path", "PFRecordRead/PFRecordWrite lifecycle"],
+        "status": "INFERRED",
+        "sources": ["ghidra:get_struct_layout(DatabasePackedFile)", "ghidra:get_struct_layout(PFRecordRead)"]
+      },
+      {
+        "id": "OWN-DIRECTORY",
+        "object": "Resource::DatabaseDirectoryFiles",
+        "owns": ["extension map", "record-list data map", "default group", "filename-to-key converter", "mutex"],
+        "released_by": ["DatabaseDirectoryFiles::Dispose @ 0x008D60D0", "CloseRecord @ 0x008D69F0"],
+        "status": "INFERRED",
+        "sources": ["ghidra:get_struct_layout(DatabaseDirectoryFiles)", "ghidra:search_functions"]
+      },
+      {
+        "id": "OWN-CELL-REF",
+        "object": "cCellDataReference_",
+        "owns": ["instance ID", "serializer association", "resolved resource intrusive pointer", "reference counter"],
+        "released_by": ["FUN_00E822C0 release path", "cCellGFX/CellGame lifecycle teardown"],
+        "status": "INFERRED",
+        "sources": ["ghidra:get_struct_layout(cCellDataReference_)", "ghidra:FUN_00e822c0@0x00e822c0"]
+      },
+      {
+        "id": "OWN-CELL-GFX",
+        "object": "Simulator::Cell::cCellGFX",
+        "owns": ["preloaded model/texture/creature vectors", "effect/model/animation worlds", "CellGFX object pool", "effect instances", "audio tracks"],
+        "released_by": ["cCellModeStrategy::OnExit/Dispose", "cCellGFX destructor/cleanup helpers"],
+        "status": "INFERRED",
+        "sources": ["ghidra:get_struct_layout(cCellGFX)", "ghidra:App::cCellModeStrategy::Dispose@0x00e81f30"]
+      },
+      {
+        "id": "OWN-CELL-GAME",
+        "object": "Simulator::Cell::cCellGame",
+        "owns": ["4096-cell object pool", "current world/background references", "query/pool state", "cell runtime flags"],
+        "released_by": ["cCellModeStrategy::Dispose", "CellGame/pool teardown helpers"],
+        "status": "INFERRED",
+        "sources": ["ghidra:Simulator::Cell::cCellGame::Initialize@0x00e80ba0", "docs/analysis/campaigns/cell-stage-campaign.md:357-375"]
+      }
+    ],
+    "event_chains": {
+      "central_cell_content": {
+        "status": "INFERRED",
+        "ordered_steps": {
+          "01_record": {
+            "asset": "DBPF record (type/group/instance)",
+            "lookup": "ResourceKey -> DatabasePackedFile/PFIndexModifiable -> RecordInfo",
+            "status": "INFERRED"
+          },
+          "02_reference": {
+            "asset": "cCellDataReference_",
+            "operation": "instanceID + CellSerializer -> lazy/resolved cCellResource",
+            "addresses": ["0x00E82420", "0x00E823A0", "0x00E822C0"],
+            "status": "VERIFIED"
+          },
+          "03_typed_cell": {
+            "asset": "cCellCellResource / cCellWorldResource / cCellPopulateResource / cCellStructureResource / cCellLootTableResource / look/effect resources",
+            "operation": "Parse/validate hard references and retain soft IDs as soft IDs",
+            "status": "VERIFIED"
+          },
+          "04_model_key": {
+            "asset": "GMDL model ResourceKey",
+            "operation": "GetModelKeyForCellResource selects a key from cell entry variants/map/current state",
+            "address": "0x00E65640",
+            "status": "INFERRED"
+          },
+          "05_preload": {
+            "asset": "Models, textures, effects, creatures, populate dependencies",
+            "operation": "cCellGFX::PreloadResources recursively binds typed resources to preload state",
+            "addresses": ["0x00E666F0", "0x00E663B0", "0x00E665C0", "0x00E64980"],
+            "status": "VERIFIED"
+          },
+          "06_world_state": {
+            "asset": "cCellGFX world/layer handles and cCellGame current world/background",
+            "operation": "Initialize/StartDisplay and CellGame pool/current-world state",
+            "addresses": ["0x00E5DBA0", "0x00E55120", "0x00E80BA0"],
+            "status": "INFERRED"
+          },
+          "07_gameplay": {
+            "asset": "cCellObjectData",
+            "operation": "CreateCellObject binds resource/model/size/scale/query state; movement, combat, animation, and effects consume it",
+            "addresses": ["0x00E74A20", "0x00E5B790", "0x00E58980", "0x00E57460", "0x00E6D200", "0x00E66840"],
+            "status": "INFERRED"
+          },
+          "08_event": {
+            "asset": "Gameplay event/state transition",
+            "operation": "Original event/message ABI and live trace remain unresolved; current OpenSpore SimEvent is only a local deterministic contract",
+            "status": "UNKNOWN"
+          }
+        }
+      },
+      "geometry_texture": {
+        "status": "INFERRED",
+        "ordered_steps": {
+          "01_model_key": {"asset": "GMDL ResourceKey", "operation": "Cell model identity", "status": "INFERRED"},
+          "02_provider_fetch": {"asset": "B1 IResourceProvider.fetch", "operation": "Current OpenSpore gets record bytes by type/group/instance", "source": "src/compat/ResourceProvider.hpp:24-59", "status": "VERIFIED"},
+          "03_gmdl": {"asset": "GMDL v8 bytes", "operation": "Current parser walks geometry/material/texture-set and produces Mesh", "source": "docs/ASSET-PATH.md:37-51", "status": "VERIFIED"},
+          "04_texture": {"asset": "Raster/DXT5 bytes", "operation": "Current parser decodes mips and submits host texture", "source": "docs/BOUNDARIES.md:40-46", "status": "VERIFIED"},
+          "05_render": {"asset": "IRenderer/IMeshSource handles", "operation": "Current vertical slice uploads/draws; original RenderWare/material ownership is not replaced", "source": "docs/BOUNDARIES.md:89-112", "status": "VERIFIED"}
+        }
+      }
+    }
+  },
+  "persistence": {
+    "package_records": [
+      {
+        "id": "PERSIST-DBPF",
+        "record": "DBPF v3 package image",
+        "fields": ["header", "index count/offset", "28-byte index row", "stored extent", "decompressed size", "compression flag"],
+        "identity": "type/group/instance",
+        "status": "VERIFIED",
+        "sources": ["src/assets/Dbpf.hpp:16-46", "src/assets/Dbpf.cpp:37-101", "docs/ASSET-PATH.md:29-36"]
+      },
+      {
+        "id": "PERSIST-QFS",
+        "record": "QFS-compressed record payload",
+        "fields": ["10FB header", "decompressed size", "control/literal/back-reference stream"],
+        "status": "VERIFIED",
+        "sources": ["docs/ASSET-PATH.md:34-36", "src/assets/Dbpf.cpp:103-198"]
+      },
+      {
+        "id": "PERSIST-RECORD-INFO",
+        "record": "PFRecordRead/RecordInfo state",
+        "fields": ["chunkOffset", "compressedSize", "memorySize", "flags", "isSaved", "mnOffset", "mnSize", "mnStreamRefCount"],
+        "status": "VERIFIED",
+        "sources": ["ghidra:get_struct_layout(RecordInfo)", "ghidra:get_struct_layout(PFRecordRead)"]
+      }
+    ],
+    "manager_state": [
+      {
+        "id": "MANAGER-FACTORIES",
+        "state": "mResourceFactories @ 0x30",
+        "meaning": "Resource type to intrusive IResourceFactory list/vector map",
+        "status": "INFERRED",
+        "sources": ["ghidra:get_struct_layout(cResourceManager)", "ghidra:get_struct_layout(IResourceFactory)"]
+      },
+      {
+        "id": "MANAGER-TYPE-MAPS",
+        "state": "mResourceTypeToRecordType @ 0x54 and mRecordTypeToResourceType @ 0x78",
+        "meaning": "Bidirectional type translation between resource factories and record IDs",
+        "status": "INFERRED",
+        "sources": ["ghidra:get_struct_layout(cResourceManager)", "ghidra:get_struct_layout(IResourceManager__vftable)"]
+      },
+      {
+        "id": "MANAGER-NAMES",
+        "state": "mFilenameMapping @ 0xF4 and mExtensionMappings @ 0xB0",
+        "meaning": "ResourceKey/name and extension/type lookup support",
+        "status": "INFERRED",
+        "sources": ["ghidra:get_struct_layout(cResourceManager)", "ghidra:get_struct_layout(DatabaseDirectoryFiles)"]
+      },
+      {
+        "id": "MANAGER-CACHE",
+        "state": "mCacheVector @ 0x9C",
+        "meaning": "Loaded resource cache vector; GetLoadedResource/CacheResource/FlushCache operate on manager cache state",
+        "status": "INFERRED",
+        "sources": ["ghidra:get_struct_layout(cResourceManager)", "ghidra:decompile_function(0x008DE280)", "ghidra:IResourceManager__vftable"]
+      },
+      {
+        "id": "MANAGER-DATABASES",
+        "state": "field_2C @ 0x2C and database vtable paths",
+        "meaning": "Registered database source list/bridge; exact traversal and package priority are not fully recovered",
+        "status": "UNKNOWN",
+        "sources": ["ghidra:get_struct_layout(cResourceManager)", "ghidra:disassemble_bytes(0x008E0D30)"]
+      }
+    ],
+    "reference_state": [
+      {
+        "id": "REF-CELL-DATA",
+        "state": "cCellDataReference_ mInstanceID/mpSerializer/mpResource/mCounter",
+        "meaning": "Lazy typed resource reference with cache identity and lifetime counter",
+        "status": "VERIFIED",
+        "sources": ["ghidra:get_struct_layout(cCellDataReference_)", "ghidra:Simulator::Cell::cCellDataReference_::Create@0x00e82420"]
+      },
+      {
+        "id": "REF-CELL-PRELOAD",
+        "state": "cCellGFX mPreloadedModels/mPreloadedTextures/mPreloadedCreatures and world pointers",
+        "meaning": "Presentation-side typed handles retained by the Cell GFX owner",
+        "status": "VERIFIED",
+        "sources": ["ghidra:get_struct_layout(cCellGFX)", "ghidra:Simulator::Cell::cCellGFX::PreloadResources@0x00e666f0"]
+      }
+    ],
+    "property_serialization": {
+      "status": "UNKNOWN",
+      "boundary": "App::Property/PropertyList/DirectPropertyList are a separate persistence substrate; no resource-manager property round-trip was recovered here.",
+      "sources": ["docs/RECON-3.1.0.22.md:48-61", "docs/BOUNDARIES.md:140-146"]
+    }
+  },
+  "openspore_comparison": {
+    "resource_provider": {
+      "original": {
+        "status": "INFERRED",
+        "contract": "cResourceManager + registered DatabasePackedFile/DatabaseDirectoryFiles + IResourceFactory + cache/name/type registries",
+        "addresses": ["0x008DE530", "0x008DF0B0", "0x01436AE8", "0x014367E0"],
+        "sources": ["ghidra:get_struct_layout(cResourceManager)", "ghidra:get_struct_layout(DatabasePackedFile)", "ghidra:get_struct_layout(DatabaseDirectoryFiles)"]
+      },
+      "openspore": {
+        "status": "VERIFIED",
+        "contract": "IResourceProvider.fetch(type,group,instance,out,error); DbpfResourceProvider reparses one borrowed package index per fetch; MemoryResourceProvider supplies deterministic bytes",
+        "addresses": ["src/compat/ResourceProvider.hpp:24-59", "src/compat/ResourceProvider.hpp:61-88"],
+        "sources": ["src/compat/ResourceProvider.hpp:24-88", "docs/BOUNDARIES.md:48-69"]
+      },
+      "missing": ["multi-package mount/priority", "database registration and directory mapping", "factory registration", "cache/reload/flush", "name/extension/type mappings", "reference-counted original resource objects", "async ownership", "property substrate"],
+      "status": "VERIFIED"
+    },
+    "dbpf_lookup": {
+      "original": {
+        "status": "INFERRED",
+        "contract": "DatabasePackedFile index and PFIndexModifiable support indexed record lookup, integrity checks, record streams, and registered database sources.",
+        "addresses": ["0x008D84D0", "0x008D9320", "0x008DBC20", "0x008DCE80"],
+        "sources": ["ghidra:get_struct_layout(DatabasePackedFile)", "ghidra:get_struct_layout(PFIndexModifiable)"]
+      },
+      "openspore": {
+        "status": "VERIFIED",
+        "contract": "parseDbpfIndex -> DbpfEntry vector; findDbpfEntry performs a linear exact type/group/instance scan; extractDbpfRecord validates extent and QFS size",
+        "addresses": ["src/assets/Dbpf.cpp:37-101", "src/assets/Dbpf.cpp:200-234"],
+        "sources": ["src/assets/Dbpf.hpp:16-46", "src/assets/Dbpf.cpp:37-234"]
+      },
+      "comparison": "The byte format and record identity are bounded-compatible; the original registry/search/cache orchestration is not represented by the current linear provider.",
+      "status": "VERIFIED"
+    },
+    "cell_references": {
+      "original": {
+        "status": "VERIFIED",
+        "contract": "cCellDataReference_ caches by instanceID+serializer, lazily resolves resource, and is consumed by CellGFX/CellGame paths.",
+        "addresses": ["0x00E82420", "0x00E823A0", "0x00E822C0", "0x00E4CDE0"],
+        "sources": ["ghidra:get_struct_layout(cCellDataReference_)", "ghidra:Simulator::Cell::cCellDataReference_::Create@0x00e82420"]
+      },
+      "openspore": {
+        "status": "INFERRED",
+        "contract": "Typed CellResource value objects validate hard references and are passed explicitly to host scene/sim code; there is no equivalent lazy serializer-backed reference object.",
+        "addresses": ["src/assets/CellResource.hpp:124-480", "src/sim/CellGame.cpp:22-80", "src/apps/cell_stage.cpp:1354-1400"],
+        "sources": ["src/assets/CellResource.hpp:124-480", "src/sim/CellGame.cpp:22-80", "docs/analysis/campaigns/cell-stage-campaign.md:409-419"]
+      },
+      "missing": ["serializer-backed resource resolution", "reference cache identity/lifetime", "soft-ID versus hard-reference runtime distinction", "lazy failure event"],
+      "status": "INFERRED"
+    },
+    "preload_and_worlds": {
+      "original": {
+        "status": "VERIFIED",
+        "contract": "cCellGFX owns typed preload vectors and world/layer pointers; recursive preload walks Cell/populate/effect references; OnEnter starts display.",
+        "addresses": ["0x00E5DBA0", "0x00E666F0", "0x00E663B0", "0x00E665C0", "0x00E55120"],
+        "sources": ["ghidra:get_struct_layout(cCellGFX)", "ghidra:Simulator::Cell::cCellGFX::PreloadResources@0x00e666f0", "docs/analysis/campaigns/cell-stage-campaign.md:455-465"]
+      },
+      "openspore": {
+        "status": "VERIFIED",
+        "contract": "CellGfx::initialize creates clean-room integer world tokens; preloadResources stores model/populate key pairs; startDisplay toggles a boolean; cell_stage directly extracts/parses scene GMDL records.",
+        "addresses": ["src/apps/CellGfx.cpp:5-44", "src/apps/CellGfx.hpp:1-78", "src/apps/cell_stage.cpp:1354-1400"],
+        "sources": ["src/apps/CellGfx.cpp:5-44", "src/apps/CellGfx.hpp:1-11", "src/apps/cell_stage.cpp:109-123"]
+      },
+      "missing": ["typed Graphics::Model/Texture/AnimatedCreature ownership", "preload pending/wait semantics", "recursive resource effect graph", "world/layer object lifetime", "exact original preload order at runtime"],
+      "status": "INFERRED"
+    },
+    "gameplay_handoff": {
+      "original": {
+        "status": "INFERRED",
+        "contract": "Cell resource references feed cCellGame pool/query state, cCellObjectData model/resource fields, movement, combat, animation, and effects.",
+        "addresses": ["0x00E74A20", "0x00E80BA0", "0x00E5B790", "0x00E58980", "0x00E57460", "0x00E6D200", "0x00E66840"],
+        "sources": ["docs/analysis/campaigns/cell-stage-campaign.md:357-419", "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json:423-480"]
+      },
+      "openspore": {
+        "status": "VERIFIED",
+        "contract": "Typed CellResource decoders, CellGame static reconstruction, CellSim events, CellGfx handles, and SceneConfig keys form a deterministic host-side vertical slice; original runtime ABI is not claimed.",
+        "addresses": ["src/assets/CellResource.cpp:727-1179", "src/sim/Sim.cpp:103-282", "src/apps/CellGfx.cpp:5-44"],
+        "sources": ["src/assets/CellResource.cpp:727-1179", "src/sim/Sim.cpp:103-282", "docs/CELLSTAGE-VALIDATION.md"]
+      },
+      "missing": ["live original Cell resource-load event trace", "runtime ownership correlation", "original event/message ABI", "player identity and procedural placement validation"],
+      "status": "INFERRED"
+    }
+  },
+  "gaps": [
+    {
+      "id": "GAP-01-MULTI-PACKAGE-ORDER",
+      "gap": "Exact package/database registration order and search priority across Spore_Content, Spore_Game, Graphics, patch, and other packages.",
+      "impact": "Cannot reproduce original first-match or last-match behavior when the same type/group/instance exists in multiple sources.",
+      "next_evidence": "Hash-pinned menu-transition trace plus a multi-package identity collision inventory.",
+      "status": "UNKNOWN",
+      "sources": ["docs/BOUNDARIES.md:48-69", "docs/analysis/campaigns/cell-stage-campaign.md:455-465"]
+    },
+    {
+      "id": "GAP-02-CACHE-EVICTION",
+      "gap": "Cache insertion, eviction, reload, flush, and exact reference-count rules for typed ResourceObject/PFRecordRead handles.",
+      "impact": "Cannot reproduce memory/lifetime behavior or stale-resource invalidation.",
+      "next_evidence": "Characterize CacheResource/FlushCache/FindCache and ResourceObject/PFRecordRead call paths; runtime lifetime trace if semantics matter.",
+      "status": "UNKNOWN",
+      "sources": ["ghidra:get_struct_layout(cResourceManager)", "ghidra:get_struct_layout(IResourceManager__vftable)"]
+    },
+    {
+      "id": "GAP-03-DIRECTORY-MAPPING",
+      "gap": "DatabaseDirectoryFiles extension/filename/default-group mapping update and lookup precedence.",
+      "impact": "Cannot reproduce non-DBPF name-to-key resolution or extension aliases.",
+      "next_evidence": "Read-only vtable/body characterization for AddExtensionMapping, UpdateRecordData, GetTypeFromTypename, GetFileNameFromKey, and SetDefaultGroupId.",
+      "status": "UNKNOWN",
+      "sources": ["ghidra:get_struct_layout(DatabaseDirectoryFiles)", "ghidra:get_struct_layout(DatabaseDirectoryFiles__vftable)"]
+    },
+    {
+      "id": "GAP-04-LOADER-SEMANTICS",
+      "gap": "Exact synchronous versus asynchronous resource creation contract, factory callbacks, and release timing in FUN_008DF0B0.",
+      "impact": "Current B1 fetch cannot claim original ResourceManager orchestration.",
+      "next_evidence": "Apply only read-only types/field analysis to the shared loader and IResourceFactory implementations; add approved runtime trace for ownership.",
+      "status": "UNKNOWN",
+      "sources": ["ghidra:decompile_function(0x008DF0B0)", "ghidra:get_struct_layout(IResourceFactory__vftable)"]
+    },
+    {
+      "id": "GAP-05-CELL-KEY-SEMANTICS",
+      "gap": "Exact field names and record-schema meaning for GetModelKeyForCellResource entry tags 3/4/5 and the central DAT_015A758C key table.",
+      "impact": "Can reproduce the output shape but not the authoritative model selection policy for every Cell variant.",
+      "next_evidence": "Resolve SDK field layouts and record-to-runtime call paths for the 0x28-byte Cell entries and FUN_00E65030/FUN_00E5C250.",
+      "status": "UNKNOWN",
+      "sources": ["ghidra:Simulator::Cell::GetModelKeyForCellResource@0x00e65640", "ghidra:FUN_00e655c0@0x00e655c0"]
+    },
+    {
+      "id": "GAP-06-MAP-HELPER",
+      "gap": "Full map_int_whatever_find container/key/value/owner contract.",
+      "impact": "Cell preload/model-key paths can call the helper but cannot expose a stable modern map abstraction.",
+      "next_evidence": "Read-only P-code/dataflow/type characterization of 0x00E5C780 and its 49 gameplay fan-in callers.",
+      "status": "UNKNOWN",
+      "sources": ["knowledgegraph/triage/reconstruction-readiness-f0e310e0.json:116-127", "docs/analysis/simulator-shared-state-interface.md:300-320"]
+    },
+    {
+      "id": "GAP-07-REFERENCE-ALIAS",
+      "gap": "Relationship between FUN_00E82340 body and SDK-associated cCellDataReference_::Create at 0x00E82420.",
+      "impact": "Must not merge the two addresses into one resolved function/resource identity.",
+      "next_evidence": "Adjacent-function/vtable adjudication in a read-only pass; preserve current separation until committed.",
+      "status": "UNKNOWN",
+      "sources": ["knowledgegraph/research/global-campaign-2026/verify-machine-final5.json:191-278", "knowledgegraph/research/global-campaign-2026/verify-machine-final6.json:176-323"]
+    },
+    {
+      "id": "GAP-08-PRELOAD-RUNTIME",
+      "gap": "Original runtime preload order, wait/completion behavior, and package load events.",
+      "impact": "Static preload graph is known, but observed lifecycle order and event causality are not.",
+      "next_evidence": "M5 menu/resource trace plus M1 Cell lifecycle trace; do not use screenshots as resource evidence.",
+      "status": "UNKNOWN",
+      "sources": ["docs/analysis/reconstruction-research-queue.md:35-61", "docs/analysis/campaigns/cell-stage-campaign.md:455-465"]
+    },
+    {
+      "id": "GAP-09-PROPERTY-PERSISTENCE",
+      "gap": "App::Property serialization and resource-manager property round-trip.",
+      "impact": "No persistence claim beyond DBPF record bytes and in-memory resource state is justified.",
+      "next_evidence": "Property fixture plus serialize/deserialize/round-trip differential.",
+      "status": "UNKNOWN",
+      "sources": ["docs/RECON-3.1.0.22.md:48-61", "docs/BOUNDARIES.md:140-146"]
+    },
+    {
+      "id": "GAP-10-RUNTIME-OWNERSHIP",
+      "gap": "Live correlation between resource handles, Cell pool indices, GFX handles, and gameplay state transitions.",
+      "impact": "Current OpenSpore chain is static/clean-room and cannot promote original runtime ownership.",
+      "next_evidence": "Approved hash-pinned Cell trace with pre/post ABI and object-pool/GFX handle observations.",
+      "status": "UNKNOWN",
+      "sources": ["docs/analysis/reconstruction-research-queue.md:46-61", "docs/analysis/campaigns/cell-stage-campaign.md:511-519"]
+    }
+  ],
+  "contradictions": [
+    {
+      "id": "CONTRA-01-SDK-LIVE-ADDRESSES",
+      "issue": "SDK anchors for DatabasePackedFile::Lock and PFIndexModifiable::Read do not equal live Ghidra function entries.",
+      "details": "SDK labels are 0x008D84F0 and 0x008DBCC0; live entries are 0x008D84D0 and 0x008DBC20.",
+      "resolution": "Keep both values, mark the SDK value as an anchor and the live value as the function entry; do not silently collapse them.",
+      "status": "VERIFIED",
+      "sources": ["knowledgegraph/research/global-campaign-2026/track-k-engine-boundaries.json:326-334", "ghidra:get_function_by_address(0x008D84D0)", "ghidra:get_function_by_address(0x008DBC20)"]
+    },
+    {
+      "id": "CONTRA-02-VTABLE-SDK-BODY",
+      "issue": "Some cResourceManager vtable slot entries are wrappers or earlier bodies while SDK-named bodies are at different addresses.",
+      "details": "GetPrivateResource vtable entry is 0x008DF940 while the SDK-named body is 0x008DFC10; GetRecordKeyList2 vtable entry is 0x008E0C10 while the SDK-named body is 0x008E0EE0; GetTypenameFromType vtable entry is 0x008DFC60 while the SDK-named body is 0x008DFF30.",
+      "resolution": "Treat the vtable layout and SDK body addresses as separate evidence; use the exact symbol/address pair in function records.",
+      "status": "VERIFIED",
+      "sources": ["ghidra:read_memory(0x01436AE8)", "ghidra:search_functions", "ghidra:get_function_by_address(0x008DFC10)"]
+    },
+    {
+      "id": "CONTRA-03-CELL-REFERENCE-ALIAS",
+      "issue": "The address 0x00E82340 has historically been labeled cCellDataReference_::Create, but the SDK-associated function is 0x00E82420.",
+      "resolution": "Keep 0x00E82340 as FUN_00E82340 and 0x00E82420 as SDK-associated cCellDataReference_::Create; relationship remains unresolved.",
+      "status": "UNKNOWN",
+      "sources": ["knowledgegraph/research/global-campaign-2026/verify-machine-final5.json:191-278", "knowledgegraph/research/global-campaign-2026/verify-semantic-final.json:84-109"]
+    },
+    {
+      "id": "CONTRA-04-OLD-RECON-DBPF",
+      "issue": "The older recon appendix calls DBPF v3 layout UNKNOWN, while later committed C++/oracle work verifies the 32-bit DBPF v3 header/index/extent path.",
+      "resolution": "Use the later bounded format evidence for DBPF record bytes; keep the older statement as historical phase context, not current status.",
+      "status": "VERIFIED",
+      "sources": ["docs/RECON-3.1.0.22.md:153-169", "docs/ASSET-PATH.md:63-75", "src/assets/Dbpf.hpp:1-7"]
+    },
+    {
+      "id": "CONTRA-05-CELL-CENSUS-PLANS",
+      "issue": "Some completed Cell campaign statuses differ from earlier plan counts after EP1/package-wide census.",
+      "details": "Examples include cCellPopulateResource 20 planned versus 21 unique completed, cCellStructureResource 38 planned versus 149 unique completed, and cCellLootTableResource 9 planned versus 45 unique completed.",
+      "resolution": "Prefer completed census values in asset_types and retain plan values only as historical context.",
+      "status": "VERIFIED",
+      "sources": ["docs/analysis/campaigns/cell-stage-campaign.md:310-320", "src/assets/CellResource.hpp:377-480"]
+    },
+    {
+      "id": "CONTRA-06-CANONICAL-FUNCTION-COUNT",
+      "issue": "Pinned canonical triage has 58,757 functions while live Ghidra reports 59,245 functions.",
+      "resolution": "Use the pinned f0e310e0/2540f2ca ledger for campaign accounting and live Ghidra for address-level queries; record both counts.",
+      "status": "VERIFIED",
+      "sources": ["knowledgegraph/research/global-campaign-2026/00-source-inventory.json:210-235", "ghidra:get_current_program_info(SporeApp.exe)"]
+    }
+  ],
+  "reconstruction_packages": [
+    {
+      "id": "PKG-03-RESOURCE-IO",
+      "name": "Resource manager, DBPF/QFS I/O, and property substrate",
+      "status": "INFERRED",
+      "current_boundary": "B1 IResourceProvider plus DBPF/QFS decoder",
+      "covered": ["ResourceKey", "DBPF identity/extent", "QFS bytes", "single-package provider seam", "explicit errors"],
+      "missing": ["cResourceManager orchestration", "DatabaseDirectoryFiles mapping", "multi-package priority", "factory/cache/registry lifecycle", "property serialization"],
+      "sources": ["docs/analysis/reconstruction-packages.md:271-336", "src/compat/ResourceProvider.hpp:24-59", "src/assets/Dbpf.cpp:37-234"]
+    },
+    {
+      "id": "PKG-04-ASSET-GEOMETRY-TEXTURE",
+      "name": "GMDL/RW4/raster geometry and texture decode",
+      "status": "VERIFIED",
+      "current_boundary": "B2 IMeshSource and narrow GMDL/RW4/raster decoders",
+      "covered": ["DBPF record to parsed GMDL/RW4/raster bytes", "GMDL v8 sample geometry", "DXT5 sample", "host Mesh/ImageRGBA"],
+      "missing": ["GMDL v9", "32-bit indices", "full RW4 materials/skins/animation", "original material/shader ownership", "multi-package loader"],
+      "sources": ["docs/analysis/reconstruction-packages.md:338-407", "docs/ASSET-PATH.md:27-84"]
+    },
+    {
+      "id": "PKG-05-CELL-CONTENT",
+      "name": "Cell content and resource record semantics",
+      "status": "VERIFIED",
+      "current_boundary": "Typed CellResource value objects and hard-reference validators",
+      "covered": ["central Cell type IDs", "record shapes", "hard/soft reference distinction", "Cell model key input schema"],
+      "missing": ["serializer-backed lazy reference lifecycle", "exact model selection field semantics", "runtime resource-load event chain", "0x00E82340/0x00E82420 alias"],
+      "sources": ["docs/analysis/reconstruction-packages.md:409-486", "src/assets/CellResource.hpp:124-480", "ghidra:Simulator::Cell::GetModelKeyForCellResource@0x00e65640"]
+    },
+    {
+      "id": "PKG-06-CELL-STATE",
+      "name": "Cell game state, pool, query, advect, and combat rules",
+      "status": "INFERRED",
+      "current_boundary": "Typed static CellGame/pool/query/advect/combat reconstructions",
+      "covered": ["4096 pool", "current world/background fields", "resource-to-cell state handoff", "advect/combat helper anchors"],
+      "missing": ["live original resource-to-pool timing", "runtime handle ownership", "full original state machine and event ABI"],
+      "sources": ["docs/analysis/reconstruction-packages.md:488-561", "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json:482-519"]
+    },
+    {
+      "id": "PKG-09-CELL-PRESENTATION",
+      "name": "Cell GFX, HUD, scene assembly, and renderer boundary",
+      "status": "INFERRED",
+      "current_boundary": "CellGfx world-token/preload shell and B2/B3 seams",
+      "covered": ["world/layer IDs", "static preload graph", "CellGame-Main/Background association", "display lifecycle shell", "direct GMDL scene loading"],
+      "missing": ["original Graphics handle ownership", "pending/wait preload semantics", "runtime preload order", "material/light and pixel oracle"],
+      "sources": ["docs/analysis/reconstruction-packages.md:704-777", "src/apps/CellGfx.hpp:1-78", "src/apps/CellGfx.cpp:5-44"]
+    }
+  ],
+  "provenance": [
+    {
+      "id": "PROV-01",
+      "path": "docs/RECON-3.1.0.22.md",
+      "role": "Binary, namespace, resource pipeline, and historical evidence boundaries",
+      "status": "VERIFIED",
+      "sources": ["docs/RECON-3.1.0.22.md:1-23", "docs/RECON-3.1.0.22.md:46-69", "docs/RECON-3.1.0.22.md:113-169"]
+    },
+    {
+      "id": "PROV-02",
+      "path": "docs/BOUNDARIES.md",
+      "role": "OpenSpore B1/B2/B3 replacement scope and non-boundaries",
+      "status": "VERIFIED",
+      "sources": ["docs/BOUNDARIES.md:48-69", "docs/BOUNDARIES.md:71-112", "docs/BOUNDARIES.md:122-146"]
+    },
+    {
+      "id": "PROV-03",
+      "path": "docs/ASSET-PATH.md",
+      "role": "Verified DBPF/QFS/GMDL path and bounded record examples",
+      "status": "VERIFIED",
+      "sources": ["docs/ASSET-PATH.md:3-25", "docs/ASSET-PATH.md:27-51", "docs/ASSET-PATH.md:63-84"]
+    },
+    {
+      "id": "PROV-04",
+      "path": "docs/CELLSTAGE-RECON.md",
+      "role": "Cell package inventory, group scheme, formats, and unresolved identity",
+      "status": "VERIFIED",
+      "sources": ["docs/CELLSTAGE-RECON.md:8-24", "docs/CELLSTAGE-RECON.md:64-81", "docs/CELLSTAGE-RECON.md:118-144"]
+    },
+    {
+      "id": "PROV-05",
+      "path": "docs/analysis/campaigns/cell-stage-campaign.md",
+      "role": "Central Cell type census, preload path, current/background state, and runtime limits",
+      "status": "VERIFIED",
+      "sources": ["docs/analysis/campaigns/cell-stage-campaign.md:250-345", "docs/analysis/campaigns/cell-stage-campaign.md:357-419", "docs/analysis/campaigns/cell-stage-campaign.md:455-519"]
+    },
+    {
+      "id": "PROV-06",
+      "path": "docs/analysis/reconstruction-packages.md",
+      "role": "Package ownership, interface boundaries, and evidence policy",
+      "status": "VERIFIED",
+      "sources": ["docs/analysis/reconstruction-packages.md:1-37", "docs/analysis/reconstruction-packages.md:271-336", "docs/analysis/reconstruction-packages.md:409-486", "docs/analysis/reconstruction-packages.md:704-777"]
+    },
+    {
+      "id": "PROV-07",
+      "path": "knowledgegraph/research/global-campaign-2026/track-k-engine-boundaries.json",
+      "role": "Pinned Cell resource and presentation boundary characterization",
+      "status": "VERIFIED",
+      "sources": ["knowledgegraph/research/global-campaign-2026/track-k-engine-boundaries.json:294-364", "knowledgegraph/research/global-campaign-2026/track-k-engine-boundaries.json:367-437"]
+    },
+    {
+      "id": "PROV-08",
+      "path": "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json",
+      "role": "Pinned Cell function inventory, lifecycle, and event surfaces",
+      "status": "VERIFIED",
+      "sources": ["knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json:420-480", "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json:482-519"]
+    },
+    {
+      "id": "PROV-09",
+      "path": "knowledgegraph/research/global-campaign-2026/00-source-inventory.json",
+      "role": "Pinned repository/artifact scope, snapshot identity, and clean-room constraints",
+      "status": "VERIFIED",
+      "sources": ["knowledgegraph/research/global-campaign-2026/00-source-inventory.json:1-37", "knowledgegraph/research/global-campaign-2026/00-source-inventory.json:343-465"]
+    },
+    {
+      "id": "PROV-10",
+      "path": "tools/re/data/ghidra_snapshot_cell_movement.json",
+      "role": "Pinned Ghidra address convention and Cell movement/runtime evidence",
+      "status": "VERIFIED",
+      "sources": ["tools/re/data/ghidra_snapshot_cell_movement.json:1-5", "tools/re/data/ghidra_snapshot_cell_movement.json:21-24", "tools/re/data/ghidra_snapshot_cell_movement.json:102-135", "tools/re/data/ghidra_snapshot_cell_movement.json:160-191"]
+    },
+    {
+      "id": "PROV-11",
+      "path": "knowledgegraph/triage/xrefs-2540f2ca.tsv",
+      "role": "Pinned canonical direct-call/thunk edges for resource and Cell producer/consumer accounting",
+      "status": "VERIFIED",
+      "sources": ["knowledgegraph/triage/xrefs-2540f2ca.tsv:71106-71114", "knowledgegraph/triage/xrefs-2540f2ca.tsv:71358-71462"]
+    },
+    {
+      "id": "PROV-12",
+      "path": "knowledgegraph/triage/reconstruction-readiness-f0e310e0.json",
+      "role": "Pinned unresolved map helper and shared-root readiness evidence",
+      "status": "VERIFIED",
+      "sources": ["knowledgegraph/triage/reconstruction-readiness-f0e310e0.json:116-127", "knowledgegraph/triage/reconstruction-readiness-f0e310e0.json:804-903"]
+    },
+    {
+      "id": "PROV-13",
+      "path": "knowledgegraph/triage/summary-f0e310e0.triage-v6.json",
+      "role": "Pinned Resource-family census and canonical function universe",
+      "status": "VERIFIED",
+      "sources": ["knowledgegraph/triage/summary-f0e310e0.triage-v6.json:1-55", "knowledgegraph/triage/summary-f0e310e0.triage-v6.json:216-289"]
+    },
+    {
+      "id": "PROV-14",
+      "path": "src/compat/ResourceProvider.hpp",
+      "role": "Current IResourceProvider/DbpfResourceProvider/MemoryResourceProvider seam",
+      "status": "VERIFIED",
+      "sources": ["src/compat/ResourceProvider.hpp:24-88"]
+    },
+    {
+      "id": "PROV-15",
+      "path": "src/assets/Dbpf.hpp",
+      "role": "Current DBPF identity schema and provider-facing lookup declaration",
+      "status": "VERIFIED",
+      "sources": ["src/assets/Dbpf.hpp:16-46"]
+    },
+    {
+      "id": "PROV-16",
+      "path": "src/assets/Dbpf.cpp",
+      "role": "Current DBPF index, QFS, extraction, and linear lookup implementation",
+      "status": "VERIFIED",
+      "sources": ["src/assets/Dbpf.cpp:37-101", "src/assets/Dbpf.cpp:103-198", "src/assets/Dbpf.cpp:200-234"]
+    },
+    {
+      "id": "PROV-17",
+      "path": "src/assets/CellResource.hpp",
+      "role": "Current central Cell type IDs, value objects, reference fields, and decoder declarations",
+      "status": "VERIFIED",
+      "sources": ["src/assets/CellResource.hpp:124-181", "src/assets/CellResource.hpp:210-240", "src/assets/CellResource.hpp:366-480"]
+    },
+    {
+      "id": "PROV-18",
+      "path": "src/apps/CellGfx.hpp",
+      "role": "Current Cell world/layer/preload contract",
+      "status": "VERIFIED",
+      "sources": ["src/apps/CellGfx.hpp:1-78"]
+    },
+    {
+      "id": "PROV-19",
+      "path": "src/apps/CellGfx.cpp",
+      "role": "Current CellGfx implementation and caller blast radius",
+      "status": "VERIFIED",
+      "sources": ["src/apps/CellGfx.cpp:5-44", "codegraph:preloadResources callers"]
+    },
+    {
+      "id": "PROV-20",
+      "path": "src/apps/cell_stage.cpp",
+      "role": "Current scene identity, preload assertion, and direct DBPF/GMDL load path",
+      "status": "VERIFIED",
+      "sources": ["src/apps/cell_stage.cpp:78-123", "src/apps/cell_stage.cpp:1354-1400"]
+    },
+    {
+      "id": "PROV-21",
+      "path": "Ghidra read-only MCP session",
+      "role": "Live address, vtable, struct layout, callers, callees, xrefs, and decompilation evidence",
+      "status": "VERIFIED",
+      "sources": ["SporeProject/SporeApp.exe", "image base 0x00400000", "queries recorded under evidence_base.ghidra_queries"]
+    },
+    {
+      "id": "PROV-22",
+      "path": "knowledgegraph/spore.db",
+      "role": "Read-only AssetRecord/Finding/structure/readiness queries",
+      "status": "VERIFIED",
+      "sources": ["knowledgegraph/kg.py query --label AssetRecord", "knowledgegraph/kg.py query --label Finding", "knowledgegraph/kg.py query --label Structure"]
+    }
+  ]
+}

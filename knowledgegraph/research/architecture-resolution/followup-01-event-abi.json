@@ -1,0 +1,392 @@
+{
+  "$schema": "openspore-architecture-resolution-followup-01-event-abi-1",
+  "artifact": "followup-01-event-abi",
+  "date": "2026-09-24",
+  "status": "read_only_static_observation",
+  "scope": {
+    "program": "SporeApp.exe",
+    "program_selection": "explicit",
+    "language": "x86:LE:32:default",
+    "compiler": "windows",
+    "image_base": "0x00400000",
+    "ghidra_mode": "read-only decompilation, disassembly, xrefs, function-boundary, raw-memory, and structure queries",
+    "ghidra_mutation": false,
+    "ghidra_save": false,
+    "ghidra_reanalysis": false,
+    "spore_directory_accessed": false,
+    "spore_db_accessed": false,
+    "implementation_performed": false,
+    "historical_artifacts_modified": false,
+    "runtime_trace": false
+  },
+  "question": "Adjudicate the four requested addresses and the candidate vtable/data anchor, recover the queue record layout and processor surfaces, and test whether the named event families share a base prefix or are only transported separately.",
+  "live_program_observation": {
+    "open_programs": 1,
+    "active_program": "SporeApp.exe",
+    "address_space": "ram",
+    "addressable_unit_size": 1,
+    "function_count": 59245,
+    "notes": [
+      "The program reports no MSVC RTTI, so vtable ownership is structural rather than RTTI-confirmed.",
+      "The candidate data at 0x01427920 is currently typed as an undefined pointer/label by Ghidra; raw bytes show a pointer table followed by strings."
+    ]
+  },
+  "address_adjudication": [
+    {
+      "address": "0x00884100",
+      "ghidra_name": "FUN_00884100",
+      "body_start": "0x00884100",
+      "body_end_inclusive": "0x008841e9",
+      "direct_callers": [],
+      "callees_from_call_graph": [
+        "FUN_0093a560",
+        "FUN_0093a480",
+        "QueryPerformanceCounter"
+      ],
+      "data_xref": "0x01427954",
+      "vtable_slot": "candidate vtable 0x01427920 + 0x34",
+      "raw_observations": [
+        "Reads the manager byte at object+0xc2 and returns without processing when it is zero.",
+        "Computes a queue-count-like expression using 0x18 division and pointer-range arithmetic.",
+        "Loops up to the stack-supplied bound and calls [vtable+0x38] for each iteration.",
+        "The raw indirect call at 0x00884199 targets the candidate vtable's +0x38 word, 0x00884700.",
+        "When the optional timing check is active, it calls QueryPerformanceCounter and can stop the loop on the observed comparison."
+      ],
+      "classification": "outer_ProcessQueue_entry_wrapper",
+      "confidence": "high_static_structure",
+      "caveat": "The semantic names and units of the stack parameters are not established."
+    },
+    {
+      "address": "0x008841f0",
+      "ghidra_name": "App::cMessageManager::ProcessQueue",
+      "body_start": "0x008841f0",
+      "body_end_inclusive": "0x00884258",
+      "direct_callers": [
+        "FUN_00884fb0"
+      ],
+      "callees_from_call_graph": [
+        "FUN_00f47380"
+      ],
+      "data_xref": "0x00885002 (JMP into the function)",
+      "vtable_slot": null,
+      "raw_observations": [
+        "Walks queue storage with a 0x18 stride and follows a 0xc0-byte block range.",
+        "On a block transition it advances a four-byte block cursor, loads the next block pointer, and sets the next range end to block+0xc0.",
+        "After the storage walk it walks four-byte pointers from object+0x14 through object+0x24 and calls FUN_00f47380 for non-null pointers.",
+        "It also calls FUN_00f47380 on the object pointer at object+0x00 when non-null.",
+        "It does not copy or dispatch the six queue-record words and does not invoke the listener/handler/owner branches found at 0x00884700."
+      ],
+      "classification": "storage_cleanup_walker_not_observed_ProcessQueue_dispatch",
+      "confidence": "high_static_structure",
+      "caveat": "The Ghidra function name is preserved as a label, but the body and its destructor caller support a cleanup/teardown interpretation rather than a dispatch entry."
+    },
+    {
+      "address": "0x00884700",
+      "ghidra_name": "FUN_00884700",
+      "body_start": "0x00884700",
+      "body_end_inclusive": "0x00884895",
+      "direct_callers": [],
+      "callees_from_call_graph": [
+        "FUN_00884550",
+        "FUN_009221b0",
+        "FUN_00922270"
+      ],
+      "data_xref": "0x01427958",
+      "vtable_slot": "candidate vtable 0x01427920 + 0x38",
+      "raw_observations": [
+        "Calls FUN_00884550 to copy one six-dword queue record into a local record and advances the queue cursor.",
+        "Increments the manager counters at object+0x68 and object+0x6c for each successful dequeue.",
+        "Branches among a listener target at record+0x08, a handler/context target at record+0x10/+0x14, and an untargeted owner fallback through the owner vtable+0x14.",
+        "When the +0xc4 option is set, releases the callback target and then the payload after dispatch.",
+        "Uses the +0xc3 option and an initial-count comparison to support a bounded initial pass with a drain-until-empty path."
+      ],
+      "classification": "second_queue_surface_ProcessQueue2_processor",
+      "confidence": "high_static_structure",
+      "caveat": "The option-bit semantics beyond the observed conditional behavior and the exact scheduling order remain unresolved."
+    }
+  ],
+  "call_graph_and_surface_map": {
+    "outer_processor": {
+      "entry": "0x00884100",
+      "vtable_word": "0x01427954",
+      "observed_indicated_target": "0x00884700",
+      "call_shape": "[candidate_vtable+0x38]()",
+      "purpose": "bounded repeated invocation of the second queue processor"
+    },
+    "queue_record_walker": {
+      "entry": "0x00884550",
+      "role": "dequeue/copy helper",
+      "observations": [
+        "Copies record words at offsets 0x00, 0x04, 0x08, 0x0c, 0x10, and 0x14.",
+        "Advances the current record by 0x18 and transitions to a new block whose usable range ends at block+0xc0.",
+        "Releases the previous block pointer when a block is exhausted."
+      ]
+    },
+    "second_queue_surface": {
+      "entry": "0x00884700",
+      "vtable_word": "0x01427958",
+      "role": "dequeue plus listener/handler/owner dispatch and conditional release"
+    },
+    "storage_cleanup_surface": {
+      "entry": "0x008841f0",
+      "role": "walk 0x18/0xc0 storage and release four-byte storage pointers during teardown",
+      "not": "not the observed record-dequeue/dispatch processor"
+    }
+  },
+  "queue_record": {
+    "size": "0x18",
+    "unit": "six 4-byte words",
+    "stride_evidence": [
+      "0x00884550 advances by 0x18.",
+      "0x00885710 copies six words and uses +0xc for ordered insertion.",
+      "0x008841f0 uses the same 0x18 stride while walking storage.",
+      "0x00884100 includes 0x18 division in its queue-count arithmetic."
+    ],
+    "layout": [
+      {
+        "offset": "0x00",
+        "field": "message_id",
+        "evidence": "0x00884550 copy; 0x00884700 passes the first word to listener/handler/owner branches"
+      },
+      {
+        "offset": "0x04",
+        "field": "payload",
+        "evidence": "0x00885890/0x00885930 build the second word; 0x00884700 passes and conditionally releases it"
+      },
+      {
+        "offset": "0x08",
+        "field": "listener_target_or_zero",
+        "evidence": "0x00885890 stores the listener target; 0x00884700 uses the listener branch"
+      },
+      {
+        "offset": "0x0c",
+        "field": "integer_ordering_key",
+        "evidence": "0x00885710 compares param_2[3] and inserts relative to the queue; 0x00884700 does not dispatch on this word"
+      },
+      {
+        "offset": "0x10",
+        "field": "handler_or_zero",
+        "evidence": "0x00885930 stores the callback pointer; 0x00884700 uses the handler branch"
+      },
+      {
+        "offset": "0x14",
+        "field": "handler_context_or_zero",
+        "evidence": "0x00885930 stores the context; 0x00884700 passes it to the handler"
+      }
+    ],
+    "block_surface": {
+      "observed_block_size": "0xc0",
+      "observed_block_cursor_step": "0x04",
+      "interpretation_limit": "The exact names and ownership roles of the manager's range/cursor fields are not fully established; the raw transitions are directly observed."
+    },
+    "producers": {
+      "0x00885890": "listener-target producer; sets id, payload, listener, ordering word, and zero handler/context words",
+      "0x00885930": "handler/context producer; sets id, payload, zero listener, ordering word, handler, and context",
+      "0x00885710": "six-word insertion helper; ordinary insertion behavior is keyed by record+0x0c"
+    },
+    "semantic_limits": [
+      "The +0x0c word is an ordering key for the examined insertion algorithm; its native name, units, signed-zero behavior, and global priority meaning are unresolved.",
+      "The six words are a transport snapshot, not a universal domain payload."
+    ]
+  },
+  "candidate_vtable_data": {
+    "address": "0x01427920",
+    "raw_observation": "0x01427920 through 0x01427968 contain 19 consecutive 4-byte pointer-like words; strings begin at approximately 0x0142796c. The raw read also contains Messaging/HIList and EAText/FontServer strings, which are not used here to name the vtable.",
+    "ownership_evidence": [
+      "Constructor body 0x00884a20 writes 0x1427920 to object+0x00 at 0x00884a27.",
+      "Destructor/teardown body 0x00884fb0 writes 0x1427920 to object+0x00 at 0x00884fb4 and then jumps to 0x008841f0.",
+      "Vtable word +0x00 points to 0x00885390, whose body calls 0x00884fb0, consistent with a destructor slot."
+    ],
+    "selected_slots": {
+      "+0x00": "0x00885390",
+      "+0x08": "0x00884ae0",
+      "+0x14": "0x008853b0",
+      "+0x18": "0x00885890",
+      "+0x1c": "0x00885930",
+      "+0x20": "0x008839e0",
+      "+0x24": "0x008839a0",
+      "+0x28": "0x00883a30",
+      "+0x34": "0x00884100",
+      "+0x38": "0x00884700",
+      "+0x44": "0x00884c80",
+      "+0x48": "0x008845d0"
+    },
+    "vtable_conclusion": "The candidate is structurally a cMessageManager concrete vtable, with ProcessQueue at +0x34 and the second processor at +0x38. This is structural ownership evidence, not RTTI proof.",
+    "unresolved_slot": {
+      "offset": "+0x14",
+      "raw_word": "0x008853b0",
+      "observation": "Ghidra reports no function at 0x008853b0, so this word is not repaired or named from the current program."
+    }
+  },
+  "family_prefix_test": {
+    "result": "no_common_prefix",
+    "semantic_interpretation": "The five families do not share a common base record or field-wise ABI prefix. They may use separate transports or appear in separate dispatch systems, but transport alone does not unify their payload layouts.",
+    "at_most": [
+      "StandardMessage and cCommEvent both begin with a 4-byte pointer-sized field, but the pointed-to interface types are different and their refcount fields are at +0x04 and +0x08 respectively.",
+      "UTFWin::Message also has a pointer-sized source field at +0x00, but that is a window source rather than a message-manager payload vtable.",
+      "AnimationMessage and the anonymous space records begin with 32-bit scalar/discriminator values, not the same pointer or record base."
+    ],
+    "families": [
+      {
+        "name": "StandardMessage",
+        "live_ghidra_size": "0x40",
+        "observed_prefix": "+0x00 vtable pointer; +0x04 int refcount; +0x08 MessageParameter[5]; +0x30 uint32 id",
+        "source": "ghidra://SporeApp.exe@structure:StandardMessage"
+      },
+      {
+        "name": "UTFWin::Message",
+        "live_ghidra_size": "0x0c",
+        "live_ghidra_type_lookup": "search_data_types returned Message at /Spore/UTFWin/Message with size 12; list_data_types also returned anonymous payload alternatives in the 4-byte through 16-byte range.",
+        "historical_field_preservation": "The read-only architecture artifact records the base as source at +0x00, an int at +0x04, and eventType at +0x08, with type-specific anonymous payload fields beginning at logical +0x0c.",
+        "resolver_limit": "The generic get_struct_layout(\"Message\") resolver selected an unrelated /Spore/Palettes/AdvancedItemViewer/Message, so live field names are not promoted as a fresh generic-layout result."
+      },
+      {
+        "name": "AnimationMessage",
+        "live_ghidra_size": "0x18",
+        "observed_prefix": "+0x00 uint32 messageID; +0x04 char* pName; +0x08 AnimatedCreature* pCreature",
+        "source": "ghidra://SporeApp.exe@structure:AnimationMessage"
+      },
+      {
+        "name": "cCommEvent",
+        "live_ghidra_size": "0xa0",
+        "observed_prefix": "+0x00 ISimulatorSerializable vtable pointer; +0x04 IVirtual vtable pointer; +0x08 int refcount; +0x0c cCommEventType",
+        "source": "ghidra://SporeApp.exe@structure:cCommEvent"
+      },
+      {
+        "name": "anonymous space primary",
+        "live_ghidra_size": "0x6c",
+        "observed_shape": "27 consecutive 4-byte slots; +0x00 opaque discriminator, +0x04 explicit zero, +0x08 timestamp-like value, followed by raw tuple/ID/scalar slots",
+        "source": "ghidra://SporeApp.exe@0x00e39ab0"
+      },
+      {
+        "name": "anonymous space companion",
+        "live_ghidra_size": "0x60",
+        "observed_shape": "24 consecutive 4-byte slots; +0x00 opaque discriminator, +0x04 mode/derived scalar, +0x08 timestamp-like value, followed by raw tuple/ID/scalar slots",
+        "source": "ghidra://SporeApp.exe@0x00e39ab0"
+      }
+    ],
+    "transport_result": "The App manager's 0x18 queue record is generic transport state. Its message_id and payload words do not make StandardMessage, UTFWin::Message, AnimationMessage, cCommEvent, or the anonymous space pair share a payload prefix."
+  },
+  "what_this_closes": [
+    "The exact live Ghidra function boundaries for 0x00884100, 0x008841f0, and 0x00884700.",
+    "The distinction between the outer ProcessQueue entry at 0x00884100, the dequeue/copy walker at 0x00884550, and the second dispatch surface at 0x00884700.",
+    "The fact that 0x008841f0 is not the observed dispatch processor despite its Ghidra name; its body walks storage and releases block/object pointers during teardown.",
+    "The candidate vtable ownership of 0x00884100 at +0x34 and 0x00884700 at +0x38, with 0x008841f0 absent from the table.",
+    "The 0x18-byte six-word queue record layout and its 0x0c insertion-key use.",
+    "The negative common-prefix result across StandardMessage, UTFWin::Message, AnimationMessage, cCommEvent, and the anonymous space pair.",
+    "The separation between App transport state and family-specific payload/owner contracts."
+  ],
+  "what_remains_unresolved": [
+    "The candidate vtable +0x14 word 0x008853b0 is not a Ghidra function in this program; its exact operation and whether it is a stale/relocated pointer remain open.",
+    "The semantic names and units of the queue record +0x0c word, including signed-zero and negative-key behavior.",
+    "The exact meaning of the 0x00884100 stack parameters, timing policy, thread affinity, and recursive callback behavior.",
+    "The exact ownership role/name of every cMessageManager range/cursor field around the 0x18/0xc0 storage blocks.",
+    "The complete live field-level UTFWin::Message layout from Ghidra's category-qualified type, because the generic layout resolver selected a duplicate bare Message type.",
+    "Whether any family-specific record is ever adapted into another transport outside the focused paths; no cross-family ABI is inferred from vocabulary or co-location."
+  ],
+  "citations": [
+    {
+      "source": "ghidra://SporeApp.exe@0x00884100",
+      "use": "exact boundary, queue-count arithmetic, +0xc2 gate, indirect +0x38 call, timing check, callers/callees"
+    },
+    {
+      "source": "ghidra://SporeApp.exe@0x008841f0",
+      "use": "exact boundary, 0x18/0xc0 storage walk, pointer release loop, destructor caller, lack of dispatch branches"
+    },
+    {
+      "source": "ghidra://SporeApp.exe@0x00884700",
+      "use": "exact boundary, dequeue/callback branches, counters, option-conditional release, snapshot/drain loop"
+    },
+    {
+      "source": "ghidra://SporeApp.exe@0x00884550",
+      "use": "six-word copy and 0x18 stride/0xc0 block transition"
+    },
+    {
+      "source": "ghidra://SporeApp.exe@0x00885710",
+      "use": "ordered insertion, six-word copy, and +0x0c comparison"
+    },
+    {
+      "source": "ghidra://SporeApp.exe@0x00885890",
+      "use": "listener-target deferred producer and queue-record field setup"
+    },
+    {
+      "source": "ghidra://SporeApp.exe@0x00885930",
+      "use": "handler/context deferred producer and queue-record field setup"
+    },
+    {
+      "source": "ghidra://SporeApp.exe@0x00884a20",
+      "use": "object vtable assignment to 0x01427920 and manager state initialization"
+    },
+    {
+      "source": "ghidra://SporeApp.exe@0x00884fb0",
+      "use": "teardown path, same vtable assignment, and tail jump to 0x008841f0"
+    },
+    {
+      "source": "ghidra://SporeApp.exe@0x01427920",
+      "use": "raw 19-word candidate table, +0x34/+0x38 anchors, unresolved +0x14 word"
+    },
+    {
+      "source": "ghidra://SporeApp.exe@0x00e39ab0",
+      "use": "live anonymous primary/companion allocation counts, raw slot writes, timestamp and sentinel"
+    },
+    {
+      "source": "ghidra://SporeApp.exe@0x00e39420",
+      "use": "raw three-slot companion/primary read helper"
+    },
+    {
+      "source": "ghidra://SporeApp.exe@0x00e39450",
+      "use": "lookup-derived two-word tuple writes"
+    },
+    {
+      "source": "ghidra://SporeApp.exe@0x00e3d9e0",
+      "use": "keyed-table iteration and space-record update path"
+    },
+    {
+      "source": "ghidra://SporeApp.exe@0x00e3a270",
+      "use": "numeric-token space-state dispatch and raw slot consumers"
+    },
+    {
+      "source": "ghidra://SporeApp.exe@structure:StandardMessage",
+      "use": "0x40 layout and vtable/refcount/parameter prefix"
+    },
+    {
+      "source": "ghidra://SporeApp.exe@structure:AnimationMessage",
+      "use": "0x18 messageID/name/creature prefix"
+    },
+    {
+      "source": "ghidra://SporeApp.exe@structure:cCommEvent",
+      "use": "0xa0 two-vtable/refcount/event-type prefix"
+    },
+    {
+      "source": "ghidra://SporeApp.exe@structure:UTFWin/Message",
+      "use": "live type-path/size lookup; field names are retained as historical where the generic resolver collided"
+    },
+    {
+      "source": "ghidra://SporeApp.exe@structure:App/IMessageManager/Entry",
+      "use": "0x14 registration layout contrast"
+    },
+    {
+      "source": "knowledgegraph/research/architecture-resolution/track-05-event.md:18-29",
+      "use": "read-only historical address correction and candidate vtable comparison"
+    },
+    {
+      "source": "knowledgegraph/research/architecture-resolution/track-05-event.md:55-83",
+      "use": "read-only historical queue layout, dispatch ownership, and processor limits"
+    },
+    {
+      "source": "knowledgegraph/research/architecture-resolution/track-11-space-records-conditional.md:6-19,35-90",
+      "use": "read-only anonymous space pair construction, ownership, and family separation"
+    },
+    {
+      "source": "knowledgegraph/research/types/07-event-message.md:295-324,428-464,495-534",
+      "use": "read-only historical UTFWin/animation/cCommEvent and anonymous-space layout context"
+    }
+  ],
+  "limitations": [
+    "No Ghidra mutation, labeling, typing, disassembly creation, saving, re-analysis, or project change was performed.",
+    "No SPORE/ filesystem traversal and no spore.db access were performed.",
+    "No implementation or historical artifact edit was performed.",
+    "No runtime evidence is claimed; static function bodies, xrefs, and structure layouts establish structure, not observed execution order.",
+    "The no-common-prefix result is semantic/field-wise; it does not deny the incidental fact that several records contain 32-bit pointer or scalar words at offset zero."
+  ]
+}

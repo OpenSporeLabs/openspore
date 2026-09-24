@@ -1,0 +1,809 @@
+{
+  "$schema": "openspore-architecture-resolution-track-11-space-records-conditional-1",
+  "artifact": "track-11-space-records-conditional",
+  "track": "11",
+  "conflict_id": "CONFLICT-ANONYMOUS-SPACE-RECORDS",
+  "date": "2026-09-24",
+  "status": "partial_static_resolution_independent_keyed_entries_sidecar_consumer_blocked",
+  "scope": {
+    "binary": "SporeApp.exe",
+    "version": "3.1.0.22",
+    "architecture": "x86:LE:32:windows",
+    "image_base": "0x00400000",
+    "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+    "ghidra_program": "SporeApp.exe",
+    "ghidra_mode": "read-only explicit-program queries; no mutation, re-analysis, or runtime",
+    "targets": [
+      "0x00e39ab0",
+      "key-0x0c primary 27-slot entry",
+      "key-0x06 sidecar 24-slot entry",
+      "events.space-record-27f",
+      "events.space-record-24f",
+      "DAT_015fd910",
+      "cCommEvent",
+      "App::StandardMessage",
+      "UTFWin::Message",
+      "AnimationMessage",
+      "App::IMessageManager",
+      "anonymous command/protocol records"
+    ],
+    "runtime_used": false,
+    "runtime_decision": "No narrow architecture-deciding original-process trace was available. Static allocation, construction, consumer, release, and serialization separators were sufficient for a bounded family conclusion; runtime order and exact field meanings remain deferred.",
+    "historical_artifacts_modified": false,
+    "spore_directory_accessed": false,
+    "spore_db_accessed": false,
+    "other_track_files_modified": false,
+    "implementation_performed": false
+  },
+  "question": "Are 0x00e39ab0's key-0x0c 27-slot entry and key-0x06 24-slot entry independent keyed records with producer-coupled sidecar semantics, variants of cCommEvent or App/UI/animation messages, or raw command/protocol data, and what ownership, serialization, and architecture boundary can be frozen?",
+  "resolution_summary": {
+    "allocation_anchor": "FUN_0067de90 returns DAT_015fd910. FUN_00e39ab0 inserts two independent keyed entries under that owner: key 0x0c with 27 slots and key 0x06 with 24 slots. The key-0x06 value is not a view, alias, or returned handle.",
+    "record_shape": "The historical 27-field/24-field descriptions are bounded here as two independent raw 32-bit slot entries, 27 slots for key 0x0c and 24 slots for key 0x06; exact semantic field names remain open.",
+    "family_conclusion": "The entries are independently stored in a common space/telemetry producer family with coupled sidecar semantics: the same builder populates both, but key 0x06 is not established as a separately dispatched event. Neither entry is an established App StandardMessage, UTFWin Message, AnimationMessage, cCommEvent, or command-protocol record.",
+    "transport_conclusion": "Key 0x0c has an observed space-state keyed-table and numeric-dispatch consumer family. No direct key-0x06 consumer was found; the pair is not shown to use IMessageManager listeners, UTFWin Window procedures, or the animation-message layout.",
+    "ownership_conclusion": "The observed boundary is table-owned raw storage: the owner/table owns keyed value nodes and their slot buffers. External object-reference lifetime, runtime execution, and any semantic relationship beyond producer coupling remain unknown.",
+    "serialization_conclusion": "A conditional generic App/Telemetry encoding edge exists through the keyed-container threshold path and optional telemetry stream. It is not evidence of game save persistence, resource serialization, network protocol framing, or a read-back ABI; no cGamePersistenceManager, ClassSerializer, ISerializer, PropertyList Write/Read, cCommEvent, or Resource I/O edge is established.",
+    "architecture_dependence": "conditional",
+    "resolution_status": "partial_static_family_separation_field_and_lifetime_bounded"
+  },
+  "hypotheses": [
+    {
+      "id": "H1",
+      "name": "independent_keyed_entries_in_distinct_space_family",
+      "statement": "Key 0x0c (27 slots) and key 0x06 (24 slots) are independent raw table entries in a space/telemetry producer family distinct from App messages, UTFWin UI messages, animation messages, cCommEvent, and command/protocol records.",
+      "predictions": [
+        "Construction should use separate keyed insertions and value nodes rather than IMessageManager registration or a vtable constructor.",
+        "The key-0x0c value should have raw-slot consumers; key 0x06 may be producer-coupled but its consumer identity should remain separate and possibly unresolved.",
+        "The values should have table-owned raw storage separate from message-manager queues and serializable object graphs."
+      ],
+      "evidence_for": [
+        "FUN_00e39ab0 calls FUN_007ec160 with keys 0x0c and 0x06, then FUN_007eb820 with counts 0x1b and 0x18; the returned handles and payload pointers are distinct.",
+        "The key-0x0c value is enumerated and updated by the space-state consumer family; no direct key-0x06 reader was found.",
+        "FUN_00e3a270 dispatches on a numeric token in the key-0x0c orchestration path, not through a message listener path.",
+        "The keyed container release helpers free value nodes and raw slot buffers independently of App queue records."
+      ],
+      "evidence_against": [
+        "The same builder and sibling builders populate both keys from shared inputs, so the entries are producer-coupled even though physically independent.",
+        "The same callers sometimes also create cCommEvent, proving co-occurrence but not a shared payload or ABI."
+      ],
+      "independence": "The two keyed insertion bodies, key-0x0c consumer census, and release path are separate Ghidra evidence classes. They are not all derived from the historical family label.",
+      "repetition": "The repeated use of 'space event' across historical reports and several callers strengthens family placement but does not independently prove field semantics or runtime execution.",
+      "status": "supported_bounded_family_boundary"
+    },
+    {
+      "id": "H2",
+      "name": "independent_entry_with_producer_coupled_sidecar_semantics",
+      "statement": "The 24-slot key-0x06 value is an independent keyed entry whose relationship to the 27-slot key-0x0c value is limited to coupled construction and common field provenance.",
+      "predictions": [
+        "The two values should have different keys, value nodes, payload pointers, and lengths.",
+        "The producer should populate both from the same discriminator, timestamp, object, position, and caller inputs.",
+        "Key 0x0c should have consumers; key 0x06 may be dormant or consumed by an undiscovered indirect path.",
+        "The common owner should serialize or release both through generic keyed-container infrastructure."
+      ],
+      "evidence_for": [
+        "FUN_00e39ab0 and sibling builders FUN_00e394f0, FUN_00e39710, FUN_00e398e0, and FUN_00e3c7c0 repeat the 0x0c/27 plus 0x06/24 construction pattern.",
+        "The repeated builders call the same initializer and lookup helpers and mirror related fields into both arrays.",
+        "The key-0x0c value is enumerated and updated by the space-state consumer family.",
+        "Generic owner teardown and telemetry serialization operate on keyed values rather than on a shared record object."
+      ],
+      "evidence_against": [
+        "The static graph cannot prove that the sidecar has no semantic purpose in a runtime-only consumer.",
+        "No positive key-0x06 read or runtime instance correlation is available.",
+        "Producer coupling does not prove a view, alias, or separately dispatched event."
+      ],
+      "independence": "Sibling builder bodies, helper read/write functions, keyed-container release, and the key-0x0c consumer census are independent observations.",
+      "repetition": "The same 0x0c/0x06 and 0x1b/0x18 pattern in four sibling builders is convergent producer-family evidence, not four independent runtime traces.",
+      "status": "supported_with_semantic_limit"
+    },
+    {
+      "id": "H3",
+      "name": "cCommEvent_variant",
+      "statement": "The two keyed entries are variants, projections, or alternate representations of Simulator::cCommEvent.",
+      "predictions": [
+        "A cCommEvent constructor or ISimulatorSerializable vtable would be reached from construction or dispatch.",
+        "The payload would show cCommEvent's 0xa0-byte object prefix, two vtable pointers, refcount, event type, political/city/mission fields, and vector fields.",
+        "A serialization or cCommManager ownership edge would be visible."
+      ],
+      "evidence_for": [
+        "FUN_0102d1b0 and FUN_0102df20 call both FUN_00e39ab0 and j_Sim_cCommManager_CreateSpaceCommEvent in the same space/surrender control flows.",
+        "The space subsystem contains named communication and trading contexts adjacent to the pair's callers."
+      ],
+      "evidence_against": [
+        "Ghidra's cCommEvent layout is 0xa0 bytes with ISimulatorSerializable and IVirtual vtable pointers at 0x00/0x04 and mnRefCount at 0x08; FUN_00e39ab0 instead constructs raw 27/24 dword slot arrays with no record vtable or local refcount.",
+        "FUN_00e39ab0's direct callee list does not contain FUN_00aeb160, FUN_00aebe90, cCommManager, or a serializer.",
+        "FUN_00aeb160 allocates and inserts a cCommEvent object and performs AddRef/Release-style lifetime calls; no such object flow is present after FUN_00e39ab0.",
+        "No field dataflow connects the returned slot array to the cCommEvent object created in the co-calling functions."
+      ],
+      "independence": "The cCommEvent constructor/layout and the space-pair builder/consumer are different bodies and different allocation mechanisms; co-callers alone are structural correlation only.",
+      "repetition": "Historical reports repeatedly place cCommEvent and space events in the same subsystem, but that repetition is not subtype evidence.",
+      "status": "rejected_as_established_relation"
+    },
+    {
+      "id": "H4",
+      "name": "app_standard_message_or_imessage_manager_payload",
+      "statement": "The pair is an App StandardMessage payload or an IMessageManager queue record.",
+      "predictions": [
+        "Construction or release would reach StandardMessage/IMessageManager registration, MessageSend, MessagePost, AddEntry, or ProcessQueue.",
+        "The carrier would expose StandardMessage's 0x40-byte vtable/refcount/params[5]/id layout or the 0x18-byte manager queue record.",
+        "Consumers would select listeners/handlers by message ID and release through the manager queue."
+      ],
+      "evidence_for": [
+        "The pair is event-like and its numeric discriminator and timestamp are compatible with a generic event dispatch abstraction at a high level.",
+        "Several space callers also call App/IAppSystem or other message-oriented services."
+      ],
+      "evidence_against": [
+        "FUN_00e39ab0's direct callee set has no App::cMessageManager, IMessageManager, StandardMessage constructor, MessageSend/Post, AddEntry, or ProcessQueue.",
+        "App::cMessageManager::ProcessQueue at 0x00884100 walks 0x18-byte queue records and releases referenced objects; the pair's 27/24 arrays are consumed by space-specific offset readers and table iteration instead.",
+        "StandardMessage is 0x40 bytes with a vtable, refcount, five 8-byte parameters, and an ID; the keyed values have raw slot storage and no message parameters or ID field established. The conditional App/Telemetry encoder is a separate generic container path, not IMessageManager transport."
+      ],
+      "independence": "The StandardMessage/IMessageManager structure and the space-pair direct callee/consumer evidence are independent checks; same-subsystem callers are not counted as payload identity.",
+      "repetition": "The phrase 'event record' in historical material is a broad category and cannot substitute for an IMessageManager edge.",
+      "status": "rejected_as_established_relation"
+    },
+    {
+      "id": "H5",
+      "name": "utfwin_or_animation_message_payload",
+      "statement": "The pair is a UTFWin Message payload, an AnimationMessage, or a refcounted cEditorAnimEvent projection.",
+      "predictions": [
+        "A Window WinProc path or IWinProc::HandleUIMessage dispatch would consume the carrier.",
+        "The record would expose UTFWin source/eventType/payload-union fields or AnimationMessage's messageID/name/creature/blockIndex/parameters.",
+        "A cEditorAnimEvent IMessageRC/DefaultRefCounted vtable and intrusive owner would be present."
+      ],
+      "evidence_for": [
+        "The pair contains numeric tokens, timing, object references, and positions that could be adapted into UI or animation presentation state.",
+        "Some space consumers perform property/UI work after reading record fields."
+      ],
+      "evidence_against": [
+        "UTFWin::Message has an SDK base of 0x0c bytes with source/eventType and anonymous payload alternatives reaching at least 0x1c; the pair has no source pointer/eventType union layout established.",
+        "AnimationMessage is 0x18 bytes with messageID, char* name, AnimatedCreature*, blockIndex, integer, and float fields; cEditorAnimEvent is 0x30 bytes with IMessageRC and DefaultRefCounted vtables.",
+        "FUN_00e39ab0 has no Window::SendMsg, IWinProc, AnimationMessage, cEditorAnimEvent, or refcount constructor in its direct callee set; its consumers use raw slot offsets and space-state fields."
+      ],
+      "independence": "The UI/animation structures and the space-pair disassembly are separate evidence sources. A consumer that later touches UI/property objects is not proof that the carrier itself is a UI message.",
+      "repetition": "The same numeric IDs and timing patterns across several space builders establish repeated internal layout usage, not a shared UTFWin or animation ABI.",
+      "status": "rejected_as_established_relation"
+    },
+    {
+      "id": "H6",
+      "name": "anonymous_command_or_protocol_record",
+      "statement": "The pair is an anonymous command/protocol record or wire-format message consumed by a command parser or resource protocol.",
+      "predictions": [
+        "A command-line, numeric command-ID, pdtk, resource-record, or protocol parser would be a direct constructor/consumer/release edge.",
+        "The record would contain command grammar, encoded strings, stream framing, or explicit serialization bytes.",
+        "Ownership would transfer to a protocol/resource record rather than a space-state table."
+      ],
+      "evidence_for": [
+        "The record's first slot is a numeric opaque discriminator and several slots carry IDs/triples, which is compatible with a tagged protocol payload in principle.",
+        "The key-0x0c and key-0x06 entries are created in multiple space/trading/tool flows where a command-like action could be encoded."
+      ],
+      "evidence_against": [
+        "No command string, CommandLine, pdtk grammar, parser, Resource::IRecord, IStream, ClassSerializer, or protocol encode/decode function appears in the direct builder/consumer/release path.",
+        "The positive byte-writing path is the generic conditional App/Telemetry keyed-container encoder, not a command or network protocol.", 
+        "The records are linked to DAT_015fd910 and raw slot helpers, not to a resource record or App::CommandLine object.",
+        "The historical command surfaces are separate: UTFWin numeric command identity, pdtk text commands, ArgScript::ICommand, App::CommandLine, and creature action handlers."
+      ],
+      "independence": "The direct absence of protocol/serializer edges is independent of the historical command-surface taxonomy; the taxonomy alone would not reject the hypothesis.",
+      "repetition": "Repeated numeric discriminants across builders are not repeated evidence of a command grammar or wire format.",
+      "status": "not_established_low_confidence"
+    }
+  ],
+  "adversarial_steps": [
+    {
+      "step": 1,
+      "name": "allocation_anchor_test",
+      "hypotheses": ["H1", "H2"],
+      "prediction": "A distinct space table should expose a common allocation anchor and container-owned buffers rather than a message object vtable.",
+      "evidence_for": [
+        "FUN_0067de90 returns DAT_015fd910.",
+        "FUN_00e39ab0 calls FUN_007ec160 with key arguments 0x0c and 0x06, then FUN_007eb820 with counts 0x1b and 0x18.",
+        "FUN_00e3ea00, FUN_00e3d9e0, FUN_00e3a270, and the key-0x0c lookup helpers repeatedly obtain the same owner/table; no direct key-0x06 consumer was found."
+      ],
+      "evidence_against": [
+        "The exact semantic owner/class of DAT_015fd910 is not named by SDK or RTTI."
+      ],
+      "independence": "Direct global getter, allocation disassembly, and repeated table access are separate observations.",
+      "repetition": "The same anchor in multiple consumers is convergent ownership evidence, not a runtime trace.",
+      "separator_result": "The two entries are table-backed and physically independent; the concrete table type remains opaque and key-0x06 semantic consumption is unresolved.",
+      "classification": "unknown"
+    },
+    {
+      "step": 2,
+      "name": "common_space_pair_test",
+      "hypotheses": ["H1", "H2"],
+      "prediction": "If the two records are one common space family, sibling builders should repeat the same 27/24 construction and shared field sources.",
+      "evidence_for": [
+        "FUN_00e394f0, FUN_00e39710, FUN_00e398e0, and FUN_00e3c7c0 repeat the 0x0c/0x1b plus 0x06/0x18 keyed-entry pattern.",
+        "They use common object/tribe position sources, timestamp helpers, cell lookup helpers, and the raw 0x053DBCF2 missing-lookup value."
+      ],
+      "evidence_against": [
+        "Only key 0x0c is returned and has a demonstrated consumer family; key 0x06 is independently stored but has no direct consumer in the focused census."
+      ],
+      "independence": "Four sibling bodies and the target's body are distinct decompilation units.",
+      "repetition": "Repeated slot counts are structural convergence; they do not prove a single wire or persistence schema.",
+      "separator_result": "Producer-coupled independent entries are supported; key-0x06 consumer identity and runtime execution remain unresolved.",
+      "classification": "unknown"
+    },
+    {
+      "step": 3,
+      "name": "cCommEvent_variant_test",
+      "hypotheses": ["H3"],
+      "prediction": "A cCommEvent subtype or projection would show a 0xa0 serializable/refcounted object and a constructor/manager edge.",
+      "evidence_for": [
+        "FUN_0102d1b0 and FUN_0102df20 co-call the pair builder and j_Sim_cCommManager_CreateSpaceCommEvent."
+      ],
+      "evidence_against": [
+        "cCommEvent is 0xa0 with two vtable pointers and mnRefCount; the target creates raw 27/24 dword arrays.",
+        "The cCommEvent constructor at 0x00aeb160 allocates 0xa0, constructs the object, inserts it into a manager vector, and performs reference operations; none is in the target path."
+      ],
+      "independence": "Co-call evidence is separated from constructor/layout and target callee evidence.",
+      "repetition": "Historical cCommEvent/space-event co-location is not subtype proof.",
+      "separator_result": "cCommEvent co-occurrence is real; payload identity is rejected as established.",
+      "classification": "unknown"
+    },
+    {
+      "step": 4,
+      "name": "app_message_transport_test",
+      "hypotheses": ["H4"],
+      "prediction": "An App carrier would route through MessageSend/Post, IMessageManager registration, or the 0x18-byte queue record and manager release path.",
+      "evidence_for": [
+        "The pair is event-like and carries a numeric discriminator/timestamp that could be adapted to a message bus."
+      ],
+      "evidence_against": [
+        "No message-manager function is in the target's direct callee set.",
+        "App::cMessageManager::ProcessQueue walks 0x18-byte records and releases objects; the target's consumers read raw arrays through FUN_00e39420/FUN_00e39de0.",
+        "StandardMessage's vtable/refcount/params[5]/id layout is not present."
+      ],
+      "independence": "Manager layout/queue behavior and target disassembly are independent checks.",
+      "repetition": "The generic term event is not counted as App transport evidence.",
+      "separator_result": "App message relation is not established; preserve a separate adapter if modern transport needs one.",
+      "classification": "unknown"
+    },
+    {
+      "step": 5,
+      "name": "utfwin_animation_test",
+      "hypotheses": ["H5"],
+      "prediction": "A UI/animation carrier would expose UTFWin source/eventType/payload or AnimationMessage/cEditorAnimEvent layouts and dispatch through Window or animation services.",
+      "evidence_for": [
+        "Downstream space consumers can create UI/property effects after reading space records."
+      ],
+      "evidence_against": [
+        "The target has no UTFWin Window, IWinProc, AnimationMessage, cEditorAnimEvent, or refcount vtable edge.",
+        "The key-0x06 sidecar is not enough to match AnimationMessage's 0x18-byte semantic fields or cEditorAnimEvent's 0x30-byte refcounted layout."
+      ],
+      "independence": "UI/animation layouts and space-record consumers are separate evidence classes.",
+      "repetition": "Presence of presentation effects after a consumer does not make the carrier a UI message.",
+      "separator_result": "UI/animation relation is not established; presentation is downstream of space state.",
+      "classification": "unknown"
+    },
+    {
+      "step": 6,
+      "name": "command_protocol_test",
+      "hypotheses": ["H6"],
+      "prediction": "A protocol/command record would reach command parsing, string/grammar construction, Resource I/O, or a serializer.",
+      "evidence_for": [
+        "Numeric tags and repeated IDs are structurally compatible with tagged records."
+      ],
+      "evidence_against": [
+        "No command, pdtk, CommandLine, Resource::IRecord, IStream, ClassSerializer, or protocol codec edge is present.",
+        "The target's ownership path is a keyed slot table, not a resource record or parser-owned message."
+      ],
+      "independence": "Direct protocol-edge search is independent of the historical command taxonomy.",
+      "repetition": "Repeated opaque tags do not establish a command language or wire format.",
+      "separator_result": "Anonymous command/protocol identity is deferred and not a safe architecture premise.",
+      "classification": "unknown"
+    },
+    {
+      "step": 7,
+      "name": "construction_to_consumer_separator",
+      "hypotheses": ["H1", "H2"],
+      "prediction": "A direct key-0x0c construction -> table iteration -> numeric dispatch -> field read/update chain should exist without message-manager or serializer calls; key 0x06 should remain a producer-side entry until a separate consumer is found.",
+      "evidence_for": [
+        "0x00e39ab0 constructs key 0x0c/27 and key 0x06/24; FUN_00e3ea00/FUN_00e3d9e0 iterate the keyed table and call FUN_00e39de0; FUN_00e3f970 calls FUN_00e3a270 on a key-0x0c state record; FUN_00e39420 reads slot triples.",
+        "FUN_00e3cf60, FUN_00e47930, and FUN_00e48fa0 consume primary-derived state and perform property/UI/space actions; no direct key-0x06 consumer appears in the focused census."
+      ],
+      "evidence_against": [
+        "The exact key-0x0c record instance from one producer to one consumer and the runtime order are not runtime-observed.",
+        "Key 0x06 has a separate value node and could have an undiscovered indirect/runtime consumer."
+      ],
+      "independence": "Construction, keyed-table iteration, numeric dispatch, field access, and the key-0x06 consumer negative are separate Ghidra observations.",
+      "repetition": "The same key-0x0c/0x06 producer pattern in sibling builders is convergence, not independent runtime confirmation.",
+      "separator_result": "A bounded static key-0x0c consumer separator was performed; it supports producer-coupled independent entries and leaves key-0x06 consumer identity unresolved.",
+      "classification": "unknown"
+    },
+    {
+      "step": 8,
+      "name": "ownership_release_serialization_separator",
+      "hypotheses": ["H1", "H2", "H3", "H4"],
+      "prediction": "The owner/table should own raw value nodes and slot buffers, with external object-reference lifetime and runtime execution remaining separate questions; generic telemetry may encode a selected key conditionally.",
+      "evidence_for": [
+        "FUN_007eb950 frees bucket nodes and their payload buffers; FUN_007eb9e0 removes and frees a keyed node.",
+        "FUN_00e3c760 reaches the owner/table teardown; FUN_007ebce0/FUN_007ebba0 conditionally encode selected keyed values through App/Telemetry and then remove the selected key.",
+        "The target values have no vtable/refcount, and the direct game path has no cCommEvent/App-message/serializer object edge."
+      ],
+      "evidence_against": [
+        "The exact teardown call's decoded stack argument is type-unsafe in decompilation, so the exact key-0x06-specific teardown identity is not overclaimed.",
+        "The telemetry stream's read-back and external compatibility role are not established; external object-reference lifetime is not recoverable from raw slots."
+      ],
+      "independence": "Generic container release, owner initialization/teardown, conditional telemetry encoding, and serialization-negative evidence are distinct observations.",
+      "repetition": "The same free and telemetry helpers appearing in multiple container paths prove infrastructure reuse, not every value's runtime release or object lifetime.",
+      "separator_result": "Table-owned raw storage and conditional generic telemetry are supported; external object-reference lifetime, runtime execution, and game persistence remain unresolved.",
+      "classification": "unknown"
+    },
+    {
+      "step": 9,
+      "name": "architecture_dependence_and_smallest_separator",
+      "hypotheses": ["H1", "H2", "H3", "H4", "H5", "H6"],
+      "prediction": "The architecture should preserve a distinct space-event adapter and avoid forcing a universal event, resource, Cell-presentation, or persistence ABI unless a direct edge is found.",
+      "evidence_for": [
+        "The target's direct callee set and static trace are internal to the keyed space/telemetry path; key 0x0c has observed consumers and key 0x06 is independently stored but not directly consumed.",
+        "cCommEvent, App messages, UTFWin messages, animation messages, and command surfaces have separate layouts, owners, and release/serialization evidence.",
+        "The only positive serialization edge is a conditional generic App/Telemetry encoder for selected keyed values, not a game-persistence, resource, network, or protocol ABI."
+      ],
+      "evidence_against": [
+        "The same space callers sometimes co-produce cCommEvent and perform UI/property actions.",
+        "The table's unknown owner, key-0x06 consumer identity, external object-reference lifetime, and runtime execution leave conditional bridges possible."
+      ],
+      "independence": "The conclusion combines independent keyed insertion, consumer, release, structure, telemetry, and historical-family evidence rather than repeating one dossier claim.",
+      "repetition": "The no-universal-ABI conclusion is convergent across multiple negative edges; absence of a direct edge is not proof of absence under indirect calls.",
+      "separator_result": "Use two independent opaque keyed entries with explicit producer-side association now. Defer key-0x06 semantic identity, external object lifetime, runtime execution, universal event, resource-codec, Cell-presentation, and game-persistence merges.",
+      "classification": "unknown"
+    }
+  ],
+  "allocation_and_construction": {
+    "anchor": {
+      "getter": "0x0067de90",
+      "global": "DAT_015fd910",
+      "observation": "FUN_0067de90 is a direct MOV EAX,[0x015fd910]; RET accessor."
+    },
+    "target": "0x00e39ab0",
+    "sequence": [
+      "Resolve DAT_015fd910 through FUN_0067de90.",
+      "Read current mode/token via FUN_00b5b800 and compare with DAT_01654c05 / DAT_00dbdba1.",
+      "Resolve the space/tribe position source through FUN_00c30c80; read +0x504/+0x508/+0x50c when the supplied position is zero.",
+      "Resolve object IDs through FUN_01021300 and object+0x84.",
+      "Obtain/resize the key-0x0c 27-slot entry with FUN_007ec160(0x0c,0) and FUN_007eb820(0x1b).",
+      "Obtain/resize the independent key-0x06 24-slot sidecar entry with FUN_007ec160(0x06,0) and FUN_007eb820(0x18).",
+      "Populate both entries; return only the key-0x0c handle. The key-0x06 handle remains local and is not passed onward in this builder."
+    ],
+    "construction_boundary": "The raw keyed insertion and resize operations are directly observed. Physical independence is resolved: the two values have different keys, value nodes, payload pointers, and lengths. The exact C++ owner class, key-0x06 consumer identity, external object-reference lifetime, and runtime execution remain unresolved."
+  },
+  "field_boundaries": {
+    "primary_key_0x0c_27_slot_record": {
+      "size_observed": "27 x 4-byte slots = 0x6c bytes",
+      "base": "payload pointer returned by the key-0x0c 27-slot value node at [node+0xc]",
+      "slots": [
+        {"offset": "0x00", "count": 1, "observed_meaning": "opaque object/event discriminator from param_1", "semantic_status": "unknown"},
+        {"offset": "0x04", "count": 1, "observed_meaning": "explicit zero write", "semantic_status": "unknown"},
+        {"offset": "0x08", "count": 1, "observed_meaning": "FUN_00b316c0() / 1000 timestamp-like value", "semantic_status": "supported_time_like"},
+        {"offset": "0x0c", "count": 3, "observed_meaning": "first supplied position triple; consumers read as 3 floats", "semantic_status": "position_bounded"},
+        {"offset": "0x18", "count": 3, "observed_meaning": "second supplied/derived position or cell-ID triple; consumers read/update as a 3-word tuple", "semantic_status": "position_or_cell_id_bounded"},
+        {"offset": "0x24", "count": 2, "observed_meaning": "object +0x84 IDs from primary and optional second object", "semantic_status": "object_id_bounded"},
+        {"offset": "0x2c", "count": 1, "observed_meaning": "lookup-derived value at resolved object+0x10; zero/initial state when lookup absent", "semantic_status": "unknown"},
+        {"offset": "0x30", "count": 1, "observed_meaning": "lookup-derived slot value or raw sentinel 0x053DBCF2 (87,932,146)", "semantic_status": "sentinel_bounded"},
+        {"offset": "0x34", "count": 3, "observed_meaning": "param_7 triple", "semantic_status": "unknown"},
+        {"offset": "0x40", "count": 6, "observed_meaning": "not written by 0x00e39ab0; vector growth supplies zero-filled slots", "semantic_status": "unknown"},
+        {"offset": "0x58", "count": 3, "observed_meaning": "param_4 triple", "semantic_status": "unknown"},
+        {"offset": "0x64", "count": 1, "observed_meaning": "param_5 scalar", "semantic_status": "unknown"},
+        {"offset": "0x68", "count": 1, "observed_meaning": "param_6 scalar", "semantic_status": "unknown"}
+      ],
+      "boundary_note": "The 0x40..0x54 range is a write boundary observation, not a claim that those fields are semantically reserved."
+    },
+    "sidecar_key_0x06_24_slot_record": {
+      "size_observed": "24 x 4-byte slots = 0x60 bytes",
+      "base": "payload pointer returned by the independent key-0x06 value node at [node+0xc]",
+      "slots": [
+        {"offset": "0x00", "count": 1, "observed_meaning": "opaque object/event discriminator from param_1", "semantic_status": "unknown"},
+        {"offset": "0x04", "count": 1, "observed_meaning": "scalar mode/derived value; zero in one sentinel branch or computed value otherwise", "semantic_status": "unknown"},
+        {"offset": "0x08", "count": 1, "observed_meaning": "timestamp-like value from FUN_00b316c0()/1000", "semantic_status": "supported_time_like"},
+        {"offset": "0x0c", "count": 4, "observed_meaning": "two lookup-derived 2-word tuples populated by FUN_00e39450 when the global lookup path is enabled", "semantic_status": "position_or_cell_id_bounded"},
+        {"offset": "0x1c", "count": 2, "observed_meaning": "object +0x84 IDs from primary and optional second object", "semantic_status": "object_id_bounded"},
+        {"offset": "0x24", "count": 1, "observed_meaning": "lookup-derived object value or zero/initial state", "semantic_status": "unknown"},
+        {"offset": "0x28", "count": 1, "observed_meaning": "lookup-derived slot value or raw sentinel 0x053DBCF2 (87,932,146)", "semantic_status": "sentinel_bounded"},
+        {"offset": "0x2c", "count": 9, "observed_meaning": "not written by 0x00e39ab0; vector growth supplies zero-filled slots", "semantic_status": "unknown"},
+        {"offset": "0x50", "count": 3, "observed_meaning": "param_4 triple", "semantic_status": "unknown"},
+        {"offset": "0x5c", "count": 1, "observed_meaning": "param_6 scalar", "semantic_status": "unknown"}
+      ],
+      "boundary_note": "The 24-slot count is directly supported by FUN_007eb820(0x18); it is not promoted to a named C++ struct."
+    }
+  },
+  "consumers": {
+    "direct_callers_of_0x00e39ab0": [
+      "0x00c4b310",
+      "0x00c830f0",
+      "0x00f17f70",
+      "0x00fda750",
+      "0x00fe2ab0",
+      "0x00fe5a20",
+      "0x01002f30",
+      "0x01004e50",
+      "0x01005d80",
+      "0x010134d0",
+      "0x0102d1b0",
+      "0x0102df20",
+      "0x0103eff0",
+      "0x0103fc10",
+      "0x01058c90",
+      "0x010593e0"
+    ],
+    "graph_metrics": {
+      "distinct_direct_callers": 16,
+      "direct_xref_rows": 23,
+      "direct_callees": 15,
+      "historical_scc_size": 14,
+      "historical_named_contexts": ["cSpaceTrading::ObtainTradingObject", "cDefaultBeamTool::WhileFiring"],
+      "caller_list_drift": {
+        "present": true,
+        "fresh_static_result": "The current Ghidra caller query returns 16 distinct direct callers and 23 direct xref rows for 0x00e39ab0.",
+        "historical_result": "The older space-event dossier lists a different 16-caller snapshot, including 0x00e36210..0x00e3a720 entries and omitting several current 0x0102..0x0105 callers.",
+        "explanation": "Caller-list drift is snapshot/export and function-boundary drift, not evidence of distinct producer families. The current direct-caller list is retained as the fresh static census; historical named contexts remain historical context only and the lists are not merged into one semantic population.",
+        "current_authority": "Ghidra direct caller/xref query against explicit SporeApp.exe",
+        "historical_authority": "docs/analysis/dossiers/unknown-high/space-event-record-pair.json"
+      }
+    },
+    "key_0x0c_consumer_census": [
+      "0x00e3ea00",
+      "0x00e3d9e0",
+      "0x00e3f970",
+      "0x00e3b5d0",
+      "0x00e3b630",
+      "0x00e3f2a0",
+      "0x00e3f7a0",
+      "0x00cd6130"
+    ],
+    "key_0x06_consumer": {
+      "status": "unresolved",
+      "direct_reader_found": false,
+      "observed": "No direct FUN_007eb100(0x06) consumer was found. The generic FUN_00668c80 path receives keys 7..11, not 6.",
+      "limit": "The focused static negative does not exclude an indirect or runtime-only consumer."
+    },
+    "selected_consumers": [
+      {"address": "0x00e39420", "role": "reads one 3-word tuple from the slot array; five direct callers"},
+      {"address": "0x00e39450", "role": "populates the key-0x06 sidecar's lookup-derived 2-word tuples"},
+      {"address": "0x00e39de0", "role": "compares and updates the first two 3-word tuples in a key-0x0c record"},
+      {"address": "0x00e3a270", "role": "large numeric-token dispatch/state update using key-0x0c record slots"},
+      {"address": "0x00e3d9e0", "role": "iterates the keyed table and invokes FUN_00e39de0 on key-0x0c values"},
+      {"address": "0x00e3f970", "role": "key-0x0c space-state orchestration caller of FUN_00e3a270"},
+      {"address": "0x00e3cf60", "role": "consumes key-0x0c-derived IDs/triples and performs property/resource/UI-space actions"},
+      {"address": "0x00e47930", "role": "consumes key-0x0c-derived field 0x10 and related IDs/triples in UI/presentation setup"},
+      {"address": "0x00e48fa0", "role": "consumes key-0x0c-derived field 0x10 and uses it for space/UI placement"},
+      {"address": "0x00e3b390", "role": "consumes key-0x0c-derived slot 0x0d and drives a UI/animation-adjacent action"}
+    ]
+  },
+  "ownership_and_release": {
+    "supported": [
+      "The owner/table owns keyed value nodes and raw slot buffers; generic helpers free the node and payload buffer.",
+      "FUN_007eb950 walks buckets and frees each value/payload node.",
+      "FUN_007eb9e0 removes a matching key and frees its value/payload node.",
+      "FUN_00e3c760 reaches the owner/table teardown for key 0x0c; no equivalent key-0x06-specific consumer/teardown identity was found in the focused census."
+    ],
+    "not_supported": [
+      "No record-local vtable, refcount, AddRef, or Release is observed on either raw value.",
+      "The exact owner class and the exact key-specific teardown argument for every entry remain unresolved.",
+      "External object-reference lifetime, runtime execution, and the semantic role of key 0x06 are unknown.",
+      "Co-occurrence with cCommEvent does not transfer cCommEvent ownership to either keyed value."
+    ],
+    "ownership_conclusion": "Freeze only table-owned raw storage. Treat object IDs/lookup-derived values and any external object references as opaque; do not infer their lifetime, runtime execution, or semantic role from storage ownership."
+  },
+  "serialization": {
+    "positive_edge": {
+      "trigger": "FUN_007ec160 checks FUN_007eb090() * 0x20 against 0x2800; a count above 640 invokes FUN_007ebce0 for the current key before insertion continues.",
+      "path": ["FUN_007ec160", "FUN_007ebce0", "FUN_007ebba0", "FUN_0093ab10", "FUN_0093aa70", "FUN_007eb600"],
+      "payload": "FUN_007ebba0 walks entries for the selected key, writes 8-byte metadata, the key, an entry identifier, and the raw 4-byte slot array; FUN_0093aa70 byte-swaps 32-bit values before writing.",
+      "destination": "FUN_007ebce0 creates a MemoryStream named App/Telemetry; FUN_007eb600 may write telemetry.dat only when the owner flag at +0x38 is enabled.",
+      "default_flag": "FUN_007ec0a0 initializes owner+0x38 to zero, so file output is not enabled by the observed default constructor.",
+      "cleanup": "After the selected-key dump, FUN_007ebba0 removes that key through FUN_007eb9e0.",
+      "scope": "Generic conditional App/Telemetry encoding for whichever keyed value is flushed, not game persistence, resource serialization, network protocol framing, or a read-back ABI."
+    },
+    "negative_edges": [
+      "No direct cGamePersistenceManager, ClassSerializer::Write/Read, ISerializer, Resource::IRecord, command parser, or network codec edge was found in the target/consumer/release path.",
+      "No read-back path corresponding to the App/Telemetry dump was found in the focused census.",
+      "The pair has no ISimulatorSerializable vtable and does not match cCommEvent's 0xa0 layout."
+    ],
+    "cCommEvent_contrast": {
+      "constructor": "0x00aeb160 allocates 0xa0, constructs the cCommEvent, inserts it into a manager vector, and uses reference operations.",
+      "layout": "cCommEvent is 160 bytes with ISimulatorSerializable/IVirtual vtable pointers, mnRefCount, event type, political/city/mission fields, and vectors.",
+      "co_callers": "0x0102d1b0 and 0x0102df20 call both the space builder and j_Sim_cCommManager_CreateSpaceCommEvent; no dataflow connects the resulting objects."
+    },
+    "conclusion": "A conditional App/Telemetry encoding edge is established for selected keyed raw values, but game persistence, resource/asset/geometry, network, and read-back semantics remain unresolved. External object-reference lifetime and runtime execution are not established by this encoding path."
+  },
+  "family_ownership_serialization_matrix": [
+    {
+      "family": "anonymous keyed space/telemetry pair",
+      "observed_carrier": "independent key-0x0c 27-slot and key-0x06 24-slot raw 32-bit entries",
+      "owner_lifetime": "DAT_015fd910 owner and embedded keyed container; raw value nodes/buffers",
+      "serialization": "conditional App/Telemetry dump through generic container helpers",
+      "relation": "independent physical entries with coupled producer-side sidecar semantics; key-0x06 consumer unresolved",
+      "status": "target_family"
+    },
+    {
+      "family": "Simulator::cCommEvent",
+      "observed_carrier": "0xa0 serializable/refcounted object",
+      "owner_lifetime": "cCommManager intrusive vector and object refcount",
+      "serialization": "ISimulatorSerializable first vtable; codec/version details unresolved",
+      "relation": "co-produced in some space callers, no payload identity",
+      "status": "separate_family"
+    },
+    {
+      "family": "App::StandardMessage",
+      "observed_carrier": "0x40 vtable/refcount/params[5]/id object",
+      "owner_lifetime": "App message manager/listener boundary",
+      "serialization": "runtime message; no persistence codec",
+      "relation": "no direct IMessageManager edge",
+      "status": "separate_family"
+    },
+    {
+      "family": "App::IMessageManager queue record",
+      "observed_carrier": "0x18-byte queue records walked by ProcessQueue",
+      "owner_lifetime": "cMessageManager queue; manager release path",
+      "serialization": "runtime queue record",
+      "relation": "not the target's table release/consumption path",
+      "status": "separate_family"
+    },
+    {
+      "family": "UTFWin::Message",
+      "observed_carrier": "0x0c SDK base with anonymous payload alternatives up to at least 0x1c",
+      "owner_lifetime": "Window WinProc/IWinProc route",
+      "serialization": "transient UI dispatch value",
+      "relation": "no Window/SendMsg/IWinProc edge",
+      "status": "separate_family"
+    },
+    {
+      "family": "AnimationMessage",
+      "observed_carrier": "0x18 messageID/name/creature/block/parameter record",
+      "owner_lifetime": "animation dispatch; container not fully recovered",
+      "serialization": "transient animation record",
+      "relation": "no AnimationMessage constructor or dispatch edge",
+      "status": "separate_family"
+    },
+    {
+      "family": "cEditorAnimEvent",
+      "observed_carrier": "0x30 IMessageRC/DefaultRefCounted object",
+      "owner_lifetime": "intrusive editor animation vector and refcount",
+      "serialization": "runtime refcounted message",
+      "relation": "no cEditorAnimEvent edge",
+      "status": "separate_family"
+    },
+    {
+      "family": "anonymous command/protocol records",
+      "observed_carrier": "opaque numeric/tagged records in multiple historical surfaces",
+      "owner_lifetime": "command/parser/resource owner unresolved",
+      "serialization": "not established",
+      "relation": "no direct command, protocol, or resource-record edge",
+      "status": "deferred_alternative"
+    }
+  ],
+  "conditional_dependency_conclusion": {
+    "depends": true,
+    "mode": "conditional",
+    "current_safe_boundary": "Keep two independent opaque keyed entries under one table owner: key 0x0c as the observed state/event entry and key 0x06 as a producer-coupled sidecar with unresolved consumer identity. Keep them separate from App message transport, UTFWin UI messages, animation messages, cCommEvent, and command/protocol records.",
+    "event_transport": "Key 0x0c is affected at the internal space-state dispatch layer and has raw-slot/numeric-dispatch consumers. Key 0x06 is independently stored but no direct consumer is established. No IMessageManager queue or listener semantics are proven.",
+    "resource_io": "Not directly coupled in the selected path. Object IDs and lookup-derived values may eventually resolve through resource/property services, but no Resource I/O or record identity is established; external object-reference lifetime is unknown.",
+    "asset_geometry": "No direct geometry/asset edge. Positions and object references can feed downstream space or presentation logic, but do not authorize merging either entry with Cell content or render assets.",
+    "cell_content_presentation": "Cell/cell-mode teardown and presentation functions share the lifecycle neighborhood, but the table-owned raw storage is distinct from cCellGame/cCellGFX/cCellUI ownership. Any presentation adapter must consume opaque primary/sidecar state rather than reinterpret either entry as a Cell message or asset record.",
+    "persistence": "A conditional App/Telemetry encoding path exists for selected keyed values, but no game-persistence, resource, network, or read-back ABI is established. Persistence remains conditional if an indirect game codec is later found.",
+    "decision_rule": "Only merge either entry with another family after recovering a direct ownership, consumer, or serialization edge and a matching layout/dispatch/release contract."
+  },
+  "classification": "unknown",
+  "classification_vocabulary": [
+    "required_for_semantics",
+    "runtime_compatibility_only",
+    "replaceable_infrastructure",
+    "unknown"
+  ],
+  "classification_reason": "The keyed-entry boundary is physically resolved: key 0x0c/27 and key 0x06/24 are independent values under one owner, with producer-coupled sidecar semantics. Key-0x06 consumer identity, external object-reference lifetime, runtime execution, exact slot semantics, telemetry read-back, and any game-persistence/resource/command role remain unknown. The safe campaign classification is unknown rather than a universal event, cCommEvent variant, resource record, or persisted payload.",
+  "minimum_safe_interface_semantics": {
+    "carrier": "Two opaque independent keyed entries under one table owner: key 0x0c primary 27-slot entry and key 0x06 producer-coupled 24-slot sidecar.",
+    "primary_slots": 27,
+    "sidecar_slots": 24,
+    "slot_width_bytes": 4,
+    "construction": "Write opaque discriminator, timestamp-like value, supplied/derived position or cell-ID tuples, object IDs, optional lookup values, raw 0x053DBCF2 (87,932,146), and caller-supplied scalar/triple fields as observed; do not name unknown slots.",
+    "dispatch": "Use a separate key-0x0c space-state table dispatcher for observed consumers; do not infer a key-0x06 dispatcher or route either entry through IMessageManager by default.",
+    "ownership": "Freeze only table-owned raw storage; external object-reference lifetime and runtime execution are unknown.",
+    "serialization": "Represent the conditional App/Telemetry encoder as a generic container side effect, not as game persistence, resource serialization, network protocol, or a read-back ABI.",
+    "cross_family_rule": "Provide adapters if modern code needs App, UTFWin, animation, cCommEvent, Resource IO, Cell, or presentation integration; never reinterpret the raw pair as those carriers without new evidence."
+  },
+  "exact_dependent_architecture_decisions": [
+    {
+      "id": "D1",
+      "decision": "Represent the target as two independent keyed entries: key 0x0c/27-slot primary and key 0x06/24-slot producer-coupled sidecar.",
+      "depends_on": ["0x00e39ab0", "0x007ec160", "0x007eb820", "FUN_00e394f0", "FUN_00e39710", "FUN_00e398e0", "FUN_00e3c7c0", "followup-05-space-pair.json:20-32"]
+    },
+    {
+      "id": "D2",
+      "decision": "Keep App StandardMessage/IMessageManager, UTFWin Message, AnimationMessage/cEditorAnimEvent, cCommEvent, and command/protocol records as separate families.",
+      "depends_on": ["cCommEvent layout at 0x00aeb160", "App::cMessageManager::ProcessQueue at 0x00884100", "UTFWin::Window::SendMsg at 0x00960250", "historical event/message artifact"]
+    },
+    {
+      "id": "D3",
+      "decision": "Use table-owned raw buffers only; do not add a vtable, message parameters, record-local refcount, external object lifetime, or runtime-execution claim.",
+      "depends_on": ["0x00e39ab0 writes", "0x007eb950", "0x007eb9e0"]
+    },
+    {
+      "id": "D4",
+      "decision": "Treat the table owner as the raw-storage/release boundary only; keep cCommManager, Cell, resource, presentation, external object-reference lifetime, and runtime execution separate.",
+      "depends_on": ["DAT_015fd910", "0x00e3c760", "0x00b32b20", "0x00e81120", "0x00aeb160"]
+    },
+    {
+      "id": "D5",
+      "decision": "Retain the raw 0x053DBCF2 (87,932,146) missing-lookup value and unknown triple/scalar slots as opaque compatibility data.",
+      "depends_on": ["0x00e39ab0", "0x00e394f0", "0x00e39710", "0x00e398e0"]
+    },
+    {
+      "id": "D6",
+      "decision": "Do not add a game-persistence, resource, network, or read-back contract; preserve only the conditional generic App/Telemetry encoding edge.",
+      "depends_on": ["0x00e39ab0 callee set", "cCommEvent constructor at 0x00aeb160", "persistence historical artifact"]
+    },
+    {
+      "id": "D7",
+      "decision": "Resolve any object/resource identity in a downstream adapter; do not expose the raw slot as a ResourceKey, asset pointer, Cell identity, or GFX handle.",
+      "depends_on": ["FUN_00b3d2a0", "FUN_00ba9370", "FUN_0067de30", "Cell runtime/presentation historical artifact"]
+    },
+    {
+      "id": "D8",
+      "decision": "If Cell or presentation needs either entry, add an explicit adapter that reads opaque keyed state; do not merge either raw entry with cCellGame/cCellGFX/cCellUI or infer external object lifetime.",
+      "depends_on": ["0x00e3cf60", "0x00e47930", "0x00e48fa0", "0x00e81120"]
+    },
+    {
+      "id": "D9",
+      "decision": "Keep field names and meaning deferred for the 0x40..0x54 primary gap, the 0x2c..0x4c key-0x06 gap, key-0x06 consumer identity, external object-reference lifetime, and runtime execution.",
+      "depends_on": ["0x00e39ab0 direct writes", "0x00e39420", "0x00e39450", "0x00e393e0"]
+    },
+    {
+      "id": "D10",
+      "decision": "Require a key-0x06 consumer/runtime or game-persistence separator before promoting the two-entry model beyond unknown classification.",
+      "depends_on": ["0x00e3a270", "0x00e3d9e0", "0x007eb950", "0x007eb9e0", "missing direct serializer/resource edge"]
+    }
+  ],
+  "freeze_list": [
+    "FUN_00e39ab0 is a side-effecting builder that returns only the key-0x0c handle and creates a separate key-0x06 value.",
+    "FUN_0067de90 returns DAT_015fd910; the owner stores independent keyed entries with separate value nodes, payload pointers, and lengths.",
+    "Key 0x0c has 27 consecutive 4-byte slots; key 0x06 has 24 consecutive 4-byte slots; neither is a view or alias of the other.",
+    "The key-0x0c value has an observed space-state/raw-slot/numeric-dispatch consumer family; no direct key-0x06 reader was found.",
+    "The shared producer inputs and sibling builders establish producer-coupled sidecar semantics, not a common view or independently proven event.",
+    "The owner/table owns raw value nodes and slot buffers; external object-reference lifetime and runtime execution are unknown.",
+    "FUN_007eb950/FUN_007eb9e0 and the owner teardown release raw table storage.",
+    "A conditional generic App/Telemetry encoder can write a selected key and remove it; this is not game persistence, resource serialization, network protocol, or a read-back ABI.",
+    "Neither entry is an established cCommEvent, StandardMessage, UTFWin Message, AnimationMessage, cEditorAnimEvent, or command/protocol carrier.",
+    "The raw missing-lookup value is 0x053DBCF2 (87,932,146), not a negative-ten sentinel."
+  ],
+  "defer_list": [
+    "Exact semantic names and types for every unknown slot, especially the key-0x0c 0x40..0x54 gap and key-0x06 0x2c..0x4c gap.",
+    "Key-0x06 consumer identity, runtime role, and whether an indirect consumer exists.",
+    "External object-reference lifetime and runtime execution of both entries.",
+    "Concrete owner/class/name of DAT_015fd910 and exact keyed teardown argument for every entry.",
+    "Runtime construction-to-consumer ordering and dispatch priority/tie behavior.",
+    "Telemetry read-back or external compatibility contract.",
+    "Any game-persistence, Resource IO, command/protocol, network, or indirect codec bridge.",
+    "Any ResourceKey, asset, geometry, Cell-content, GFX, or UI identity hidden in opaque slots.",
+    "Any relationship to cCommEvent beyond same-call-site co-occurrence."
+  ],
+  "blockers": [
+    {
+      "id": "B1",
+      "priority": "critical",
+      "blocker": "No direct consumer or runtime instance was found for key 0x06, so its semantic role remains unresolved.",
+      "next_observation": "Trace one key-0x06 insertion through any later table lookup, dispatch, telemetry, or release path; record owner, key, value node, payload pointer, and consumer call."
+    },
+    {
+      "id": "B2",
+      "priority": "high",
+      "blocker": "Exact field meanings, external object-reference lifetime, and runtime execution for the two raw values are unknown.",
+      "next_observation": "Perform a cross-consumer slot-use census and a narrow original-process instance trace; do not infer lifetime from storage ownership."
+    },
+    {
+      "id": "B3",
+      "priority": "high",
+      "blocker": "The concrete owner class/name and exact key-specific teardown argument for both entries remain unresolved.",
+      "next_observation": "Recover the owner constructor/vtable identity or correlate one owner-table clear with each key."
+    },
+    {
+      "id": "B4",
+      "priority": "high",
+      "blocker": "The conditional App/Telemetry encoding edge has no recovered read-back or external compatibility contract.",
+      "next_observation": "Observe the threshold trigger and correlate the serialized key/value with any reconstruction, external consumer, or game-persistence path."
+    },
+    {
+      "id": "B5",
+      "priority": "medium",
+      "blocker": "Game persistence, Resource IO, command/protocol, and network relations are negative for the focused path but indirect ownership remains possible.",
+      "next_observation": "Trace all owner-table callers and any matching codec/protocol/resource consumers before promoting a cross-domain edge."
+    }
+  ],
+  "citations": [
+    {
+      "kind": "ghidra",
+      "target": "0x00e39ab0",
+      "addresses": ["0x00e39ab0-0x00e39ddf"],
+      "citation": "Read-only Ghidra decompilation and disassembly; DAT_015fd910 anchor, 27/24 allocation, field writes, timestamp, sentinel, and return"
+    },
+    {
+      "kind": "ghidra",
+      "target": "slot access and dispatch",
+      "addresses": ["0x00e39420", "0x00e39450", "0x00e393e0", "0x00e39de0", "0x00e3a270", "0x00e3d9e0", "0x00e3f970", "0x00e3cf60", "0x00e47930", "0x00e48fa0"],
+      "citation": "Read-only Ghidra decompilation; raw triple access, table iteration, numeric dispatch, and downstream property/UI/space consumers"
+    },
+    {
+      "kind": "ghidra",
+      "target": "allocation/release container",
+      "addresses": ["0x0067de90", "DAT_015fd910", "0x007ec160", "0x007eb820", "0x007eb950", "0x007eb9e0", "0x007ebb60", "0x00e3c760"],
+      "citation": "Read-only Ghidra disassembly/decompilation; anchor access, array resize, keyed node release, and lifecycle teardown"
+    },
+    {
+      "kind": "ghidra",
+      "target": "sibling builders",
+      "addresses": ["0x00e394f0", "0x00e39710", "0x00e398e0", "0x00e3c7c0"],
+      "citation": "Read-only Ghidra decompilation; repeated 27/24 construction and common space-state field sources"
+    },
+    {
+      "kind": "ghidra",
+      "target": "cCommEvent contrast",
+      "addresses": ["0x00aeb720", "0x00aeb160", "0x00aebe90", "cCommEvent"],
+      "citation": "Read-only Ghidra decompilation and structure layout; cCommEvent allocation/refcount/manager ownership versus raw space slots"
+    },
+    {
+      "kind": "ghidra",
+      "target": "App and UTFWin contrast",
+      "addresses": ["0x00884100", "0x0098f4d0", "0x00960250", "StandardMessage", "cMessageManager", "UTFWin::Message"],
+      "citation": "Read-only Ghidra structure/decompilation; App 0x18 queue records, manager release, and UTFWin dispatch are separate carriers"
+    },
+    {
+      "kind": "followup",
+      "target": "independent key-0x06 sidecar result",
+      "path": "knowledgegraph/research/architecture-resolution/followup-05-space-pair.json:18-25,35-49,227-257",
+      "citation": "Read-only follow-up static resolution; key 0x0c/27 and key 0x06/24 are independent entries, producer-coupled sidecar semantics, key-0x06 consumer unresolved, and conditional App/Telemetry encoding"
+    },
+    {
+      "kind": "followup",
+      "target": "space-pair follow-up report",
+      "path": "knowledgegraph/research/architecture-resolution/followup-05-space-pair.md:7-20,22-43,45-78,130-174",
+      "citation": "Read-only follow-up narrative; independent keyed entries, caller-list/consumer boundary, telemetry edge, and remaining blocker"
+    },
+    {
+      "kind": "historical",
+      "target": "space event dossier",
+      "path": "docs/analysis/dossiers/unknown-high/space-event-record-pair.md:1-93",
+      "citation": "Read-only historical allocation/anchor summary, callers, callees, and unresolved layout"
+    },
+    {
+      "kind": "historical",
+      "target": "event/message family audit",
+      "path": "knowledgegraph/research/types/07-event-message.md:1-729",
+      "citation": "Read-only historical family separation, cCommEvent/App/UTFWin/animation/command boundaries, and unresolved space-record questions"
+    },
+    {
+      "kind": "historical",
+      "target": "conflict inventory",
+      "path": "knowledgegraph/research/conflicts/00-corpus-inventory.json:1055-1086",
+      "citation": "Read-only CONFLICT-ANONYMOUS-SPACE-RECORDS subject, conditional architecture impact, and next separator"
+    },
+    {
+      "kind": "historical",
+      "target": "cross-domain event conflict",
+      "path": "knowledgegraph/research/conflicts/track-f-cross-domain-impact.json:1667-1849",
+      "citation": "Read-only heterogeneous event-family and do-not-collapse conclusions"
+    },
+    {
+      "kind": "historical",
+      "target": "persistence architecture",
+      "path": "knowledgegraph/research/types/08-persistence-serialization.md:99-143,199-220",
+      "citation": "Read-only serializer boundaries and explicit separation of serializable simulator objects from transient/runtime records"
+    },
+    {
+      "kind": "historical",
+      "target": "Cell architecture",
+      "path": "knowledgegraph/research/architecture-resolution/track-08-cell-lifecycle.json:383-464",
+      "citation": "Read-only Cell simulation/presentation/content ownership matrix used to bound conditional Cell impact"
+    }
+  ],
+  "limitations": [
+    "Ghidra was queried read-only and explicitly targeted SporeApp.exe; no function, data, type, symbol, vtable, or project mutation was performed.",
+    "No original-process runtime/Wine trace was performed because no narrow architecture-deciding trace was available; runtime execution and external object-reference lifetime remain unknown.",
+    "Historical artifacts and follow-up-05 were read only; no SPORE/ directory or knowledgegraph/spore.db access was performed.",
+    "The current Ghidra direct-caller census differs from the older dossier list; this is documented as snapshot/function-boundary drift, not a semantic merge.",
+    "No direct key-0x06 consumer was found in the focused static graph; this bounded negative does not exclude an indirect or runtime-only consumer.",
+    "The conditional App/Telemetry encoding edge is real, but its read-back and external compatibility significance are not established.",
+    "Decompiler calling conventions and several stack-argument type recoveries are unreliable, especially the keyed teardown call; exact table owner/key identity remains deferred.",
+    "The 27/24 slot counts and independent key boundaries are stronger than the historical field descriptions, but semantic field names remain unknown.",
+    "No current OpenSpore implementation was created or authorized by this investigation."
+  ],
+  "subagent_status": "No subagent interface was exposed in this session. Three independent evidence streams were collected in parallel read-only: allocation/xrefs/consumer decompilation; structure/ownership/release/serialization contrast; and historical event-family/mode/resource/Cell conditional dependency review. The synthesis is authored here and does not treat those streams as runtime proof."
+}

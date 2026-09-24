@@ -1,0 +1,706 @@
+{
+  "track": "resource-lifetime",
+  "scope": "SporeApp.exe 3.1.0.22 renderer-boundary resource acquisition, identity remapping, reference and ownership, release/unload, and Cell mode/entity lifetime; static evidence only, with no runtime promotion",
+  "boundaries": [
+    {
+      "classification": "required_for_semantics",
+      "boundary": "ResourceKey to database/cache to parsed-record acquisition",
+      "gameplay_caller": "Cell resource consumers, cCellGame initialization, and cCellGFX preload helpers",
+      "original_callee": "Resource::cResourceManager::Initialize; Resource::cResourceManager::GetPrivateResource; Resource::cResourceManager::GetRecordKeyList2; Resource::cResourceManager::SetKeyName; Resource::cResourceManager::RegisterFactory; Resource::cResourceManager::IsDatabaseRegistered",
+      "parameters": [
+        "ResourceKey{instanceID,typeID,groupID}",
+        "Database* and IResourceFactory*",
+        "IKeyFilter* for record enumeration",
+        "wchar16* file name for key-name remapping",
+        "cached and remove flags"
+      ],
+      "outputs": [
+        "intrusive_ptr<Resource::ResourceObject> lookup handle",
+        "vector<ResourceKey> enumeration result",
+        "name-to-key mapping",
+        "database and factory registration state"
+      ],
+      "state_changed": [
+        "resource-manager hash/index table",
+        "database list and cache associations",
+        "factory registry",
+        "name-to-key remapping table",
+        "resource-object handle on a successful lookup"
+      ],
+      "structures": [
+        "Resource::cResourceManager",
+        "ResourceKey",
+        "Resource::ResourceObject",
+        "intrusive_ptr<Resource::ResourceObject>",
+        "Database",
+        "IResourceFactory",
+        "PFIndexModifiable"
+      ],
+      "lifetime": "The manager owns its indexes, database registrations, factory registrations, and remapping state. The exported GetPrivateResource signature returns an intrusive_ptr-shaped ResourceObject handle, so callers should retain that handle until the resource is no longer needed; the exact acquire/release edge is not present in the captured body. SetKeyName performs temporary-container cleanup and virtual callbacks, so key remapping is not merely a string-table edit. OpenSpore should make the record identity and explicit handle lifetime stable while hiding the original manager object graph.",
+      "failure_semantics": "Initialize, lookup, registration, and remapping use boolean/vector return conventions, but the exported pseudocode does not reliably distinguish absent, invalid, and not-yet-registered resources. OpenSpore should return an explicit error and preserve whether a key was absent versus unreadable rather than copying the original boolean ambiguity.",
+      "timing_order": "Build or mount the resource indexes before any presentation preload; register databases and factories before lookup; resolve cell resource keys before acquiring models, textures, or effects; cache or remap keys before the stage becomes display-active. The committed Cell campaign records the intended chain as Initialize -> PreloadResources -> StartDisplay.",
+      "openspore_concept": "stable content identity and resource selection",
+      "modern_abstraction": "IContentStore + IRecordCodec, with IResourceProvider::fetch(type, group, instance) returning owned bytes or an explicit error; package priority, indexes, factories, and remapping stay behind the adapter",
+      "evidence": [
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/track-k-engine-boundaries.json",
+          "line": 295,
+          "symbol": "B-K-04 Cell resource identity and content loading"
+        },
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/track-k-engine-boundaries.json",
+          "line": 314,
+          "symbol": "Resource::cResourceManager::GetPrivateResource / GetRecordKeyList2 / SetKeyName"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 15785,
+          "symbol": "Resource::cResourceManager::GetPrivateResource"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 15819,
+          "symbol": "Resource::cResourceManager::SetKeyName"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Resource__cResourceManager__Initialize.c",
+          "line": 19,
+          "symbol": "Resource::cResourceManager::Initialize"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Resource__cResourceManager__GetPrivateResource.c",
+          "line": 8,
+          "symbol": "Resource::cResourceManager::GetPrivateResource"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Resource__cResourceManager__GetRecordKeyList2.c",
+          "line": 8,
+          "symbol": "Resource::cResourceManager::GetRecordKeyList2"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Resource__cResourceManager__SetKeyName.c",
+          "line": 34,
+          "symbol": "Resource::cResourceManager::SetKeyName"
+        },
+        {
+          "file": "src/compat/ResourceProvider.hpp",
+          "line": 24,
+          "symbol": "IResourceProvider"
+        }
+      ],
+      "confidence": "medium",
+      "notes": "Content identity is a required semantic contract. Exact cache eviction, multi-package priority, directory semantics, and the precise GetPrivateResource ownership edge remain unresolved; the current B1 seam intentionally serves one borrowed package image and reparses its index."
+    },
+    {
+      "classification": "replaceable_infrastructure",
+      "boundary": "Database record leases, directory-file refcounts, and packed-file index handles",
+      "gameplay_caller": "ResourceManager and IO stream consumers beneath renderer preloads",
+      "original_callee": "Resource::DatabaseDirectoryFiles::GetRefCount; Resource::DatabaseDirectoryFiles::CloseRecord; Resource::DatabaseDirectoryFiles::Dispose; Resource::DatabasePackedFile::DestroyIndex; Resource::PFIndexModifiable::GetFiles",
+      "parameters": [
+        "IRecord* record lease",
+        "IKeyFilter* enumeration filter",
+        "EAIOZoneObject* index object",
+        "vector<ResourceKey>* output"
+      ],
+      "outputs": [
+        "database reference count",
+        "record close/dispose result",
+        "resource-key enumeration result",
+        "index teardown result"
+      ],
+      "state_changed": [
+        "DatabaseDirectoryFiles reference count",
+        "record mnRefCount and database callback state",
+        "record/index list membership",
+        "allocator-owned index nodes"
+      ],
+      "structures": [
+        "Resource::DatabaseDirectoryFiles",
+        "IRecord",
+        "Resource::DatabasePackedFile",
+        "Resource::PFIndexModifiable",
+        "ResourceKey"
+      ],
+      "lifetime": "A record is a borrowable database object whose close path is coupled to the record refcount and database callbacks. Directory disposal resets a lock-protected counter and tears down the database object; PFIndex enumeration removes stale index nodes and frees their allocations. DatabasePackedFile::DestroyIndex is empty in the captured body, so index destruction must not be assumed to mean all backing resources are released. OpenSpore should scope record leases around parsing and copying bytes, then release them before stage teardown completes.",
+      "failure_semantics": "GetRefCount returns the current count, CloseRecord and Dispose return booleans, and GetFiles returns a size. The captured pseudocode does not expose a stable error code or a complete close-failure path; missing and malformed records therefore need distinct modern errors.",
+      "timing_order": "Open or borrow the database/record only for the resource operation; read and parse the needed bytes; close the record after the loader no longer needs the source stream; release database/index handles during package or content-store unmount. A renderer upload must not depend on a closed database stream unless all required bytes are copied.",
+      "openspore_concept": "borrow-versus-own resource bytes and explicit lease release",
+      "modern_abstraction": "IContentStore::read returns an owned ByteSpan with explicit errors, or IRecordLease has deterministic destruction; package mount/unmount owns index lifetime while third-party stream details remain hidden",
+      "evidence": [
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/track-k-engine-boundaries.json",
+          "line": 326,
+          "symbol": "Resource::DatabasePackedFile::Lock / PFIndexModifiable::Read"
+        },
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/track-k-engine-boundaries.json",
+          "line": 350,
+          "symbol": "IContentStore + IRecordCodec"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Resource__DatabaseDirectoryFiles__GetRefCount.c",
+          "line": 8,
+          "symbol": "Resource::DatabaseDirectoryFiles::GetRefCount"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Resource__DatabaseDirectoryFiles__CloseRecord.c",
+          "line": 24,
+          "symbol": "Resource::DatabaseDirectoryFiles::CloseRecord"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Resource__DatabaseDirectoryFiles__Dispose.c",
+          "line": 8,
+          "symbol": "Resource::DatabaseDirectoryFiles::Dispose"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Resource__DatabasePackedFile__DestroyIndex.c",
+          "line": 8,
+          "symbol": "Resource::DatabasePackedFile::DestroyIndex"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Resource__PFIndexModifiable__GetFiles.c",
+          "line": 23,
+          "symbol": "Resource::PFIndexModifiable::GetFiles"
+        },
+        {
+          "file": "src/compat/ResourceProvider.hpp",
+          "line": 32,
+          "symbol": "DbpfResourceProvider"
+        }
+      ],
+      "confidence": "medium",
+      "notes": "This is a replaceable storage boundary, not a gameplay interface. The original has observable refcount and close machinery, but the exact record owner and index-cache policy are not fully recoverable from the exported bodies."
+    },
+    {
+      "classification": "required_for_semantics",
+      "boundary": "cCellGFX world, layer, shadow, and effects handle table",
+      "gameplay_caller": "App::cCellModeStrategy::Initialize; cCellGFX::PreloadResources; cCellGFX::StartDisplay",
+      "original_callee": "Simulator::Cell::cCellGFX::Initialize; Graphics::IRenderer::Get; Graphics::IShadowWorld::Get; ILayer and world-service virtual methods",
+      "parameters": [
+        "no explicit parameters in cCellGFX::Initialize",
+        "world and layer IDs supplied by renderer services",
+        "named layers CellGame-Background and CellGame-Main"
+      ],
+      "outputs": [
+        "ordered world/layer handles for skybox, background, beach, main-model, effects, and foreground worlds",
+        "shadow-layer associations",
+        "display/layer state for later preload and draw"
+      ],
+      "state_changed": [
+        "sCellGFX world/layer slots from 0x161a0 through 0x161d8",
+        "world-to-layer and shadow associations",
+        "display flags and effect-world bindings"
+      ],
+      "structures": [
+        "Simulator::Cell::cCellGFX",
+        "ILayer",
+        "IShadowWorld",
+        "IEffectsManager",
+        "world/layer handle pair"
+      ],
+      "lifetime": "Initialize creates and stores presentation handles in a fixed slot order. When a slot is replaced, the decompiled body destroys/releases the old handle before retaining the new one. Those handles must remain valid for preload and display, then be unbound or destroyed during mode teardown. OpenSpore should model the world/layer association and ordering, not reproduce RenderWare or service object layouts.",
+      "failure_semantics": "The constructor does not expose a clean uniform failure return; downstream preload helpers tolerate null model/resource handles. A partial world/layer table must therefore not be treated as a valid display stage, and modern initialization should fail atomically or report which world handle is missing.",
+      "timing_order": "Initialize the world/layer table before resource preloads; preload models, effects, and populate associations into those worlds; call StartDisplay only after the associations are ready; stop display before Dispose releases the table. The committed campaign maps this as Initialize -> PreloadResources -> StartDisplay.",
+      "openspore_concept": "ordered world/layer association with stage-owned presentation handles",
+      "modern_abstraction": "ICellPresentation with explicit createWorld/destroyWorld, layer binding, visibility, and start/stop display operations; handles are borrowed by the scene owner and destroyed after display shutdown",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__Initialize.c",
+          "line": 47,
+          "symbol": "Simulator::Cell::cCellGFX::Initialize"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__Initialize.c",
+          "line": 54,
+          "symbol": "CellSkyboxEffectsWorld handle replacement"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__Initialize.c",
+          "line": 83,
+          "symbol": "CellBackgroundEffectsWorld handle replacement"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__Initialize.c",
+          "line": 146,
+          "symbol": "CellBeachEffectsWorld handle replacement"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__Initialize.c",
+          "line": 189,
+          "symbol": "CellEffectsWorld and CellGame-Main handle creation"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__StartDisplay.c",
+          "line": 16,
+          "symbol": "Simulator::Cell::cCellGFX::StartDisplay"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__Dispose.c",
+          "line": 40,
+          "symbol": "App::cCellModeStrategy::Dispose"
+        },
+        {
+          "file": "docs/analysis/campaigns/cell-stage-campaign.md",
+          "line": 455,
+          "symbol": "CS-26 cCellGFX preload path"
+        },
+        {
+          "file": "src/apps/CellGfx.hpp",
+          "line": 41,
+          "symbol": "CellGfx"
+        }
+      ],
+      "confidence": "high",
+      "notes": "The world IDs, slot order, and display ordering are well supported statically. Exact renderer object ownership is not a gameplay contract; the report records only the handle association and teardown obligations."
+    },
+    {
+      "classification": "required_for_semantics",
+      "boundary": "Cell resource preload to model, texture, and effect acquisition",
+      "gameplay_caller": "Simulator::Cell::cCellGFX::PreloadResources and recursive preload helpers",
+      "original_callee": "cCellGFX::PreloadResources; cCellGFX::PreloadCellResource; cCellGFX::PreloadPopulateResource; cCellGFX::PreloadCreature; cCellGFX::AddPreloadedModel; cCellGFX::AddPreloadedModel2; cCellGFX::AddPreloadedTexture; cCellGFX::AddPreloadedEffect; Simulator::Cell::GetModelKeyForCellResource",
+      "parameters": [
+        "cCellDataReference<cCellCellResource> and cCellDataReference<cCellPopulateResource>",
+        "resource/preloaded maps and nested record references",
+        "model instanceID, groupID, and optional waitUntilLoaded",
+        "Model*, Texture*, and effect instance/group IDs"
+      ],
+      "outputs": [
+        "preloaded model handles",
+        "preloaded texture handles",
+        "preloaded effect and creature handles",
+        "cell-resource to model ResourceKey mapping",
+        "preloaded model/populate associations"
+      ],
+      "state_changed": [
+        "cCellGFX preloaded model and resource maps",
+        "model-like counter field_40 during AddPreloadedModel2",
+        "intrusive-pointer bookkeeping for preloaded textures",
+        "preloaded creature/effect lists",
+        "model-key identity selected from nested cell resource records"
+      ],
+      "structures": [
+        "cCellDataReference<cCellCellResource>",
+        "cCellDataReference<cCellPopulateResource>",
+        "Graphics::Model",
+        "Texture",
+        "IVisualEffect",
+        "ResourceKey",
+        "cCellGFX preloaded-resource collections"
+      ],
+      "lifetime": "Preload acquisition happens before display. AddPreloadedModel obtains a model through the model service, increments a refcount-like field, and either retains the model through the preload collection or releases the temporary reference when the counter falls below the retain threshold. AddPreloadedTexture performs intrusive-pointer bookkeeping around its vector slot. PreloadCreature stores a non-null returned handle. The exact field_40 layout is decompiler-sensitive, but the required contract is strong handle retention across the preload-to-display interval and release when stage associations are removed.",
+      "failure_semantics": "Null model acquisition is skipped; zero effect identity is skipped; failed or unresolved child references do not propagate a rich error through the exported void helpers. OpenSpore should make missing keys, unsupported record versions, and optional wait timeouts explicit without silently treating them as successful preloads.",
+      "timing_order": "Initialize worlds, walk the primary cell resource and populate records, recursively acquire nested models/effects/creatures, resolve nested model keys, register all preload associations, then start display. waitUntilLoaded may delay completion before the preload map is considered ready; the original ordering is summarized in the Cell campaign.",
+      "openspore_concept": "preload cache and resource association before first visible draw",
+      "modern_abstraction": "IResourceCache/IContentStore plus ICellPresentation::preloadModel, preloadEffect, and bindPopulate; use strong shared handles, per-key deduplication, explicit readiness state, and deterministic cache eviction",
+      "evidence": [
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 33554,
+          "symbol": "Simulator::Cell::cCellGFX::AddPreloadedModel2"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 33555,
+          "symbol": "Simulator::Cell::cCellGFX::AddPreloadedModel"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 33573,
+          "symbol": "Simulator::Cell::cCellGFX::PreloadResources"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__PreloadResources.c",
+          "line": 50,
+          "symbol": "Simulator::Cell::cCellGFX::PreloadResources"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__PreloadCellResource.c",
+          "line": 52,
+          "symbol": "Simulator::Cell::cCellGFX::PreloadCellResource"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__PreloadPopulateResource.c",
+          "line": 42,
+          "symbol": "Simulator::Cell::cCellGFX::PreloadPopulateResource"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__AddPreloadedModel.c",
+          "line": 14,
+          "symbol": "Simulator::Cell::cCellGFX::AddPreloadedModel"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__AddPreloadedModel2.c",
+          "line": 14,
+          "symbol": "Simulator::Cell::cCellGFX::AddPreloadedModel2"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__AddPreloadedTexture.c",
+          "line": 16,
+          "symbol": "Simulator::Cell::cCellGFX::AddPreloadedTexture"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__PreloadCreature.c",
+          "line": 13,
+          "symbol": "Simulator::Cell::cCellGFX::PreloadCreature"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__GetModelKeyForCellResource.c",
+          "line": 34,
+          "symbol": "Simulator::Cell::GetModelKeyForCellResource"
+        },
+        {
+          "file": "docs/analysis/campaigns/cell-stage-campaign.md",
+          "line": 456,
+          "symbol": "CS-26 cCellGFX preload path"
+        }
+      ],
+      "confidence": "high",
+      "notes": "The preload sequence and identity remapping are required semantics. The exact refcount field layout and constructor-side AddRef behavior are not promoted from decompiler type guesses."
+    },
+    {
+      "classification": "renderware_third_party",
+      "boundary": "Graphics model-manager handle and final release",
+      "gameplay_caller": "cCellGFX preload helpers and any model-owning presentation/entity path",
+      "original_callee": "Graphics::Model::Release; Graphics::IModelManager::Get",
+      "parameters": [
+        "Model* this"
+      ],
+      "outputs": [
+        "residual model counter value",
+        "zero result after finalization path"
+      ],
+      "state_changed": [
+        "Model refcount-like counter at in_ECX+0x10",
+        "model finalizer callback when the counter reaches the release threshold"
+      ],
+      "structures": [
+        "Graphics::Model",
+        "IModelManager",
+        "intrusive_ptr<Graphics::Model>"
+      ],
+      "lifetime": "The direct release body treats the counter as less than two at finalization, otherwise decrements it and returns the remaining count. This proves a refcount-like release contract, not the unseen model constructor or all AddRef sites. A model must remain owned by the preload/world/entity graph through all submitted draws and be released only after the last semantic owner is gone; the modern renderer should not destroy a device mesh while a frame may still use it.",
+      "failure_semantics": "Release has no explicit error result. The finalizer is called when the observed counter is below the threshold, and the method returns zero; AddRef and allocation failure paths are not captured. Do not infer that the cCellGFX field_40 counter is the same storage as Model::Release.",
+      "timing_order": "Acquire or retain before preload registration; use only while the model is bound to its world/entity presentation; release after world/entity associations are cleared and after the renderer has retired in-flight work. The exported model release itself is not a draw submission.",
+      "openspore_concept": "shared model lifetime across semantic owners, not one model per draw call",
+      "modern_abstraction": "IModelCache returning shared ModelHandle values with explicit retain/release and backend retirement; MeshSource can create a transient renderer handle but must not destroy the underlying semantic model while an owner remains",
+      "evidence": [
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 134,
+          "symbol": "Graphics::Model::Release"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__Model__Release.c",
+          "line": 9,
+          "symbol": "Graphics::Model::Release"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__IModelManager__Get.c",
+          "line": 8,
+          "symbol": "Graphics::IModelManager::Get"
+        },
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 381,
+          "symbol": "ActiveState and MaterialShader state-cache requirements"
+        },
+        {
+          "file": "docs/analysis/semantic-atlas.md",
+          "line": 167,
+          "symbol": "Vulkan renderer and IRenderer"
+        },
+        {
+          "file": "src/compat/MeshSource.hpp",
+          "line": 64,
+          "symbol": "submitMeshSource"
+        }
+      ],
+      "confidence": "medium",
+      "notes": "The original model release mechanism is third-party implementation detail. The semantic requirement is strong ownership through use and last-owner release; exact AddRef, finalizer, and GPU-retirement behavior are unresolved."
+    },
+    {
+      "classification": "required_for_semantics",
+      "boundary": "Cell entity to effect-map slot to IVisualEffect instance lifetime",
+      "gameplay_caller": "Cell interaction/effect events and the per-frame Cell update",
+      "original_callee": "Simulator::Cell::cCellGFX::LoadEffectMap; Simulator::Cell::cCellGFX::InstanceEffectOnCell; Simulator::Cell::cCellGame::Initialize",
+      "parameters": [
+        "cCellObjectData* cell",
+        "effectID",
+        "cell/player pool identity",
+        "world selection and cell transform"
+      ],
+      "outputs": [
+        "world-specific effect handle",
+        "IVisualEffect* instance returned for an entity",
+        "effect-map slot binding"
+      ],
+      "state_changed": [
+        "per-world cCellGFX effect slots",
+        "effect instance array and ownership state",
+        "cell/player pool association",
+        "cell transform and effect parameters"
+      ],
+      "structures": [
+        "cCellObjectData",
+        "cCellQueryLinkedPool",
+        "Simulator::Cell::cCellGFX effect slots",
+        "IVisualEffect",
+        "cCellEffectMapResource"
+      ],
+      "lifetime": "LoadEffectMap checks whether an existing effect slot is valid, releases or disables an invalid/old slot, creates a new effect from the selected world when absent, starts it, and applies parameters. InstanceEffectOnCell selects the background or foreground world from the cell query/player identity, releases a prior temporary effect when present, creates a new instance, stores it in the effect-instance array, applies the cell transform, and releases the temporary/previous effect path. Effects are therefore entity-scoped instances over world-owned effect resources, not world-global textures.",
+      "failure_semantics": "LoadEffectMap reports a missing effect start with a log and skips that entry; it does not return a rich error. InstanceEffectOnCell returns a nullable effect handle. Player-index-dependent positioning is skipped when the player index is unavailable.",
+      "timing_order": "Preload effect definitions and world associations before display; load the effect map when the stage is active; instantiate an effect only after the event/entity has a selected world and transform; replace or release the prior instance before or when a new instance is created; release all instances before mode/world teardown.",
+      "openspore_concept": "entity-scoped visual-effect handles with a separate world/template association",
+      "modern_abstraction": "ICellPresentation or IVisualEffectInstance owned by the entity/presentation layer; world holds effect definitions, entity owns an instance handle, and cull/mode-exit releases the instance before its world is destroyed",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__LoadEffectMap.c",
+          "line": 53,
+          "symbol": "Simulator::Cell::cCellGFX::LoadEffectMap"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__LoadEffectMap.c",
+          "line": 76,
+          "symbol": "Simulator::Cell::cCellGFX::LoadEffectMap"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__LoadEffectMap.c",
+          "line": 98,
+          "symbol": "Simulator::Cell::cCellGFX::LoadEffectMap"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__InstanceEffectOnCell.c",
+          "line": 30,
+          "symbol": "Simulator::Cell::cCellGFX::InstanceEffectOnCell"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__InstanceEffectOnCell.c",
+          "line": 56,
+          "symbol": "Simulator::Cell::cCellGFX::InstanceEffectOnCell"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__InstanceEffectOnCell.c",
+          "line": 67,
+          "symbol": "Simulator::Cell::cCellGFX::InstanceEffectOnCell"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGame__Initialize.c",
+          "line": 40,
+          "symbol": "Simulator::Cell::cCellGame::Initialize"
+        },
+        {
+          "file": "docs/analysis/campaigns/cell-stage-campaign.md",
+          "line": 508,
+          "symbol": "CS-31 Animation + effects"
+        }
+      ],
+      "confidence": "medium",
+      "notes": "The effect release and replacement sequence is statically visible, but exact IVisualEffect finalization, pending GPU work, and the entity cull-time release path are not runtime-observed."
+    },
+    {
+      "classification": "required_for_semantics",
+      "boundary": "Game-mode transition and Cell entity/stage teardown lifetime",
+      "gameplay_caller": "App::cGameModeManager::SetActiveModeAt and the application frame/host lifecycle",
+      "original_callee": "App::cGameModeManager::SetActiveModeAt; App::cCellModeStrategy::Initialize; App::cCellModeStrategy::OnEnter; App::cCellModeStrategy::OnExit; App::cCellModeStrategy::Dispose; Simulator::Cell::cCellGame::Initialize",
+      "parameters": [
+        "mode index",
+        "cGameModeManager* this",
+        "cCellModeStrategy* this",
+        "mode-manager registration object"
+      ],
+      "outputs": [
+        "old-mode exit and new-mode enter transition",
+        "Cell stage singleton initialization and teardown",
+        "per-frame Cell update",
+        "stopped display and cleared stage state"
+      ],
+      "state_changed": [
+        "active game-mode index",
+        "sCellGame, sCellGFX, and sCellUI singleton pointers",
+        "Cell mode initialized/entered flags",
+        "background clear-color globals",
+        "Cell entity pool and stage frame state"
+      ],
+      "structures": [
+        "App::cGameModeManager",
+        "App::cCellModeStrategy",
+        "Simulator::Cell::cCellGame",
+        "Simulator::Cell::cCellGFX",
+        "Simulator::Cell::cCellUI",
+        "Cell entity pool"
+      ],
+      "lifetime": "The mode manager performs old-mode exit before new-mode enter. Cell Initialize allocates and resets stage singletons, initializes the entity/background state, and prepares resources; OnEnter starts display; OnExit disables the stage, resets presentation globals, and iterates remaining objects before display shutdown; Dispose releases GFX, UI, and game singletons and clears the stage. All entity/resource owners must therefore be released before the mode's final teardown, and no draw may use a stage handle after Dispose.",
+      "failure_semantics": "The exported SetActiveModeAt body is boundary-damaged and does not expose a stable error contract; the committed boundary report identifies mode activation as a required semantic seam. A failed initialization or partial allocation must not leave a mode registered as display-ready; modern code should fail initialization atomically and keep OnExit/Dispose idempotent.",
+      "timing_order": "Initialize once before activation; set active mode with old OnExit then new OnEnter; update the active mode each frame; on transition call OnExit before Dispose; release entity/effect/model/presentation resources before world/device teardown; only then shut down the renderer. The current OpenSpore manager preserves old-exit/new-enter order and the current strategy clears preload/world state during Dispose.",
+      "openspore_concept": "stage owner controls entity, presentation, and renderer-resource teardown order",
+      "modern_abstraction": "IAppHost + IGameModeRegistry with explicit initialize/onEnter/update/onExit/dispose ordering; inject a stage lifetime owner or RAII scope so entity and graphics resources cannot outlive the mode",
+      "evidence": [
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/track-k-engine-boundaries.json",
+          "line": 108,
+          "symbol": "App::cGameModeManager::SetActiveModeAt"
+        },
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/track-k-engine-boundaries.json",
+          "line": 118,
+          "symbol": "App::cCellModeStrategy lifecycle slots"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__Initialize.c",
+          "line": 32,
+          "symbol": "App::cCellModeStrategy::Initialize"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnEnter.c",
+          "line": 19,
+          "symbol": "App::cCellModeStrategy::OnEnter"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnExit.c",
+          "line": 15,
+          "symbol": "App::cCellModeStrategy::OnExit"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__Dispose.c",
+          "line": 20,
+          "symbol": "App::cCellModeStrategy::Dispose"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGame__Initialize.c",
+          "line": 40,
+          "symbol": "Simulator::Cell::cCellGame::Initialize"
+        },
+        {
+          "file": "docs/analysis/campaigns/cell-stage-campaign.md",
+          "line": 475,
+          "symbol": "CS-28 cCellModeStrategy lifecycle"
+        },
+        {
+          "file": "src/apps/CellModeStrategy.cpp",
+          "line": 18,
+          "symbol": "CellModeStrategy::dispose"
+        },
+        {
+          "file": "src/apps/CellModeStrategy.cpp",
+          "line": 80,
+          "symbol": "GameModeManager::setActiveModeAt"
+        }
+      ],
+      "confidence": "high",
+      "notes": "The mode and teardown order is a required semantic contract. Exact original error propagation and the original mode manager's complete ABI are unresolved; current OpenSpore lifecycle code is an approximation, not live-runtime validation."
+    },
+    {
+      "classification": "renderware_third_party",
+      "boundary": "Material, raster/texture-slot, mesh-stream, and index-buffer remapping at draw time",
+      "gameplay_caller": "Cell, terrain, and other presentation draw paths that submit meshes with material and texture state",
+      "original_callee": "Graphics::MaterialShader::GetMaterialShader; Graphics::ActiveState::SetShaderData; RenderWare::CompiledState::SetRaster; RenderWare::CompiledState::GetRaster; RenderWare::Mesh::SetIndexBuffer; RenderWare::Mesh::SetIndicesCount",
+      "parameters": [
+        "shaderID",
+        "material slot index",
+        "Raster* texture/raster pointer",
+        "Mesh* and IndexBuffer*",
+        "shader-data index and value"
+      ],
+      "outputs": [
+        "cached MaterialShader lookup or null",
+        "updated or queried raster slot",
+        "bound vertex streams and index buffer",
+        "current mesh index count and primitive state"
+      ],
+      "state_changed": [
+        "global MaterialShader list last-hit cache",
+        "CompiledState raster-slot bindings",
+        "ActiveState shader-data queue",
+        "cached vertex-stream bindings",
+        "cached index-buffer binding and primitive count"
+      ],
+      "structures": [
+        "Graphics::MaterialShader",
+        "Graphics::ActiveState",
+        "RenderWare::CompiledState",
+        "RenderWare::Raster",
+        "RenderWare::Mesh",
+        "RenderWare::IndexBuffer",
+        "Graphics::RenderUtils device wrapper"
+      ],
+      "lifetime": "These functions establish binding/remapping state, not resource ownership. GetMaterialShader caches a pointer without an AddRef in the captured body; SetRaster and GetRaster read/write slot pointers without a visible retain/release; Mesh::SetIndexBuffer rebinds changed streams, unbinds surplus streams, and conditionally binds the index buffer. The raster, material, mesh, and buffer objects must therefore remain alive for the duration of the draw contract, while the modern backend may own them through separate handles.",
+      "failure_semantics": "A shader-ID miss returns null; SetRaster can return without changing a mismatched slot; stream/index device calls can fail and return early; no ownership transfer or explicit unload is visible in these bodies. OpenSpore should fail a draw when required material/texture/mesh handles are absent rather than treating a null binding as a successful state.",
+      "timing_order": "Set material and texture slots before mesh submission; set index count, then index buffer, then issue the indexed draw through the caller; rebind only changed state and clear surplus streams; release material/raster/mesh/buffer resources only after the final draw and any in-flight GPU work completes. SetIndexBuffer is a state transition; the caller performs the actual draw.",
+      "openspore_concept": "material ID, texture slot, mesh topology, and draw-order compatibility",
+      "modern_abstraction": "IMaterialBindings + IMeshDraw + IGraphicsDevice with handle-based state transitions, explicit null/unsupported errors, and backend-owned resource retirement; do not reproduce RW object layouts or D3D vtables",
+      "evidence": [
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/track-k-engine-boundaries.json",
+          "line": 440,
+          "symbol": "B-K-06 RenderWare draw state and graphics device implementation"
+        },
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/track-k-engine-boundaries.json",
+          "line": 483,
+          "symbol": "IMeshDraw + IMaterialBindings + IGraphicsDevice"
+        },
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 160,
+          "symbol": "RenderWare::Mesh::SetIndexBuffer draw-state transition"
+        },
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 285,
+          "symbol": "Materials and shaders"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__MaterialShader__GetMaterialShader.c",
+          "line": 6,
+          "symbol": "Graphics::MaterialShader::GetMaterialShader"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/RenderWare__CompiledState__SetRaster.c",
+          "line": 90,
+          "symbol": "RenderWare::CompiledState::SetRaster"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/RenderWare__CompiledState__GetRaster.c",
+          "line": 89,
+          "symbol": "RenderWare::CompiledState::GetRaster"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/RenderWare__Mesh__SetIndexBuffer.c",
+          "line": 22,
+          "symbol": "RenderWare::Mesh::SetIndexBuffer"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/RenderWare__Mesh__SetIndicesCount.c",
+          "line": 12,
+          "symbol": "RenderWare::Mesh::SetIndicesCount"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__ActiveState__SetShaderData.c",
+          "line": 15,
+          "symbol": "Graphics::ActiveState::SetShaderData"
+        },
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 381,
+          "symbol": "ActiveState on-change rebind semantics"
+        },
+        {
+          "file": "src/renderer/Renderer.hpp",
+          "line": 53,
+          "symbol": "IRenderer"
+        }
+      ],
+      "confidence": "medium",
+      "notes": "The remapping and draw-order sequence is strong static evidence, but the original functions do not expose a complete material/raster ownership protocol. OpenSpore should preserve state validity and ordering, not third-party loader or D3D internals."
+    }
+  ],
+  "unresolved": [
+    "Original multi-package search, cache/registry priority, directory semantics, and exact load order remain unresolved; the current B1 provider reparses one borrowed package image per fetch.",
+    "The exact AddRef/acquire edge for Resource::cResourceManager::GetPrivateResource and the model constructor path are not captured; the report proves an intrusive_ptr-shaped return and a model release threshold, not the full ownership graph.",
+    "cCellGFX field_40 and mPreloadedModels decompilation is not reliable enough to specify exact refcount storage, map ownership, or whether all preload callbacks are symmetric.",
+    "Original material/raster/mesh/buffer release fanout, GPU command retirement, and live Cell-mode teardown order are not runtime-observed; the report does not promote the static decompilation to runtime validation.",
+    "Effect-map replacement and entity-cull ownership are statically visible, but exact IVisualEffect finalization, pending-effect lifetime, and release timing are unresolved.",
+    "SetKeyName's decompiled cleanup path and exact cache eviction policy remain evidence-not-truth; name-to-key remapping is required, but the original failure and replacement details are not pinned.",
+    "Current OpenSpore renderer handles are released immediately through IRenderer; the compatibility contract still needs an explicit in-flight GPU-work retirement policy before it can claim equivalent original lifetime safety."
+  ]
+}

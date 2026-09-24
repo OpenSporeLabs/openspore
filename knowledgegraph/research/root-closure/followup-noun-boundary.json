@@ -1,0 +1,491 @@
+{
+  "$schema": "openspore-root-closure-followup-noun-boundary-1",
+  "schema": "openspore-root-closure-followup-noun-boundary-1",
+  "artifact": {
+    "name": "followup-noun-boundary",
+    "phase": "Phase-0 Root Closure",
+    "date": "2026-09-24",
+    "mode": "static-only",
+    "purpose": "Resolve the GetData SDK boundary, noun-map materialization ordering, concrete callback behavior, central consumer mechanics, and 0x00b25fb0 receiver provenance where the pinned binary permits.",
+    "outputs": [
+      "knowledgegraph/research/root-closure/followup-noun-boundary.json",
+      "knowledgegraph/research/root-closure/followup-noun-boundary.md"
+    ]
+  },
+  "scope": {
+    "binary": "SPORE/SporeBin/SporeApp.exe",
+    "binary_version": "3.1.0.22",
+    "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+    "architecture": "x86:LE:32:windows",
+    "analysis_snapshot": "f0e310e0",
+    "canonical_xref_snapshot": "2540f2ca",
+    "canonical_xrefs": "knowledgegraph/triage/xrefs-2540f2ca.tsv",
+    "sdk_export": ".spore-analysis/ghidra-exports/spore_sdk.xml",
+    "function_export": ".spore-analysis/ghidra-exports/functions.tsv",
+    "decomp_gap_inputs": [
+      "knowledgegraph/research/decomp-gap/sim-core-02.json",
+      "knowledgegraph/research/decomp-gap/hold-infrastructure.json"
+    ],
+    "root_closure_inputs": [
+      "knowledgegraph/research/root-closure/track-d-noun-registry.json",
+      "knowledgegraph/research/root-closure/track-e-empire-chain.json",
+      "knowledgegraph/research/root-closure/track-c-opaque-owner.json",
+      "knowledgegraph/research/root-closure/cross-root-relationships.json"
+    ],
+    "excluded": [
+      "runtime execution or tracing",
+      "Wine",
+      "source changes",
+      "SPORE modifications",
+      "historical artifact changes",
+      "Phase-0 interface changes",
+      "Ghidra project or type mutations"
+    ]
+  },
+  "target_addresses": [
+    "0x00b212d0",
+    "0x00b21340",
+    "0x00ba8420",
+    "0x00b25f40",
+    "0x00b21080",
+    "0x00d3d420",
+    "0x00b236c0",
+    "0x00b1e500",
+    "0x00bfbbf0",
+    "0x00b25fb0",
+    "0x00b3d400"
+  ],
+  "boundary_adjudication": {
+    "sdk_get_data": {
+      "sdk_declared_address": "0x00b212d0",
+      "sdk_declared_name": "Simulator::cGameNounManager::GetData",
+      "actual_calling_implementation": "0x00b21340",
+      "implementation_identity": "high confidence Simulator::cGameNounManager::GetData implementation",
+      "sdk_address_status": "boundary-contaminated label on a split continuation block; not a distinct callable implementation",
+      "evidence": [
+        "The committed functions export records 0x00b212d0 as a 98-byte Ghidra function and 0x00b21340 as a separate 202-byte function.",
+        "Raw bytes at 0x00b212c7..0x00b212cb are je 0x00b212eb and jmp 0x00b212d0 inside the preceding 0x00b211e0 body, not call rel32 instructions.",
+        "The 0x00b211e0 body walks cGameNounManager.mNouns at +0x78 and mObjects at +0x10c, calls cGameData vtable +0x20, uses a two-argument frame, and returns with ret 8 at 0x00b2132f.",
+        "The 0x00b21340 body has ECX this, five stack arguments, ret 0x14, mNounMap access at +0x98, lower-bound traversal, and the SDK callback shape.",
+        "The canonical xref row 0x00b211e0 -> 0x00b212d0 is therefore an intra-function jump misclassified as a direct call by the split analysis; it is not independent implementation-entry evidence."
+      ],
+      "resolution": "Keep 0x00b21340 as the implementation entry. Keep 0x00b212d0 as the SDK address label with an explicit boundary warning; do not merge the two exported function records or call the 98-byte record a separate GetData implementation."
+    },
+    "preceding_function": {
+      "address": "0x00b211e0",
+      "committed_name": "FUN_00b211e0",
+      "exact_identity": "unresolved noun-map maintenance/update function",
+      "mechanics": [
+        "ECX receiver is used as cGameNounManager-layout owner.",
+        "The function walks mNouns and mObjects and invokes cGameData vtable +0x20, identified by the SDK as GetNounID.",
+        "It accepts one caller-cleaned pointer argument and returns with ret 8.",
+        "Its second loop reaches the 0x00b212d0 continuation, calls 0x00579bd0, and shares the epilogue at 0x00b2132f."
+      ],
+      "do_not_infer": "Do not assign 0x00b211e0 to GetData or another SDK method from its map/list mechanics alone."
+    }
+  },
+  "contracts": {
+    "0x00b21340": {
+      "resolved_role": "cGameNounManager-layout noun-map lookup, cache refresh, and callback materialization bridge",
+      "abi": {
+        "this": "ECX, cGameNounManager-layout receiver",
+        "stack_arguments_in_logical_order": [
+          "pCreateCallback",
+          "pClearCallback",
+          "pAddCallback",
+          "pFilterCallback",
+          "nounID"
+        ],
+        "stack_cleanup": "ret 0x14"
+      },
+      "exact_order": [
+        "Call 0x00e5c780 with this+0x98 and nounID to obtain an unsigned map lower-bound result.",
+        "Compare the returned node pointer only with this+0x9c, the mNounMap end sentinel.",
+        "If the result is the end sentinel, call pCreateCallback and then call 0x00ba8420.",
+        "For a non-end lower-bound successor, load node+0x14 as the record; there is no node-key equality check in this function.",
+        "If record.needsUpdate at +0x00 is nonzero, call pClearCallback(record).",
+        "Walk this+0x78 mNouns. For each embedded cGameData list element, call pFilterCallback(cGameData*, nounID).",
+        "For each accepted element, call pAddCallback(record, cGameData*).",
+        "Set record.needsUpdate to zero and return the record pointer in ebx."
+      ],
+      "critical_semantics": {
+        "lower_bound_not_exact_find": "Confirmed. A missing key with a greater successor does not enter 0x00ba8420; the successor payload is used.",
+        "successor_refresh_risk": "If the successor record needsUpdate, the function clears and rebuilds that payload using the requested nounID. The static contract does not validate the node key before this write.",
+        "cache_hit": "If the selected record has needsUpdate == 0, no clear/filter/add traversal occurs.",
+        "publication": "The final byte write to needsUpdate occurs after callback traversal and before return."
+      },
+      "ownership": {
+        "return": "Borrowed raw record pointer; no AddRef or Release occurs in 0x00b21340.",
+        "map_state": "The map is mutated only through 0x00ba8420 on the end-sentinel path.",
+        "elements": "The accepted elements are appended through pAddCallback; the callback is responsible for the intrusive_ptr ownership operation."
+      },
+      "failure": {
+        "null_create": "0x00b21080 can return null; 0x00b21340 subsequently reads the selected record and has no null guard. The sampled noun consumers also dereference the returned record without a null check.",
+        "null_receiver": "No null-this guard is present.",
+        "callback_failure": "The clear/add/filter callback types return void or bool; there is no status channel for clear/add failure.",
+        "allocation_failure": "The exact 0x00ba8420/f473a0 failure path is unresolved and no exception policy is established."
+      }
+    },
+    "0x00ba8420": {
+      "resolved_role": "Generic map insertion/try-emplace-style helper used by the noun materialization path; exact template and ABI name remain unresolved",
+      "mechanics": [
+        "ECX is a map receiver; it performs an unsigned tree search for the key pointer supplied on the stack.",
+        "It calls 0x009215c0 and 0x00ba83a0 for tree insertion/rebalance paths.",
+        "0x00ba83a0 calls 0x00f473a0 for a 0x18-byte allocation and then 0x009216a0 for tree linkage.",
+        "For an existing equal key, the helper writes the output iterator and sets the output inserted byte to zero.",
+        "For a greater lower-bound successor or end path, it performs the insertion path and sets the output inserted byte to one."
+      ],
+      "return_and_failure": {
+        "output": "Caller-provided iterator/output slot plus an inserted byte; return encoding is an output-pointer convention, not a noun-specific result.",
+        "duplicate": "Existing equal key is not replaced by the visible path.",
+        "allocation": "0x00ba83a0 checks the 0x00f473a0 result before field initialization, but later tree-helper behavior on a null allocation is not closed.",
+        "status": "No explicit error code or recoverable allocation-failure contract is established."
+      },
+      "ownership": "The helper mutates map state and allocates a 0x18-byte object through the shared allocator wrapper. It does not directly call cGameData AddRef/Release; element ownership is supplied by the later add callback."
+    },
+    "0x00b25f40": {
+      "resolved_role": "kCivilization noun-vector lookup by cGameData::GetPoliticalID; not the SDK GetPlayerCivilization entry",
+      "abi": "ECX context plus one caller-cleaned uint32 political ID; ret 4",
+      "exact_sequence": [
+        "Push nounID 0x018c816a, filter 0x00b1e500, add 0x00b236c0, clear 0x00d3d420, create 0x00b21080, and call 0x00b21340.",
+        "Read the returned tGameDataVectorT begin at +0x04 and end at +0x08.",
+        "Iterate intrusive_ptr<cGameData> elements without a null-element guard.",
+        "Call cGameData primary vtable +0x4c, identified as GetPoliticalID.",
+        "Return the first element whose political ID equals the caller argument; otherwise return null."
+      ],
+      "ownership": "The returned cGameData/cCivilization-compatible pointer is borrowed; no AddRef or Release occurs in this function.",
+      "failure": "A null vector result is dereferenced immediately. A null element is dereferenced immediately. A valid empty vector returns null."
+    },
+    "0x00b25fb0": {
+      "resolved_mechanical_identity": "No-argument ECX current-player political-ID bridge into 0x00b25f40, with the incoming ECX value used as the no-empire return value",
+      "abi": {
+        "this_or_context": "ECX",
+        "explicit_stack_arguments": 0,
+        "return": "Raw pointer-sized value; on the normal path a kCivilization/cCivilization-compatible pointer, on the null-empire path the original ECX value"
+      },
+      "exact_sequence": [
+        "Save ECX and ESI.",
+        "Call 0x01021300 with no arguments.",
+        "If the returned cEmpire pointer is non-null, read cEmpire+0x84 and call 0x00b25f40 with that political ID and the saved ECX context.",
+        "If the empire pointer is null, read the saved ECX from the stack slot at current ESP+4, which is the original context register, not a caller-supplied fallback word.",
+        "Restore registers and return with ret, not ret 4."
+      ],
+      "sdk_identity_boundary": "The SDK address 0x00b25f90 is an adjudicated tail alias inside 0x00b25f40. The adjacent 0x00b25fb0 body has the no-argument bridge shape and is a candidate implementation location for GetPlayerCivilization, but exact SDK-name identity remains medium because the null-empire result is the incoming context value rather than a proven cCivilization pointer.",
+      "receiver_provenance": {
+        "b3d400_result": "Not traced. 0x00b3d400 returns DAT_0167eb60 in EAX and is not used to establish ECX before 0x00b25fb0 in the sampled direct callers.",
+        "b3d300_result": "Traced in the representative bodies: call 0x00b3d300, mov ecx,eax, then call 0x00b25fb0.",
+        "central_consumer": "0x00bfbbf0 has 0x00b3d300 at 0x00bfbc21 followed by 0x00b25fb0 at 0x00bfbc28.",
+        "co_call_metric": "Committed root metrics report all 100 distinct 0x00b25fb0 callers also co-call 0x00b3d300; only three functions co-call both 0x00b25fb0 and 0x00b3d400.",
+        "three_b3d400_co_callers": [
+          {
+            "caller": "0x00aebe90",
+            "b25fb0_callsite": "0x00aec5bd",
+            "preceding_b3d300": "0x00aec5b6",
+            "later_b3d400": "0x00aece75"
+          },
+          {
+            "caller": "0x00d0e170",
+            "b25fb0_callsite": "0x00d0e70d",
+            "preceding_b3d300": "0x00d0e706",
+            "later_b3d400": "0x00d0e75b and 0x00d0e766"
+          },
+          {
+            "caller": "0x00d100b0",
+            "b25fb0_callsite": "0x00d100e7",
+            "preceding_b3d300": "0x00d100e0",
+            "later_b3d400": "0x00d10393 and 0x00d1039e"
+          }
+        ],
+        "conclusion": "The selected static evidence supports 0x00b3d300 -> 0x00b25fb0 and does not support 0x00b3d400 -> 0x00b25fb0. The concrete class/global alias relationship between DAT_0167eae0 and DAT_0167eb60 remains unresolved."
+      }
+    },
+    "0x00b3d400": {
+      "mechanics": "mov eax, DAT_0167eb60; ret",
+      "identity": "SDK-named Simulator::cGameNounManager::Get accessor",
+      "ownership": "Raw borrowed singleton-slot return; no AddRef or write in the getter.",
+      "relation_to_b25fb0": "The three co-call bodies invoke the getter separately from the b25fb0 receiver propagation; no direct ECX dataflow to b25fb0 was found."
+    },
+    "0x00bfbbf0": {
+      "committed_name": "FUN_00bfbbf0",
+      "exact_identity": "Unnamed large noun/civilization/city orchestration and synchronization consumer; no exact SDK method identity established",
+      "function_size_bytes": 1928,
+      "abi": "ECX receiver, no explicit stack arguments, plain ret; return value is not intentionally materialized",
+      "direct_caller": "0x00ae6240 at 0x00ae6366 in the committed xref export",
+      "high_information_sequences": [
+        {
+          "callsite": "0x00bfbc21..0x00bfbc28",
+          "meaning": "0x00b3d300 supplies ECX, then 0x00b25fb0 supplies the current-player bridge result."
+        },
+        {
+          "callsite": "0x00bfbd26..0x00bfbd58",
+          "meaning": "0x00b3d300 supplies ECX to 0x00b25ca0; a second 0x00b3d300 result supplies ECX to 0x00b21340 with create 0x00cd7d10, clear 0x00d3d420, add 0x00acdff0, filter 0x00b1e500, and nounID 0x018c43e8 (GameNounIDs::kCity)."
+        },
+        {
+          "callsite": "0x00bfbc28, 0x00bfc0d6, 0x00bfc109, 0x00bfc131, 0x00bfc164",
+          "meaning": "Repeated current-player bridge calls are interleaved with 0x00b3d300 receiver acquisition."
+        }
+      ],
+      "consumer_mechanics": [
+        "It reads begin/end from the 0x00b25ca0 kCivilization vector result and from the direct kCity GetData result.",
+        "It invokes cGameData vtable +0x4c on noun elements and compares political IDs before later city/civilization operations.",
+        "It does not visibly AddRef or Release the returned vector records in the inspected central window; those records remain borrowed from the noun-manager path.",
+        "The same body calls 0x00b3d2c0 directly for relationship-manager-compatible state, while its 0x00b25fb0 receiver paths are sourced from 0x00b3d300."
+      ],
+      "materialization": "The central consumer uses the same clear/filter callbacks but a distinct create callback 0x00cd7d10 and distinct add callback 0x00acdff0. This demonstrates that callback thunks are selected by noun/category and are not one universal GetData implementation detail.",
+      "ownership_and_failure": "No direct ownership transfer is visible for the two vector records. Null record/element behavior is inherited from 0x00b21340 and the selected callbacks; the large consumer has no general null guard around those noun paths."
+    }
+  },
+  "callbacks": [
+    {
+      "address": "0x00b21080",
+      "sdk_role": "ContainerCreateCallback_t",
+      "signature": "tGameDataVectorT<Simulator::cGameData>* (*)(void)",
+      "exact_body": [
+        "Call 0x00f473a0 for a 0x18-byte allocation.",
+        "On success, set byte +0x00 to 1 and dwords +0x04, +0x08, and +0x0c to zero.",
+        "Return the allocated record; return zero when the allocation result is zero."
+      ],
+      "ownership": "Allocates a record and returns it to GetData. No AddRef/Release is performed by the callback itself.",
+      "failure": "Null is returned on the visible allocation-null branch; GetData and the sampled consumers do not establish a recoverable null contract."
+    },
+    {
+      "address": "0x00d3d420",
+      "sdk_role": "ContainerClearCallback_t",
+      "signature": "void (*)(tGameDataVectorT<Simulator::cGameData>*)",
+      "exact_body": [
+        "Read the record begin at +0x04 and end at +0x08.",
+        "Call 0x00e25bd0 with ECX=record+0x04 and the begin/end pointers.",
+        "0x00e25bd0 releases every non-null element through cGameData primary vtable +0x04 and writes the vector end back to the begin position."
+      ],
+      "ownership": "Releases the vector's intrusive_ptr elements; it does not release the record object itself and does not clear needsUpdate.",
+      "failure": "Null elements are skipped. Malformed begin/end ordering and allocator behavior are not established."
+    },
+    {
+      "address": "0x00b236c0",
+      "sdk_role": "ContainerAddCallback_t",
+      "signature": "void (*)(tGameDataVectorT<Simulator::cGameData>*, cGameData*)",
+      "exact_body": [
+        "Read the cGameData argument and call its primary vtable +0x0c Cast with type token 0x901f1362.",
+        "The SDK enum identifies 0x901f1362 as Simulator::cCivilization.",
+        "AddRef the cast result through its vtable +0x00, append it to the record vector, and Release the temporary through vtable +0x04.",
+        "If the input or cast result is null, the callback appends/handles a null pointer without an error return."
+      ],
+      "ownership": "The vector receives one intrusive_ptr ownership reference to the cast cCivilization object; the temporary AddRef is released after append. The input cGameData is not itself AddRef'd before Cast.",
+      "failure": "A failed Cast becomes a null append rather than a status error. Growth/relocation is delegated to 0x00aea5d0 and has no visible status channel."
+    },
+    {
+      "address": "0x00b1e500",
+      "sdk_role": "ContainerFilterCallback_t",
+      "signature": "bool (*)(cGameData*, uint)",
+      "exact_body": [
+        "Call cGameData primary vtable +0x20, identified by the SDK as GetNounID.",
+        "Compare the returned noun ID with the supplied uint and return equality as a byte boolean."
+      ],
+      "ownership": "Read-only filter; no AddRef/Release and no mutation.",
+      "failure": "No null cGameData guard is present; a null list element would be dereferenced."
+    }
+  ],
+  "callback_order_examples": [
+    {
+      "consumer": "0x00b25f40",
+      "noun_id": "0x018c816a",
+      "semantic_name": "GameNounIDs::kCivilization",
+      "push_order": [
+        "0x00b21080 create",
+        "0x00d3d420 clear",
+        "0x00b236c0 add",
+        "0x00b1e500 filter",
+        "0x018c816a nounID"
+      ],
+      "post_call": "Scan the returned vector by cGameData::GetPoliticalID and return the first matching raw pointer."
+    },
+    {
+      "consumer": "0x00b25ca0",
+      "noun_id": "0x018c816a",
+      "semantic_name": "GameNounIDs::kCivilization",
+      "push_order": [
+        "0x00b21080 create",
+        "0x00d3d420 clear",
+        "0x00b236c0 add",
+        "0x00b1e500 filter",
+        "0x018c816a nounID"
+      ],
+      "post_call": "Return the GetData record plus 0x04, exposing the vector begin pointer."
+    },
+    {
+      "consumer": "0x00bfbbf0",
+      "noun_id": "0x018c43e8",
+      "semantic_name": "GameNounIDs::kCity",
+      "push_order": [
+        "0x00cd7d10 create",
+        "0x00d3d420 clear",
+        "0x00acdff0 add",
+        "0x00b1e500 filter",
+        "0x018c43e8 nounID"
+      ],
+      "post_call": "Use the kCity vector alongside the kCivilization vector returned through 0x00b25ca0."
+    }
+  ],
+  "ownership_and_failure_summary": {
+    "records": "0x00b21340, 0x00b25f40, 0x00b25ca0, and the inspected 0x00bfbbf0 noun paths return or consume borrowed raw record/object pointers; no direct caller-side release is established.",
+    "elements": "0x00d3d420 releases existing vector elements; 0x00b236c0 transfers one intrusive_ptr reference for accepted cCivilization values.",
+    "manager_map": "0x00ba8420 owns the visible map insertion/rebalance mutation, but the exact relationship between its allocated 0x18-byte object and the pCreate result is not closed by the available static path.",
+    "nulls": "The noun lookup consumers do not guard a null record; the add callback skips null input/cast, the clear callback skips null elements, and the filter callback does not skip a null element.",
+    "concurrency": "No lock, atomic generation, or reentrancy guarantee is visible in the inspected bodies."
+  },
+  "contradictions_preserved": [
+    {
+      "id": "sdk-address-is-split-continuation",
+      "prior": "0x00b212d0 and 0x00b21340 were treated as two distinct function implementations with unresolved method identity.",
+      "resolution": "Raw control flow shows 0x00b212d0 is the continuation of 0x00b211e0 and the xref row is a misclassified internal jump. 0x00b21340 is the callable GetData implementation; the SDK address remains a contaminated label."
+    },
+    {
+      "id": "noun-lower-bound-successor",
+      "prior": "A noun lower-bound miss was treated as a general insertion/materialization branch.",
+      "resolution": "0x00b21340 checks only the end sentinel. A greater successor is accepted as the record and can be refreshed using the requested nounID. The missing-key/successor behavior is therefore a static risk, not an insertion path."
+    },
+    {
+      "id": "b25fb0-stack-fallback",
+      "prior": "0x00b25fb0 was described as having a caller-supplied one-word stack fallback.",
+      "resolution": "Rejected. The null path reads the saved ECX after two pushes; 0x00b25fb0 has ret, not ret 4, and the sampled callers do not push a fallback."
+    },
+    {
+      "id": "b25f90-is-not-b25f40-entry",
+      "prior": "The SDK GetPlayerCivilization address 0x00b25f90 was treated as a tail alias and not assigned to a nearby implementation.",
+      "resolution": "The 0x00b25f90 bytes are confirmed inside 0x00b25f40. 0x00b25fb0 is a separate no-argument bridge and is a candidate implementation location, but exact SDK-name identity remains medium because its null-empire return is the incoming context value."
+    },
+    {
+      "id": "pcreate-to-map-node-relation",
+      "prior": "The create callback result was treated as directly equivalent to the inserted map payload.",
+      "resolution": "Unresolved. 0x00b21340 calls pCreate before 0x00ba8420, but the visible call arguments do not pass the pCreate result into 0x00ba8420; 0x00ba8420 performs its own 0x18-byte allocation/tree path. Do not collapse these allocations without a typed dataflow proof."
+    },
+    {
+      "id": "b3d300-versus-b3d400",
+      "prior": "The ECX context for 0x00b25fb0 could be the named cGameNounManager getter 0x00b3d400.",
+      "resolution": "Representative direct call chains and the three b3d400 co-callers support 0x00b3d300 -> 0x00b25fb0, while 0x00b3d400 calls are separate later operations. Whether DAT_0167eae0 and DAT_0167eb60 alias remains unresolved."
+    }
+  ],
+  "unresolved": [
+    "The exact SDK semantic name and map argument contract of the real containing function 0x00b211e0.",
+    "The exact allocator/template relationship between pCreate results, 0x00ba8420's 0x18-byte allocation, and the map node payload.",
+    "The full failure/exception behavior of 0x00f473a0, 0x00ba83a0, 0x00aea5d0, and tree rebalance on allocation failure.",
+    "All writers of needsUpdate and all mNounMap erase/rekey paths; invalidation outside 0x00b21340 is not closed.",
+    "The concrete class/global alias relationship between DAT_0167eae0 and DAT_0167eb60.",
+    "Whether the successor-record behavior in 0x00b21340 is intentional for the game's noun-key invariants or a latent aliasing hazard.",
+    "The exact SDK method identity of 0x00b25fb0 and the semantic type expected when it returns the incoming context on the no-empire path.",
+    "The exact method identity of the large 0x00bfbbf0 consumer beyond its static city/civilization orchestration role."
+  ],
+  "evidence_sources": [
+    {
+      "path": "SPORE/SporeBin/SporeApp.exe",
+      "use": "Read-only objdump -d -Mintel instruction verification for all bounded ranges listed below; no execution or modification."
+    },
+    {
+      "path": ".spore-analysis/ghidra-exports/functions.tsv",
+      "use": "Function boundaries and sizes, especially 0x00b211e0, 0x00b212d0, 0x00b21340, 0x00b25f40, 0x00b25fb0, 0x00ba8420, and 0x00bfbbf0."
+    },
+    {
+      "path": ".spore-analysis/ghidra-exports/spore_sdk.xml",
+      "use": "GetData/callback signatures, cGameNounManager/cGameData layouts, GetNounID/GetPoliticalID vtable slots, GameNounIDs::kCity/kCivilization, and Simulator::cCivilization type token."
+    },
+    {
+      "path": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cGameNounManager__GetData.c",
+      "use": "Boundary-contaminated SDK-address decompilation retained as contradiction evidence; not treated as the clean 0x00b21340 body."
+    },
+    {
+      "path": "knowledgegraph/triage/xrefs-2540f2ca.tsv",
+      "use": "Canonical direct-call and callsite evidence, including the false split call 0x00b211e0 -> 0x00b212d0, 0x00b25f40/0x00b25fb0 call sites, and 0x00bfbbf0 edges."
+    },
+    {
+      "path": "knowledgegraph/triage/xrefs-2540f2ca.summary.json",
+      "use": "Pinned xref snapshot identity and coverage boundary."
+    },
+    {
+      "path": "knowledgegraph/research/decomp-gap/sim-core-02.json",
+      "use": "Committed decomp-gap confirmation that 0x00b25f40 and 0x00bfbbf0 have no persisted body and that their static dependency closure was available without runtime evidence."
+    },
+    {
+      "path": "knowledgegraph/research/decomp-gap/hold-infrastructure.json",
+      "use": "Committed decomp-gap caller/callee closure around the central consumer and related infrastructure."
+    },
+    {
+      "path": "knowledgegraph/research/root-closure/track-d-noun-registry.json",
+      "use": "Prior noun layout, callback-role, materialization, and ownership claims checked against instruction-level evidence."
+    },
+    {
+      "path": "knowledgegraph/research/root-closure/track-e-empire-chain.json",
+      "use": "Prior 0x00b25fb0 fallback and 0x00b25f40 political-ID bridge claims checked and corrected where contradicted."
+    },
+    {
+      "path": "knowledgegraph/research/root-closure/cross-root-relationships.json",
+      "use": "Committed root metrics and central shared-consumer relationships, including the 100-caller 0x00b25fb0/0x00b3d300 co-call set."
+    }
+  ],
+  "static_instruction_ranges": [
+    {
+      "purpose": "0x00b212d0 split continuation and 0x00b21340 GetData body",
+      "start": "0x00b211e0",
+      "end_exclusive": "0x00b2140a"
+    },
+    {
+      "purpose": "0x00ba8420 map insertion helper",
+      "start": "0x00ba8390",
+      "end_exclusive": "0x00ba84a8"
+    },
+    {
+      "purpose": "0x00b25f40 political lookup and 0x00b25fb0 bridge",
+      "start": "0x00b25f40",
+      "end_exclusive": "0x00b25fd5"
+    },
+    {
+      "purpose": "0x00b21080 create callback",
+      "start": "0x00b21080",
+      "end_exclusive": "0x00b210b7"
+    },
+    {
+      "purpose": "0x00d3d420 clear callback and 0x00e25bd0 element release loop",
+      "start": "0x00d3d420",
+      "end_exclusive": "0x00d3d435"
+    },
+    {
+      "purpose": "0x00b236c0 add callback and 0x00b1e500 filter callback",
+      "start": "0x00b236c0",
+      "end_exclusive": "0x00b23733"
+    },
+    {
+      "purpose": "0x00b1e500 filter callback",
+      "start": "0x00b1e500",
+      "end_exclusive": "0x00b1e517"
+    },
+    {
+      "purpose": "0x00bfbbf0 central consumer",
+      "start": "0x00bfbbf0",
+      "end_exclusive": "0x00bfc378"
+    },
+    {
+      "purpose": "0x00b3d400 named noun-manager getter",
+      "start": "0x00b3d3d0",
+      "end_exclusive": "0x00b3d410"
+    },
+    {
+      "purpose": "representative b3d300/b25fb0/b3d400 receiver traces",
+      "starts": [
+        "0x00aec5b6..0x00aec5bd and 0x00aece75",
+        "0x00d0e706..0x00d0e70d and 0x00d0e75b..0x00d0e766",
+        "0x00d100e0..0x00d100e7 and 0x00d10393..0x00d1039e"
+      ]
+    }
+  ],
+  "modification_boundary": {
+    "runtime_used": false,
+    "wine_used": false,
+    "spore_modified": false,
+    "source_modified": false,
+    "historical_artifacts_modified": false,
+    "phase_0_interface_modified": false,
+    "outputs_only": [
+      "knowledgegraph/research/root-closure/followup-noun-boundary.json",
+      "knowledgegraph/research/root-closure/followup-noun-boundary.md"
+    ]
+  }
+}

@@ -1,0 +1,823 @@
+{
+  "schema_version": "openspore-world-planet-data-model-1",
+  "track": {
+    "id": "world-planet-data",
+    "title": "World and planet data archaeology",
+    "as_of": "2026-09-24",
+    "artifact": "knowledgegraph/research/data-model/05-world-planet-data.json",
+    "status": "research-only",
+    "runtime_claim": "No original Cell, Space, Terrain, save/load, editor, or stage-transition runtime sequence was available; original runtime ordering and mutation semantics remain INFERRED or UNKNOWN."
+  },
+  "scope": {
+    "repository": "/home/juanr/Proyectos/OpenSpore",
+    "repository_head": "260c7cefc409465c755731a03418fd360530b07c",
+    "binary": {
+      "program": "SporeApp.exe",
+      "version": "3.1.0.22",
+      "architecture": "x86:LE:32",
+      "image_base": "0x00400000",
+      "sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+      "live_ghidra_function_count": 59245,
+      "live_ghidra_data_type_count": 11808,
+      "evidence": "VERIFIED"
+    },
+    "logical_definitions": [
+      {
+        "term": "WorldData",
+        "meaning": "The scale-banded Cell world projection: cCellWorldResource with level-to-populate references and advect tuning, its typed runtime references in cCellGame, and the cCellPopulate/cCellBackgroundMap records reached from that state.",
+        "is_not": [
+          "cCellGFX render-world handles",
+          "0x0F43029A model-group records",
+          "a stored per-entity x/y placement list"
+        ],
+        "evidence": "INFERRED"
+      },
+      {
+        "term": "PlanetData",
+        "meaning": "The Space/planet aggregate spanning cPlanetRecord generated schema/state, cPlanet live spatial/game-data wrapper, PlayerPlanetData per-player overlay, cPlanetModel surface-mode object, and cTerrainSphere surface runtime.",
+        "is_not": [
+          "a verified original C++ type literally named PlanetData",
+          "Cell world/advect data"
+        ],
+        "evidence": "INFERRED"
+      },
+      {
+        "term": "world_object",
+        "meaning": "Both explicit cPlanetRecord::mPlanetObjects entries and DBPF type 0x0F43029A model-group/part-definition records. They are distinct schemas and must not be conflated.",
+        "evidence": "VERIFIED"
+      },
+      {
+        "term": "render_world",
+        "meaning": "A renderer-side IModelWorld/IEffectsWorld/ILightingWorld or current CellGfx token, not the serialized logical world definition.",
+        "evidence": "VERIFIED"
+      }
+    ],
+    "covered": [
+      "Cell world, advect, populate, background, scale, and placement-evidence schemas",
+      "planet record/runtime/player/surface schemas and terrain records",
+      "DBPF and ResourceKey identity",
+      "models, actors, effects, terrain modifications, and world references",
+      "create/load/query/mutate/serialize/destroy functions",
+      "Cell and planet/terrain lifecycle, persistence, and editor boundaries",
+      "src/assets/WorldObject.*, src/sim, src/renderer, src/apps, tests, and fixtures"
+    ],
+    "excluded": [
+      "inspection of any file under SPORE/",
+      "original runtime execution or package-byte extraction",
+      "Ghidra writes, saves, program changes, patching, or injection",
+      "reproduction of decompiled code",
+      "untracked research artifacts as authority",
+      "promotion of OpenSpore behavior to original semantics"
+    ]
+  },
+  "evidence_base": {
+    "levels": {
+      "VERIFIED": "Direct static Ghidra type/function metadata, a committed parser invariant, current committed source behavior, or a read-only KG row. A VERIFIED OpenSpore claim is not an original-game claim.",
+      "INFERRED": "A bounded interpretation supported by multiple static names, fields, call edges, or committed reports but not runtime-observed.",
+      "UNKNOWN": "No bounded static or observed contract establishes the claim."
+    },
+    "precedence": [
+      "read-only Ghidra layouts/function metadata/xrefs for SporeApp.exe 3.1.0.22",
+      "committed byte-level OpenSpore analysis and tests that do not read SPORE/",
+      "committed OpenSpore source, which establishes OpenSpore behavior only",
+      "read-only knowledgegraph/spore.db and committed knowledgegraph/seed-literals.json",
+      "secondary committed docs"
+    ],
+    "runtime_evidence": {
+      "cell": "UNKNOWN; committed KG node obs:cell_mode_untraced has zero events.",
+      "planet_terrain": "UNKNOWN; no original Space-to-Terrain, planet save/load, or editor trace exists.",
+      "promotion_rule": "No original behavior above INFERRED without a hash-pinned original runtime sequence."
+    },
+    "sources": [
+      {
+        "id": "SRC-GHIDRA",
+        "kind": "read-only Ghidra",
+        "locator": "SporeApp.exe",
+        "operations": ["get_current_program_info", "search_functions", "search_data_types", "get_struct_layout", "get_function_callers", "get_function_callees"],
+        "evidence": "VERIFIED"
+      },
+      {
+        "id": "SRC-RECON",
+        "kind": "committed doc",
+        "path": "docs/RECON-3.1.0.22.md",
+        "lines": "3-23,46-68,83-103,113-125,147-169",
+        "use": "binary identity, namespaces, singleton spine, resource pipeline, no-RTTI limit",
+        "evidence": "VERIFIED"
+      },
+      {
+        "id": "SRC-CELL-RECON",
+        "kind": "committed doc",
+        "path": "docs/CELLSTAGE-RECON.md",
+        "lines": "8-24,37-45,64-81,83-115",
+        "use": "Cell asset census, heightfield identity, resource names, historical placement uncertainty",
+        "evidence": "VERIFIED"
+      },
+      {
+        "id": "SRC-CELL",
+        "kind": "committed doc",
+        "path": "docs/CELLSTAGE.md",
+        "lines": "18-54,89-102",
+        "use": "current scene and deterministic simulation contract",
+        "evidence": "VERIFIED"
+      },
+      {
+        "id": "SRC-TERRAIN",
+        "kind": "committed doc",
+        "path": "docs/RENDERWARE-RESEARCH.md",
+        "lines": "320-348,372-425",
+        "use": "terrain sphere/quad, LOD, renderer target, evidence limits",
+        "evidence": "VERIFIED"
+      },
+      {
+        "id": "SRC-BOUNDARIES",
+        "kind": "committed doc",
+        "path": "docs/BOUNDARIES.md",
+        "lines": "48-112,114-145",
+        "use": "B1/B2/B3 boundaries and unresolved runtime/persistence limits",
+        "evidence": "VERIFIED"
+      },
+      {
+        "id": "SRC-STATUS",
+        "kind": "committed doc",
+        "path": "docs/replacement-status.json",
+        "lines": "5-47,85-129,138-146",
+        "use": "replacement status and open gates",
+        "evidence": "VERIFIED"
+      },
+      {
+        "id": "SRC-KG-LITERAL",
+        "kind": "committed KG input",
+        "path": "knowledgegraph/seed-literals.json",
+        "lines": "1715-1844,1913-1919",
+        "use": "historical WorldObject note, DBPF group scheme, asset identities, untraced Cell evidence",
+        "evidence": "VERIFIED"
+      },
+      {
+        "id": "SRC-KG-RO",
+        "kind": "read-only KG",
+        "locator": "file:knowledgegraph/spore.db?mode=ro",
+        "nodes": ["CellWorldObjects", "dbpf_group_scheme", "asset:gmdl:00E6BCE5:40666202:0D1B4BB56", "asset:raster:2F4E681C:40662900:0D1B4BB56", "obs:cell_mode_untraced", "sub:resource-manager-full", "sub:property-serialization", "sub:simulator-gameplay"],
+        "selected_edges": 0,
+        "note": "Read-only SQLite URI avoided the documented kg.py migration write path.",
+        "evidence": "VERIFIED"
+      }
+    ]
+  },
+  "asset_types": [
+    {
+      "id": "AT-01",
+      "name": "DBPF v3 index",
+      "type_id": "DBPF v3",
+      "role": "record identity and byte extent",
+      "schema": "96-byte header; rows carry type, group, instance, offset, stored size, memory size, compression",
+      "producers": ["parseDbpfIndex"],
+      "consumers": ["extractDbpfRecord", "findDbpfEntry", "DbpfResourceProvider::fetch"],
+      "openspore": "one package per provider; exact (type,group,instance) lookup",
+      "evidence": "VERIFIED",
+      "source": "src/assets/Dbpf.hpp:16-46; src/assets/Dbpf.cpp:37-100,200-235; src/compat/ResourceProvider.hpp:24-84"
+    },
+    {
+      "id": "AT-02",
+      "name": "Cell world",
+      "type_id": "0x9B8E862F",
+      "role": "scale-banded populate selection and advect tuning",
+      "schema": "16 + 12*numPopulate + 24*numAdvect bytes",
+      "producers": ["parseCellWorld"],
+      "consumers": ["cCellGame world refs", "GetCurrentAdvectInfo", "GetNextAdvectID", "level population"],
+      "census": "37 records, 13 unique",
+      "openspore": "decoded/dumped; not a complete level generator",
+      "evidence": "VERIFIED",
+      "source": "src/assets/CellResource.hpp:165-197; src/assets/CellResource.cpp:1032-1090; src/assets/tests/cell_world_test.cpp:1-12,132-139"
+    },
+    {
+      "id": "AT-03",
+      "name": "Cell populate",
+      "type_id": "0xDA141C1B",
+      "role": "marker-based population recipes",
+      "schema": "16 + 76*numMarkers bytes",
+      "producers": ["parseCellPopulate"],
+      "consumers": ["level placement/distribution", "PreloadPopulateResource"],
+      "census": "21 unique records; committed test declares 387 markers and hard-ref validation",
+      "openspore": "decoded/dumped; no x/y placement execution",
+      "evidence": "VERIFIED",
+      "source": "src/assets/CellResource.hpp:442-484; src/assets/CellResource.cpp:907-1029; src/assets/tests/cell_populate_test.cpp:1-10,144-152"
+    },
+    {
+      "id": "AT-04",
+      "name": "Cell definition",
+      "type_id": "0xDFAD9F51",
+      "role": "spawnable Cell definition, model/resource refs, behavior and loot/structure refs",
+      "schema": "fixed 796-byte cCellCellResource layout",
+      "producers": ["parseCellCell"],
+      "consumers": ["CreateCellObject", "PreloadCellResource", "populate/loot/structure closure"],
+      "census": "266 unique records",
+      "openspore": "fully decoded; only a reduced CellResourceSpec reaches sim",
+      "evidence": "VERIFIED",
+      "source": "src/assets/CellResource.hpp:124-163; src/sim/CellGame.hpp:31-40; Ghidra cCellCellResource"
+    },
+    {
+      "id": "AT-05",
+      "name": "Cell background ramp",
+      "type_id": "0x612B3191",
+      "role": "scale-keyed RGB background",
+      "schema": "8 + 16*numEntries bytes",
+      "producers": ["parseCellBackgroundMap"],
+      "consumers": ["sampleBackgroundMapColor", "backgroundMapColorEnvelope", "cell-stage clear"],
+      "census": "one record",
+      "openspore": "decoded and sampled; not a planet sky/terrain model",
+      "evidence": "VERIFIED",
+      "source": "src/assets/CellResource.hpp:222-267; src/assets/CellResource.cpp:429-503,1234-1294; src/assets/tests/effectmap_test.cpp:1-9,149-156"
+    },
+    {
+      "id": "AT-06",
+      "name": "Cell effect map",
+      "type_id": "0x433FB70C",
+      "role": "effect parameter selection",
+      "schema": "8 + 28*numEntries bytes",
+      "producers": ["parseCellEffectMap"],
+      "consumers": ["LoadEffectMap", "InstanceEffectOnCell"],
+      "census": "one record; effectID is a soft reference",
+      "openspore": "decoded and projected into slot/instance selection",
+      "evidence": "VERIFIED",
+      "source": "src/assets/CellResource.hpp:199-253; src/assets/CellResource.cpp:395-504; src/apps/CellAnim.hpp:69-85"
+    },
+    {
+      "id": "AT-07",
+      "name": "Model-group world-object",
+      "type_id": "0x0F43029A",
+      "role": "model-group/part-definition metadata, not Cell scene placement",
+      "schema": "20-byte header plus variable body; c-entry order UNKNOWN",
+      "versions": [9, 10],
+      "census": "1365 base+EP1 records",
+      "producers": ["parseWorldObject"],
+      "consumers": ["structural inspection/accounting"],
+      "openspore": "names/vector3 extraction and full byte accounting only",
+      "evidence": "VERIFIED",
+      "source": "src/assets/WorldObject.hpp:1-20,31-69; src/assets/WorldObject.cpp:23-112; src/assets/tests/worldobj_test.cpp:52-53,136-145"
+    },
+    {
+      "id": "AT-08",
+      "name": "Game model",
+      "type_id": "0x00E6BCE5",
+      "role": "static mesh/material/texture-reference payload",
+      "schema": "bounded version-8 static GMDL path",
+      "producers": ["parseGmdl", "meshFromGmdl"],
+      "consumers": ["bakeEntity", "IRenderer mesh creation"],
+      "openspore": "host positions/normals/UVs/indices/bounds",
+      "evidence": "VERIFIED",
+      "source": "src/assets/Gmdl.hpp:1-11,58-78; src/assets/Mesh.hpp:27-65; src/apps/cell_stage.cpp:1366-1400"
+    },
+    {
+      "id": "AT-09",
+      "name": "Raster",
+      "type_id": "0x2F4E681C",
+      "role": "texture envelope and DXT5 mips",
+      "schema": "32-byte envelope, layer headers, compressed mip chain",
+      "producers": ["parseRasterEnvelope", "decodeRasterMips"],
+      "consumers": ["IRenderer::createTexture", "drawTextured"],
+      "openspore": "host RGBA pixels, not original renderer resource state",
+      "evidence": "VERIFIED",
+      "source": "src/assets/Texture.hpp:17-49; src/renderer/Renderer.hpp:68-81"
+    },
+    {
+      "id": "AT-10",
+      "name": "SporeMol composition",
+      "type_id": "cll=0x3D97A8E4; crt=0x2B978C46; flr=0x438F6347",
+      "role": "block-composed creature/plant model definitions",
+      "schema": "XML block group/instance refs and transforms",
+      "producers": ["original content authoring/loading"],
+      "consumers": ["model/player identity resolution"],
+      "openspore": "no loader in the compared path",
+      "evidence": "INFERRED",
+      "source": "docs/CELLSTAGE-RECON.md:64-75; docs/RENDERWARE-RESEARCH.md:344-348"
+    },
+    {
+      "id": "AT-11",
+      "name": "Cell advect resource",
+      "type_id": "UNKNOWN",
+      "role": "flow payload selected by advectID",
+      "schema": "UNKNOWN",
+      "producers": ["original resource authoring"],
+      "consumers": ["mpCurrentAdvectionMap", "GetCurrentAdvectInfo", "GetNextAdvectID"],
+      "openspore": "selects ID/tuning; does not load/execute payload",
+      "evidence": "UNKNOWN",
+      "source": "Ghidra cCellGame/cAdvectEntry; src/sim/Advect.hpp:1-22"
+    },
+    {
+      "id": "AT-12",
+      "name": "Generated planet terrain",
+      "type_id": "UNKNOWN",
+      "role": "terrain selected for a planet",
+      "schema": "ResourceKey target VERIFIED; container format UNKNOWN",
+      "producers": ["planet generation/authoring"],
+      "consumers": ["cPlanetModel::ToSurface", "cTerrainSphere load/generate"],
+      "openspore": "no planet terrain loader",
+      "evidence": "UNKNOWN",
+      "source": "Ghidra cPlanetRecord/cPlanetModel/cTerrainSphere layouts"
+    }
+  ],
+  "schemas": [
+    {
+      "id": "S-01",
+      "name": "identity",
+      "items": [
+        {"name": "DBPF key", "layout": "(type,group,instance)", "evidence": "VERIFIED"},
+        {"name": "ResourceKey", "size": 12, "layout": "instanceID +0x00; typeID +0x04; groupID +0x08", "evidence": "VERIFIED"},
+        {"name": "cCellDataReference<T>", "size": 16, "layout": "mInstanceID +0x00; mpSerializer +0x04; mpResource +0x08; mCounter +0x0c", "note": "serialized refs use typed instance IDs; no group field", "evidence": "VERIFIED"}
+      ],
+      "source": "src/assets/Dbpf.hpp:16-26; Ghidra ResourceKey and cCellDataReference layouts"
+    },
+    {
+      "id": "S-02",
+      "name": "cCellWorldResource",
+      "size": "16-byte header plus arrays",
+      "fields": ["numPopulate +0x00", "populate ptr slot +0x04", "numAdvect +0x08", "advect ptr slot +0x0c", "cLevelEntry[numPopulate]", "cAdvectEntry[numAdvect]"],
+      "evidence": "VERIFIED",
+      "source": "src/assets/CellResource.hpp:183-197; Ghidra cCellWorldResource"
+    },
+    {
+      "id": "S-03",
+      "name": "cLevelEntry",
+      "size": 12,
+      "fields": ["populate ref +0x00", "startTile +0x04", "padding +0x05..+0x07", "playerSize +0x08"],
+      "meaning": "populate definition ref; scale band or 0xFFFFFFFF wildcard",
+      "evidence": "VERIFIED",
+      "source": "src/assets/CellResource.hpp:165-170; Ghidra cLevelEntry"
+    },
+    {
+      "id": "S-04",
+      "name": "cAdvectEntry",
+      "size": 24,
+      "fields": ["field_0 stage scale +0x00", "playerSize +0x04", "strength f32 +0x08", "variance f32 +0x0c", "period f32 +0x10", "advectID +0x14"],
+      "evidence": "VERIFIED",
+      "source": "src/assets/CellResource.hpp:172-181; Ghidra cAdvectEntry"
+    },
+    {
+      "id": "S-05",
+      "name": "cCellPopulateResource",
+      "size": "16-byte header plus markers",
+      "fields": ["scale +0x00", "maskTexture +0x04", "numMarkers +0x08", "markers ptr slot +0x0c", "cMarker[numMarkers]"],
+      "evidence": "VERIFIED",
+      "source": "src/assets/CellResource.hpp:463-475; Ghidra cCellPopulateResource"
+    },
+    {
+      "id": "S-06",
+      "name": "cMarker",
+      "size": 76,
+      "fields": ["dead uint32 slots +0x00..+0x0b", "zOffset +0x0c", "zOffsetMax +0x10", "dead uint32 +0x14", "distributeCell +0x18", "clusterCell +0x1c", "encounterPopulate +0x20", "plantType +0x24", "type +0x28", "count f32 +0x2c", "countEasy +0x30", "countMed +0x34", "countHard +0x38", "size +0x3c", "parts +0x40", "linear +0x44", "encounterScale +0x48"],
+      "absence": "no x/y field in the recovered marker",
+      "evidence": "VERIFIED",
+      "source": "src/assets/CellResource.hpp:442-461; Ghidra cMarker"
+    },
+    {
+      "id": "S-07",
+      "name": "cCellBackgroundMapResource",
+      "size": "8-byte header plus entries",
+      "fields": ["numEntries +0x00", "entries ptr slot +0x04", "cBackgroundMapEntry[numEntries]"],
+      "entry": {"size": 16, "fields": ["ColorRGB +0x00", "geometric ladder f32 +0x0c"]},
+      "evidence": "VERIFIED",
+      "source": "src/assets/CellResource.hpp:222-239; Ghidra background structs"
+    },
+    {
+      "id": "S-08",
+      "name": "0x0F43029A header",
+      "size": 20,
+      "fields": ["magic u32 0xABB455B7 +0x00", "version u32 9|10 +0x04", "countC +0x08", "countD +0x0c", "countE +0x10"],
+      "body": "names and plausible float3s extracted; exact c-entry boundaries/order UNKNOWN",
+      "evidence": "VERIFIED",
+      "source": "src/assets/WorldObject.hpp:1-20,31-69; src/assets/WorldObject.cpp:23-112"
+    },
+    {
+      "id": "S-09",
+      "name": "cCellGame world/runtime slice",
+      "size": 20964,
+      "fields": ["mpCurrentAdvectionMap +0x0000", "mCells +0x001c", "mpCellQuery +0x40fc", "mpCellQueryBackground +0x4100", "mpCurrentWorld +0x4114", "mpCurrentWorldBackground +0x4118", "mAvatarCellIndex +0x411c", "mpSerializableData +0x5190"],
+      "evidence": "VERIFIED",
+      "source": "Ghidra cCellGame layout; src/sim/CellGame.hpp:60-113"
+    },
+    {
+      "id": "S-10",
+      "name": "cCellObjectData",
+      "size": 920,
+      "fields": ["pool index +0x00", "target position +0x08", "target orientation +0x14", "transform +0x48", "relative elevation +0x80", "model ResourceKey +0xfc", "scale level +0x358"],
+      "evidence": "VERIFIED",
+      "source": "src/sim/CellPool.hpp:23-56; Ghidra cCellObjectData"
+    },
+    {
+      "id": "S-11",
+      "name": "cPlanetRecord",
+      "size": 432,
+      "fields": ["mNameKey ResourceKey +0x08", "mName +0x18", "mType +0x28", "mOrbit +0x30", "atmosphere score +0xb0", "temperature +0xb4", "water +0xb8", "plant species +0xbc", "animal species +0xd0", "commodity nodes +0xe4", "defender UFO count +0x124", "built/called times +0x128/+0x12c", "home world +0x130", "planet objects +0x134", "terrain stamps to remove +0x148", "civ data +0x15c", "tribe data +0x170", "PlanetID mKey +0x184", "ResourceKey field_188 +0x188", "tech level +0x194", "spice gen +0x198", "generated terrain key +0x1a4"],
+      "evidence": "VERIFIED",
+      "source": "Ghidra cPlanetRecord layout"
+    },
+    {
+      "id": "S-12",
+      "name": "PlayerPlanetData",
+      "size": 176,
+      "vtable": ["Write +0x00", "Read +0x04", "virtual dtor +0x08"],
+      "fields": ["species scanned map +0x08", "building scanned +0x20", "vehicle scanned +0x38", "UFO scanned +0x50", "political IDs encountered +0x68", "spice timer +0x80", "max T score +0xa0", "max food-web lines +0xa1", "explored +0xa2", "PlanetID field_A8 +0xa8"],
+      "evidence": "VERIFIED",
+      "source": "Ghidra PlayerPlanetData and vtable layouts"
+    },
+    {
+      "id": "S-13",
+      "name": "cPlanet",
+      "size": 456,
+      "fields": ["cSpatialObject prefix +0x00: transform/bounds/edit/model/IModelWorld", "cGameData-like prefix +0xd4: IDs/owner/political ID", "special UFO count +0x108", "mpPlanetRecord +0x13c", "mPlanetKey +0x140", "starter world +0x144", "orbited last-known position +0x148", "low-LOD sim +0x154", "representation mode +0x158", "impostor model +0x15c", "effect script +0x16c", "planet effects +0x170", "planet scale +0x184", "solar hit sphere +0x188", "visible planet +0x18c", "colony timer +0x198", "planet flags +0x1bc", "parent +0x1c0"],
+      "evidence": "VERIFIED",
+      "source": "Ghidra cPlanet layout"
+    },
+    {
+      "id": "S-14",
+      "name": "cPlanetObjectData",
+      "size": 44,
+      "fields": ["object type +0x00", "position +0x04", "ammo +0x10", "artifact type +0x12", "health +0x14", "loot drop time +0x18", "ResourceKey +0x1c", "flags +0x28"],
+      "note": "explicit positioned planet-object record; distinct from AT-07",
+      "evidence": "VERIFIED",
+      "source": "Ghidra cPlanetObjectData layout"
+    },
+    {
+      "id": "S-15",
+      "name": "cPlanetModel",
+      "size": 92,
+      "fields": ["mpTerrain +0x24", "mpTerrain2 +0x28", "planet ResourceKey +0x30", "string field_38 +0x38", "A* info +0x50", "obstacles +0x54", "ribbon graphics +0x58"],
+      "evidence": "VERIFIED",
+      "source": "Ghidra cPlanetModel layout"
+    },
+    {
+      "id": "S-16",
+      "name": "cTerrainSphere",
+      "size": 2640,
+      "fields": ["name ResourceKey +0x18", "properties +0x28", "map set +0x2c", "six full-res quads +0x118", "six low-res quads +0x130", "six normal maps +0x148", "six height maps +0x160", "six control maps +0x178", "seed +0x1cc", "LOD chunk resolution +0x1d8", "terrain state manager +0x20c", "weather +0x210", "TerrainState +0x4f8", "assets-loaded +0x76c", "model footprints +0x770", "model relevel +0x788", "player effects +0x7a0", "model keys +0x7c0", "model transforms +0x7d4", "models +0x7e8", "ambient effects +0x7fc", "ambient sound field +0x810", "underwater model worlds +0x8b0", "underwater anim worlds +0x8c4", "underwater effects world +0x8d8"],
+      "virtual_lifecycle": ["IsLoading", "SetOnLoadFinish", "ForceLoadEnd", "Add/Remove/Has/ResetModelModification", "Add/Remove/Has/ResetPlayerModification", "LoadAssets", "UnloadAssets", "Update", "Dispose", "LoadInternal", "Load"],
+      "evidence": "VERIFIED",
+      "source": "Ghidra cTerrainSphere and ITerrain vtable layouts"
+    },
+    {
+      "id": "S-17",
+      "name": "terrain subrecords",
+      "items": [
+        {"name": "cTerrainMapSet", "size": 92, "fields": "11 map pointers +0x08; planet radius +0x34; altitude +0x38; water +0x3c; max cliff +0x4c; height ranges +0x58", "evidence": "VERIFIED"},
+        {"name": "cTerrainSphereQuad", "size": 440, "fields": "sphere back-pointer, index, chunk bounds, terrain transform, mesh/index ranges", "evidence": "VERIFIED"},
+        {"name": "TerrainModification", "size": 172, "fields": "Transform +0x00; unresolved 96-byte payload +0x38; ResourceKey +0x98; field +0xa4; modid +0xa8", "evidence": "VERIFIED"}
+      ],
+      "source": "Ghidra cTerrainMapSet/cTerrainSphereQuad/TerrainModification layouts"
+    },
+    {
+      "id": "S-18",
+      "name": "planet population/civilization",
+      "items": [
+        {"name": "cTribeData", "size": 24, "fields": "political ID +0x00; position +0x04; population +0x10; food +0x14", "evidence": "VERIFIED"},
+        {"name": "cCivData", "size": 80, "fields": "model keys +0x00; political ID +0x14; color +0x18; wealth +0x1c; turret/building counts +0x20/+0x24; vehicles +0x28; cities +0x3c", "evidence": "VERIFIED"},
+        {"name": "cCommunity", "size": 288, "fields": "mCommunitySize +0x38; member/vector state +0x78..+0xe4; name +0xf8; description +0x108; leader +0x11c", "evidence": "VERIFIED"}
+      ],
+      "source": "Ghidra cTribeData/cCivData/cCommunity layouts"
+    },
+    {
+      "id": "S-19",
+      "name": "galaxy/live planet context",
+      "items": [
+        {"name": "cStarRecord", "size": 176, "fields": "ISimulatorSerializable+RefCount; save version/time; empire ID +0x54; key +0x70; planets +0x84; count +0xac", "evidence": "VERIFIED"},
+        {"name": "SpacePlayerData", "size": 52, "fields": "active planet +0x04; active star +0x08; context +0x10; empire ID +0x18; empire +0x1c; colonies +0x20", "evidence": "VERIFIED"},
+        {"name": "cSimulatorSpaceGame", "size": 240, "fields": "ISimulatorSerializable; high-LOD planet sim +0x54; mission manager +0xb8; universe +0xc0; uplift planets +0xdc", "evidence": "VERIFIED"}
+      ],
+      "source": "Ghidra cStarRecord/SpacePlayerData/cSimulatorSpaceGame layouts"
+    }
+  ],
+  "relationships": [
+    {"id":"R-01","from":"DBPF entry","to":"format value","cardinality":"one-to-one","rule":"(type,group,instance) identifies a record; DBPF has no path/name table.","evidence":"VERIFIED"},
+    {"id":"R-02","from":"DBPF entry","to":"parser","cardinality":"one-to-one","rule":"parseDbpfIndex -> extractDbpfRecord -> WorldObject or CellResource parser.","evidence":"VERIFIED"},
+    {"id":"R-03","from":"cLevelEntry.populate","to":"cCellPopulateResource","cardinality":"many-to-one","rule":"Typed instance ref; playerSize selects a scale band and startTile is a level flag.","evidence":"VERIFIED"},
+    {"id":"R-04","from":"cMarker.distributeCell/clusterCell","to":"cCellCellResource","cardinality":"many-to-one","rule":"Typed Cell instance IDs; non-null refs validate against real Cell records.","evidence":"VERIFIED"},
+    {"id":"R-05","from":"cAdvectEntry.advectID","to":"cAdvectResource","cardinality":"many-to-one","rule":"Scale bucket selects current/next ID; target type/group and payload are UNKNOWN.","evidence":"INFERRED"},
+    {"id":"R-06","from":"Cell scale","to":"level/advect selection","cardinality":"many-to-one","rule":"OpenSpore maps scale to buckets 1..10, exact match first, then -1 default; next advect uses bucket+1.","evidence":"VERIFIED"},
+    {"id":"R-07","from":"cCellGame world slots","to":"cCellWorldResource","cardinality":"two runtime refs","rule":"Original slots point to 16-byte cCellDataReference objects; current OpenSpore stores simplified 4-byte IDs.","evidence":"VERIFIED"},
+    {"id":"R-08","from":"background world","to":"background ramp","cardinality":"one-to-zero-or-one","rule":"A separate 0x612B3191 record supplies scale-keyed color; exact original selector is not in the decoded world record.","evidence":"INFERRED"},
+    {"id":"R-09","from":"cCellGFX","to":"Cell/populate/model/texture/effect resources","cardinality":"many-to-many","rule":"PreloadResources calls Cell and populate preload paths; model/texture/creature/effect vectors feed live presentation.","evidence":"VERIFIED"},
+    {"id":"R-10","from":"cCellGame.mCells","to":"cCellQueryEntry","cardinality":"pool-to-query","rule":"Live Cell objects are pool-allocated and referenced by foreground/background query entries.","evidence":"VERIFIED"},
+    {"id":"R-11","from":"0x0F43029A","to":"Cell scene x/y","cardinality":"none established","rule":"Current source classifies it as model-group/part definition data, not placement.","evidence":"VERIFIED"},
+    {"id":"R-12","from":"cMarker","to":"Cell scene x/y","cardinality":"probable via UNKNOWN algorithm","rule":"Markers have z/count/type/size controls but no x/y; an original placement function must generate coordinates if this interpretation is correct.","evidence":"INFERRED"},
+    {"id":"R-13","from":"Cell model ResourceKey","to":"GMDL -> Mesh -> renderer handle","cardinality":"definition-to-many-instances","rule":"One model definition can back many pool/Gfx instances distinguished by index and transform.","evidence":"VERIFIED"},
+    {"id":"R-14","from":"cStarManager","to":"cStarRecord","cardinality":"one-to-many","rule":"Manager vectors/maps own intrusive star records.","evidence":"VERIFIED"},
+    {"id":"R-15","from":"cStarRecord.mPlanets","to":"cPlanetRecord","cardinality":"one-to-many","rule":"Star record owns generated/schema planet records.","evidence":"VERIFIED"},
+    {"id":"R-16","from":"cStarRecord/cStar/cSolarSystem","to":"cPlanet","cardinality":"one-to-many","rule":"Live cPlanet has a PlanetID-compatible key and parent; cSolarSystem separately owns live cPlanet objects.","evidence":"INFERRED"},
+    {"id":"R-17","from":"cPlanet","to":"cPlanetRecord","cardinality":"many-to-one","rule":"mpPlanetRecord links the live wrapper to generated schema/state.","evidence":"VERIFIED"},
+    {"id":"R-18","from":"cPlanet","to":"cVisiblePlanet","cardinality":"one-to-zero-or-one","rule":"cPlanet owns mpVisiblePlanet; cVisiblePlanet has a back-pointer.","evidence":"VERIFIED"},
+    {"id":"R-19","from":"cPlanet","to":"cPlanetGfx","cardinality":"one-to-many presentation association","rule":"cPlanetGfx holds a planet pointer and visual-effect vector entries.","evidence":"VERIFIED"},
+    {"id":"R-20","from":"cPlanetRecord.mPlanetObjects","to":"cPlanetObjectData","cardinality":"one-to-many","rule":"Each record has type, explicit position, health/ammo/loot, ResourceKey, and flags.","evidence":"VERIFIED"},
+    {"id":"R-21","from":"cPlanetRecord","to":"cCivData/cTribeData","cardinality":"one-to-many","rule":"Planet state embeds civilization/tribe model, political, wealth, population, position, and food data.","evidence":"VERIFIED"},
+    {"id":"R-22","from":"cPlanetRecord.mGeneratedTerrainKey","to":"ITerrain/cTerrainSphere","cardinality":"many-to-one","rule":"Generated terrain ResourceKey is the stable planet-to-surface handoff; producer/container key are UNKNOWN.","evidence":"INFERRED"},
+    {"id":"R-23","from":"cPlanetModel","to":"cTerrainSphere","cardinality":"one-to-one in surface mode","rule":"cPlanetModel holds ITerrain pointers; ToSurface is a named transition surface with 55 direct callers.","evidence":"INFERRED"},
+    {"id":"R-24","from":"cTerrainSphere","to":"quads/maps/weather/state","cardinality":"one-to-many","rule":"Sphere owns six full/low-res quads, eleven map slots, weather, state, and texture maps.","evidence":"VERIFIED"},
+    {"id":"R-25","from":"model/player modifications","to":"TerrainModification","cardinality":"many-to-many by modid","rule":"ITerrain exposes add/remove/has/reset methods; records carry transform and ResourceKey.","evidence":"VERIFIED"},
+    {"id":"R-26","from":"cSimulatorSpaceGame","to":"cSimPlanetHighLOD","cardinality":"one-to-zero-or-one","rule":"mpHighLODPlanetSim is the Space-stage planet simulation handle.","evidence":"VERIFIED"},
+    {"id":"R-27","from":"SpacePlayerData","to":"active cPlanet/cStar","cardinality":"one active pointer per context","rule":"Direct active pointers plus mPlayerColonies vector.","evidence":"VERIFIED"},
+    {"id":"R-28","from":"PlayerPlanetData","to":"player-planet progress","cardinality":"one record per relationship","rule":"Scan maps, encountered IDs, spice timer, explored/TScore and PlanetID exist; owner key/stream order UNKNOWN.","evidence":"INFERRED"},
+    {"id":"R-29","from":"cGamePersistenceManager","to":"serializable records","cardinality":"manager-to-many","rule":"Get returns persistence manager; vtable exposes LoadGame. Exact transaction and stream order are UNKNOWN.","evidence":"INFERRED"},
+    {"id":"R-30","from":"editor/play mode","to":"planet/terrain state","cardinality":"bidirectional edit boundary","rule":"Planet dirty/edit flags and terrain footprint/relevel/player-effect vectors expose mutation surfaces.","evidence":"INFERRED"}
+  ],
+  "functions": [
+    {"id":"F-01","side":"openspore","operation":"load","name":"parseDbpfIndex","address":null,"assets":["AT-01"],"contract":"Parse DBPF v3 identity/extents; reject DBBF and truncation.","evidence":"VERIFIED","source":"src/assets/Dbpf.cpp:37-100"},
+    {"id":"F-02","side":"openspore","operation":"load","name":"extractDbpfRecord","address":null,"assets":["AT-01"],"contract":"Bounds-check extent, QFS-decompress when flagged, verify decompressed size.","evidence":"VERIFIED","source":"src/assets/Dbpf.cpp:200-223"},
+    {"id":"F-03","side":"openspore","operation":"query","name":"findDbpfEntry / DbpfResourceProvider::fetch","address":null,"assets":["AT-01"],"contract":"Exact (type,group,instance) lookup and extraction from one package.","evidence":"VERIFIED","source":"src/assets/Dbpf.cpp:226-235; src/compat/ResourceProvider.hpp:24-53"},
+    {"id":"F-04","side":"openspore","operation":"create","name":"parseWorldObject","address":null,"assets":["AT-07"],"contract":"Validate header, extract names/plausible float3s, account for bytes; no field-order claim.","evidence":"VERIFIED","source":"src/assets/WorldObject.cpp:23-112"},
+    {"id":"F-05","side":"openspore","operation":"create","name":"parseCellWorld","address":null,"assets":["AT-02"],"contract":"Parse exact span 16 + 12*numPopulate + 24*numAdvect.","evidence":"VERIFIED","source":"src/assets/CellResource.cpp:1050-1090"},
+    {"id":"F-06","side":"openspore","operation":"create","name":"parseCellPopulate","address":null,"assets":["AT-03"],"contract":"Parse exact span 16 + 76*numMarkers and retain refs/count bands.","evidence":"VERIFIED","source":"src/assets/CellResource.cpp:925-970"},
+    {"id":"F-07","side":"openspore","operation":"query","name":"cellWorldIssues / cellPopulateIssues","address":null,"assets":["AT-02","AT-03"],"contract":"Validate count domains and hard refs; not runtime resolution.","evidence":"VERIFIED","source":"src/assets/CellResource.cpp:973-1029,1093-1126"},
+    {"id":"F-08","side":"openspore","operation":"query","name":"sampleBackgroundMapColor / backgroundMapColorEnvelope","address":null,"assets":["AT-05"],"contract":"Endpoint clamp plus log2 interpolation between positive scale stops; per-channel envelope.","evidence":"VERIFIED","source":"src/assets/CellResource.cpp:1234-1294"},
+    {"id":"F-09","side":"original","operation":"create","name":"Simulator::Cell::cCellDataReference_::Create","address":"0x00e82420","assets":["AT-02","AT-03","AT-04"],"contract":"Named typed reference creation entry; exact constructor/serializer/group behavior remains unresolved and is not merged with adjacent FUN_00e82340.","callers":["FUN_00e4ace0","FUN_00e4cde0"],"evidence":"INFERRED","source":"Ghidra function metadata/caller-callee reads"},
+    {"id":"F-10","side":"original","operation":"load","name":"Simulator::Cell::cCellGFX::PreloadResources","address":"0x00e666f0","assets":["AT-02","AT-03","AT-04"],"contract":"Calls PreloadCellResource and PreloadPopulateResource plus model/effect helpers.","callers":["FUN_00e819b0"],"evidence":"VERIFIED","source":"Ghidra caller/callee reads; src/apps/CellGfx.hpp:1-11"},
+    {"id":"F-11","side":"original","operation":"load","name":"cCellGFX::PreloadCellResource","address":"0x00e663b0","assets":["AT-04"],"contract":"Preloads Cell-associated model/effect/creature resources.","evidence":"INFERRED","source":"Ghidra caller/callee reads"},
+    {"id":"F-12","side":"original","operation":"load","name":"cCellGFX::PreloadPopulateResource","address":"0x00e665c0","assets":["AT-03"],"contract":"Preloads populate-linked content; exact record-to-model binding unresolved.","callers":["cCellGFX::PreloadResources@0x00e666f0"],"evidence":"INFERRED","source":"Ghidra caller/callee reads"},
+    {"id":"F-13","side":"original","operation":"mutate","name":"Simulator::Cell::cCellGame::Initialize","address":"0x00e80ba0","assets":["AT-02"],"contract":"Initializes Cell state, 4096-cell pool, timing, serializable state and background bounds; relative original order is static-only.","callers":["FUN_00e81120","FUN_00e819b0"],"evidence":"INFERRED","source":"Ghidra caller/callee reads; src/sim/CellGame.cpp:22-80"},
+    {"id":"F-14","side":"original","operation":"query","name":"Simulator::Cell::GetCurrentAdvectInfo","address":"0x00e58ef0","assets":["AT-02","AT-11"],"contract":"Scale-bucket/current-world advect lookup named at the function boundary.","callers":["FUN_00e5f360"],"evidence":"INFERRED","source":"Ghidra caller/callee reads; src/sim/Advect.hpp:65-88"},
+    {"id":"F-15","side":"original","operation":"query","name":"Simulator::Cell::GetNextAdvectID","address":"0x00e58e30","assets":["AT-02","AT-11"],"contract":"Next scale-bucket advect ID lookup named at the function boundary.","callers":["FUN_00e5f360"],"evidence":"INFERRED","source":"Ghidra caller/callee reads; src/sim/Advect.hpp:90-104"},
+    {"id":"F-16","side":"original","operation":"create","name":"Simulator::Cell::CreateCellObject","address":"0x00e74a20","assets":["AT-04","AT-08"],"contract":"Pool allocation and cCellObjectData initialization from resource/model/scale/position inputs.","direct_callers":14,"evidence":"INFERRED","source":"Ghidra caller/callee reads; src/sim/CellGame.cpp:82-152"},
+    {"id":"F-17","side":"original","operation":"mutate","name":"cCellGFX::Initialize","address":"0x00e5dba0","assets":["AT-08","AT-09"],"contract":"Create/replace skybox, background, beach, model, effects and foreground worlds/layers.","evidence":"INFERRED","source":"src/apps/CellGfx.hpp:1-12; Ghidra cCellGFX layout"},
+    {"id":"F-18","side":"original","operation":"mutate","name":"cCellGFX::StartDisplay","address":"0x00e55120","assets":["AT-08","AT-09"],"contract":"Activate Cell display/world presentation.","evidence":"INFERRED","source":"src/apps/CellGfx.hpp:7-10,67-68"},
+    {"id":"F-19","side":"openspore","operation":"create","name":"CellGame::initialize / CellGfx::initialize","address":null,"assets":["AT-02","AT-08"],"contract":"Rebuild deterministic OpenSpore Cell state and renderer-world tokens.","evidence":"VERIFIED","source":"src/sim/CellGame.cpp:22-80; src/apps/CellGfx.cpp:5-20"},
+    {"id":"F-20","side":"openspore","operation":"mutate","name":"CellGame::setCurrentWorld / setCurrentWorldBackground","address":null,"assets":["AT-02"],"contract":"Replace simplified 4-byte world IDs.","evidence":"VERIFIED","source":"src/sim/CellGame.hpp:146-153; src/sim/tests/cellgame_test.cpp:71-77"},
+    {"id":"F-21","side":"openspore","operation":"create","name":"CellGame::createCellObject","address":null,"assets":["AT-04","AT-08"],"contract":"OpenSpore projection of allocation, size, orientation, position, opacity, model key and tier.","evidence":"VERIFIED","source":"src/sim/CellGame.cpp:82-152; src/sim/tests/createcell_test.cpp"},
+    {"id":"F-22","side":"openspore","operation":"query","name":"bucketKeyForScale / getCurrentAdvectInfo / getNextAdvectID","address":null,"assets":["AT-02"],"contract":"Pure deterministic scale-bucket selection with wildcard fallback.","evidence":"VERIFIED","source":"src/sim/Advect.hpp:47-104; src/sim/tests/advect_test.cpp"},
+    {"id":"F-23","side":"openspore","operation":"query","name":"CellQuery::queryNear","address":null,"assets":[],"contract":"Return indices for distance <= cellSize + radius in LIFO order.","evidence":"VERIFIED","source":"src/sim/CellQuery.hpp:43-77"},
+    {"id":"F-24","side":"openspore","operation":"mutate","name":"CellSim::update","address":null,"assets":[],"contract":"Independent role/string fixed-dt simulation; does not consume decoded world/populate records.","evidence":"VERIFIED","source":"src/sim/Sim.cpp; tests/fixtures/cell/fixtures.json"},
+    {"id":"F-25","side":"openspore","operation":"load","name":"CellGfx::preloadResources","address":null,"assets":["AT-03","AT-04","AT-08"],"contract":"Store model/populate keys; current cell_stage supplies model pairs and an empty populate list.","evidence":"VERIFIED","source":"src/apps/CellGfx.cpp:23-28; src/apps/cell_stage.cpp:1332-1354"},
+    {"id":"F-26","side":"openspore","operation":"query","name":"CellGfx::findWorld / modelWorld","address":null,"assets":[],"contract":"Find world token by projected WorldID.","evidence":"VERIFIED","source":"src/apps/CellGfx.cpp:32-44; src/apps/cellgfx_test.cpp"},
+    {"id":"F-27","side":"openspore","operation":"mutate","name":"CellModeStrategy::initialize/onEnter/update/onExit/dispose","address":null,"assets":["AT-05","AT-08"],"contract":"Host lifecycle shell; update only increments frame count and does not run original world simulation.","evidence":"VERIFIED","source":"src/apps/CellModeStrategy.cpp:7-42"},
+    {"id":"F-28","side":"openspore","operation":"create","name":"bakeEntity / buildFrameDraws","address":null,"assets":["AT-08"],"contract":"Center/scale meshes, apply transforms, bake view-projection, cull dead entities, create frame handles.","evidence":"VERIFIED","source":"src/apps/cell_stage.cpp:442-470,651-720"},
+    {"id":"F-29","side":"openspore","operation":"render","name":"IRenderer/VulkanRenderer create-draw-destroy","address":null,"assets":["AT-08","AT-09"],"contract":"Upload/draw host mesh/texture data and destroy handles after offscreen completion or present-fence gating.","evidence":"VERIFIED","source":"src/renderer/Renderer.hpp:56-87; src/apps/cell_stage.cpp:624-633,779-803,1150-1179"},
+    {"id":"F-30","side":"original","operation":"create","name":"Simulator::cPlanetRecord::Create","address":"0x00ba6300","assets":["AT-12"],"contract":"Named planet-record creation entry; available static body does not establish initialization/generation details.","callers":["FUN_00df7ce0","FUN_00df95d0"],"evidence":"INFERRED","source":"Ghidra function metadata/caller read"},
+    {"id":"F-31","side":"original","operation":"mutate","name":"cPlanetRecord_GetGeneratedTerrainKey","address":"0x00b8da30","assets":["AT-12"],"contract":"Copies a 12-byte input key into cPlanetRecord terrain-key storage.","callers":["FUN_00de6f20"],"evidence":"VERIFIED","source":"ghidra://SporeApp.exe@0x00b8da30 static memory-operation summary"},
+    {"id":"F-32","side":"original","operation":"query","name":"Simulator::cStarRecord::GetPlanetRecords","address":"0x00bba900","assets":["AT-12"],"contract":"Named planet-record query surface.","callers":["FUN_00ba6bb0","FUN_00c53720"],"evidence":"INFERRED","source":"Ghidra function metadata/caller read"},
+    {"id":"F-33","side":"original","operation":"query","name":"Simulator_GetActivePlanet","address":"0x01021110","assets":["AT-12"],"contract":"Named active-planet accessor surface.","evidence":"INFERRED","source":"Ghidra search_functions"},
+    {"id":"F-34","side":"original","operation":"mutate","name":"Simulator::cStarManager::RecordToPlanet","address":"0x00bb5b50","assets":["AT-12"],"contract":"Named star-to-planet record helper; exact field mapping unresolved.","callers":["FUN_00c33690","cStarRecord__ctor@0x00bba2a0"],"evidence":"INFERRED","source":"Ghidra function metadata/caller read"},
+    {"id":"F-35","side":"original","operation":"mutate","name":"Simulator::cPlanetModel::ToSurface","address":"0x00b81780","assets":["AT-12"],"contract":"Named Space-to-surface transition with 55 direct callers; this-call body is insufficient for a full field-transform claim.","direct_callers":55,"evidence":"INFERRED","source":"Ghidra function metadata/caller-callee read and bounded body summary"},
+    {"id":"F-36","side":"original","operation":"query","name":"Simulator::cPlanet::GetTemperatureScore","address":"0x00c70bc0","assets":[],"contract":"Named temperature-score query; formula/return convention unresolved.","callers":["FUN_00ffa2c0","FUN_01003690","FUN_0102c1a0"],"evidence":"INFERRED","source":"Ghidra function metadata/caller read"},
+    {"id":"F-37","side":"original","operation":"query","name":"Simulator::cTerraformingManager::CalculateTScore","address":"0x00fc2040","assets":[],"contract":"Named T-score calculation; formula and inputs unresolved.","evidence":"INFERRED","source":"Ghidra search_functions"},
+    {"id":"F-38","side":"original","operation":"query","name":"Terrain::cTerrainSphere::GetSimDataRTT","address":"0x00f968b0","assets":["AT-12"],"contract":"Named simulation-data RTT query; exact return interpretation unresolved.","evidence":"INFERRED","source":"Ghidra function metadata/body summary"},
+    {"id":"F-39","side":"original","operation":"render","name":"cTerrainSphere::RenderTerrainLand","address":"0x00f97ef0","assets":["AT-12"],"contract":"Named land pass; no direct static caller recovered because dispatch is structural/virtual.","evidence":"INFERRED","source":"Ghidra function metadata/caller read"},
+    {"id":"F-40","side":"original","operation":"render","name":"cTerrainSphere::RenderTerrainAtmosphere","address":"0x00f98170","assets":["AT-12"],"contract":"Named atmosphere pass; caller FUN_00f9bd00 and callee FUN_00fb3040.","evidence":"INFERRED","source":"Ghidra function metadata/caller-callee read"},
+    {"id":"F-41","side":"original","operation":"render","name":"cTerrainSphere::RenderTerrainDecals","address":"0x00f98110","assets":["AT-12"],"contract":"Named decal pass; no direct static caller recovered.","evidence":"INFERRED","source":"Ghidra function metadata/caller read"},
+    {"id":"F-42","side":"original","operation":"render","name":"Terrain::cTerrainSphereQuad::Draw","address":"0x00faeec0","assets":["AT-12"],"contract":"Named terrain-quad draw surface; no stronger host-renderer claim supported.","evidence":"INFERRED","source":"Ghidra function metadata/body summary"},
+    {"id":"F-43","side":"original","operation":"serialize","name":"Simulator::cGamePersistenceManager::Get","address":"0x00b3d440","assets":["AT-12"],"contract":"Returns persistence manager; vtable exposes HandleMessage, AddRef, Release, LoadGame and three unnamed slots.","direct_callers":37,"evidence":"INFERRED","source":"Ghidra get_function_by_address/caller read; cGamePersistenceManager vtable"},
+    {"id":"F-44","side":"original","operation":"serialize","name":"PlayerPlanetData::Write / Read","address":"UNKNOWN","assets":["AT-12"],"contract":"Write +0x00 and Read +0x04 vtable names exist; addresses, stream order, versioning and failure behavior unknown.","evidence":"UNKNOWN","source":"Ghidra PlayerPlanetData__vftable"},
+    {"id":"F-45","side":"original","operation":"destroy","name":"Simulator::cObjectPool_::DeleteObject","address":"0x00b72370","assets":[],"contract":"Named generic pool deletion surface; callback/reset behavior not reconstructed here.","evidence":"INFERRED","source":"Ghidra search_functions"},
+    {"id":"F-46","side":"original","operation":"destroy","name":"ITerrain::Dispose/UnloadAssets; IModelWorld::Dispose/FinalRelease","address":"VIRTUAL_SLOT_UNRESOLVED","assets":["AT-12"],"contract":"Virtual destruction/unload surfaces exist; concrete addresses and ordering are not recovered in the live function index.","evidence":"UNKNOWN","source":"Ghidra ITerrain and IModelWorld vtables"},
+    {"id":"F-47","side":"openspore","operation":"destroy","name":"cObjectPool::deallocate/release; VulkanRenderer destroy/shutdown","address":null,"assets":[],"contract":"Free-list/backing-storage release; GPU handles destroyed after frame/fence safety; shutdown owns WSI/GPU teardown.","evidence":"VERIFIED","source":"src/sim/CellPool.hpp:124-161; src/apps/cell_stage.cpp:624-633,779-803,1150-1190; src/renderer/VulkanRenderer.hpp:48-67"}
+  ],
+  "lifecycle": [
+    {
+      "id":"L-01",
+      "domain":"original Cell world",
+      "status":"static projection",
+      "events":[
+        {"order":1,"state":"manager/resource bring-up","action":"Resource and Simulator managers become available.","functions":["Resource::cResourceManager::Initialize","Simulator::cSimulatorSystem::Get"],"evidence":"INFERRED"},
+        {"order":2,"state":"Cell mode initialized","action":"Establish sCellGame/sCellGFX/sCellUI; initialize Cell pools/state and render worlds/layers.","functions":["cCellModeStrategy::Initialize@0x00e81cf0","cCellGame::Initialize@0x00e80ba0","cCellGFX::Initialize@0x00e5dba0"],"evidence":"INFERRED"},
+        {"order":3,"state":"world/content preload","action":"Resolve typed refs and preload Cell/populate models, textures, creatures and effects.","functions":["cCellDataReference_::Create@0x00e82420","cCellGFX::PreloadResources@0x00e666f0","PreloadCellResource@0x00e663b0","PreloadPopulateResource@0x00e665c0"],"evidence":"INFERRED"},
+        {"order":4,"state":"level selection","action":"Select foreground/background worlds, level entries, start tile and current/next advect data.","functions":["FUN_00e5f360","GetCurrentAdvectInfo@0x00e58ef0","GetNextAdvectID@0x00e58e30"],"evidence":"INFERRED"},
+        {"order":5,"state":"Cell mode active","action":"Activate display, UI, input, world and simulation.","functions":["cCellModeStrategy::OnEnter@0x00e552f0","cCellGFX::StartDisplay@0x00e55120"],"evidence":"INFERRED"},
+        {"order":6,"state":"active simulation","action":"Frame update dispatches movement, Cell create/update, AI, graphics, effects, queries and world state.","functions":["cCellModeStrategy::Update@0x00e80980","CreateCellObject@0x00e74a20"],"evidence":"INFERRED"},
+        {"order":7,"state":"exit/dispose","action":"Reset mode/background state, then release pools, GFX and UI.","functions":["cCellModeStrategy::OnExit@0x00e7fc00","cCellModeStrategy::Dispose@0x00e81f30"],"evidence":"INFERRED"}
+      ],
+      "runtime_order":"UNKNOWN"
+    },
+    {
+      "id":"L-02",
+      "domain":"OpenSpore Cell world",
+      "status":"current implementation",
+      "events":[
+        {"order":1,"state":"scene declaration","action":"Load six entity group/instance/transform records with identity and position provenance.","functions":["loadSceneConfig"],"evidence":"VERIFIED"},
+        {"order":2,"state":"package index","action":"Parse one content package; no multi-package precedence exists.","functions":["parseDbpfIndex"],"evidence":"VERIFIED"},
+        {"order":3,"state":"mode/GFX shell","action":"Load UI, create eight world tokens and store scene model pairs.","functions":["CellModeStrategy::initialize","CellGfx::initialize","CellGfx::preloadResources"],"evidence":"VERIFIED"},
+        {"order":4,"state":"active","action":"Start display and bind entities to projected main model world 0x1010020.","functions":["CellModeStrategy::onEnter","CellGfx::modelWorld"],"evidence":"VERIFIED"},
+        {"order":5,"state":"asset load","action":"Fetch GMDL, convert mesh 0, bake vertex formats and check expected counts.","functions":["extractDbpfRecord","parseGmdl","meshFromGmdl","bakeEntity"],"evidence":"VERIFIED"},
+        {"order":6,"state":"renderer/simulation","action":"Run fixed, scripted or interactive host path; CellSim is independent of decoded world/populate records.","functions":["IRenderer::init","CellSim::update","buildFrameDraws"],"evidence":"VERIFIED"},
+        {"order":7,"state":"destroy","action":"Destroy frame handles after frame/fence safety, run OnExit/Dispose and shut down GPU/WSI.","functions":["IRenderer::destroyMesh","VulkanRenderer::shutdown","CellModeStrategy::onExit","CellModeStrategy::dispose"],"evidence":"VERIFIED"}
+      ],
+      "fidelity":"Clean-room host shell, not an observed original transition order."
+    },
+    {
+      "id":"L-03",
+      "domain":"original planet/terrain",
+      "status":"static projection",
+      "events":[
+        {"order":1,"state":"galaxy generation/load","action":"cStarManager owns star grids/saved/starter records; each cStarRecord owns planet records.","functions":["cStarManager::Get@0x00b3d3a0","cStarRecord::GetPlanetRecords@0x00bba900"],"evidence":"INFERRED"},
+        {"order":2,"state":"planet record generation","action":"Create and populate scores, species, commodities, civ/tribe records, planet objects and terrain key.","functions":["cPlanetRecord::Create@0x00ba6300","cStarManager::RecordToPlanet@0x00bb5b50","cPlanetRecord_GetGeneratedTerrainKey@0x00b8da30"],"evidence":"INFERRED"},
+        {"order":3,"state":"Space live planet","action":"Select active cPlanet and link record, model/world, low-LOD sim, visible planet, effects and parent.","functions":["Simulator_GetActivePlanet@0x01021110","cPlanetModel::Get@0x00b3d450"],"evidence":"INFERRED"},
+        {"order":4,"state":"surface transition","action":"Enter surface mode and reach terrain helpers.","functions":["cPlanetModel::ToSurface@0x00b81780"],"evidence":"INFERRED"},
+        {"order":5,"state":"terrain load/generate","action":"Load/generate sphere, map set, textures, LOD quads, state/weather, models, transforms and relevel data.","functions":["ITerrain::Load/LoadInternal/LoadAssets","cTerrainSphere::GetSimDataRTT@0x00f968b0"],"evidence":"INFERRED"},
+        {"order":6,"state":"surface simulation/render","action":"High-LOD simulation and land/atmosphere/decal passes update environment.","functions":["cSimulatorSpaceGame::mpHighLODPlanetSim","RenderTerrainLand@0x00f97ef0","RenderTerrainAtmosphere@0x00f98170","RenderTerrainDecals@0x00f98110"],"evidence":"INFERRED"},
+        {"order":7,"state":"editor/player mutation","action":"Add/remove/reset model footprints, relevel entries and player effects.","functions":["ITerrain::AddModelModification","ITerrain::RemoveModelModification","ITerrain::ResetModelModifications","ITerrain::AddPlayerModification"],"evidence":"INFERRED"},
+        {"order":8,"state":"return/dispose","action":"Release surface models/effects/terrain before or during return to Space.","functions":["ITerrain::Dispose","ITerrain::UnloadAssets","IModelWorld::Dispose"],"evidence":"UNKNOWN"}
+      ],
+      "runtime_order":"UNKNOWN"
+    }
+  ],
+  "persistence": {
+    "cell": {
+      "owner":"cCellGame.mpSerializableData",
+      "schema":{"name":"cCellSerializableData","size_bytes":236,"fields":["mGameMode +0x0c","mPlayerCreatureKey ResourceKey +0x10","food progression +0x1c..+0x2c","evolution points spent +0x2c","unlocked parts int[13] +0x34","part/show-mate flags +0x68/+0x69","kill/death counts +0x70/+0x74","game time/game ID/difficulty +0x78/+0x7c/+0x80","missions cCellMission[6] +0x88","moved/eaten/editor flags +0xe0..+0xe2","nanites/nanovirus/telemetry +0xe4..+0xec"],"evidence":"VERIFIED"},
+      "interface":"ISimulatorSerializable vtable exposes AddRef, Release, Write, Read, WriteToXML and GetNounID.",
+      "openspore":"CellGame has only a serializable-present flag; no Cell save/load serializer.",
+      "boundary":"Stream order, versioning, migration and round-trip observables are UNKNOWN.",
+      "evidence":"INFERRED"
+    },
+    "planet": {
+      "owner":"PlayerPlanetData enclosing owner unresolved",
+      "schema":"176 bytes with Write/Read slots, scan maps, encountered political IDs, spice timer, explored/TScore fields and PlanetID.",
+      "openspore":"No implementation.",
+      "boundary":"Owner key, stream framing, defaults/versioning, and embedded-vs-database storage are UNKNOWN.",
+      "evidence":"UNKNOWN"
+    },
+    "planet_record": {
+      "owner":"cStarRecord.mPlanets and cStarManager planet-record databases",
+      "schema":"cPlanetRecord is a ResourceObject; no direct ISimulatorSerializable Write/Read prefix appears in the imported layout.",
+      "openspore":"No implementation.",
+      "boundary":"Generation-on-load versus explicit serialization, database role and record coverage are UNKNOWN.",
+      "evidence":"UNKNOWN"
+    },
+    "galaxy_space": {
+      "owners":["cStarRecord","cSolarSystem","cSimulatorSpaceGame","cStarManager"],
+      "verified":["cStarRecord is ISimulatorSerializable and stores save version/time plus planet vector.","cSolarSystem and cSimulatorSpaceGame have ISimulatorSerializable prefixes.","cStarManager owns temp/main planet databases and saved/starter star vectors."],
+      "manager":"cGamePersistenceManager::Get@0x00b3d440; vtable LoadGame +0x10",
+      "openspore":"No implementation.",
+      "boundary":"Record order, cross-manager transaction, rollback and migration are UNKNOWN.",
+      "evidence":"INFERRED"
+    },
+    "property_system": {
+      "role":"Terrain and managers carry PropertyList pointers.",
+      "original_surface":"App::PropertyList::Read@0x006a2f60 and Write@0x006a1540.",
+      "openspore":"No PropertyList loader/serializer.",
+      "gate":"Committed replacement status requires serialize -> deserialize -> compare.",
+      "evidence":"INFERRED"
+    },
+    "editor": {
+      "original":["cPlanet being-edited/model-changed/transform-dirty flags","cTerrainSphere model footprints/relevel/player effects","ITerrain model/player modification methods","cGameModeManager editor/play-mode transition"],
+      "openspore":"Only Cell mode shell; no planet/terrain editor.",
+      "boundary":"Commit, undo/redo, dirty persistence and play-mode restore order are UNKNOWN.",
+      "evidence":"INFERRED"
+    }
+  },
+  "openspore_comparison": [
+    {"area":"WorldObject","original_or_asset":"1365 0x0F43029A model-group records, versions 9/10, part names/vector-like data.","openspore":"Strict header validation, names/vector extraction and full byte accounting.","match":"Bounded structural coverage","limit":"c-entry order, GUID/model relationship and body semantics remain UNKNOWN; not a level executor.","evidence":"VERIFIED","sources":["src/assets/WorldObject.hpp","src/assets/WorldObject.cpp","src/assets/tests/worldobj_test.cpp"]},
+    {"area":"Cell world/populate assets","original_or_asset":"Typed refs, scale bands, markers/counts, advect and background ramps.","openspore":"Parses exact spans, validates hard refs, dumps deterministically and queries advect/background values.","match":"Asset-side schema coverage","limit":"No world selector, start-tile placement, marker x/y, seed, or actor materialization consumes decoded records.","evidence":"VERIFIED","sources":["src/assets/CellResource.hpp","src/assets/CellResource.cpp","src/assets/tests/cell_world_test.cpp","src/assets/tests/cell_populate_test.cpp"]},
+    {"area":"Cell state","original_or_asset":"cCellGame has current advect, two world refs, 4096-cell pool, foreground/background queries, avatar and serializable state.","openspore":"CellGame reduced subset plus independent role/string CellSim.","match":"Selected static projection","limit":"CellSim does not instantiate decoded records; world refs are simplified IDs, not 16-byte typed refs.","evidence":"VERIFIED","sources":["src/sim/CellGame.hpp","src/sim/CellGame.cpp","src/sim/Sim.hpp","src/sim/Sim.cpp"]},
+    {"area":"Spatial query","original_or_asset":"cCellQueryEntry stores position, size, next link and Cell pool index in distinct fg/bg pools.","openspore":"Vector arena, LIFO links and deterministic near predicate.","match":"Bounded behavior/layout match","limit":"No original insertion/update/removal lifecycle or acceleration structure.","evidence":"VERIFIED","sources":["src/sim/CellQuery.hpp","src/sim/tests/cellquery_test.cpp"]},
+    {"area":"Cell GFX","original_or_asset":"cCellGFX owns model/anim/effects/light worlds and preload vectors.","openspore":"Eight integer world tokens, named layers, key vectors and display flag.","match":"Structural projection","limit":"Tokens are not RenderWare worlds; current cell_stage populate preload is empty.","evidence":"VERIFIED","sources":["src/apps/CellGfx.hpp","src/apps/CellGfx.cpp","src/apps/cellgfx_test.cpp"]},
+    {"area":"Renderer","original_or_asset":"RenderWare model LOD, terrain sphere/quad passes, material, lighting, weather/effects.","openspore":"Generic host meshes/textures, flat/textured draw, readback and Vulkan present; transforms baked CPU-side.","match":"Generic B3 only","limit":"No IModelWorld, terrain pass, weather, material cache, LOD, atmosphere/water/decal or original pixel correspondence.","evidence":"VERIFIED","sources":["src/renderer/Renderer.hpp","src/renderer/VulkanRenderer.hpp","src/apps/cell_stage.cpp","docs/BOUNDARIES.md"]},
+    {"area":"Scene fixture","original_or_asset":"World/populate imply procedural x/y; 0x0F43029A is not placement.","openspore":"scene.json has six explicit entries; every position and most Cell identities are INFERRED.","match":"Regression fixture only","limit":"No relation from current x/y to marker fields; identity/role is not original-resolved.","evidence":"VERIFIED","sources":["src/apps/scene.json","src/apps/SceneConfig.hpp","src/apps/scene_config_test.cpp"]},
+    {"area":"Simulation fixtures","original_or_asset":"Original scale, placement and population runtime unknown.","openspore":"cell-sim-contract/2 fixes 1/60 s binary32 frames across stationary, mouse, eat, flee, world-plane, advect-settle, multi-prey and zoom scenarios.","match":"OpenSpore determinism only","limit":"No original trace or decoded world input; proves regression stability, not original semantics.","evidence":"VERIFIED","sources":["tests/fixtures/cell/README.md","tests/fixtures/cell/fixtures.json","src/sim/tests/sim_contract_test.cpp"]},
+    {"area":"Advect fixtures","original_or_asset":"Static threshold table and cAdvectEntry schema.","openspore":"Pure bucket/default/next-ID tests.","match":"Bounded contract","limit":"No target resource load or flow execution.","evidence":"VERIFIED","sources":["src/sim/tests/advect_test.cpp"]},
+    {"area":"Planet/terrain","original_or_asset":"cPlanetRecord/cPlanet/PlayerPlanetData/cPlanetModel/cTerrainSphere graph and render surfaces.","openspore":"No counterpart in assets, sim, apps or renderer.","match":"None","limit":"No planet generation, population, terrain, persistence, editor or Space/Terrain stage implementation.","evidence":"VERIFIED","sources":["src/assets","src/sim","src/renderer","src/apps"]}
+  ],
+  "gaps": [
+    {"id":"GAP-01","question":"Is there a runtime/asset object more literally named WorldData or PlanetData?","status":"UNKNOWN","blocker":"No matching Ghidra function/data type; logical aggregates are projections."},
+    {"id":"GAP-02","question":"What selects a Cell world and start tile, and how does it transition to the next scale band?","status":"UNKNOWN","blocker":"World-selection/start-tile function addresses and event order are unresolved."},
+    {"id":"GAP-03","question":"How are marker x/y coordinates generated?","status":"UNKNOWN","blocker":"Markers contain no x/y; placement PRNG, shape, density, seed and actor materialization are absent."},
+    {"id":"GAP-04","question":"What is the exact 0x0F43029A c-entry layout?","status":"UNKNOWN","blocker":"Current parser extracts names/vectors and accounts bytes but cannot derive field order or model ownership."},
+    {"id":"GAP-05","question":"How are typed Cell instance refs mapped across group/type/serializer context?","status":"UNKNOWN","blocker":"cCellDataReference stores instance/serializer/resource/counter but no group; original resource-manager precedence is unresolved."},
+    {"id":"GAP-06","question":"What is the advect resource type/key and execution model?","status":"UNKNOWN","blocker":"Only advectID and tuning are decoded; mpCurrentAdvectionMap target is not loaded."},
+    {"id":"GAP-07","question":"How is cPlanetRecord generated and mutated?","status":"UNKNOWN","blocker":"cPlanetRecord::Create body/signature is unresolved; score, species, colony and terraforming formulas are absent."},
+    {"id":"GAP-08","question":"What is the generated-terrain container and its exact ResourceKey producer?","status":"UNKNOWN","blocker":"Field is VERIFIED; type ID, group, format, generation and load order are not."},
+    {"id":"GAP-09","question":"What is the exact cPlanetModel::ToSurface contract and return-to-Space handoff?","status":"UNKNOWN","blocker":"55 callers establish reachability, not full this-call field/ownership/order semantics."},
+    {"id":"GAP-10","question":"How are planet population, civ, tribe, city and vehicle records initialized/updated?","status":"UNKNOWN","blocker":"Static vectors/fields exist; creation, placement, destruction and event order are not characterized."},
+    {"id":"GAP-11","question":"What is the complete save/load stream?","status":"UNKNOWN","blocker":"Write/Read and LoadGame surfaces exist without round-trip fixtures, stream order, versions, migration or rollback."},
+    {"id":"GAP-12","question":"How are terrain model footprints/relevel/player mutations committed?","status":"UNKNOWN","blocker":"Virtual add/remove/reset surfaces and vectors exist; editor transaction, dirty-state and undo semantics are absent."},
+    {"id":"GAP-13","question":"What are terrain water/seabed/reflection and weather transitions?","status":"UNKNOWN","blocker":"Named vtable/render surfaces and managers exist; no complete pass graph or runtime event order."},
+    {"id":"GAP-14","question":"What are original renderer material/light/LOD/atmosphere semantics?","status":"UNKNOWN","blocker":"No matched original terrain frame or complete RenderWare/terrain material reconstruction."},
+    {"id":"GAP-15","question":"What are the original pool/query insert, update, remove and ownership rules?","status":"UNKNOWN","blocker":"Current OpenSpore pool/query is bounded; original callback and full state side effects are not traced."},
+    {"id":"GAP-16","question":"What is original runtime lifecycle order?","status":"UNKNOWN","blocker":"No original Cell, Space-to-Terrain, return, save/load or editor event trace; committed Cell trace is negative."},
+    {"id":"GAP-17","question":"Which DBPF group/name identities map to semantic Cell model actors?","status":"UNKNOWN","blocker":"No name table or SporeMol runtime resolver; current player/food/prey roles are inferred."},
+    {"id":"GAP-18","question":"What are concrete destroy/refcount callbacks?","status":"UNKNOWN","blocker":"Virtual Dispose/UnloadAssets/FinalRelease and pool deletion exist, but concrete terrain/model callback order is unresolved."}
+  ],
+  "contradictions": [
+    {"id":"C-01","topic":"0x0F43029A role","historical":"docs/CELLSTAGE-RECON.md:68-70 and KG CellWorldObjects infer Cell-soup placement.","current":"WorldObject.hpp:1-6 and scene.json:3 classify records as model-group/part definitions; parsed cMarker has no x/y.","resolution":"Use model-definition meaning; retain historical note only as superseded evidence.","evidence":"VERIFIED"},
+    {"id":"C-02","topic":"WorldObject census","historical":"base content docs report 1022 records and call placement undecoded.","current":"worldobj_test expects 1365 across base+EP1 and strict versions 9/10.","resolution":"1365 is current base+EP1 census; 1022 remains historical base-only count.","evidence":"VERIFIED"},
+    {"id":"C-03","topic":"CellLevelEntry target type","source_comment":"CellResource.hpp:167 says populate is a cCellDataReference key (cell resource ref).","ghidra":"cLevelEntry.populate is cCellDataReference<cCellPopulateResource>* and a 76-byte cMarker follows.","resolution":"Use populate-resource reference; source comment is a naming error.","evidence":"VERIFIED"},
+    {"id":"C-04","topic":"cAdvectEntry scalar types","ghidra":"strength, variance and period imported as int.","file_parser":"src reads all three as f32 and observed values validate that representation.","resolution":"Use f32 on disk; record SDK type drift.","evidence":"VERIFIED"},
+    {"id":"C-05","topic":"Cell world reference width","original":"cCellGame slots are pointers to 16-byte typed cCellDataReference objects.","openspore":"CellGame stores 4-byte CellDataReference{id}.","resolution":"Current code is a reduced state projection, not ABI-compatible.","evidence":"VERIFIED"},
+    {"id":"C-06","topic":"ResourceKey order","provider":"DBPF API order is type/group/instance.","ghidra":"ResourceKey memory order is instance/type/group.","resolution":"Convert explicitly at boundaries; do not serialize triples positionally.","evidence":"VERIFIED"},
+    {"id":"C-07","topic":"Cell object model-key comment","source":"CellPool.hpp:51 labels the uint32[3] comment as {group,type,instance}.","ghidra":"ResourceKey order is instance/type/group.","resolution":"The comment is unreliable; use Ghidra layout and model producer tests.","evidence":"VERIFIED"},
+    {"id":"C-08","topic":"cCellGFX main model world ID","source":"kModelShadowLayer 0x1010020 is used as modelWorld and bound to CellGame-Main.","original_layout":"cCellGFX separately contains model/anim/effect world pointers and nearby shadow/effect slots.","resolution":"Projected mapping is INFERRED; do not equate a shadow-layer ID with a cModelWorld without stronger evidence.","evidence":"INFERRED"},
+    {"id":"C-09","topic":"cAdvectEntry stage values","source":"asset parser notes stageScale values 1..13 observed.","enum":"current CellStageScale has -1 and 0..10.","resolution":"The asset/domain may have a broader numeric domain than the current enum; mapping is UNKNOWN.","evidence":"UNKNOWN"},
+    {"id":"C-10","topic":"cPlanetModel::ToSurface","name":"Name and 55 callers support a Space-to-surface joint.","body":"this-call decompilation is noisy and does not support a complete transformation/ownership claim.","resolution":"Keep transition existence INFERRED; exact field and return contract UNKNOWN.","evidence":"INFERRED"},
+    {"id":"C-11","topic":"PlayerPlanetData ownership","layout":"Contains PlanetID field_A8 and per-player progress maps.","unknown":"No recovered owner/container relation proves whether it is embedded by PlanetID or stored separately.","resolution":"Do not claim a direct cPlanetRecord pointer or save layout.","evidence":"UNKNOWN"},
+    {"id":"C-12","topic":"cPlanetRecord serialization","layout":"cPlanetRecord is ResourceObject, while cStarRecord/PlayerPlanetData expose serializable/write-read surfaces.","unknown":"No direct cPlanetRecord Write/Read function is recovered.","resolution":"Do not equate generation state with an independently persisted record.","evidence":"UNKNOWN"}
+  ],
+  "reconstruction_packages": [
+    {"id":"RP-01","title":"World asset catalog","scope":"Canonical typed manifest for Cell world/populate/cell/background/effect/advect refs.","prerequisites":["retain strict parsers","add group/type context for typed instance refs","synthetic reference-negative fixtures"],"outputs":["resolved ref graph","missing/duplicate identity diagnostics","serialization-neutral value model"],"stop":"Do not execute placement or claim original resource-manager priority.","evidence":"VERIFIED"},
+    {"id":"RP-02","title":"Cell world runtime reference","scope":"Replace simplified IDs with an explicit clean-room typed reference boundary and current/background world state.","prerequisites":["freeze RP-01 identities","keep reduced and ABI projections separate"],"outputs":["current world/query API","switch/clear contract","world/advect runtime tests"],"stop":"No original switch/start-tile event order without a trace.","evidence":"VERIFIED"},
+    {"id":"RP-03","title":"Procedural Cell placement","scope":"Recover and implement marker-to-x/y/actor materialization using seed, scale, z, type, count and shape fields.","prerequisites":["map placement function(s)","identify PRNG/seed","identify distribution/cluster algorithms","ground truth frame/state"],"outputs":["deterministic placement trace","actor instance list","per-frame culling/state"],"stop":"No stable x/y claim from marker bytes alone.","evidence":"UNKNOWN"},
+    {"id":"RP-04","title":"WorldObject field schema","scope":"Decode 0x0F43029A c-entry order, GUID/model relationships and D/E body fields.","prerequisites":["locate consumer/load path","field-boundary corpus","negative fixtures"],"outputs":["typed schema","model/group ownership refs","serializer or read-only extractor"],"stop":"Retain names/vectors only if field order remains unproven.","evidence":"UNKNOWN"},
+    {"id":"RP-05","title":"Planet record model","scope":"cPlanetRecord generation, PlanetID/group identity, scores, species, commodities, civ/tribe and planet objects.","prerequisites":["adjudicate Create@0x00ba6300","map generation callers","score/terrain/terraform formulas","save ownership"],"outputs":["clean-room PlanetData schema","deterministic record generator","mutation transaction rules"],"stop":"No original generation formula from names/layout alone.","evidence":"UNKNOWN"},
+    {"id":"RP-06","title":"Space-to-surface handoff","scope":"cPlanetModel::ToSurface, generated terrain key, ITerrain load/generate and return-to-Space ownership.","prerequisites":["terrain type/key","ToSurface field contract","matched event trace","terrain frame oracle"],"outputs":["surface transition interface","load/generate state machine","destroy/return order"],"stop":"Do not merge cPlanetModel and cTerrainSphere into one object.","evidence":"UNKNOWN"},
+    {"id":"RP-07","title":"Planet population and civilization","scope":"Tribe/civ/community/city/vehicle/planet-object creation, placement, ownership and lifecycle.","prerequisites":["record producers","runtime instances","mutation/event map","persistence schema"],"outputs":["population graph","actor lifecycle","save/load mapping"],"stop":"Static vectors do not establish generation or ownership.","evidence":"UNKNOWN"},
+    {"id":"RP-08","title":"Planet persistence","scope":"PlayerPlanetData, cStarRecord, cSolarSystem, cSimulatorSpaceGame, cStarManager databases and LoadGame ordering.","prerequisites":["Write/Read addresses","stream fixtures","version/default matrix","round-trip oracle"],"outputs":["ordered schemas","migration/rollback contract","save/load event trace"],"stop":"No round-trip fidelity claim from vtable names.","evidence":"UNKNOWN"},
+    {"id":"RP-09","title":"Terrain render lifecycle","scope":"cTerrainSphere/quad/map/weather/state load, LOD, land/water/seabed/atmosphere/decal/reflection passes and material inputs.","prerequisites":["concrete virtual addresses","terrain asset decode","matched original frames","material/light map"],"outputs":["pass graph","LOD/modification model","host renderer boundary"],"stop":"Generic IRenderer draws do not replace original terrain rendering.","evidence":"UNKNOWN"},
+    {"id":"RP-10","title":"Planet/terrain editor","scope":"Model footprints, relevel/player modifications, dirty flags, commit/undo and play-mode restore.","prerequisites":["editor message order","mutation transaction trace","save integration","round-trip fixture"],"outputs":["editor mutation API","dirty/persistence contract","undo/redo projection"],"stop":"No editor replacement interface before ownership and event order are known.","evidence":"UNKNOWN"},
+    {"id":"RP-11","title":"Identity resolver","scope":"DBPF type/group/instance to Cell actor/model, planet asset and generated terrain semantics.","prerequisites":["SporeMol resolver","resource load trace","name/manifest authority","negative duplicate cases"],"outputs":["canonical semantic manifest","unresolved identity queue"],"stop":"Do not infer names from opaque IDs or geometry alone.","evidence":"VERIFIED"}
+  ],
+  "provenance": {
+    "generated_at": "2026-09-24",
+    "determinism": "All arrays use fixed logical order by ID; no hash-map/set iteration order is serialized.",
+    "ghidra_operations": "Read-only metadata, layouts, caller/callee queries, and bounded static-body summaries only; no save/change and no decompiled code reproduced.",
+    "kg_operations": "SQLite read-only URI only; no rows changed.",
+    "source_policy": "Only committed repository files and live read-only Ghidra/KG evidence were used. Untracked research artifacts were excluded as authority.",
+    "source_files": [
+      "src/assets/WorldObject.hpp",
+      "src/assets/WorldObject.cpp",
+      "src/assets/CellResource.hpp",
+      "src/assets/CellResource.cpp",
+      "src/assets/Dbpf.hpp",
+      "src/assets/Dbpf.cpp",
+      "src/assets/Gmdl.hpp",
+      "src/assets/Mesh.hpp",
+      "src/assets/Texture.hpp",
+      "src/assets/tests/worldobj_test.cpp",
+      "src/assets/tests/cell_world_test.cpp",
+      "src/assets/tests/cell_populate_test.cpp",
+      "src/assets/tests/effectmap_test.cpp",
+      "src/sim/CellGame.hpp",
+      "src/sim/CellGame.cpp",
+      "src/sim/CellPool.hpp",
+      "src/sim/CellQuery.hpp",
+      "src/sim/Advect.hpp",
+      "src/sim/Sim.hpp",
+      "src/sim/Sim.cpp",
+      "src/sim/tests/cellgame_test.cpp",
+      "src/sim/tests/createcell_test.cpp",
+      "src/sim/tests/advect_test.cpp",
+      "src/apps/CellGfx.hpp",
+      "src/apps/CellGfx.cpp",
+      "src/apps/CellModeStrategy.cpp",
+      "src/apps/SceneConfig.hpp",
+      "src/apps/SceneConfig.cpp",
+      "src/apps/scene.json",
+      "src/apps/cell_stage.cpp",
+      "src/apps/cellgfx_test.cpp",
+      "src/apps/scene_config_test.cpp",
+      "src/compat/ResourceProvider.hpp",
+      "src/compat/MeshSource.hpp",
+      "src/renderer/Renderer.hpp",
+      "src/renderer/VulkanRenderer.hpp",
+      "tests/fixtures/cell/README.md",
+      "tests/fixtures/cell/fixtures.json"
+    ],
+    "ghidra_locators": [
+      "SporeApp.exe/cCellDataReference<Simulator::Cell::cCellWorldResource>",
+      "SporeApp.exe/cCellWorldResource",
+      "SporeApp.exe/cLevelEntry",
+      "SporeApp.exe/cAdvectEntry",
+      "SporeApp.exe/cCellPopulateResource",
+      "SporeApp.exe/cMarker",
+      "SporeApp.exe/cCellBackgroundMapResource",
+      "SporeApp.exe/cCellGame",
+      "SporeApp.exe/cCellGFX",
+      "SporeApp.exe/ResourceKey",
+      "SporeApp.exe/cPlanetRecord",
+      "SporeApp.exe/PlayerPlanetData",
+      "SporeApp.exe/PlayerPlanetData__vftable",
+      "SporeApp.exe/cPlanet",
+      "SporeApp.exe/cVisiblePlanet",
+      "SporeApp.exe/cPlanetGfx",
+      "SporeApp.exe/cPlanetObjectData",
+      "SporeApp.exe/cPlanetModel",
+      "SporeApp.exe/cTerrainSphere",
+      "SporeApp.exe/cTerrainSphereQuad",
+      "SporeApp.exe/cTerrainMapSet",
+      "SporeApp.exe/TerrainModification",
+      "SporeApp.exe/ITerrain__vftable",
+      "SporeApp.exe/cStarRecord",
+      "SporeApp.exe/SpacePlayerData",
+      "SporeApp.exe/cSimulatorSpaceGame",
+      "ghidra://SporeApp.exe@0x00e82420",
+      "ghidra://SporeApp.exe@0x00e666f0",
+      "ghidra://SporeApp.exe@0x00e663b0",
+      "ghidra://SporeApp.exe@0x00e665c0",
+      "ghidra://SporeApp.exe@0x00e80ba0",
+      "ghidra://SporeApp.exe@0x00e58e30",
+      "ghidra://SporeApp.exe@0x00e58ef0",
+      "ghidra://SporeApp.exe@0x00e74a20",
+      "ghidra://SporeApp.exe@0x00e5dba0",
+      "ghidra://SporeApp.exe@0x00e55120",
+      "ghidra://SporeApp.exe@0x00ba6300",
+      "ghidra://SporeApp.exe@0x00b8da30",
+      "ghidra://SporeApp.exe@0x00bba900",
+      "ghidra://SporeApp.exe@0x01021110",
+      "ghidra://SporeApp.exe@0x00bb5b50",
+      "ghidra://SporeApp.exe@0x00b81780",
+      "ghidra://SporeApp.exe@0x00c70bc0",
+      "ghidra://SporeApp.exe@0x00fc2040",
+      "ghidra://SporeApp.exe@0x00f968b0",
+      "ghidra://SporeApp.exe@0x00f97ef0",
+      "ghidra://SporeApp.exe@0x00f98170",
+      "ghidra://SporeApp.exe@0x00f98110",
+      "ghidra://SporeApp.exe@0x00faeec0",
+      "ghidra://SporeApp.exe@0x00b3d440",
+      "ghidra://SporeApp.exe@0x00b72370"
+    ],
+    "mutations": {"ghidra_program": false, "knowledgegraph": false, "spore_directory": false, "historical_artifacts": false, "other_repository_files": false},
+    "excluded_operations": ["SPORE/ inspection", "Ghidra mutation/save", "patching/injection", "historical artifact alteration"]
+  }
+}

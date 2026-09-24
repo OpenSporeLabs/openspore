@@ -1,38 +1,208 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>OpenSpore Knowledge Graph</title>
-<link rel="stylesheet" href="/static/viewer.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>OpenSpore Reverse-Engineering Graph Observatory</title>
+  <link rel="stylesheet" href="/static/viewer.css">
+  <script src="/static/viewer.js" defer></script>
 </head>
 <body>
-<header id="topbar">
-  <div>
-    <h1>OpenSpore Knowledge Graph</h1>
-    <div id="dbline"><span id="db-path"></span> <span id="db-state"></span></div>
-  </div>
-</header>
-<div id="degraded-banner" hidden></div>
-<nav id="tabs">
-  <button id="tab-all" class="tab active" type="button">All nodes</button>
-  <button id="tab-functions" class="tab" type="button">Functions</button>
-</nav>
-<main>
-  <section id="summary" class="panel" aria-label="Project summary"></section>
-  <section id="evidence" class="panel" aria-label="Evidence distribution"></section>
-  <section id="inv-status" class="panel" aria-label="Investigation status"></section>
-  <section id="subsystems" class="panel" aria-label="Subsystems"></section>
-  <section id="nodes" class="panel" aria-label="Node inventory">
-    <form id="node-search">
-      <input name="q" placeholder="name substring" aria-label="name">
-      <select name="label" aria-label="label"><option value="">all labels</option></select>
-      <button type="submit">Search</button>
+  <a class="skip-link" href="#observatory-main">Skip to graph observatory</a>
+  <header class="topbar">
+    <div class="brand-block">
+      <p class="eyebrow">OpenSpore / analysis field</p>
+      <h1>Graph Observatory</h1>
+      <p id="db-line" class="database-line">Connecting to read-only graph…</p>
+    </div>
+    <form id="global-search" class="global-search" role="search">
+      <label for="global-query">Search the reverse-engineering graph</label>
+      <div class="search-control">
+        <span aria-hidden="true">⌕</span>
+        <input id="global-query" name="q" type="search" minlength="2" maxlength="120" autocomplete="off" placeholder="Symbol, address, package, type, event…">
+        <button type="submit">Search</button>
+      </div>
     </form>
-    <div id="node-results"></div>
-  </section>
-  <section id="detail" class="panel" aria-label="Node detail" hidden></section>
-</main>
-<script src="/static/viewer.js"></script>
+    <div class="connection-block" aria-label="Database connection">
+      <span id="connection-dot" class="connection-dot pending" aria-hidden="true"></span>
+      <span id="connection-label">Connecting</span>
+    </div>
+  </header>
+
+  <div id="system-banner" class="system-banner" role="alert" hidden></div>
+
+  <div class="workspace">
+    <nav class="view-nav" aria-label="Graph views">
+      <p class="eyebrow">View layer</p>
+      <button class="view-button active" type="button" data-view="architecture" aria-pressed="true">
+        <span class="view-index">01</span><span>Architecture</span>
+      </button>
+      <button class="view-button" type="button" data-view="packages" aria-pressed="false">
+        <span class="view-index">02</span><span>Packages</span>
+      </button>
+      <button class="view-button" type="button" data-view="types" aria-pressed="false">
+        <span class="view-index">03</span><span>Types</span>
+      </button>
+      <button class="view-button" type="button" data-view="functions" aria-pressed="false">
+        <span class="view-index">04</span><span>Functions</span>
+      </button>
+      <button class="view-button" type="button" data-view="events" aria-pressed="false">
+        <span class="view-index">05</span><span>State / events</span>
+      </button>
+      <div class="nav-foot">
+        <span class="readonly-mark">RO</span>
+        <span>Read-only<br>observatory</span>
+      </div>
+    </nav>
+
+    <aside class="explorer-panel" aria-labelledby="explorer-title">
+      <header class="panel-heading">
+        <div>
+          <p class="eyebrow">Bounded corpus</p>
+          <h2 id="explorer-title">Field controls</h2>
+        </div>
+        <span id="view-state" class="state-pill">booting</span>
+      </header>
+
+      <form id="filter-form" class="filter-form">
+        <div class="field">
+          <label for="evidence-filter">Minimum evidence</label>
+          <select id="evidence-filter" name="evidence">
+            <option value="all">All evidence</option>
+            <option value="UNKNOWN">UNKNOWN</option>
+            <option value="APPROXIMATION">APPROXIMATION</option>
+            <option value="INFERRED">INFERRED</option>
+            <option value="SUPPORTED">SUPPORTED</option>
+            <option value="OBSERVED">OBSERVED</option>
+            <option value="CONFIRMED">CONFIRMED</option>
+            <option value="VERIFIED">VERIFIED</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="readiness-filter">Readiness status</label>
+          <select id="readiness-filter" name="readiness">
+            <option value="all">All readiness</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="sort-filter">Order</label>
+          <select id="sort-filter" name="sort">
+            <option value="hotspots">Hotspots first</option>
+            <option value="evidence">Evidence strength</option>
+            <option value="degree">Connection degree</option>
+            <option value="confidence">Confidence</option>
+            <option value="name">Name A–Z</option>
+          </select>
+        </div>
+      </form>
+
+      <section id="search-results" class="search-results" aria-labelledby="search-results-title" hidden>
+        <div class="section-heading">
+          <h3 id="search-results-title">Search results</h3>
+          <button id="close-search-results" class="text-button" type="button">Close</button>
+        </div>
+        <p id="search-meta" class="microcopy"></p>
+        <div id="search-result-list" class="result-list"></div>
+      </section>
+
+      <section class="scope-section" aria-labelledby="scope-title">
+        <div class="section-heading">
+          <h3 id="scope-title">Architecture hierarchy</h3>
+          <span id="node-list-count" class="count-badge">0</span>
+        </div>
+        <nav id="breadcrumbs" class="breadcrumbs" aria-label="Selected node ancestry"></nav>
+        <p id="scope-description" class="microcopy">Loading a bounded root slice…</p>
+        <div id="node-list" class="node-list" role="list"></div>
+      </section>
+    </aside>
+
+    <main id="observatory-main" class="observatory-main">
+      <section class="graph-panel" aria-labelledby="graph-title">
+        <header class="graph-heading">
+          <div>
+            <p class="eyebrow">Interactive topology</p>
+            <h2 id="graph-title">Neighborhood field</h2>
+            <p id="graph-scope" class="graph-scope">Architecture / root slice</p>
+          </div>
+          <div class="graph-actions" aria-label="Graph controls">
+            <button id="simulator-toggle" class="mode-button" type="button" aria-pressed="false">Simulator</button>
+            <button id="zoom-out" type="button" aria-label="Zoom out">−</button>
+            <button id="zoom-in" type="button" aria-label="Zoom in">+</button>
+            <button id="fit-view" type="button">Fit</button>
+            <button id="focus-selection" type="button">Focus</button>
+            <button id="collapse-view" type="button">Collapse</button>
+          </div>
+        </header>
+
+        <dl id="metrics" class="metrics" aria-label="Loaded graph metrics"></dl>
+
+        <div id="graph-shell" class="graph-shell">
+          <svg id="graph-canvas" viewBox="0 0 1000 680" role="group" aria-labelledby="graph-svg-title graph-svg-description" tabindex="0">
+            <title id="graph-svg-title">Reverse-engineering graph neighborhood</title>
+            <desc id="graph-svg-description">Interactive node and relationship field. Use Tab to reach nodes, Enter to select, and E to expand a node.</desc>
+            <g id="graph-viewport">
+              <g id="edge-layer" aria-hidden="true"></g>
+              <g id="node-layer"></g>
+            </g>
+          </svg>
+          <div id="graph-feedback" class="graph-feedback" aria-live="polite" hidden></div>
+          <div class="zoom-readout" id="zoom-readout" aria-live="polite">100%</div>
+        </div>
+
+        <div class="graph-key" aria-label="Graph legend">
+          <div class="key-group" aria-label="Category shapes">
+            <span><i class="key-shape package" aria-hidden="true"></i>Package</span>
+            <span><i class="key-shape type" aria-hidden="true"></i>Type</span>
+            <span><i class="key-shape function" aria-hidden="true"></i>Function</span>
+            <span><i class="key-shape event" aria-hidden="true"></i>Event</span>
+          </div>
+          <div class="key-group evidence-key" aria-label="Evidence strengths">
+            <span><i class="evidence-mark ev-unknown" aria-hidden="true"></i>Unknown</span>
+            <span><i class="evidence-mark ev-inferred" aria-hidden="true"></i>Inferred</span>
+            <span><i class="evidence-mark ev-observed" aria-hidden="true"></i>Observed</span>
+            <span><i class="evidence-mark ev-confirmed" aria-hidden="true"></i>Confirmed</span>
+            <span><i class="evidence-mark ev-verified" aria-hidden="true"></i>Verified</span>
+          </div>
+        </div>
+      </section>
+
+      <section id="simulator-panel" class="simulator-panel" aria-labelledby="simulator-title" hidden>
+        <div class="simulator-copy">
+          <p class="eyebrow">Bounded neighborhood replay</p>
+          <h2 id="simulator-title">Trace simulator</h2>
+          <p id="simulator-status" class="microcopy">Select a node to establish a trace.</p>
+        </div>
+        <div class="simulator-controls">
+          <button id="simulator-play" type="button">Run</button>
+          <button id="simulator-step" type="button">Step</button>
+          <button id="simulator-reset" type="button">Reset</button>
+        </div>
+        <ol id="simulator-trail" class="simulator-trail" aria-label="Simulator traversal"></ol>
+      </section>
+    </main>
+
+    <aside class="detail-panel" aria-labelledby="selection-title">
+      <header class="detail-heading">
+        <div>
+          <p class="eyebrow">Selection dossier</p>
+          <h2 id="selection-title">Node detail</h2>
+        </div>
+        <button id="clear-selection" class="text-button" type="button">Clear</button>
+      </header>
+      <div id="selection-content" class="selection-content" aria-live="polite">
+        <div class="empty-selection">
+          <span class="empty-orbit" aria-hidden="true"></span>
+          <h3>No node selected</h3>
+          <p>Select a graph node or search result. Identity, evidence, provenance, fields, and bounded relationships will remain visible here.</p>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <footer class="app-footer">
+    <span>OpenSpore clean-room observatory</span>
+    <span id="footer-status">API adapter: bounded routes / no corpus preload</span>
+  </footer>
 </body>
 </html>

@@ -1,0 +1,407 @@
+{
+  "$schema": "openspore-semantic-verification-1",
+  "artifact": "knowledgegraph/research/global-campaign-2026/verify-semantic.json",
+  "as_of": "2026-09-24",
+  "status": "FINDINGS",
+  "scope": {
+    "repository": "/home/juanr/Proyectos/OpenSpore",
+    "role": "conservative semantic verifier",
+    "reviewed": [
+      "knowledgegraph/research/semantic-atlas.json",
+      "docs/analysis/semantic-atlas.md",
+      "docs/analysis/reconstruction-packages.md",
+      "docs/analysis/reconstruction-research-queue.md",
+      "knowledgegraph/research/track-a-architecture.json",
+      "knowledgegraph/research/track-b-function-accounting.json",
+      "knowledgegraph/research/track-b-function-accounting.jsonl",
+      "knowledgegraph/research/track-i-dependency-graph.json",
+      "knowledgegraph/research/track-m-oracle-plan.json",
+      "knowledgegraph/research/track-n-testability.json",
+      "knowledgegraph/research/global-campaign-2026/00-source-inventory.json",
+      "knowledgegraph/research/global-campaign-2026/track-c-gameplay-contracts.json",
+      "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json",
+      "knowledgegraph/research/global-campaign-2026/track-f-empire-economy.json",
+      "knowledgegraph/research/global-campaign-2026/track-g-editor-ui-input.json",
+      "knowledgegraph/research/global-campaign-2026/track-j-dependency-graph.json",
+      "knowledgegraph/research/global-campaign-2026/track-k-engine-boundaries.json",
+      "knowledgegraph/research/global-campaign-2026/track-o-packages-testability.json",
+      "knowledgegraph/research/global-campaign-2026/track-p-coverage.json",
+      "docs/analysis/reconstruction-readiness.md",
+      "docs/analysis/simulator-shared-state-interface.md",
+      "docs/analysis/campaigns/cell-stage-campaign.md",
+      "docs/analysis/dossiers/cell-movement.md",
+      "docs/replacement-status.json"
+    ],
+    "excluded": [
+      "implementation changes",
+      "final-artifact changes",
+      "database writes",
+      "SPORE writes",
+      "new original-binary runtime execution"
+    ]
+  },
+  "overall_assessment": {
+    "highest_severity": "high",
+    "function_level_semantic_promotion_found": false,
+    "runtime_cell_evidence_found": false,
+    "major_gates_consistent": true,
+    "principal_risk": "The machine-readable tracks are conservative in their evidence labels, but several human-readable campaign/status summaries are stale or overstate completion and integration.",
+    "final_artifacts_modified": false
+  },
+  "findings": [
+    {
+      "id": "F-001",
+      "title": "CS-31 claims CellAnim is wired into cell_stage, but current call evidence shows test-only callers",
+      "severity": "high",
+      "category": "unsupported-integration-claim",
+      "claim_checked": "The Cell animation/effects work is complete and wired into the cell-stage executable.",
+      "finding": "The campaign report says CellAnim.cpp was wired into cell_stage. The current source-graph check reports animBlend, effectIDForEvent, and instanceEffect as called only by cellanim_test.cpp, and Track G explicitly records that cell_stage has no calls to those functions. The pure helper contract exists, but the claimed stage integration and its implied event-to-render path do not.",
+      "evidence": [
+        {
+          "source": "docs/analysis/campaigns/cell-stage-campaign.md:502-508",
+          "observation": "CS-31 status says the animation/effect implementation is DONE and says CellAnim.cpp was wired into cell_stage."
+        },
+        {
+          "source": "knowledgegraph/research/global-campaign-2026/track-g-editor-ui-input.json:381-386",
+          "observation": "Track G says cell_stage has no call to animBlend, instanceEffect, or effectIDForEvent; only cellanim_test exercises them, and the renderer has no pose/skeleton upload contract."
+        },
+        {
+          "source": "codegraph_explore:animBlend,effectIDForEvent,instanceEffect",
+          "observation": "Current call graph reports one caller for each helper, with tests as the caller; no cell_stage caller is reported."
+        },
+        {
+          "source": "knowledgegraph/research/global-campaign-2026/track-o-packages-testability.json:415-428",
+          "observation": "PKG-17 is marked INFERRED with an unresolved matched visual/state trace and a partial existing contract, not a completed original animation pipeline."
+        }
+      ],
+      "impact": "This can cause a pure local transformation to be treated as a reconstructed Cell animation/effect runtime, and it overstates the evidence available for PKG-17 and CS-31.",
+      "recommended_correction": "Mark CS-31 as pure helper implementation plus unit coverage, not integrated stage animation. Keep PKG-17 partial/inferred and add an explicit unresolved question for SimEvent-to-CellAnim-to-renderer/pose integration. Do not describe the current renderer as reproducing the original animation state machine."
+    },
+    {
+      "id": "F-002",
+      "title": "Replacement and movement status text is stale after static campaign progress",
+      "severity": "high",
+      "category": "stale-evidence-boundary",
+      "claim_checked": "The current status board and movement dossier describe the current Cell slice accurately.",
+      "finding": "The status board still says the movement plane values were never read and that the model has no movement plane, while the campaign records static verification of the plane normal and load-time point and a ray-plane implementation. The status board also says the world-object format is undecoded and positions are hard-coded, while the campaign records structural decoding and a data-driven scene with inferred positions. The status levels can remain conservative, but their supporting descriptions are no longer current.",
+      "evidence": [
+        {
+          "source": "docs/replacement-status.json:94-110",
+          "observation": "cell-sim-movement-interaction says the original plane values are never read, the current model has no movement plane, and the current implementation is an approximation."
+        },
+        {
+          "source": "docs/replacement-status.json:123-129",
+          "observation": "cell-stage-scene-assembly says 0x0f43029a is undecoded, positions are hard-coded, and player-cell identity is unresolved."
+        },
+        {
+          "source": "docs/analysis/campaigns/cell-stage-campaign.md:206-216,348-355",
+          "observation": "CS-01 records the normal as statically VERIFIED and the load-time point as zero, and CS-14 records the ray-plane steering as implemented."
+        },
+        {
+          "source": "docs/analysis/campaigns/cell-stage-campaign.md:218-248,430-437",
+          "observation": "CS-02 records full byte accounting for the world-object format, and CS-23 records removal of the hard-coded entity table in favor of scene.json; positions and player identity remain inferred."
+        },
+        {
+          "source": "docs/analysis/dossiers/cell-movement.md:135-151",
+          "observation": "The dossier still says plane values are unread and OpenSpore has no movement-plane model."
+        }
+      ],
+      "impact": "Consumers of the status board can misclassify static improvements as absent, or conversely read the updated static values as runtime-verified. The correct replacement status remains conservative because there is still no live Cell differential.",
+      "recommended_correction": "Update supporting prose while preserving the conservative statuses: distinguish statically verified normal/load-time point from unresolved per-world runtime point; describe the scene as data-driven with inferred placements and identity; keep cell-sim movement replaced-stub and the movement hook replaced-approx until the runtime gates pass. Regenerate or mark the old dossier as superseded rather than using it as current evidence."
+    },
+    {
+      "id": "F-003",
+      "title": "CS-32 says the replaced-approx entries are ready to promote and describes approval as sufficient",
+      "severity": "high",
+      "category": "unsupported-status-promotion",
+      "claim_checked": "A future approved human-watched Cell trace can directly promote the three replaced-approx entries to replaced-verified.",
+      "finding": "The campaign wording says the three replaced-approx entries are ready to promote and that approval will promote them. The package and oracle contracts require more than a trace: hash-pinned provenance, field offsets and meanings meeting the evidence gate, an original/replacement observable comparison, independent adjudication, and human status approval. A decompilation-only 64/64 differential remains replaced-approx by explicit policy.",
+      "evidence": [
+        {
+          "source": "docs/analysis/campaigns/cell-stage-campaign.md:511-519",
+          "observation": "CS-32 says the three replaced-approx entries are ready to promote and that the approved trace promotes them."
+        },
+        {
+          "source": "knowledgegraph/research/global-campaign-2026/track-m-oracle-plan.json:228-251,734-742",
+          "observation": "The oracle plan requires live pre/post ABI evidence, a hash-pinned trace, differential comparison, independent adjudication, and human status approval; decomp-only cannot promote."
+        },
+        {
+          "source": "docs/analysis/reconstruction-research-queue.md:34-47",
+          "observation": "C-REPLACEMENT explicitly requires live original trace, field gate, original/replacement comparison, independent adjudication, and approval."
+        },
+        {
+          "source": "knowledgegraph/research/global-campaign-2026/track-o-packages-testability.json:511-517",
+          "observation": "The package contract repeats that a decompilation-only 64/64 result remains replaced-approx."
+        }
+      ],
+      "impact": "The wording can bypass the replacement promotion gate and turn a future runtime observation into an automatic status change.",
+      "recommended_correction": "Replace 'ready to promote' with 'eligible for review only if the complete C-REPLACEMENT gate passes'. State that the trace is necessary but not sufficient, and that independent adjudication and explicit human status_update remain mandatory."
+    },
+    {
+      "id": "F-004",
+      "title": "cCellDataReference::Create is presented as a supported package anchor despite an unresolved address alias",
+      "severity": "high",
+      "category": "function-and-structure-identity",
+      "claim_checked": "The generic cCellDataReference::Create function and its resource-reference structure are pinned to one VA.",
+      "finding": "Track D records a static body at 00e82340 while the Track C SDK/KG row names cCellDataReference_::Create at 00e82420 and explicitly leaves the relationship unresolved. Track D nevertheless gives the generic name to 00e82340, and Track O and the package document list 00e82340 as a supported cCellDataReference_::Create anchor. This is enough to misplace a resource boundary even though the discrepancy is documented in Track D.",
+      "evidence": [
+        {
+          "source": "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json:719-725,928-940",
+          "observation": "Track D labels 00e82340 as cCellDataReference_::Create/FUN_00e82340, records the 00e82420 discrepancy, and keeps Q11 unresolved."
+        },
+        {
+          "source": "knowledgegraph/research/global-campaign-2026/track-c-gameplay-contracts.json:647074-647302",
+          "observation": "Track C has a FUN_00e82340 row and a separate SDK-named cCellDataReference_::Create row at 00e82420."
+        },
+        {
+          "source": "knowledgegraph/research/global-campaign-2026/track-o-packages-testability.json:223-236",
+          "observation": "PKG-05 lists 0x00e82340 as a supported cCellDataReference_::Create root without carrying the alias warning."
+        },
+        {
+          "source": "docs/analysis/reconstruction-packages.md:395-429",
+          "observation": "The package table repeats 0x00e82340 as the supported data-reference root."
+        }
+      ],
+      "impact": "A future reconstruction can attach the wrong function, signature, or structure identity to the Cell resource path, especially because the generic name is more authoritative than the address evidence warrants.",
+      "recommended_correction": "Keep 00e82340 as FUN_00e82340/static body evidence and keep the SDK association at 00e82420 separate until an alias/adjacent-function adjudication is committed. If the package must list it, carry an unresolved alias flag and do not claim the generic structure/function identity is supported."
+    },
+    {
+      "id": "F-005",
+      "title": "PKG-01 prerequisites omit the map_int_whatever_find dependency that its own root set and the graph identify",
+      "severity": "high",
+      "category": "package-prerequisite-gap",
+      "claim_checked": "PKG-01 lists all prerequisites needed to characterize its shared-state roots and dependent callers.",
+      "finding": "PKG-01 includes map_int_whatever_find as a root with NEEDS_RE status, but its prerequisite list only says to export/decompile the ten unnamed roots. The dependency graph and readiness audit identify map_int_whatever_find as the genuine container prerequisite used by 00b21340 and the empire registry path. The package therefore does not make that dependency explicit even though its root set and downstream work depend on it.",
+      "evidence": [
+        {
+          "source": "knowledgegraph/research/global-campaign-2026/track-o-packages-testability.json:131-172",
+          "observation": "PKG-01 roots include map_int_whatever_find with NEEDS_RE status, while prerequisites say 'Export/decompile the ten unnamed roots' and do not name the map helper."
+        },
+        {
+          "source": "knowledgegraph/research/global-campaign-2026/track-j-dependency-graph.json:762-772,774-812",
+          "observation": "Track J identifies 00e5c780 as a genuine map/list traversal prerequisite and places it in the first understanding and unlock order."
+        },
+        {
+          "source": "docs/analysis/reconstruction-readiness.md:191-205",
+          "observation": "The readiness audit calls map_int_whatever_find the only high-fan-in function outside the accessor family and a genuine prerequisite for GameGlobal work."
+        },
+        {
+          "source": "docs/analysis/reconstruction-packages.md:115-177",
+          "observation": "The human-readable package contract repeats the ten-root prerequisite omission while listing the map candidate as a root."
+        }
+      ],
+      "impact": "A work order can satisfy the ten named unnamed-root prerequisites and still proceed with unresolved map ownership, key/value semantics, or caller contracts.",
+      "recommended_correction": "Either add 'decompile/adjudicate map_int_whatever_find' and its map contract to PKG-01 prerequisites, or explicitly assign it to PKG-20 and add a PKG-01 -> PKG-20 dependency. Preserve the unresolved map type, key domain, and mutation rules."
+    },
+    {
+      "id": "F-006",
+      "title": "'reconstructable without prereqs' is a structural metric presented as semantic readiness",
+      "severity": "medium",
+      "category": "misleading-readiness-label",
+      "claim_checked": "The 127 reconstructable-without-prerequisites gameplay rows are implementation-ready reconstruction targets.",
+      "finding": "The machine artifact calls the metric recon_without_prereq, while the human readiness table renders it as 'reconstructable without prereqs'. The queue's actual READY and READY_WITH_LOCAL_CONTEXT rows total 35, all contracts remain unknown, and the package documents explicitly require static characterization and validation gates. A zero prerequisite count is not a semantic or original-behavior readiness result.",
+      "evidence": [
+        {
+          "source": "knowledgegraph/triage/reconstruction-readiness-f0e310e0.json:1239-1263",
+          "observation": "The machine field is recon_without_prereq=127, alongside 172 decomp-backed rows and 207 rows with prerequisites; it does not establish a runtime or semantic contract."
+        },
+        {
+          "source": "docs/analysis/reconstruction-readiness.md:38-67,73-99,200-218",
+          "observation": "The document renders 127 as reconstructable without prereqs, but separately limits Phase 1 to 35 READY/READY_WITH_LOCAL_CONTEXT queue functions and states that all contracts remain static."
+        },
+        {
+          "source": "knowledgegraph/research/track-b-function-accounting.md:122-158,194-219",
+          "observation": "Only 365 queue rows are in the canonical queue scope, all function contract statuses are unknown, and decompilation/name/evidence fields do not promote semantics."
+        }
+      ],
+      "impact": "A consumer can interpret structural leaf-ness as permission to implement or promote behavior, especially for the 127 rows that are not the 35 queue-ready rows.",
+      "recommended_correction": "Rename the displayed metric to 'no queued prerequisite dependency' or 'structurally leaf', and add a separate implementation_readiness field that is false until a contract, validation class, and required evidence gate are satisfied."
+    },
+    {
+      "id": "F-007",
+      "title": "Unknown gameplay counts use incompatible denominators and are not consistently scoped",
+      "severity": "medium",
+      "category": "count-and-scope-ambiguity",
+      "claim_checked": "The 1,598 unknown gameplay rows and the 0.744 field are directly comparable to the atlas's 1,976 not-established gameplay rows and 1,977 unavailable-body rows.",
+      "finding": "Track O labels 0.744 as unknown_gameplay_fraction_of_canonical, but 1,598/2,149 equals approximately 0.744; 1,598/58,757 is about 0.027. Track C separately counts 1,976 gameplay rows as not established, and Track P counts 1,977 gameplay rows with no persisted body. These are different populations and the package unresolved list does not define which one it means by 'unknown gameplay rows'.",
+      "evidence": [
+        {
+          "source": "knowledgegraph/research/global-campaign-2026/track-o-packages-testability.json:53-62,525-530",
+          "observation": "The partition field is named unknown_gameplay_fraction_of_canonical=0.744, while the unresolved item says 1,598 unknown gameplay rows."
+        },
+        {
+          "source": "knowledgegraph/research/semantic-atlas.json:1 (counts and packages.global_unresolved_items)",
+          "observation": "The atlas records 2,149 gameplay functions, 1,976 semantic-not-established rows, and the same 1,598 package unresolved count without a population definition."
+        },
+        {
+          "source": "knowledgegraph/research/global-campaign-2026/track-p-coverage.json:18-30,127-139",
+          "observation": "Track P separately defines the 2,149 gameplay universe and reports 1,977 rows without a persisted body, including snapshot-only state."
+        },
+        {
+          "source": "knowledgegraph/triage/reconstruction-readiness-f0e310e0.json:1239-1255",
+          "observation": "The 1,598 value is specifically the population category unknown-needs-investigation."
+        }
+      ],
+      "impact": "Readers can incorrectly treat category-level unknown, semantic-not-established, and body-availability populations as one unresolved set and compute the wrong fraction or backlog size.",
+      "recommended_correction": "Rename the field to unknown_gameplay_fraction_of_gameplay_population, label 1,598 as population_category=unknown-needs-investigation, and retain separate fields for 1,976 semantic-not-established and 1,977 no-persisted-body. Add an explicit statement that the populations are not interchangeable."
+    },
+    {
+      "id": "F-008",
+      "title": "The Cell campaign completion language overstates original-runtime completion",
+      "severity": "medium",
+      "category": "original-versus-clean-room-claim",
+      "claim_checked": "The cell_stage executable now runs the original Cell-stage pipeline end-to-end and the lifecycle target is complete.",
+      "finding": "The campaign header calls the executable an original cell-stage pipeline and marks CS-28 lifecycle work DONE, while the same report says player identity and placement remain approximate, the S5 Cell trace is negative, and the original lifecycle order is not runtime-observed. The package and track evidence correctly describe a clean-room mode shell and static vtable contract, so the issue is the campaign wording/status rather than the existence of the clean-room implementation.",
+      "evidence": [
+        {
+          "source": "docs/analysis/campaigns/cell-stage-campaign.md:3-16,20-40",
+          "observation": "The report says the cell_stage binary runs the original cell-stage pipeline end-to-end and calls the campaign complete, while also gating the S5 trace and replacement promotion."
+        },
+        {
+          "source": "docs/analysis/campaigns/cell-stage-campaign.md:48-54,430-437,511-519",
+          "observation": "The same report says positions/player identity are approximations, removes only the hard-coded scene table, and records no Cell-stage runtime trace."
+        },
+        {
+          "source": "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json:356-420,966-976",
+          "observation": "Track D marks the original transitions partial and says the current source is not an original Cell runtime; the largest unresolved boundary is FUN_00e806b0."
+        },
+        {
+          "source": "knowledgegraph/research/global-campaign-2026/track-m-oracle-plan.json:205-226,773-776",
+          "observation": "Track M says no live Cell Stage evidence exists and the replacement is not live-runtime verified."
+        }
+      ],
+      "impact": "A reader can mistake a deterministic clean-room vertical slice for a completed original runtime or a verified mode transition.",
+      "recommended_correction": "Use 'clean-room Cell-stage vertical slice using real assets' for the executable. Mark CS-28 as a clean-room lifecycle shell completed, with original lifecycle ordering still static/inferred and gated by M1/C-ORDER."
+    },
+    {
+      "id": "F-009",
+      "title": "The empire/economy research dossier has no explicit package ownership or prerequisite mapping",
+      "severity": "medium",
+      "category": "unresolved-package-coverage-gap",
+      "claim_checked": "The 23-package index covers the major researched systems without losing empire/economy ownership.",
+      "finding": "Track F contains a major state model for cEmpire, cSpaceTrading, missions, tribes, planets, stars, progression, and serialization, with 17 unresolved questions. Track O has no dedicated empire/economy package and does not explicitly state that Track F's questions are owned by PKG-11, PKG-12, and PKG-13. Those packages are broad and mostly non-Cell, but the mapping is not recorded as a prerequisite or unresolved-question handoff.",
+      "evidence": [
+        {
+          "source": "knowledgegraph/research/global-campaign-2026/track-f-empire-economy.json:1-6,94-200,201-431,882-925",
+          "observation": "Track F defines a separate empire/economy dossier, state models, event surfaces, and unresolved questions for empire, trade, missions, tribes, planets, stars, and serialization."
+        },
+        {
+          "source": "knowledgegraph/research/global-campaign-2026/track-o-packages-testability.json:53-84,319-380,525-530",
+          "observation": "The 23-package partition has no empire/economy package; PKG-11 is broad simulator managers/tools/missions, PKG-12 is Space, and PKG-13 is Creature/Tribe/Civ, but Track F questions are not attached to them."
+        },
+        {
+          "source": "docs/analysis/reconstruction-packages.md:830-1069,1261-1427",
+          "observation": "The package details remain broad and do not state that empire/economy semantics are intentionally out of scope or explicitly owned by the corresponding packages."
+        }
+      ],
+      "impact": "The long tail can appear covered by generic Simulator packages while its empire/economy-specific unresolved contracts are never scheduled or assigned a stopping condition.",
+      "recommended_correction": "Add an explicit Track-F-to-package ownership matrix. Either add a dedicated empire/economy package or record PKG-11/12/13 ownership, prerequisites, and unresolved questions for money, trade, missions, tribes, planets, stars, serialization, and runtime stage reachability. Do not infer implementation readiness from the dossier's static field maps."
+    }
+  ],
+  "package_and_state_machine_check": {
+    "consistent": [
+      {
+        "topic": "Cell movement prerequisites",
+        "result": "M0 -> M1 -> M2 is consistent across Track M, PKG-07, and the reconstruction queue. PKG-07 is explicitly real-install-unvalidated and the 64/64 result remains decomp-reference-only.",
+        "evidence": [
+          "knowledgegraph/research/global-campaign-2026/track-m-oracle-plan.json:353-464",
+          "knowledgegraph/research/global-campaign-2026/track-o-packages-testability.json:255-268",
+          "docs/analysis/reconstruction-research-queue.md:18-30"
+        ]
+      },
+      {
+        "topic": "Cell lifecycle prerequisites",
+        "result": "PKG-08's M1 and SetActiveModeAt correlation prerequisite matches Track D's partial lifecycle state and Track M's C-ORDER gate. The issue is only the campaign report's DONE/original wording.",
+        "evidence": [
+          "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json:356-420",
+          "knowledgegraph/research/global-campaign-2026/track-m-oracle-plan.json:205-226",
+          "knowledgegraph/research/global-campaign-2026/track-o-packages-testability.json:271-284"
+        ]
+      },
+      {
+        "topic": "Runtime negative evidence",
+        "result": "The major tracks consistently preserve the negative Cell result, zero function-level runtime validation, screenshot non-substitution, and decompilation-not-truth policy. No direct inferred-to-OBSERVED function promotion was found in the reviewed tracks.",
+        "evidence": [
+          "knowledgegraph/research/track-b-function-accounting.md:194-219",
+          "knowledgegraph/research/global-campaign-2026/track-p-coverage.json:199-221,804-917",
+          "knowledgegraph/research/global-campaign-2026/track-m-oracle-plan.json:25-35,122-168",
+          "knowledgegraph/research/semantic-atlas.md:1-7,95-107,269-294"
+        ]
+      }
+    ],
+    "inconsistent_or_incomplete": [
+      "PKG-01 prerequisite omission for map_int_whatever_find (F-005).",
+      "CS-28/CS-31 campaign status wording overstates clean-room completion and integration (F-001, F-008).",
+      "CS-32 promotion wording omits the complete replacement gate (F-003)."
+    ]
+  },
+  "unresolved_question_check": {
+    "existing_high_value_questions_present": [
+      "Runtime per-world movement-plane point and sCellGame gate-field meanings (Track D Q1-Q2).",
+      "FUN_00e806b0/FUN_00e5b2e0 argument and continuation order (Track D Q3).",
+      "Original query insertion, removal, partitioning, and iteration order (Track D Q4).",
+      "Original event/message path for eat, damage, death, animation, and effects (Track D Q6).",
+      "Runtime world/populate selection, player identity, and placement (Track D Q7).",
+      "Cell state/GFX vtable slot linkage (Track D Q9).",
+      "cCellDataReference address alias (Track D Q11).",
+      "cGameInputManager routing, message order, UTFWin grammar, editor tool semantics, animation/pose semantics, and CellAnim integration (Track G).",
+      "Empire money, trade, missions, tribes, planets, stars, serialization, and runtime reachability (Track F).",
+      "Replacement ABI, runtime state, negative-result, and lifecycle ordering gates (Track M)."
+    ],
+    "package_level_gaps": [
+      {
+        "gap": "PKG-17 does not carry Track G's explicit question about CellAnim-to-stage/renderer integration and pose-state policy.",
+        "evidence": [
+          "knowledgegraph/research/global-campaign-2026/track-g-editor-ui-input.json:349-386,624-666",
+          "knowledgegraph/research/global-campaign-2026/track-o-packages-testability.json:415-428"
+        ],
+        "recommended_correction": "Add the integration question and a static-only stopping condition to PKG-17 until a real event-to-pose/render path is demonstrated."
+      },
+      {
+        "gap": "PKG-05 does not carry the 00e82340/00e82420 alias question as a package-level unresolved item.",
+        "evidence": [
+          "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json:928-940",
+          "knowledgegraph/research/global-campaign-2026/track-o-packages-testability.json:223-236"
+        ],
+        "recommended_correction": "Add the alias question to PKG-05 or reference Track D Q11 from the package record; keep the generic function name unresolved until adjudicated."
+      },
+      {
+        "gap": "The package index does not attach Track F's empire/economy unresolved questions to PKG-11/12/13.",
+        "evidence": [
+          "knowledgegraph/research/global-campaign-2026/track-f-empire-economy.json:882-925",
+          "knowledgegraph/research/global-campaign-2026/track-o-packages-testability.json:319-380,525-530"
+        ],
+        "recommended_correction": "Add explicit ownership and stopping conditions for the empire/economy questions or create a dedicated package."
+      }
+    ],
+    "bottom_line": "The major binary-semantic questions are present in the detailed tracks; the missing coverage is mainly in package-level handoffs and in stale summaries that no longer reflect the latest static campaign evidence."
+  },
+  "known_documented_conflicts_not_reported_as_new": [
+    {
+      "id": "CONFLICT-01",
+      "finding": "Older prose says xdotool/Xvfb are absent while the current read-only check and S5 artifacts use xdotool.",
+      "handling": "Use the current environment check and raw S5 artifacts; retain older prose as historical context.",
+      "evidence": "knowledgegraph/research/global-campaign-2026/track-m-oracle-plan.json:330-351"
+    },
+    {
+      "id": "CONFLICT-02",
+      "finding": "Campaign prose says S5 was not run while devlog 018 and raw S5 directories record a three-run S5 attempt.",
+      "handling": "Use devlog 018 and raw S5 records; the Cell runtime gate remains negative/open.",
+      "evidence": "knowledgegraph/research/global-campaign-2026/track-m-oracle-plan.json:343-351"
+    },
+    {
+      "id": "FUNCTION-COUNT-DRIFT",
+      "finding": "Pinned canonical corpus is 58,757 while live Ghidra reports 59,245 manager entries.",
+      "handling": "Use 58,757 as the pinned campaign denominator and retain the 488-entry drift as unresolved snapshot/scope reconciliation; do not use live counts to promote queue membership.",
+      "evidence": "knowledgegraph/research/global-campaign-2026/00-source-inventory.json:299-310,382-406"
+    }
+  ],
+  "recommended_correction_order": [
+    "Correct CS-31 and CS-28 wording/status before using campaign completion as a semantic gate.",
+    "Refresh the replacement status supporting text and cell-movement dossier while preserving replaced-stub/replaced-approx levels.",
+    "Replace the CS-32 promotion wording with the full C-REPLACEMENT gate.",
+    "Resolve or quarantine the cCellDataReference 00e82340/00e82420 identity before package implementation work.",
+    "Add the map_int_whatever_find prerequisite and attach Track F ownership/questions to packages.",
+    "Rename structural readiness and unknown-population metrics so they cannot be read as runtime or semantic readiness."
+  ]
+}

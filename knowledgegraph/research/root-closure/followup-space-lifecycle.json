@@ -1,0 +1,662 @@
+{
+  "$schema": "openspore-root-closure-followup-1",
+  "track": "F-followup",
+  "phase": "Phase-0 Root Closure",
+  "title": "SpacePlayerData lifecycle, active planet/star ownership, and SpaceContext transitions",
+  "status": "static follow-up complete; no runtime execution",
+  "scope": {
+    "target_addresses": [
+      "01021d40",
+      "01021960",
+      "01001360",
+      "010219b0",
+      "00b60d80"
+    ],
+    "context_writer_callers": [
+      "00b32b20",
+      "00b32ce0",
+      "00b33350",
+      "00fda9f0",
+      "00fdf5f0",
+      "01003490",
+      "01003690",
+      "01003a50",
+      "0100a960"
+    ],
+    "state_offsets": [
+      "Simulator::sSpacePlayerData",
+      "SpacePlayerData+0x04",
+      "SpacePlayerData+0x08",
+      "SpacePlayerData+0x10"
+    ],
+    "excluded": [
+      "runtime execution",
+      "Wine",
+      "SPORE/ modification",
+      "OpenSpore source changes",
+      "historical artifact changes",
+      "Phase-0 interface changes",
+      "Ghidra project mutation"
+    ]
+  },
+  "evidence_policy": {
+    "runtime_evidence": false,
+    "basis": "committed static exports/decomp-gap plus read-only Ghidra inspection of the existing SporeApp.exe snapshot",
+    "confidence_labels": [
+      "CONFIRMED",
+      "SUPPORTED",
+      "INFERRED",
+      "UNKNOWN"
+    ],
+    "important_rule": "SDK names and offsets establish layout/type provenance; they do not by themselves prove function identity, ownership, runtime ordering, or enum aliasing."
+  },
+  "provenance": {
+    "baseline": {
+      "path": "knowledgegraph/research/00-baseline-inventory.json",
+      "binary": "SporeApp.exe",
+      "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+      "source_precedence": "pinned Ghidra exports and canonical xrefs precede SDK naming, decomp-gap projections, and narrative reports"
+    },
+    "analysis_snapshot": {
+      "id": "f0e310e0",
+      "classifier": "triage-v6",
+      "binary": "SporeApp.exe",
+      "architecture": "x86:LE:32:windows"
+    },
+    "xrefs": {
+      "path": "knowledgegraph/triage/xrefs-2540f2ca.tsv",
+      "snapshot": "2540f2ca",
+      "edge_count": 223704,
+      "edge_sha256": "89e74b8a03c4db38a1927f8c95c38db507bf99cb8a11de6b6eb6a9484d8c79cb",
+      "context_writer_rows": [
+        "00b32b20 -> 01021960 at 00b32be7",
+        "00b32ce0 -> 01021960 at 00b32d87",
+        "00b33350 -> 01021960 at 00b33463",
+        "00fda9f0 -> 01021960 at 00fdaa5f",
+        "00fdf5f0 -> 01021960 at 00fdf823",
+        "01003490 -> 01021960 at 010034fd",
+        "01003690 -> 01021960 at 01003750",
+        "01003a50 -> 01021960 at 01003aaf",
+        "0100a960 -> 01021960 at 0100ab17"
+      ],
+      "initializer_row": "00b60d80 -> 01021d40 at 00b622eb (computed-call)",
+      "target_sizes": {
+        "00b60d80": "10061 bytes",
+        "01001360": "917 bytes",
+        "01021960": "66 bytes",
+        "010219b0": "246 bytes",
+        "01021d40": "89 bytes"
+      }
+    },
+    "exports": {
+      "sdk": ".spore-analysis/ghidra-exports/spore_sdk.xml",
+      "structures": ".spore-analysis/ghidra-exports/structs_fields.tsv:11683-11691",
+      "functions": ".spore-analysis/ghidra-exports/functions.tsv:24353,38138,38162,38164,38166,38229,38440-38446",
+      "global": ".spore-analysis/ghidra-exports/spore_sdk.xml:51791,52107"
+    },
+    "committed_decomp_gap": [
+      "knowledgegraph/research/decomp-gap/sim-core-07.json:24448-24975",
+      "knowledgegraph/research/decomp-gap/sim-core-07.json:24978-25579",
+      "knowledgegraph/research/decomp-gap/sim-core-00.json:48000-48930",
+      "knowledgegraph/research/decomp-gap/sim-core-00.json:49800-50640",
+      "knowledgegraph/research/decomp-gap/hold-infrastructure.json"
+    ],
+    "read_only_inspection": {
+      "engine": "Ghidra 12.1.2 headless",
+      "program": "SporeApp.exe",
+      "project_source": "existing SporeProject database copied to a temporary directory",
+      "mode": "read-only",
+      "program_mutated": false,
+      "persisted_decompilation": false,
+      "note": "The temporary inspection was used to recover current bodies, disassembly, direct references, and field mechanics; no new decompilation or project state was written to the repository."
+    }
+  },
+  "executive_findings": [
+    "01021d40 allocates a 0x34-byte SpacePlayerData object, publishes it to Simulator::sSpacePlayerData at 0x016dda8c, explicitly initializes +0x04=0, +0x08=0, +0x0c=0, +0x10=-1, +0x18=-1, +0x1c=0, the three colony-vector words, and +0x14=1.0. It does not explicitly initialize +0x00 in the recovered body.",
+    "01021960 is a conditional SpaceContext writer: it stores the supplied integer at +0x10 only when the old value differs. The only special follow-up is new value 2 with non-null +0x08 and non-null return from 00ffbe50; it then calls 00c8b360 on the old +0x08 object and 01001360 with the helper result.",
+    "010219b0 is a reference-replacement routine for the SDK mpActiveStar (+0x08) and mpActivePlanet (+0x04) slots, not a context writer. It performs virtual intrusive-style AddRef/Release operations and clears the secondary/planet path when its second input is null or resolves to the same player object.",
+    "01001360 is a 917-byte collection/record refresh helper with its own reference-management operations. It is invoked by 01021960, 010213b0, and 010021a0; it does not itself write SpacePlayerData+0x10.",
+    "01022460 and 00bb7250 provide field-level teardown/release evidence. 01022460 clears and releases +0x04, +0x08, +0x0c, +0x1c, and the colony vector, and resets +0x18; 00bb7250 independently clears and releases +0x08.",
+    "The five +0x10 write sites recovered for this closure are 01021d40 initialization to -1, 01021960 conditional writes, and 01022580's independent conditional write to 0. The nine direct 01021960 callers request -1, 0, 1, or 2; requested value and actual store are distinct because 01021960 suppresses same-value writes.",
+    "00b60d80 is the only canonical caller of 01021d40, through a computed call at 00b622eb. The recovered 01021d40 body contains no whole-object free or old-global release; no direct final global nulling or whole-object teardown is established in this closure.",
+    "SpaceContext, cScenarioMode::mMode, and cGameInputManager::mCurrentGameMode remain separate state axes. The shared numeric value 2 is numerically coincidental, not an alias or proven transition mapping."
+  ],
+  "layout": {
+    "global": {
+      "name": "Simulator::sSpacePlayerData",
+      "address": "0x016dda8c",
+      "type": "SpacePlayerData*",
+      "source": ".spore-analysis/ghidra-exports/spore_sdk.xml:51791,52107"
+    },
+    "structure": {
+      "name": "SpacePlayerData",
+      "size": "0x34",
+      "source": ".spore-analysis/ghidra-exports/structs_fields.tsv:11683-11691",
+      "fields": {
+        "+0x00": {
+          "name": "mMillisecondsSinceLastUpdate",
+          "type": "int",
+          "closure_role": "not explicitly initialized by 01021d40; no target-root mutation established"
+        },
+        "+0x04": {
+          "name": "mpActivePlanet",
+          "type": "intrusive_ptr<Simulator::cPlanet>",
+          "closure_role": "authoritative active-planet reference storage"
+        },
+        "+0x08": {
+          "name": "mpActiveStar",
+          "type": "intrusive_ptr<Simulator::cStar>",
+          "closure_role": "authoritative active-star reference storage"
+        },
+        "+0x0c": {
+          "name": "mpTribeCivRelationships",
+          "type": "intrusive_ptr<Simulator::cRelationshipManager>",
+          "closure_role": "released by 01022460; not a target navigation field"
+        },
+        "+0x10": {
+          "name": "mCurrentContext",
+          "type": "SpaceContext",
+          "closure_role": "authoritative space-navigation context storage"
+        },
+        "+0x14": {
+          "name": "mfRotationRateFactor",
+          "type": "float",
+          "closure_role": "explicitly initialized to 1.0"
+        },
+        "+0x18": {
+          "name": "mPlayerEmpireID",
+          "type": "uint32_t",
+          "closure_role": "reset to -1 by 01022460"
+        },
+        "+0x1c": {
+          "name": "mpPlayerEmpire",
+          "type": "intrusive_ptr<Simulator::cEmpire>",
+          "closure_role": "cleared/released by 01022460"
+        },
+        "+0x20": {
+          "name": "mPlayerColonies",
+          "type": "vector<eastl::intrusive_ptr<Simulator::cPlanet>>",
+          "closure_role": "range released by 01022460"
+        }
+      }
+    },
+    "space_context": {
+      "name": "SpaceContext",
+      "size": 4,
+      "values": {
+        "None": -1,
+        "Planet": 0,
+        "SolarSystem": 1,
+        "Galaxy": 2
+      },
+      "source": ".spore-analysis/ghidra-exports/spore_sdk.xml:10393-10398"
+    }
+  },
+  "global_reference_inventory": {
+    "committed_canonical_xrefs": "The committed xref file is the canonical call/data reference source; computed base+offset field accesses are not represented as direct references to the field address.",
+    "read_only_reference_pass": {
+      "target": "0x016dda8c",
+      "total_reference_rows": 56,
+      "attached_global_writes": [
+        {
+          "function": "01021d40",
+          "address": "01021d80",
+          "instruction": "MOV [0x016dda8c],EAX",
+          "meaning": "publish allocated SpacePlayerData pointer"
+        },
+        {
+          "function": "01021d40",
+          "address": "01021d8c",
+          "instruction": "MOV dword ptr [0x016dda8c],ESI",
+          "meaning": "publish null on allocation failure"
+        }
+      ],
+      "unowned_write_reference": {
+        "address": "01022572",
+        "status": "not promoted",
+        "reason": "read-only reference listing reports a WRITE reference with no containing function; no function-level lifecycle claim is made"
+      },
+      "field_address_reference_limits": {
+        "+0x04": "one direct address read at 01021766; base+offset writers are identified from disassembly/decompilation",
+        "+0x08": "one direct address read at 01021774; base+offset writers are identified from disassembly/decompilation",
+        "+0x10": "no direct address reference; all recovered accesses use the global base plus an offset"
+      }
+    }
+  },
+  "lifecycle": {
+    "initialization": {
+      "actor": "01021d40",
+      "classification": "CONFIRMED_STATIC_ALLOCATION_INITIALIZER",
+      "caller": "00b60d80",
+      "callsite": "00b622eb",
+      "reference_type": "computed-call",
+      "allocation": "FUN_00f473a0(0x34, \"Simulator\", 0, 0, 0, 0)",
+      "success_path": [
+        "publish EAX to Simulator::sSpacePlayerData at 01021d80",
+        "+0x04=0 at 01021d62",
+        "+0x08=0 at 01021d65",
+        "+0x0c=0 at 01021d68",
+        "+0x10=0xffffffff at 01021d6e",
+        "+0x18=0xffffffff at 01021d71",
+        "+0x1c=0 at 01021d74",
+        "+0x20=0 at 01021d77",
+        "+0x24=0 at 01021d7a",
+        "+0x28=0 at 01021d7d",
+        "+0x14=1.0 at 01021d85"
+      ],
+      "failure_path": "publish null at 01021d8c; the recovered fallback also contains a decompiler-visible write using ESI=0 and is not treated as a valid SpacePlayerData field write",
+      "old_global_release": false,
+      "whole_object_free": false,
+      "initial_context": "None (-1), explicitly stored on the success path",
+      "active_planet_allocation": false,
+      "active_star_allocation": false,
+      "evidence": [
+        {
+          "level": "SUPPORTED",
+          "source": "read-only Ghidra decompilation/disassembly of 01021d40",
+          "claim": "allocation, explicit field initialization, and global publication"
+        },
+        {
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/triage/simulator-shared-state-interface-f0e310e0.json:1214-1230",
+          "claim": "01021d40 allocates and initializes SpacePlayerData; active-planet allocation is not established there"
+        },
+        {
+          "level": "CONFIRMED",
+          "source": "knowledgegraph/triage/xrefs-2540f2ca.tsv:103982",
+          "claim": "00b60d80 computed-call relationship at 00b622eb"
+        }
+      ],
+      "limits": [
+        "The recovered body does not explicitly store +0x00; allocator zeroing is not promoted to a field-level fact.",
+        "The allocation call is not known to be safe to repeat; no old-global release occurs before publication."
+      ]
+    },
+    "active_planet_star_assignment": {
+      "field_mapping": {
+        "+0x04": "mpActivePlanet; intrusive_ptr<cPlanet>",
+        "+0x08": "mpActiveStar; intrusive_ptr<cStar>"
+      },
+      "writers": [
+        {
+          "actor": "010219b0",
+          "mechanics": "Resolve and replace +0x08 first, then resolve and replace +0x04. If the secondary input is null or resolves to the same player object, the +0x04 replacement is cleared.",
+          "ownership": "virtual slot +0x00 on the new +0x08 object, virtual slot +0xbc on the new +0x04 object, and release candidates at +0x04 and +0xc0 on prior objects",
+          "semantic_level": "SUPPORTED mechanics; SDK field names establish object roles, exact helper identities remain unresolved"
+        },
+        {
+          "actor": "010221f0",
+          "mechanics": "Clear/release prior +0x08 and +0x04 values, derive replacement values through 00b3d2a0/00bb3750, then store the new +0x04 and +0x08 pointers.",
+          "ownership": "same intrusive-style virtual release pattern; decompiler indexed notation Simulator__sSpacePlayerData[1]/[2] maps to +0x04/+0x08",
+          "semantic_level": "SUPPORTED mechanics; exact meaning of the input player token and returned objects remains unresolved"
+        },
+        {
+          "actor": "01021d40",
+          "mechanics": "initializes both slots to null",
+          "ownership": "no AddRef/Release because both are null",
+          "semantic_level": "CONFIRMED static initialization"
+        }
+      ],
+      "readers_and_consumers": [
+        "01021260 reads +0x04 through the active-planet accessor.",
+        "01021230/01021240 read +0x08 and dereference the active-star object in the recovered static bodies.",
+        "01021960 reads +0x08 only to gate its value-2 follow-up.",
+        "01021740 and 01022920 read the active-reference/context region but do not provide a direct field writer."
+      ],
+      "conclusion": "Active-planet and active-star assignment is not confined to 010219b0; 010221f0 is a second replacement/initialization path, and 01022460/00bb7250 provide separate release paths."
+    },
+    "field_write_release_inventory": {
+      "+0x04": [
+        {
+          "actor": "01021d40",
+          "operation": "initialize null",
+          "release": false
+        },
+        {
+          "actor": "010219b0",
+          "operation": "replace with resolved planet reference",
+          "release": "prior +0x04 is released through virtual slot +0xc0; new reference is balanced through +0xc0 after publication"
+        },
+        {
+          "actor": "010221f0",
+          "operation": "clear prior value, then store derived planet reference",
+          "release": "prior +0x04 release through virtual slot +0xc0"
+        },
+        {
+          "actor": "01022460",
+          "operation": "clear to null",
+          "release": "prior +0x04 release through virtual slot +0xc0"
+        }
+      ],
+      "+0x08": [
+        {
+          "actor": "01021d40",
+          "operation": "initialize null",
+          "release": false
+        },
+        {
+          "actor": "010219b0",
+          "operation": "replace with resolved star reference",
+          "release": "prior +0x08 release through virtual slot +0x04; new reference is balanced through +0x04"
+        },
+        {
+          "actor": "010221f0",
+          "operation": "clear prior value, then store derived star reference",
+          "release": "prior +0x08 release through virtual slot +0x04"
+        },
+        {
+          "actor": "01022460",
+          "operation": "clear to null",
+          "release": "prior +0x08 release through virtual slot +0x04"
+        },
+        {
+          "actor": "00bb7250",
+          "operation": "clear to null if non-null",
+          "release": "prior +0x08 release through virtual slot +0x04"
+        }
+      ],
+      "+0x10": [
+        {
+          "actor": "01021d40",
+          "operation": "initialize -1 (None)",
+          "release": false
+        },
+        {
+          "actor": "01021960",
+          "operation": "store supplied integer only when old value differs",
+          "release": false
+        },
+        {
+          "actor": "01022580",
+          "operation": "store 0 when current +0x10 is non-zero",
+          "release": false
+        }
+      ],
+      "other_teardown": [
+        {
+          "actor": "01022460",
+          "operations": [
+            "clear/release +0x0c",
+            "clear/release +0x1c",
+            "release the +0x20 colony vector",
+            "set +0x18 to -1"
+          ]
+        }
+      ]
+    },
+    "teardown": {
+      "field_cleanup": "01022460 is the clearest committed static cleanup routine: it clears and releases +0x04, +0x08, +0x0c, +0x1c, releases the colony vector, and resets +0x18. 00bb7250 independently clears/releases +0x08.",
+      "context_cleanup": "01022460 does not write +0x10. The callers 00b32b20 and 00b32ce0 call 01022460 and then request 01021960(-1); 00b33350 calls 01022460 and conditionally requests 01021960(-1).",
+      "global_teardown": "No direct final nulling or whole-object free of Simulator::sSpacePlayerData is present in the recovered global reference set. 01021d40 is allocation/publication, and 01022460 is field cleanup, not whole-object destruction.",
+      "runtime_limit": "Static cleanup and release calls establish possible ownership operations, not runtime order or actual destruction."
+    }
+  },
+  "target_functions": {
+    "01021d40": {
+      "classification": "SPACE_PLAYER_DATA_ALLOCATOR_INITIALIZER",
+      "size_bytes": 89,
+      "static_callers": [
+        {
+          "caller": "00b60d80",
+          "callsite": "00b622eb",
+          "reference_type": "computed-call"
+        }
+      ],
+      "body_mechanics": "allocate 0x34 bytes, initialize explicit fields, publish global, or publish null on allocation failure",
+      "context_effect": "+0x10=-1",
+      "field_effects": "+0x04=0, +0x08=0, +0x0c=0, +0x10=-1, +0x18=-1, +0x1c=0, +0x20=0, +0x24=0, +0x28=0, +0x14=1.0",
+      "release_evidence": "none",
+      "conclusion": "Initialization is confirmed; active planet/star allocation and whole-object teardown are not established here"
+    },
+    "01021960": {
+      "classification": "CONDITIONAL_SPACE_CONTEXT_WRITER",
+      "size_bytes": 66,
+      "static_callers": 9,
+      "body_mechanics": "compare +0x10 with integer argument; store argument on difference; for new value 2, require old +0x08 and 00ffbe50 result non-null, then call 00c8b360 on old +0x08 and 01001360 with the helper result",
+      "context_values_observed_at_callers": [
+        -1,
+        0,
+        1,
+        2
+      ],
+      "pre_state_rule": "not read by this writer; the caller may or may not read the old value before requesting the new value",
+      "release_evidence": "none",
+      "conclusion": "The writer is static and conditional; requested -1 is now a characterized context value, but runtime ordering is not claimed"
+    },
+    "01001360": {
+      "classification": "REFERENCE_MANAGED_COLLECTION_REFRESH_HELPER",
+      "size_bytes": 917,
+      "static_callers": [
+        {
+          "caller": "01021960",
+          "callsite": "0102199a"
+        },
+        {
+          "caller": "010213b0",
+          "callsite": "010213dc"
+        },
+        {
+          "caller": "010021a0",
+          "callsite": "0100243a"
+        }
+      ],
+      "body_mechanics": "enumerate a manager list, build a bounded 0xfa0-byte temporary, copy records through helper calls, and perform virtual AddRef/Release and slot +0x16c updates",
+      "spaceplayerdata_effect": "no direct write to SpacePlayerData+0x10 in the recovered body",
+      "conclusion": "01001360 is the value-2 follow-up worker, not the context storage writer; its exact object/domain meaning remains unresolved"
+    },
+    "010219b0": {
+      "classification": "ACTIVE_PLANET_STAR_REFERENCE_REPLACER",
+      "size_bytes": 246,
+      "static_caller_rows": 10,
+      "static_distinct_callers": 9,
+      "decompiler_observed_parameters": [
+        "int param_1",
+        "int *param_2"
+      ],
+      "body_mechanics": "derive/replace +0x08 first, then derive/replace +0x04; clear +0x04 when the secondary input is null or resolves to the same player object",
+      "release_slots": {
+        "+0x08": "virtual +0x00 and +0x04",
+        "+0x04": "virtual +0xbc and +0xc0"
+      },
+      "context_effect": "none",
+      "conclusion": "reference replacement and ownership mechanics are supported; exact helper/object identity and the original three-parameter hypothesis are not promoted"
+    },
+    "00b60d80": {
+      "classification": "LARGE_SIMULATOR_INITIALIZATION_COMPONENT",
+      "size_bytes": 10061,
+      "static_relationship": "computed call at 00b622eb resolves to 01021d40 in the canonical xref export",
+      "body_role": "constructs and registers subsystem objects, including the object whose vtable call reaches 01021d40",
+      "spaceplayerdata_effect": "no direct Simulator::sSpacePlayerData field access beyond the computed initialization relationship",
+      "conclusion": "initialization caller only; no teardown evidence is established from this function"
+    },
+    "01022460": {
+      "classification": "SPACE_PLAYER_FIELD_TEARDOWN",
+      "body_mechanics": "clear/release +0x04, +0x08, +0x0c, +0x1c; release +0x20 vector; reset +0x18 to -1",
+      "context_effect": "none; callers separately request -1",
+      "conclusion": "field teardown is established, global object teardown is not"
+    },
+    "01022580": {
+      "classification": "LAZY_SPACE_PLAYER_STATE_INITIALIZER_AND_CONTEXT_NORMALIZER",
+      "static_callers": [
+        "00b32dd0",
+        "00b32f60",
+        "00b33130"
+      ],
+      "body_mechanics": "one-shot guard; if +0x08 is null, derive a value and call 010221f0; if +0x10 is non-zero, store 0",
+      "context_effect": "independent +0x10=0 write, not routed through 01021960",
+      "conclusion": "the previous single-writer characterization is incomplete"
+    },
+    "00bb7250": {
+      "classification": "ADJACENT_SPACE_PLAYER_FIELD_RELEASE",
+      "body_mechanics": "if +0x08 is non-null, clear it and invoke virtual +0x04 release",
+      "context_effect": "none",
+      "conclusion": "additional active-star release path; no +0x04 release is shown in this function"
+    }
+  },
+  "context_transition_evidence": {
+    "writer_sites": [
+      {
+        "actor": "01021d40",
+        "requested_value": -1,
+        "condition": "initialization success",
+        "actual_store": true
+      },
+      {
+        "actor": "01021960",
+        "requested_values": [
+          -1,
+          0,
+          1,
+          2
+        ],
+        "condition": "old +0x10 differs from requested value",
+        "actual_store": "conditional"
+      },
+      {
+        "actor": "01022580",
+        "requested_value": 0,
+        "condition": "current +0x10 is non-zero",
+        "actual_store": true
+      }
+    ],
+    "direct_caller_table": [
+      {
+        "caller": "00b32b20",
+        "callsite": "00b32be7",
+        "argument": -1,
+        "pre_state_observation": "none before call; 01022460 is called immediately before the request",
+        "post_context_evidence": "initialization/reset sequence",
+        "adjacent_reference_action": "010219b0(0,0) after 01022460"
+      },
+      {
+        "caller": "00b32ce0",
+        "callsite": "00b32d87",
+        "argument": -1,
+        "pre_state_observation": "none before call; 01022460 is called immediately before the request",
+        "post_context_evidence": "initialization/reset sequence",
+        "adjacent_reference_action": "010219b0(0,0) after 01022460"
+      },
+      {
+        "caller": "00b33350",
+        "callsite": "00b33463",
+        "argument": -1,
+        "pre_state_observation": "none before call",
+        "condition": "requested for parameter values 0x1654c01, 0x1654c02, and 0x1654c04",
+        "post_context_evidence": "conditional reset after 01022460",
+        "adjacent_reference_action": "010219b0(0,0) only in the same conditional block"
+      },
+      {
+        "caller": "00fda9f0",
+        "callsite": "00fdaa5f",
+        "argument": -1,
+        "pre_state_observation": "01021080 is read at 00fda9fc when receiver+0x15c is non-null; switch handles 0, 1, 2, and -1",
+        "post_context_evidence": "requests None after context-specific work and then clears +0x04/+0x08 through 010219b0(0,0)",
+        "adjacent_reference_action": "010219b0(0,0) after the context request"
+      },
+      {
+        "caller": "00fdf5f0",
+        "callsite": "00fdf823",
+        "argument": 0,
+        "pre_state_observation": "none before call",
+        "post_context_evidence": "requests Planet",
+        "adjacent_reference_action": "none at this callsite"
+      },
+      {
+        "caller": "01003490",
+        "callsite": "010034fd",
+        "argument": 2,
+        "pre_state_observation": "none before call",
+        "post_context_evidence": "requests Galaxy; 01021080 is read at 01003514 after the request",
+        "adjacent_reference_action": "none at this callsite"
+      },
+      {
+        "caller": "01003690",
+        "callsite": "01003750",
+        "argument": 0,
+        "pre_state_observation": "none before call",
+        "post_context_evidence": "requests Planet and continues with planet/space setup",
+        "adjacent_reference_action": "none at this callsite"
+      },
+      {
+        "caller": "01003a50",
+        "callsite": "01003aaf",
+        "argument": 1,
+        "pre_state_observation": "none before call",
+        "post_context_evidence": "requests SolarSystem and continues with system-space setup",
+        "adjacent_reference_action": "none at this callsite"
+      },
+      {
+        "caller": "0100a960",
+        "callsite": "0100ab17",
+        "argument": -1,
+        "pre_state_observation": "none before call",
+        "post_context_evidence": "requests None during a larger teardown/transition body",
+        "adjacent_reference_action": "none at this callsite"
+      }
+    ],
+    "value_2_follow_up": {
+      "condition": "requested value is 2, old +0x08 is non-null, and FUN_00ffbe50 returns non-null",
+      "call_sequence": [
+        "FUN_00c8b360 with ECX=old +0x08 object",
+        "FUN_01001360 with the 00ffbe50 result as ECX and the 00c8b360 result as stack argument"
+      ],
+      "semantic_limit": "the recovered helper body is collection/record management, but the exact navigation operation is unresolved"
+    },
+    "conclusion": "Static requested-value coverage is now complete for the nine direct callers plus 01022580: None is requested by five direct callers, Planet by two, SolarSystem by one, and Galaxy by one. Actual store suppression for same-value requests and all runtime ordering remain unobserved."
+  },
+  "scenario_game_mode_comparison": {
+    "space_context": {
+      "owner": "Simulator::sSpacePlayerData",
+      "field": "mCurrentContext",
+      "offset": "0x10",
+      "type": "SpaceContext",
+      "values": "None=-1, Planet=0, SolarSystem=1, Galaxy=2",
+      "evidence": "SDK export and direct 01021080 read plus recovered 01021960/01022580 writes"
+    },
+    "scenario_mode": {
+      "owner": "App::cScenarioMode",
+      "field": "mMode",
+      "offset": "0xcc",
+      "type": "cScenarioMode::Mode",
+      "values": "UnkMode=0, EditMode=1, PlayMode=2",
+      "owner_shape": "IGameMode implementation with scenario data/play-mode pointers",
+      "evidence": ".spore-analysis/ghidra-exports/spore_sdk.xml:32687-32733"
+    },
+    "input_manager_mode": {
+      "owner": "Simulator::cGameInputManager",
+      "field": "mCurrentGameMode",
+      "offset": "0x1c",
+      "related_field": "mLastGameMode+0x18",
+      "type": "uint32_t",
+      "owner_shape": "input manager with maps, mouse state, and input regions",
+      "evidence": ".spore-analysis/ghidra-exports/spore_sdk.xml:15988-16013 and docs/analysis/simulator-shared-state-interface.md:81-94"
+    },
+    "comparison": {
+      "alias_claim": false,
+      "direct_edge_found_from_01021960_to_scenario_or_input_fields": false,
+      "numeric_overlap": "Galaxy=2 and PlayMode=2 are numerically coincidental",
+      "safe_conclusion": "SpaceContext is navigation-scale state; cScenarioMode.mMode is scenario edit/play state; cGameInputManager.mCurrentGameMode is input/game-mode routing state. No static alias or direct projection is established."
+    }
+  },
+  "unresolved_boundaries": [
+    "The exact original ABI and semantic identities of 010219b0's two observed arguments remain unresolved; the prior three-parameter hypothesis is not promoted.",
+    "The exact roles of 00c8b360, 00ffbe50, and the 01001360 receiver/domain are not fully named by the committed static evidence.",
+    "No runtime order, same-value suppression frequency, or actual destruction order is claimed.",
+    "No whole-object destructor or final global release for Simulator::sSpacePlayerData is established.",
+    "The unowned 01022572 write reference is retained as unresolved and not used as lifecycle evidence.",
+    "SDK field names and intrusive_ptr types support owner roles but do not prove exact concrete dynamic types at every call site."
+  ],
+  "source_boundary": {
+    "modified_existing_artifacts": false,
+    "runtime_used": false,
+    "wine_used": false,
+    "spore_modified": false,
+    "source_modified": false,
+    "historical_artifacts_modified": false,
+    "phase0_interface_modified": false,
+    "new_outputs": [
+      "knowledgegraph/research/root-closure/followup-space-lifecycle.json",
+      "knowledgegraph/research/root-closure/followup-space-lifecycle.md"
+    ]
+  }
+}

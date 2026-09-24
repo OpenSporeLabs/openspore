@@ -89,10 +89,77 @@ class ViewerHandler(BaseHTTPRequestHandler):
     def _api(self, path, qs):
         if path == "/api/summary":
             return query.summary(self.db_path)
+        if path in ("/api/statistics", "/api/stats"):
+            return query.statistics(
+                limit=qs.get("limit", ["200"])[0],
+                offset=qs.get("offset", ["0"])[0], db=self.db_path)
+        if path in ("/api/architecture", "/api/hierarchy"):
+            return query.hierarchy(
+                root=qs.get("root", [None])[0],
+                depth=qs.get("depth", ["1"])[0],
+                limit=qs.get("limit", ["500"])[0],
+                edge_limit=qs.get("edge_limit", ["2000"])[0],
+                offset=qs.get("offset", ["0"])[0], db=self.db_path)
+        if path == "/api/packages":
+            return query.packages(
+                q=qs.get("q", [None])[0],
+                limit=qs.get("limit", ["200"])[0],
+                offset=qs.get("offset", ["0"])[0], db=self.db_path)
+        if path == "/api/functions":
+            return query.functions(
+                q=qs.get("q", [None])[0],
+                evidence=qs.get("evidence", [None])[0],
+                readiness=qs.get("readiness", [None])[0],
+                subsystem=qs.get("subsystem", [None])[0],
+                package=qs.get("package", [None])[0],
+                limit=qs.get("limit", ["200"])[0],
+                offset=qs.get("offset", ["0"])[0], db=self.db_path)
+        if path == "/api/search":
+            return query.search(
+                q=qs.get("q", [None])[0],
+                label=qs.get("label", [None])[0],
+                evidence=qs.get("evidence", [None])[0],
+                origin=qs.get("origin", [None])[0],
+                readiness=qs.get("readiness", [None])[0],
+                limit=qs.get("limit", ["200"])[0],
+                offset=qs.get("offset", ["0"])[0], db=self.db_path)
         if path == "/api/evidence":
-            return query.evidence_distribution(self.db_path)
+            return query.evidence_distribution(
+                self.db_path, limit=qs.get("limit", [None])[0],
+                offset=qs.get("offset", ["0"])[0])
+        if path == "/api/readiness":
+            return query.readiness_distribution(
+                limit=qs.get("limit", ["200"])[0],
+                offset=qs.get("offset", ["0"])[0], db=self.db_path)
+        if path == "/api/types":
+            return query.types(
+                q=qs.get("q", [None])[0],
+                limit=qs.get("limit", ["200"])[0],
+                offset=qs.get("offset", ["0"])[0], db=self.db_path)
+        if path == "/api/states":
+            return query.states(
+                limit=qs.get("limit", ["200"])[0],
+                offset=qs.get("offset", ["0"])[0], db=self.db_path)
+        if path == "/api/events":
+            return query.events(
+                limit=qs.get("limit", ["200"])[0],
+                offset=qs.get("offset", ["0"])[0], db=self.db_path)
+        if path in ("/api/simulator", "/api/simulator-hierarchy"):
+            return query.simulator_hierarchy(
+                depth=qs.get("depth", ["2"])[0],
+                limit=qs.get("limit", ["500"])[0],
+                edge_limit=qs.get("edge_limit", ["2000"])[0],
+                root=qs.get("root", [None])[0], db=self.db_path)
+        if path in ("/api/hotspots", "/api/centrality"):
+            return query.hotspots(
+                limit=qs.get("limit", ["100"])[0],
+                offset=qs.get("offset", ["0"])[0],
+                label=qs.get("label", [None])[0],
+                relation=qs.get("relation", [None])[0], db=self.db_path)
         if path == "/api/labels":
-            return query.node_label_distribution(self.db_path)
+            return query.node_label_distribution(
+                self.db_path, limit=qs.get("limit", [None])[0],
+                offset=qs.get("offset", ["0"])[0])
         if path == "/api/investigations":
             return query.investigation_status_distribution(self.db_path)
         if path == "/api/investigation-list":
@@ -105,7 +172,9 @@ class ViewerHandler(BaseHTTPRequestHandler):
                 q=qs.get("q", [None])[0],
                 status=qs.get("status", [None])[0],
                 limit=qs.get("limit", ["200"])[0],
-                offset=qs.get("offset", ["0"])[0])
+                offset=qs.get("offset", ["0"])[0],
+                readiness=qs.get("readiness", [None])[0],
+                db=self.db_path)
         if path == "/api/subsystems":
             return query.subsystem_summary(self.db_path)
         if path == "/api/nodes":
@@ -113,14 +182,41 @@ class ViewerHandler(BaseHTTPRequestHandler):
                 label=qs.get("label", [None])[0],
                 q=qs.get("q", [None])[0],
                 limit=qs.get("limit", ["200"])[0],
-                offset=qs.get("offset", ["0"])[0])
+                offset=qs.get("offset", ["0"])[0],
+                evidence=qs.get("evidence", [None])[0],
+                origin=qs.get("origin", [None])[0],
+                readiness=qs.get("readiness", [None])[0], db=self.db_path)
+        if path == "/api/subgraph":
+            ref = qs.get("ref", [None])[0]
+            if not ref:
+                return {"status": "error", "code": "invalid_params",
+                        "message": "'ref' is required"}
+            return query.subgraph(
+                ref, depth=qs.get("depth", ["2"])[0],
+                limit=qs.get("limit", ["500"])[0],
+                edge_limit=qs.get("edge_limit", ["2000"])[0], db=self.db_path)
+        if path.startswith("/api/subgraph/"):
+            return query.subgraph(
+                unquote(path[len("/api/subgraph/"):]),
+                depth=qs.get("depth", ["2"])[0],
+                limit=qs.get("limit", ["500"])[0],
+                edge_limit=qs.get("edge_limit", ["2000"])[0], db=self.db_path)
+        if path.startswith("/api/function/"):
+            return query.function_detail(
+                unquote(path[len("/api/function/"):]),
+                limit=qs.get("limit", ["200"])[0], db=self.db_path)
         if path.startswith("/api/node/") and path.endswith("/neighbors"):
             ref = unquote(path[len("/api/node/"):-len("/neighbors")])
-            try:
-                depth = int(qs.get("depth", ["1"])[0])
-            except ValueError:
-                depth = "bad"  # query.node_neighbors rejects it
-            return query.node_neighbors(ref, depth, self.db_path)
+            return query.node_neighbors(
+                ref, depth=qs.get("depth", ["1"])[0],
+                limit=qs.get("limit", ["500"])[0],
+                edge_limit=qs.get("edge_limit", ["2000"])[0], db=self.db_path)
+        if path.startswith("/api/node/") and path.endswith("/subgraph"):
+            ref = unquote(path[len("/api/node/"):-len("/subgraph")])
+            return query.subgraph(
+                ref, depth=qs.get("depth", ["2"])[0],
+                limit=qs.get("limit", ["500"])[0],
+                edge_limit=qs.get("edge_limit", ["2000"])[0], db=self.db_path)
         if path.startswith("/api/node/"):
             return query.node_detail(unquote(path[len("/api/node/"):]),
                                      self.db_path)

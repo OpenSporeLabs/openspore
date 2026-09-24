@@ -1,0 +1,662 @@
+{
+  "track": "scene-entity",
+  "scope": "Gameplay-cell to CellGFX presentation representations, scene-world and layer membership, per-entity transforms and visibility, model and creature content, effect instances, draw-list assembly, render submission, and presentation lifetime for the main cell mode. The boundary preserves gameplay identity, world/layer membership, and ordering; model-world traversal, render-queue construction, and RenderWare or D3D submission are replaceable presentation infrastructure.",
+  "boundaries": [
+    {
+      "classification": "required_for_semantics",
+      "boundary": "Gameplay cell to per-cell presentation handle allocation and reverse association",
+      "gameplay_caller": "App::cCellModeStrategy::OnEnter calls the cell presentation staging path; FUN_00e78c00 is the confirmed caller of unnamed FUN_00e6d8f0; the staged path is entered by cell-population helpers for ordinary cells and many static or periscope-shaded cells.",
+      "original_callee": [
+        "FUN_00e6d8f0",
+        "cObjectPool<CellGFXObjectData>::Allocate at FUN_00b72160",
+        "cCellModeStrategy::StartDisplay",
+        "Simulator::Cell::PlayAnimation"
+      ],
+      "parameters": [
+        "cell pool index and cCellObjectData instance",
+        "selected model and animation identity",
+        "foreground or background scene-graph mode",
+        "model reference and creature reference when available",
+        "preloaded animation inputs"
+      ],
+      "outputs": [
+        "CellGFXObjectData pool entry",
+        "cCellObjectData::mGFXObjectIndex",
+        "CellGFXObjectData::mCellIndex",
+        "model, animated-creature, and structure presentation links",
+        "initial animation applied to the model world"
+      ],
+      "state_changed": [
+        "a presentation-pool entry is allocated",
+        "cCellObjectData::mGFXObjectIndex associates gameplay data with CellGFX data",
+        "CellGFXObjectData::mCellIndex provides the reverse association",
+        "the entity's model-world and animation state are populated"
+      ],
+      "structures": [
+        "cCellGame::mCells",
+        "cCellObjectData::mGFXObjectIndex",
+        "cCellGFX::mCellGFXObjects",
+        "CellGFXObjectData",
+        "CellGFXObjectData::mCellIndex",
+        "CellGFXObjectData::mpModel",
+        "CellGFXObjectData::mpAnimatedCreature",
+        "Graphics::IModelWorld"
+      ],
+      "lifetime": "The gameplay cell owns the identity and index field; the separately allocated CellGFXObjectData is a replaceable presentation representation and can be rebuilt, detached, or released while gameplay identity remains in the cell pool.",
+      "failure_semantics": "The recovered allocator path does not visibly guard a null pool allocation before dereferencing the returned entry, so presentation-pool exhaustion is inferred to be a fatal invariant violation rather than a gameplay-visible recoverable state.",
+      "timing_order": [
+        "the gameplay cell is created or changed in cCellGame::mCells",
+        "OnEnter creates the CellGFX presentation world and stages cells",
+        "the presentation pool entry is populated and linked back to the gameplay cell",
+        "StartDisplay activates the CellGFX display before the scene is rendered"
+      ],
+      "openspore_concept": "A gameplay entity owns an optional PresentationHandle; the handle is presentation state, not part of the entity's gameplay identity.",
+      "modern_abstraction": "IEntityPresentationRegistry allocates stable handles, attaches an IEntityView, and rebuilds or detaches the view without changing the owning gameplay entity.",
+      "evidence": [
+        "knowledgegraph/triage/structs_fields.tsv:1359-1367: cCellObjectData::mGFXObjectIndex is a pool handle.",
+        "knowledgegraph/triage/structs_fields.tsv:1871-1909: cCellGFX::mCellGFXObjects is a fixed-size CellGFXObjectData pool with reciprocal cell and model/creature links.",
+        "knowledgegraph/triage/structs_fields.tsv:3992-3996: IModelManager exposes CreateWorld, DisposeWorld, and main-world selection.",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__CreateCellObject.c:157-170: gameplay object creation establishes the cell-game container and object index.",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnEnter.c:45-111: presentation staging invokes the per-cell population path after CellGFX initialization.",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__StartDisplay.c:56-88: the display path walks CellGFXObjectData and applies animation/model-world operations.",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__PlayAnimation.c:46-58: initial animation selection is staged; lines 122-135 apply it to the model world.",
+        "knowledgegraph/triage/xrefs-2540f2ca.tsv:151655,151669,159544: FUN_00e6d8f0 allocation and model-world operations with the FUN_00e78c00 caller edge.",
+        "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl:33653: FUN_00e6d8f0 is present in the recovered function map but lacks an SDK name."
+      ],
+      "confidence": "medium",
+      "notes": "The one-to-one association and lifecycle are high-confidence static findings. Exact intent for the two unnamed call-site variants and the precise pre-load versus immediate allocation split remain unresolved."
+    },
+    {
+      "classification": "required_for_semantics",
+      "boundary": "Per-cell scene membership removal and presentation-component release",
+      "gameplay_caller": "Cell retirement, stage replacement, and mode-transition paths call FUN_00e66010 through FUN_00e780a0, FUN_00e7fd00, and the direct transition call site; mode teardown also reaches the same component cleanup through CellGFX shutdown.",
+      "original_callee": [
+        "FUN_00e66010",
+        "FUN_00e65ad0",
+        "FUN_00e65a00",
+        "Graphics::IModelWorld::SetInWorld",
+        "Graphics::IModelWorld::FinalRelease",
+        "CellGFXObjectData::mStructureGFXs"
+      ],
+      "parameters": [
+        "gameplay cell or pool index",
+        "CellGFXObjectData pool handle from mGFXObjectIndex",
+        "component cleanup or immediate-release selector",
+        "owned model, creature, structure, and effect component lists"
+      ],
+      "outputs": [
+        "invalid or cleared mGFXObjectIndex",
+        "released CellGFXObjectData pool entry",
+        "model removed from its model world",
+        "released model, creature, structure, and effect presentation links",
+        "updated scene/world component collections"
+      ],
+      "state_changed": [
+        "the gameplay cell loses its current presentation handle",
+        "the reciprocal CellGFXObjectData::mCellIndex association is destroyed",
+        "model-world membership and draw-list participation are removed",
+        "model, creature, structure, and effect components are detached or released",
+        "the presentation pool entry is returned to its allocator"
+      ],
+      "structures": [
+        "cCellObjectData::mGFXObjectIndex",
+        "cCellGFX::mCellGFXObjects",
+        "CellGFXObjectData",
+        "CellGFXObjectData::mStructureGFXs",
+        "Swarm::EffectInstance",
+        "Graphics::IModelWorld"
+      ],
+      "lifetime": "Removal is inverse to the presentation allocation but is not destruction of the gameplay cell. The boolean cleanup selector distinguishes component release from a less eager helper path, after which the presentation pool slot may be reused independently.",
+      "failure_semantics": "A missing mGFXObjectIndex value is treated as an already-detached presentation. The recovered path does not expose a recoverable model or effect release failure; repeated invalidation is expected to be safe, while partially populated representations are tolerated by per-component pointer checks.",
+      "timing_order": [
+        "the gameplay cell is marked for removal, stage replacement, or model rebuild",
+        "the cell's presentation handle is resolved",
+        "models and attached visual components leave their world or are stopped",
+        "component links and the reciprocal cell index are cleared",
+        "the presentation pool entry is released",
+        "the gameplay cell may remain in cCellGame until its own removal completes"
+      ],
+      "openspore_concept": "Presentation detach is idempotent and presentation-specific; it must not destroy or invalidate the gameplay entity.",
+      "modern_abstraction": "IDetachableView detaches from its scene graph, releases borrowed content and effects through separate ownership scopes, and invalidates only PresentationHandle.",
+      "evidence": [
+        "knowledgegraph/triage/structs_fields.tsv:1871-1909: mCellGFXObjects, mCellIndex, mStructureGFXs, model, and creature fields establish the representation graph.",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnExit.c:45-70: mode exit invokes the CellGFX shutdown path and then disposes CellGFX.",
+        "knowledgegraph/triage/xrefs-2540f2ca.tsv:159444,159450,159523: FUN_00e66010 callers include direct teardown, FUN_00e780a0, and FUN_00e7fd00.",
+        "knowledgegraph/triage/xrefs-2540f2ca.tsv:151717,151724: FUN_00e66010 calls FUN_00e65ad0, and the latter calls FUN_00e65a00.",
+        "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl:33565-33567: FUN_00e65a00, FUN_00e65ad0, and FUN_00e66010 are present but unnamed.",
+        "knowledgegraph/triage/structs_fields.tsv:3873-3874: IModelWorld exposes SetInWorld and FinalRelease as the semantic membership/retirement operations."
+      ],
+      "confidence": "medium",
+      "notes": "The inverse state transitions are supported by the helper structure and IModelWorld slots. The exact meaning of the cleanup selector and every list-specific release path require runtime validation or a later Ghidra pass with the executable open."
+    },
+    {
+      "classification": "required_for_semantics",
+      "boundary": "CellGFX world, layer, lighting, and effects composition",
+      "gameplay_caller": "App::cCellModeStrategy::OnEnter calls Simulator::Cell::cCellGFX::Initialize; mode OnExit and Dispose subsequently tear the same graph down.",
+      "original_callee": [
+        "Simulator::Cell::cCellGFX::Initialize",
+        "FUN_0067ddd0 world and layer manager",
+        "FUN_00b69f20 named layer manager",
+        "Graphics::IModelManager::CreateWorld",
+        "Graphics::IModelWorld::AsLayer",
+        "Graphics::IModelWorld::SetLightingWorld",
+        "Graphics::IModelWorld::SetEffectsWorld",
+        "Graphics::IRenderer::RegisterLayer"
+      ],
+      "parameters": [
+        "cCellGFX ownership context",
+        "world IDs for creature, animated creatures, and structures",
+        "preloaded-layer ID",
+        "lighting environment ID",
+        "layer index 7 and 100:60:1 bound model/creature animation resources",
+        "named and unnamed model layers",
+        "Swarm effects-world instance"
+      ],
+      "outputs": [
+        "owned model, animated-creature, and structure model worlds",
+        "main model world",
+        "preloaded layer",
+        "named layers and unnamed model layer",
+        "layer graph wired to lighting and effects worlds",
+        "renderer registration for the final layer set"
+      ],
+      "state_changed": [
+        "CellGFX creates its model/effects world graph",
+        "the preloaded layer and gameplay model layers are composed into a scene",
+        "model worlds are connected to lighting and effects contexts",
+        "the scene layers are registered with the renderer",
+        "the global or transition effects-world context is selected"
+      ],
+      "structures": [
+        "cCellGFX::mpRenderer",
+        "cCellGFX::mpModelManager",
+        "cCellGFX::mpPreloadedModels",
+        "cCellGFX::mpPreloadedTextures",
+        "cCellGFX::mpPreloadedCreatures",
+        "cCellGFX::mpWorlds",
+        "cCellGFX::mCellGFXObjects",
+        "WorldID",
+        "Graphics::IModelManager",
+        "Graphics::IModelWorld",
+        "Graphics::IRenderer",
+        "Swarm::IEffectsWorld"
+      ],
+      "lifetime": "These worlds and layers span the main cell mode. They outlive individual gameplay cells and their per-cell presentation handles, but do not outlive cCellGFX/mode disposal.",
+      "failure_semantics": "Initialize records a failed status after several world or layer construction failures, but a normal return can still leave an incomplete scene graph. The scene contract is therefore tolerant at mode level but not a recoverable gameplay error.",
+      "timing_order": [
+        "OnEnter creates CellGFX",
+        "CellGFX::Initialize creates the model manager, preloaded resources, and effects world",
+        "creature, animated-creature, and structure worlds are created",
+        "the main world, preloaded layer, named layers, lighting, and effects contexts are connected",
+        "the unnamed layer is registered and the layer is activated",
+        "cells receive presentation representations"
+      ],
+      "openspore_concept": "A presentation world owns ordered render layers and a scene-wide lighting/effects context; gameplay entities enter it through presentation views.",
+      "modern_abstraction": "ISceneStage builds an owned layer graph, associates each layer with an IViewport and pass encoder, and registers renderable components with the renderer.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__Initialize.c:34-107: initialization creates resources, effects, model and creature worlds, the main world, preloaded/named/unnamed layers, and renderer registration.",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnEnter.c:45-111: OnEnter calls CellGFX::Initialize, records the returned status, and prepares CellGFX cell presentation after world setup.",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnExit.c:45-69: OnExit shuts down CellGFX and disposes it.",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__Dispose.c:17-34: Dispose finalizes the mode and disposes CellGFX.",
+        "knowledgegraph/triage/structs_fields.tsv:1865-1891: cCellGFX ownership fields, world array, and CellGFXObjectData pool.",
+        "knowledgegraph/triage/structs_fields.tsv:3992-3996: IModelManager world creation and main-world contract.",
+        "knowledgegraph/triage/structs_fields.tsv:4050-4059: IRenderer layer registration, unregistration, lookup, and count contract.",
+        "docs/RENDERER-DESIGN.md:19-25: renderer must own layer, world, and render-job concepts while keeping API and implementation separate."
+      ],
+      "confidence": "high",
+      "notes": "World/layer topology and renderer registration are directly recovered. Layer 7's display name and the exact RenderWare mapping behind AsLayer are presentation details, not gameplay identity."
+    },
+    {
+      "classification": "required_for_semantics",
+      "boundary": "Entity transform, animation, opacity, and view visibility handoff",
+      "gameplay_caller": "Cell updates and animation transitions provide cCellObjectData::mTransform, target opacity, animation identity, and model/creature state; IGameDataView::SetVisible and cCell visibility changes select the active presentation view.",
+      "original_callee": [
+        "FUN_00e5e590 presentation point update",
+        "Simulator::Cell::PlayAnimation",
+        "Graphics::IModelWorld::SetAnimationGroupTransform",
+        "Graphics::IModelWorld::AnimAction",
+        "Simulator::IGameDataView::SetVisible",
+        "Simulator::IGameDataView::GetModel"
+      ],
+      "parameters": [
+        "cCellObjectData world transform",
+        "current and target opacity",
+        "cell scale or presentation flags",
+        "model or animated-creature identity",
+        "animation name, mode, transition time, and loop mode",
+        "game-data view visibility and model association"
+      ],
+      "outputs": [
+        "updated scene transform and presentation point state",
+        "updated model-world animation and material/effect parameters",
+        "active model or animated-creature representation",
+        "view visibility reflected in scene membership"
+      ],
+      "state_changed": [
+        "per-cell world transform and opacity are propagated to presentation state",
+        "model-world animation transitions and group transforms are changed",
+        "active model/creature view and visibility can change",
+        "material and effect parameters can be updated without changing gameplay identity"
+      ],
+      "structures": [
+        "cCellObjectData::mTransform",
+        "cCellObjectData::mTargetOpacity",
+        "cCellObjectData::mOpacity",
+        "cCellObjectData::mPresentationFlags",
+        "IGameDataView",
+        "Graphics::IModelWorld",
+        "AnimatedCreature"
+      ],
+      "lifetime": "These values are per-frame scene state derived from gameplay data. They remain valid only while a presentation handle exists and are reset when the view is detached.",
+      "failure_semantics": "A missing model view or cell-GFX handle makes animation and transform presentation no-ops in several recovery paths; the gameplay cell can continue without a visible representation.",
+      "timing_order": [
+        "gameplay updates authoritative cell transform, opacity, scale, and animation state",
+        "animation selection may stage a transition",
+        "presentation update synchronizes model-world transform and animation parameters",
+        "view visibility and world membership determine whether the entity appears",
+        "the renderer builds and submits the frame after these updates"
+      ],
+      "openspore_concept": "Gameplay data produces an immutable per-frame presentation snapshot for each visible entity; draw matrices and GPU state are derived outputs.",
+      "modern_abstraction": "IEntityView exposes setTransform, setOpacity, setAnimation, and setVisible, while a scene renderer reads the resulting snapshot without mutating gameplay state.",
+      "evidence": [
+        "knowledgegraph/triage/structs_fields.tsv:1354-1367: cCellObjectData owns transform, opacity, presentation flags, pool identity, and mGFXObjectIndex.",
+        "knowledgegraph/triage/structs_fields.tsv:3885-3891: IGameDataView exposes SetVisible, IsVisible, SetModel, and GetModel.",
+        "knowledgegraph/triage/structs_fields.tsv:3810-3835: IModelWorld exposes animation actions, time scale, group transform, material, draw, LOD, and effect-parameter operations.",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__PlayAnimation.c:35-58: animation inputs are derived from gameplay cell flags and model identity; lines 122-135 apply the selected animation to the model world.",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__StartDisplay.c:56-88: start display updates model/effects state and activates lighting before per-cell animation processing.",
+        "knowledgegraph/triage/xrefs-2540f2ca.tsv:183357,184186: gameplay cell-scale callers reach FUN_00e5e590, which updates presentation points and structures.",
+        "knowledgegraph/triage/xrefs-2540f2ca.tsv:132653,132665,135204: CellAdd and cCell update callers establish that authoritative transform and opacity update before scene propagation."
+      ],
+      "confidence": "medium",
+      "notes": "Field propagation is high confidence, but the exact per-frame order of gameplay update, animation update, CellGFX presentation update, and renderer traversal was not runtime-validated."
+    },
+    {
+      "classification": "required_for_semantics",
+      "boundary": "Preloaded model, animation, texture, and creature content acquisition",
+      "gameplay_caller": "App::cCellModeStrategy::OnEnter calls cCellGFX::PreloadResources before individual cells receive models or animated creatures.",
+      "original_callee": [
+        "Simulator::Cell::cCellGFX::PreloadResources",
+        "FUN_0057a1a0 AnimationManager lookup",
+        "FUN_00593890 model preloader",
+        "FUN_00593c90 animated-creature preloader",
+        "FUN_00594820 texture preloader",
+        "FUN_00a35740 resource preloader",
+        "CellGFXObjectData::mStructureGFXs"
+      ],
+      "parameters": [
+        "layer ID 7",
+        "100:60:1 bound model and animation resources",
+        "model resource identity",
+        "animated-creature resource identity",
+        "texture resource identity",
+        "optional effect resource"
+      ],
+      "outputs": [
+        "preloaded model, animation, texture, and creature containers",
+        "resolved per-layer preloaded model handle",
+        "reusable model or creature content for cell presentation"
+      ],
+      "state_changed": [
+        "presentation caches are populated before cell representation creation",
+        "cell GFX preloaded-resource fields are assigned",
+        "resource handles are made available to per-cell presentation and structure attachments"
+      ],
+      "structures": [
+        "cCellGFX::mpPreloadedModels",
+        "cCellGFX::mpPreloadedTextures",
+        "cCellGFX::mpPreloadedCreatures",
+        "CellGFXObjectData::mStructureGFXs",
+        "Graphics::Model",
+        "AnimatedCreature"
+      ],
+      "lifetime": "The preload containers belong to cCellGFX and outlive individual cell presentation entries; the scene borrows or references their content and does not duplicate gameplay identity.",
+      "failure_semantics": "Null model, animation, creature, and texture results are generally skipped or logged. The path records failure for an unbound presentation state and does not convert resource failure into a gameplay state transition.",
+      "timing_order": [
+        "CellGFX world graph is initialized",
+        "layer 7 and 100:60:1 resources are preloaded",
+        "the preloaded layer is activated",
+        "individual cells resolve or reuse presentation content"
+      ],
+      "openspore_concept": "A presentation resource cache resolves stable resource identities into shared GPU/CPU assets; assets are not entity state.",
+      "modern_abstraction": "IPresentationResourceCache preloads immutable assets and lends handles to IEntityView constructors, with shared ownership separate from entity ownership.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnEnter.c:91-110: OnEnter calls PreloadResources and ignores a false preload result before returning true.",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__PreloadResources.c:22-32: presentation resource containers are constructed; lines 40-65 and 67-88 preload 100:60:1 and layer 7.",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__PreloadResources.c:123-175: models and animated creatures are preloaded into CellGFX pools and per-layer containers.",
+        "knowledgegraph/triage/structs_fields.tsv:1865-1909: cCellGFX owns preload containers and structure presentation links.",
+        "knowledgegraph/triage/xrefs-2540f2ca.tsv:159505-159505: cCellGFX::PreloadResources is called from OnEnter.",
+        "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl:33900: cCellGFX::PreloadResources is recovered as a 0x2176-byte function."
+      ],
+      "confidence": "high",
+      "notes": "The preload identities and ordering are directly recovered. Specific asset file mappings are outside this scene/entity boundary and belong to resource-lifetime or asset-format analysis."
+    },
+    {
+      "classification": "required_for_semantics",
+      "boundary": "Entity-local visual effect and particle attachment",
+      "gameplay_caller": "Simulator::Cell::cCellGFX::InstanceEffectOnCell is the recovered explicit per-cell effect entry point; gameplay effect events and effect state flow into the cell's Swarm effect world.",
+      "original_callee": [
+        "Simulator::Cell::cCellGFX::InstanceEffectOnCell",
+        "Graphics::Model::LoadEffectMap",
+        "Swarm::IEffectsWorld::CreateVisualEffect",
+        "Swarm::EffectInstance",
+        "Swarm::IVisualEffect"
+      ],
+      "parameters": [
+        "cell presentation or cell index",
+        "effect resource and world ID",
+        "cell and world transforms",
+        "local effect transform",
+        "parent effect flags",
+        "effect target and reset/cleanup selectors"
+      ],
+      "outputs": [
+        "IVisualEffect instance",
+        "EffectInstance with localTransform and cellTransform",
+        "model effect-map entries for preloaded models",
+        "effect attached to the selected CellGFX world"
+      ],
+      "state_changed": [
+        "an effect is instantiated in the cell's effects world",
+        "the effect's local and cell transforms are copied",
+        "model effect maps or effect instance collections are updated",
+        "effect ownership is retained until stop, release, or CellGFX teardown"
+      ],
+      "structures": [
+        "cCellGFX::mCellGFXObjects",
+        "CellGFXObjectData::mModelEffectMaps",
+        "Swarm::EffectInstance",
+        "Swarm::EffectInstance::localTransform",
+        "Swarm::EffectInstance::cellTransform",
+        "Swarm::IVisualEffect",
+        "Swarm::IEffectsWorld"
+      ],
+      "lifetime": "An effect is scene presentation owned independently of the gameplay effect event that spawned it; it can outlive the event and is stopped/released through its own effect instance or when the cell/world representation is torn down.",
+      "failure_semantics": "Invalid presentation handles, parent effect failures, and missing effect worlds are logged and return failure rather than failing the gameplay cell. Cleanup is pointer-checked and a failed effect creation does not create a visible instance.",
+      "timing_order": [
+        "gameplay effect state requests a visual instance",
+        "the CellGFX world and transforms are resolved",
+        "the effect resource is loaded or looked up",
+        "IVisualEffect is created with local and cell transforms",
+        "the effect is stored and updated with the scene",
+        "the effect is stopped/released or released with the owning world"
+      ],
+      "openspore_concept": "A gameplay effect event emits a presentation effect request; an effect instance has scene lifetime independent of the event.",
+      "modern_abstraction": "IEffectPresenter creates a VFX instance with local and world transforms and returns an owned handle to the scene lifetime system.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__InstanceEffectOnCell.c:24-45: the presentation handle and parent effect are validated and the cell transform is copied.",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__InstanceEffectOnCell.c:46-91: effect map resources are loaded and visual effects are created with local/cell transforms.",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__InstanceEffectOnCell.c:90-101: the effect instance is linked into the cell/world collection or parent effect and returned.",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__LoadEffectMap.c:28-68: model effect-map and zero-transform creation are composed through the cell GFX effect path.",
+        "knowledgegraph/triage/structs_fields.tsv:1884-1889: CellGFXObjectData::mModelEffectMaps is a presentation-owned effect map.",
+        "knowledgegraph/triage/structs_fields.tsv:19329-19333: EffectInstance owns localTransform, cellTransform, and an intrusive IVisualEffect."
+      ],
+      "confidence": "high",
+      "notes": "The recovered boundary is an effects-world instance, not a separate gameplay particle system. Particle rendering inside IVisualEffect is replaceable Swarm/RenderWare implementation and is not inferred as another entity identity boundary."
+    },
+    {
+      "classification": "required_for_semantics",
+      "boundary": "CellGFX scene display activation, visibility, and service shutdown",
+      "gameplay_caller": "App::cCellModeStrategy::OnEnter calls cCellGFX::StartDisplay; OnExit calls the unnamed CellGFX shutdown helper FUN_00e64a00; Dispose completes cCellGFX teardown.",
+      "original_callee": [
+        "Simulator::Cell::cCellGFX::StartDisplay",
+        "FUN_00e64a00",
+        "Graphics::IModelWorld::SetActive",
+        "Graphics::IModelWorld::GetActive",
+        "Graphics::IModelWorld::SetLightingWorld",
+        "Graphics::IModelWorld::SetEffectsWorld",
+        "Swarm::IEffectsWorld::SetState",
+        "ShadeLighting::ActivateShadowMap",
+        "Lighting::LightingWorld::ResetShadowState"
+      ],
+      "parameters": [
+        "CellGFX world and layer graph",
+        "model and animated-creature world pointers",
+        "model-world active flag",
+        "lighting environment and shadow map state",
+        "global effect world state",
+        "layer and renderer registration state"
+      ],
+      "outputs": [
+        "active model and effects worlds",
+        "active lighting and shadow state",
+        "per-cell model/effect presentation enabled",
+        "deactivated and released presentation services"
+      ],
+      "state_changed": [
+        "main model world and effects worlds are activated or deactivated",
+        "lighting environment, shadow maps, and shadow state are initialized or reset",
+        "cell model/effect presentation flags are changed",
+        "layers and renderer registrations are removed during shutdown"
+      ],
+      "structures": [
+        "cCellGFX::mWorlds",
+        "cCellGFX::mCellGFXObjects",
+        "WorldID",
+        "Graphics::IModelWorld",
+        "Graphics::ILayer",
+        "Lighting::LightingEnvironment",
+        "ShadeLighting::LightingContext",
+        "Swarm::IEffectsWorld"
+      ],
+      "lifetime": "Display activation is a mode-scoped state transition. It is independent of per-cell presentation allocation and is reversed before CellGFX destruction.",
+      "failure_semantics": "StartDisplay returns true and records a status even when a sub-service activation fails; the caller treats activation as best-effort scene setup. Shutdown is guarded by pointer checks so missing services do not block mode exit.",
+      "timing_order": [
+        "CellGFX::Initialize constructs worlds and layers",
+        "OnEnter calls StartDisplay",
+        "StartDisplay activates model and effects worlds and initializes lighting",
+        "cell presentation representations are populated or activated",
+        "OnExit deactivates the same services and unregisters layers",
+        "Dispose releases the owned world and presentation graph"
+      ],
+      "openspore_concept": "A scene has a mode-level visible/enabled state that controls whether presentation services and registered layers participate in rendering.",
+      "modern_abstraction": "ISceneStage.setVisible and setPresentationServicesActive expose explicit stage activation while renderer and backend shutdown remain idempotent.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__StartDisplay.c:39-69: StartDisplay selects main model and creature worlds, activates them, sets lighting/effects contexts, and resets shadow state.",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__StartDisplay.c:71-88: display walks CellGFXObjectData and activates per-cell model/effect presentation state.",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnExit.c:45-69: OnExit calls the unnamed CellGFX shutdown helper before Dispose.",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__Dispose.c:17-34: Dispose finalizes and disposes CellGFX after shutdown.",
+        "knowledgegraph/triage/structs_fields.tsv:3859-3865: IModelWorld exposes active state, layer, lighting-world, and effects-world operations.",
+        "knowledgegraph/triage/xrefs-2540f2ca.tsv:148162,159487,159505: OnEnter/OnExit and OnEnter/PreloadResources lifecycle edges.",
+        "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl:33545: FUN_00e64a00 is the unnamed CellGFX shutdown helper candidate."
+      ],
+      "confidence": "high",
+      "notes": "StartDisplay and mode lifecycle order are directly recovered. FUN_00e64a00 is treated as a teardown helper based on the OnExit edge and its world/layer/light/effect call structure, but remains unnamed."
+    },
+    {
+      "classification": "replaceable_infrastructure",
+      "boundary": "Model-world draw-list assembly and renderer submission",
+      "gameplay_caller": "No direct gameplay caller is proven; CellGFX layer registration, per-cell SetInWorld membership, transforms, animation, materials, LOD, and visibility are the upstream gameplay-to-presentation inputs consumed by the Graphics and renderer update path.",
+      "original_callee": [
+        "Graphics::IModelWorld draw-list membership and flags",
+        "Graphics::IModelWorld::SetRenderGroups",
+        "Graphics::IModelWorld::GetRenderGroups",
+        "Graphics::IModelWorld::SetRenderSetInfo",
+        "Graphics::IModelWorld::GetRenderSetInfo",
+        "Graphics::ILayer traversal",
+        "Graphics::IRenderer::Render",
+        "Graphics::IRenderer::SubRender",
+        "RenderWare internal traversal and draw"
+      ],
+      "parameters": [
+        "registered layer list and layer ordering",
+        "model-world active and draw-list flags",
+        "model membership and model transforms",
+        "render groups, render-set information, materials, LOD, and effects parameters",
+        "camera, frustum, lighting, and target state"
+      ],
+      "outputs": [
+        "model-world draw lists",
+        "layer-specific render queues",
+        "sorted or batched render jobs",
+        "backend render state changes and indexed draw calls",
+        "framebuffer or render-target output"
+      ],
+      "state_changed": [
+        "temporary or persistent draw-list membership is updated",
+        "render groups and render-set information are consumed",
+        "renderer layer queues and backend render state are populated",
+        "GPU-visible frame output is produced"
+      ],
+      "structures": [
+        "Graphics::IModelWorld",
+        "Graphics::ILayer",
+        "Graphics::IRenderer",
+        "Graphics::IRenderJob",
+        "RenderWare scene and layer internals"
+      ],
+      "lifetime": "Scene membership and layer registration are stage-scoped; draw lists and backend queues are normally frame-scoped or rebuilt from presentation state. They are not gameplay state and need not be persisted by OpenSpore.",
+      "failure_semantics": "Inactive or absent model-world membership makes an entity non-renderable. Layer, transform, material, and effect failures affect visibility or appearance but must not change gameplay ownership; RenderWare-specific allocation and draw errors are backend failures behind the renderer abstraction.",
+      "timing_order": [
+        "CellGFX registers the scene layers and populates model membership",
+        "gameplay and presentation updates synchronize transforms, animation, materials, LOD, and visibility",
+        "the renderer traverses the layer graph and builds model draw lists",
+        "render jobs are ordered and submitted through Render/SubRender",
+        "RenderWare and D3D emit the final frame"
+      ],
+      "openspore_concept": "Gameplay-visible semantics stop at the ordered set of visible renderable components, world/layer membership, transform, and material identity; draw-list buckets, sort keys, batch encoding, and GPU submission are replaceable renderer internals.",
+      "modern_abstraction": "ISceneRenderer snapshots renderable components, computes a per-pass draw list, and submits render passes through a backend adapter without exposing RenderWare internals.",
+      "evidence": [
+        "knowledgegraph/triage/structs_fields.tsv:3853-3865: IModelWorld exposes render groups, render-set information, active state, layer, lighting, and effects context.",
+        "knowledgegraph/triage/structs_fields.tsv:4046-4059: IRenderer exposes Render, SubRender, RegisterLayer, UnregisterLayer, and layer queries.",
+        "knowledgegraph/triage/structs_fields.tsv:3831-3848: IModelWorld exposes effects, dynamic draw, LOD, material, and runtime-mesh state used by draw assembly.",
+        "docs/RENDERER-DESIGN.md:19-25: layer, world, and render-job ownership belongs to the renderer boundary while API and implementation remain separable.",
+        "docs/replacement-boundaries.md:378-380: gameplay-to-renderer calls are required only at a narrow visible contract; renderer internals are replaceable.",
+        "docs/replacement-boundaries.md:508-510: RenderWare-specific draw state is classified as third-party or runtime infrastructure.",
+        "knowledgegraph/research/render-boundary/01-renderware-objects.json:27-176: existing analysis identifies RenderWare resource, model, effect, and draw boundaries without treating them as gameplay state."
+      ],
+      "confidence": "medium",
+      "notes": "The upstream membership, layer, visibility, and renderer contracts are high confidence. Exact build/sort timing, persistent-versus-transient draw-list allocation, and RenderWare traversal details are intentionally not duplicated here; use 01-renderware-objects.json and a live trace for those internals."
+    },
+    {
+      "classification": "required_for_semantics",
+      "boundary": "Mode-scoped CellGFX presentation graph destruction",
+      "gameplay_caller": "App::cCellModeStrategy::OnExit shuts down CellGFX; App::cCellModeStrategy::Dispose destroys it; direct constructor/destructor call sites provide the final lifetime edge.",
+      "original_callee": [
+        "FUN_00e64090",
+        "FUN_00e64a00",
+        "FUN_00e66980",
+        "Graphics::IRenderer::UnregisterLayer",
+        "Graphics::IModelWorld::Dispose",
+        "Graphics::IModelManager::DisposeWorld",
+        "Swarm::IEffectsWorld::SetState",
+        "cCellGFX::mCellGFXObjects"
+      ],
+      "parameters": [
+        "cCellGFX-owned model worlds, effects worlds, layers, preloaded resources, and presentation pool",
+        "renderer registrations",
+        "active cell presentation handles"
+      ],
+      "outputs": [
+        "deactivated effects and lighting services",
+        "unregistered layers",
+        "released model, creature, structure, and effect components",
+        "disposed model worlds and CellGFX presentation pool",
+        "released cCellGFX object"
+      ],
+      "state_changed": [
+        "mode presentation services are stopped",
+        "renderer layer registrations are removed",
+        "per-cell presentation and preloaded resources are released",
+        "owned world graph is destroyed and the cCellGFX lifetime ends"
+      ],
+      "structures": [
+        "cCellGFX::mWorlds",
+        "cCellGFX::mCellGFXObjects",
+        "cCellGFX::mPreloadedModels",
+        "cCellGFX::mPreloadedTextures",
+        "cCellGFX::mPreloadedCreatures",
+        "Graphics::IModelWorld",
+        "Graphics::ILayer",
+        "Graphics::IModelManager",
+        "Swarm::IEffectsWorld"
+      ],
+      "lifetime": "This is the terminal presentation lifetime for the main cell mode. It is ordered after gameplay cell detachment/transition work and before the mode object is released; it must not destroy gameplay systems or shared global services that outlive the mode.",
+      "failure_semantics": "The recovered teardown path uses per-pointer checks and best-effort component release, allowing incomplete initialization to be torn down. A failure to release one presentation component must not prevent the remaining layer, world, and pool cleanup.",
+      "timing_order": [
+        "OnExit invokes the scene/service shutdown helper",
+        "cell presentation representations are detached and effects are stopped",
+        "layers are unregistered and worlds are disposed",
+        "FUN_00e64090 releases the cCellGFX object and its presentation pool",
+        "Dispose completes and the mode no longer owns scene presentation"
+      ],
+      "openspore_concept": "A presentation stage owns all scene-local render resources and is destroyed independently from gameplay entities and global renderer services.",
+      "modern_abstraction": "ISceneStage.shutdown performs idempotent layer unregistration, view detachment, effect shutdown, and backend resource release before the stage handle is dropped.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnExit.c:45-69: OnExit calls FUN_00e64a00 and then cCellGFX Dispose.",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__Dispose.c:17-34: final mode disposal releases CellGFX.",
+        "knowledgegraph/triage/xrefs-2540f2ca.tsv:148177,148193,151703,151717: teardown callers and cleanup helper edges.",
+        "knowledgegraph/triage/xrefs-2540f2ca.tsv:148230,148239,148299: FUN_00e64090, FUN_00e64a00, and FUN_00e66980 form the shutdown/release chain.",
+        "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl:33532,33545,33575: the three helpers are present in the function map but lack SDK names.",
+        "knowledgegraph/triage/structs_fields.tsv:4046-4051: IRenderer exposes both Render/SubRender and Register/UnregisterLayer lifecycle operations."
+      ],
+      "confidence": "medium",
+      "notes": "Mode ordering and high-level ownership are high confidence. The exact destructor split between FUN_00e64090, FUN_00e66980, and the per-cell release helpers is inferred from call structure and should remain address-addressed until stronger analysis is available."
+    }
+  ],
+  "unresolved": [
+    {
+      "item": "Exact names and intent of FUN_00e6d8f0, FUN_00e66010, FUN_00e65ad0, FUN_00e65a00, FUN_00e64090, FUN_00e64a00, and FUN_00e66980",
+      "reason": "The recovered SDK and triage data do not provide reliable names. Their state effects and call ordering are recoverable, but assigning conventional Create/Remove/Release names would be speculative.",
+      "evidence": [
+        "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl:33532,33545,33565-33567,33575,33653",
+        "knowledgegraph/triage/xrefs-2540f2ca.tsv:151717-151724,159444-159544"
+      ],
+      "confidence": "high"
+    },
+    {
+      "item": "Exact meaning of the boolean selector passed through FUN_00e66010 to FUN_00e65ad0",
+      "reason": "The helper visibly selects different component cleanup paths, but the evidence does not prove whether the flag means immediate release, world transition, or a mode-specific detach policy.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__InstanceEffectOnCell.c:24-101",
+        "knowledgegraph/triage/structs_fields.tsv:1884-1909,19329-19333"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "item": "Per-frame ordering among Cell gameplay update, cCellGFX presentation propagation, animation/effects update, draw-list build, and renderer submit",
+      "reason": "Static call graphs establish dependencies but not the complete frame loop ordering. Runtime tracing is required to distinguish persistent from transient draw-list construction and to validate fade/visibility timing.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__StartDisplay.c:39-88",
+        "knowledgegraph/triage/structs_fields.tsv:3810-3865,4046-4059"
+      ],
+      "confidence": "high"
+    },
+    {
+      "item": "Whether cCellObjectData::mTargetOpacity and mPresentationFlags directly drive visibility, model selection, effect routing, or only animation/fade state",
+      "reason": "The fields and model/effect update calls are present, but a direct per-entity renderer visibility call was not proven in the recovered scene path.",
+      "evidence": [
+        "knowledgegraph/triage/structs_fields.tsv:1354-1367",
+        "knowledgegraph/triage/xrefs-2540f2ca.tsv:132653,132665,135204"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "item": "Exact construction and ordering of model-world draw lists inside IModelWorld and the RenderWare layer traversal",
+      "reason": "The API exposes render groups, render-set information, draw flags, and renderer passes, but the internal traversal is intentionally excluded from this scoped analysis. Existing renderware-object analysis is the correct place for that work.",
+      "evidence": [
+        "knowledgegraph/triage/structs_fields.tsv:3825-3865,4046-4059",
+        "docs/replacement-boundaries.md:378-380,508-510"
+      ],
+      "confidence": "high"
+    },
+    {
+      "item": "Relationship between Swarm effect instances and any separate particle-system or emitter subsystem",
+      "reason": "The recovered Cell boundary consistently uses IEffectsWorld, IVisualEffect, and EffectInstance. No independent particle entity identity or gameplay particle state was established, so introducing a separate boundary would exceed the evidence.",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__InstanceEffectOnCell.c:46-101",
+        "knowledgegraph/triage/structs_fields.tsv:19329-19333"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "item": "OpenSpore target mapping for stable per-entity presentation handles and scene-layer membership",
+      "reason": "The current codebase has a CellGfx token and CellMode token, but no entity presentation registry, model-world membership, layer graph, or renderer submission boundary. This report establishes the replacement contract; implementing it is a separate feature.",
+      "evidence": [
+        "src/graphics/CellGfx.hpp:41-55",
+        "src/modes/CellMode.hpp:18-40",
+        "docs/STATE.md:20-22"
+      ],
+      "confidence": "high"
+    }
+  ]
+}

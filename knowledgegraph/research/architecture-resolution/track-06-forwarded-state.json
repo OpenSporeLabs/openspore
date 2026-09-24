@@ -1,0 +1,965 @@
+{
+  "$schema": "openspore-architecture-resolution-track-06-forwarded-state-1",
+  "artifact": "track-06-forwarded-state",
+  "track": "06",
+  "date": "2026-09-24",
+  "status": "partial_static_resolution_identity_deferred",
+  "scope": {
+    "conflict": "CONFLICT-OPAQUE-FORWARDED-STATE",
+    "binary": "SporeApp.exe",
+    "version": "3.1.0.22",
+    "architecture": "x86:LE:32:windows",
+    "image_base": "0x00400000",
+    "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+    "ghidra_program": "SporeApp.exe",
+    "ghidra_mode": "read-only static queries; no mutation, re-analysis, or runtime",
+    "targets": [
+      "0x00b5b800",
+      "0x00b3d320",
+      "DAT_0167eaec",
+      "forwarded_object+0x20",
+      "0x00a42730",
+      "sentinel 0xffffffff",
+      "0x01654c00..0x01654c06"
+    ],
+    "runtime_used": false,
+    "runtime_decision": "A runtime check would need a narrow Cell-mode path that observes the first publication and teardown of the global; no such trace is available in the committed evidence, so static separation is the architecture-deciding result.",
+    "followup_artifact": {
+      "json": "knowledgegraph/research/architecture-resolution/followup-02-forwarded-state.json",
+      "markdown": "knowledgegraph/research/architecture-resolution/followup-02-forwarded-state.md",
+      "role": "read-only evidence incorporated into this record"
+    },
+    "historical_artifacts_modified": false,
+    "other_track_files_modified": false,
+    "implementation_performed": false
+  },
+  "question": "Is 0x00b5b800 a pointer/interface, a mode or strategy identifier, or an opaque encoded state/handle, and what exact ownership, publication, and downstream contract can be frozen without inventing a receiver class?",
+  "allowed_classification_taxonomy": {
+    "name": "architecture_resolution_classification",
+    "allowed_values": [
+      "required_for_semantics",
+      "runtime_compatibility_only",
+      "replaceable_infrastructure",
+      "unknown"
+    ],
+    "rule": "The top-level classification is the only selected classification value; no nested classification is used to override it."
+  },
+  "resolution_summary": {
+    "mechanics": "resolved",
+    "receiver_identity": "unresolved",
+    "physical_field_type": "unresolved",
+    "value_domain": "opaque 32-bit state/handle contract supported; pointer, mode-ID, and strategy-pointer identities rejected as established claims",
+    "receiver_lifecycle": "unresolved",
+    "architecture_dependence": "yes, at the state/routing and ownership boundary; concrete receiver class is not required for the safe interface",
+    "resolution_status": "partial_static_opaque_boundary_resolved_identity_deferred"
+  },
+  "root_contract": {
+    "entry": "0x00b5b800",
+    "body": [
+      "0x00b5b800: call 0x00b3d320",
+      "0x00b5b805: test eax,eax",
+      "0x00b5b807: jz 0x00b5b810",
+      "0x00b5b809: mov ecx,eax",
+      "0x00b5b80b: jmp 0x00a42730",
+      "0x00b5b810: or eax,0xffffffff",
+      "0x00b5b813: ret"
+    ],
+    "arguments": "none",
+    "receiver_source": "0x00b3d320 returns the raw word at DAT_0167eaec; publication of that word is not established",
+    "field_reader": "0x00a42730 is exactly mov eax,dword ptr [ecx+0x20]; ret",
+    "null_result": "0xffffffff when DAT_0167eaec is zero",
+    "non_null_result": "raw DWORD copied by value from receiver+0x20; semantic freshness and publication state are unknown",
+    "receiver_access": "the receiver is borrowed/read-only only during the field read; no ownership is transferred",
+    "returned_value": "EAX is a by-value uint32 copy; no retained reference or object lifetime is carried by the return value",
+    "writes": [],
+    "allocation": false,
+    "mutation": false,
+    "locking": false,
+    "add_ref_or_release": false,
+    "ownership_transfer": "none"
+  },
+  "caller_use_census": {
+    "method": "Read-only full-listing flow scan for direct CALL instructions to 0x00b5b800, followed by a conservative 24-instruction live-EAX alias check and manual review of apparent pointer-like cases.",
+    "direct_callsites": 843,
+    "unique_caller_identities_in_flow_inventory": 460,
+    "function_call_endpoint_records": 459,
+    "caller_identity_note": "The full instruction-flow inventory includes callsites without a containing function identity; the function-call endpoint returned 459 function records.",
+    "bounded_classifier": {
+      "scalar_compare_branch_copy_or_pass": 829,
+      "apparent_pointer_like_patterns": 6,
+      "return_only": 1,
+      "ambiguous_within_24_instruction_window": 7
+    },
+    "manual_review_of_apparent_pointer_like_patterns": {
+      "addresses": [
+        "0x00b5ca73",
+        "0x00c0b220",
+        "0x00c0b273",
+        "0x00c0b2f0",
+        "0x00e02062",
+        "0x00e19dd3"
+      ],
+      "classification": "switch normalization, range/index arithmetic, or LEA/table indexing; not dereference of the returned value as a pointer"
+    },
+    "strict_pointer_dereference_observed": 0,
+    "bounded_result": "No direct caller was observed to use the returned EAX as a memory base, indirect-call target, or indirect-jump target. The defensible bound is 0 observed and 7 unresolved callsites; deeper branch, phi, or stack propagation is not claimed.",
+    "selected_independent_consumers": [
+      {
+        "function": "0x00ad12a0",
+        "use": "b5 result is compared with 0x01654c04; the later +0x5fc write targets a separately obtained object",
+        "pointer_deref": "not_observed"
+      },
+      {
+        "function": "0x00b3d2c0",
+        "use": "dispatches on the result, including C02/C04/C05 and other values; a later path uses a separate global flow",
+        "pointer_deref": "not_observed"
+      },
+      {
+        "function": "0x00d2e4a0",
+        "use": "compares with 0x01654c01, then obtains a separate object from 0x00d37cb0 and dispatches its vtable",
+        "pointer_deref": "not_observed"
+      },
+      {
+        "function": "0x00d2e580",
+        "use": "compares with 0x01654c10, then operates on an object obtained through 0x00b1fdb0",
+        "pointer_deref": "not_observed"
+      },
+      {
+        "function": "0x00d2e8a0",
+        "use": "compares with 0x01654c10, then obtains separate objects through 0x00d38840 and 0x00b1fdb0",
+        "pointer_deref": "not_observed"
+      },
+      {
+        "function": "0x00c099e0",
+        "use": "compares with 0x01654c01 or 0x01654c02 before separate editor/object operations",
+        "pointer_deref": "not_observed"
+      }
+    ]
+  },
+  "first_writer_publication_search": {
+    "performed": true,
+    "search_scope": "Ghidra xrefs, full instruction address-operand surface, exact little-endian address bytes, loaded memory, global audit, and adjacent direct-accessor control",
+    "direct_writers": [],
+    "direct_readers": [
+      {
+        "address": "0x00b3d320",
+        "instruction": "MOV EAX,[0x0167eaec]",
+        "type": "READ"
+      }
+    ],
+    "direct_xref_to_slot": {
+      "count": 1,
+      "reference": "0x00b3d320 READ"
+    },
+    "xrefs_from_slot": [],
+    "literal_address_evidence": {
+      "instruction_address_operand_scan": "one occurrence, 0x00b3d320 MOV EAX,[0x0167eaec]",
+      "exact_little_endian_byte_pattern": "one hit, 0x00b3d321, the operand bytes of that read",
+      "direct_write": false
+    },
+    "loaded_memory": {
+      "queried_range": "0x0167eae0..0x0167eaff",
+      "bytes": "all zero in the queried range",
+      "target_slot": "zero at 0x0167eaec in the loaded Ghidra image",
+      "runtime_meaning": "not established; this is not a runtime observation"
+    },
+    "global_audit": {
+      "name": "DAT_0167eaec",
+      "ghidra_type": "undefined4",
+      "length": 4,
+      "xref_count": 1,
+      "status": "untyped, generic name, no plate comment"
+    },
+    "lifecycle_result": {
+      "constructor": "none connected by direct xref or literal-address evidence",
+      "allocation": "none connected",
+      "first_writer": "none statically recovered",
+      "first_plus_0x20_writer": "none connected to this receiver",
+      "clear": "none connected",
+      "teardown": "none connected",
+      "publication": "none connected; indirect or bulk publication remains possible",
+      "adjacent_slot_control": "0x00b3d300 reads DAT_0167eae0, 0x00b3d310 reads DAT_0167eae8, 0x00b3d330 reads DAT_0167eaf0, and 0x00b3d350 reads DAT_0167eaf8; adjacency does not establish aliasing or ownership"
+    }
+  },
+  "observed_token_census": {
+    "requested_range": "0x01654c00..0x01654c06",
+    "whole_program_exact_scalar_operand_occurrences": {
+      "C00_0x01654c00": 66,
+      "C01_0x01654c01": 147,
+      "C02_0x01654c02": 153,
+      "C03_0x01654c03": 0,
+      "C04_0x01654c04": 167,
+      "C05_0x01654c05": 329,
+      "C06_0x01654c06": 20
+    },
+    "whole_program_exact_byte_pattern_result": "C00, C01, C02, C04, C05, and C06 have exact little-endian byte-pattern matches; C03 has no match.",
+    "direct_b5_result_comparison_or_subtraction_counts": {
+      "method": "24-instruction live-EAX window after each direct CALL 0x00b5b800; counts only CMP/SUB of the returned value or a conservative register copy with an exact C00..C06 immediate",
+      "C00_0x01654c00": 27,
+      "C01_0x01654c01": 89,
+      "C02_0x01654c02": 89,
+      "C03_0x01654c03": 0,
+      "C04_0x01654c04": 110,
+      "C05_0x01654c05": 260,
+      "C06_0x01654c06": 2
+    },
+    "observed_sentinel_tokens": [
+      "C00_0x01654c00",
+      "C01_0x01654c01",
+      "C02_0x01654c02",
+      "C04_0x01654c04",
+      "C05_0x01654c05",
+      "C06_0x01654c06"
+    ],
+    "unknown_token": {
+      "id": "C03",
+      "value": "0x01654c03",
+      "status": "unknown_not_evidenced",
+      "exact_scalar_operand_count": 0,
+      "exact_byte_pattern_count": 0,
+      "two_complement_equivalent_scalar_count": 0,
+      "interpretation": "No exact C03 token is observed in the static scan. Range checks or equivalent arithmetic may cover it; absence does not prove the value is impossible."
+    },
+    "outside_requested_range": "0x01654c10 and 0x02ccd1d2 are also compared in selected consumers, but they are not promoted into the requested C00..C06 observed-token set."
+  },
+  "hypotheses": [
+    {
+      "id": "H1",
+      "name": "forwarded_receiver_is_a_normal_object_and_return_is_a_pointer",
+      "statement": "DAT_0167eaec is a receiver pointer and forwarded_object+0x20 stores a dereferenceable pointer or interface value.",
+      "predictions": [
+        "A consumer should dereference, virtual-dispatch, retain, release, or pass the returned EAX as the same object identity.",
+        "A writer should establish receiver publication and a typed +0x20 store.",
+        "Ownership and teardown should be visible around the receiver."
+      ],
+      "evidence_for": [
+        "0x00a42730 is implemented as a generic ECX+0x20 field reader.",
+        "The root performs an ECX-based forwarded read before returning."
+      ],
+      "evidence_against": [
+        "Named and high-information consumers compare the returned EAX to opaque constants and do not dereference it.",
+        "No AddRef, Release, virtual call, or object-operation follows the EAX comparison in 0x00ad12a0, 0x00d2e4a0, 0x00d2e580, or 0x00d2e8a0.",
+        "The only direct global reference is a read; no direct receiver writer or pointer initializer is available."
+      ],
+      "independence": "The field-reader evidence is independent of the consumer evidence; the consumer evidence is not a restatement of the root body.",
+      "repetition": "Calling the receiver an object is repeated terminology, not independent proof of a C++ class or pointer field.",
+      "status": "not_established"
+    },
+    {
+      "id": "H2",
+      "name": "opaque_32bit_encoded_state_or_handle",
+      "statement": "The result is a raw 32-bit value copied by value from an unknown receiver word; its semantic meaning, freshness, and publication state are not yet known.",
+      "predictions": [
+        "Consumers should use equality/range/branch logic without dereferencing the result.",
+        "The root should preserve a distinct null-owner result of 0xffffffff.",
+        "C00, C01, C02, C04, C05, and C06 should be treated as separate observed comparison tokens, not ordinary nulls or dereferenceable objects; C03 remains unknown."
+      ],
+      "evidence_for": [
+        "0x00b3d2c0 compares the b5 result to 0x01654c02, 0x01654c04, and 0x01654c05 and returns other results or zero based only on the comparison.",
+        "The follow-up caller-use census found 829 scalar compare/branch/copy/pass sites among 843 direct callsites, with 0 observed strict pointer dereferences; the evidenced token set is C00/C01/C02/C04/C05/C06 and C03 is unknown.",
+        "0x00ad12a0 has both direct forwarding and wrapper branches; the b5 result controls a flag bit on a separate object rather than becoming that object."
+      ],
+      "evidence_against": [
+        "The constants are address-like, so pointer-shaped encodings remain formally possible.",
+        "The receiver is used as a base for a memory read, so the underlying storage may itself be pointer-backed even if the returned uint32 is scalar-like."
+      ],
+      "independence": "The sentinel corpus and the selected direct-path decompilation are independent observations of consumer behavior; the historical count is not counted as an additional independent proof of the body mechanics.",
+      "repetition": "The phrase opaque state is a conservative synthesis, not a claim that all sentinel values share one confirmed enum.",
+      "status": "supported_bounded_contract"
+    },
+    {
+      "id": "H3",
+      "name": "current_mode_id_or_mode_field",
+      "statement": "The returned value is cGameInputManager.mCurrentGameMode, cGameModeManager.mCurrentGameMode, cGameModeManager.mActiveModeID, or an equivalent current-mode identifier.",
+      "predictions": [
+        "The b5 receiver or field would alias one of the named manager fields.",
+        "A consumer would pass the result into a mode accessor or use it as a mode-manager receiver.",
+        "The field offset and value domain would match the named manager layout."
+      ],
+      "evidence_for": [
+        "The b5 path is adjacent to Simulator input/mode roots and many callers co-call cGameInputManager::Get.",
+        "The SDK contains explicit current/active mode fields in cGameInputManager and cGameModeManager."
+      ],
+      "evidence_against": [
+        "DAT_0167eaec is distinct from DAT_0167eaf8 and DAT_0167eb2c, the globals read by the named input and mode getters.",
+        "0x00a42730 is a plain [ECX+0x20] load, not a virtual call or a proven manager-field access.",
+        "0x00ad12a0 compares the forwarded result to 0x01654c04/0x01654c05 and uses separate objects for downstream work; no b5-to-mode-manager dataflow is shown."
+      ],
+      "independence": "The distinct-global comparison is independent of the SDK layout comparison; co-call counts are not used as aliasing evidence.",
+      "repetition": "The nearby presence of mode fields is a semantic prior, not proof that this global is a mode field.",
+      "status": "rejected_as_established_identity"
+    },
+    {
+      "id": "H4",
+      "name": "ISimulatorStrategy_or_strategy_interface_pointer",
+      "statement": "The forwarded receiver is an ISimulatorStrategy/cStrategy object and +0x20 is an interface or strategy field.",
+      "predictions": [
+        "A vtable slot, interface call, strategy method, or AddRef/Release operation would be visible.",
+        "The receiver would be identifiable from a constructor, vtable owner, or matching field layout.",
+        "Consumers would use the result as a strategy receiver rather than only as a branch token."
+      ],
+      "evidence_for": [
+        "The SDK contains ISimulatorStrategy and strategy infrastructure near the Simulator subsystem.",
+        "The root has a forwarded receiver and a +0x20 access point."
+      ],
+      "evidence_against": [
+        "The +0x20 access is an object-field read, not the SDK ISimulatorStrategy vtable slot at +0x20.",
+        "No concrete receiver class, vtable owner, AddRef, Release, or strategy call is connected to this path.",
+        "Sentinel equality is the dominant consumer behavior."
+      ],
+      "independence": "SDK existence of a strategy interface and the binary's concrete +0x20 field load are separate evidence classes; neither establishes identity.",
+      "repetition": "Strategy-family labels in triage or neighboring subsystem names are detector/name metadata, not independent receiver evidence.",
+      "status": "low_confidence_family_hypothesis_only"
+    },
+    {
+      "id": "H5",
+      "name": "b5_aliases_input_or_game_mode_manager",
+      "statement": "DAT_0167eaec is an alternate or canonical alias of cGameInputManager or cGameModeManager.",
+      "predictions": [
+        "A b5 result would flow into the named manager getter or a matching manager receiver operation.",
+        "The relevant global slots would be shown equal or receive the same publisher/teardown path.",
+        "The +0x20 field would be identified as a matching manager field."
+      ],
+      "evidence_for": [
+        "Historical co-caller counts show 64 b5 callers also call 0x00b3d350 and two also call 0x00b3d420.",
+        "Both b5 and the named manager getters sit in the Simulator service-accessor region."
+      ],
+      "evidence_against": [
+        "The globals are distinct: DAT_0167eaec versus DAT_0167eaf8 and DAT_0167eb2c.",
+        "The named getters are separate six-byte global loaders; b5 is a separate forwarding path.",
+        "The selected b5 consumers do not pass the result to either named getter."
+      ],
+      "independence": "The distinct-global bodies and consumer dataflow are independent checks; co-call counts are explicitly non-independent structural correlation.",
+      "repetition": "Calling all high-fan-in roots one subsystem would erase the separate owner axes and is rejected.",
+      "status": "rejected_as_established_alias"
+    },
+    {
+      "id": "H6",
+      "name": "root_null_sentinel_and_consumer_sentinel_family_share_one_enum",
+      "statement": "0xffffffff and the evidenced C00/C01/C02/C04/C05/C06 comparison tokens are members of one confirmed mode/strategy enum domain.",
+      "predictions": [
+        "The root would return one of the consumer tokens when the receiver is absent or the field is invalid.",
+        "Consumers would treat -1 and the 0x01654c00 family through the same enum contract.",
+        "A mode/strategy writer would populate both forms under one typed storage."
+      ],
+      "evidence_for": [
+        "All values are 32-bit and are used in branch logic around the same root family."
+      ],
+      "evidence_against": [
+        "The 0xffffffff result is produced only when the global receiver word is zero, before any field read.",
+        "C00/C01/C02/C04/C05/C06 are observed after the non-null forwarded read and are compared as distinct tokens; C03 is not evidenced.",
+        "No first writer or typed field store has been found that would unify the domains."
+      ],
+      "independence": "The null branch and sentinel consumer comparisons are independent control-flow observations.",
+      "repetition": "Address-like rendering of tokens is not evidence of a common enum or pointer type.",
+      "status": "not_established"
+    },
+    {
+      "id": "H7",
+      "name": "receiver_is_allocated_and_published_by_the_original_binary",
+      "statement": "A first writer allocates the receiver, stores it in DAT_0167eaec, writes receiver+0x20, and later tears it down; this is not established by the current evidence.",
+      "predictions": [
+        "A direct MOV/LEA/store or a bulk publication path would initialize the global.",
+        "A matching AddRef/Release or destruction path would establish lifetime.",
+        "The receiver would have a typed +0x20 store."
+      ],
+      "evidence_for": [
+        "The global is in writable .data and the root is a shared service accessor, making runtime publication plausible."
+      ],
+      "evidence_against": [
+        "Ghidra reports one direct xref to DAT_0167eaec, a READ in 0x00b3d320, no xrefs from the slot, and only one exact little-endian address-byte hit at 0x00b3d321.",
+        "Ghidra memory inspection shows zero at the slot and nearby bytes.",
+        "No allocation, initialization, publication, or teardown function is connected to the slot in the available static evidence."
+      ],
+      "independence": "The direct-reference inventory is independent of the historical adjacent-slot writer search; neither proves that an indirect writer does not exist.",
+      "repetition": "The negative direct-writer result must not be repeated as the stronger claim that the slot is never published.",
+      "status": "unresolved_indirect_publication_possible"
+    }
+  ],
+  "nine_step_record": [
+    {
+      "step": 1,
+      "name": "mechanism_and_root_boundary",
+      "question": "Is the root body an observed forwarding read rather than an inferred accessor label?",
+      "hypotheses_tested": ["H1", "H2"],
+      "predictions": [
+        "The root should call 0x00b3d320, test the returned word, and either return 0xffffffff or tail to 0x00a42730.",
+        "0x00a42730 should load exactly four bytes from ECX+0x20."
+      ],
+      "support": [
+        "Ghidra disassembly/decompilation shows the exact body at 0x00b5b800-0x00b5b813.",
+        "Ghidra shows 0x00b3d320 as MOV EAX,[0x0167eaec] and 0x00a42730 as MOV EAX,[ECX+0x20]; RET."
+      ],
+      "contradictions": [],
+      "independence": "Instruction-level root evidence is independent of semantic type hypotheses.",
+      "repetition": "The same mechanics recur at direct forwarding call sites, but recurrence corroborates mechanics only.",
+      "separator_result": "Mechanics closed; no type or ownership identity closed.",
+      "status": "resolved_mechanics"
+    },
+    {
+      "step": 2,
+      "name": "normal_pointer_result",
+      "question": "Does the returned uint32 behave as a normal object/interface pointer?",
+      "hypotheses_tested": ["H1", "H4"],
+      "predictions": [
+        "At least one direct caller should use EAX as a memory base, indirect-call target, or indirect-jump target.",
+        "A consumer should show a typed receiver identity, virtual dispatch, AddRef, or Release after the call."
+      ],
+      "support": [
+        "The unknown receiver is used as ECX and its +0x20 field is read.",
+        "The return value is a raw 32-bit word and could theoretically carry a pointer-shaped representation."
+      ],
+      "contradictions": [
+        "The full direct-call census observed zero strict pointer dereferences.",
+        "Six apparent pointer-like cases were manually classified as range/index/switch normalization, and seven remain bounded-ambiguous.",
+        "Selected consumers use separate objects for downstream virtual calls and field access."
+      ],
+      "independence": "The 843-call census is independent of the root-body decompilation; the six-case manual review is a separate classification pass.",
+      "repetition": "The generic ECX field-read shape is not independent evidence of a normal pointer result.",
+      "separator_result": "No observed caller establishes a normal pointer result; the result remains opaque uint32.",
+      "status": "not_established"
+    },
+    {
+      "step": 3,
+      "name": "opaque_encoded_state_or_handle",
+      "question": "Do callers consistently use the result as a by-value state/handle/token?",
+      "hypotheses_tested": ["H2"],
+      "predictions": [
+        "Calls should compare, branch, normalize, copy, index, or return EAX without dereferencing it as an object.",
+        "The result should remain a by-value copy rather than a retained reference."
+      ],
+      "support": [
+        "829 of 843 direct callsites are in the scalar compare/branch/copy/pass class.",
+        "Six apparent pointer-like callsites are normalization/indexing and one is return-only.",
+        "The root performs a field load into EAX and returns EAX; no reference operation occurs."
+      ],
+      "contradictions": [
+        "The bounded 24-instruction alias method leaves seven callsites unresolved.",
+        "The physical field representation and semantic freshness are unknown."
+      ],
+      "independence": "The caller classifier is independent of the root body; the selected consumer bodies are an independent semantic spot-check.",
+      "repetition": "Repeated scalar uses support a bounded contract but do not prove one enum or one semantic state domain.",
+      "separator_result": "Opaque uint32 by-value contract supported; physical representation deferred.",
+      "status": "supported_bounded_contract"
+    },
+    {
+      "step": 4,
+      "name": "mode_id_and_manager_alias",
+      "question": "Is the result a current mode ID or a field of a named input/game-mode manager?",
+      "hypotheses_tested": ["H3", "H5"],
+      "predictions": [
+        "The result should flow into cGameInputManager or cGameModeManager, or match a named mode field owner.",
+        "DAT_0167eaec should alias or receive the same publication as the relevant manager slot."
+      ],
+      "support": [
+        "The target is adjacent to named simulator/input accessor slots.",
+        "Some consumers are in gameplay/mode-routing regions and branch on the returned word."
+      ],
+      "contradictions": [
+        "DAT_0167eaec is distinct from the named simulator/input slots DAT_0167eaf0 and DAT_0167eaf8 and from DAT_0167eb2c.",
+        "No b5-result-to-named-mode-manager dataflow or matching field-owner store is observed.",
+        "No typed first writer establishes mode identity."
+      ],
+      "independence": "Distinct-global bodies and consumer dataflow are independent of SDK field-name priors.",
+      "repetition": "Adjacency and co-callers are repeated structural correlation, not aliasing evidence.",
+      "separator_result": "Mode identity and manager aliasing remain open; no direct alias is frozen.",
+      "status": "not_established"
+    },
+    {
+      "step": 5,
+      "name": "strategy_or_interface_identity",
+      "question": "Is the receiver or returned value an ISimulatorStrategy/cStrategy-like object or interface?",
+      "hypotheses_tested": ["H4"],
+      "predictions": [
+        "A strategy constructor, vtable owner, interface call, AddRef, Release, or matching field layout should be connected.",
+        "The +0x20 operation should be explained by a strategy layout rather than a generic field read."
+      ],
+      "support": [
+        "The target is in a Simulator-adjacent shared-accessor region and uses a +0x20 field access."
+      ],
+      "contradictions": [
+        "The +0x20 operation is a plain load, not a vtable load.",
+        "No concrete receiver, vtable owner, constructor, strategy call, AddRef, or Release is connected.",
+        "The direct caller census observed no returned-value pointer dereference."
+      ],
+      "independence": "SDK strategy existence is separate from binary field mechanics; neither is a receiver identity proof.",
+      "repetition": "Strategy-family naming and neighboring subsystem labels are repeated priors, not independent evidence.",
+      "separator_result": "Strategy/interface identity remains a low-confidence family hypothesis only.",
+      "status": "not_established"
+    },
+    {
+      "step": 6,
+      "name": "sentinel_token_scope",
+      "question": "Which requested sentinel tokens are actually evidenced, especially C03?",
+      "hypotheses_tested": ["H2", "H6"],
+      "predictions": [
+        "Exact scalar and byte-pattern scans should show which requested values are observed.",
+        "C03 should be treated as unknown if no exact token evidence exists."
+      ],
+      "support": [
+        "Whole-program exact scalar counts are C00=66, C01=147, C02=153, C04=167, C05=329, C06=20; C03=0.",
+        "Exact byte patterns match C00, C01, C02, C04, C05, and C06, but not C03.",
+        "Direct b5 comparison counts are C00=27, C01=89, C02=89, C04=110, C05=260, C06=2; C03=0."
+      ],
+      "contradictions": [
+        "The scans do not exclude equivalent arithmetic, range coverage, or dynamic construction of C03.",
+        "0x01654c10 and 0x02ccd1d2 are compared outside the requested range, so the requested set is not a complete proven domain."
+      ],
+      "independence": "Whole-program token scans and direct-call comparison counts are separate censuses; selected consumer decompilation independently confirms C01/C02/C04/C05 use.",
+      "repetition": "Multiple C05 observations are not independent semantic proof of one enum.",
+      "separator_result": "Observed tokens restricted to C00/C01/C02/C04/C05/C06; C03 explicitly unknown, not proven impossible.",
+      "status": "token_scope_bounded"
+    },
+    {
+      "step": 7,
+      "name": "first_writer_publication_and_lifecycle",
+      "question": "Can the receiver writer, allocation, publication, and teardown be recovered?",
+      "hypotheses_tested": ["H7"],
+      "predictions": [
+        "A direct, address-taken, bulk, or constructor-mediated write to DAT_0167eaec should be present.",
+        "A matching receiver+0x20 writer and clear/replacement/teardown path should follow."
+      ],
+      "support": [
+        "The slot is writable .data and the root has a service-accessor shape, making runtime publication plausible."
+      ],
+      "contradictions": [
+        "Direct xref inventory has one READ and zero direct writers.",
+        "The full instruction address-operand scan has one read and no absolute write.",
+        "The exact address-byte search has one hit at 0x00b3d321, belonging to that read.",
+        "Loaded memory around the slot is zero.",
+        "No constructor, allocation, +0x20 writer, clear, replacement, or teardown is statically connected."
+      ],
+      "independence": "The first-writer search is independent of the caller-use census and root mechanics.",
+      "repetition": "The direct negative must not be restated as proof that indirect or bulk publication is impossible.",
+      "separator_result": "Direct writer search complete and negative within the stated surface; indirect publication remains unresolved.",
+      "status": "unresolved_indirect_publication_possible"
+    },
+    {
+      "step": 8,
+      "name": "downstream_ownership_chain",
+      "question": "Does the by-value returned uint32 own, identify, or publish the downstream object?",
+      "hypotheses_tested": ["H1", "H2", "H3", "H4"],
+      "predictions": [
+        "Post-call pointer use, reference operations, or a receiver chain should be visible if the result owns or identifies the downstream object.",
+        "Separate acquisition paths should remain visible if the result is only a branch token."
+      ],
+      "support": [
+        "0x00ad12a0 uses the b5 result as a C04 discriminator while updating a separately obtained object at +0x5fc.",
+        "0x00d2e4a0, 0x00d2e580, 0x00d2e8a0, and 0x00c099e0 use the result as a gate/discriminator and then operate on separately obtained objects."
+      ],
+      "contradictions": [
+        "No selected consumer dereferences, retains, releases, or passes the by-value result as a downstream receiver.",
+        "The p-code at 0x00ad1f68 ends the b5 value at the equality/branch."
+      ],
+      "independence": "Downstream decompilation and p-code are independent of the global writer search.",
+      "repetition": "The same separation across selected consumers is corroboration of a boundary contract, not proof that every caller is identical.",
+      "separator_result": "No b5-result ownership chain is established; downstream object acquisition is separate.",
+      "status": "resolved_bounded_negative"
+    },
+    {
+      "step": 9,
+      "name": "architecture_dependence_and_safe_interface",
+      "question": "Does the unresolved physical identity change architecture decisions, and what interface is safe now?",
+      "hypotheses_tested": ["H1", "H2", "H3", "H4", "H7"],
+      "predictions": [
+        "A pointer, mode, strategy, or owned-service typing would change storage, ownership, routing, and lifetime decisions.",
+        "An opaque by-value read contract should avoid inventing receiver identity and should leave publication/freshness explicitly unknown."
+      ],
+      "support": [
+        "Mechanics, caller-use census, distinct token scope, first-writer negative, and downstream separation jointly support a narrow opaque boundary.",
+        "The receiver is accessed borrowed/read-only only during the read; the returned uint32 is copied by value."
+      ],
+      "contradictions": [
+        "No first writer, allocation, publication, teardown, or concrete field type is available.",
+        "Seven caller sites remain bounded-ambiguous and C03 is not evidenced."
+      ],
+      "independence": "The interface conclusion synthesizes independent mechanics, consumer, writer-search, and downstream evidence; it does not depend on any single prior label.",
+      "repetition": "The interface must not inherit the words published, borrowed-value, pointer, or enum from repeated shorthand.",
+      "separator_result": "Freeze raw by-value uint32 read semantics and explicit unknowns; defer all stronger types and lifecycle claims.",
+      "status": "architecture_dependent_but_minimally_freezable"
+    }
+  ],
+  "predictions": [
+    {
+      "id": "P1",
+      "hypothesis": "H1",
+      "prediction": "A pointer interpretation requires object dereference, virtual dispatch, reference operations, or receiver identity propagation after b5.",
+      "result": "not_observed_in_selected_consumers"
+    },
+    {
+      "id": "P2",
+      "hypothesis": "H2",
+      "prediction": "An opaque state interpretation permits equality/range branch use with no post-call dereference.",
+      "result": "observed"
+    },
+    {
+      "id": "P3",
+      "hypothesis": "H3/H5",
+      "prediction": "A mode-manager interpretation requires dataflow to DAT_0167eaf8 or DAT_0167eb2c or a matching field layout.",
+      "result": "not_observed"
+    },
+    {
+      "id": "P4",
+      "hypothesis": "H4",
+      "prediction": "A strategy-interface interpretation requires vtable/interface/reference evidence, not merely a +0x20 offset.",
+      "result": "not_observed"
+    },
+    {
+      "id": "P5",
+      "hypothesis": "H6",
+      "prediction": "One enum interpretation requires a typed writer or explicit -1/consumer-token unification.",
+      "result": "not_observed"
+    },
+    {
+      "id": "P6",
+      "hypothesis": "H7",
+      "prediction": "A first writer requires a direct or indirect publication path into DAT_0167eaec.",
+      "result": "direct path not found; indirect path remains possible"
+    }
+  ],
+  "evidence_for": [
+    {
+      "id": "E1",
+      "kind": "direct_disassembly",
+      "addresses": ["0x00b3d320", "0x00b5b800", "0x00a42730"],
+      "claim": "The root reads DAT_0167eaec, null-checks it, returns 0xffffffff for a zero receiver, and otherwise reads ECX+0x20 through 0x00a42730.",
+      "source": "Ghidra read-only SporeApp.exe disassembly and decompilation",
+      "independence": "direct control-flow and instruction evidence"
+    },
+    {
+      "id": "E2",
+      "kind": "consumer_classification",
+      "addresses": ["0x00b3d2c0", "0x00ad12a0", "0x00c099e0", "0x00d2e4a0", "0x00d2e580", "0x00d2e8a0"],
+      "claim": "The b5 result is used as a comparison/gate value; selected downstream virtual calls or field accesses use separately obtained objects.",
+      "source": "Ghidra read-only decompilation and p-code dataflow",
+      "independence": "independent consumer control-flow evidence"
+    },
+    {
+      "id": "E3",
+      "kind": "caller_use_census",
+      "addresses": ["0x00b5b800"],
+      "claim": "The follow-up full-listing flow scan found 843 direct callsites, 460 unique flow identities, 459 function endpoint records, 829 scalar compare/branch/copy/pass sites, 6 manually reclassified normalization sites, 1 return-only site, 7 bounded-ambiguous sites, and 0 observed strict pointer dereferences.",
+      "source": "knowledgegraph/research/architecture-resolution/followup-02-forwarded-state.json:138-163 and followup-02-forwarded-state.md:45-62",
+      "independence": "The full-listing caller census is independent of the root-body and writer searches; manual normalization review is a separate pass."
+    },
+    {
+      "id": "E4",
+      "kind": "aliasing_control",
+      "addresses": ["0x0167eaec", "0x0167eaf8", "0x0167eb2c", "0x00b3d350", "0x00b3d420"],
+      "claim": "The b5 receiver slot and named input/mode slots are distinct globals; shared callers do not establish aliasing.",
+      "source": "Ghidra read-only getters, decompilation, and xrefs; historical co-caller metrics",
+      "independence": "slot identity and consumer dataflow are independent checks"
+    },
+    {
+      "id": "E5",
+      "kind": "first_writer_negative",
+      "addresses": ["0x0167eaec", "0x00b3d321"],
+      "claim": "Ghidra reports one direct xref to the slot, a read at 0x00b3d320, no outgoing xrefs from the slot, and one exact address-byte hit at 0x00b3d321; memory inspection returns zero in the slot.",
+      "source": "Ghidra read-only xref, byte-pattern, memory-inspection, and global-audit queries",
+      "independence": "direct binary search is independent of historical report wording"
+    },
+    {
+      "id": "E6",
+      "kind": "token_census",
+      "addresses": ["0x01654c00", "0x01654c01", "0x01654c02", "0x01654c03", "0x01654c04", "0x01654c05", "0x01654c06"],
+      "claim": "Exact whole-program scalar counts are C00=66, C01=147, C02=153, C03=0, C04=167, C05=329, C06=20; exact byte patterns match all except C03. Direct b5 comparison counts are C00=27, C01=89, C02=89, C03=0, C04=110, C05=260, C06=2.",
+      "source": "knowledgegraph/research/architecture-resolution/followup-02-forwarded-state.json:200-227 and followup-02-forwarded-state.md:72-96",
+      "independence": "Whole-program token scans and direct-call comparison scans are separate censuses; neither proves the semantic enum or C03 impossibility."
+    }
+  ],
+  "evidence_against": [
+    {
+      "id": "C1",
+      "against": "concrete receiver class",
+      "statement": "No constructor, vtable owner, field map, allocation, or type-compatible receiver identity is connected to DAT_0167eaec."
+    },
+    {
+      "id": "C2",
+      "against": "pointer field typing",
+      "statement": "The address-like evidenced token set and lack of dereference make a normal object-pointer field unsafe, but they do not exclude a tagged or encoded value."
+    },
+    {
+      "id": "C3",
+      "against": "mode/strategy identity",
+      "statement": "The neighboring SDK fields and co-callers support subsystem adjacency only; no direct dataflow or slot alias is proven, and C03 is not evidenced as a requested token."
+    },
+    {
+      "id": "C4",
+      "against": "lifecycle closure",
+      "statement": "No first writer, publication, receiver allocation, or teardown is found by the direct static surface; indirect or bulk publication remains possible and semantic freshness is unknown."
+    },
+    {
+      "id": "C5",
+      "against": "runtime confirmation",
+      "statement": "No narrow original-process trace is available; static evidence cannot promote field values or owner identity to runtime-observed semantics."
+    }
+  ],
+  "independence": {
+    "independent_evidence": [
+      "E1 direct root mechanics",
+      "E2 independent consumer decompilation/p-code",
+      "E4 distinct global-slot bodies",
+      "E5 direct first-writer separator",
+      "E6 token census and direct comparison census"
+    ],
+    "correlated_not_independent": [
+      "The follow-up whole-program token census, direct b5 comparison census, and selected consumer decompilation share the same underlying token population and are not additive proof.",
+      "The b5 root body and 0x00a42730 body are mechanically dependent, not two independent identity proofs.",
+      "SDK mode/strategy names and nearby manager layouts are semantic priors, not evidence that DAT_0167eaec aliases those types."
+    ],
+    "repeated_assumptions_removed": [
+      "field+0x20 does not imply a vtable slot",
+      "address-like constants do not imply a dereferenceable pointer",
+      "co-calling a manager getter does not imply aliasing",
+      "absence of a direct writer does not imply no runtime publication"
+    ]
+  },
+  "repetition": {
+    "root_mechanics": "The same forwarding mechanics appear in 0x00b5b800, 0x00b3d2c0, and 0x00ad12a0; this is corroboration of mechanics, not independent receiver identity.",
+    "sentinel_consumers": "The 843-call flow census, exact token scans, and selected named consumers are repeated observations of the dominant scalar-gate pattern, not proof of a single enum; only C00/C01/C02/C04/C05/C06 are evidenced, while C03 is unknown.",
+    "manager_names": "Input/mode SDK names and co-call metrics repeat subsystem proximity, not aliasing.",
+    "lifecycle_negative": "The first-writer negative must be phrased as direct-static-only; repeating it as an absolute would be invalid.",
+    "ownership_shorthand": "The receiver is borrowed only during the field read; the returned uint32 is copied by value and its semantic freshness/publication is unknown."
+  },
+  "separator_result": {
+    "smallest_separator": "0x00ad12a0:00ad1f3e..0x00ad1f7f",
+    "what_was_separated": "forwarded state discriminator versus downstream object ownership",
+    "observations": [
+      "Direct 0x00b3d320 -> 0x00a42730 path compares with 0x01654c05.",
+      "The alternate 0x00b5b800 path compares with 0x01654c04.",
+      "The subsequent +0x5fc write targets an object reached through a separate pointer chain.",
+      "Ghidra p-code at 0x00ad1f68 shows the b5 return entering only the EAX equality/branch, with the branch ending at 0x00ad1f7f."
+    ],
+    "result": "supports opaque by-value state/handle semantics and separates the result from downstream object ownership; it does not identify the receiver or establish semantic freshness/publication",
+    "caller_use_separator": {
+      "performed": true,
+      "result": "843 direct callsites classified: 829 scalar, 6 normalization, 1 return-only, 7 bounded-ambiguous, 0 observed strict pointer dereferences"
+    },
+    "first_writer_separator": {
+      "performed": true,
+      "queries": [
+        "Ghidra get_xrefs_to(0x0167eaec): one READ at 0x00b3d320",
+        "Ghidra get_xrefs_from(0x0167eaec): none",
+        "Ghidra search_byte_patterns(0x0167eaec little-endian): only 0x00b3d321",
+        "Ghidra inspect_memory_content(0x0167eae0): zero bytes at and around the slot",
+        "Ghidra audit_global(0x0167eaec): undefined4, one xref, untyped, no comment"
+      ],
+      "result": "The direct writer/publication search is complete and negative within the stated Ghidra surface: no direct writer, constructor, allocation, +0x20 writer, clear, replacement, publication, or teardown chain was found. Indirect, address-taken, bulk, or runtime-populated publication remains possible; semantic freshness is unknown."
+    },
+    "receiver_allocation_separator": {
+      "performed": true,
+      "result": "not_available_from_the_slot; allocation and ownership remain blockers"
+    },
+    "downstream_ownership_separator": {
+      "performed": true,
+      "result": "performed successfully; no b5-result ownership chain is present in selected consumers"
+    }
+  },
+  "receiver_storage_lifetime": {
+    "receiver": {
+      "source": "0x00b3d320 returns DAT_0167eaec; no publication is established",
+      "type": "unknown raw 32-bit receiver word",
+      "allocation": "not found",
+      "first_writer": "not found by direct static query; indirect publication unresolved",
+      "publication": "unresolved; do not call the receiver published",
+      "teardown": "not found",
+      "aliasing": "not established with any named manager or canonical/alternate slot"
+    },
+    "storage": {
+      "global_slot": "DAT_0167eaec",
+      "segment": "writable .data; address lies in the writable virtual tail",
+      "on_disk_or_loaded_value": "zero at queried slot and nearby bytes in the loaded Ghidra image; runtime meaning is unknown",
+      "field": "forwarded_object+0x20",
+      "field_type": "unknown; only a 32-bit load is proven",
+      "vtable_status": "not a vtable load"
+    },
+    "lifetime": {
+      "receiver_access": "borrowed/read-only only during the field read",
+      "returned_value": "copied by value into EAX; no retained reference is transferred",
+      "semantic_freshness": "unknown; static evidence does not establish when the source word was published, replaced, or last written",
+      "operations_in_root_path": ["read global", "null test", "read field", "copy value to EAX"],
+      "missing_operations": ["allocation", "AddRef", "Release", "mutation", "lock"],
+      "validity": "the returned uint32 can be held by value, but the evidence does not establish the semantic lifetime, freshness, or publication guarantee of its value"
+    }
+  },
+  "first_writer": {
+    "status": "unresolved",
+    "direct_static_result": "no direct writer, address-taken publisher, constructor, allocation, +0x20 writer, clear, replacement, publication, or teardown chain found in the stated Ghidra surface",
+    "queries": [
+      "Ghidra xref to 0x0167eaec: one read",
+      "Ghidra full instruction address-operand scan: one read and no absolute write",
+      "Ghidra exact byte-pattern search: one hit at 0x00b3d321, belonging to the read",
+      "Ghidra slot xref-from query: none",
+      "Ghidra global audit: undefined4 and untyped",
+      "Ghidra loaded memory around 0x0167eaec: zero"
+    ],
+    "indirect_publication": "not excluded; computed, address-taken, bulk, or runtime-populated publication remains possible",
+    "smallest_remaining_separator": "trace computed or address-taken provenance to 0x0167eaec from candidate constructor/publisher/copy helpers, then verify the first [receiver+0x20] write and its clear/replacement/teardown path",
+    "architecture_impact": "Until found, the safe interface must not promise receiver identity, publication state, semantic freshness, or publication order."
+  },
+  "downstream_ownership_chain": {
+    "root_chain": [
+      "DAT_0167eaec -> 0x00b3d320 -> EAX",
+      "EAX == 0 -> 0xffffffff",
+      "EAX != 0 -> ECX=EAX -> 0x00a42730 -> EAX=[ECX+0x20]"
+    ],
+    "selected_chains": [
+      {
+        "consumer": "0x00ad12a0",
+        "result_use": "equality discriminator 0x01654c04 versus direct path 0x01654c05",
+        "downstream": "separate object +0x5fc flag update",
+        "ownership_result": "b5 value is not the object receiving the update"
+      },
+      {
+        "consumer": "0x00d2e4a0",
+        "result_use": "compare to 0x01654c01",
+        "downstream": "FUN_00d37cb0 supplies a separate object whose vtable +0x28 is called",
+        "ownership_result": "no b5-result dereference or ownership operation"
+      },
+      {
+        "consumer": "0x00d2e580",
+        "result_use": "compare to 0x01654c10 in a gate",
+        "downstream": "FUN_00b1fdb0 supplies a separate creature/object chain",
+        "ownership_result": "no b5-result ownership operation"
+      },
+      {
+        "consumer": "0x00d2e8a0",
+        "result_use": "compare to 0x01654c10 before a gameplay action",
+        "downstream": "FUN_00d38840, 0x00b3d300, and 0x00b1fdb0 are separate calls",
+        "ownership_result": "no b5-result ownership operation"
+      }
+    ],
+    "conclusion": "the returned uint32 is copied by value and no downstream ownership chain is established; downstream gameplay objects have independent acquisition paths"
+  },
+  "classification": "unknown",
+  "classification_reason": "The forwarding mechanics are known, but the receiver class, physical field type, encoded value domain, publication, semantic freshness, and teardown are not. The safe boundary is an opaque by-value read contract; concrete pointer, mode, or strategy typing is not authorized.",
+  "architecture_dependence": {
+    "depends": true,
+    "scope": "state representation, observed-token taxonomy, receiver-access lifetime, semantic freshness/publication, mode-routing adapter, and state snapshot/teardown boundary",
+    "does_not_depend_yet": "the exact C++ receiver class name or dynamic subtype",
+    "reason": "Typing the value as a pointer, mode ID, strategy pointer, or owned object changes whether the architecture stores an opaque token, dereferences state, transfers ownership, and aliases a mode manager. The current static evidence does not select among those designs."
+  },
+  "minimum_safe_interface_semantics": {
+    "operation": "read_forwarded_state()",
+    "signature": "std::uint32_t read_forwarded_state()",
+    "normal_result": "the raw 32-bit value copied by value from receiver+0x20; semantic freshness and publication state are unknown",
+    "absent_receiver_result": "0xffffffff when the source word is zero",
+    "receiver_access": "borrow the receiver only for the field read; do not expose, retain, or claim publication of it",
+    "returned_value": "uint32 copy by value; no ownership transfer and no static semantic-freshness guarantee",
+    "ownership": "no AddRef, Release, allocation, mutation, lock, or retention in the root path",
+    "type_rule": "opaque uint32-sized value; never expose as a normal pointer, enum, player ID, or ISimulatorStrategy pointer without first-writer evidence",
+    "token_rule": "preserve only evidenced comparison tokens C00/C01/C02/C04/C05/C06; keep C03 unknown and do not normalize evidenced tokens to null or -1",
+    "receiver_rule": "do not expose or reconstruct the unknown receiver; if an implementation needs a state snapshot, inject a read-only state provider with an explicit freshness contract",
+    "downstream_rule": "keep mode/input manager accessors and downstream gameplay objects separate from this forwarding boundary"
+  },
+  "exact_dependent_architecture_decisions": [
+    "Whether the modern boundary stores a uint32 opaque state, an enum-like token, or a tagged handle.",
+    "Whether the receiver is accessed only as a borrowed/read-only source during the field read; the returned uint32 is a by-value copy.",
+    "How the 0xffffffff absent-source result is represented and when it is observed.",
+    "How the evidenced tokens C00/C01/C02/C04/C05/C06 are named, persisted, and compared, and how C03 remains unknown.",
+    "Whether mode routing consumes this value as a branch token or whether a separate mode manager is authoritative; aliasing with cGameInputManager/cGameModeManager is not established.",
+    "Where receiver publication, state replacement, and teardown occur; no first writer, semantic freshness guarantee, or teardown is currently known.",
+    "Which separate downstream object owns gameplay state after the comparison; the selected evidence shows the by-value b5 result is not that object."
+  ],
+  "freeze_list": [
+    "0x00b5b800 has no explicit arguments and returns through EAX.",
+    "0x00b3d320 reads DAT_0167eaec; 0x00a42730 reads ECX+0x20.",
+    "A zero source word returns 0xffffffff before any forwarded field read.",
+    "The non-null result is one raw 32-bit value copied by value from receiver+0x20.",
+    "The receiver is borrowed/read-only only during the field read; publication and semantic freshness are unknown.",
+    "The root path performs no allocation, mutation, lock, AddRef, or Release.",
+    "The safe modern representation is an opaque uint32-sized by-value result.",
+    "0xffffffff and the evidenced tokens C00/C01/C02/C04/C05/C06 are separate observable domains; C03 is unknown.",
+    "Input and game-mode manager roots remain separate from the b5 slot.",
+    "The b5 result is not exposed, retained, or dereferenced by the selected downstream object chain."
+  ],
+  "defer_list": [
+    "Concrete receiver class and owner.",
+    "Physical type of forwarded_object+0x20.",
+    "Whether the value is a tagged handle, encoded state, or a pointer-like value in a narrower but unproven sense.",
+    "Exact semantic names of evidenced C00/C01/C02/C04/C05/C06; C03 remains unknown and is not promoted as an observed token.",
+    "First writer, receiver allocation, publication, semantic freshness, replacement, and teardown.",
+    "Aliasing with any alternate/canonical manager or mode state axis.",
+    "Runtime reachability and lifecycle ordering in Cell mode.",
+    "Any strategy/interface identity or mode-ID identity."
+  ],
+  "blockers": [
+    "No indirect first-writer, constructor, allocation, +0x20 writer, publication, semantic-freshness, replacement, or teardown trace is available.",
+    "No original-process runtime trace is available.",
+    "Seven direct-call sites remain ambiguous within the bounded 24-instruction window.",
+    "C03 has no exact scalar, byte-pattern, or direct comparison evidence and remains unknown rather than proven absent.",
+    "The exact token census does not establish a complete 32-bit domain or enum."
+  ],
+  "citations": [
+    {
+      "kind": "ghidra",
+      "target": "0x00b5b800",
+      "addresses": ["0x00b5b800-0x00b5b813"],
+      "citation": "Read-only Ghidra disassembly/decompilation of SporeApp.exe"
+    },
+    {
+      "kind": "ghidra",
+      "target": "0x00b3d320 and DAT_0167eaec",
+      "addresses": ["0x00b3d321", "0x0167eaec"],
+      "citation": "Read-only Ghidra MOV [0x0167eaec], xref, byte-pattern, global-audit, and memory queries"
+    },
+    {
+      "kind": "ghidra",
+      "target": "0x00a42730",
+      "addresses": ["0x00a42730-0x00a42733"],
+      "citation": "Read-only Ghidra disassembly: MOV EAX,[ECX+0x20]; RET"
+    },
+    {
+      "kind": "ghidra",
+      "target": "0x00ad12a0",
+      "addresses": ["0x00ad1f3e-0x00ad1f7f"],
+      "citation": "Read-only Ghidra decompilation and p-code dataflow; direct c05 path and b5 c04 path"
+    },
+    {
+      "kind": "ghidra",
+      "target": "0x00d2e4a0, 0x00d2e580, 0x00d2e8a0",
+      "addresses": ["0x00d2e52d", "0x00d2e655", "0x00d2e90f"],
+      "citation": "Read-only Ghidra decompilation; b5 result gates separate downstream objects"
+    },
+    {
+      "kind": "followup",
+      "target": "Follow-up 02 forwarded state",
+      "path": "knowledgegraph/research/architecture-resolution/followup-02-forwarded-state.json:37-163,200-227,229-377",
+      "markdown": "knowledgegraph/research/architecture-resolution/followup-02-forwarded-state.md:6-96,98-172",
+      "citation": "Read-only first-writer/publication search, caller-use census, exact token census, and bounded hypotheses"
+    },
+    {
+      "kind": "historical",
+      "target": "Track B strategy handle dossier",
+      "path": "knowledgegraph/research/root-closure/track-b-strategy-handle.json:57-148,150-175,280-380",
+      "citation": "Read-only historical evidence; baseline and independent consumer census"
+    },
+    {
+      "kind": "historical",
+      "target": "Conflict adjudication",
+      "path": "docs/analysis/conflict-adjudication.md:108-114,207-227",
+      "citation": "Read-only historical gate and architecture-impact statement"
+    },
+    {
+      "kind": "historical",
+      "target": "Simulator shared-state interface",
+      "path": "docs/analysis/simulator-shared-state-interface.md:66-79,217-225,266-279",
+      "citation": "Read-only historical interface freeze and uncertainty boundary"
+    },
+    {
+      "kind": "historical",
+      "target": "Adjacent global-slot follow-up",
+      "path": "knowledgegraph/research/root-closure/followup-global-slots.md:22-35,199-218",
+      "citation": "Read-only comparative evidence that direct-writer negatives on neighboring writable slots do not prove indirect publication absence"
+    }
+  ],
+  "limitations": [
+    "Ghidra was queried read-only and explicitly targeted the SporeApp.exe program; no Ghidra state, function, data, or project mutation was performed.",
+    "No historical artifact, source file, Phase-0 interface, or other track file was modified.",
+    "No runtime or Wine trace was performed; the architecture decision is based on static mechanics and bounded negative evidence.",
+    "The exact first writer, receiver allocation, publication, semantic freshness, teardown, and owner remain unresolved.",
+    "The caller-use census is bounded by a 24-instruction live-EAX method with seven unresolved sites; deeper branch/phi/stack propagation is not claimed.",
+    "Only C00/C01/C02/C04/C05/C06 are evidenced requested comparison tokens; C03 is unknown, and equivalent arithmetic cannot be excluded.",
+    "The exact token census does not establish a complete 32-bit domain or enum."
+  ]
+}

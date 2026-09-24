@@ -90,6 +90,23 @@ _INVESTIGATIONS_TABLE = """CREATE TABLE IF NOT EXISTS investigations (
   binary_sha256 TEXT NOT NULL
 )"""
 
+_XREF_TABLE = """CREATE TABLE IF NOT EXISTS xref (
+    caller_va       TEXT NOT NULL,
+    callee_va       TEXT NOT NULL,
+    reference_type  TEXT NOT NULL
+        CHECK (reference_type IN ('direct-call','thunk','external',
+            'computed-call','vtable-ref','data-ref')),
+    callsite_va     TEXT NOT NULL,
+    source          TEXT NOT NULL,
+    snapshot_sha256 TEXT NOT NULL,
+    PRIMARY KEY (caller_va, callee_va, callsite_va)
+)"""
+
+_XREF_INDEXES = (
+    "CREATE INDEX IF NOT EXISTS idx_xref_caller ON xref(caller_va)",
+    "CREATE INDEX IF NOT EXISTS idx_xref_callee ON xref(callee_va)",
+)
+
 _INDEXES = (
     "CREATE INDEX IF NOT EXISTS idx_node_label ON node(label)",
     "CREATE INDEX IF NOT EXISTS idx_edge_src ON edge(src)",
@@ -119,6 +136,79 @@ _NODE_BODY = """id          INTEGER PRIMARY KEY AUTOINCREMENT,
     UNIQUE (label, name)"""
 
 
+_TRIAGE_TABLE = """CREATE TABLE IF NOT EXISTS triage (
+    va          TEXT PRIMARY KEY,
+    rva         TEXT NOT NULL,
+    ghidra_name TEXT NOT NULL,
+    norm_name   TEXT NOT NULL,
+    subsystem   TEXT NOT NULL,
+    category    TEXT NOT NULL
+        CHECK (category IN ('ENGINE_INTERFACE','ENGINE_IMPLEMENTATION',
+            'GAMEPLAY_SUPPORT','GAMEPLAY_LOGIC','THIRD_PARTY_OR_RUNTIME',
+            'UNKNOWN')),
+    priority    TEXT NOT NULL CHECK (priority IN ('P0','P1','P2','P3','IGNORE')),
+    evidence    TEXT NOT NULL DEFAULT 'UNKNOWN'
+        CHECK (evidence IN ('UNKNOWN','APPROXIMATION','INFERRED',
+            'SUPPORTED','OBSERVED','CONFIRMED','VERIFIED')),
+    sdk_name    TEXT,
+    vtable_addrs TEXT NOT NULL DEFAULT '[]',
+    struct_names TEXT NOT NULL DEFAULT '[]',
+    caller_count INTEGER,
+    callee_count INTEGER,
+    decomp_path TEXT,
+    recon_candidate INTEGER NOT NULL DEFAULT 0 CHECK (recon_candidate IN (0,1)),
+    rationale   TEXT NOT NULL DEFAULT '',
+    kg_node_id  TEXT NOT NULL,
+    snapshot_sha256 TEXT NOT NULL,
+    classifier_version TEXT NOT NULL DEFAULT 'triage-v4',
+    classified_at TEXT NOT NULL DEFAULT (datetime('now'))
+)"""
+
+# triage-v4 (DB user_version 4): investigations.triage_status accepts the 7
+# canonical lowercase queue states plus all legacy UPPERCASE values.
+_TRIAGE_STATUS_COL = """triage_status TEXT NOT NULL DEFAULT 'candidate'
+      CHECK (triage_status IN ('candidate','queued','analyzing','understood',
+          'implemented','replacement-tested','runtime-validated',
+          'UNTRIAGED','QUEUED','PRIORITIZED','RECON_CANDIDATE','ASSIGNED',
+          'DONE','DROPPED','SUPERSEDED'))"""
+
+_INVESTIGATIONS_V4 = """CREATE TABLE investigations (
+  id             TEXT PRIMARY KEY,
+  kind           TEXT NOT NULL,
+  va             TEXT, name         TEXT, subsystem     TEXT,
+  mode           TEXT NOT NULL,
+  why_interesting TEXT NOT NULL,
+  stage          TEXT NOT NULL,
+  status         TEXT NOT NULL,
+  block_reason   TEXT,
+  prerequisites  TEXT,
+  attempts       TEXT,
+  checkpoint     TEXT,
+  evidence_refs  TEXT,
+  implementer_id TEXT, adjudicator_id TEXT,
+  created_at TEXT, updated_at TEXT,
+  binary_sha256 TEXT NOT NULL,
+  triage_status TEXT NOT NULL DEFAULT 'candidate'
+      CHECK (triage_status IN ('candidate','queued','analyzing','understood',
+          'implemented','replacement-tested','runtime-validated',
+          'UNTRIAGED','QUEUED','PRIORITIZED','RECON_CANDIDATE','ASSIGNED',
+          'DONE','DROPPED','SUPERSEDED'))
+)"""
+
+_INVESTIGATIONS_COLS = ("id", "kind", "va", "name", "subsystem", "mode",
+                        "why_interesting", "stage", "status", "block_reason",
+                        "prerequisites", "attempts", "checkpoint",
+                        "evidence_refs", "implementer_id", "adjudicator_id",
+                        "created_at", "updated_at", "binary_sha256",
+                        "triage_status")
+
+_TRIAGE_INDEXES = (
+    "CREATE INDEX IF NOT EXISTS idx_triage_prio_cat ON triage(priority, category)",
+    "CREATE INDEX IF NOT EXISTS idx_triage_sub_prio ON triage(subsystem, priority)",
+    "CREATE INDEX IF NOT EXISTS idx_inv_triage_status ON investigations(triage_status)",
+)
+
+
 def _migrate(c):
     tables = {r[0] for r in c.execute(
         "SELECT name FROM sqlite_master WHERE type='table'")}
@@ -140,12 +230,88 @@ def _migrate(c):
             f"SELECT {', '.join(select)} FROM node")
         c.execute("DROP TABLE node")
         c.execute("ALTER TABLE node_new RENAME TO node")
-    for ddl in (_FIELD_TABLE, _TRACE_RUN_TABLE, _INVESTIGATIONS_TABLE):
+    for ddl in (_FIELD_TABLE, _TRACE_RUN_TABLE, _INVESTIGATIONS_TABLE,
+                _XREF_TABLE):
         c.execute(ddl)
-    for ddl in _INDEXES:
+    for ddl in _INDEXES + _XREF_INDEXES:
         c.execute(ddl)
     if c.execute("PRAGMA user_version").fetchone()[0] == 0:
         c.execute("PRAGMA user_version = 1")
+    if c.execute("PRAGMA user_version").fetchone()[0] == 1:
+        c.execute(_TRIAGE_TABLE)
+        c.execute(_TRIAGE_INDEXES[0])
+        c.execute(_TRIAGE_INDEXES[1])
+        inv_cols = {r[1] for r in
+                    c.execute("PRAGMA table_info(investigations)")}
+        if "investigations" in {r[0] for r in c.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'")} \
+                and "triage_status" not in inv_cols:
+            c.execute(f"ALTER TABLE investigations ADD COLUMN {_TRIAGE_STATUS_COL}")
+        c.execute(_TRIAGE_INDEXES[2])
+        c.execute("PRAGMA user_version = 2")
+    if c.execute("PRAGMA user_version").fetchone()[0] == 2:
+        # triage-v2: category GAMEPLAY_SYSTEM -> GAMEPLAY_LOGIC (CHECK rebuild).
+        names = {r[0] for r in c.execute(
+            "SELECT name FROM sqlite_master WHERE type='table'")}
+        if "triage" in names:
+            c.execute("ALTER TABLE triage RENAME TO triage_legacy_v1")
+            c.execute(_TRIAGE_TABLE)
+            c.execute(
+                "INSERT INTO triage(va,rva,ghidra_name,norm_name,subsystem,"
+                "category,priority,evidence,sdk_name,vtable_addrs,"
+                "struct_names,caller_count,callee_count,decomp_path,"
+                "recon_candidate,rationale,kg_node_id,snapshot_sha256,"
+                "classifier_version,classified_at) "
+                "SELECT va,rva,ghidra_name,norm_name,subsystem,"
+                "REPLACE(category,'GAMEPLAY_SYSTEM','GAMEPLAY_LOGIC'),"
+                "priority,evidence,sdk_name,vtable_addrs,struct_names,"
+                "caller_count,callee_count,decomp_path,recon_candidate,"
+                "rationale,kg_node_id,snapshot_sha256,classifier_version,"
+                "classified_at FROM triage_legacy_v1")
+            c.execute("DROP TABLE triage_legacy_v1")
+        for ddl in _TRIAGE_INDEXES:
+            c.execute(ddl)
+        c.execute("PRAGMA user_version = 3")
+    if c.execute("PRAGMA user_version").fetchone()[0] == 3:
+        # triage-v4: widen investigations.triage_status CHECK to the 7
+        # canonical lowercase queue states (legacy UPPERCASE kept), default
+        # 'candidate'; normalize triage.classifier_version DEFAULT to
+        # 'triage-v4'. Both tables are rebuilt (CHECK/DEFAULT change); all
+        # row values are copied verbatim (backfill is a separate step).
+        names = {r[0] for r in c.execute(
+            "SELECT name FROM sqlite_master WHERE type='table'")}
+        if "investigations" in names:
+            c.execute("ALTER TABLE investigations "
+                      "RENAME TO investigations_legacy_v3")
+            c.execute(_INVESTIGATIONS_V4)
+            inv_have = {r[1] for r in c.execute(
+                "PRAGMA table_info(investigations_legacy_v3)")}
+            cols = [col for col in _INVESTIGATIONS_COLS
+                    if col in inv_have]
+            c.execute(
+                f"INSERT INTO investigations({', '.join(cols)}) "
+                f"SELECT {', '.join(cols)} FROM investigations_legacy_v3")
+            c.execute("DROP TABLE investigations_legacy_v3")
+        if "triage" in names:
+            c.execute("ALTER TABLE triage RENAME TO triage_legacy_v3")
+            c.execute(_TRIAGE_TABLE)
+            c.execute(
+                "INSERT INTO triage(va,rva,ghidra_name,norm_name,subsystem,"
+                "category,priority,evidence,sdk_name,vtable_addrs,"
+                "struct_names,caller_count,callee_count,decomp_path,"
+                "recon_candidate,rationale,kg_node_id,snapshot_sha256,"
+                "classifier_version,classified_at) "
+                "SELECT va,rva,ghidra_name,norm_name,subsystem,"
+                "category,priority,evidence,sdk_name,vtable_addrs,"
+                "struct_names,caller_count,callee_count,decomp_path,"
+                "recon_candidate,rationale,kg_node_id,snapshot_sha256,"
+                "classifier_version,classified_at FROM triage_legacy_v3")
+            c.execute("DROP TABLE triage_legacy_v3")
+        for ddl in _INDEXES + _XREF_INDEXES:
+            c.execute(ddl)
+        for ddl in _TRIAGE_INDEXES:
+            c.execute(ddl)
+        c.execute("PRAGMA user_version = 4")
 
 
 def conn():

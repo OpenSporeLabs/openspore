@@ -1,0 +1,921 @@
+{
+  "schema_version": "openspore-empire-space-data-1",
+  "track": {
+    "id": "empire-space-data",
+    "title": "EmpireData and SpaceData logical schema archaeology",
+    "status": "research_only",
+    "array_policy": "Arrays use fixed authored order; no unordered-set output, random values, timestamps, or wall-clock fields."
+  },
+  "scope": {
+    "repository": "/home/juanr/Proyectos/OpenSpore",
+    "program": "SporeApp.exe",
+    "version": "3.1.0.22",
+    "architecture": "x86:LE:32:default",
+    "image_base": "0x00400000",
+    "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+    "snapshot": {
+      "id": "f0e310e0",
+      "sha256": "5fd07ad16b85da68716e7e7fe2c1fcbc78e397888b532c0c09783b4480b6321e",
+      "function_count": 58757,
+      "xref_rows": 223704,
+      "triage": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl"
+    },
+    "included": [
+      "EmpireData and SpaceData logical roots",
+      "planets, colonies, civilizations, tribes, stars, political ownership, and identifiers",
+      "fleets, ships, vehicles, tools, inventory, cargo, commodities, and trade",
+      "relationships, communications, missions, events, runtime objects, lifecycle, and persistence",
+      "OpenSpore source correspondence and missing semantics"
+    ],
+    "excluded": [
+      "SPORE/ access or modification",
+      "asset bytes, models, textures, sounds, scripts, and proprietary source copying",
+      "Ghidra writes, renames, type changes, saves, and historical artifact rewrites",
+      "unobserved gameplay behavior"
+    ],
+    "runtime_evidence": {
+      "status": "NOT_AVAILABLE",
+      "evidence_level": "OBSERVED",
+      "reason": "The committed runtime campaign is negative for reaching Cell Stage under the tested Wine/input conditions; no empire, space, diplomacy, or economy transition is observed.",
+      "gameplay_promotion_allowed": false
+    }
+  },
+  "evidence_base": {
+    "levels": ["UNKNOWN", "APPROXIMATION", "INFERRED", "SUPPORTED", "OBSERVED", "CONFIRMED", "VERIFIED"],
+    "policy": {
+      "SDK": "Imported names, sizes, offsets, field names, enums, and interface declarations are static evidence, not proof of undocumented behavior.",
+      "Ghidra": "Bodies establish bounded call shape, memory access, allocation, dispatch, and transitions; unnamed symbols and decompiler types remain uncertain.",
+      "OpenSpore": "Source establishes current OpenSpore behavior only; resemblance is not original semantic proof.",
+      "runtime": "No empire or space gameplay observation is available; gameplay behavior is not promoted to OBSERVED or VERIFIED."
+    },
+    "source_precedence": [
+      "pinned binary identity and committed runtime artifacts",
+      "pinned Ghidra exports, SDK XML, structure fields, vtable candidates, and xrefs",
+      "read-only Ghidra targeted queries",
+      "triage-v6 and read-only KG projections",
+      "existing research dossiers and campaign documents",
+      "current OpenSpore source and tests"
+    ],
+    "coverage": "Pinned snapshot has 58,757 functions and 172/2,149 gameplay functions with decompilation coverage. Targeted read-only bodies do not rewrite that ledger.",
+    "historical_rule": "The committed decomp-gap unavailable state remains authoritative for accounting even where a read-only Ghidra body was available."
+  },
+  "asset_types": [
+    {
+      "id": "ResourceKey",
+      "kind": "identifier",
+      "size_bytes": 12,
+      "fields": [
+        {"offset": "0x00", "name": "typeID", "type": "uint32_t"},
+        {"offset": "0x04", "name": "groupID", "type": "uint32_t"},
+        {"offset": "0x08", "name": "instanceID", "type": "uint32_t"}
+      ],
+      "evidence_level": "SUPPORTED",
+      "provenance": [".spore-analysis/ghidra-exports/structs_fields.tsv", "docs/RECON-3.1.0.22.md"]
+    },
+    {
+      "id": "cGameData",
+      "kind": "base_record",
+      "size_bytes": 52,
+      "fields": [
+        {"offset": "0x24", "name": "mID", "type": "uint32_t"},
+        {"offset": "0x28", "name": "mDefinitionID", "type": "uint32_t"},
+        {"offset": "0x2c", "name": "mpGameDataOwner", "type": "intrusive_ptr<cGameData>"},
+        {"offset": "0x30", "name": "mPoliticalID", "type": "uint32_t"}
+      ],
+      "evidence_level": "SUPPORTED",
+      "provenance": ["ghidra:SporeApp.exe@cGameData", ".spore-analysis/ghidra-exports/structs_fields.tsv"]
+    },
+    {
+      "id": "cEmpire",
+      "kind": "political_identity_record",
+      "size_bytes": 344,
+      "role": "Canonical EmpireData identity carrier",
+      "identity": ["mPoliticalID", "mIDColorID", "mEmpireName", "mHomeStar", "mHomePlanet"],
+      "asset_references": ["mUFOKey", "mCaptainKey"],
+      "evidence_level": "SUPPORTED",
+      "provenance": ["ghidra:SporeApp.exe@cEmpire", ".spore-analysis/ghidra-exports/structs_fields.tsv", "docs/analysis/dossiers/unknown-high/empire-idcolor-pick.json"]
+    },
+    {
+      "id": "SpacePlayerData",
+      "kind": "shared_context",
+      "size_bytes": 52,
+      "role": "Active-space context and cached player-empire identity",
+      "identity": ["mPlayerEmpireID", "mpPlayerEmpire"],
+      "context": ["mpActivePlanet", "mpActiveStar", "mCurrentContext", "mPlayerColonies", "mpTribeCivRelationships"],
+      "evidence_level": "SUPPORTED",
+      "provenance": ["ghidra:SporeApp.exe@SpacePlayerData", "docs/analysis/dossiers/unknown-high/space-player-data-accessors-2.json"]
+    },
+    {
+      "id": "cPlayerInventory",
+      "kind": "inventory_record",
+      "size_bytes": 152,
+      "role": "Items, unlockable tools, active tool, and active cargo",
+      "evidence_level": "SUPPORTED",
+      "provenance": ["ghidra:SporeApp.exe@cPlayerInventory", ".spore-analysis/ghidra-exports/structs_fields.tsv"]
+    },
+    {
+      "id": "cSpaceInventoryItem",
+      "kind": "item_record",
+      "size_bytes": 124,
+      "role": "Serializable item, cargo, tool, trading object, and deliverable",
+      "fields": [
+        {"offset": "0x10", "name": "mItemCount", "type": "size_t"},
+        {"offset": "0x14", "name": "mItemType", "type": "SpaceInventoryItemType"},
+        {"offset": "0x18", "name": "mItemCost", "type": "uint"},
+        {"offset": "0x1c", "name": "mbIsUnique", "type": "bool"},
+        {"offset": "0x20", "name": "mPoliticalId", "type": "uint32_t"},
+        {"offset": "0x24", "name": "mItemPosition", "type": "uint"},
+        {"offset": "0x30", "name": "mpPropList", "type": "intrusive_ptr<PropertyList>"},
+        {"offset": "0x5c", "name": "mItemID", "type": "ResourceKey"}
+      ],
+      "evidence_level": "SUPPORTED",
+      "provenance": ["ghidra:SporeApp.exe@cSpaceInventoryItem", "knowledgegraph/research/decomp-gap/sim-space-00.json"]
+    },
+    {
+      "id": "cSpaceToolData",
+      "kind": "tool_record",
+      "size_bytes": 672,
+      "role": "Active space tool, projectile, weapon, and cargo-drop state",
+      "evidence_level": "SUPPORTED",
+      "provenance": [".spore-analysis/ghidra-exports/structs_fields.tsv", "knowledgegraph/research/types/05-empire-space.json"]
+    },
+    {
+      "id": "cGameDataUFO",
+      "kind": "ship_game_data",
+      "size_bytes": 2072,
+      "role": "Spacecraft identity, movement, target, energy, combat, and model state",
+      "evidence_level": "SUPPORTED",
+      "provenance": ["ghidra:SporeApp.exe@cGameDataUFO", "ghidra:SporeApp.exe@0x00c38b10"]
+    },
+    {
+      "id": "cVehicle",
+      "kind": "vehicle_game_data",
+      "size_bytes": 3480,
+      "role": "Ground/vehicle locomotive and spatial state",
+      "evidence_level": "SUPPORTED",
+      "provenance": ["ghidra:SporeApp.exe@0x00ca6630", ".spore-analysis/ghidra-exports/structs_fields.tsv"]
+    },
+    {
+      "id": "cSimulatorPlayerUFO",
+      "kind": "runtime_ship_wrapper",
+      "size_bytes": 224,
+      "role": "Player-UFO wrapper and scan/range state",
+      "evidence_level": "SUPPORTED",
+      "provenance": [".spore-analysis/ghidra-exports/structs_fields.tsv"]
+    },
+    {
+      "id": "cSimulatorSpaceGame",
+      "kind": "session_root",
+      "size_bytes": 240,
+      "role": "Active space UI, player UFO, inventory, missions, NPC UFOs, and uplift state",
+      "evidence_level": "SUPPORTED",
+      "provenance": ["ghidra:SporeApp.exe@0x010027b0", ".spore-analysis/ghidra-exports/structs_fields.tsv"]
+    },
+    {
+      "id": "cStarManager",
+      "kind": "galaxy_manager",
+      "size_bytes": 556,
+      "role": "Star database, generation, empire registry, relationship pointer, and trade routes",
+      "evidence_level": "SUPPORTED",
+      "provenance": ["ghidra:SporeApp.exe@0x00b3d3a0", ".spore-analysis/ghidra-exports/structs_fields.tsv"]
+    },
+    {
+      "id": "cStarRecord",
+      "kind": "star_record",
+      "size_bytes": 176,
+      "role": "Serializable star position, type, tech, EmpireID, species, and planets",
+      "fields": [
+        {"offset": "0x0c", "name": "mLastObservedTime", "type": "int"},
+        {"offset": "0x54", "name": "mEmpireID", "type": "uint32_t"},
+        {"offset": "0x70", "name": "mKey", "type": "StarID"},
+        {"offset": "0x74", "name": "mCitizenSpeciesKey", "type": "ResourceKey"},
+        {"offset": "0x84", "name": "mPlanets", "type": "vector<intrusive_ptr<cPlanetRecord>>"},
+        {"offset": "0xac", "name": "mPlanetCount", "type": "char"}
+      ],
+      "evidence_level": "SUPPORTED",
+      "provenance": ["ghidra:SporeApp.exe@cStarRecord", ".spore-analysis/ghidra-exports/structs_fields.tsv"]
+    },
+    {
+      "id": "cPlanetRecord",
+      "kind": "planet_record",
+      "size_bytes": 432,
+      "role": "Orbit, scores, species, commodities, civ/tribe records, and terrain reference",
+      "fields": [
+        {"offset": "0x28", "name": "mType", "type": "PlanetType"},
+        {"offset": "0x30", "name": "mOrbit", "type": "cEllipticalOrbit"},
+        {"offset": "0xb0", "name": "mAtmosphereScore", "type": "float"},
+        {"offset": "0xb4", "name": "mTemperatureScore", "type": "float"},
+        {"offset": "0xb8", "name": "mWaterScore", "type": "float"},
+        {"offset": "0xbc", "name": "mPlantSpecies", "type": "vector<ResourceKey>"},
+        {"offset": "0xd0", "name": "mAnimalSpecies", "type": "vector<ResourceKey>"},
+        {"offset": "0xe4", "name": "mCommodityNodes", "type": "vector<cCommodityNodeData*>"},
+        {"offset": "0x188", "name": "mCivData", "type": "vector<cCivData*>"},
+        {"offset": "0x194", "name": "mTechLevel", "type": "TechLevel"},
+        {"offset": "0x198", "name": "mSpiceGen", "type": "ResourceKey"},
+        {"offset": "0x1a0", "name": "mTribeData", "type": "vector<cTribeData*>"},
+        {"offset": "0x1a4", "name": "mGeneratedTerrainKey", "type": "ResourceKey"}
+      ],
+      "evidence_level": "SUPPORTED",
+      "provenance": ["ghidra:SporeApp.exe@cPlanetRecord", "ghidra:SporeApp.exe@0x00ba6300", ".spore-analysis/ghidra-exports/structs_fields.tsv"]
+    },
+    {
+      "id": "cCivilization",
+      "kind": "civilization_record",
+      "size_bytes": 1240,
+      "role": "Large civilization game-data object",
+      "limitations": ["Only the SDK-derived shape and selected identity relationship are claimed; complete civilization behavior is not recovered."],
+      "evidence_level": "SUPPORTED",
+      "provenance": [".spore-analysis/ghidra-exports/structs.tsv", ".spore-analysis/ghidra-exports/structs_fields.tsv"]
+    },
+    {
+      "id": "cCivData",
+      "kind": "colony_civ_record",
+      "size_bytes": 80,
+      "role": "Planet-embedded civilization state",
+      "evidence_level": "SUPPORTED",
+      "provenance": [".spore-analysis/ghidra-exports/structs.tsv", ".spore-analysis/ghidra-exports/structs_fields.tsv"]
+    },
+    {
+      "id": "cTribeData",
+      "kind": "colony_tribe_record",
+      "size_bytes": 24,
+      "fields": [
+        {"offset": "0x00", "name": "mPoliticalID", "type": "uint32_t"},
+        {"offset": "0x04", "name": "mPosition", "type": "Vector3"},
+        {"offset": "0x10", "name": "mPopulation", "type": "int"},
+        {"offset": "0x14", "name": "mFood", "type": "int"}
+      ],
+      "evidence_level": "SUPPORTED",
+      "provenance": ["knowledgegraph/research/types/05-empire-space.json", ".spore-analysis/ghidra-exports/structs_fields.tsv"]
+    },
+    {
+      "id": "cRelationshipManager",
+      "kind": "relationship_manager",
+      "size_bytes": 256,
+      "role": "Political-ID relationship map, decay queue, and message listener",
+      "evidence_level": "SUPPORTED",
+      "provenance": ["ghidra:SporeApp.exe@cRelationshipManager", "ghidra:SporeApp.exe@0x00b3d3c0"]
+    },
+    {
+      "id": "cRelationshipData",
+      "kind": "relationship_value",
+      "size_bytes": 36,
+      "fields": [
+        {"offset": "0x00", "name": "mValue", "type": "float"},
+        {"offset": "0x04", "name": "mFlags", "type": "int"},
+        {"offset": "0x08", "name": "mRelationshipEvents", "type": "map<uint32_t,float>"}
+      ],
+      "evidence_level": "SUPPORTED",
+      "provenance": [".spore-analysis/ghidra-exports/structs_fields.tsv", "knowledgegraph/research/types/05-empire-space.json"]
+    },
+    {
+      "id": "cSpaceTrading",
+      "kind": "economy_manager",
+      "size_bytes": 248,
+      "role": "Spices, rare resources, NPC stores, and commodity availability",
+      "evidence_level": "SUPPORTED",
+      "provenance": ["ghidra:SporeApp.exe@0x00b3d4d0", ".spore-analysis/ghidra-exports/structs_fields.tsv"]
+    },
+    {
+      "id": "cCommodityNode",
+      "kind": "planet_commodity",
+      "size_bytes": 656,
+      "role": "Resource points and construct/capture/convert/buy political ownership",
+      "evidence_level": "SUPPORTED",
+      "provenance": ["knowledgegraph/research/types/05-empire-space.json", ".spore-analysis/ghidra-exports/structs_fields.tsv"]
+    },
+    {
+      "id": "cSpaceTradeRouteManager",
+      "kind": "trade_route_manager",
+      "size_bytes": 36,
+      "role": "Serializable map of trade routes",
+      "evidence_level": "SUPPORTED",
+      "provenance": ["ghidra:SporeApp.exe@cSpaceTradeRouteManager", ".spore-analysis/ghidra-exports/structs_fields.tsv"]
+    },
+    {
+      "id": "cMission",
+      "kind": "mission_record",
+      "size_bytes": 496,
+      "role": "Owner/target political identity, state, rewards, costs, clues, and communication",
+      "evidence_level": "SUPPORTED",
+      "provenance": ["ghidra:SporeApp.exe@cMission", ".spore-analysis/ghidra-exports/structs_fields.tsv"]
+    },
+    {
+      "id": "cMissionManager",
+      "kind": "mission_manager",
+      "size_bytes": 324,
+      "role": "Generation configuration, tracked missions, and recent NPC/colony missions",
+      "evidence_level": "SUPPORTED",
+      "provenance": ["ghidra:SporeApp.exe@0x00feb770", ".spore-analysis/ghidra-exports/structs_fields.tsv"]
+    },
+    {
+      "id": "cCommManager",
+      "kind": "communication_manager",
+      "size_bytes": 100,
+      "role": "Current event, queued events, listener state, and cancellation conditions",
+      "evidence_level": "SUPPORTED",
+      "provenance": ["ghidra:SporeApp.exe@0x00aeb160", ".spore-analysis/ghidra-exports/structs_fields.tsv"]
+    },
+    {
+      "id": "cCommEvent",
+      "kind": "communication_event",
+      "size_bytes": 160,
+      "role": "Queued civ/space communication payload",
+      "limitations": ["Numeric message/action IDs and sender/receiver meanings are unresolved."],
+      "evidence_level": "SUPPORTED",
+      "provenance": ["knowledgegraph/research/types/05-empire-space.json", "knowledgegraph/research/decomp-gap/sim-space-00.json"]
+    },
+    {
+      "id": "space_event_record_pair",
+      "kind": "runtime_event_records",
+      "size_bytes": "27-field and 24-field unnamed records",
+      "role": "Shared space event plumbing carrying object/cell IDs, timestamp, sentinel, IDs, and positions",
+      "evidence_level": "INFERRED",
+      "provenance": ["docs/analysis/dossiers/unknown-high/space-event-record-pair.json", "ghidra:SporeApp.exe@0x00e39ab0"]
+    }
+  ],
+  "schemas": [
+    {
+      "id": "EmpireData",
+      "kind": "logical_root",
+      "canonical_types": ["cGameData", "cEmpire", "SpacePlayerData"],
+      "purpose": "Model political identity, home world, relations, economy, and active context without treating SDK vtable prefixes as RTTI-backed inheritance.",
+      "identity": {
+        "primary": "cEmpire.mPoliticalID",
+        "cache": "SpacePlayerData.mPlayerEmpireID plus mpPlayerEmpire",
+        "unset_cache_sentinel": -1
+      },
+      "fields": [
+        {"source": "cEmpire", "offset": "0x10", "name": "mIDColorID", "role": "identity-color ID"},
+        {"source": "cEmpire", "offset": "0x14", "name": "mEntityNames", "role": "entity-name map"},
+        {"source": "cEmpire", "offset": "0x30", "name": "mCachedColor", "role": "cached identity color"},
+        {"source": "cEmpire", "offset": "0x3c", "name": "mEmpireName", "role": "empire name"},
+        {"source": "cEmpire", "offset": "0x50", "name": "mFlags", "role": "empire flags"},
+        {"source": "cEmpire", "offset": "0x54", "name": "mTrait", "role": "empire trait"},
+        {"source": "cEmpire", "offset": "0x58", "name": "mArchetype", "role": "archetype"},
+        {"source": "cEmpire", "offset": "0x5c", "name": "mEnemies", "role": "relation vector"},
+        {"source": "cEmpire", "offset": "0x70", "name": "mAllies", "role": "relation vector"},
+        {"source": "cEmpire", "offset": "0x84", "name": "mPoliticalID", "role": "political key"},
+        {"source": "cEmpire", "offset": "0x88", "name": "mStars", "role": "star references"},
+        {"source": "cEmpire", "offset": "0x9c", "name": "mNextStarTowardsHome", "role": "home-route state"},
+        {"source": "cEmpire", "offset": "0xb0", "name": "mHomeStar", "role": "StarID"},
+        {"source": "cEmpire", "offset": "0xb4", "name": "mHomePlanet", "role": "PlanetID"},
+        {"source": "cEmpire", "offset": "0xb8", "name": "mUFOKey", "role": "ResourceKey"},
+        {"source": "cEmpire", "offset": "0xc4", "name": "mCaptainKey", "role": "ResourceKey"},
+        {"source": "cEmpire", "offset": "0xd0", "name": "mEmpireMoney", "role": "economy field; formulas unresolved"},
+        {"source": "cEmpire", "offset": "0x108", "name": "mCultureSet", "role": "culture state"},
+        {"source": "cEmpire", "offset": "0x148", "name": "mAdventureList", "role": "adventure IDs"},
+        {"source": "SpacePlayerData", "offset": "0x04", "name": "mpActivePlanet", "role": "active planet"},
+        {"source": "SpacePlayerData", "offset": "0x08", "name": "mpActiveStar", "role": "active star"},
+        {"source": "SpacePlayerData", "offset": "0x0c", "name": "mpTribeCivRelationships", "role": "relationship manager"},
+        {"source": "SpacePlayerData", "offset": "0x10", "name": "mCurrentContext", "role": "SpaceContext"},
+        {"source": "SpacePlayerData", "offset": "0x18", "name": "mPlayerEmpireID", "role": "cached political ID"},
+        {"source": "SpacePlayerData", "offset": "0x1c", "name": "mpPlayerEmpire", "role": "cached cEmpire"},
+        {"source": "SpacePlayerData", "offset": "0x20", "name": "mPlayerColonies", "role": "colony planets"}
+      ],
+      "relations": [
+        "cEmpire.mPoliticalID -> relationship map keys",
+        "cEmpire.mHomeStar/mHomePlanet -> star/planet records",
+        "SpacePlayerData.mPlayerEmpireID -> cached mpPlayerEmpire",
+        "SpacePlayerData.mPlayerColonies -> cPlanet runtime objects"
+      ],
+      "lifecycle": {
+        "create": "Create/load empire, assign political ID, species profile, home world, and identity color.",
+        "query": "Resolve active context and player empire through shared accessors and manager lookup.",
+        "mutate": "Update identity, ownership, relations, money, culture, and asset references.",
+        "serialize": "ISimulatorSerializable prefix exists; exact property set is unresolved.",
+        "destroy": "Refcount release through imported vtable/prefix conventions; exact teardown is unresolved."
+      },
+      "evidence_level": "SUPPORTED",
+      "confidence": 0.9,
+      "provenance": ["ghidra:SporeApp.exe@cEmpire", "ghidra:SporeApp.exe@SpacePlayerData", "docs/analysis/dossiers/unknown-high/space-player-data-accessors-2.json"]
+    },
+    {
+      "id": "SpaceData",
+      "kind": "logical_root",
+      "canonical_types": ["cSimulatorSpaceGame", "SpacePlayerData", "cStarManager", "cStarRecord", "cPlanetRecord"],
+      "purpose": "Represent active space mode, galaxy records, active context, colonies, and runtime composition.",
+      "identity": ["cStarManager::Get", "cSimulatorSpaceGame::Get", "SpacePlayerData.mpActivePlanet", "SpacePlayerData.mpActiveStar"],
+      "fields": [
+        {"source": "cSimulatorSpaceGame", "offset": "0x14", "name": "mpUI", "role": "space UI"},
+        {"source": "cSimulatorSpaceGame", "offset": "0x40", "name": "mpPlayerInventory", "role": "inventory"},
+        {"source": "cSimulatorSpaceGame", "offset": "0x78", "name": "mNPC_UFOs", "role": "NPC spacecraft IDs"},
+        {"source": "cSimulatorSpaceGame", "offset": "0xb4", "name": "mpPlayerUFO", "role": "player spacecraft"},
+        {"source": "cSimulatorSpaceGame", "offset": "0xb8", "name": "mpMissionManager", "role": "missions"},
+        {"source": "cSimulatorSpaceGame", "offset": "0xdc", "name": "mPlanetsToUplift", "role": "uplift queue"},
+        {"source": "cStarManager", "offset": "0x94", "name": "mStarRecordGrid", "role": "star grid"},
+        {"source": "cStarManager", "offset": "0xf0", "name": "mSavedGameStarRecords", "role": "saved stars"},
+        {"source": "cStarManager", "offset": "0x12c", "name": "mEmpireHomeStarRecords", "role": "EmpireID to home star"},
+        {"source": "cStarManager", "offset": "0x150", "name": "mEmpires", "role": "EmpireID to cEmpire"},
+        {"source": "cStarManager", "offset": "0x1d4", "name": "mNextPoliticalID", "role": "political ID state"},
+        {"source": "cStarManager", "offset": "0x1e0", "name": "mTradeRouteManager", "role": "trade routes"},
+        {"source": "cStarManager", "offset": "0x204", "name": "mpRelationshipManager", "role": "relationships"},
+        {"source": "cStarManager", "offset": "0x208", "name": "mTransactionLog", "role": "transaction log"},
+        {"source": "cStarRecord", "offset": "0x54", "name": "mEmpireID", "role": "star ownership/reference"},
+        {"source": "cStarRecord", "offset": "0x84", "name": "mPlanets", "role": "planet records"},
+        {"source": "cStarRecord", "offset": "0xac", "name": "mPlanetCount", "role": "planet count"},
+        {"source": "cPlanetRecord", "offset": "0xb0", "name": "scores", "role": "atmosphere/temperature/water generation scores"},
+        {"source": "cPlanetRecord", "offset": "0xe4", "name": "mCommodityNodes", "role": "commodity records"},
+        {"source": "cPlanetRecord", "offset": "0x188", "name": "mCivData", "role": "civ records"},
+        {"source": "cPlanetRecord", "offset": "0x1a0", "name": "mTribeData", "role": "tribe records"}
+      ],
+      "relations": [
+        "cStarManager.mStarRecordGrid -> cStarRecord.mPlanets -> cPlanetRecord",
+        "cStarRecord.mEmpireID -> cEmpire.mPoliticalID",
+        "cPlanetRecord.mKey -> SpacePlayerData.mPlayerColonies",
+        "cStarManager.mTradeRouteManager -> cTradeRouteData",
+        "cSimulatorSpaceGame -> inventory, UFO, mission, NPC, and uplift state"
+      ],
+      "lifecycle": {
+        "create": "Generate/load star records, generate planets, attach civ/tribe/commodity records, and create runtime objects.",
+        "query": "Resolve star grid, find stars/empire, read active planet/star, and read planet records.",
+        "mutate": "Regenerate empty systems, set ownership, assign home world, update colonies, and update UFO state.",
+        "serialize": "Star/planet serialization plus temporary and saved record databases.",
+        "destroy": "Refcount release and manager reset; exact teardown is unresolved."
+      },
+      "evidence_level": "SUPPORTED",
+      "confidence": 0.9,
+      "provenance": ["ghidra:SporeApp.exe@0x00b3d3a0", "ghidra:SporeApp.exe@cStarRecord", "ghidra:SporeApp.exe@cPlanetRecord", ".spore-analysis/ghidra-exports/structs_fields.tsv"]
+    },
+    {
+      "id": "ColonyData",
+      "kind": "logical_record",
+      "canonical_types": ["cPlanetRecord", "cCivData", "cTribeData", "SpacePlayerData"],
+      "identity": ["cPlanetRecord.mKey", "cTribeData.mPoliticalID", "SpacePlayerData.mPlayerColonies"],
+      "purpose": "Represent colony-capable planet state with civ/tribe subrecords and player membership.",
+      "lifecycle": "Static data supports planet lookup and colony membership; colonization, uplift, and full civ transition bodies are incomplete.",
+      "evidence_level": "SUPPORTED",
+      "confidence": 0.82,
+      "provenance": ["ghidra:SporeApp.exe@cPlanetRecord", "knowledgegraph/research/types/05-empire-space.json"]
+    },
+    {
+      "id": "FleetShipData",
+      "kind": "logical_record",
+      "canonical_types": ["cGameDataUFO", "cSimulatorPlayerUFO", "cVehicle", "cSimulatorSpaceGame"],
+      "identity": ["cGameData.mID", "cGameData.mDefinitionID", "cGameData.mPoliticalID", "mModelKey"],
+      "purpose": "Represent ship/vehicle runtime objects without claiming a single SDK Fleet record.",
+      "lifecycle": "Create/load spacecraft, update movement/energy/combat, acquire targets, and release objects. Fleet aggregate and full ownership protocol are unresolved.",
+      "evidence_level": "SUPPORTED",
+      "confidence": 0.78,
+      "provenance": ["ghidra:SporeApp.exe@cGameDataUFO", "ghidra:SporeApp.exe@0x00c38b10", "ghidra:SporeApp.exe@0x00ca6630"]
+    },
+    {
+      "id": "InventoryData",
+      "kind": "logical_record",
+      "canonical_types": ["cPlayerInventory", "cSpaceInventoryItem", "cSpaceToolData"],
+      "identity": ["cSpaceInventoryItem.mItemID", "cSpaceInventoryItem.mPoliticalId", "cGameData.mID"],
+      "purpose": "Represent item counts, costs, cargo, tools, unlocks, and active selections.",
+      "lifecycle": "Create/load items, apply properties, mutate counts, select active tool/cargo, use/drop/obtain items, and release them. Insertion, removal, capacity, and payout bodies are incomplete.",
+      "evidence_level": "SUPPORTED",
+      "confidence": 0.86,
+      "provenance": ["ghidra:SporeApp.exe@cPlayerInventory", "ghidra:SporeApp.exe@cSpaceInventoryItem", "knowledgegraph/research/decomp-gap/sim-space-00.json"]
+    },
+    {
+      "id": "TradeData",
+      "kind": "logical_record",
+      "canonical_types": ["cSpaceTrading", "cCommodityNode", "cCommodityNodeData", "cSpaceTradeRouteManager", "cPlayerInventory"],
+      "identity": ["ResourceKey", "commodity political IDs", "inventory item ID", "route map key"],
+      "purpose": "Represent spices, rare discovery, NPC stores, commodity ownership, trading objects, prices, and routes.",
+      "lifecycle": "Generate/assign commodity state, query rare/spice availability, create stores, acquire objects, mutate ownership/count/cost, and persist routes. Formulas are unresolved.",
+      "evidence_level": "SUPPORTED",
+      "confidence": 0.84,
+      "provenance": ["ghidra:SporeApp.exe@0x00b3d4d0", "knowledgegraph/research/types/05-empire-space.json"]
+    },
+    {
+      "id": "RelationshipData",
+      "kind": "logical_record",
+      "canonical_types": ["cRelationshipManager", "cRelationshipData", "cEmpire"],
+      "identity": "ordered pair of cEmpire.mPoliticalID values",
+      "purpose": "Represent relationship value, war/alliance flags, event map, and decay state.",
+      "lifecycle": "Create/find relation, query war/alliance, apply deltas, declare war/peace/alliance, break alliance, and decay. Message payloads remain unresolved.",
+      "evidence_level": "SUPPORTED",
+      "confidence": 0.9,
+      "provenance": ["ghidra:SporeApp.exe@0x00d01f50", "ghidra:SporeApp.exe@0x00d01ff0", "ghidra:SporeApp.exe@0x00d065a0"]
+    },
+    {
+      "id": "MissionData",
+      "kind": "logical_record",
+      "canonical_types": ["cMission", "cMissionManager", "cCommEvent", "cCommManager"],
+      "identity": ["cMission.mMissionID", "cMission.mOwnerEmpireID", "cMission.mTargetEmpireID", "cMission.mState"],
+      "states": [
+        {"name": "Unaccepted", "value": 0},
+        {"name": "Finished", "value": 1},
+        {"name": "Accepted", "value": 2},
+        {"name": "Active", "value": 3},
+        {"name": "Completed", "value": 5},
+        {"name": "Failed", "value": 6},
+        {"name": "Aborted", "value": 7},
+        {"name": "Rejected", "value": 8},
+        {"name": "StepCompleted", "value": 9}
+      ],
+      "purpose": "Represent mission state, owner/target worlds, rewards, costs, progress, communication, and tracking.",
+      "lifecycle": "Generate, query, choose, accept/reject, activate, complete, fail, abort, and destroy. Reward and event ordering are incomplete.",
+      "evidence_level": "SUPPORTED",
+      "confidence": 0.86,
+      "provenance": ["ghidra:SporeApp.exe@cMission", "ghidra:SporeApp.exe@0x00feb770", ".spore-analysis/ghidra-exports/structs_fields.tsv"]
+    },
+    {
+      "id": "EventData",
+      "kind": "logical_record",
+      "canonical_types": ["cCommEvent", "cCommManager", "space_event_record_pair", "MessageListenerData"],
+      "identity": ["event object reference", "timestamp", "sender/receiver political IDs", "cell IDs"],
+      "purpose": "Represent communication/space event payloads, positions, queueing, dispatch, and release.",
+      "lifecycle": "Create, initialize, append, show/dispatch, and release. Numeric IDs and cross-stage ordering are unresolved.",
+      "evidence_level": "INFERRED",
+      "confidence": 0.72,
+      "provenance": ["ghidra:SporeApp.exe@0x00e39ab0", "ghidra:SporeApp.exe@0x00aeb160", "docs/analysis/dossiers/unknown-high/space-event-record-pair.json"]
+    }
+  ],
+  "relationships": [
+    {
+      "from": "Simulator manager block",
+      "to": ["cStarManager", "cRelationshipManager", "cSpaceTrading", "cMissionManager", "SpacePlayerData"],
+      "kind": "manager_root_lookup",
+      "evidence_level": "SUPPORTED",
+      "detail": "Named getters and high-fan-in accessors exist; exact owner/type of every packed accessor is unresolved.",
+      "provenance": ["ghidra:SporeApp.exe@0x00b3d3a0", "ghidra:SporeApp.exe@0x00b3d3c0", "ghidra:SporeApp.exe@0x00b3d4d0", "docs/RECON-3.1.0.22.md:97-99"]
+    },
+    {
+      "from": "SpacePlayerData.mPlayerEmpireID",
+      "to": "SpacePlayerData.mpPlayerEmpire",
+      "kind": "identity_keyed_cache",
+      "evidence_level": "SUPPORTED",
+      "detail": "The cached cEmpire.mPoliticalID at +0x84 is compared with the stored ID; mismatch triggers lookup, pointer replacement, and old-object release.",
+      "provenance": ["ghidra:SporeApp.exe@0x01021300", "docs/analysis/dossiers/unknown-high/space-player-data-accessors-2.json"]
+    },
+    {
+      "from": "cStarRecord.mEmpireID",
+      "to": "cEmpire.mPoliticalID",
+      "kind": "ownership_or_reference",
+      "evidence_level": "SUPPORTED",
+      "provenance": ["ghidra:SporeApp.exe@cStarRecord", ".spore-analysis/ghidra-exports/structs_fields.tsv"]
+    },
+    {
+      "from": "cStarRecord.mPlanets",
+      "to": "cPlanetRecord",
+      "kind": "composition_many",
+      "evidence_level": "SUPPORTED",
+      "provenance": ["ghidra:SporeApp.exe@cStarRecord", "ghidra:SporeApp.exe@cPlanetRecord"]
+    },
+    {
+      "from": "cPlanetRecord",
+      "to": ["cCivData", "cCivilization", "cTribeData", "cCommodityNodeData"],
+      "kind": "embedded_or_referenced_colony_state",
+      "evidence_level": "SUPPORTED",
+      "provenance": ["ghidra:SporeApp.exe@cPlanetRecord", ".spore-analysis/ghidra-exports/structs_fields.tsv"]
+    },
+    {
+      "from": "SpacePlayerData.mPlayerColonies",
+      "to": "cPlanet",
+      "kind": "player_colony_membership",
+      "evidence_level": "SUPPORTED",
+      "provenance": ["ghidra:SporeApp.exe@SpacePlayerData"]
+    },
+    {
+      "from": "cRelationshipManager.mRelationships",
+      "to": "cRelationshipData",
+      "kind": "ordered_political_id_pair_map",
+      "evidence_level": "SUPPORTED",
+      "detail": "War is flag bit 0; alliance is flag bit 1.",
+      "provenance": ["ghidra:SporeApp.exe@cRelationshipManager", "ghidra:SporeApp.exe@0x00d01f50", "ghidra:SporeApp.exe@0x00d01ff0"]
+    },
+    {
+      "from": "cSimulatorSpaceGame",
+      "to": ["cPlayerInventory", "cSimulatorPlayerUFO", "cMissionManager", "cPlanet", "cUI"],
+      "kind": "session_composition",
+      "evidence_level": "SUPPORTED",
+      "provenance": ["ghidra:SporeApp.exe@0x010027b0", ".spore-analysis/ghidra-exports/structs_fields.tsv"]
+    },
+    {
+      "from": "cSpaceTrading",
+      "to": ["cSpaceInventoryItem", "cNPCStore", "cCommodityNode", "ResourceKey"],
+      "kind": "economy_producer_consumer",
+      "evidence_level": "SUPPORTED",
+      "provenance": ["ghidra:SporeApp.exe@0x00b3d4d0", "knowledgegraph/research/types/05-empire-space.json"]
+    },
+    {
+      "from": "cMission",
+      "to": ["cEmpire", "cPlanet", "cCommEvent", "ResourceKey", "cPlayerInventory"],
+      "kind": "mission_producer_consumer",
+      "evidence_level": "SUPPORTED",
+      "provenance": ["ghidra:SporeApp.exe@cMission", ".spore-analysis/ghidra-exports/structs_fields.tsv"]
+    },
+    {
+      "from": "cCommManager",
+      "to": "cCommEvent",
+      "kind": "queue_and_dispatch",
+      "evidence_level": "SUPPORTED",
+      "provenance": ["ghidra:SporeApp.exe@0x00aeb160", "knowledgegraph/research/decomp-gap/sim-space-00.json"]
+    },
+    {
+      "from": "cGameDataUFO",
+      "to": ["cPlanet", "cSpaceToolData", "ResourceKey", "cEmpire"],
+      "kind": "runtime_space_object_production",
+      "evidence_level": "SUPPORTED",
+      "provenance": ["ghidra:SporeApp.exe@cGameDataUFO", "ghidra:SporeApp.exe@0x00c38b10"]
+    }
+  ],
+  "functions": [
+    {"address": "0x00b3d3a0", "name": "Simulator::cStarManager::Get", "operation": "query", "structures": ["cStarManager", "SpaceData"], "contract": "Return the star-manager singleton.", "evidence_level": "SUPPORTED", "provenance": ["ghidra:SporeApp.exe@0x00b3d3a0", ".spore-analysis/ghidra-exports/functions.tsv"]},
+    {"address": "0x00b3d3c0", "name": "Simulator::cRelationshipManager::Get", "operation": "query", "structures": ["cRelationshipManager", "RelationshipData"], "contract": "Return the relationship-manager singleton.", "evidence_level": "SUPPORTED", "provenance": ["ghidra:SporeApp.exe@0x00b3d3c0"]},
+    {"address": "0x00b3d4d0", "name": "Simulator::cSpaceTrading::Get", "operation": "query", "structures": ["cSpaceTrading", "TradeData"], "contract": "Return the space-economy singleton.", "evidence_level": "SUPPORTED", "provenance": ["ghidra:SporeApp.exe@0x00b3d4d0"]},
+    {"address": "0x00feb770", "name": "Simulator::cMissionManager::Get", "operation": "query", "structures": ["cMissionManager", "MissionData"], "contract": "Return the mission-manager singleton.", "evidence_level": "SUPPORTED", "provenance": ["ghidra:SporeApp.exe@0x00feb770", "knowledgegraph/research/types/05-empire-space.json"]},
+    {"address": "0x010027b0", "name": "Simulator::cSimulatorSpaceGame::Get", "operation": "query", "structures": ["cSimulatorSpaceGame", "SpaceData"], "contract": "Return the active space-game composition root.", "evidence_level": "SUPPORTED", "provenance": ["ghidra:SporeApp.exe@0x010027b0"]},
+    {"address": "0x01021080", "name": "SpacePlayerData context accessor", "operation": "query", "structures": ["SpacePlayerData"], "contract": "Read mCurrentContext at +0x10.", "evidence_level": "SUPPORTED", "provenance": ["ghidra:SporeApp.exe@0x01021080", "docs/analysis/dossiers/unknown-high/space-player-data-accessors-3.json"]},
+    {"address": "0x01021260", "name": "SpacePlayerData active-planet accessor", "operation": "query", "structures": ["SpacePlayerData", "cPlanet"], "contract": "Read mpActivePlanet at +0x04 with null guard.", "evidence_level": "SUPPORTED", "provenance": ["ghidra:SporeApp.exe@0x01021260", "docs/analysis/dossiers/unknown-high/space-player-data-accessors.json"]},
+    {"address": "0x01021300", "name": "SpacePlayerData cached-empire accessor", "operation": "query_mutate", "structures": ["SpacePlayerData", "cEmpire", "cStarManager"], "contract": "Compare stored ID with cached cEmpire.mPoliticalID, re-resolve on mismatch, replace pointer, release old object, and return cache.", "evidence_level": "SUPPORTED", "provenance": ["ghidra:SporeApp.exe@0x01021300", "docs/analysis/dossiers/unknown-high/space-player-data-accessors-2.json"]},
+    {"address": "0x00ba6300", "name": "Simulator::cPlanetRecord::Create", "operation": "create", "structures": ["cPlanetRecord", "PlanetID"], "contract": "Create/resolve a planet record for a PlanetID into an intrusive output.", "evidence_level": "SUPPORTED", "body_status": "Thin wrapper recovered; complete allocation path is not claimed.", "provenance": ["ghidra:SporeApp.exe@0x00ba6300"]},
+    {"address": "0x00bb4100", "name": "cStarManager planet-generation routine", "operation": "create_mutate", "structures": ["cStarManager", "cStarRecord", "cPlanetRecord"], "contract": "Generate planet records using star type, orbit/position, names, flags, property/random inputs, and shared clock; update planet count and records.", "evidence_level": "SUPPORTED", "limitations": "Large decompiler body contains unknown helpers; formulas are not clean-room reconstructed.", "provenance": ["ghidra:SporeApp.exe@0x00bb4100", "knowledgegraph/research/types/05-empire-space.json"]},
+    {"address": "0x00bb4af0", "name": "cStarManager star-system regeneration routine", "operation": "mutate", "structures": ["cStarManager", "cStarRecord", "cPlanetRecord"], "contract": "When mPlanetCount is zero and timing passes, update observation time, remove pending star, reset manager state, and generate planets.", "evidence_level": "SUPPORTED", "provenance": ["ghidra:SporeApp.exe@0x00bb4af0", "docs/analysis/dossiers/unknown-high/star-system-regen.json"]},
+    {"address": "0x00bb4ba0", "name": "cStarManager RequirePlanetsForStar/persistence routine", "operation": "create_mutate_serialize", "structures": ["cStarManager", "cStarRecord", "cPlanetRecord", "PropertyList", "Resource::Database"], "contract": "Ensure planets and serialize temporary star/planet databases through stars.db.tmp before replacing stars.db.", "evidence_level": "SUPPORTED", "identity_note": "Pinned export associates the address with RequirePlanetsForStar; live body also exposes persistence.", "provenance": ["ghidra:SporeApp.exe@0x00bb4ba0", ".spore-analysis/ghidra-exports/functions.tsv"]},
+    {"address": "0x00bb5b50", "name": "Simulator::cStarManager::RecordToPlanet", "operation": "query_mutate", "structures": ["cStarManager", "cPlanetRecord", "cPlanet"], "contract": "Convert/resolve a cPlanetRecord into a runtime cPlanet intrusive pointer.", "evidence_level": "SUPPORTED", "body_status": "Thin wrapper; full conversion internals unresolved.", "provenance": ["ghidra:SporeApp.exe@0x00bb5b50"]},
+    {"address": "0x00bb5d80", "name": "cStarManager star-generation message handler", "operation": "mutate", "structures": ["cStarManager", "cStarRecord", "cPlanetRecord"], "contract": "Place or refresh a cStarRecord in manager grid/vector state from generation data.", "evidence_level": "SUPPORTED", "provenance": ["ghidra:SporeApp.exe@0x00bb5d80", "knowledgegraph/research/types/05-empire-space.json"]},
+    {"address": "0x00ba9370", "name": "political-ID map lookup helper", "operation": "query", "structures": ["cStarManager", "cEmpire", "SpacePlayerData"], "contract": "Resolve an EmpireID through the manager map used by the cached empire accessor and color picker.", "evidence_level": "SUPPORTED", "identity_note": "Exact owner/type is not fully named.", "provenance": ["ghidra:SporeApp.exe@0x00ba9370", "docs/analysis/dossiers/unknown-high/empire-idcolor-pick.json"]},
+    {"address": "0x00c31890", "name": "cEmpire_RequireHomePlanet", "operation": "create_mutate", "structures": ["cEmpire", "cStarRecord", "cPlanetRecord"], "contract": "Check home-world state and invoke home-star/planet generation or lookup when absent.", "evidence_level": "SUPPORTED", "provenance": ["knowledgegraph/research/types/05-empire-space.json", "ghidra:SporeApp.exe@0x00c31890"]},
+    {"address": "0x00c30cc0", "name": "Simulator::cEmpire::GetSpeciesProfile", "operation": "query", "structures": ["cEmpire", "ResourceKey", "cSpeciesProfile"], "contract": "Select a species-profile ResourceKey using archetype and difficulty context.", "evidence_level": "SUPPORTED", "provenance": ["knowledgegraph/research/types/05-empire-space.json", ".spore-analysis/ghidra-exports/functions.tsv"]},
+    {"address": "0x00c33690", "name": "Simulator::cEmpire::SetSpeciesProfile", "operation": "mutate", "structures": ["cEmpire", "cStarRecord", "cPlanetRecord", "cTribe"], "contract": "Update species/home-world/profile state and invoke identity-color and related map/name updates.", "evidence_level": "SUPPORTED", "provenance": ["knowledgegraph/research/types/05-empire-space.json", "ghidra:SporeApp.exe@0x00c33690"]},
+    {"address": "0x00c32cd0", "name": "cEmpire identity-color picker", "operation": "mutate", "structures": ["cEmpire", "cStarManager", "cTribe"], "contract": "Select a distinguishable cached color from a runtime twelve-color palette and write mIDColorID/mCachedColor.", "evidence_level": "SUPPORTED", "limitations": "Exact palette RGB constants and initialization are unavailable statically.", "provenance": ["ghidra:SporeApp.exe@0x00c32cd0", "docs/analysis/dossiers/unknown-high/empire-idcolor-pick.json"]},
+    {"address": "0x00c8d060", "name": "Simulator::cEmpire::CaptureSystem", "operation": "mutate", "structures": ["cEmpire", "cStarRecord", "cPlanetRecord", "cRelationshipManager"], "contract": "Apply system capture/ownership transition to empire and space records.", "evidence_level": "SUPPORTED", "provenance": ["knowledgegraph/research/types/05-empire-space.json", ".spore-analysis/ghidra-exports/functions.tsv"]},
+    {"address": "0x00d01b80", "name": "RelationshipExists", "operation": "query", "structures": ["cRelationshipManager", "cRelationshipData", "cEmpire"], "contract": "Query whether a relation exists for two political IDs.", "evidence_level": "SUPPORTED", "provenance": ["knowledgegraph/research/types/05-empire-space.json", ".spore-analysis/ghidra-exports/functions.tsv"]},
+    {"address": "0x00d01f50", "name": "IsAtWar", "operation": "query", "structures": ["cRelationshipManager", "cRelationshipData"], "contract": "Read relationship flag bit 0 after resolving both political IDs.", "evidence_level": "SUPPORTED", "provenance": ["ghidra:SporeApp.exe@0x00d01f50"]},
+    {"address": "0x00d01ff0", "name": "Simulator::cRelationshipManager::IsAllied2", "operation": "query", "structures": ["cRelationshipManager", "cRelationshipData"], "contract": "Read relationship flag bit 1 after resolving both political IDs.", "evidence_level": "SUPPORTED", "provenance": ["ghidra:SporeApp.exe@0x00d01ff0"]},
+    {"address": "0x00d01e30", "name": "BreakAlliance", "operation": "mutate", "structures": ["cRelationshipManager", "cRelationshipData", "cEmpire"], "contract": "Clear alliance bit 1 in directed relation entries, update empire state, and dispatch the observed player path when applicable.", "evidence_level": "SUPPORTED", "provenance": ["ghidra:SporeApp.exe@0x00d01e30", "knowledgegraph/research/types/05-empire-space.json"]},
+    {"address": "0x00d038e0", "name": "DeclarePeace", "operation": "mutate", "structures": ["cRelationshipManager", "cRelationshipData", "cEmpire"], "contract": "Clear war bit 0 when a relation exists, update empire/message state, and execute the observed player path.", "evidence_level": "SUPPORTED", "provenance": ["ghidra:SporeApp.exe@0x00d038e0"]},
+    {"address": "0x00d05830", "name": "ResetRelationship", "operation": "mutate", "structures": ["cRelationshipManager", "cRelationshipData"], "contract": "Find or create a relation and reset its value, flags, and event members to bounded defaults.", "evidence_level": "SUPPORTED", "provenance": ["ghidra:SporeApp.exe@0x00d05830"]},
+    {"address": "0x00d06270", "name": "ApplyRelationship", "operation": "mutate", "structures": ["cRelationshipManager", "cRelationshipData", "cEmpire"], "contract": "Apply a signed relationship delta, clamp through the manager, and propagate the observed event path.", "evidence_level": "SUPPORTED", "provenance": ["ghidra:SporeApp.exe@0x00d06270"]},
+    {"address": "0x00d065a0", "name": "DeclareWar", "operation": "mutate", "structures": ["cRelationshipManager", "cRelationshipData", "cEmpire"], "contract": "Set war bit 0, clear alliance bit 1, update empire/civ state, emit the observed player path, and apply relationship deltas.", "evidence_level": "SUPPORTED", "provenance": ["ghidra:SporeApp.exe@0x00d065a0"]},
+    {"address": "0x00d06920", "name": "DeclareAlliance", "operation": "mutate", "structures": ["cRelationshipManager", "cRelationshipData", "cEmpire"], "contract": "Follow peace, set alliance bit 1, update empire state, and emit the observed player relationship path.", "evidence_level": "SUPPORTED", "provenance": ["ghidra:SporeApp.exe@0x00d06920"]},
+    {"address": "0x00c877f0", "name": "cSpaceInventoryItem property initialization/constructor-like routine", "operation": "create_mutate", "structures": ["cSpaceInventoryItem", "PropertyList"], "contract": "Maintain item PropertyList, populate localized fields, conditionally write mItemPosition, and invoke an indirect item slot.", "evidence_level": "SUPPORTED", "identity_note": "Constructor-like is bounded; canonical constructor and vtable slot +0x4c are contested.", "provenance": ["ghidra:SporeApp.exe@0x00c877f0", "knowledgegraph/research/decomp-gap/sim-space-00.json"]},
+    {"address": "0x00c878d0", "name": "cSpaceInventoryItem factory path", "operation": "create", "structures": ["cSpaceInventoryItem", "PropertyList", "ResourceKey"], "contract": "Load a property list before constructing/applying an item definition.", "evidence_level": "SUPPORTED", "provenance": ["knowledgegraph/research/types/05-empire-space.json", "ghidra:SporeApp.exe@0x00c878d0"]},
+    {"address": "0x00ff3bf0", "name": "Simulator::cPlayerInventory::GetUnlockableTool", "operation": "query", "structures": ["cPlayerInventory", "cSpaceInventoryItem", "cSpaceToolData"], "contract": "Query unlockable tools and return a tool/inventory reference.", "evidence_level": "SUPPORTED", "provenance": ["knowledgegraph/research/types/05-empire-space.json", ".spore-analysis/ghidra-exports/functions.tsv"]},
+    {"address": "0x0103a3c0", "name": "cSpaceTrading::IsRare", "operation": "query", "structures": ["cSpaceTrading", "ResourceKey"], "contract": "Query whether a ResourceKey belongs to a rare group.", "evidence_level": "SUPPORTED", "provenance": ["knowledgegraph/research/types/05-empire-space.json", ".spore-analysis/ghidra-exports/functions.tsv"]},
+    {"address": "0x0103ac40", "name": "GetRareHasBeenFound", "operation": "query", "structures": ["cSpaceTrading", "ResourceKey"], "contract": "Query rare-resource discovery state.", "evidence_level": "SUPPORTED", "provenance": ["knowledgegraph/research/types/05-empire-space.json", ".spore-analysis/ghidra-exports/functions.tsv"]},
+    {"address": "0x0103ca40", "name": "AssignPlanetSpice", "operation": "mutate", "structures": ["cSpaceTrading", "cPlanetRecord", "cCommodityNode", "ResourceKey"], "contract": "Assign/update planet spice resource state.", "evidence_level": "SUPPORTED", "provenance": ["knowledgegraph/research/types/05-empire-space.json", ".spore-analysis/ghidra-exports/functions.tsv"]},
+    {"address": "0x0103e8e0", "name": "cSpaceTrading::GenerateNPCStore", "operation": "create", "structures": ["cSpaceTrading", "cNPCStore", "ResourceKey"], "contract": "Generate an NPC store from rare/spice/commodity state.", "evidence_level": "SUPPORTED", "limitations": "Selection and pricing formulas unresolved.", "provenance": ["knowledgegraph/research/types/05-empire-space.json", ".spore-analysis/ghidra-exports/functions.tsv"]},
+    {"address": "0x0103fba0", "name": "SetRareAsFound", "operation": "mutate", "structures": ["cSpaceTrading", "ResourceKey"], "contract": "Mark a rare ResourceKey discovered.", "evidence_level": "SUPPORTED", "provenance": ["knowledgegraph/research/types/05-empire-space.json", ".spore-analysis/ghidra-exports/functions.tsv"]},
+    {"address": "0x0103fc10", "name": "cSpaceTrading::ObtainTradingObject", "operation": "create_mutate", "structures": ["cSpaceTrading", "cSpaceInventoryItem", "cPlayerInventory", "ResourceKey"], "contract": "Obtain a trading object and feed event/inventory/economy paths.", "evidence_level": "SUPPORTED", "provenance": ["ghidra:SporeApp.exe@0x0103fc10", "docs/analysis/dossiers/unknown-high/space-event-record-pair.json"]},
+    {"address": "0x00fedfe0", "name": "ThereIsEventInPlanet", "operation": "query", "structures": ["cMissionManager", "cPlanet", "cMission"], "contract": "Query whether a planet has an event or mission candidate.", "evidence_level": "SUPPORTED", "provenance": ["knowledgegraph/research/types/05-empire-space.json", ".spore-analysis/ghidra-exports/functions.tsv"]},
+    {"address": "0x00fee220", "name": "HasMissionsAvailable", "operation": "query", "structures": ["cMissionManager", "cMission"], "contract": "Query whether mission candidates are available.", "evidence_level": "SUPPORTED", "provenance": ["knowledgegraph/research/types/05-empire-space.json", ".spore-analysis/ghidra-exports/functions.tsv"]},
+    {"address": "0x00fee310", "name": "Simulator::cMissionManager::GetMissionByID", "operation": "query", "structures": ["cMissionManager", "cMission"], "contract": "Resolve a mission by mission ID.", "evidence_level": "SUPPORTED", "provenance": ["ghidra:SporeApp.exe@0x00fee310", ".spore-analysis/ghidra-exports/functions.tsv"]},
+    {"address": "0x00feebb0", "name": "ChooseMission", "operation": "create_mutate", "structures": ["cMissionManager", "cMission", "cPlanet", "cEmpire"], "contract": "Select a mission candidate and create/update tracking or ownership state.", "evidence_level": "SUPPORTED", "provenance": ["knowledgegraph/research/types/05-empire-space.json", ".spore-analysis/ghidra-exports/functions.tsv"]},
+    {"address": "0x00aeb160", "name": "cCommManager civilization-event creator", "operation": "create", "structures": ["cCommManager", "cCommEvent"], "contract": "Allocate a 0xa0 event, initialize its argument tuple, retain it, append it to the manager vector, and release the local reference.", "evidence_level": "SUPPORTED", "provenance": ["ghidra:SporeApp.exe@0x00aeb160", "knowledgegraph/research/decomp-gap/sim-space-00.json"]},
+    {"address": "0x00aeb720", "name": "space communication create-and-dispatch wrapper", "operation": "create_mutate", "structures": ["cCommManager", "cCommEvent"], "contract": "Forward event arguments to the internal creator with a final zero and pass the event to manager dispatch/display.", "evidence_level": "SUPPORTED", "identity_note": "HandleSpaceCommAction is contested; do not promote it as the exact public entry.", "provenance": ["ghidra:SporeApp.exe@0x00aeb720", "knowledgegraph/research/decomp-gap/sim-space-00.json"]},
+    {"address": "0x00e39ab0", "name": "space event record-pair builder", "operation": "create", "structures": ["space_event_record_pair", "cTribe", "cSpaceTrading", "cSpaceToolData"], "contract": "Populate 27-field and 24-field records with object/cell IDs, timestamp, sentinel, IDs, and float3 positions; use tribe position when explicit positions are zero.", "evidence_level": "INFERRED", "limitations": "Record types are unnamed; field meanings beyond observed writes are inferred.", "provenance": ["ghidra:SporeApp.exe@0x00e39ab0", "docs/analysis/dossiers/unknown-high/space-event-record-pair.json"]},
+    {"address": "0x006a2f60", "name": "App::PropertyList::Read", "operation": "serialize", "structures": ["PropertyList", "cSpaceInventoryItem", "cMission", "cStarManager"], "contract": "Read property-list framing and entries with parent/global fallback.", "evidence_level": "SUPPORTED", "provenance": ["knowledgegraph/research/types/05-empire-space.json", "knowledgegraph/research/global-campaign-2026/track-f-empire-economy.json"]},
+    {"address": "0x006a1540", "name": "App::PropertyList::Write", "operation": "serialize", "structures": ["PropertyList", "cSpaceInventoryItem", "cMission", "cStarManager"], "contract": "Write entry count followed by property IDs and values.", "evidence_level": "SUPPORTED", "provenance": ["knowledgegraph/research/types/05-empire-space.json", "knowledgegraph/research/global-campaign-2026/track-f-empire-economy.json"]},
+    {"address": "0x006a2530", "name": "App::PropertyList::GetProperty", "operation": "serialize_query", "structures": ["PropertyList", "cSpaceInventoryItem", "cSpaceTrading", "cMissionManager"], "contract": "Search local sorted entries and fall back to parent property list.", "evidence_level": "SUPPORTED", "provenance": ["knowledgegraph/research/types/05-empire-space.json", "knowledgegraph/research/global-campaign-2026/track-f-empire-economy.json"]},
+    {"address": "0x006a2e20", "name": "App::PropertyList::SetProperty", "operation": "serialize_mutate", "structures": ["PropertyList", "cSpaceInventoryItem", "cSpaceTrading", "cMissionManager"], "contract": "Insert/update property and increment operation counter.", "evidence_level": "SUPPORTED", "provenance": ["knowledgegraph/research/types/05-empire-space.json", "knowledgegraph/research/global-campaign-2026/track-f-empire-economy.json"]},
+    {"address": "0x00c38b10", "name": "Simulator::cGameDataUFO::ChangeEnergy", "operation": "mutate", "structures": ["cGameDataUFO", "FleetShipData"], "contract": "Mutate spacecraft energy state.", "evidence_level": "SUPPORTED", "provenance": ["ghidra:SporeApp.exe@0x00c38b10", "knowledgegraph/research/types/05-empire-space.json"]},
+    {"address": "0x00ca6630", "name": "Simulator::cVehicle::Load", "operation": "create_query", "structures": ["cVehicle", "FleetShipData", "ResourceKey"], "contract": "Load vehicle/game-data state and resource/model references.", "evidence_level": "SUPPORTED", "provenance": ["ghidra:SporeApp.exe@0x00ca6630", "knowledgegraph/research/types/05-empire-space.json"]},
+    {"address": "vtable-release-slots", "name": "refcount release paths for cEmpire, cStarRecord, cPlanetRecord, cPlayerInventory, cMission, cGameDataUFO, and cVehicle", "operation": "destroy", "structures": ["cEmpire", "cStarRecord", "cPlanetRecord", "cPlayerInventory", "cMission", "cGameDataUFO", "cVehicle"], "contract": "Release intrusive pointers through imported refcount/vtable conventions; exact destructor names and manager teardown are unresolved.", "evidence_level": "SUPPORTED", "provenance": [".spore-analysis/ghidra-exports/structs_fields.tsv", "ghidra:SporeApp.exe@0x01021300", "knowledgegraph/research/types/05-empire-space.json"]}
+  ],
+  "lifecycle": [
+    {
+      "id": "L-001",
+      "stage": "manager_registration",
+      "producers": ["cStarManager", "cRelationshipManager", "cSpaceTrading", "cMissionManager", "SpacePlayerData"],
+      "consumers": ["EmpireData", "SpaceData", "InventoryData", "TradeData", "MissionData"],
+      "events": ["singleton access", "manager initialization", "manager reset"],
+      "evidence_level": "SUPPORTED",
+      "gap": "Setters and exact manager-registry layout unresolved."
+    },
+    {
+      "id": "L-002",
+      "stage": "galaxy_generation",
+      "producers": ["planet-generation routine", "star-generation handler", "RecordToPlanet"],
+      "consumers": ["cStarRecord", "cPlanetRecord", "cEmpire home world", "SpacePlayerData"],
+      "events": ["political ID allocation", "star placement", "planet creation", "planet count update"],
+      "evidence_level": "SUPPORTED",
+      "gap": "Generation formulas, rarity policy, and all side effects unresolved."
+    },
+    {
+      "id": "L-003",
+      "stage": "empire_identity",
+      "producers": ["SetSpeciesProfile", "identity-color picker", "CaptureSystem"],
+      "consumers": ["SpacePlayerData cache", "cRelationshipManager", "cStarManager", "ResourceKey references"],
+      "events": ["political ID assignment", "home-world association", "identity-color update", "system capture"],
+      "evidence_level": "SUPPORTED",
+      "gap": "Palette constants, species mapping, and complete capture side effects unresolved."
+    },
+    {
+      "id": "L-004",
+      "stage": "colony_and_ownership",
+      "producers": ["RecordToPlanet", "CaptureSystem", "SpacePlayerData colony vector"],
+      "consumers": ["cPlanetRecord.mCivData", "cPlanetRecord.mTribeData", "cCommodityNode", "cRelationshipManager"],
+      "events": ["planet record to runtime planet", "colony membership", "ownership update", "commodity capture/buy/convert"],
+      "evidence_level": "INFERRED",
+      "gap": "Colonization/uplift bodies and runtime state are incomplete."
+    },
+    {
+      "id": "L-005",
+      "stage": "space_session",
+      "producers": ["cSimulatorSpaceGame::Get", "cSimulatorPlayerUFO", "cGameDataUFO", "cVehicle"],
+      "consumers": ["cPlayerInventory", "cSpaceToolData", "cPlanet", "cUI"],
+      "events": ["session composition", "active planet/star", "player UFO update", "NPC UFO list", "destination movement"],
+      "evidence_level": "SUPPORTED",
+      "gap": "Fleet aggregate, complete ship lifecycle, and runtime movement semantics."
+    },
+    {
+      "id": "L-006",
+      "stage": "inventory_and_trade",
+      "producers": ["item initialization", "GenerateNPCStore", "ObtainTradingObject"],
+      "consumers": ["cPlayerInventory", "cEmpire.mEmpireMoney", "cCommodityNode", "cSpaceTradeRouteManager"],
+      "events": ["item property application", "tool unlock", "trading-object acquisition", "rare discovery", "spice assignment"],
+      "evidence_level": "SUPPORTED",
+      "gap": "Prices, counts, capacity, cargo, and payout mutations."
+    },
+    {
+      "id": "L-007",
+      "stage": "relationship_and_mission",
+      "producers": ["cRelationshipManager", "cMissionManager", "ChooseMission", "cCommManager"],
+      "consumers": ["cEmpire", "cPlanet", "cMission", "cCommEvent", "ResourceKey"],
+      "events": ["war", "peace", "alliance", "break alliance", "mission selection", "accept/reject", "complete/fail/abort", "communication queue"],
+      "evidence_level": "SUPPORTED",
+      "gap": "Callback order, message IDs, and reward payout sequence."
+    },
+    {
+      "id": "L-008",
+      "stage": "persistence_and_reload",
+      "producers": ["PropertyList", "star/planet serializers", "cStarManager database writer", "mission/inventory property lists"],
+      "consumers": ["saved game records", "active runtime objects", "mission/inventory/trade state"],
+      "events": ["write", "read", "temporary database commit", "stars.db replacement", "cached-object revalidation"],
+      "evidence_level": "SUPPORTED",
+      "gap": "No original round-trip fixture, property dictionary, or complete manager reset boundary."
+    }
+  ],
+  "persistence": {
+    "property_list_spine": [
+      {"address": "0x006a2f60", "name": "App::PropertyList::Read", "role": "read", "evidence_level": "SUPPORTED", "contract": "Read list framing and entries with parent/global fallback."},
+      {"address": "0x006a1540", "name": "App::PropertyList::Write", "role": "write", "evidence_level": "SUPPORTED", "contract": "Write entry count and property IDs/values."},
+      {"address": "0x006a2530", "name": "App::PropertyList::GetProperty", "role": "lookup", "evidence_level": "SUPPORTED", "contract": "Local sorted lookup with parent fallback."},
+      {"address": "0x006a2e20", "name": "App::PropertyList::SetProperty", "role": "mutation", "evidence_level": "SUPPORTED", "contract": "Insert/update property and increment operation counter."}
+    ],
+    "serializable_owners": [
+      {"owner": "cEmpire", "surface": "ISimulatorSerializable prefix", "field_set": "unknown", "evidence_level": "SUPPORTED"},
+      {"owner": "cStarRecord", "surface": "ISimulatorSerializable prefix", "field_set": "unknown", "evidence_level": "SUPPORTED"},
+      {"owner": "cMission", "surface": "vtable Write/Read/WriteToXML plus mpPropList", "field_set": "unknown beyond named mission fields", "evidence_level": "SUPPORTED"},
+      {"owner": "cMissionManager", "surface": "ISimulatorSerializable plus generator/config PropertyLists", "field_set": "unknown", "evidence_level": "SUPPORTED"},
+      {"owner": "cSpaceInventoryItem", "surface": "mpPropList and message/serialization relations", "field_set": "partially observed through hashed IDs", "evidence_level": "SUPPORTED"},
+      {"owner": "PlayerPlanetData", "surface": "vtable Write/Read", "field_set": "unknown", "evidence_level": "SUPPORTED"},
+      {"owner": "cSpacePlayerWarData", "surface": "vtable Write/Read", "field_set": "unknown", "evidence_level": "SUPPORTED"},
+      {"owner": "cSpaceTradeRouteManager", "surface": "vtable Write/Read", "field_set": "unknown; cTradeRouteData incomplete", "evidence_level": "SUPPORTED"}
+    ],
+    "property_ids": [
+      {"owner": "cSpaceInventoryItem @ 0x00c877f0", "ids": ["0x3068d95d", "0x04cad19b", "0x1bfc1dee"], "effect": "localized description/detail and conditional item position", "evidence_level": "SUPPORTED", "limit": "Names unresolved."},
+      {"owner": "cSpaceInventoryItem factory @ 0x00c878d0", "ids": ["0x037d494e"], "effect": "load PropertyList before item construction", "evidence_level": "SUPPORTED", "limit": "Name unresolved."},
+      {"owner": "cSpaceTrading routines", "ids": ["0x034d97fa", "0x034f1a4f", "0x036801e8", "0x036801e9", "0x068b657b", "0x068b657d", "0x068b657e"], "effect": "rare/trading/NPC-store reads", "evidence_level": "SUPPORTED", "limit": "No property dictionary."}
+    ],
+    "database_state": [
+      {"owner": "cStarRecord", "fields": ["mSavedGameVersionMajor", "mSavedGameVersionMinor", "mSavedGameTimeStamp", "mLastObservedTime"], "evidence_level": "SUPPORTED"},
+      {"owner": "cStarManager", "fields": ["mpPlanetRecordsTempDatabase", "mpPlanetRecordsDatabase", "mTransactionLog", "mSavedGameStarRecords"], "evidence_level": "SUPPORTED"},
+      {"owner": "cStarManager path @ 0x00bb4ba0", "contract": "Write stars.db.tmp and replace stars.db after database/manager state updates", "evidence_level": "SUPPORTED", "identity_limit": "Pinned export and live body expose different portions of this path."}
+    ],
+    "resource_keys": "ResourceKey is a type/group/instance reference, not a payload. cResourceManager/IO load behavior remains static evidence only.",
+    "openspore_boundary": "src/compat/ResourceProvider.hpp is a clean-room record-byte provider, not the original manager.",
+    "round_trip_status": "NO_ORIGINAL_PROPERTY_FIXTURE_AND_NO_RUNTIME_ROUND_TRIP",
+    "evidence_level": "OBSERVED"
+  },
+  "openspore_comparison": [
+    {
+      "area": "game_mode_lifecycle",
+      "original": "App::cGameModeManager, IGameMode, IGameModeManager, and space/cell mode composition",
+      "openspore": [
+        {"path": "src/apps/IGameMode.hpp:28-52", "behavior": "ten-method clean-room lifecycle/input interface"},
+        {"path": "src/apps/CellModeStrategy.hpp:45-99", "behavior": "Cell strategy and narrow manager"},
+        {"path": "src/apps/CellModeStrategy.cpp:7-92", "behavior": "initialize/dispose/enter/exit and active-mode ordering"}
+      ],
+      "relationship": "PARTIAL_CLEAN_ROOM_SHELL",
+      "missing": ["mode IDs/names/camera/viewer ownership", "extra original vtable slots", "empire/space registration and message transitions"],
+      "evidence_level": "OBSERVED",
+      "provenance": ["src/apps/IGameMode.hpp", "src/apps/CellModeStrategy.hpp", "src/apps/CellModeStrategy.cpp"]
+    },
+    {
+      "area": "cell_state",
+      "original": "Simulator::Cell cCellGame, cCellGFX, cCellUI, cell pools, and cell simulation",
+      "openspore": [
+        {"path": "src/sim/CellGame.hpp:1-157", "behavior": "clean-room named cell state and pools"},
+        {"path": "src/sim/Sim.hpp:222-260", "behavior": "deterministic local CellSim state/events"},
+        {"path": "src/sim/Sim.cpp:237-260", "behavior": "local eat/flee events"}
+      ],
+      "relationship": "SELECTED_CELL_RECONSTRUCTION",
+      "missing": ["EmpireData/SpaceData", "planet/colony/civilization/empire/relationship/trade/mission/fleet state", "global progression and original event semantics"],
+      "evidence_level": "OBSERVED",
+      "provenance": ["src/sim/CellGame.hpp", "src/sim/Sim.hpp", "src/sim/Sim.cpp", "docs/analysis/campaigns/cell-stage-campaign.md"]
+    },
+    {
+      "area": "resource_access",
+      "original": "ResourceKey references across empire, star, planet, trading, mission, and UFO records",
+      "openspore": [
+        {"path": "src/compat/ResourceProvider.hpp:21-59", "behavior": "record-byte fetch by type/group/instance"},
+        {"path": "src/assets/CellResource.hpp:269-429", "behavior": "clean-room Cell table parsers"}
+      ],
+      "relationship": "BOUNDARY_ONLY",
+      "missing": ["original ResourceKey manager lookup", "cross-package precedence/cache/lifetime", "economy semantics from Cell records"],
+      "evidence_level": "OBSERVED",
+      "provenance": ["src/compat/ResourceProvider.hpp", "src/assets/CellResource.hpp", "docs/ASSET-PATH.md"]
+    },
+    {
+      "area": "events_and_messages",
+      "original": "cCommManager, cCommEvent, relationship messages, mission progress, space event records",
+      "openspore": [{"path": "src/sim/Sim.hpp:230-260", "behavior": "CellSim event accessor"}],
+      "relationship": "NO_SEMANTIC_CORRESPONDENCE",
+      "missing": ["message IDs/payloads/queues", "mission/communication/space events"],
+      "evidence_level": "OBSERVED",
+      "provenance": ["src/sim/Sim.hpp", "src/sim/Sim.cpp"]
+    },
+    {
+      "area": "persistence",
+      "original": "PropertyList serialization, star/planet databases, stars.db replacement, mission/inventory properties",
+      "openspore": [],
+      "relationship": "NO_CORRESPONDENCE",
+      "missing": ["empire/space PropertyList", "star/planet database writer", "mission/inventory/trade/relationship/save persistence"],
+      "evidence_level": "SUPPORTED",
+      "provenance": ["src/", "knowledgegraph/research/types/05-empire-space.json"]
+    },
+    {
+      "area": "fleet_and_ships",
+      "original": "cGameDataUFO, cVehicle, cSimulatorPlayerUFO, NPC UFOs, and space tools",
+      "openspore": [],
+      "relationship": "NO_CORRESPONDENCE",
+      "missing": ["fleet/vehicle runtime model", "ship ownership", "space movement/target/energy transitions"],
+      "evidence_level": "SUPPORTED",
+      "provenance": ["ghidra:SporeApp.exe@cGameDataUFO", "ghidra:SporeApp.exe@cVehicle"]
+    }
+  ],
+  "gaps": [
+    {"id": "GAP-001", "priority": 0, "topic": "runtime_observation", "statement": "No committed runtime trace reaches empire or space gameplay.", "impact": "Behavior beyond static layouts and bounded call shape is non-observed.", "next_action": "Require a separately approved future space/empire trace before promotion.", "evidence_level": "OBSERVED", "provenance": ["docs/STATE.md:3-5", "docs/analysis/dossiers/unknown-high/empire-idcolor-pick.json"]},
+    {"id": "GAP-002", "priority": 0, "topic": "manager_registry", "statement": "High-fan-in packed manager accessors lack fully named owner/type and setter/reset boundaries.", "impact": "Subsystem roots cannot be safely merged by adjacency alone.", "next_action": "Characterize every accessor, global, setter, and reset path.", "evidence_level": "SUPPORTED", "provenance": ["docs/RECON-3.1.0.22.md:97-99", "knowledgegraph/research/global-campaign-2026/track-f-empire-economy.json:94-199"]},
+    {"id": "GAP-003", "priority": 1, "topic": "planet_generation", "statement": "Orbit, scores, species, commodities, rare systems, and colonization formulas are incomplete.", "impact": "PlanetData can be schema-shaped but not behavior-compatible.", "next_action": "Recover deterministic inputs, random calls, property IDs, and side effects.", "evidence_level": "SUPPORTED", "provenance": ["ghidra:SporeApp.exe@0x00bb4100", "knowledgegraph/research/types/05-empire-space.json"]},
+    {"id": "GAP-004", "priority": 1, "topic": "civilization_and_colony", "statement": "cCivilization, cCivData, cTribeData, colony membership, colonization, and uplift are only partially linked.", "impact": "Complete civ ownership and progression cannot be claimed.", "next_action": "Trace civ/tribe record producers, consumers, and persistence.", "evidence_level": "SUPPORTED", "provenance": ["ghidra:SporeApp.exe@cPlanetRecord", ".spore-analysis/ghidra-exports/structs.tsv"]},
+    {"id": "GAP-005", "priority": 1, "topic": "inventory_economy", "statement": "Item insertion/removal, cargo capacity, price/payment, rare discovery, NPC selection, and route mutation are incomplete.", "impact": "Inventory/trade schemas lack complete behavior.", "next_action": "Trace inventory mutators, trading callers, commodity consumers, and trade-route accessors.", "evidence_level": "SUPPORTED", "provenance": ["knowledgegraph/research/types/05-empire-space.json:262-311", "ghidra:SporeApp.exe@0x00b3d4d0"]},
+    {"id": "GAP-006", "priority": 1, "topic": "relationship_messages", "statement": "War/alliance flags are known, but event IDs, decay, side effects, and non-player payloads are not.", "impact": "Diplomacy is only flag/map complete.", "next_action": "Read relationship message producers and event-map consumers.", "evidence_level": "SUPPORTED", "provenance": ["ghidra:SporeApp.exe@0x00d06270", "ghidra:SporeApp.exe@0x00d065a0"]},
+    {"id": "GAP-007", "priority": 1, "topic": "mission_lifecycle", "statement": "Mission callbacks and states are named, but creation, accept/reject, completion/failure, reward, and unlock ordering is incomplete.", "impact": "Mission reward/event ordering cannot be reproduced.", "next_action": "Trace cMission callbacks, manager transition callers, money, and inventory mutations.", "evidence_level": "SUPPORTED", "provenance": ["ghidra:SporeApp.exe@cMission", "knowledgegraph/research/types/05-empire-space.json:759-851"]},
+    {"id": "GAP-008", "priority": 1, "topic": "fleet_ship", "statement": "Ship/vehicle structs exist, but fleet aggregation, ownership, creation/destruction, and runtime transitions are incomplete.", "impact": "FleetData is bounded composition, not a verified fleet simulation.", "next_action": "Trace space-session, UFO, vehicle, and NPC-UFO lifecycles.", "evidence_level": "SUPPORTED", "provenance": ["ghidra:SporeApp.exe@cGameDataUFO", "ghidra:SporeApp.exe@cVehicle"]},
+    {"id": "GAP-009", "priority": 1, "topic": "property_names", "statement": "PropertyList behavior is known, but hashed property IDs are not semantically named.", "impact": "Opaque values can be preserved, not independently recreated.", "next_action": "Recover the property dictionary through adjacent call sites and committed metadata.", "evidence_level": "SUPPORTED", "provenance": ["knowledgegraph/research/global-campaign-2026/track-f-empire-economy.json:505-527"]},
+    {"id": "GAP-010", "priority": 2, "topic": "space_event_records", "statement": "The 27-field and 24-field records are unnamed and their meanings are inferred from builder writes.", "impact": "Do not expose them as verified public schemas.", "next_action": "Name record consumers and correlate fields with message/action dispatch.", "evidence_level": "INFERRED", "provenance": ["docs/analysis/dossiers/unknown-high/space-event-record-pair.json", "ghidra:SporeApp.exe@0x00e39ab0"]},
+    {"id": "GAP-011", "priority": 2, "topic": "resource_manager", "statement": "Original cResourceManager load, cache, and precedence behavior is not reconstructed by the OpenSpore provider seam.", "impact": "ResourceKey references are not end-to-end resolved in original order.", "next_action": "Keep the provider seam isolated and recover only through committed static evidence.", "evidence_level": "SUPPORTED", "provenance": ["docs/RECON-3.1.0.22.md:113-119", "src/compat/ResourceProvider.hpp:1-92"]}
+  ],
+  "contradictions": [
+    {"id": "CONT-001", "topic": "decomp_coverage", "statement": "The committed decomp-gap ledger marks targeted bodies unavailable while read-only Ghidra returns bodies.", "resolution": "Preserve unavailable historical accounting; use bodies only as bounded mechanics evidence and do not add coverage.", "evidence_level": "OBSERVED", "provenance": ["knowledgegraph/research/decomp-gap/sim-space-00.json:1-9", "knowledgegraph/research/types/05-empire-space.json:1473-1480"]},
+    {"id": "CONT-002", "topic": "live_snapshot_counts", "statement": "Read-only live Ghidra reports 59,245 functions while the pinned snapshot reports 58,757.", "resolution": "Use pinned counts/triage; record live Ghidra only as a read-only cross-check and do not rewrite history.", "evidence_level": "OBSERVED", "provenance": ["ghidra:SporeApp.exe current program info", "knowledgegraph/research/types/05-empire-space.json:15-20"]},
+    {"id": "CONT-003", "topic": "star_manager_address_names", "statement": "Pinned exports associate some star-manager addresses with named routines, while live bodies recover generic vector/grid operations.", "resolution": "Retain address and mechanics, downgrade exact SDK name until entry/ABI reconciliation.", "evidence_level": "SUPPORTED", "provenance": ["ghidra:SporeApp.exe@0x00ba6750", "ghidra:SporeApp.exe@0x00ba7220", "knowledgegraph/research/types/05-empire-space.json:530-543"]},
+    {"id": "CONT-004", "topic": "space_communication_entry", "statement": "Triage associates 0x00aeb720 with HandleSpaceCommAction while the body matches create-and-dispatch.", "resolution": "Keep address/mechanics; do not promote HandleSpaceCommAction.", "evidence_level": "SUPPORTED", "provenance": ["knowledgegraph/research/decomp-gap/sim-space-00.json:108-180", "ghidra:SporeApp.exe@0x00aeb720"]},
+    {"id": "CONT-005", "topic": "inventory_vtable_slot", "statement": "The SDK vtable label for cSpaceInventoryItem slot +0x4c is not reconciled with the candidate target recovered from the item initialization path.", "resolution": "Preserve SDK label and candidate target separately; do not claim exact runtime meaning.", "evidence_level": "SUPPORTED", "provenance": ["knowledgegraph/research/types/05-empire-space.json:988-1013", "knowledgegraph/research/decomp-gap/sim-space-00.json:183-247"]},
+    {"id": "CONT-006", "topic": "rtti_and_inheritance", "statement": "Vtable-prefix relations look like inheritance, but the binary has no MSVC RTTI and the vtable pass labels are limited.", "resolution": "Model interfaces/ownership as evidence-bounded relations; do not publish definitive inheritance.", "evidence_level": "SUPPORTED", "provenance": ["docs/RECON-3.1.0.22.md:18-23", "docs/RECON-3.1.0.22.md:121-129"]},
+    {"id": "CONT-007", "topic": "planet_record_runtime_mapping", "statement": "cPlanetRecord::Create and RecordToPlanet have strong SDK names but thin live bodies; full record-to-runtime cPlanet path is not isolated.", "resolution": "Claim record schema and bounded conversion call, not complete runtime construction.", "evidence_level": "SUPPORTED", "provenance": ["ghidra:SporeApp.exe@0x00ba6300", "ghidra:SporeApp.exe@0x00bb5b50"]}
+  ],
+  "reconstruction_packages": [
+    {"id": "package-00-manager-roots", "order": 0, "scope": "Simulator manager block, SpacePlayerData, cStarManager, cRelationshipManager, cSpaceTrading, cMissionManager", "contract": "Freeze read-only manager interfaces, ID-keyed lookup, ownership, and reset/persistence boundaries.", "schemas": ["SpacePlayerData", "cStarManager", "cRelationshipManager", "cSpaceTrading", "cMissionManager"], "functions": ["0x00b3d2a0", "0x00b3d3a0", "0x00b3d3c0", "0x00b3d4d0", "0x01021300", "0x00feb770"], "status": "READY_FOR_STATIC_CONTRACT", "gate": "Name every high-fan-in accessor and setter/reset path.", "evidence_level": "SUPPORTED", "provenance": ["docs/analysis/reconstruction-readiness.md", "knowledgegraph/research/types/05-empire-space.json"]},
+    {"id": "package-01-empire-space-identity", "order": 1, "scope": "EmpireData, SpaceData, home worlds, identity color, cached player empire, star ownership", "contract": "Implement a clean-room logical identity graph using political IDs and explicit references; do not copy SDK/decompiler types.", "schemas": ["EmpireData", "SpaceData", "ColonyData"], "functions": ["0x00c31890", "0x00c30cc0", "0x00c33690", "0x00c32cd0", "0x01021300", "0x00c8d060"], "status": "READY_FOR_STATIC_CONTRACT", "gate": "Recover palette initialization, species mapping, and capture side effects.", "evidence_level": "SUPPORTED", "provenance": ["docs/analysis/dossiers/unknown-high/empire-idcolor-pick.json", "knowledgegraph/research/global-campaign-2026/track-f-empire-economy.json"]},
+    {"id": "package-02-galaxy-planet-generation", "order": 2, "scope": "Star generation, planet generation, regeneration, record-to-planet conversion", "contract": "Create deterministic schema-shaped records first; gate formulas behind generation characterization.", "schemas": ["SpaceData", "ColonyData", "cStarRecord", "cPlanetRecord"], "functions": ["0x00ba6300", "0x00bb4100", "0x00bb4af0", "0x00bb4ba0", "0x00bb5b50", "0x00bb5d80"], "status": "PARTIAL_CONTRACT", "gate": "Recover random/property inputs, score formulas, count transitions, and database order.", "evidence_level": "SUPPORTED", "provenance": ["ghidra:SporeApp.exe@0x00bb4100", "docs/analysis/dossiers/unknown-high/star-system-regen.json"]},
+    {"id": "package-03-relationship-state", "order": 3, "scope": "Relationship map, war/peace/alliance, apply/reset/decay, empire relation vectors", "contract": "Implement a table-driven flag/value state machine with event adapters.", "schemas": ["RelationshipData", "EmpireData"], "functions": ["0x00d01b80", "0x00d01f50", "0x00d01ff0", "0x00d01e30", "0x00d038e0", "0x00d05830", "0x00d06270", "0x00d065a0", "0x00d06920"], "status": "READY_WITH_LOCAL_CONTEXT", "gate": "Name event IDs, decay rules, and empire/civ side effects.", "evidence_level": "SUPPORTED", "provenance": ["ghidra:SporeApp.exe@0x00d06270", "knowledgegraph/research/types/05-empire-space.json"]},
+    {"id": "package-04-inventory-trade", "order": 4, "scope": "Inventory items, tools, cargo, rare/spice, NPC stores, commodity nodes, trade routes", "contract": "Separate item identity/ownership from economy mutations; preserve PropertyList and ResourceKey boundaries.", "schemas": ["InventoryData", "TradeData"], "functions": ["0x00c877f0", "0x00c878d0", "0x00ff3bf0", "0x0103a3c0", "0x0103ac40", "0x0103ca40", "0x0103e8e0", "0x0103fba0", "0x0103fc10"], "status": "NEEDS_MORE_RE", "gate": "Recover insertion/removal, capacity, prices, payout, and route data.", "evidence_level": "SUPPORTED", "provenance": ["knowledgegraph/research/types/05-empire-space.json:262-311", "knowledgegraph/research/decomp-gap/sim-space-00.json"]},
+    {"id": "package-05-mission-communication", "order": 5, "scope": "Mission records, manager tracking, rewards, communication queue, space events", "contract": "Model states and event records independently; do not invent numeric message semantics.", "schemas": ["MissionData", "EventData"], "functions": ["0x00fedfe0", "0x00fee220", "0x00fee310", "0x00feebb0", "0x00aeb160", "0x00aeb720", "0x00e39ab0"], "status": "NEEDS_MORE_RE", "gate": "Recover callback order, reward/tool payout, queue cancellation, and event IDs.", "evidence_level": "SUPPORTED", "provenance": ["ghidra:SporeApp.exe@0x00aeb160", "docs/analysis/dossiers/unknown-high/space-event-record-pair.json"]},
+    {"id": "package-06-ships-and-colonies", "order": 6, "scope": "cGameDataUFO, cVehicle, cSimulatorPlayerUFO, colony membership, active planet/star, uplift queue", "contract": "Keep runtime object ownership separate from persistent record ownership; model only observed fields.", "schemas": ["FleetShipData", "ColonyData", "SpaceData"], "functions": ["0x010027b0", "0x00c38b10", "0x00ca6630", "0x00c8d060", "0x00bb5b50"], "status": "NEEDS_MORE_RE", "gate": "Recover creation/destruction, ship ownership, colony transition, and session reset behavior.", "evidence_level": "SUPPORTED", "provenance": ["ghidra:SporeApp.exe@cGameDataUFO", "ghidra:SporeApp.exe@0x010027b0"]},
+    {"id": "package-07-property-persistence", "order": 7, "scope": "PropertyList, serializable owners, stars.db, mission/inventory/trade data", "contract": "Create clean-room opaque-property infrastructure first; attach subsystem fields only after a round-trip gate.", "schemas": ["EmpireData", "SpaceData", "MissionData", "InventoryData", "TradeData"], "functions": ["0x006a2f60", "0x006a1540", "0x006a2530", "0x006a2e20", "0x00bb4ba0"], "status": "PREREQUISITE", "gate": "Recover property dictionary and original fixture; do not use proprietary assets as a test fixture.", "evidence_level": "SUPPORTED", "provenance": ["knowledgegraph/research/types/05-empire-space.json:1185-1207", "knowledgegraph/research/global-campaign-2026/track-f-empire-economy.json:505-533"]}
+  ],
+  "provenance": [
+    {"path": ".spore-analysis/ghidra-exports/structs.tsv", "use": "SDK-derived structure sizes and field counts", "authority": "pinned_static_export"},
+    {"path": ".spore-analysis/ghidra-exports/structs_fields.tsv", "use": "field names, offsets, types, and vtable slots", "authority": "pinned_static_export"},
+    {"path": ".spore-analysis/ghidra-exports/spore_sdk.xml", "use": "SDK declarations, interfaces, enums, and prototypes", "authority": "sdk_reference"},
+    {"path": ".spore-analysis/ghidra-exports/functions.tsv", "use": "named function addresses and sizes", "authority": "pinned_static_export"},
+    {"path": "docs/analysis/vtables.json", "use": "limited vtable candidate inventory", "authority": "structural_candidate"},
+    {"path": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl", "use": "subsystem, category, priority, evidence, and queue projection", "authority": "derived_projection"},
+    {"path": "knowledgegraph/spore.db", "use": "read-only KG node/field/triage context; no rows changed", "authority": "derived_projection"},
+    {"path": "knowledgegraph/research/decomp-gap/sim-space-00.json", "use": "targeted read-only space decompilation and identity conflicts", "authority": "bounded_evidence"},
+    {"path": "knowledgegraph/research/types/05-empire-space.json", "use": "prior empire/space partition synthesis", "authority": "synthesis"},
+    {"path": "knowledgegraph/research/global-campaign-2026/track-f-empire-economy.json", "use": "empire, planet, trade, mission, relationship, and serialization dossier", "authority": "synthesis"},
+    {"path": "docs/analysis/dossiers/unknown-high/empire-idcolor-pick.json", "use": "cEmpire identity-color algorithm and palette gap", "authority": "targeted_dossier"},
+    {"path": "docs/analysis/dossiers/unknown-high/space-player-data-accessors-2.json", "use": "cached player-empire ID/pointer lifecycle", "authority": "targeted_dossier"},
+    {"path": "docs/analysis/dossiers/unknown-high/space-event-record-pair.json", "use": "inferred 27-field/24-field space event records", "authority": "targeted_dossier"},
+    {"path": "docs/analysis/dossiers/unknown-high/star-system-regen.json", "use": "star-system regeneration policy", "authority": "targeted_dossier"},
+    {"path": "docs/RECON-3.1.0.22.md", "use": "manager spine, resource pipeline, namespace map, and known gaps", "authority": "recon_report"},
+    {"path": "docs/STATE.md", "use": "current implementation status and negative runtime trace", "authority": "project_state"},
+    {"path": "src/apps/IGameMode.hpp", "use": "OpenSpore lifecycle/input counterpart", "authority": "current_source"},
+    {"path": "src/apps/CellModeStrategy.hpp", "use": "OpenSpore Cell lifecycle counterpart", "authority": "current_source"},
+    {"path": "src/apps/CellModeStrategy.cpp", "use": "OpenSpore active-mode ordering", "authority": "current_source"},
+    {"path": "src/sim/CellGame.hpp", "use": "OpenSpore Cell state and pool counterpart", "authority": "current_source"},
+    {"path": "src/sim/Sim.hpp", "use": "OpenSpore local CellSim state/events", "authority": "current_source"},
+    {"path": "src/sim/Sim.cpp", "use": "OpenSpore local eat/flee behavior", "authority": "current_source"},
+    {"path": "src/compat/ResourceProvider.hpp", "use": "OpenSpore record-byte resource seam", "authority": "current_source"},
+    {"path": "src/assets/CellResource.hpp", "use": "OpenSpore Cell resource table parsers", "authority": "current_source"},
+    {"path": "ghidra:SporeApp.exe@cEmpire", "use": "read-only Ghidra structure layout", "authority": "read_only_ghidra"},
+    {"path": "ghidra:SporeApp.exe@SpacePlayerData", "use": "read-only Ghidra structure layout", "authority": "read_only_ghidra"},
+    {"path": "ghidra:SporeApp.exe@cStarRecord", "use": "read-only Ghidra structure layout", "authority": "read_only_ghidra"},
+    {"path": "ghidra:SporeApp.exe@cPlanetRecord", "use": "read-only Ghidra structure layout", "authority": "read_only_ghidra"},
+    {"path": "ghidra:SporeApp.exe@cRelationshipManager", "use": "read-only Ghidra structure layout", "authority": "read_only_ghidra"},
+    {"path": "ghidra:SporeApp.exe@cPlayerInventory", "use": "read-only Ghidra structure layout", "authority": "read_only_ghidra"},
+    {"path": "ghidra:SporeApp.exe@cSpaceInventoryItem", "use": "read-only Ghidra structure layout", "authority": "read_only_ghidra"},
+    {"path": "ghidra:SporeApp.exe@cMission", "use": "read-only Ghidra structure layout", "authority": "read_only_ghidra"},
+    {"path": "ghidra:SporeApp.exe@cGameDataUFO", "use": "read-only Ghidra structure layout", "authority": "read_only_ghidra"},
+    {"path": "ghidra:SporeApp.exe@0x01021300", "use": "read-only cached-empire accessor", "authority": "read_only_ghidra"},
+    {"path": "ghidra:SporeApp.exe@0x00e39ab0", "use": "read-only space event-pair builder", "authority": "read_only_ghidra"},
+    {"path": "ghidra:SporeApp.exe@0x00d01f50", "use": "read-only war query", "authority": "read_only_ghidra"},
+    {"path": "ghidra:SporeApp.exe@0x00d01ff0", "use": "read-only alliance query", "authority": "read_only_ghidra"},
+    {"path": "ghidra:SporeApp.exe@0x00d065a0", "use": "read-only DeclareWar transition", "authority": "read_only_ghidra"},
+    {"path": "ghidra:SporeApp.exe@0x00d06920", "use": "read-only DeclareAlliance transition", "authority": "read_only_ghidra"},
+    {"path": "ghidra:SporeApp.exe@0x00c32cd0", "use": "read-only identity-color picker", "authority": "read_only_ghidra"},
+    {"path": "ghidra:SporeApp.exe@0x00bb4af0", "use": "read-only star-system regeneration", "authority": "read_only_ghidra"},
+    {"path": "ghidra:SporeApp.exe@0x00bb4ba0", "use": "read-only generation/database persistence path", "authority": "read_only_ghidra"}
+  ]
+}

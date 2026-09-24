@@ -1,0 +1,873 @@
+{
+  "schema_version": "openspore-editor-data-model-1",
+  "track": "editor-data-archaeology",
+  "scope": {
+    "binary": "SporeApp.exe 3.1.0.22",
+    "architecture": "x86:LE:32",
+    "image_base": "0x00400000",
+    "address_convention": "Ghidra display VAs include the image base",
+    "read_only": true,
+    "runtime_validation": "none",
+    "scope_statement": "Editor authored data, transient editor state, editor-to-runtime conversion, serialization/save boundaries, and level/game-mode transitions.",
+    "literal_editor_data_status": "No exported binary type or SDK symbol named EditorData was found; this artifact records a composite recovery model.",
+    "ghidra_read_layer": "Committed .spore-analysis/ghidra-exports were used as the read layer because the live headless bridge had no open program and GUI-mode program opening was unavailable.",
+    "not_claimed": [
+      "A literal EditorData symbol or exact wire format",
+      "Runtime-observed editor behavior or mode-transition ordering",
+      "Copied or reproduced decompiled source"
+    ]
+  },
+  "evidence_base": [
+    {
+      "id": "E1",
+      "kind": "ghidra_sdk_structure_export",
+      "source": ".spore-analysis/ghidra-exports/structs_fields.tsv",
+      "lines": "19543-20542",
+      "claim": "Editor resource, model, rigblock, cEditor, skin, animation-world, and edit-history layouts.",
+      "level": "SUPPORTED"
+    },
+    {
+      "id": "E2",
+      "kind": "ghidra_sdk_xml",
+      "source": ".spore-analysis/ghidra-exports/spore_sdk.xml",
+      "lines": "6141-6191,12971-13001,36986-37215,38214-39505",
+      "claim": "SDK field names, offsets, fixed-vector capacities, function signatures, and request/mode boundaries.",
+      "level": "SUPPORTED"
+    },
+    {
+      "id": "E3",
+      "kind": "ghidra_function_anchors",
+      "source": ".spore-analysis/ghidra-exports/sdk_functions.tsv",
+      "lines": "28-110,136",
+      "claim": "Named editor, model, resource, skin, input, history, animation-world, and request functions.",
+      "level": "CONFIRMED"
+    },
+    {
+      "id": "E4",
+      "kind": "ghidra_decompilation",
+      "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnMouseMove.c",
+      "lines": "8-61",
+      "claim": "Mouse position/state is stored transiently and dispatched through mode/tool state.",
+      "level": "SUPPORTED"
+    },
+    {
+      "id": "E5",
+      "kind": "ghidra_decompilation",
+      "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnMouseDown.c; Editors__cEditor__OnMouseUp.c",
+      "lines": "OnMouseDown 9-776; OnMouseUp 15-155",
+      "claim": "Mouse interaction reaches tool/actor vtables, changes part state, releases tools, and can commit or undo an edit.",
+      "level": "SUPPORTED"
+    },
+    {
+      "id": "E6",
+      "kind": "ghidra_decompilation",
+      "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__CommitEditHistory.c; Editors__cEditor__Undo.c; Editors__cEditor__Redo.c",
+      "lines": "Commit 8-123; Undo 14-145; Redo 14-109",
+      "claim": "Two history collections, one shared cursor, snapshot commit, history truncation, model restore, and derived-state refresh.",
+      "level": "SUPPORTED"
+    },
+    {
+      "id": "E7",
+      "kind": "ghidra_decompilation",
+      "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__SetActiveMode.c; Editors__cEditorAnimWorld__GetCreatureController.c; SetTargetPosition.c; SetTargetAngle.c; DestroyCreature.c",
+      "lines": "SetActiveMode 8-363; anim-world exports 8-25",
+      "claim": "Mode changes update/destroy runtime creature controllers and send animation events.",
+      "level": "SUPPORTED"
+    },
+    {
+      "id": "E8",
+      "kind": "ghidra_decompilation",
+      "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__EditorCreatureController__SetTargetPosition.c; Update.c; App__PropertyList__Read.c; App__PropertyList__Write.c",
+      "lines": "controller 8-80,9-327; property 8-59,8-41",
+      "claim": "Controller transforms are runtime pose state; PropertyList uses count plus sequential 0x18-byte entries.",
+      "level": "SUPPORTED"
+    },
+    {
+      "id": "E9",
+      "kind": "ghidra_decompilation",
+      "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__Initialize.c; OnEnter.c; Update.c; OnExit.c; Dispose.c; SetEditorModel.c",
+      "lines": "Initialize 8-543; OnEnter 11-1726; Update 11-631; OnExit 8-550; Dispose 10-247; SetEditorModel 8-267",
+      "claim": "cEditor owns transient service, UI, input, model, skin, play-mode, animation-world, request, and mode state.",
+      "level": "SUPPORTED"
+    },
+    {
+      "id": "E10",
+      "kind": "research_docs",
+      "source": "docs/analysis/reconstruction-readiness.md; knowledgegraph/research/global-campaign-2026/track-g-editor-ui-input.json; knowledgegraph/research/global-campaign-2026/track-k-engine-boundaries.json",
+      "lines": "readiness 11-30,109-166,191-221; track-g 20-21,63-115,163-192,253-303,349-437,522-570,605-672; track-k 617-671",
+      "claim": "Editor input, animation, message, package, persistence, and runtime gaps are recorded as static evidence.",
+      "level": "SUPPORTED"
+    },
+    {
+      "id": "E11",
+      "kind": "current_source",
+      "source": "src/apps/IGameMode.hpp; src/apps/CellModeStrategy.cpp; src/apps/CellInput.hpp; src/apps/CellAnim.hpp; src/sim/Sim.hpp; src/sim/CellGame.hpp; src/compat/ResourceProvider.hpp; src/assets/CellResource.hpp",
+      "lines": "IGameMode 19-52; CellModeStrategy 7-94; CellInput 19-108; CellAnim 26-86; Sim 46-260; CellGame 31-155; ResourceProvider 24-88; CellResource 1-163",
+      "claim": "OpenSpore has a deterministic cell-stage slice and typed resource seam, but no editor authored-data model.",
+      "level": "OBSERVED_CURRENT"
+    },
+    {
+      "id": "E12",
+      "kind": "knowledge_graph_read",
+      "source": "knowledgegraph/spore.db",
+      "lines": "read-only editor structure/function/package queries",
+      "claim": "KG corroborates editor structure/function associations, PKG-10/PKG-15 boundaries, and the negative menu-transition observation.",
+      "level": "SUPPORTED"
+    }
+  ],
+  "asset_types": [
+    {
+      "id": "AT-01",
+      "name": "cCreatureDataResource",
+      "role": "authored creature-data record candidate",
+      "type_id": null,
+      "persistence": "candidate_persistent",
+      "functions": ["cCreatureDataResource::Read @ 0x004bf970", "cCreatureDataResource::Write @ 0x004bfcb0"],
+      "evidence": ["E1", "E2", "E3", "E10"]
+    },
+    {
+      "id": "AT-02",
+      "name": "cEditorResource",
+      "role": "resource container and block snapshot",
+      "type_id": null,
+      "persistence": "intermediate_or_persistent_candidate",
+      "fields": ["mNameKey", "mProperties", "mBlocks"],
+      "evidence": ["E1", "E2", "E6"]
+    },
+    {
+      "id": "AT-03",
+      "name": "EditorModel",
+      "role": "runtime editor model and authored part graph",
+      "type_id": null,
+      "persistence": "authored_runtime_model_candidate",
+      "fields": ["mKey", "mRigblocks", "mModelType", "mName", "mDescription", "mAcceptedName", "mColors", "mSkinEffectIDs", "mSkinEffectSeeds"],
+      "evidence": ["E1", "E2", "E3", "E9", "E10"]
+    },
+    {
+      "id": "AT-04",
+      "name": "EditorRigblock",
+      "role": "part/rigblock with hierarchy, transforms, snapping, capabilities, morphs, and paints",
+      "type_id": null,
+      "persistence": "authored_part_candidate",
+      "evidence": ["E1", "E2", "E5", "E7"]
+    },
+    {
+      "id": "AT-05",
+      "name": "cEditorResourceBlock",
+      "role": "resource-level part record",
+      "type_id": null,
+      "persistence": "persistent_resource_candidate",
+      "fields": ["groupID", "instanceID", "parentIndex", "symmetricIndex", "transform", "paint arrays"],
+      "evidence": ["E1", "E2"]
+    },
+    {
+      "id": "AT-06",
+      "name": "cEditorSkin/cEditorSkinMesh",
+      "role": "derived paint/render asset production",
+      "type_id": null,
+      "persistence": "derived_runtime_asset",
+      "functions": ["cEditorSkinMeshBase::FromRigblocks @ 0x004c7460", "cEditorSkin::PaintSkin @ 0x004c5270"],
+      "evidence": ["E1", "E2", "E3", "E10"]
+    },
+    {
+      "id": "AT-07",
+      "name": "editor definitions and requests",
+      "role": "templates, palettes, species profiles, and entry requests",
+      "type_id": null,
+      "persistence": "external_definition_or_request",
+      "objects": ["cObjectTemplateDB", "cSpeciesManager", "Palettes::PaletteMain", "EditorRequest"],
+      "evidence": ["E2", "E3", "E7", "E10"]
+    },
+    {
+      "id": "AT-08",
+      "name": "GMDL/RW4/raster downstream assets",
+      "role": "graphics assets consumed by rendering, not an EditorData schema",
+      "type_id": "GMDL 0x00E6BCE5; RW4 0x2F4E681B; raster 0x2F4E681C in current OpenSpore research",
+      "persistence": "downstream_asset",
+      "evidence": ["E2", "E10", "E11"]
+    }
+  ],
+  "schemas": {
+    "editor_data_umbrella": {
+      "status": "recovered_composite_not_named_type",
+      "persistent_authored_core": ["AT-01", "AT-02", "AT-03", "AT-04", "AT-05"],
+      "runtime_transient_shell": ["cEditor", "EditorStateEditHistory", "cEditorAnimWorld", "EditorCreatureController", "AnimatedCreature", "cEditorAnimEvent"],
+      "derived_or_external": ["AT-06", "AT-07", "AT-08"],
+      "claim": "Persistent author state and transient editor state are separate surfaces even though the original composes them in cEditor."
+    },
+    "cEditor": {
+      "size_bytes": 1536,
+      "field_count": 353,
+      "role": "transient editor shell",
+      "array_order": "ascending offset; relevant fields only",
+      "fields": [
+        {"offset": "0x20", "name": "mpGameModeMgr", "type": "intrusive_ptr<App::IGameModeManager>", "kind": "service_pointer"},
+        {"offset": "0x24", "name": "mpPropList", "type": "intrusive_ptr<App::PropertyList>", "kind": "property_state"},
+        {"offset": "0x28", "name": "mMousePosition", "type": "Point", "kind": "transient_input"},
+        {"offset": "0x30", "name": "mMouseFlags", "type": "int", "kind": "transient_input"},
+        {"offset": "0x34", "name": "mMouseState", "type": "MouseState", "kind": "transient_input"},
+        {"offset": "0x78", "name": "mpEditorUI", "type": "EditorUI *", "kind": "runtime_ui"},
+        {"offset": "0x7c", "name": "mpPlayMode", "type": "EditorPlayMode *", "kind": "runtime_mode"},
+        {"offset": "0x80", "name": "mpLightingWorld", "type": "intrusive_ptr<Graphics::ILightingWorld>", "kind": "runtime_render"},
+        {"offset": "0x84", "name": "mpMainModelWorld", "type": "intrusive_ptr<Graphics::IModelWorld>", "kind": "runtime_render"},
+        {"offset": "0x94", "name": "mpEffectWorld", "type": "intrusive_ptr<Swarm::IEffectsWorld>", "kind": "runtime_effects"},
+        {"offset": "0x98", "name": "mpEditorModel", "type": "EditorModel *", "kind": "authored_runtime_model"},
+        {"offset": "0xcc", "name": "mpActivePart", "type": "intrusive_ptr<EditorRigblock>", "kind": "transient_selection"},
+        {"offset": "0xd0", "name": "mpMovingPart", "type": "intrusive_ptr<EditorRigblock>", "kind": "transient_interaction"},
+        {"offset": "0xd4", "name": "mpSelectedPart", "type": "intrusive_ptr<EditorRigblock>", "kind": "transient_selection"},
+        {"offset": "0xe4", "name": "mpActiveHandle", "type": "EditorBaseHandle *", "kind": "transient_manipulator"},
+        {"offset": "0xe8", "name": "mbMouseIsInSkin", "type": "bool", "kind": "transient_paint_state"},
+        {"offset": "0x150", "name": "mpEditorSkin", "type": "intrusive_ptr<cEditorSkin>", "kind": "derived_runtime_asset"},
+        {"offset": "0x160", "name": "mStateEditHistory", "type": "vector<intrusive_ptr<EditorStateEditHistory>>", "kind": "transient_history"},
+        {"offset": "0x174", "name": "mEditHistory", "type": "vector<intrusive_ptr<cEditorResource>>", "kind": "transient_snapshot_history"},
+        {"offset": "0x188", "name": "mEditHistoryIndex", "type": "int", "kind": "transient_history_cursor"},
+        {"offset": "0x190", "name": "mbTransitionHideUI", "type": "bool", "kind": "transition"},
+        {"offset": "0x194", "name": "mbTransitionCenterCamera", "type": "bool", "kind": "transition"},
+        {"offset": "0x198", "name": "mTransitionAnimationID", "type": "uint32_t", "kind": "transition"},
+        {"offset": "0x1a0", "name": "mTransitionEffectID", "type": "uint32_t", "kind": "transition"},
+        {"offset": "0x1b0", "name": "mDefaultEditors", "type": "map<unsigned int, unsigned int>", "kind": "definition_mapping"},
+        {"offset": "0x1cc", "name": "mEditorRequest", "type": "intrusive_ptr<EditorRequest>", "kind": "external_request"},
+        {"offset": "0x1d0", "name": "mParentAssetKey", "type": "ResourceKey", "kind": "asset_reference"},
+        {"offset": "0x2a8", "name": "mSaveExtension", "type": "uint32_t", "kind": "save_configuration"},
+        {"offset": "0x2ac", "name": "mSaveDirectory", "type": "uint32_t", "kind": "save_configuration"},
+        {"offset": "0x2b0", "name": "mIsActive", "type": "bool", "kind": "lifecycle"},
+        {"offset": "0x2b8", "name": "mBoundSize", "type": "float", "kind": "validation_or_limits"},
+        {"offset": "0x2dc", "name": "mComplexityLimit", "type": "int", "kind": "validation_or_limits"},
+        {"offset": "0x2e0", "name": "mBoneComplexityLimit", "type": "int", "kind": "validation_or_limits"},
+        {"offset": "0x2e4", "name": "mMaxBakedBlocks", "type": "int", "kind": "validation_or_limits"},
+        {"offset": "0x2f1", "name": "mbUseSkin", "type": "bool", "kind": "editor_policy"},
+        {"offset": "0x2f2", "name": "mbUseSpine", "type": "bool", "kind": "editor_policy"},
+        {"offset": "0x2f3", "name": "mbInitSpine", "type": "bool", "kind": "editor_policy"},
+        {"offset": "0x2f5", "name": "mbAllowAsymmetry", "type": "bool", "kind": "editor_policy"},
+        {"offset": "0x2fa", "name": "editorTranslateModelOnSave", "type": "bool", "kind": "save_policy"},
+        {"offset": "0x31c", "name": "mMode", "type": "Mode", "kind": "transient_mode"},
+        {"offset": "0x320", "name": "mEnabledManipulators", "type": "vector<unsigned int>", "kind": "tool_definition"},
+        {"offset": "0x334", "name": "mModelTypes", "type": "vector<unsigned int>", "kind": "template_definition"},
+        {"offset": "0x358", "name": "mpEditorNamePanel", "type": "intrusive_ptr<UI::EditorNamePanel>", "kind": "runtime_name_ui"},
+        {"offset": "0x360", "name": "mpEditorAnimWorld", "type": "intrusive_ptr<cEditorAnimWorld>", "kind": "runtime_pose_world"},
+        {"offset": "0x364", "name": "mCurrentCreatureID", "type": "int", "kind": "runtime_creature_reference"},
+        {"offset": "0x36c", "name": "mOtherActorsIDs", "type": "vector<int>", "kind": "runtime_actor_references"},
+        {"offset": "0x380", "name": "mpAnimEvent", "type": "intrusive_ptr<cEditorAnimEvent>", "kind": "runtime_event"},
+        {"offset": "0x3b0", "name": "mHoveredPaintRegion", "type": "int", "kind": "transient_paint_state"},
+        {"offset": "0x3b8", "name": "mpPartsPalette", "type": "intrusive_ptr<Palettes::PaletteMain>", "kind": "palette_definition"},
+        {"offset": "0x3c0", "name": "mpPaintPalette", "type": "intrusive_ptr<Palettes::PaletteMain>", "kind": "palette_definition"},
+        {"offset": "0x434", "name": "mpEditorLimits", "type": "intrusive_ptr<StdEditorLimits>", "kind": "validation_definition"},
+        {"offset": "0x4ac", "name": "mRenderingQuality", "type": "int", "kind": "runtime_render"},
+        {"offset": "0x4b7", "name": "mbModelForceSaveOver", "type": "bool", "kind": "save_policy"},
+        {"offset": "0x4b8", "name": "mbModelCopyConsequence", "type": "bool", "kind": "save_policy"},
+        {"offset": "0x4b9", "name": "mbModelSaveLastChild", "type": "bool", "kind": "save_policy"}
+      ],
+      "transient_vs_persistent": "cEditor is predominantly transient. Its pointers, input, selection, UI, mode, animation world, history, and live handles must not be serialized wholesale as authored data."
+    },
+    "EditorModel": {
+      "size_bytes": 224,
+      "role": "authored/runtime model containing part graph, identity strings, colors, and bounds",
+      "fields": [
+        {"offset": "0x0c", "name": "mKey", "type": "ResourceKey", "kind": "asset_reference"},
+        {"offset": "0x18", "name": "mRigblocks", "type": "vector<intrusive_ptr<EditorRigblock>>", "kind": "parts"},
+        {"offset": "0x54", "name": "mTranslationOptions", "type": "int", "kind": "transform_policy"},
+        {"offset": "0x58", "name": "mModelType", "type": "uint32_t", "kind": "template_type"},
+        {"offset": "0x5c", "name": "mName", "type": "string16", "kind": "authored_name"},
+        {"offset": "0x6c", "name": "mDescription", "type": "string16", "kind": "authored_text"},
+        {"offset": "0x7c", "name": "mAcceptedName", "type": "string16", "kind": "authored_name"},
+        {"offset": "0x8c", "name": "mSkinEffectIDs", "type": "int[3]", "capacity": 3, "kind": "skin_definition"},
+        {"offset": "0x98", "name": "mSkinEffectSeeds", "type": "int[3]", "capacity": 3, "kind": "skin_definition"},
+        {"offset": "0xa4", "name": "mColors", "type": "ColorRGB[3]", "capacity": 3, "kind": "authored_paint_colors"},
+        {"offset": "0xc8", "name": "field_C8", "type": "vector<Math::BoundingBox>", "kind": "geometry"},
+        {"offset": "0xdc", "name": "mZCorpScore", "type": "int", "kind": "derived_or_scoring"}
+      ]
+    },
+    "EditorRigblock": {
+      "size_bytes": 3592,
+      "role": "part/rigblock with authored transforms, hierarchy, paints, snapping, capabilities, and model references",
+      "array_order": "ascending offset; relevant fields only",
+      "fields": [
+        {"offset": "0x0c", "name": "mpPropList", "type": "intrusive_ptr<App::PropertyList>", "kind": "part_properties"},
+        {"offset": "0x1c", "name": "mInstanceID", "type": "uint32_t", "kind": "object_reference"},
+        {"offset": "0x20", "name": "mGroupID", "type": "uint32_t", "kind": "object_reference"},
+        {"offset": "0x28", "name": "mpEditorModel", "type": "EditorModel *", "kind": "owner_reference"},
+        {"offset": "0x48", "name": "mPosition", "type": "Vector3", "kind": "authored_transform"},
+        {"offset": "0x54", "name": "lastPos", "type": "Vector3", "kind": "transient_transform"},
+        {"offset": "0x60", "name": "mTotalOrientation", "type": "Matrix3", "kind": "authored_orientation"},
+        {"offset": "0xa8", "name": "mOrientation", "type": "Matrix3", "kind": "runtime_or_derived_orientation"},
+        {"offset": "0xf0", "name": "mUserOrientation", "type": "Matrix3", "kind": "authored_user_transform"},
+        {"offset": "0x1b4", "name": "mDeformBoneEndJointIndex", "type": "int", "kind": "deformation_reference"},
+        {"offset": "0x1b8", "name": "mDeformBoneBaseJointIndex", "type": "int", "kind": "deformation_reference"},
+        {"offset": "0x1bc", "name": "mDeformBoneMiddleIndex", "type": "int", "kind": "deformation_reference"},
+        {"offset": "0x1cc", "name": "mLimbType", "type": "int", "kind": "part_type"},
+        {"offset": "0x1d0", "name": "mMuscleScale", "type": "float", "kind": "authored_shape"},
+        {"offset": "0x1d4", "name": "mBaseMuscleScale", "type": "float", "kind": "authored_shape"},
+        {"offset": "0x1d8", "name": "size", "type": "float", "kind": "authored_shape"},
+        {"offset": "0x1dc", "name": "size_2", "type": "float", "kind": "authored_shape"},
+        {"offset": "0x1e0", "name": "mModelMinScale", "type": "float", "kind": "validation_or_limits"},
+        {"offset": "0x1e4", "name": "mModelMaxScale", "type": "float", "kind": "validation_or_limits"},
+        {"offset": "0x1e8", "name": "mModelDefaultMouseOffset", "type": "Vector3", "kind": "editor_transform"},
+        {"offset": "0x1f4", "name": "mModelEditorInitialRotation", "type": "Matrix3", "kind": "editor_transform"},
+        {"offset": "0x220", "name": "mModelSymmetrySnapDelta", "type": "float", "kind": "authored_editor_policy"},
+        {"offset": "0x228", "name": "mModelReplaceSnapDelta", "type": "float", "kind": "authored_editor_policy"},
+        {"offset": "0x22c", "name": "mModelSymmetryRotationSnapAngle", "type": "float", "kind": "authored_editor_policy"},
+        {"offset": "0x248", "name": "mModelNumberOfSnapAxes", "type": "int", "kind": "authored_editor_policy"},
+        {"offset": "0x24c", "name": "mEffectsBoneTransform1", "type": "Transform", "kind": "deformation_reference"},
+        {"offset": "0x284", "name": "mEffectsBoneTransform2", "type": "Transform", "kind": "deformation_reference"},
+        {"offset": "0x2c0", "name": "mCSnapBoneTransform1", "type": "Transform", "kind": "deformation_reference"},
+        {"offset": "0x2f8", "name": "mCSnapBoneTransform2", "type": "Transform", "kind": "deformation_reference"},
+        {"offset": "0x33c", "name": "mpParent", "type": "intrusive_ptr<EditorRigblock>", "kind": "hierarchy_reference"},
+        {"offset": "0x340", "name": "mChildren", "type": "fixed_vector<intrusive_ptr<EditorRigblock>, 8>", "capacity": 8, "kind": "hierarchy_reference"},
+        {"offset": "0x3a0", "name": "mTriangleDirection", "type": "Vector3", "kind": "picking_or_pose"},
+        {"offset": "0x3ac", "name": "mTrianglePickOrigin", "type": "Vector3", "kind": "picking_or_pose"},
+        {"offset": "0x3bc", "name": "mModelForcePinningType", "type": "int", "kind": "authored_editor_policy"},
+        {"offset": "0x3c0", "name": "mModelPinningTypeGroup", "type": "uint32_t", "kind": "authored_editor_policy"},
+        {"offset": "0x3e0", "name": "mpSymmetricRigblock", "type": "intrusive_ptr<EditorRigblock>", "kind": "hierarchy_reference"},
+        {"offset": "0x3e4", "name": "mpAsymmetricRigblock", "type": "intrusive_ptr<EditorRigblock>", "kind": "hierarchy_reference"},
+        {"offset": "0x400", "name": "mModelMinSocketConnectorOffset", "type": "Vector3", "kind": "connector_constraint"},
+        {"offset": "0x40c", "name": "mSocketConnectorOffset", "type": "Vector3", "kind": "authored_transform"},
+        {"offset": "0x418", "name": "mModelRotationBallHandleOffset", "type": "Vector3", "kind": "editor_transform"},
+        {"offset": "0x424", "name": "mModelPaletteRotation", "type": "Vector3", "kind": "editor_transform"},
+        {"offset": "0x454", "name": "mModelScale", "type": "float", "kind": "authored_shape"},
+        {"offset": "0x458", "name": "mModelMinMuscleFile", "type": "ResourceKey *", "kind": "external_reference"},
+        {"offset": "0x45c", "name": "mModelMaxMuscleFile", "type": "ResourceKey *", "kind": "external_reference"},
+        {"offset": "0x4c8", "name": "mPaints", "type": "fixed_vector<pair<unsigned int, EditorRigblockPaint>, 8>", "capacity": 8, "kind": "paints"},
+        {"offset": "0x5e4", "name": "mModelPrice", "type": "int", "kind": "derived_or_scoring"},
+        {"offset": "0x5e8", "name": "mModelComplexityScore", "type": "int", "kind": "validation_or_scoring"},
+        {"offset": "0x5ec", "name": "mModelRunTimeBoneCount", "type": "int", "kind": "derived_or_limits"},
+        {"offset": "0x5f0", "name": "mModelBakeLevel", "type": "int", "kind": "derived_or_limits"},
+        {"offset": "0x5f8", "name": "mModelRigBlockType", "type": "ResourceKey", "kind": "template_reference"},
+        {"offset": "0x604", "name": "mModelShowoffAnimation", "type": "uint32_t", "kind": "animation_reference"},
+        {"offset": "0x608", "name": "mModelShowoffEffect", "type": "uint32_t", "kind": "effect_reference"},
+        {"offset": "0x6cc", "name": "mMorphHandles", "type": "fixed_vector<intrusive_ptr<EditorBaseHandle>, 8>", "capacity": 8, "kind": "transient_manipulator"},
+        {"offset": "0x704", "name": "mMorphHandleWeights", "type": "fixed_vector<float, 8>", "capacity": 8, "kind": "morph_or_pose"},
+        {"offset": "0x73c", "name": "mMorphHandleChannels", "type": "fixed_vector<unsigned int, 8>", "capacity": 8, "kind": "morph_or_pose"},
+        {"offset": "0x774", "name": "mModelSnapDownTo", "type": "fixed_vector<ResourceKey, 8>", "capacity": 8, "kind": "template_reference"},
+        {"offset": "0x7ec", "name": "mModelSnapToParentTypes", "type": "fixed_vector<ResourceKey, 8>", "capacity": 8, "kind": "template_reference"},
+        {"offset": "0x864", "name": "mModelStayAbove", "type": "fixed_vector<ResourceKey, 8>", "capacity": 8, "kind": "template_reference"},
+        {"offset": "0x8dc", "name": "mModelAlignLateralWith", "type": "fixed_vector<ResourceKey, 8>", "capacity": 8, "kind": "template_reference"},
+        {"offset": "0x954", "name": "mModelAlignHeightWith", "type": "fixed_vector<ResourceKey, 8>", "capacity": 8, "kind": "template_reference"},
+        {"offset": "0x9cc", "name": "mModelAlignXYWith", "type": "fixed_vector<ResourceKey, 8>", "capacity": 8, "kind": "template_reference"},
+        {"offset": "0xa44", "name": "mModelTypesToInteractWith", "type": "fixed_vector<ResourceKey, 8>", "capacity": 8, "kind": "template_reference"},
+        {"offset": "0xabc", "name": "mModelTypesToSnapReplace", "type": "fixed_vector<ResourceKey, 8>", "capacity": 8, "kind": "template_reference"},
+        {"offset": "0xb34", "name": "mModelTypesNotToInteractWith", "type": "fixed_vector<ResourceKey, 16>", "capacity": 16, "kind": "template_reference"},
+        {"offset": "0xc0c", "name": "mCapabilities", "type": "fixed_vector<EditorRigblockCapability, 20>", "capacity": 20, "kind": "capability_definition"},
+        {"offset": "0xdb4", "name": "mFootType", "type": "uint32_t", "kind": "part_type"},
+        {"offset": "0xdb8", "name": "mMouthType", "type": "uint32_t", "kind": "part_type"},
+        {"offset": "0xdbc", "name": "mWeaponType", "type": "uint32_t", "kind": "part_type"},
+        {"offset": "0xdc8", "name": "mBooleanAttributes", "type": "bitset<64>", "capacity": 64, "kind": "part_flags"}
+      ],
+      "paint_element": {"type": "EditorRigblockPaint", "fields": ["mPaintID", "mPaintColor1", "mPaintColor2"]},
+      "hierarchy": {"parent": "mpParent", "children": "mChildren", "symmetry": ["mpSymmetricRigblock", "mpAsymmetricRigblock"], "capacity": 8}
+    },
+    "cEditorResourceProperties": {
+      "size_bytes": 128,
+      "fields": [
+        {"offset": "0x00", "name": "mModelType", "type": "uint32_t"},
+        {"offset": "0x04", "name": "mZCorpScore", "type": "int"},
+        {"offset": "0x08", "name": "mSkinEffectID1", "type": "uint32_t"},
+        {"offset": "0x0c", "name": "mSkinEffectID2", "type": "uint32_t"},
+        {"offset": "0x10", "name": "mSkinEffectID3", "type": "uint32_t"},
+        {"offset": "0x14", "name": "mSkinEffectSeed1", "type": "uint32_t"},
+        {"offset": "0x18", "name": "mSkinEffectSeed2", "type": "uint32_t"},
+        {"offset": "0x1c", "name": "mSkinEffectSeed3", "type": "uint32_t"},
+        {"offset": "0x20", "name": "mSkinColor1", "type": "ColorRGB"},
+        {"offset": "0x2c", "name": "mSkinColor2", "type": "ColorRGB"},
+        {"offset": "0x38", "name": "mSkinColor3", "type": "ColorRGB"},
+        {"offset": "0x48", "name": "padding_48", "type": "char[60]"}
+      ]
+    },
+    "cEditorResourceBlock": {
+      "size_bytes": 472,
+      "fields": [
+        {"offset": "0x00", "name": "groupID", "type": "uint32_t", "kind": "object_reference"},
+        {"offset": "0x04", "name": "instanceID", "type": "uint32_t", "kind": "object_reference"},
+        {"offset": "0x08", "name": "parentIndex", "type": "int", "kind": "hierarchy_reference"},
+        {"offset": "0x0c", "name": "symmetricIndex", "type": "int", "kind": "hierarchy_reference"},
+        {"offset": "0x10", "name": "scale", "type": "float", "kind": "authored_transform"},
+        {"offset": "0x14", "name": "position", "type": "Vector3", "kind": "authored_transform"},
+        {"offset": "0x20", "name": "triangleDirection", "type": "Vector3", "kind": "picking_or_pose"},
+        {"offset": "0x2c", "name": "trianglePickOrigin", "type": "Vector3", "kind": "picking_or_pose"},
+        {"offset": "0x38", "name": "orientation", "type": "Matrix3", "kind": "authored_orientation"},
+        {"offset": "0x5c", "name": "userOrientation", "type": "Matrix3", "kind": "authored_orientation"},
+        {"offset": "0x80", "name": "snapped", "type": "bool"},
+        {"offset": "0x81", "name": "isAsymmetric", "type": "bool"},
+        {"offset": "0x84", "name": "limbType", "type": "int", "kind": "part_type"},
+        {"offset": "0x88", "name": "muscleScale", "type": "float", "kind": "authored_shape"},
+        {"offset": "0x8c", "name": "baseMuscleScale", "type": "float", "kind": "authored_shape"},
+        {"offset": "0x90", "name": "handlesCount", "type": "int", "kind": "pose_or_shape_count"},
+        {"offset": "0x94", "name": "handleWeights", "type": "float[8]", "capacity": 8, "kind": "pose_or_shape"},
+        {"offset": "0xb4", "name": "handleChannels", "type": "uint32_t[8]", "capacity": 8, "kind": "pose_or_shape"},
+        {"offset": "0xd4", "name": "paintListCount", "type": "int", "kind": "paint_count"},
+        {"offset": "0xd8", "name": "paintRegions", "type": "int[8]", "capacity": 8, "kind": "paints"},
+        {"offset": "0xf8", "name": "paintIDs", "type": "uint32_t[8]", "capacity": 8, "kind": "paints"},
+        {"offset": "0x118", "name": "paintColors1", "type": "ColorRGB[8]", "capacity": 8, "kind": "paints"},
+        {"offset": "0x178", "name": "paintColors2", "type": "ColorRGB[8]", "capacity": 8, "kind": "paints"}
+      ]
+    },
+    "cEditorResource": {
+      "size_bytes": 172,
+      "fields": [
+        {"offset": "0x08", "name": "mNameKey", "type": "ResourceKey", "kind": "asset_reference"},
+        {"offset": "0x14", "name": "mpFinalReleaseCallback", "type": "cIReleaseCallback *", "kind": "runtime_lifetime"},
+        {"offset": "0x18", "name": "mProperties", "type": "cEditorResourceProperties", "kind": "resource_properties"},
+        {"offset": "0x98", "name": "mBlocks", "type": "vector<cEditorResourceBlock>", "kind": "parts"}
+      ]
+    },
+    "cCreatureDataResource": {
+      "size_bytes": 296,
+      "role": "authored creature-data resource candidate",
+      "fields": [
+        {"offset": "0x08", "name": "mNameKey", "type": "ResourceKey", "kind": "asset_reference"},
+        {"offset": "0x18", "name": "mProperties", "type": "cEditorResourceProperties", "kind": "resource_properties"},
+        {"offset": "0x98", "name": "mRigblocks", "type": "vector<cCreatureDataResource::RigblockData>", "kind": "parts"},
+        {"offset": "0xac", "name": "mCapabilityIDs", "type": "vector<CapabilityTag>", "kind": "capabilities"},
+        {"offset": "0xbc", "name": "mCapabilityLevels", "type": "vector<char>", "kind": "capabilities"},
+        {"offset": "0xd4", "name": "mAnimationIDs", "type": "vector<unsigned int>", "kind": "animation_definition"},
+        {"offset": "0xe8", "name": "mAnimationValues", "type": "vector<float>", "kind": "animation_definition"},
+        {"offset": "0xfc", "name": "mAnimationWeights", "type": "vector<float>", "kind": "animation_definition"},
+        {"offset": "0x114", "name": "mEffects", "type": "vector<int>", "kind": "effect_definition"}
+      ],
+      "rigblock_data": {
+        "size_bytes": 140,
+        "fields": [
+          {"offset": "0x00", "name": "mIndex", "type": "int16_t", "kind": "object_reference"},
+          {"offset": "0x04", "name": "mParentIndex", "type": "int16_t", "kind": "hierarchy_reference"},
+          {"offset": "0x06", "name": "mSymmetricIndex", "type": "int16_t", "kind": "hierarchy_reference"},
+          {"offset": "0x08", "name": "mFlags", "type": "int16_t", "kind": "part_flags"},
+          {"offset": "0x0b", "name": "mType", "type": "RigblockDataType", "kind": "part_type"},
+          {"offset": "0x0c", "name": "mCapabilityIndex", "type": "int16_t", "kind": "capability_reference"},
+          {"offset": "0x0e", "name": "mMorphsIndex", "type": "int16_t", "kind": "morph_or_pose_reference"},
+          {"offset": "0x10", "name": "mNumCapabilities", "type": "int8_t", "kind": "capability_count"},
+          {"offset": "0x14", "name": "mBoundingBox", "type": "BoundingBox", "kind": "authored_geometry"},
+          {"offset": "0x2c", "name": "mScale", "type": "float", "kind": "authored_transform"},
+          {"offset": "0x30", "name": "mTotalOrientation", "type": "Matrix3", "kind": "authored_orientation"},
+          {"offset": "0x54", "name": "mPosition", "type": "Vector3", "kind": "authored_transform"},
+          {"offset": "0x60", "name": "mEffectOffset", "type": "Vector3", "kind": "effect_reference"},
+          {"offset": "0x6c", "name": "mScaleRelative", "type": "float", "kind": "authored_transform"},
+          {"offset": "0x70", "name": "mSocketConnectorDistance", "type": "float", "kind": "connector_constraint"},
+          {"offset": "0x74", "name": "mMuscleScale", "type": "float", "kind": "authored_shape"},
+          {"offset": "0x78", "name": "mBaseMuscleScale", "type": "float", "kind": "authored_shape"},
+          {"offset": "0x80", "name": "mFootWeaponOrMouthType", "type": "uint32_t", "kind": "part_type"},
+          {"offset": "0x84", "name": "mGroupID", "type": "uint32_t", "kind": "object_reference"},
+          {"offset": "0x88", "name": "mInstanceID", "type": "uint32_t", "kind": "object_reference"}
+        ]
+      }
+    },
+    "EditorStateEditHistory": {
+      "size_bytes": 44,
+      "role": "small per-operation transient history record",
+      "fields": [
+        {"offset": "0x08", "name": "mBudget", "type": "int"},
+        {"offset": "0x0c", "name": "mMode", "type": "Mode"},
+        {"offset": "0x10", "name": "field_10", "type": "int"},
+        {"offset": "0x14", "name": "field_14", "type": "bool"},
+        {"offset": "0x15", "name": "field_15", "type": "bool"},
+        {"offset": "0x18", "name": "field_18", "type": "int"},
+        {"offset": "0x1c", "name": "field_1C", "type": "int"},
+        {"offset": "0x20", "name": "field_20", "type": "int"},
+        {"offset": "0x24", "name": "field_24", "type": "int"},
+        {"offset": "0x28", "name": "field_28", "type": "int"}
+      ]
+    },
+    "cEditorAnimWorld": {
+      "size_bytes": 72,
+      "role": "runtime creature-ID to controller/animation/model-world conversion",
+      "fields": [
+        {"offset": "0x08", "name": "mCreatures", "type": "map<int, intrusive_ptr<EditorCreatureController>>", "kind": "creature_id_reference"},
+        {"offset": "0x24", "name": "field_24", "type": "vector<intrusive_ptr<cEditorAnimEvent>>", "kind": "runtime_event_collection"},
+        {"offset": "0x38", "name": "mpAnimWorld", "type": "intrusive_ptr<Anim::IAnimWorld>", "kind": "runtime_animation"},
+        {"offset": "0x3c", "name": "mpAnimations", "type": "intrusive_ptr<EditorAnimations>", "kind": "runtime_animation"},
+        {"offset": "0x40", "name": "mpModelWorld", "type": "intrusive_ptr<Graphics::IModelWorld>", "kind": "runtime_render"},
+        {"offset": "0x44", "name": "mNextCreatureIndex", "type": "int", "kind": "runtime_id_allocator"}
+      ]
+    },
+    "EditorCreatureController": {
+      "size_bytes": 136,
+      "role": "runtime creature pose/target controller",
+      "fields": [
+        {"offset": "0x08", "name": "mpAnimatedCreature", "type": "intrusive_ptr<AnimatedCreature>", "kind": "runtime_pose_target"},
+        {"offset": "0x0c", "name": "mpModelWorld", "type": "IModelWorld *", "kind": "runtime_render"},
+        {"offset": "0x1c", "name": "mCurrentAnimID", "type": "uint32_t", "kind": "runtime_animation"},
+        {"offset": "0x20", "name": "mRealTargetPosition", "type": "Vector3", "kind": "runtime_pose"},
+        {"offset": "0x2c", "name": "mTargetPosition", "type": "Vector3", "kind": "runtime_pose"},
+        {"offset": "0x38", "name": "mCurrentPosition", "type": "Vector3", "kind": "runtime_pose"},
+        {"offset": "0x44", "name": "mTargetAngle", "type": "float", "kind": "runtime_pose"},
+        {"offset": "0x48", "name": "mCurrentAngle", "type": "float", "kind": "runtime_pose"},
+        {"offset": "0x4c", "name": "mMovementSpeed", "type": "float", "kind": "runtime_motion"},
+        {"offset": "0x50", "name": "mRotateSpeed", "type": "float", "kind": "runtime_motion"},
+        {"offset": "0x58", "name": "mTargetLookAt", "type": "Vector3", "kind": "runtime_pose"},
+        {"offset": "0x64", "name": "mCurrentLookAt", "type": "Vector3", "kind": "runtime_pose"},
+        {"offset": "0x84", "name": "mSmoothLookAt", "type": "bool", "kind": "runtime_pose"}
+      ]
+    },
+    "AnimatedCreature": {
+      "role": "runtime animation/model instance",
+      "fields": [
+        {"offset": "0x04", "name": "mPosition", "type": "Vector3", "kind": "runtime_pose"},
+        {"offset": "0x10", "name": "mOrientation", "type": "Quaternion", "kind": "runtime_pose"},
+        {"offset": "0x17c", "name": "p_cid", "type": "anim_cid *", "kind": "runtime_animation"},
+        {"offset": "0x180", "name": "mpModel", "type": "intrusive_ptr<Graphics::Model>", "kind": "runtime_asset"},
+        {"offset": "0x18c", "name": "field_18C", "type": "AnimIndex", "kind": "runtime_animation"},
+        {"offset": "0x190", "name": "mpAnimWorld", "type": "IAnimWorld *", "kind": "runtime_animation"}
+      ]
+    },
+    "cEditorSkin": {
+      "size_bytes": 136,
+      "role": "derived paint/render object",
+      "fields": [
+        {"offset": "0x0c", "name": "mpEditor", "type": "cEditor *", "kind": "runtime_owner"},
+        {"offset": "0x10", "name": "mpEditorModel", "type": "EditorModel *", "kind": "authored_model_reference"},
+        {"offset": "0x14", "name": "mpModelWorld", "type": "IModelWorld *", "kind": "runtime_render"},
+        {"offset": "0x18", "name": "mpMesh", "type": "cEditorSkinMesh *", "kind": "derived_mesh"},
+        {"offset": "0x1c", "name": "mpMeshHQ", "type": "cEditorSkinMesh *", "kind": "derived_mesh"},
+        {"offset": "0x60", "name": "mMaterialID", "type": "uint32_t", "kind": "derived_render_material"},
+        {"offset": "0x64", "name": "mTextureKey", "type": "ResourceKey", "kind": "derived_texture_reference"},
+        {"offset": "0x78", "name": "mSkinResolutionHQ", "type": "float", "kind": "derived_asset_setting"},
+        {"offset": "0x7c", "name": "mSkinResolutionRealtime", "type": "float", "kind": "derived_asset_setting"},
+        {"offset": "0x80", "name": "mSkinResolutionHQ2", "type": "float", "kind": "derived_asset_setting"}
+      ]
+    },
+    "cEditorSkinMesh": {
+      "size_bytes": 304,
+      "role": "derived mesh/material/texture object",
+      "fields": [
+        {"offset": "0x08", "name": "mpCreatureData", "type": "cCreatureDataResource *", "kind": "authored_data_reference"},
+        {"offset": "0x0c", "name": "mRigblockPropLists", "type": "vector<intrusive_ptr<App::PropertyList>>", "kind": "part_properties"},
+        {"offset": "0x68", "name": "field_68", "type": "vector<Transform>", "kind": "derived_pose_or_geometry"},
+        {"offset": "0x90", "name": "mUVs", "type": "vector<Math::Rectangle>", "kind": "derived_geometry"},
+        {"offset": "0xb8", "name": "mpMaterialInfo", "type": "intrusive_ptr<Graphics::cMaterialInfo>", "kind": "derived_render_material"},
+        {"offset": "0xc0", "name": "mRigblocks", "type": "vector<intrusive_ptr<EditorRigblock>>", "kind": "parts"},
+        {"offset": "0xd4", "name": "mpMaterial", "type": "intrusive_ptr<Graphics::Material>", "kind": "derived_render_material"},
+        {"offset": "0xd8", "name": "mInstanceID", "type": "uint32_t", "kind": "object_reference"},
+        {"offset": "0xdc", "name": "mGroupID", "type": "uint32_t", "kind": "object_reference"},
+        {"offset": "0xe0", "name": "mpModel", "type": "intrusive_ptr<Graphics::Model>", "kind": "derived_runtime_asset"},
+        {"offset": "0xfc", "name": "mDiffuseTexture", "type": "intrusive_ptr<Graphics::Texture>", "kind": "derived_runtime_asset"},
+        {"offset": "0x100", "name": "mNSpecTexture", "type": "intrusive_ptr<Graphics::Texture>", "kind": "derived_runtime_asset"}
+      ]
+    },
+    "cEditorAnimEvent": {
+      "size_bytes": 48,
+      "role": "runtime animation/message event",
+      "fields": [
+        {"offset": "0x14", "name": "mpEditorModel", "type": "EditorModel *", "kind": "authored_model_reference"},
+        {"offset": "0x18", "name": "mEventID", "type": "uint32_t", "kind": "event_identity"},
+        {"offset": "0x20", "name": "field_20", "type": "float", "kind": "event_parameter"},
+        {"offset": "0x28", "name": "field_28", "type": "int", "kind": "event_parameter"},
+        {"offset": "0x2c", "name": "field_2C", "type": "float", "kind": "event_parameter"}
+      ]
+    },
+    "EditorRequest": {
+      "size_bytes": 156,
+      "role": "external request to enter/operate an editor, not authored model data",
+      "fields": [
+        {"offset": "0x0c", "name": "editorID", "type": "uint32_t", "kind": "request_identity"},
+        {"offset": "0x10", "name": "creationKey", "type": "ResourceKey", "kind": "asset_reference"},
+        {"offset": "0x1c", "name": "activeModeID", "type": "uint32_t", "kind": "mode_reference"},
+        {"offset": "0x24", "name": "editableTests", "type": "ContentValidation", "kind": "validation_policy"},
+        {"offset": "0x34", "name": "sporepediaCanSwitch", "type": "bool", "kind": "request_policy"},
+        {"offset": "0x35", "name": "disableNameEdit", "type": "bool", "kind": "request_policy"},
+        {"offset": "0x36", "name": "allowSporepedia", "type": "bool", "kind": "request_policy"},
+        {"offset": "0x37", "name": "hasSaveButton", "type": "bool", "kind": "request_policy"},
+        {"offset": "0x38", "name": "hasCreateNewButton", "type": "bool", "kind": "request_policy"},
+        {"offset": "0x39", "name": "hasExitButton", "type": "bool", "kind": "request_policy"},
+        {"offset": "0x3a", "name": "hasPublishButton", "type": "bool", "kind": "request_policy"},
+        {"offset": "0x3b", "name": "hasCancelButton", "type": "bool", "kind": "request_policy"},
+        {"offset": "0x40", "name": "field_40", "type": "string16", "kind": "unknown_request_string"},
+        {"offset": "0x50", "name": "field_50", "type": "string16", "kind": "unknown_request_string"},
+        {"offset": "0x70", "name": "field_70", "type": "vector<void *>", "kind": "request_payload_unknown"},
+        {"offset": "0x94", "name": "field_94", "type": "intrusive_ptr<Object>", "kind": "request_payload_object"},
+        {"offset": "0x98", "name": "next", "type": "intrusive_ptr<EditorRequest>", "kind": "request_chain"}
+      ]
+    },
+    "definitions_templates": {
+      "evidence": ["E1", "E2", "E3", "E7"],
+      "entries": [
+        {"name": "cSpeciesManager", "fields": ["mSpeciesProfiles map<ResourceKey,cSpeciesProfile>", "mDefaultKey", "multiple hash_map<int,int> fields"]},
+        {"name": "cObjectTemplateDB", "address": "0x0067cb00", "role": "object-template definition lookup", "vtable_slots": 32},
+        {"name": "Palettes::PaletteMain/PaletteUI", "role": "parts and paints palette definitions/UI", "references": ["cEditor.mpPartsPalette", "cEditor.mpPaintPalette"]},
+        {"name": "EditorRequest", "role": "editor entry/operation request", "references": ["cEditor.mEditorRequest", "cGameModeManager::SubmitEditorRequest"]}
+      ]
+    }
+  },
+  "relationships": [
+    {"from": "cEditor", "to": "EditorModel", "relation": "owns_runtime_model", "evidence": ["E1", "E9"]},
+    {"from": "EditorModel", "to": "EditorRigblock", "relation": "contains_ordered_parts", "evidence": ["E1", "E2"]},
+    {"from": "EditorRigblock", "to": "EditorRigblock", "relation": "parent_children_symmetry", "evidence": ["E1", "E2"]},
+    {"from": "EditorRigblock", "to": "EditorRigblockPaint", "relation": "contains_up_to_8_paint_pairs", "evidence": ["E1", "E2"]},
+    {"from": "cEditorResource", "to": "cEditorResourceBlock", "relation": "contains_ordered_blocks", "evidence": ["E1", "E2"]},
+    {"from": "cEditorResourceBlock", "to": "ResourceKey", "relation": "group_instance_reference", "evidence": ["E1", "E2"]},
+    {"from": "cEditorResourceBlock", "to": "cEditorResourceBlock", "relation": "parent_and_symmetric_index_reference", "evidence": ["E1", "E2"]},
+    {"from": "cCreatureDataResource", "to": "cCreatureDataResource::RigblockData", "relation": "contains_ordered_parts", "evidence": ["E1", "E2"]},
+    {"from": "cEditor", "to": "EditorStateEditHistory", "relation": "transient_operation_history", "evidence": ["E1", "E6"]},
+    {"from": "cEditor", "to": "cEditorResource", "relation": "transient_snapshot_history", "evidence": ["E1", "E6"]},
+    {"from": "cEditor", "to": "cEditorAnimWorld", "relation": "owns_runtime_pose_world", "evidence": ["E1", "E7"]},
+    {"from": "cEditorAnimWorld", "to": "EditorCreatureController", "relation": "creature_id_to_controller_map", "evidence": ["E1", "E7"]},
+    {"from": "EditorCreatureController", "to": "AnimatedCreature", "relation": "writes_runtime_position_orientation_animation", "evidence": ["E1", "E8"]},
+    {"from": "cEditor", "to": "cEditorAnimEvent", "relation": "sends_or_posts_runtime_events", "evidence": ["E1", "E7"]},
+    {"from": "cEditorSkin", "to": "cEditorSkinMesh", "relation": "owns_realtime_and_hq_derived_meshes", "evidence": ["E1", "E2"]},
+    {"from": "EditorRigblock", "to": "cEditorSkinMesh", "relation": "converted_to_derived_mesh", "evidence": ["E2", "E3"], "confidence": "INFERRED"},
+    {"from": "EditorModel", "to": "cEditorSkin", "relation": "drives_skin_paint_production", "evidence": ["E1", "E3"], "confidence": "INFERRED"},
+    {"from": "cEditor", "to": "Palettes::PaletteMain", "relation": "parts_and_paint_definition_lookup", "evidence": ["E1"]},
+    {"from": "cEditor", "to": "cObjectTemplateDB", "relation": "template_definition_lookup", "evidence": ["E1", "E7"]},
+    {"from": "EditorRequest", "to": "ResourceKey", "relation": "creation_asset_reference", "evidence": ["E2"]},
+    {"from": "EditorRequest", "to": "cGameModeManager", "relation": "submitted_mode_transition_request", "evidence": ["E2", "E3"]},
+    {"from": "EditorModel", "to": "App::PropertyList", "relation": "typed_property_boundary", "evidence": ["E1", "E8", "E10"]},
+    {"from": "EditorRigblock", "to": "App::PropertyList", "relation": "per_part_property_boundary", "evidence": ["E1"]}
+  ],
+  "functions": [
+    {"va": "0x0043acf0", "name": "Editors::EditorRigblock::SetShadedDisplay", "operation": "mutate", "role": "part display state", "body": "not_persisted", "evidence": ["E3"]},
+    {"va": "0x004ad850", "name": "Editors::EditorModel::Dispose", "operation": "destroy", "role": "model teardown", "body": "not_persisted", "evidence": ["E3"]},
+    {"va": "0x004ae250", "name": "Editors::EditorModel::SetColor", "operation": "mutate", "role": "authored color mutation", "body": "persisted_empty_return", "evidence": ["E3", "E10"]},
+    {"va": "0x004ae280", "name": "Editors::EditorModel::SetName", "operation": "mutate", "role": "authored name mutation", "body": "not_persisted", "evidence": ["E2", "E3"]},
+    {"va": "0x004ae440", "name": "Editors::EditorModel::SetDescription", "operation": "mutate", "role": "authored description mutation", "body": "not_persisted", "evidence": ["E2", "E3"]},
+    {"va": "0x004ae520", "name": "Editors::EditorModel::GetCreationName", "operation": "query", "role": "authored name query", "body": "not_persisted", "evidence": ["E2", "E3"]},
+    {"va": "0x004ae8d0", "name": "Editors::EditorModel::Load", "operation": "serialize", "role": "model load boundary", "body": "not_persisted", "evidence": ["E2", "E3"]},
+    {"va": "0x004af780", "name": "Editors::EditorModel::Save", "operation": "serialize", "role": "model save boundary", "body": "not_persisted", "evidence": ["E2", "E3"]},
+    {"va": "0x004bf970", "name": "Editors::cCreatureDataResource::Read", "operation": "serialize", "role": "authored record read", "body": "not_persisted", "evidence": ["E3", "E10"]},
+    {"va": "0x004bfcb0", "name": "Editors::cCreatureDataResource::Write", "operation": "serialize", "role": "authored record write", "body": "not_persisted", "evidence": ["E3", "E10"]},
+    {"va": "0x004c5270", "name": "Editors::cEditorSkin::PaintSkin", "operation": "asset_production", "role": "paint/derived skin production", "body": "not_persisted", "evidence": ["E3"]},
+    {"va": "0x004c7460", "name": "Editors::cEditorSkinMeshBase::FromRigblocks", "operation": "asset_production", "role": "rigblock to derived mesh", "body": "not_persisted", "evidence": ["E3"]},
+    {"va": "0x005737d0", "name": "Editors::cEditor::OnMouseMove", "operation": "query", "role": "input/hover state and tool dispatch", "body": "persisted", "evidence": ["E3", "E4"]},
+    {"va": "0x00582fe0", "name": "Editors::cEditor::AddCreature", "operation": "create", "role": "runtime creature/model world creation", "body": "persisted", "evidence": ["E3", "E7", "E9"]},
+    {"va": "0x00584300", "name": "Editors::cEditor::Initialize", "operation": "lifecycle", "role": "editor initialization", "body": "persisted", "evidence": ["E3", "E9"]},
+    {"va": "0x00586410", "name": "Editors::cEditor::CommitEditHistory", "operation": "mutate", "role": "history snapshot commit", "body": "persisted", "evidence": ["E3", "E6"]},
+    {"va": "0x00586b00", "name": "Editors::cEditor::SetEditorModel", "operation": "mutate", "role": "model installation and derived rebuild", "body": "persisted", "evidence": ["E3", "E9"]},
+    {"va": "0x00587270", "name": "Editors::cEditor::SetActiveMode", "operation": "mutate", "role": "editor mode transition", "body": "persisted", "evidence": ["E3", "E7"]},
+    {"va": "0x00587a20", "name": "Editors::cEditor::OnExit", "operation": "destroy", "role": "editor exit/teardown", "body": "persisted", "evidence": ["E3", "E9"]},
+    {"va": "0x00588570", "name": "Editors::cEditor::OnMouseDown", "operation": "mutate", "role": "selection/tool/edit start", "body": "persisted", "evidence": ["E3", "E5"]},
+    {"va": "0x0058a5a0", "name": "Editors::cEditor::Undo", "operation": "mutate", "role": "history restore", "body": "persisted", "evidence": ["E3", "E6"]},
+    {"va": "0x0058a950", "name": "Editors::cEditor::Redo", "operation": "mutate", "role": "history replay", "body": "persisted", "evidence": ["E3", "E6"]},
+    {"va": "0x0058ac10", "name": "Editors::cEditor::OnKeyDown", "operation": "mutate", "role": "key dispatch and undo/redo/mode/save commands", "body": "persisted", "evidence": ["E3", "E5", "E10"]},
+    {"va": "0x0058b650", "name": "Editors::cEditor::OnMouseUp", "operation": "mutate", "role": "tool finalization and commit", "body": "persisted", "evidence": ["E3", "E5"]},
+    {"va": "0x0058be50", "name": "Editors::cEditor::Update", "operation": "mutate", "role": "per-frame editor/tool/animation state", "body": "persisted", "evidence": ["E3", "E9"]},
+    {"va": "0x0058e6d0", "name": "Editors::cEditor::OnEnter", "operation": "lifecycle", "role": "property/template/UI/model/skin setup", "body": "persisted", "evidence": ["E3", "E9"]},
+    {"va": "0x00591fa0", "name": "Editors::cEditor::HandleMessage", "operation": "query", "role": "message dispatcher and save/mode/UI boundary", "body": "persisted", "readiness": "DEPENDENCY_FIRST", "evidence": ["E3", "E10"]},
+    {"va": "0x0059b0f0", "name": "Editors::EditorCreatureController::SetTargetPosition", "operation": "mutate", "role": "runtime pose target position", "body": "persisted", "evidence": ["E3", "E8"]},
+    {"va": "0x0059b4b0", "name": "Editors::EditorCreatureController::Update", "operation": "mutate", "role": "runtime pose interpolation", "body": "persisted", "evidence": ["E3", "E8"]},
+    {"va": "0x0059c6e0", "name": "Editors::cEditorAnimWorld::DestroyCreature", "operation": "destroy", "role": "creature controller destruction", "body": "persisted", "evidence": ["E3", "E7"]},
+    {"va": "0x0059cac0", "name": "Editors::cEditorAnimWorld::GetCreatureController", "operation": "query", "role": "creature ID to controller lookup", "body": "persisted", "evidence": ["E3", "E7"]},
+    {"va": "0x0059cf00", "name": "Editors::cEditorAnimWorld::SetTargetPosition", "operation": "mutate", "role": "pose target position dispatch", "body": "persisted", "evidence": ["E3", "E7"]},
+    {"va": "0x0059cea0", "name": "Editors::cEditorAnimWorld::SetTargetAngle", "operation": "mutate", "role": "pose target angle dispatch", "body": "persisted", "evidence": ["E3", "E7"]},
+    {"va": "0x0059d840", "name": "Editors::cEditorAnimEvent::MessagePost", "operation": "mutate", "role": "animation event post", "body": "persisted", "evidence": ["E3", "E10"]},
+    {"va": "0x0059d8b0", "name": "Editors::cEditorAnimEvent::MessageSend", "operation": "mutate", "role": "animation event send", "body": "persisted", "evidence": ["E3", "E10"]},
+    {"va": "0x005a92c0", "name": "Editors::EditorRequest::Submit", "operation": "create", "role": "editor request submission", "body": "not_persisted", "evidence": ["E2", "E3"]},
+    {"va": "0x0067cb00", "name": "Sporepedia::OTDB::cObjectTemplateDB::Get", "operation": "query", "role": "object-template definition lookup", "body": "not_persisted", "evidence": ["E3", "E10"]},
+    {"va": "0x006a2f60", "name": "App::PropertyList::Read", "operation": "serialize", "role": "property stream read", "body": "persisted", "evidence": ["E3", "E8"]},
+    {"va": "0x006a1540", "name": "App::PropertyList::Write", "operation": "serialize", "role": "property stream write", "body": "persisted", "evidence": ["E3", "E8"]},
+    {"va": "0x00b1de20", "name": "Simulator::cGameModeManager::SubmitEditorRequest", "operation": "create", "role": "mode-manager request handoff", "body": "not_persisted", "evidence": ["E2", "E3"]}
+  ],
+  "lifecycle": [
+    {"state": "editor_uninitialized", "transition": "cEditor::Initialize @ 0x00584300", "effects": ["construct service/UI/render state", "initialize editor infrastructure", "create helper objects and callbacks"], "state_kind": "transient", "evidence": ["E3", "E9"]},
+    {"state": "editor_initialized_not_entered", "transition": "cEditor::OnEnter @ 0x0058e6d0", "effects": ["read property-backed configuration", "look up template/palette-adjacent definitions", "create or replace UI, skin, play-mode, model, effect, and shadow state"], "state_kind": "transient", "evidence": ["E1", "E9", "E10"]},
+    {"state": "editor_hover_or_idle", "transition": "cEditor::OnMouseMove @ 0x005737d0", "effects": ["store pointer/coordinates", "mark movement active", "dispatch through mode/tool state"], "state_kind": "transient", "evidence": ["E4"]},
+    {"state": "editor_drag_or_selection", "transition": "cEditor::OnMouseDown @ 0x00588570", "effects": ["hit/selection work", "invoke tool/actor mutations", "change active/moving/selected parts and colors"], "state_kind": "transient", "evidence": ["E5"]},
+    {"state": "editor_edit_committed", "transition": "cEditor::OnMouseUp @ 0x0058b650 then CommitEditHistory @ 0x00586410", "effects": ["clear active interaction", "release tool/model references", "truncate redo tail", "append state/resource snapshots", "refresh derived state"], "state_kind": "transient_history", "evidence": ["E5", "E6"]},
+    {"state": "editor_history_moved", "transition": "cEditor::Undo @ 0x0058a5a0 or Redo @ 0x0058a950", "effects": ["move shared history cursor", "restore model/resource state", "refresh transform/animation state", "sometimes send animation event"], "state_kind": "transient_history", "evidence": ["E6"]},
+    {"state": "editor_mode_transition", "transition": "cEditor::SetActiveMode @ 0x00587270", "effects": ["run prior mode cleanup", "update controller target position/angle", "enter new mode", "send animation event"], "state_kind": "transient_mode_and_pose", "evidence": ["E7"]},
+    {"state": "editor_per_frame", "transition": "cEditor::Update @ 0x0058be50", "effects": ["process tool interaction", "update render/pose/animation state", "check property-backed conditions and transitions"], "state_kind": "transient", "evidence": ["E9", "E10"]},
+    {"state": "editor_exited", "transition": "cEditor::OnExit @ 0x00587a20", "effects": ["release runtime resources", "clear editor state", "remove lighting/model worlds", "reset to a base editor mode"], "state_kind": "transient", "evidence": ["E9"]},
+    {"state": "editor_disposed", "transition": "cEditor::Dispose @ 0x00576c50", "effects": ["unregister callbacks", "pause services", "release UI/model/world resources", "dispose shell"], "state_kind": "transient", "evidence": ["E9"]},
+    {"state": "editor_request_to_mode_manager", "transition": "EditorRequest::Submit @ 0x005a92c0 to cGameModeManager::SubmitEditorRequest @ 0x00b1de20", "effects": ["request editor entry/operation", "select creation key and active mode"], "state_kind": "external_request", "evidence": ["E2", "E3"]},
+    {"state": "level_or_game_mode_transition", "transition": "IGameModeManager/AppSystem handoff", "effects": ["mode exit/enter, UI/property messages, transition animation/effects, and camera/UI flags are expected", "exact cross-level ordering is not runtime observed"], "state_kind": "external_lifecycle", "confidence": "INFERRED", "evidence": ["E2", "E7", "E10"]}
+  ],
+  "persistence": {
+    "authored_data_candidate": {
+      "objects": ["cCreatureDataResource", "cEditorResource", "EditorModel", "EditorRigblock", "cEditorResourceBlock"],
+      "evidence": ["E1", "E2", "E3", "E10"],
+      "confidence": "INFERRED",
+      "wire_format": "UNKNOWN"
+    },
+    "runtime_snapshots": {
+      "objects": ["cEditor", "EditorStateEditHistory", "cEditor history snapshots", "cEditorAnimWorld", "EditorCreatureController", "AnimatedCreature", "cEditorAnimEvent", "cEditorSkin"],
+      "evidence": ["E1", "E6", "E7", "E8", "E9"],
+      "claim": "These are transient, derived, or runtime conversion state and should not be serialized wholesale as authored EditorData.",
+      "confidence": "SUPPORTED"
+    },
+    "history": {
+      "state_vector": {"field": "cEditor.mStateEditHistory", "object": "EditorStateEditHistory", "size_bytes": 44, "persistence": "transient"},
+      "resource_snapshot_vector": {"field": "cEditor.mEditHistory", "object": "cEditorResource-like snapshot", "size_bytes": 172, "persistence": "transient_until_save_proven"},
+      "cursor": {"field": "cEditor.mEditHistoryIndex", "type": "int", "persistence": "transient"},
+      "commit_behavior": ["truncate later entries", "append edit state", "append resource-like snapshot", "increment cursor", "refresh derived model/animation state"],
+      "evidence": ["E1", "E6"],
+      "confidence": "SUPPORTED"
+    },
+    "property_stream": {
+      "functions": ["App::PropertyList::Read @ 0x006a2f60", "App::PropertyList::Write @ 0x006a1540", "App::DirectPropertyList::Read @ 0x006a3170", "App::DirectPropertyList::Write @ 0x006a1640"],
+      "observed_shape": "count followed by sequential property entries with 0x18-byte stride; each entry uses an integer/key-like first word and a helper-serialized second value",
+      "property_surface": ["bool", "int32", "uint32", "float", "string16", "key", "vector2", "vector3", "vector4", "color RGB/RGBA", "transform", "arrays", "BBox"],
+      "evidence": ["E3", "E8", "E10"],
+      "editor_wire_format": "UNKNOWN"
+    },
+    "model_load_save": {
+      "functions": ["EditorModel::Load @ 0x004ae8d0", "EditorModel::Save @ 0x004af780", "cCreatureDataResource::Read @ 0x004bf970", "cCreatureDataResource::Write @ 0x004bfcb0"],
+      "observed": "SDK names and paired read/write anchors establish load/save boundaries.",
+      "unobserved": ["byte order", "record headers", "version fields", "property-to-field mapping", "validation/apply ordering", "save extension/directory semantics", "round-trip result"],
+      "evidence": ["E2", "E3", "E10"],
+      "confidence": "INFERRED"
+    },
+    "save_and_apply_flow": {
+      "observed_sequence": [
+        "EditorModel::Load or cCreatureDataResource::Read supplies an authored record candidate",
+        "cEditor::SetEditorModel installs/rebuilds runtime model state",
+        "mouse/tool callbacks mutate parts or paint state",
+        "OnMouseUp or CommitEditHistory appends transient history state",
+        "EditorModel::Save or cCreatureDataResource::Write is the persistence boundary",
+        "cEditor::SetActiveMode or AddCreature rebuilds runtime animation/model-world conversion"
+      ],
+      "evidence": ["E3", "E5", "E6", "E7", "E9", "E10"],
+      "confidence": "INFERRED",
+      "not_claimed": "No exact validator body or runtime save/apply trace was recovered."
+    },
+    "validation_and_limits": {
+      "observed": ["EditorRequest.editableTests and save/create/publish/cancel policy flags", "cEditor complexity, bone, geometry, bounds, height, and baked-block limits", "cEditor skin/spine/asymmetry/palette policies", "cEditor model save overwrite/copy/last-child flags"],
+      "evidence": ["E1", "E2", "E9"],
+      "confidence": "SUPPORTED",
+      "gap": "No single validator function or exact pass/fail rule is established."
+    }
+  },
+  "openspore_comparison": {
+    "current_tree_scope": {
+      "implemented": ["IGameMode lifecycle shell", "CellModeStrategy lifecycle", "CellInput key/action/frame contract", "deterministic CellSim state/events", "CellAnim blend/effect helper", "B1 resource provider by type/group/instance", "typed Cell resource readers and bounded DBPF/GMDL/RW4/raster support"],
+      "not_implemented": ["general editor shell", "EditorModel/EditorRigblock/cEditorResource/cCreatureDataResource", "property serialization", "editor paint/skin pipeline", "editor animation controller/world", "undo/redo history", "UTFWin editor/UI message graph", "level/editor/game-mode request transitions"],
+      "evidence": ["E10", "E11"]
+    },
+    "capability_matrix": [
+      {"capability": "mode lifecycle", "openspore": "CellModeStrategy/GameModeManager", "original": "cEditor/IGameMode", "status": "partial_shell", "evidence": ["E10", "E11"]},
+      {"capability": "authored object/part graph", "openspore": "none", "original": "EditorModel/EditorRigblock/cEditorResource/cCreatureDataResource", "status": "missing", "evidence": ["E1", "E11"]},
+      {"capability": "object IDs and references", "openspore": "resource identity and cell pool indices", "original": "group/instance, parent/symmetry indices, creature IDs, ResourceKey links", "status": "different_contract", "evidence": ["E1", "E11"]},
+      {"capability": "paints", "openspore": "CellAnim effect mapping only", "original": "mPaints, cEditorResourceBlock paint arrays, cEditorSkin/Skinner", "status": "missing_editor_specific", "evidence": ["E1", "E3", "E11"]},
+      {"capability": "poses", "openspore": "PlayerState position/heading and baked meshes", "original": "rigblock transforms, controller targets, AnimatedCreature quaternion/animation", "status": "partial_different_layer", "evidence": ["E1", "E8", "E11"]},
+      {"capability": "names", "openspore": "scene/resource naming only", "original": "EditorModel mName/mDescription/mAcceptedName and EditorNamePanel", "status": "missing_editor_specific", "evidence": ["E1", "E2", "E11"]},
+      {"capability": "undo/redo", "openspore": "none", "original": "two history vectors, Undo/Redo, CommitEditHistory", "status": "missing", "evidence": ["E6"]},
+      {"capability": "validation/apply", "openspore": "asset decoder validation and Cell creation checks", "original": "EditorRequest ContentValidation and editor limits/save policy", "status": "missing_or_different", "evidence": ["E1", "E2", "E10"]},
+      {"capability": "serialization/save", "openspore": "typed Cell records and test manifests", "original": "PropertyList streams and EditorModel/cCreatureDataResource read/write", "status": "missing_general_property_and_editor_save", "evidence": ["E8", "E10", "E11"]},
+      {"capability": "runtime conversion", "openspore": "DBPF/GMDL/RW4/raster to host mesh/renderer", "original": "rigblocks to skin/mesh/model/animation world", "status": "downstream_only", "evidence": ["E3", "E10", "E11"]},
+      {"capability": "mode/level transitions", "openspore": "fixed/sim/interactive cell paths", "original": "EditorRequest, cGameModeManager, cEditor SetActiveMode, transition effects", "status": "not_reconstructed", "evidence": ["E2", "E7", "E10"]}
+    ],
+    "determinism": {
+      "current_tree": "Cell simulation, manifests, and replay contracts are deterministic and float32-exact within existing OpenSpore fixtures.",
+      "editor_evidence": "History and property entry ordering are statically deterministic in recovered bodies, but original editor runtime and save payload are not runtime validated.",
+      "evidence": ["E6", "E8", "E11"]
+    }
+  },
+  "gaps": [
+    {"id": "G-01", "gap": "No literal EditorData symbol or structure was found.", "needed": "A targeted type/vtable or owner-constructor trace proving a distinct EditorData type.", "evidence": ["E1", "E3"]},
+    {"id": "G-02", "gap": "cCreatureDataResource::Read/Write bodies are absent from the persisted export.", "needed": "Read-only decompilation of 0x004bf970 and 0x004bfcb0 with typed IStream use.", "evidence": ["E3", "E10"]},
+    {"id": "G-03", "gap": "EditorModel::Load/Save bodies are absent; SetColor is present but empty.", "needed": "Read-only decompilation of 0x004ae8d0, 0x004af780, and mutation peers.", "evidence": ["E3", "E10"]},
+    {"id": "G-04", "gap": "Exact conversion among EditorRigblock, cEditorResourceBlock, and cCreatureDataResource::RigblockData is unproved.", "needed": "Typed constructor/assignment traces for model and resource paths.", "evidence": ["E1", "E2", "E5"]},
+    {"id": "G-05", "gap": "The semantic contents of the larger history snapshot and small edit-state object are not fully typed.", "needed": "Constructor/fill bodies and snapshot comparison.", "evidence": ["E6"]},
+    {"id": "G-06", "gap": "Exact property keys, message IDs, and payloads for editor load/save/apply are unresolved.", "needed": "Typed HandleMessage/message-manager trace or runtime menu/editor trace.", "evidence": ["E10"]},
+    {"id": "G-07", "gap": "No positive original editor or menu-to-editor trace exists in current evidence.", "needed": "Hash-pinned menu transition with editor entry, mode, save, and teardown events.", "evidence": ["E10"]},
+    {"id": "G-08", "gap": "Validation is represented by flags and limits but no single validator contract is established.", "needed": "Typed ContentValidation/limits call graph and before/after snapshots.", "evidence": ["E1", "E2", "E9"]},
+    {"id": "G-09", "gap": "Exact group/instance allocation, parent/symmetry validation, and duplicate repair behavior are unknown.", "needed": "Constructor, mutation, and serialization traces around resource blocks.", "evidence": ["E1", "E2"]},
+    {"id": "G-10", "gap": "Exact paint persistence and paint-to-texture save behavior are unknown.", "needed": "PaintSkin/FromRigblocks bodies and save correlation.", "evidence": ["E3", "E10"]},
+    {"id": "G-11", "gap": "Exact animation event IDs and pose interpolation semantics beyond recovered controller writes are unknown.", "needed": "Animation manager event table and controller trace.", "evidence": ["E7", "E8", "E10"]},
+    {"id": "G-12", "gap": "No OpenSpore editor data package or compatibility contract exists in source.", "needed": "A clean-room typed editor model/serializer design after static boundaries close.", "evidence": ["E10", "E11"]}
+  ],
+  "contradictions": [
+    {"id": "X-01", "issue": "EditorData is the requested name, but no EditorData type or symbol is present.", "resolution": "Record a composite model and bound names to exported SDK types.", "evidence": ["E1", "E3"]},
+    {"id": "X-02", "issue": "cEditor has 353 SDK fields while decompiler expressions contain generated/untyped fields.", "resolution": "Preserve SDK offsets as structure evidence; do not infer meanings for field_N or generated unions.", "evidence": ["E1", "E2", "E9"]},
+    {"id": "X-03", "issue": "CommitEditHistory appends small and larger objects, but the larger constructor is unnamed.", "resolution": "Call it cEditorResource-like only as a size/structure hypothesis; keep exact type unresolved.", "evidence": ["E1", "E6"]},
+    {"id": "X-04", "issue": "EditorModel::SetColor is named but its available body only returns.", "resolution": "Treat the mutator boundary as named, not behaviorally recovered.", "evidence": ["E3", "E10"]},
+    {"id": "X-05", "issue": "EditorModel and cEditorResourceBlock expose similar part/pose/paint concepts, but no body proves they share one serialized representation.", "resolution": "Keep both schemas and mark conversion unresolved.", "evidence": ["E1", "E2"]},
+    {"id": "X-06", "issue": "Committed Ghidra snapshot uses 58,757 functions while a prior live read reported 59,245.", "resolution": "Use pinned snapshot/address evidence and retain the count drift as provenance.", "evidence": ["E10"]},
+    {"id": "X-07", "issue": "The live bridge was reachable but had no open program and could not open GUI-mode programs.", "resolution": "Use committed Ghidra exports; no Ghidra mutation or save was attempted.", "evidence": ["E1", "E12"]},
+    {"id": "X-08", "issue": "Mode transition effects are statically visible, but current runtime evidence is negative.", "resolution": "Keep lifecycle ordering at INFERRED until a positive trace exists.", "evidence": ["E10"]}
+  ],
+  "reconstruction_packages": [
+    {
+      "id": "PKG-10-EDITOR-DISPATCH",
+      "name": "Editor and UTFWin message/input dispatch",
+      "status": "SUPPORTED",
+      "role": "Input, message, mode, save, and UI boundary around authored data",
+      "anchors": ["cEditor::OnKeyDown @ 0x0058ac10", "OnMouseDown @ 0x00588570", "OnMouseUp @ 0x0058b650", "Update @ 0x0058be50", "HandleMessage @ 0x00591fa0", "SetActiveMode @ 0x00587270"],
+      "assets": ["EditorRequest", "cEditor", "PropertyList", "EditorUI", "UTFWin message graph"],
+      "minimum_evidence": ["typed message IDs/payloads", "editor field types", "tool/actor vtable contract", "menu-to-editor trace"],
+      "evidence": ["E3", "E10", "E12"]
+    },
+    {
+      "id": "PKG-15-EDITOR-SUPPORT",
+      "name": "Palettes, Skinner, and editor support",
+      "status": "INFERRED",
+      "role": "Part/paint palettes, skin mesh derivation, paint operations, and supporting asset production",
+      "anchors": ["cEditorSkin::PaintSkin @ 0x004c5270", "cEditorSkinMeshBase::FromRigblocks @ 0x004c7460", "Skinner texture-paint family"],
+      "assets": ["cEditorSkin", "cEditorSkinMesh", "EditorRigblock", "GMDL/RW4/raster downstream assets"],
+      "minimum_evidence": ["paint input/output contract", "texture identity and save correlation", "rigblock-to-mesh field map"],
+      "evidence": ["E1", "E3", "E10"]
+    },
+    {
+      "id": "PKG-03-RESOURCE-IO",
+      "name": "Resource manager, DBPF/QFS I/O, and property substrate",
+      "status": "SUPPORTED",
+      "role": "ResourceKey resolution, property records, and future EditorData save/load adapter",
+      "anchors": ["App::PropertyList::Read @ 0x006a2f60", "Write @ 0x006a1540", "cCreatureDataResource::Read @ 0x004bf970", "Write @ 0x004bfcb0"],
+      "assets": ["ResourceKey", "PropertyList", "cEditorResource", "cCreatureDataResource"],
+      "minimum_evidence": [".prop-style record fixture", "editor record round trip", "multi-package load order"],
+      "evidence": ["E1", "E8", "E10"]
+    },
+    {
+      "id": "PKG-04-ASSET-GEOMETRY-TEXTURE",
+      "name": "GMDL/RW4/raster geometry and texture decode",
+      "status": "SUPPORTED",
+      "role": "Downstream model/mesh/texture seam, not the original editor authored-data schema",
+      "anchors": ["GMDL v8 parser", "RW4 section walker", "raster/DXT5 decoder"],
+      "assets": ["GMDL", "RW4", "raster"],
+      "minimum_evidence": ["complete material/animation mapping", "original editor output correlation"],
+      "evidence": ["E10", "E11"]
+    },
+    {
+      "id": "PKG-17-ANIMATION-SWARM",
+      "name": "Cell and creature animation boundary",
+      "status": "INFERRED",
+      "role": "EditorCreatureController, AnimatedCreature, cEditorAnimWorld, and pose/animation event conversion",
+      "anchors": ["cEditorAnimWorld::GetCreatureController @ 0x0059cac0", "SetTargetPosition @ 0x0059cf00", "SetTargetAngle @ 0x0059cea0", "Controller::Update @ 0x0059b4b0"],
+      "assets": ["cEditorAnimWorld", "EditorCreatureController", "AnimatedCreature", "cEditorAnimEvent"],
+      "minimum_evidence": ["event ID table", "controller interpolation contract", "editor-to-render pose trace"],
+      "evidence": ["E1", "E7", "E8", "E10"]
+    },
+    {
+      "id": "PKG-02-APP-LIFECYCLE",
+      "name": "Application bootstrap and system lifecycle",
+      "status": "SUPPORTED",
+      "role": "IGameMode/AppSystem handoff surrounding editor requests and level/game-mode transitions",
+      "anchors": ["IGameMode lifecycle", "EditorRequest::Submit @ 0x005a92c0", "cGameModeManager::SubmitEditorRequest @ 0x00b1de20"],
+      "assets": ["EditorRequest", "cGameModeManager", "transition effect/animation IDs"],
+      "minimum_evidence": ["positive menu-to-editor trace", "mode exit/enter ordering", "save/cancel/abort behavior"],
+      "evidence": ["E2", "E7", "E10"]
+    }
+  ],
+  "provenance": {
+    "artifact": "knowledgegraph/research/data-model/07-editor-data.json",
+    "as_of": "2026-09-24",
+    "generator": "read-only editor-data archaeology worker",
+    "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+    "triage_snapshot": "f0e310e0c83fc960ed38d490ff6d2a78d53925969206b4c4db7a012ddbf8b54b",
+    "xref_snapshot": "2540f2ca7cd361a72b559448fa5cf247eff3cee20d375b14ed0dd256c45229c8",
+    "sdk_export_revision": "cbf9206",
+    "evidence_index": {
+      "E1": ".spore-analysis/ghidra-exports/structs_fields.tsv",
+      "E2": ".spore-analysis/ghidra-exports/spore_sdk.xml",
+      "E3": ".spore-analysis/ghidra-exports/sdk_functions.tsv",
+      "E4": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnMouseMove.c",
+      "E5": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnMouseDown.c; Editors__cEditor__OnMouseUp.c",
+      "E6": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__CommitEditHistory.c; Editors__cEditor__Undo.c; Editors__cEditor__Redo.c",
+      "E7": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__SetActiveMode.c; Editors__cEditorAnimWorld__*.c",
+      "E8": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__EditorCreatureController__*.c; App__PropertyList__*.c",
+      "E9": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__Initialize.c; OnEnter.c; Update.c; OnExit.c; Dispose.c; SetEditorModel.c",
+      "E10": "docs/analysis/reconstruction-readiness.md; knowledgegraph/research/global-campaign-2026/track-g-editor-ui-input.json; knowledgegraph/research/global-campaign-2026/track-k-engine-boundaries.json",
+      "E11": "src/apps/IGameMode.hpp; src/apps/CellModeStrategy.cpp; src/apps/CellInput.hpp; src/apps/CellAnim.hpp; src/sim/Sim.hpp; src/sim/CellGame.hpp; src/compat/ResourceProvider.hpp; src/assets/CellResource.hpp",
+      "E12": "knowledgegraph/spore.db"
+    },
+    "determinism": {
+      "function_array": "ascending numeric VA",
+      "schema_field_arrays": "ascending byte offset within each schema",
+      "capacity_arrays": "ascending offset; capacities are SDK/Ghidra-exported values",
+      "relationship_array": "source schema order, then relation order",
+      "gap_array": "ascending gap id"
+    },
+    "safety": {
+      "ghidra_mutations": 0,
+      "ghidra_saves": 0,
+      "kg_writes": 0,
+      "historical_artifacts_modified": 0,
+      "spore_directory_inspected": false,
+      "decompiled_source_reproduced": false
+    }
+  }
+}

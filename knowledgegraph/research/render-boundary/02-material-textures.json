@@ -1,0 +1,679 @@
+{
+  "track": "material-textures",
+  "scope": "Gameplay-facing material and texture intent, raster loading, texture-slot binding, UV/vertex-stream and render-state inputs, semantically consumed lighting activation, and the boundary to RenderWare/D3D implementation. Original third-party internals are treated as replaceable implementation; content identity, material identity, slot association, state ordering, and draw inputs are preserved as contracts.",
+  "boundaries": [
+    {
+      "classification": "required_for_semantics",
+      "boundary": "Gameplay material and texture intent: cell/content resource selection, material IDs, and texture references",
+      "gameplay_caller": "Simulator::Cell::cCellGFX::PreloadResources and cCellGFX::PreloadCellResource; cCellGFX::AddPreloadedTexture for preload insertion",
+      "original_callee": "Simulator::Cell::cCellGFX::AddPreloadedTexture; cCellGFX::PreloadCellResource and cCellGFX::PreloadPopulateResource; resource/material manager calls reached by the preload path",
+      "parameters": [
+        "cell/resource reference and preloaded-map entry",
+        "material identity or Texture* selected by content data",
+        "model, effect, populate, creature, and texture association"
+      ],
+      "outputs": [
+        "preloaded stage-resource associations",
+        "texture, model, effect, or creature references stored for display"
+      ],
+      "state_changed": [
+        "cCellGFX preload collections",
+        "stage-to-resource association state"
+      ],
+      "structures": [
+        "cCellGFX",
+        "IsPreloadedMap_t",
+        "cCellDataReference<Simulator::Cell::cCellCellResource>",
+        "Texture",
+        "modern GmdlModel.materialIds and GmdlTextureRef"
+      ],
+      "lifetime": "Stage/display lifetime. Content and resource managers own the referenced records; cCellGFX retains the stage association until the Cell presentation is replaced or disposed.",
+      "failure_semantics": "The original decompilation has null guards and allocation fallback but no explicit status return. Missing-resource and unsupported-content behavior is not fully resolved. The triage record is static-only and explicitly not runtime-validated.",
+      "timing_order": "Resource and texture preload precedes StartDisplay; the resulting associations are consumed when the Cell world/layers become visible.",
+      "openspore_concept": "Gameplay/content material intent is a stable material ID plus texture keys and slot associations, not a RenderWare MaterialShader or Raster pointer.",
+      "modern_abstraction": "IMaterialIntent + IContentStore + IStageResourcePreloader",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__AddPreloadedTexture.c",
+          "line": 8,
+          "symbol": "Simulator::Cell::cCellGFX::AddPreloadedTexture"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__AddPreloadedTexture.c",
+          "line": 22,
+          "symbol": "Simulator::Cell::cCellGFX::AddPreloadedTexture"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__PreloadResources.c",
+          "line": 50,
+          "symbol": "Simulator::Cell::cCellGFX::PreloadResources"
+        },
+        {
+          "file": "src/assets/Gmdl.hpp",
+          "line": 51,
+          "symbol": "GmdlTextureRef"
+        },
+        {
+          "file": "src/assets/Gmdl.hpp",
+          "line": 68,
+          "symbol": "GmdlModel::materialIds and GmdlModel::textureRefs"
+        },
+        {
+          "file": "src/assets/Gmdl.cpp",
+          "line": 196,
+          "symbol": "parseGmdl material table"
+        },
+        {
+          "file": "src/assets/Gmdl.cpp",
+          "line": 218,
+          "symbol": "parseGmdl texture-set decoding"
+        },
+        {
+          "file": "knowledgegraph/triage/queue-f0e310e0.json",
+          "line": 6887,
+          "symbol": "Simulator::Cell::cCellGFX::AddPreloadedTexture"
+        }
+      ],
+      "confidence": "medium",
+      "notes": "The material-ID and texture-reference structure is a clean-room content contract. The original AddPreloadedTexture body has heavily type-ambiguous decompiler aliases, so the exact collection ownership and material-to-slot relation remain inferred. This boundary is semantic content selection, not a request to reconstruct RW object layouts."
+    },
+    {
+      "classification": "required_for_semantics",
+      "boundary": "Stable material ID to shader/material definition lookup",
+      "gameplay_caller": "Graphics material selection/loading path; the direct caller is not present in the committed decompilation export",
+      "original_callee": "Graphics::MaterialShader::GetMaterialShader",
+      "parameters": [
+        "uint32_t shaderID"
+      ],
+      "outputs": [
+        "MaterialShader* whose mID equals shaderID",
+        "nullptr when no list entry matches"
+      ],
+      "state_changed": [
+        "DAT_017186d4 caches the last matching MaterialShader pointer"
+      ],
+      "structures": [
+        "MaterialShader",
+        "MaterialShader.mID",
+        "MaterialShader linked-list next field",
+        "Graphics material registry"
+      ],
+      "lifetime": "The material registry owns the records; a returned handle is valid only while its material-manager records remain alive. The lookup cache does not establish a new ownership lifetime.",
+      "failure_semantics": "A missing ID returns nullptr and does not visibly report an error code. The cache is updated only on a match.",
+      "timing_order": "Resolve a material ID before binding compiled state, active shader data, and the draw submission.",
+      "openspore_concept": "A stable MaterialId resolves to a material definition containing texture-slot bindings, shader family, and constants.",
+      "modern_abstraction": "IMaterialRegistry.resolve(MaterialId) -> MaterialDefinitionHandle",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__MaterialShader__GetMaterialShader.c",
+          "line": 6,
+          "symbol": "Graphics::MaterialShader::GetMaterialShader"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__MaterialShader__GetMaterialShader.c",
+          "line": 13,
+          "symbol": "MaterialShader::mID comparison"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__MaterialShader__GetMaterialShader.c",
+          "line": 17,
+          "symbol": "MaterialShader linked-list traversal"
+        },
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 292,
+          "symbol": "MaterialShader ID-keyed cache"
+        },
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 295,
+          "symbol": "CompiledState material texture slots"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.jsonl",
+          "line": 43674,
+          "symbol": "Graphics::MaterialShader::GetMaterialShader"
+        }
+      ],
+      "confidence": "high",
+      "notes": "The function is an engine-side lookup, but the ID-to-definition association is content semantics. Preserve the ID and definition contract, not the original linked-list pointer, DAT cache, or calling convention."
+    },
+    {
+      "classification": "thin_wrapper",
+      "boundary": "Graphics manager service roots used to reach material, texture, renderer, and lighting implementations",
+      "gameplay_caller": "cCellGFX::Initialize/StartDisplay and material/texture/draw code that first obtains a Graphics service",
+      "original_callee": "Graphics::IRenderer::Get; Graphics::ITextureManager::Get; Graphics::IMaterialManager::Get; Graphics::ILightingManager::Get; Graphics::IShadowWorld::Get",
+      "parameters": [],
+      "outputs": [
+        "IRenderer* from DAT_015fd8b0",
+        "ITextureManager* from DAT_015fd8b4",
+        "IMaterialManager* from DAT_015fd8b8",
+        "ILightingManager* from DAT_015fd8c0",
+        "IShadowWorld* from DAT_015fd8cc"
+      ],
+      "state_changed": [],
+      "structures": [
+        "IRenderer",
+        "ITextureManager",
+        "IMaterialManager",
+        "ILightingManager",
+        "IShadowWorld",
+        "process-global DAT manager pointers"
+      ],
+      "lifetime": "Process/service-manager lifetime. These accessors do not own a per-draw material or texture and do not create a new resource lifetime.",
+      "failure_semantics": "They return the stored global pointer; an uninitialized service can therefore yield null or a later invalid virtual call. No explicit initialization error is returned by the wrappers.",
+      "timing_order": "The accessor is called immediately before a service virtual method such as lighting-world selection, renderer-layer creation, or material/texture operations.",
+      "openspore_concept": "Service discovery is an implementation convenience; the semantic contract is the injected manager interface and its typed operations.",
+      "modern_abstraction": "IRenderer + IMaterialBindings + ITextureStore + ILightingService",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__IRenderer__Get.c",
+          "line": 6,
+          "symbol": "Graphics::IRenderer::Get"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__ITextureManager__Get.c",
+          "line": 8,
+          "symbol": "Graphics::ITextureManager::Get"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__IMaterialManager__Get.c",
+          "line": 8,
+          "symbol": "Graphics::IMaterialManager::Get"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__ILightingManager__Get.c",
+          "line": 8,
+          "symbol": "Graphics::ILightingManager::Get"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__IShadowWorld__Get.c",
+          "line": 8,
+          "symbol": "Graphics::IShadowWorld::Get"
+        },
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 51,
+          "symbol": "Graphics manager abstraction"
+        },
+        {
+          "file": "docs/replacement-boundaries.md",
+          "line": 52,
+          "symbol": "B3 IRenderer seam"
+        }
+      ],
+      "confidence": "high",
+      "notes": "These are thin global-service accessors, not gameplay material data. Do not reproduce DAT globals or the original 32-bit vtable layout in OpenSpore."
+    },
+    {
+      "classification": "replaceable_infrastructure",
+      "boundary": "Raster record decoding and GPU texture upload",
+      "gameplay_caller": "Cell/resource preload path obtains a raster record; a later material draw consumes the resulting texture resource",
+      "original_callee": "RenderWare::Raster::Create, CreateRaster, Extract, and D3D9AddToUnmanagedList; the Graphics texture-manager implementation around those calls",
+      "parameters": [
+        "raster record bytes",
+        "raster envelope fields: width, height, mip count, and FOURCC",
+        "texture target/slot or resource identity"
+      ],
+      "outputs": [
+        "decoded raster mip images",
+        "renderer-owned texture/raster handle"
+      ],
+      "state_changed": [
+        "resource texture cache or raster state",
+        "GPU texture image, view, and sampler state after upload"
+      ],
+      "structures": [
+        "RasterEnvelope",
+        "Raster/RW4 Raster section",
+        "Texture",
+        "GmdlTextureRef"
+      ],
+      "lifetime": "The source record belongs to content/resource lifetime; decoded images and GPU textures are valid until their explicit destroy operation. The original RW raster lifetime is not exposed as a gameplay contract.",
+      "failure_semantics": "The original Raster bodies are not locally decompiled, so their failure contract is unresolved. OpenSpore's clean-room decoder returns false with an error for truncated envelopes, unsupported FOURCC, zero mip count, invalid layer splitting, or a mip slice beyond the record.",
+      "timing_order": "Decode the asset before texture creation, then upload before material binding and before the first draw that samples it.",
+      "openspore_concept": "The semantic asset boundary is a content texture asset with dimensions, mip data, format, and a stable resource key; the RW Raster object and D3D upload are replaceable infrastructure.",
+      "modern_abstraction": "ITextureAssetLoader -> TextureAsset; ITextureStore.create(TextureAsset) -> TextureHandle",
+      "evidence": [
+        {
+          "file": "docs/MATERIALS-DESIGN.md",
+          "line": 10,
+          "symbol": "raster envelope"
+        },
+        {
+          "file": "docs/MATERIALS-DESIGN.md",
+          "line": 27,
+          "symbol": "derived raster layer count and DXT5 mip chain"
+        },
+        {
+          "file": "docs/MATERIALS-DESIGN.md",
+          "line": 34,
+          "symbol": "raster/DXT5 oracle and C++ port plan"
+        },
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 271,
+          "symbol": "RW4 textures and raster records"
+        },
+        {
+          "file": "src/assets/Texture.cpp",
+          "line": 70,
+          "symbol": "decodeRasterMips"
+        },
+        {
+          "file": "src/renderer/Renderer.hpp",
+          "line": 68,
+          "symbol": "IRenderer::createTexture"
+        },
+        {
+          "file": "src/renderer/VulkanRenderer.cpp",
+          "line": 1641,
+          "symbol": "VulkanRenderer::createTexture"
+        },
+        {
+          "file": "src/renderer/VulkanRenderer.cpp",
+          "line": 1741,
+          "symbol": "Vulkan texture descriptor and sampler binding"
+        }
+      ],
+      "confidence": "medium",
+      "notes": "Raster format and texture resource identity are strong asset-contract evidence. The current OpenSpore upload is a single-level RGBA8 approximation; the clean-room decoder can expose mips, but the current IRenderer createTexture contract does not carry a mip chain."
+    },
+    {
+      "classification": "renderware_third_party",
+      "boundary": "CompiledState raster-to-texture-slot binding",
+      "gameplay_caller": "Material submission/CompiledState::Load path after gameplay/content has selected the material; indirect from cCellGFX texture preload",
+      "original_callee": "RenderWare::CompiledState::SetRaster and RenderWare::CompiledState::GetRaster",
+      "parameters": [
+        "CompiledState*",
+        "size_t nSlotIndex",
+        "Raster* pRaster for SetRaster"
+      ],
+      "outputs": [
+        "SetRaster has no visible return value",
+        "GetRaster returns the Raster bound to the requested slot or nullptr"
+      ],
+      "state_changed": [
+        "compiled-state raster slot pointer",
+        "slot binding is updated only when the requested raster differs"
+      ],
+      "structures": [
+        "RenderWare::CompiledState",
+        "RenderWare::Raster",
+        "RW compiled-state slot table"
+      ],
+      "lifetime": "A compiled state and its raster references live with the material/resource lifetime. Slot pointers must not outlive the referenced raster or compiled-state object.",
+      "failure_semantics": "GetRaster returns nullptr when the slot is absent. SetRaster has no explicit validation/error path in the decompilation; malformed or mismatched slot state is not characterized.",
+      "timing_order": "Load or create the material, bind rasters to material slots, then submit the active material and draw. The slot binding is semantic state even though the table walker is RW implementation detail.",
+      "openspore_concept": "Material definitions own stable texture-slot bindings; the renderer resolves slots to backend texture handles.",
+      "modern_abstraction": "IMaterialBindings.bindTexture(slot, TextureHandle), textureAt(slot), and clearTexture(slot)",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/RenderWare__CompiledState__SetRaster.c",
+          "line": 6,
+          "symbol": "RenderWare::CompiledState::SetRaster"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/RenderWare__CompiledState__SetRaster.c",
+          "line": 90,
+          "symbol": "RenderWare::CompiledState::SetRaster slot match"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/RenderWare__CompiledState__SetRaster.c",
+          "line": 95,
+          "symbol": "RenderWare::CompiledState::SetRaster slot write"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/RenderWare__CompiledState__GetRaster.c",
+          "line": 89,
+          "symbol": "RenderWare::CompiledState::GetRaster slot lookup"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/RenderWare__CompiledState__GetRaster.c",
+          "line": 114,
+          "symbol": "RenderWare::CompiledState::GetRaster missing-slot return"
+        },
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 295,
+          "symbol": "CompiledState raster slot bindings"
+        }
+      ],
+      "confidence": "medium",
+      "notes": "The exact RW slot table layout is not reconstructed. Preserve stable slot indices and binding results; replace the table walker and raster pointer with typed material/texture handles."
+    },
+    {
+      "classification": "renderware_third_party",
+      "boundary": "Current-frame active texture, sampler, and shader-constant state",
+      "gameplay_caller": "Graphics material/draw submission path; exact original gameplay caller is not present in the committed decompilation export",
+      "original_callee": "Graphics::ActiveState::SetTexture, Graphics::ActiveState::SetShaderData, and Graphics::RenderUtils::RegisterShaderData/GetShaderDataSize",
+      "parameters": [
+        "texture stage or slot and raster/texture handle for SetTexture; exact original signature is not locally exported",
+        "short index, void* value, and bool overrideIfEqual for SetShaderData",
+        "shader-data index and value payload for backend registration"
+      ],
+      "outputs": [
+        "updated current-frame active texture/sampler state",
+        "updated shader-data records consumed by a subsequent draw"
+      ],
+      "state_changed": [
+        "Graphics::ActiveState shader-data list",
+        "backend texture/sampler binding state",
+        "backend shader-constant upload state"
+      ],
+      "structures": [
+        "Graphics::ActiveState",
+        "shader-data record list",
+        "active texture binding cache",
+        "Graphics::RenderUtils device wrapper"
+      ],
+      "lifetime": "Texture/material resources outlive the frame; active texture and shader-data state is frame-scoped and is replaced or refreshed as draws change materials.",
+      "failure_semantics": "SetShaderData visibly no-ops when the active shader is absent or the current shader-data count is zero and has no status return. The committed export does not contain the SetTexture body, so sampler override and invalid-texture behavior remain unresolved.",
+      "timing_order": "Set material and shader constants/textures before the draw; the active shader's vertex declaration and state are then read during mesh submission. State transitions should remain ordered even if Vulkan descriptors or push constants replace D3D calls.",
+      "openspore_concept": "A per-draw material binding contract containing texture slots, sampler policy, shader family, and constants; the backend owns descriptor/pipeline mechanics.",
+      "modern_abstraction": "IMaterialBindings + IRenderStateCache + IPipelineState; bindTexture, setShaderData, and submit",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__ActiveState__SetShaderData.c",
+          "line": 6,
+          "symbol": "Graphics::ActiveState::SetShaderData"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__ActiveState__SetShaderData.c",
+          "line": 15,
+          "symbol": "Graphics::ActiveState::SetShaderData active-shader gate"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__ActiveState__SetShaderData.c",
+          "line": 31,
+          "symbol": "Graphics::ActiveState shader-data record append"
+        },
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 102,
+          "symbol": "Graphics::ActiveState::SetTexture"
+        },
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 297,
+          "symbol": "RenderUtils shader-data upload path"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.jsonl",
+          "line": 43495,
+          "symbol": "Graphics::ActiveState::SetTexture"
+        },
+        {
+          "file": "src/renderer/Renderer.hpp",
+          "line": 34,
+          "symbol": "OpenSpore MaterialState"
+        },
+        {
+          "file": "src/renderer/VulkanRenderer.cpp",
+          "line": 1893,
+          "symbol": "VulkanRenderer::drawTextured material constants"
+        }
+      ],
+      "confidence": "medium",
+      "notes": "The active-state implementation is backend state, but slot/constant ordering is a compatibility contract. The current OpenSpore MaterialState contains only lightDir and ambient; it does not yet carry the original shader ID or multi-slot texture bindings."
+    },
+    {
+      "classification": "renderware_third_party",
+      "boundary": "UV/vertex declaration, stream rebinding, index scope, and indexed draw inputs",
+      "gameplay_caller": "RenderWare::Mesh::Render draw helper reached by model and terrain submission; exact gameplay callers are not in the local decompilation export",
+      "original_callee": "RenderWare::VertexDescriptionBase::LoadDeclaration, RenderWare::Mesh::SetIndexBuffer, RenderWare::Mesh::SetIndicesCount, and the active-shader vertex-declaration virtual",
+      "parameters": [
+        "vertex declaration elements: stream, offset, position/normal/texcoord usage, type, and stride",
+        "index buffer and index count",
+        "vertex-buffer association and topology"
+      ],
+      "outputs": [
+        "backend vertex-stream bindings",
+        "backend index-buffer binding",
+        "indexed draw transition; the actual DrawIndexedPrimitive is issued by the caller"
+      ],
+      "state_changed": [
+        "cached stream triples in DAT_016f913c",
+        "surplus stream unbinding when the active stream count shrinks",
+        "index-buffer state in DAT_016f85a8 and DAT_016f8afc",
+        "active stream count in DAT_015d0934"
+      ],
+      "structures": [
+        "RenderWare::VertexDescriptionBase",
+        "RenderWare::Mesh",
+        "RenderWare::IndexBuffer",
+        "Graphics::RenderUtils::sDevice",
+        "modern TexVertex position/normal/uv layout"
+      ],
+      "lifetime": "Vertex and index resources live with their mesh/draw resource; stream and index bindings are current renderer state. Modern mesh handles may be destroyed after frame submission, not before GPU use completes.",
+      "failure_semantics": "The RW helper returns early when stream binding reports failure and when the index-scope check fails. SetIndicesCount has no visible error return. The exact device-wrapper error mapping is implementation detail.",
+      "timing_order": "After material/active-shader state is selected, bind the declared streams, unbind surplus streams, validate and bind indices, then issue the indexed draw. UV values are consumed through the declared texcoord stream.",
+      "openspore_concept": "A mesh draw contract with vertex layout, UV/normal/position inputs, index buffer, topology, and explicit draw ordering; no RW stream cache or D3D vertex declaration object is exposed.",
+      "modern_abstraction": "IMeshDraw.bindVertexStream, unbindSurplusStreams, bindIndexBuffer, and drawIndexed",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/RenderWare__Mesh__SetIndexBuffer.c",
+          "line": 22,
+          "symbol": "RenderWare::Mesh::SetIndexBuffer active-shader vertex declaration"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/RenderWare__Mesh__SetIndexBuffer.c",
+          "line": 31,
+          "symbol": "RenderWare::Mesh::SetIndexBuffer stream loop"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/RenderWare__Mesh__SetIndexBuffer.c",
+          "line": 67,
+          "symbol": "RenderWare::Mesh::SetIndexBuffer surplus-stream unbind"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/RenderWare__Mesh__SetIndexBuffer.c",
+          "line": 84,
+          "symbol": "RenderWare::Mesh::SetIndexBuffer index binding"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/RenderWare__Mesh__SetIndicesCount.c",
+          "line": 6,
+          "symbol": "RenderWare::Mesh::SetIndicesCount"
+        },
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 160,
+          "symbol": "RW SetIndexBuffer draw path"
+        },
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 172,
+          "symbol": "stream rebind and index-scope semantics"
+        },
+        {
+          "file": "src/assets/Mesh.cpp",
+          "line": 216,
+          "symbol": "toRendererTexMesh"
+        },
+        {
+          "file": "src/renderer/Renderer.hpp",
+          "line": 21,
+          "symbol": "TexVertex"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.jsonl",
+          "line": 43656,
+          "symbol": "RenderWare::Mesh::SetIndexBuffer alias of RenderWare::Mesh::Render"
+        }
+      ],
+      "confidence": "high",
+      "notes": "The state-transition order is stronger evidence than the exact D3D wrapper calls. UV is a semantic vertex input; D3D vertex declarations, RW object fields, and stream-cache globals are replaceable implementation."
+    },
+    {
+      "classification": "required_for_semantics",
+      "boundary": "Lighting-world and shadow-state activation at Cell display entry",
+      "gameplay_caller": "Simulator::Cell::cCellGFX::StartDisplay invoked during Cell mode entry",
+      "original_callee": "Graphics::ILightingManager::Get followed by ILightingManager::GetLightingWorld; Graphics::IShadowWorld::Get followed by IShadowWorld::Reset; cCellGFX world-handle virtual calls",
+      "parameters": [
+        "lighting-world handles from PTR_PTR_015a841c, PTR_PTR_015a8420, PTR_PTR_015a8424, and PTR_PTR_015a8428",
+        "lighting selectors 2, 5, 13, and 24 as observed call arguments",
+        "cCellGFX world handles for display enable/disable"
+      ],
+      "outputs": [
+        "four lighting-world selections",
+        "enabled or disabled cCellGFX world/layer state",
+        "shadow-world reset state"
+      ],
+      "state_changed": [
+        "lighting-world activation state",
+        "cCellGFX world/layer visibility flags",
+        "shadow/effects display state",
+        "cell display/audio-related presentation flags"
+      ],
+      "structures": [
+        "ILightingManager",
+        "IShadowWorld",
+        "cCellGFX world/layer handles",
+        "lighting-world handle objects"
+      ],
+      "lifetime": "Lighting and shadow state is tied to the Cell display/world lifetime and is reset or replaced when the stage changes. The original lighting object ownership is not inferred.",
+      "failure_semantics": "The decompilation shows no explicit return value or recoverable error path for the lighting calls. Invalid manager/world pointers would fail through the virtual-call path rather than a typed status.",
+      "timing_order": "After Cell GFX world/layer creation and preload, StartDisplay selects lighting worlds, enables/disables world handles, resets shadow state, and opens display-related state before the visible frame.",
+      "openspore_concept": "Stage presentation state must preserve world identity, activation order, and shadow reset. The actual light color, intensity, fog, and D3D fixed-function pixel behavior are presentation-only visuals, not gameplay simulation state.",
+      "modern_abstraction": "IPresentationLighting.activateLightingWorld(WorldID), setWorldEnabled(WorldID, bool), and resetShadowWorld(WorldID)",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__StartDisplay.c",
+          "line": 16,
+          "symbol": "Simulator::Cell::cCellGFX::StartDisplay lighting-world selection"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__StartDisplay.c",
+          "line": 24,
+          "symbol": "Simulator::Cell::cCellGFX::StartDisplay world visibility state"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__StartDisplay.c",
+          "line": 32,
+          "symbol": "Simulator::Cell::cCellGFX::StartDisplay shadow reset"
+        },
+        {
+          "file": "docs/analysis/campaigns/cell-stage-campaign.md",
+          "line": 455,
+          "symbol": "Cell preload and display chain"
+        },
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/track-k-engine-boundaries.json",
+          "line": 399,
+          "symbol": "cCellGFX::StartDisplay boundary"
+        },
+        {
+          "file": "src/renderer/Renderer.hpp",
+          "line": 36,
+          "symbol": "OpenSpore approximate light direction and ambient state"
+        }
+      ],
+      "confidence": "medium",
+      "notes": "The four lighting-world arguments are not semantically named. Only the call order and activation/reset effects are pinned. The current OpenSpore lightDir/ambient values are an approximation, not evidence of the original lighting state."
+    }
+  ],
+  "unresolved": [
+    {
+      "question": "What are the exact bodies and signatures of Graphics::ActiveState::SetTexture and the texture/material manager methods that load or select rasters?",
+      "impact": "Texture-stage numbering, sampler override behavior, invalid-texture handling, and the original load order cannot be fully reconstructed from the committed export.",
+      "evidence": [
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.jsonl",
+          "line": 43495,
+          "symbol": "Graphics::ActiveState::SetTexture"
+        },
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 102,
+          "symbol": "Graphics::ActiveState::SetTexture"
+        }
+      ]
+    },
+    {
+      "question": "How does the original cCellGFX::AddPreloadedTexture implementation associate a texture with a material, slot, or resource key?",
+      "impact": "The semantic texture intent can be preserved, but exact preloaded collection ownership and material-slot relation remain inferred because the decompiler aliases this and the parameter are ambiguous.",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__AddPreloadedTexture.c",
+          "line": 8,
+          "symbol": "Simulator::Cell::cCellGFX::AddPreloadedTexture"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__AddPreloadedTexture.c",
+          "line": 22,
+          "symbol": "Simulator::Cell::cCellGFX::AddPreloadedTexture"
+        }
+      ]
+    },
+    {
+      "question": "What is the complete original mapping from GMDL material IDs and texture-set entries to compiled-state slots, sampler IDs, and shader data?",
+      "impact": "OpenSpore can preserve material IDs and texture resource keys, but it cannot yet claim exact original per-slot material equivalence.",
+      "evidence": [
+        {
+          "file": "src/assets/Gmdl.hpp",
+          "line": 68,
+          "symbol": "GmdlModel::materialIds and GmdlModel::textureRefs"
+        },
+        {
+          "file": "src/assets/Gmdl.cpp",
+          "line": 218,
+          "symbol": "parseGmdl texture-set decoding"
+        }
+      ]
+    },
+    {
+      "question": "What do the four cCellGFX lighting-world pointer arguments and selectors 2, 5, 13, and 24 name semantically?",
+      "impact": "World activation order and shadow reset are known, but the modern world enum names and intended lighting roles are not established.",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__StartDisplay.c",
+          "line": 16,
+          "symbol": "Simulator::Cell::cCellGFX::StartDisplay"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__StartDisplay.c",
+          "line": 23,
+          "symbol": "Simulator::Cell::cCellGFX::StartDisplay"
+        }
+      ]
+    },
+    {
+      "question": "What is the original pixel-level sampler, mip-selection, fixed-function lighting, and PS1.1/VS1.1 output for a material?",
+      "impact": "The semantic state sequence is mapped, but pixel equivalence remains unverified; no original Cell/material frame trace is available.",
+      "evidence": [
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 285,
+          "symbol": "precompiled D3D9 shader and fixed-function material model"
+        },
+        {
+          "file": "docs/replacement-boundaries.md",
+          "line": 26,
+          "symbol": "material-shader-texture supported status"
+        }
+      ]
+    },
+    {
+      "question": "Does the original texture path preserve the full decoded mip chain at draw time, or does each material path select a specific mip level?",
+      "impact": "The current OpenSpore IRenderer uploads a single RGBA8 level with NEAREST/CLAMP sampler state; the original runtime mip-selection policy is not established.",
+      "evidence": [
+        {
+          "file": "src/renderer/Renderer.hpp",
+          "line": 68,
+          "symbol": "IRenderer::createTexture"
+        },
+        {
+          "file": "src/renderer/VulkanRenderer.cpp",
+          "line": 1574,
+          "symbol": "VulkanRenderer::createTextureSupport"
+        },
+        {
+          "file": "docs/MATERIALS-DESIGN.md",
+          "line": 113,
+          "symbol": "current mip-0-only textured pipeline"
+        }
+      ]
+    }
+  ]
+}

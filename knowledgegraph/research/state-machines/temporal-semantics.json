@@ -1,0 +1,1556 @@
+{
+  "$schema": "state-machine-research-1",
+  "callbacks": [
+    {
+      "address": "IAppSystem+0x3c",
+      "consumers": [
+        "application frame pacing"
+      ],
+      "evidence": [
+        {
+          "address": "IAppSystem+0x3c",
+          "claim": "The SDK interface names SetFixedStepping(int) at this slot.",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED_NAME_ONLY",
+          "source": "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/App/cAppSystem.h:36,133"
+        },
+        {
+          "address": "0x007e5f70",
+          "claim": "The SDK address is not used here to identify a concrete original body because the surrounding build uses address drift and the frame body has a separate pacing path.",
+          "kind": "address_conflict",
+          "level": "UNKNOWN",
+          "source": "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/App/cAppSystem.h:133"
+        }
+      ],
+      "name": "App::IAppSystem::SetFixedStepping",
+      "parameters": [
+        "int"
+      ],
+      "returns": "void",
+      "semantics": "The interface exposes fixed-step configuration, but the relationship between this slot and the observed 1..45 millisecond pacing logic is unresolved."
+    },
+    {
+      "address": "IAppSystem+0x78",
+      "consumers": [
+        "cSporeApp frame update"
+      ],
+      "evidence": [
+        {
+          "address": "0x00f47a45-0x00f47aa5",
+          "claim": "The instruction-aligned frame body loads mpAppSystem and calls the virtual slot at +0x78 with the measured integer millisecond delta.",
+          "kind": "disassembly",
+          "level": "SUPPORTED",
+          "source": "SPORE/SporeBin/SporeApp.exe (read-only objdump)"
+        },
+        {
+          "address": "IAppSystem+0x78",
+          "claim": "The SDK interface names this slot Update(int deltaTimeMS).",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED_NAME_ONLY",
+          "source": "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/App/cAppSystem.h:55"
+        }
+      ],
+      "name": "App::IAppSystem::Update",
+      "parameters": [
+        "int deltaTimeMS"
+      ],
+      "returns": "void",
+      "semantics": "The main frame path passes one measured millisecond delta to the application-system update callback."
+    },
+    {
+      "address": "IAppSystem+0x7c",
+      "consumers": [
+        "post-frame application work"
+      ],
+      "evidence": [
+        {
+          "address": "0x00f47ac9-0x00f47ad1",
+          "claim": "The frame body calls the mpAppSystem virtual slot +0x7c after the +0x78 update and another service callback.",
+          "kind": "disassembly",
+          "level": "SUPPORTED",
+          "source": "SPORE/SporeBin/SporeApp.exe (read-only objdump)"
+        },
+        {
+          "address": "IAppSystem+0x7c",
+          "claim": "The SDK interface leaves this slot unnamed as func7Ch.",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED_NAME_ONLY",
+          "source": "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/App/cAppSystem.h:56"
+        }
+      ],
+      "name": "App::IAppSystem::func7Ch",
+      "parameters": [],
+      "returns": "void",
+      "semantics": "An unnamed application-system callback runs after the primary update callback; its exact responsibility is unresolved."
+    },
+    {
+      "address": "IAppSystem+0x80",
+      "consumers": [
+        "kMsgAppUpdate listener"
+      ],
+      "evidence": [
+        {
+          "address": "0x00f47bb8-0x00f47bca",
+          "claim": "After calling the frame body at 0x00f47930, the kMsgAppUpdate handler calls the mpAppSystem virtual slot +0x80.",
+          "kind": "disassembly",
+          "level": "SUPPORTED",
+          "source": "SPORE/SporeBin/SporeApp.exe (read-only objdump)"
+        },
+        {
+          "address": "IAppSystem+0x80",
+          "claim": "The SDK interface names this slot PostUpdate().",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED_NAME_ONLY",
+          "source": "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/App/cAppSystem.h:57"
+        }
+      ],
+      "name": "App::IAppSystem::PostUpdate",
+      "parameters": [],
+      "returns": "void",
+      "semantics": "The post-update phase follows the frame body and the +0x78/+0x7c callback sequence for an app-update message."
+    },
+    {
+      "address": "App::kMsgAppUpdate",
+      "consumers": [
+        "cSporeApp::HandleMessage at 0x00f47b10",
+        "SDK update-function listeners",
+        "SDK scheduled-task listeners"
+      ],
+      "evidence": [
+        {
+          "address": "0x01ee100a",
+          "claim": "The SDK names this message kMsgAppUpdate and describes it as sent every game frame after all other systems have updated.",
+          "kind": "sdk_enum_and_documentation",
+          "level": "CONFIRMED_NAME_ONLY",
+          "source": "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/App/IMessageManager.h:38-44"
+        },
+        {
+          "address": "0x00f47b20-0x00f47b2b",
+          "claim": "The cSporeApp message handler compares the incoming message ID with 0x01ee100a and branches to the frame update path.",
+          "kind": "disassembly",
+          "level": "SUPPORTED",
+          "source": "SPORE/SporeBin/SporeApp.exe (read-only objdump)"
+        }
+      ],
+      "name": "kMsgAppUpdate",
+      "parameters": [
+        "message ID"
+      ],
+      "returns": "void",
+      "semantics": "A per-frame application message whose handling in cSporeApp invokes timing, update, and post-update callbacks."
+    },
+    {
+      "address": "IMessageManager+0x14",
+      "consumers": [
+        "application message listeners",
+        "mode-transition announcements"
+      ],
+      "evidence": [
+        {
+          "address": "IMessageManager+0x14",
+          "claim": "The SDK interface names MessageSend(uint32_t messageID, void* pMessage, IUnmanagedMessageListener* pListener) at this slot.",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED_NAME_ONLY",
+          "source": "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/App/IMessageManager.h:100-105"
+        },
+        {
+          "address": "0x008841f0",
+          "claim": "The exported ProcessQueue body traverses a block/list structure and releases referenced objects, but its recovered types do not prove listener invocation order.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cMessageManager__ProcessQueue.c:6-38"
+        }
+      ],
+      "name": "App::IMessageManager::MessageSend",
+      "parameters": [
+        "uint32_t messageID",
+        "void* pMessage",
+        "IUnmanagedMessageListener* pListener"
+      ],
+      "returns": "void",
+      "semantics": "Routes a message to a selected or registered listener; immediate versus queued timing and traversal order remain unresolved."
+    },
+    {
+      "address": "IMessageManager+0x18",
+      "consumers": [
+        "refcounted application-message producers"
+      ],
+      "evidence": [
+        {
+          "address": "IMessageManager+0x18",
+          "claim": "The SDK interface names MessagePost(uint32_t messageID, IMessageRC* pMessage, IMessageListener* pListener) at this slot.",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED_NAME_ONLY",
+          "source": "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/App/IMessageManager.h:106-109"
+        }
+      ],
+      "name": "App::IMessageManager::MessagePost",
+      "parameters": [
+        "uint32_t messageID",
+        "IMessageRC* pMessage",
+        "IMessageListener* pListener"
+      ],
+      "returns": "void",
+      "semantics": "Posts a refcounted message; exact queue insertion and release timing are unresolved."
+    },
+    {
+      "address": "IMessageManager+0x1c",
+      "consumers": [
+        "static message-handler registration"
+      ],
+      "evidence": [
+        {
+          "address": "IMessageManager+0x1c",
+          "claim": "The SDK interface names MessagePostFunction(uint32_t messageID, IMessageRC* pMessage, int, MessageHandler_t handler, void*) at this slot.",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED_NAME_ONLY",
+          "source": "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/App/IMessageManager.h:109"
+        }
+      ],
+      "name": "App::IMessageManager::MessagePostFunction",
+      "parameters": [
+        "uint32_t messageID",
+        "IMessageRC* pMessage",
+        "int",
+        "MessageHandler_t handler",
+        "void*"
+      ],
+      "returns": "void",
+      "semantics": "Associates a static callback with a message; callback ordering and queue behavior are unresolved."
+    },
+    {
+      "address": "App::cCellModeStrategy+0x10",
+      "consumers": [
+        "game-mode registry"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e81cf0",
+          "claim": "The concrete Cell mode initialization body constructs sCellGame, sCellGFX, and sCellUI and performs setup callbacks.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__Initialize.c:9-115"
+        }
+      ],
+      "name": "App::cCellModeStrategy::Initialize",
+      "parameters": [
+        "this",
+        "IGameModeManager* pManager"
+      ],
+      "returns": "bool",
+      "semantics": "Creates and initializes the Cell mode service globals before normal mode entry."
+    },
+    {
+      "address": "App::cCellModeStrategy::OnEnter",
+      "consumers": [
+        "game-mode transition path"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e552f0",
+          "claim": "The Cell mode entry body resets mode/UI flags, starts CellGFX display, and invokes gameplay and UI setup helpers.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnEnter.c:8-46"
+        }
+      ],
+      "name": "App::cCellModeStrategy::OnEnter",
+      "parameters": [
+        "this"
+      ],
+      "returns": "bool",
+      "semantics": "Enters the active Cell mode and starts its presentation and gameplay setup."
+    },
+    {
+      "address": "App::cCellModeStrategy::OnExit",
+      "consumers": [
+        "game-mode transition path"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e7fc00",
+          "claim": "The Cell mode exit body flushes a pending-object iteration, disables a service state, and releases mode/UI state.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnExit.c:8-36"
+        }
+      ],
+      "name": "App::cCellModeStrategy::OnExit",
+      "parameters": [
+        "this"
+      ],
+      "returns": "void",
+      "semantics": "Runs the old Cell mode's exit cleanup and pending-work flush before another mode is entered."
+    },
+    {
+      "address": "App::cCellModeStrategy::Update",
+      "consumers": [
+        "active game-mode update path"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e80980",
+          "claim": "The SDK-named Cell update entry forwards its first delta to FUN_00e806b0 and does not use the second delta in the recovered body.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__Update.c:8-13"
+        },
+        {
+          "address": "0x00e806b0",
+          "claim": "The real Cell update body branches on sCellGame state and conditionally invokes trading, manager, movement, interaction, and Cell subsystem helpers.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "tools/re/data/decompiled/FUN_00e806b0.c:7-51"
+        }
+      ],
+      "name": "App::cCellModeStrategy::Update",
+      "parameters": [
+        "this",
+        "float fDelta1",
+        "float fDelta2"
+      ],
+      "returns": "void",
+      "semantics": "Forwards one Cell update delta to the concrete Cell state-update body; the second delta is not consumed by this entry."
+    },
+    {
+      "address": "App::cCellModeStrategy::Dispose",
+      "consumers": [
+        "mode teardown"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e81f30",
+          "claim": "The Cell mode disposal body tears down service state, unpauses the application, and releases sCellGame, sCellGFX, and sCellUI when present.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__Dispose.c:8-87"
+        }
+      ],
+      "name": "App::cCellModeStrategy::Dispose",
+      "parameters": [
+        "this"
+      ],
+      "returns": "bool",
+      "semantics": "Performs final Cell mode teardown and releases the mode's owned service globals."
+    },
+    {
+      "address": "Simulator::cGameTimeManager::ConvertDeltaTime",
+      "consumers": [
+        "Simulator game-time update"
+      ],
+      "evidence": [
+        {
+          "address": "0x00b31da0",
+          "claim": "The SDK documents ConvertDeltaTime as returning zero while paused and otherwise multiplying elapsed milliseconds by the current game speed.",
+          "kind": "sdk_documentation",
+          "level": "CONFIRMED_NAME_ONLY",
+          "source": "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/SubSystem/GameTimeManager.h:116-123"
+        },
+        {
+          "address": "0x00b31da0",
+          "claim": "The available body evidence is not sufficient to map the SDK anchor to the original implementation in this build.",
+          "kind": "address_conflict",
+          "level": "UNKNOWN",
+          "source": "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/SubSystem/GameTimeManager.h:184"
+        }
+      ],
+      "name": "Simulator::cGameTimeManager::ConvertDeltaTime",
+      "parameters": [
+        "int deltaMilliseconds"
+      ],
+      "returns": "int",
+      "semantics": "The SDK contract is pause-gated game-time conversion; the concrete original body and call placement remain unresolved."
+    }
+  ],
+  "domain": "Temporal Semantics",
+  "events": [
+    {
+      "consumers": [
+        "cSporeApp::HandleMessage at 0x00f47b10",
+        "App::IAppSystem::Update",
+        "App::IAppSystem::func7Ch",
+        "App::IAppSystem::PostUpdate"
+      ],
+      "evidence": [
+        {
+          "address": "0x01ee100a",
+          "claim": "The cSporeApp handler dispatches this message to the frame body and then calls IAppSystem::PostUpdate.",
+          "kind": "disassembly",
+          "level": "SUPPORTED",
+          "source": "SPORE/SporeBin/SporeApp.exe (read-only objdump at 0x00f47b20-0x00f47bca)"
+        },
+        {
+          "address": "0x01ee100a",
+          "claim": "The SDK names the message kMsgAppUpdate and describes a once-per-game-frame message.",
+          "kind": "sdk_enum",
+          "level": "CONFIRMED_NAME_ONLY",
+          "source": "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/App/IMessageManager.h:38-44"
+        }
+      ],
+      "id": "app_update",
+      "kind": "application_message",
+      "producers": [
+        "application message producer at 0x00f4827e-0x00f4828a",
+        "SDK update-function listeners"
+      ],
+      "status": "static_dispatch_order_supported"
+    },
+    {
+      "consumers": [
+        "application startup"
+      ],
+      "evidence": [
+        {
+          "address": "0x007e93d0",
+          "claim": "The historical startup trace observed InitPlugins at 503.766 ms.",
+          "kind": "runtime",
+          "level": "OBSERVED",
+          "source": "tools/observatory/SCENARIO-main_menu.md:163-177"
+        }
+      ],
+      "id": "app_plugins_initialized",
+      "kind": "lifecycle_callback",
+      "producers": [
+        "App::cAppSystem::InitPlugins"
+      ],
+      "status": "runtime_observed_main_menu_only"
+    },
+    {
+      "consumers": [
+        "application startup"
+      ],
+      "evidence": [
+        {
+          "address": "0x007e8ba0",
+          "claim": "The historical startup trace observed Init at 503.802 ms, approximately 36 microseconds after InitPlugins.",
+          "kind": "runtime",
+          "level": "OBSERVED",
+          "source": "tools/observatory/SCENARIO-main_menu.md:163-177"
+        }
+      ],
+      "id": "app_initialized",
+      "kind": "lifecycle_callback",
+      "producers": [
+        "App::cAppSystem::Init"
+      ],
+      "status": "runtime_observed_main_menu_only"
+    },
+    {
+      "consumers": [
+        "application startup"
+      ],
+      "evidence": [
+        {
+          "address": "0x007e67a0",
+          "claim": "The historical startup trace observed Startup at 543.544 ms.",
+          "kind": "runtime",
+          "level": "OBSERVED",
+          "source": "tools/observatory/SCENARIO-main_menu.md:163-177"
+        }
+      ],
+      "id": "app_started",
+      "kind": "lifecycle_callback",
+      "producers": [
+        "App::cAppSystem::Startup"
+      ],
+      "status": "runtime_observed_main_menu_only"
+    },
+    {
+      "consumers": [
+        "old game mode",
+        "new game mode",
+        "mode listeners"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e7fc00",
+          "claim": "The Cell mode exit callback performs cleanup and pending-work flush.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnExit.c:15-35"
+        },
+        {
+          "address": "0x00e552f0",
+          "claim": "The Cell mode entry callback resets flags, starts display, and performs setup.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnEnter.c:19-46"
+        }
+      ],
+      "id": "cell_mode_transition",
+      "kind": "game_mode_lifecycle",
+      "producers": [
+        "App::cGameModeManager transition path"
+      ],
+      "status": "static_cell_callbacks_runtime_unverified"
+    },
+    {
+      "consumers": [
+        "active Cell game state",
+        "Cell movement and interaction helpers"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e806b0",
+          "claim": "The Cell update body gates work on sCellGame state and invokes movement and interaction helpers when the active path is taken.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "tools/re/data/decompiled/FUN_00e806b0.c:20-43"
+        },
+        {
+          "address": "0x00e80980",
+          "claim": "The SDK-named Cell update entry forwards to the concrete update body.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__Update.c:8-13"
+        }
+      ],
+      "id": "cell_update",
+      "kind": "gameplay_tick",
+      "producers": [
+        "active game-mode update path"
+      ],
+      "status": "static_only_no_cell_runtime_trace"
+    },
+    {
+      "consumers": [
+        "Simulator::cCity deferred-event processing"
+      ],
+      "evidence": [
+        {
+          "address": "0x00000000",
+          "claim": "SDK tDeferredEvent stores an event GUID at +0x00, a 64-bit trigger time at +0x08, and four user payload fields through +0x1f.",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED_NAME_ONLY",
+          "source": "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cCity.h:73-82"
+        }
+      ],
+      "id": "city_deferred_event_due",
+      "kind": "deferred_event",
+      "producers": [
+        "deferred-event insertion path unresolved"
+      ],
+      "status": "layout_only_dispatch_unresolved"
+    },
+    {
+      "consumers": [
+        "SDK update-function listeners",
+        "SDK scheduled-task listeners"
+      ],
+      "evidence": [
+        {
+          "address": "0x01ee100a",
+          "claim": "The SDK helper implementation registers update and scheduled-task listeners for kMsgAppUpdate and uses a clock or timer to compare elapsed time.",
+          "kind": "sdk_documentation_and_helper_code",
+          "level": "CONFIRMED_NAME_ONLY",
+          "source": "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/App/IMessageManager.h:216-268"
+        }
+      ],
+      "id": "scheduled_callback_due",
+      "kind": "callback_schedule",
+      "producers": [
+        "ScheduleTask helper"
+      ],
+      "status": "sdk_helper_contract_only"
+    }
+  ],
+  "scope": {
+    "binary": "SPORE/SporeBin/SporeApp.exe",
+    "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+    "boundaries": [
+      "This artifact is documentation only and does not modify the binary, SPORE/, source implementation, Ghidra project, knowledge-graph database, or historical triage files.",
+      "SDK names and vtable slots establish interface shape; behavior is promoted only where a body, disassembly, or runtime trace supports it.",
+      "Current OpenSpore source is a labeled comparison and is not evidence of original SporeApp.exe behavior.",
+      "The original binary has no MSVC RTTI; recovered vtable and call relationships are used without inferring undocumented C++ inheritance."
+    ],
+    "build": "GOG 3.1.0.22",
+    "covered": [
+      "cSporeApp lifecycle flags and message-driven frame dispatch",
+      "QueryPerformanceCounter-backed frame timing and pacing",
+      "IAppSystem Update, func7Ch, and PostUpdate ordering",
+      "cMessageManager registration, send, post, queue, and release boundaries",
+      "Cell mode Initialize, OnEnter, Update, OnExit, and Dispose lifecycle",
+      "cGameTimeManager pause and speed interface",
+      "cCity deferred-event record layout",
+      "SDK per-frame callback and scheduled-task helper contracts",
+      "startup/main-menu observatory evidence",
+      "current OpenSpore loop comparison"
+    ],
+    "evidence_policy": {
+      "confidence": {
+        "high": "Direct static body, vtable slot, or multiple agreeing static sources; no runtime verification required for bounded mechanics.",
+        "low": "SDK name/layout or bounded inference with material behavior unresolved.",
+        "medium": "Direct body or disassembly with missing type identity, address drift, or incomplete runtime coverage."
+      },
+      "decompilation": "Committed Ghidra exports are static evidence. Recovered types, parameter names, and local aliases are not authoritative when contradicted by bytes or call shape.",
+      "levels": [
+        "CONFIRMED_NAME_ONLY",
+        "CONFIRMED",
+        "INFERRED",
+        "OBSERVED",
+        "SUPPORTED",
+        "UNKNOWN"
+      ],
+      "runtime": "Only committed observatory traces are runtime evidence. The positive trace covers startup/main-menu presence; Cell gameplay traces contain zero events."
+    },
+    "image_base": "0x00400000",
+    "method": [
+      "Queried CodeGraph before direct source inspection for current OpenSpore comparison paths.",
+      "Read committed SDK headers, Ghidra decompilation exports, runtime probe definitions, and existing research artifacts.",
+      "Used read-only x86 PE disassembly to resolve instruction-aligned cSporeApp frame and lifecycle bodies after SDK address drift.",
+      "Kept exact timing claims bounded to direct QPC arithmetic, explicit branch conditions, and observed callback order."
+    ],
+    "sources": [
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__TimeAtStartOfFrame.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/App__cMessageManager__ProcessQueue.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__Initialize.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnEnter.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnExit.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__Dispose.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__Update.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/App__cAppSystem__InitPlugins.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/App__cAppSystem__func7Ch.c",
+      "tools/re/data/decompiled/FUN_00e806b0.c",
+      "tools/observatory/SCENARIO-main_menu.md",
+      "tools/observatory/examples/obs_main_menu_example.jsonl",
+      "tools/observatory/probes/main_menu.json",
+      "tools/observatory/probes/menu_transition.json",
+      "knowledgegraph/research/types/01-simulator-core.json",
+      "knowledgegraph/research/types/07-event-message.json",
+      "knowledgegraph/research/global-campaign-2026/track-k-engine-boundaries.json",
+      "src/apps/cell_stage.cpp",
+      "src/apps/CellModeStrategy.cpp",
+      "docs/CELLSTAGE.md",
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/App/IMessageManager.h",
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/App/cAppSystem.h",
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/App/cSporeApp.h",
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/SubSystem/GameTimeManager.h",
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cCity.h"
+    ]
+  },
+  "state_machines": [
+    {
+      "confidence": {
+        "level": "medium",
+        "reason": "The persistent flags and stop-event writes are direct static evidence, but the complete constructor and exact lifecycle entry boundary are not fully identified."
+      },
+      "entry_actions": [
+        {
+          "action": "The cSporeApp lifecycle body sets mIsRunning at 0x00f47f1a and later registers the cSporeApp listener for kMsgAppUpdate at 0x00f4827e-0x00f48286.",
+          "conditions": [
+            "initialization and startup checks have passed"
+          ],
+          "evidence": "SPORE/SporeBin/SporeApp.exe (read-only objdump at 0x00f47f1a,0x00f4827e)"
+        }
+      ],
+      "evidence": [
+        {
+          "address": "0x00f47700",
+          "claim": "The teardown body clears mHasInitialized, removes message listeners, invokes service teardown callbacks, releases service pointers, and returns success.",
+          "kind": "disassembly",
+          "level": "SUPPORTED",
+          "source": "SPORE/SporeBin/SporeApp.exe (read-only objdump at 0x00f47700-0x00f47922)"
+        },
+        {
+          "address": "0x00f47b9b-0x00f47bae",
+          "claim": "The message handler for 0x0153c326 stores a result word and clears mIsRunning.",
+          "kind": "disassembly",
+          "level": "SUPPORTED",
+          "source": "SPORE/SporeBin/SporeApp.exe (read-only objdump)"
+        },
+        {
+          "address": "cSporeApp+0x0c,+0x0d",
+          "claim": "SDK structure maps mHasInitialized to +0x0c and mIsRunning to +0x0d.",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED_NAME_ONLY",
+          "source": "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/App/cSporeApp.h:20-27"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "Set mHasInitialized to false and mIsRunning to false through the stop-message and teardown paths, then release application services.",
+          "conditions": [
+            "shutdown requested or initialization failure"
+          ],
+          "evidence": "0x00f47700 and 0x00f47b9b"
+        }
+      ],
+      "name": "spore_app_runtime",
+      "possible_states": [
+        {
+          "actions": [
+            "do not dispatch the app-update frame body"
+          ],
+          "guards": [
+            "mHasInitialized == false"
+          ],
+          "name": "uninitialized_or_tearing_down",
+          "raw_value": "mHasInitialized=0; mIsRunning may be 0 or transitional"
+        },
+        {
+          "actions": [
+            "allow the kMsgAppUpdate listener to enter the frame body"
+          ],
+          "guards": [
+            "mHasInitialized != 0"
+          ],
+          "name": "initialized_frame_listener",
+          "raw_value": "mHasInitialized=1"
+        },
+        {
+          "actions": [
+            "accept frame messages until a stop message or shutdown condition is observed"
+          ],
+          "guards": [
+            "mIsRunning != 0"
+          ],
+          "name": "running",
+          "raw_value": "mHasInitialized=1; mIsRunning=1"
+        },
+        {
+          "actions": [
+            "stop accepting normal running work and enter teardown"
+          ],
+          "guards": [
+            "stop message 0x0153c326 received"
+          ],
+          "name": "stop_requested",
+          "raw_value": "mIsRunning=0; mResult written"
+        }
+      ],
+      "relevant_functions": [
+        "0x00f47ed0",
+        "0x00f47930",
+        "0x00f47b10",
+        "0x00f47700"
+      ],
+      "relevant_structures": [
+        "App::cSporeApp"
+      ],
+      "side_effects": [
+        "publishes and releases App and service pointers",
+        "registers and removes application message listeners",
+        "invokes application shutdown and service teardown callbacks"
+      ],
+      "state_variable": {
+        "expression": "mHasInitialized@+0x0c and mIsRunning@+0x0d",
+        "owner": "App::cSporeApp",
+        "type": "pair<bool,bool>"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "set mIsRunning",
+            "register cSporeApp for kMsgAppUpdate"
+          ],
+          "cause": "application startup reaches the listener-registration path",
+          "event": "startup",
+          "from_state": "uninitialized_or_tearing_down",
+          "guard": "required initialization and startup calls succeed",
+          "to_state": "running"
+        },
+        {
+          "actions": [
+            "call the frame body",
+            "call IAppSystem::PostUpdate"
+          ],
+          "cause": "application update message",
+          "event": "kMsgAppUpdate",
+          "from_state": "running",
+          "guard": "mHasInitialized != 0",
+          "to_state": "running"
+        },
+        {
+          "actions": [
+            "write mResult",
+            "clear mIsRunning"
+          ],
+          "cause": "stop message",
+          "event": "0x0153c326",
+          "from_state": "running",
+          "guard": "message ID equals 0x0153c326",
+          "to_state": "stop_requested"
+        },
+        {
+          "actions": [
+            "clear mHasInitialized",
+            "remove listeners",
+            "release services"
+          ],
+          "cause": "shutdown",
+          "event": "shutdown",
+          "from_state": "stop_requested",
+          "guard": "shutdown path is entered",
+          "to_state": "uninitialized_or_tearing_down"
+        }
+      ],
+      "validation_strategy": [
+        "Trace cSporeApp+0x0c and +0x0d around startup, kMsgAppUpdate, stop message 0x0153c326, and teardown.",
+        "Trace IAppSystem listener registration and removal for kMsgAppUpdate on the same object.",
+        "Correlate the static frame body at 0x00f47930 with the kMsgAppUpdate handler at 0x00f47b10.",
+        "Do not treat the SDK Run/Init/Shutdown addresses as exact entries until their instruction-aligned bodies are mapped."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "high",
+        "reason": "The message comparison, frame-body call, delta arithmetic, update dispatch, and PostUpdate call are all directly visible in the read-only x86 body."
+      },
+      "entry_actions": [
+        {
+          "action": "Match message ID 0x01ee100a and call the frame body at 0x00f47930.",
+          "conditions": [
+            "incoming message ID equals kMsgAppUpdate"
+          ],
+          "evidence": "0x00f47b20-0x00f47bb8"
+        }
+      ],
+      "evidence": [
+        {
+          "address": "0x00f47930-0x00f47ad9",
+          "claim": "The frame body reads QueryPerformanceCounter through the IAT, computes an elapsed delta using field_18, optionally waits for pacing, and performs one update sequence.",
+          "kind": "disassembly",
+          "level": "SUPPORTED",
+          "source": "SPORE/SporeBin/SporeApp.exe (read-only objdump)"
+        },
+        {
+          "address": "0x00f47b10-0x00f47bd1",
+          "claim": "The handler dispatches the frame body and then invokes the application-system +0x80 PostUpdate slot.",
+          "kind": "disassembly",
+          "level": "SUPPORTED",
+          "source": "SPORE/SporeBin/SporeApp.exe (read-only objdump)"
+        },
+        {
+          "address": "0x01ee100a",
+          "claim": "The SDK identifies this as a per-frame message and states that it is sent after other systems have updated.",
+          "kind": "sdk_documentation",
+          "level": "CONFIRMED_NAME_ONLY",
+          "source": "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/App/IMessageManager.h:38-44"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "Return handled=true after IAppSystem::PostUpdate returns.",
+          "conditions": [
+            "frame body completed"
+          ],
+          "evidence": "0x00f47bca-0x00f47bd1"
+        }
+      ],
+      "name": "app_update_dispatch",
+      "possible_states": [
+        {
+          "actions": [
+            "wait for a message ID"
+          ],
+          "guards": [],
+          "name": "message_received",
+          "raw_value": "handler entry"
+        },
+        {
+          "actions": [
+            "read QPC baseline and elapsed ticks",
+            "convert elapsed ticks to an integer delta"
+          ],
+          "guards": [
+            "mHasInitialized != 0"
+          ],
+          "name": "delta_measured",
+          "raw_value": "local delta milliseconds"
+        },
+        {
+          "actions": [
+            "optionally wait for the pacing target",
+            "recompute the current elapsed delta"
+          ],
+          "guards": [
+            "pacing target is positive and the target has not elapsed"
+          ],
+          "name": "paced",
+          "raw_value": "target 1..45 or caller-provided target"
+        },
+        {
+          "actions": [
+            "call IAppSystem::Update(int)",
+            "call the intermediate service callback",
+            "call IAppSystem::func7Ch()"
+          ],
+          "guards": [],
+          "name": "updated",
+          "raw_value": "single frame delta"
+        },
+        {
+          "actions": [
+            "call IAppSystem::PostUpdate()"
+          ],
+          "guards": [],
+          "name": "post_updated",
+          "raw_value": "handler return"
+        }
+      ],
+      "relevant_functions": [
+        "0x00f47930",
+        "0x00f47b10"
+      ],
+      "relevant_structures": [
+        "App::cSporeApp",
+        "App::IAppSystem"
+      ],
+      "side_effects": [
+        "samples the monotonic performance counter",
+        "may sleep or yield through the pacing path",
+        "updates the cSporeApp timing baseline",
+        "invokes application-system and service update callbacks"
+      ],
+      "state_variable": {
+        "expression": "local delta milliseconds, timing baseline at cSporeApp+0x10/+0x14, scale fields at +0x18/+0x1c",
+        "owner": "cSporeApp frame body",
+        "type": "transient integer plus persistent timing state"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "enter the QPC measurement path"
+          ],
+          "cause": "kMsgAppUpdate",
+          "event": "message_dispatch",
+          "from_state": "message_received",
+          "guard": "message ID equals 0x01ee100a",
+          "to_state": "delta_measured"
+        },
+        {
+          "actions": [
+            "enter the optional wait path"
+          ],
+          "cause": "target pacing interval has not elapsed",
+          "event": "pacing_check",
+          "from_state": "delta_measured",
+          "guard": "target > 0 and current delta is below the target",
+          "to_state": "paced"
+        },
+        {
+          "actions": [
+            "call the update callbacks once"
+          ],
+          "cause": "pacing condition is complete or disabled",
+          "event": "frame_update",
+          "from_state": "delta_measured",
+          "guard": "no wait is required",
+          "to_state": "updated"
+        },
+        {
+          "actions": [
+            "call PostUpdate",
+            "return handled"
+          ],
+          "cause": "update callback returns",
+          "event": "post_update",
+          "from_state": "updated",
+          "guard": "update body returned",
+          "to_state": "post_updated"
+        }
+      ],
+      "validation_strategy": [
+        "Instrument 0x00f47b10, 0x00f47930, IAppSystem::Update, func7Ch, and PostUpdate with timestamps and the cSporeApp pointer.",
+        "Record QPC ticks, field_18 conversion, measured integer delta, pacing target, and whether a wait occurs.",
+        "Verify that a single kMsgAppUpdate produces one frame-body entry and one +0x80 call in the same handler invocation.",
+        "Test long-frame and below-target cases to distinguish pacing from fixed-step catch-up; do not assume accumulator semantics."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "medium",
+        "reason": "Cell lifecycle bodies are direct decompilation evidence, but no positive Cell-mode runtime trace establishes actual transition order or reachability."
+      },
+      "entry_actions": [
+        {
+          "action": "Construct sCellGame, sCellGFX, and sCellUI and initialize Cell mode state.",
+          "conditions": [
+            "mode initialization is invoked"
+          ],
+          "evidence": "0x00e81cf0"
+        }
+      ],
+      "evidence": [
+        {
+          "address": "0x00e81cf0",
+          "claim": "The Cell Initialize body constructs or nulls the three Cell service globals, clears state flags, and performs setup callbacks.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__Initialize.c:32-115"
+        },
+        {
+          "address": "0x00e552f0",
+          "claim": "The Cell OnEnter body resets flags, starts display, and invokes gameplay/UI setup.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnEnter.c:19-46"
+        },
+        {
+          "address": "0x00e7fc00",
+          "claim": "The Cell OnExit body flushes pending work, disables a service, and releases mode state.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnExit.c:15-35"
+        },
+        {
+          "address": "0x00e81f30",
+          "claim": "The Cell Dispose body tears down services, unpauses the application, and releases Cell globals.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__Dispose.c:20-86"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "Release Cell game, GFX, and UI objects and restore the application pause state.",
+          "conditions": [
+            "Cell mode disposal is invoked"
+          ],
+          "evidence": "0x00e81f30"
+        }
+      ],
+      "name": "cell_mode_lifecycle",
+      "possible_states": [
+        {
+          "actions": [
+            "hold mode object and service globals"
+          ],
+          "guards": [],
+          "name": "uninitialized",
+          "raw_value": "no initialized Cell services"
+        },
+        {
+          "actions": [
+            "allow mode entry"
+          ],
+          "guards": [
+            "Initialize returned true"
+          ],
+          "name": "initialized",
+          "raw_value": "Cell services constructed"
+        },
+        {
+          "actions": [
+            "start display",
+            "reset mode and UI flags",
+            "allow Cell update dispatch"
+          ],
+          "guards": [
+            "OnEnter returned true"
+          ],
+          "name": "active",
+          "raw_value": "Cell mode entered"
+        },
+        {
+          "actions": [
+            "flush pending work",
+            "disable active mode state"
+          ],
+          "guards": [
+            "mode transition exits Cell"
+          ],
+          "name": "exited",
+          "raw_value": "OnExit complete"
+        },
+        {
+          "actions": [
+            "release Cell services"
+          ],
+          "guards": [
+            "Dispose invoked"
+          ],
+          "name": "disposed",
+          "raw_value": "Cell services released"
+        }
+      ],
+      "relevant_functions": [
+        "0x00e81cf0",
+        "0x00e552f0",
+        "0x00e80980",
+        "0x00e7fc00",
+        "0x00e81f30"
+      ],
+      "relevant_structures": [
+        "App::cCellModeStrategy",
+        "Simulator::Cell::cCellGame",
+        "Simulator::Cell::cCellGFX",
+        "Simulator::Cell::cCellUI"
+      ],
+      "side_effects": [
+        "constructs and releases Cell service globals",
+        "starts and stops Cell display",
+        "flushes pending Cell work",
+        "changes application pause state"
+      ],
+      "state_variable": {
+        "expression": "mode lifecycle flags plus non-null sCellGame, sCellGFX, and sCellUI service pointers",
+        "owner": "App::cCellModeStrategy and Cell global services",
+        "type": "structural lifecycle state"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "construct and initialize Cell services"
+          ],
+          "cause": "mode initialization",
+          "event": "initialize",
+          "from_state": "uninitialized",
+          "guard": "manager and service allocation checks pass",
+          "to_state": "initialized"
+        },
+        {
+          "actions": [
+            "reset flags",
+            "start display",
+            "perform gameplay/UI setup"
+          ],
+          "cause": "mode activation",
+          "event": "enter",
+          "from_state": "initialized",
+          "guard": "OnEnter returns true",
+          "to_state": "active"
+        },
+        {
+          "actions": [
+            "flush pending work",
+            "disable mode state"
+          ],
+          "cause": "mode deactivation",
+          "event": "exit",
+          "from_state": "active",
+          "guard": "OnExit is invoked",
+          "to_state": "exited"
+        },
+        {
+          "actions": [
+            "release Cell services",
+            "restore application pause state"
+          ],
+          "cause": "mode disposal",
+          "event": "dispose",
+          "from_state": "exited",
+          "guard": "Dispose is invoked",
+          "to_state": "disposed"
+        }
+      ],
+      "validation_strategy": [
+        "Run a positive Cell-mode observatory trace with probes at Initialize, OnEnter, Update, OnExit, and Dispose.",
+        "Record the mode object identity and the Cell global pointer values at every transition.",
+        "Correlate OnExit's pending-work loop with the actual deferred-event consumer once its dispatch implementation is located.",
+        "Keep the state machine static-only until a Cell trace reaches the mode; the current Cell movement traces contain zero events."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "low",
+        "reason": "Pause counters, speed fields, and conversion semantics are SDK layout/documentation, but the relevant original bodies are not safely mapped in this build."
+      },
+      "entry_actions": [
+        {
+          "action": "Accept a Pause or Resume operation keyed by a TimeManagerPause identifier.",
+          "conditions": [
+            "cGameTimeManager service is available"
+          ],
+          "evidence": "GameTimeManager.h:68-100"
+        }
+      ],
+      "evidence": [
+        {
+          "address": "cGameTimeManager+0x1c..+0x78",
+          "claim": "SDK layout identifies four speed factors, base elapsed time, frame-start time, current speed, pause flags, a pause map, and pause-type counters.",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED_NAME_ONLY",
+          "source": "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/SubSystem/GameTimeManager.h:162-174"
+        },
+        {
+          "address": "cGameTimeManager::ConvertDeltaTime",
+          "claim": "SDK documentation says paused time converts to zero and unpaused time is multiplied by current speed.",
+          "kind": "sdk_documentation",
+          "level": "CONFIRMED_NAME_ONLY",
+          "source": "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/SubSystem/GameTimeManager.h:116-123"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "Return the resulting pause counter or converted delta to the caller.",
+          "conditions": [
+            "operation completes"
+          ],
+          "evidence": "GameTimeManager.h:74-123"
+        }
+      ],
+      "name": "game_time_pause_and_speed",
+      "possible_states": [
+        {
+          "actions": [
+            "convert elapsed milliseconds using the current speed factor"
+          ],
+          "guards": [
+            "no pause type has a positive counter"
+          ],
+          "name": "running",
+          "raw_value": "mFlags game bit clear"
+        },
+        {
+          "actions": [
+            "return zero converted game time"
+          ],
+          "guards": [
+            "at least one pause counter is positive and the game pause bit is set"
+          ],
+          "name": "game_paused",
+          "raw_value": "mFlags & 1"
+        },
+        {
+          "actions": [
+            "retain game time pause while allowing or stopping effects according to flags"
+          ],
+          "guards": [
+            "effect pause flag is set"
+          ],
+          "name": "effects_paused",
+          "raw_value": "mFlags & 2"
+        },
+        {
+          "actions": [
+            "retain game and effects pause while controlling audio"
+          ],
+          "guards": [
+            "audio pause flag is set"
+          ],
+          "name": "audio_paused",
+          "raw_value": "mFlags & 4"
+        },
+        {
+          "actions": [
+            "use one of four configured speed factors"
+          ],
+          "guards": [
+            "mCurrentSpeedIndex selects a speed factor"
+          ],
+          "name": "speed_scaled",
+          "raw_value": "mCurrentSpeedIndex 0..3"
+        }
+      ],
+      "relevant_functions": [
+        "Simulator::cGameTimeManager::Pause",
+        "Simulator::cGameTimeManager::Resume",
+        "Simulator::cGameTimeManager::Toggle",
+        "Simulator::cGameTimeManager::ConvertDeltaTime"
+      ],
+      "relevant_structures": [
+        "Simulator::cGameTimeManager"
+      ],
+      "side_effects": [
+        "increments or decrements pause-type counters",
+        "updates combined pause flags",
+        "selects a speed factor",
+        "converts real elapsed time to simulated elapsed time"
+      ],
+      "state_variable": {
+        "expression": "mSpeedFactors, mCurrentSpeed, mCurrentSpeedIndex, mFlags, mPauseMaps, mPauseTypes",
+        "owner": "Simulator::cGameTimeManager",
+        "type": "SDK structure"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "increment the selected pause counter"
+          ],
+          "cause": "pause request",
+          "event": "Pause(type)",
+          "from_state": "running",
+          "guard": "pause type is valid",
+          "to_state": "game_paused"
+        },
+        {
+          "actions": [
+            "decrement the selected pause counter"
+          ],
+          "cause": "resume request",
+          "event": "Resume(type)",
+          "from_state": "game_paused",
+          "guard": "selected pause counter is positive",
+          "to_state": "running"
+        },
+        {
+          "actions": [
+            "toggle the selected pause counter"
+          ],
+          "cause": "toggle request",
+          "event": "Toggle(type)",
+          "from_state": "running",
+          "guard": "selected pause counter is zero or one",
+          "to_state": "game_paused"
+        },
+        {
+          "actions": [
+            "multiply delta by selected speed factor"
+          ],
+          "cause": "game-time conversion",
+          "event": "ConvertDeltaTime(delta)",
+          "from_state": "running",
+          "guard": "game pause bit is clear",
+          "to_state": "speed_scaled"
+        }
+      ],
+      "validation_strategy": [
+        "Resolve exact Pause, Resume, Toggle, and ConvertDeltaTime instruction-aligned bodies before promoting transitions.",
+        "Trace mFlags, mCurrentSpeedIndex, mPauseMaps, and mPauseTypes for single, nested, and mismatched pause requests.",
+        "Correlate converted game time with the one measured delta passed by cSporeApp::frame dispatch.",
+        "Do not infer a fixed-step accumulator from cGameTimeManager fields alone."
+      ]
+    }
+  ],
+  "temporal_semantics": {
+    "call_order": [
+      {
+        "claim": "For a kMsgAppUpdate notification, cSporeApp enters the frame body, calls the +0x78 Update callback, calls the intermediate service callback, calls +0x7c, and then calls +0x80 PostUpdate.",
+        "evidence": [
+          "SPORE/SporeBin/SporeApp.exe (read-only objdump at 0x00f47b10-0x00f47bca and 0x00f47930-0x00f47ad9)"
+        ],
+        "order": [
+          "kMsgAppUpdate",
+          "frame body",
+          "IAppSystem::Update",
+          "intermediate service callback",
+          "IAppSystem::func7Ch",
+          "IAppSystem::PostUpdate"
+        ]
+      },
+      {
+        "claim": "The historical startup trace observed InitPlugins, then Init, then Startup.",
+        "evidence": [
+          "tools/observatory/SCENARIO-main_menu.md:163-177"
+        ],
+        "order": [
+          "entry",
+          "InitPlugins",
+          "Init",
+          "Startup"
+        ]
+      },
+      {
+        "claim": "The Cell mode's static lifecycle bodies support OnExit cleanup before the next OnEnter, but the positive runtime trace does not reach Cell mode.",
+        "evidence": [
+          ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnExit.c:15-35",
+          ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnEnter.c:19-46",
+          "tools/observatory/out/cell/S5-20260922T214226Z-399437/obs_cell_movement.jsonl"
+        ],
+        "order": [
+          "old mode OnExit",
+          "new mode OnEnter"
+        ]
+      }
+    ],
+    "clock": {
+      "claim": "The aligned cSporeApp frame body samples a monotonic performance counter through the IAT, subtracts the previous 64-bit baseline, multiplies the 64-bit difference by field_18, converts to an integer, and may wait for a pacing target.",
+      "confidence": "high",
+      "evidence": [
+        "SPORE/SporeBin/SporeApp.exe (read-only objdump at 0x00f47948-0x00f47a14)"
+      ],
+      "exact_observations": [
+        "The QPC-like call is indirect through 0x13cc2b8.",
+        "The elapsed difference is computed as a 64-bit subtraction across cSporeApp+0x10/+0x14.",
+        "field_18 is used as the tick-to-millisecond conversion multiplier.",
+        "field_1c is applied when updating the timing baseline.",
+        "A pacing target is clamped to at least 1 and at most 45 in the observed branch when the relevant application condition is active.",
+        "After optional waiting, the body recomputes the current elapsed delta before dispatching updates."
+      ],
+      "not_proven": [
+        "The exact semantic name and units of field_18 and field_1c beyond their arithmetic roles.",
+        "That the 1..45 clamp is the concrete implementation of SetFixedStepping.",
+        "A universal original frame rate.",
+        "A fixed-step accumulator or catch-up loop."
+      ]
+    },
+    "current_openspore_comparison": {
+      "claim": "The current OpenSpore executable is comparison evidence only: its interactive path polls SDL, updates simulation, advances the Cell stage with one fixed 1/60 delta, then renders; it does not establish original timing semantics.",
+      "confidence": "high",
+      "difference_from_original": "The current fixed delta is a clean-room local design and must not be used to fill the original cSporeApp timing fields, cGameTimeManager conversion, or message queue.",
+      "evidence": [
+        "src/apps/cell_stage.cpp:767-803",
+        "src/apps/CellModeStrategy.cpp:56-67",
+        "docs/CELLSTAGE.md"
+      ],
+      "observed_current_behavior": [
+        "Scripted mode calls sim.update(frame) and stage->update(1.0f / 60.0f) once per scripted frame.",
+        "Interactive mode polls SDL events and performs the local simulation/stage update before presentation.",
+        "Renderer work is deferred until beginPresentFrame confirms the required synchronization boundary."
+      ]
+    },
+    "deferred_work": {
+      "claim": "cCity stores deferred work as 0x20-byte records with an event GUID, 64-bit trigger time, and four user fields.",
+      "confidence": "high",
+      "evidence": [
+        "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cCity.h:73-82"
+      ],
+      "known": [
+        "record size is 0x20",
+        "mEventGuid is at +0x00",
+        "mTriggerTime is at +0x08",
+        "mUserFloat1 and mUserFloat2 are at +0x10 and +0x14",
+        "mUserUint1 and mUserUint2 are at +0x18 and +0x1c"
+      ],
+      "unknown": [
+        "the original insertion and due-event dispatch implementation",
+        "clock domain and units for mTriggerTime",
+        "ordering of multiple due events",
+        "whether trigger execution is synchronous or queued"
+      ]
+    },
+    "frame_update_semantics": {
+      "catch_up_boundary": "No accumulator-driven repeated update was found in the aligned body. This is a bounded static negative claim, not proof that no other subsystem has an accumulator.",
+      "claim": "The observed original frame body performs one measured-delta update sequence per app-update message, with no loop that repeatedly consumes an accumulated remainder in the aligned body.",
+      "confidence": "high",
+      "evidence": [
+        "SPORE/SporeBin/SporeApp.exe (read-only objdump at 0x00f47930-0x00f47ad9)"
+      ],
+      "single_update_sequence": [
+        "sample current monotonic time",
+        "compute elapsed integer delta",
+        "optionally pace/wait",
+        "recompute current elapsed delta",
+        "update timing baseline",
+        "call IAppSystem::Update(delta)",
+        "call intermediate service callback",
+        "call IAppSystem::func7Ch"
+      ]
+    },
+    "message_queue_semantics": {
+      "claim": "The original message manager has separate Send, Post, PostFunction, ProcessQueue, and ProcessQueue2 surfaces; the exported ProcessQueue body traverses a block/list structure and releases referenced objects, but exact listener priority and callback order are not established.",
+      "confidence": "medium",
+      "evidence": [
+        "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/App/IMessageManager.h:61-205",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/App__cMessageManager__ProcessQueue.c:6-38"
+      ],
+      "known": [
+        "message ID and payload are routed to registered listeners or handlers",
+        "listener registration metadata contains priority and refcounting fields",
+        "queued records are distinct from the 0x14-byte registration Entry",
+        "ProcessQueue releases referenced objects after traversal"
+      ],
+      "unknown": [
+        "priority direction and tie order",
+        "whether Send is synchronous relative to the caller",
+        "queue insertion and reentrancy rules",
+        "ProcessQueue2 differences",
+        "listener consume or stop semantics"
+      ]
+    },
+    "runtime_observations": {
+      "claim": "The only positive original runtime evidence is the startup/main-menu trace; it does not establish Cell gameplay timing or universal update cadence.",
+      "confidence": "high",
+      "evidence": [
+        "tools/observatory/SCENARIO-main_menu.md:163-183",
+        "tools/observatory/examples/obs_main_menu_example.jsonl",
+        "tools/observatory/out/cell/S5-20260922T214226Z-399437/obs_cell_movement.jsonl",
+        "tools/observatory/out/cell/S5-20260922T194521Z-392241/obs_cell_movement.jsonl"
+      ],
+      "observed": [
+        "1004 startup events were captured.",
+        "InitPlugins was observed at 503.766 ms.",
+        "Init was observed at 503.802 ms.",
+        "Startup was observed at 543.544 ms.",
+        "IAppSystem::Get was capped at 1000 events.",
+        "The Cell movement traces contain zero events."
+      ]
+    },
+    "shutdown_semantics": {
+      "claim": "The cSporeApp teardown body clears mHasInitialized, removes the kMsgAppUpdate listener plus other message registrations, invokes service teardown, and releases service pointers.",
+      "confidence": "high",
+      "evidence": [
+        "SPORE/SporeBin/SporeApp.exe (read-only objdump at 0x00f47700-0x00f47922)"
+      ],
+      "order": [
+        "clear mHasInitialized",
+        "remove application listeners",
+        "invoke subsystem teardown callbacks",
+        "dispose/release service pointers",
+        "return success"
+      ]
+    }
+  },
+  "unresolved": [
+    {
+      "blocking_question": "What are the exact instruction-aligned entries and names for cSporeApp::Init, cSporeApp::Run, and cSporeApp::Shutdown in this binary?",
+      "evidence": [
+        "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/App/cSporeApp.h:44-50",
+        "SPORE/SporeBin/SporeApp.exe (read-only objdump around 0x00f47410-0x00f47ed0)"
+      ],
+      "impact": "The lifecycle state machine can model flags and observed teardown, but cannot promote every SDK address to an exact function entry.",
+      "required_evidence": "Map the cSporeApp vtable and xrefs to instruction-aligned bodies, then compare constructor, Init, Run, and Shutdown call graphs.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "What concrete operation implements IAppSystem::SetFixedStepping(int), and is it related to the 1..45 pacing clamp?",
+      "evidence": [
+        "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/App/cAppSystem.h:36,133",
+        "SPORE/SporeBin/SporeApp.exe (read-only objdump at 0x00f47994-0x00f47a14)"
+      ],
+      "impact": "The frame pacing values cannot be described as the original fixed-step configuration or as a fixed-step accumulator.",
+      "required_evidence": "Trace all writers and readers of the relevant timing state and resolve the concrete +0x3c implementation body.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "What are the exact units and semantics of cSporeApp field_18 and field_1c?",
+      "evidence": [
+        "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/App/cSporeApp.h:26-31",
+        "SPORE/SporeBin/SporeApp.exe (read-only objdump at 0x00f47969-0x00f47a42)"
+      ],
+      "impact": "The arithmetic conversion and baseline update are known, but their ownership and relation to game-time scaling remain opaque.",
+      "required_evidence": "Find all writers, initialization values, and runtime reads of +0x18 and +0x1c, with correlated timing traces.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "What is the exact listener priority, Send/Post timing, and ProcessQueue2 ordering in App::cMessageManager?",
+      "evidence": [
+        "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/App/IMessageManager.h:61-205",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/App__cMessageManager__ProcessQueue.c:6-38"
+      ],
+      "impact": "Message producers and callback contracts are known, but deterministic dispatch order and reentrancy are not.",
+      "required_evidence": "Resolve concrete manager methods, registration data, queue record layouts, and a runtime trace with two listeners of different priorities.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "Which code inserts, orders, and dispatches Simulator::cCity::tDeferredEvent records?",
+      "evidence": [
+        "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cCity.h:73-82,227"
+      ],
+      "impact": "Only the record layout and deferred-work concept are established; trigger timing and gameplay effects are not.",
+      "required_evidence": "Locate all vector writers/readers, map the trigger clock, and capture a positive City deferred-event runtime trace.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "Does cGameTimeManager::ConvertDeltaTime participate in the cSporeApp frame delta, or is it called by a later Simulator subsystem?",
+      "evidence": [
+        "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/SubSystem/GameTimeManager.h:116-123,184",
+        "SPORE/SporeBin/SporeApp.exe (read-only objdump around 0x00f47930)"
+      ],
+      "impact": "Real frame delta, game-time delta, and speed/pause conversion cannot yet be composed into one end-to-end temporal model.",
+      "required_evidence": "Resolve the exact ConvertDeltaTime body and trace its callers with the cSporeApp delta on the same thread and frame.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "What is the actual Cell mode transition order and reachability in the original runtime?",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnEnter.c:8-46",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnExit.c:8-36",
+        "tools/observatory/out/cell/S5-20260922T214226Z-399437/obs_cell_movement.jsonl"
+      ],
+      "impact": "Static lifecycle mechanics are documented, but no positive Cell runtime trace validates the state machine.",
+      "required_evidence": "A hash-pinned observatory run that reaches Cell with probes for mode Initialize, OnEnter, Update, OnExit, and Dispose.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "What is the original cGameTimeManager pause counter and speed conversion behavior for nested or overlapping pause types?",
+      "evidence": [
+        "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/SubSystem/GameTimeManager.h:29-50,74-123,153-174"
+      ],
+      "impact": "The SDK state shape is known, but concrete transitions and flag-combination behavior are not runtime- or body-verified.",
+      "required_evidence": "Exact method bodies plus traces for single, nested, mismatched, and resumed pause requests.",
+      "status": "unresolved"
+    }
+  ]
+}

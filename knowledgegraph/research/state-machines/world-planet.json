@@ -1,0 +1,2175 @@
+{
+  "$schema": "state-machine-research-1",
+  "callbacks": [
+    {
+      "address": "0x00b3d450",
+      "consumers": [
+        "planet-surface accessors",
+        "terrain/world presentation consumers"
+      ],
+      "evidence": [
+        {
+          "address": "0x00b3d450",
+          "claim": "returns the global cPlanetModel pointer from DAT_0167eb38",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cPlanetModel__Get.c"
+        },
+        {
+          "address": "struct:Simulator::cPlanetModel",
+          "claim": "KG associates the getter and six additional functions with cPlanetModel",
+          "kind": "kg_structure_association",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/spore.db"
+        }
+      ],
+      "name": "Simulator::cPlanetModel::Get",
+      "parameters": [],
+      "returns": "cPlanetModel*",
+      "semantics": "borrowed active planet-model service; publication and teardown owner are not established"
+    },
+    {
+      "address": "0x00b81780",
+      "consumers": [
+        "planet-surface coordinate consumers",
+        "terrain interaction helpers"
+      ],
+      "evidence": [
+        {
+          "address": "0x00b81780",
+          "claim": "normalizes a nonzero position, applies a surface transform, and writes the result through the return object",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cPlanetModel__ToSurface.c"
+        }
+      ],
+      "name": "Simulator::cPlanetModel::ToSurface",
+      "parameters": [
+        "position"
+      ],
+      "returns": "Vector3 surface-aligned position",
+      "semantics": "surface projection helper; exact collision and terrain-height call chain is partially decompiler-corrupted"
+    },
+    {
+      "address": "0x00ba61b0",
+      "consumers": [
+        "cStarManager::GeneratePlanetsForStar"
+      ],
+      "evidence": [
+        {
+          "address": "0x00ba61b0",
+          "claim": "allocates a 0x1b0 cPlanetRecord, initializes it, writes the PlanetID-derived key, and invokes the record virtual initialization path",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra live decompilation of FUN_00ba61b0"
+        }
+      ],
+      "name": "FUN_00ba61b0",
+      "parameters": [
+        "PlanetID",
+        "output intrusive_ptr<cPlanetRecord>*"
+      ],
+      "returns": "void",
+      "semantics": "record allocation/initialization helper; its SDK-facing analogue is cPlanetRecord::Create, whose imported body is a decompiler no-op"
+    },
+    {
+      "address": "0x00ba64a0",
+      "consumers": [
+        "cStarManager::GeneratePlanetsForStar"
+      ],
+      "evidence": [
+        {
+          "address": "0x00ba64a0",
+          "claim": "for unset planet type it creates a terrain key, loads terrain-derived scores, then writes the resolved planet type and score fields",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra live decompilation of FUN_00ba64a0"
+        },
+        {
+          "address": "struct:Simulator::cPlanetRecord",
+          "claim": "mType+0x28, mAtmosphereScore+0xb0, mTemperatureScore+0xb4, mWaterScore+0xb8, and mGeneratedTerrainKey+0x1a4 are addressable",
+          "kind": "sdk_structure",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv"
+        }
+      ],
+      "name": "FUN_00ba64a0",
+      "parameters": [
+        "cPlanetRecord*"
+      ],
+      "returns": "void",
+      "semantics": "planet type/score initialization; the exact terrain resource-manager policy remains unresolved"
+    },
+    {
+      "address": "0x00bb4af0",
+      "consumers": [
+        "star discovery/regeneration callers"
+      ],
+      "evidence": [
+        {
+          "address": "0x00bb4af0",
+          "claim": "returns immediately when cStarRecord+0xac is nonzero; when zero and the timing check passes it records observed minutes, removes the pending entry, resets manager state, and calls the planet-generation body",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra live decompilation of FUN_00bb4af0"
+        },
+        {
+          "address": "0x00bb4af0",
+          "claim": "the committed dossier identifies the same body as star-system regeneration after a no-planet and timing guard",
+          "kind": "research_dossier",
+          "level": "SUPPORTED",
+          "source": "docs/analysis/dossiers/unknown-high/star-system-regen.md"
+        }
+      ],
+      "name": "FUN_00bb4af0",
+      "parameters": [
+        "cStarManager*",
+        "cStarRecord*",
+        "generation filter/flags"
+      ],
+      "returns": "void",
+      "semantics": "lazy no-planet regeneration guard; current Ghidra function name does not match the SDK export address for RequirePlanetsForStar"
+    },
+    {
+      "address": "0x00bb4100",
+      "consumers": [
+        "star discovery",
+        "planet record generation"
+      ],
+      "evidence": [
+        {
+          "address": "0x00bb4100",
+          "claim": "loops over requested planet slots, allocates cPlanetRecord instances, initializes their types/scores, and increments cStarRecord+0xac",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra live decompilation of FUN_00bb4100"
+        },
+        {
+          "address": "0x00bb42a0",
+          "claim": "SDK export names the nearby cStarManager::GeneratePlanetsForStar address",
+          "kind": "sdk_name",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/sdk_functions.tsv"
+        }
+      ],
+      "name": "FUN_00bb4100",
+      "parameters": [
+        "cStarRecord*",
+        "StarRequestFilter*",
+        "useMaxPlanets flag"
+      ],
+      "returns": "void",
+      "semantics": "planet-record generation body; exact current-Ghidra/SDK address identity is not claimed"
+    },
+    {
+      "address": "0x00bb5b50",
+      "consumers": [
+        "active-planet materialization",
+        "space/planet presentation"
+      ],
+      "evidence": [
+        {
+          "address": "0x00bb5b50",
+          "claim": "SDK-defined RecordToPlanet signature accepts a cPlanetRecord and output cPlanetPtr; KG associates the function with cStarManager",
+          "kind": "sdk_structure_and_kg",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/sdk_functions.tsv"
+        }
+      ],
+      "name": "Simulator::cStarManager::RecordToPlanet",
+      "parameters": [
+        "cPlanetRecord*",
+        "output cPlanetPtr*"
+      ],
+      "returns": "void",
+      "semantics": "turns persistent planet data into the visual/simulated cPlanet object; allocation and representation-mode side effects are not fully recovered"
+    },
+    {
+      "address": "0x00bb5d80",
+      "consumers": [
+        "galaxy-generation message dispatch"
+      ],
+      "evidence": [
+        {
+          "address": "0x00bb5d80",
+          "claim": "message handler iterates DistributeEffectMessageData records, creates cStarRecord objects, inserts them into the star grid, and can enqueue black-hole/generated records",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra live decompilation of FUN_00bb5d80"
+        },
+        {
+          "address": "0x00bb5f00",
+          "claim": "SDK export names the nearby cStarManager::StarGenerationMessageHandler address",
+          "kind": "sdk_name",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/sdk_functions.tsv"
+        }
+      ],
+      "name": "FUN_00bb5d80",
+      "parameters": [
+        "messageId",
+        "DistributeEffectMessageData*",
+        "StarType"
+      ],
+      "returns": "bool",
+      "semantics": "galaxy-generation event consumer that materializes star records; exact current-Ghidra/SDK address identity is not claimed"
+    },
+    {
+      "address": "0x00c85380",
+      "consumers": [
+        "solar-system per-frame update"
+      ],
+      "evidence": [
+        {
+          "address": "0x00c85380",
+          "claim": "updates every cCelestialBody and, in Planet context, creates or refreshes the active planet visual model from cPlanet representation data",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra live decompilation of FUN_00c85380"
+        },
+        {
+          "address": "struct:Simulator::cSolarSystem",
+          "claim": "mCelestialBodies+0x24, mpStar1+0x38, and mpStar2+0x3c are addressable vectors/slots",
+          "kind": "sdk_structure",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv"
+        }
+      ],
+      "name": "FUN_00c85380",
+      "parameters": [
+        "cSolarSystem*",
+        "delta time"
+      ],
+      "returns": "void",
+      "semantics": "celestial/planet presentation refresh; the exact visual lifecycle and null-owner behavior remain incomplete"
+    },
+    {
+      "address": "0x00c86390",
+      "consumers": [
+        "space update tick"
+      ],
+      "evidence": [
+        {
+          "address": "0x00c86390",
+          "claim": "for each celestial body it updates position/state using the current context, active-planet position when in Planet context, and then calls the visual/world refresh helper",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra live decompilation of FUN_00c86390"
+        }
+      ],
+      "name": "FUN_00c86390",
+      "parameters": [
+        "cSolarSystem*",
+        "delta time"
+      ],
+      "returns": "void",
+      "semantics": "per-frame orbital/celestial update; it branches on the explicit SpaceContext enum rather than an inferred integer state"
+    },
+    {
+      "address": "0x00c86760",
+      "consumers": [
+        "cStar solar-system materialization"
+      ],
+      "evidence": [
+        {
+          "address": "0x00c86760",
+          "claim": "stores the owner star, creates or replaces mpStar1 for non-binary stars, invokes binary-star/asteroid helpers, and populates the cSolarSystem planet and celestial-body vectors",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra live decompilation of FUN_00c86760"
+        },
+        {
+          "address": "0x00c868f0",
+          "claim": "SDK export names cSolarSystem::Load at the nearby address",
+          "kind": "sdk_name",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/sdk_functions.tsv"
+        }
+      ],
+      "name": "FUN_00c86760",
+      "parameters": [
+        "cSolarSystem*",
+        "cStar*"
+      ],
+      "returns": "void",
+      "semantics": "loads persistent system data into runtime solar-system objects without proving that graphics are created"
+    },
+    {
+      "address": "0x00c86e00",
+      "consumers": [
+        "solar-system graphics lifecycle",
+        "space presentation"
+      ],
+      "evidence": [
+        {
+          "address": "0x00c86e00",
+          "claim": "iterates the celestial-body and planet collections through virtual calls and invokes the shared graphics generation helpers",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cSolarSystem__GenerateGraphics.c"
+        }
+      ],
+      "name": "Simulator::cSolarSystem::GenerateGraphics",
+      "parameters": [
+        "bool create"
+      ],
+      "returns": "void",
+      "semantics": "create/destroy graphics and hit spheres; the imported body does not preserve the create-branch cleanly enough to claim exact entry/exit state"
+    },
+    {
+      "address": "0x00c8b700",
+      "consumers": [
+        "cStar solar-system accessors"
+      ],
+      "evidence": [
+        {
+          "address": "0x00c8b700",
+          "claim": "if the owner field at +0x40 is null, allocates cSolarSystem, replaces the pointer, and calls the Load body",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra live decompilation of FUN_00c8b700"
+        }
+      ],
+      "name": "FUN_00c8b700",
+      "parameters": [
+        "cStar*"
+      ],
+      "returns": "void",
+      "semantics": "lazy cSolarSystem allocation and load entry point; owner type beyond the cStar-like layout is not fully named"
+    },
+    {
+      "address": "0x00f97ef0",
+      "consumers": [
+        "terrain render layer"
+      ],
+      "evidence": [
+        {
+          "address": "0x00f97ef0",
+          "claim": "iterates land rendering chunks and stops when the terrain owner callback returns false",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Terrain__cTerrainSphere__RenderTerrainLand.c"
+        }
+      ],
+      "name": "Terrain::cTerrainSphere::RenderTerrainLand",
+      "parameters": [
+        "RenderStatistics*",
+        "render flags"
+      ],
+      "returns": "void",
+      "semantics": "terrain land pass; it is a rendering callback, not proof of gameplay state transitions"
+    },
+    {
+      "address": "0x00f98110",
+      "consumers": [
+        "terrain decal render layer"
+      ],
+      "evidence": [
+        {
+          "address": "0x00f98110",
+          "claim": "iterates decal entries, skips entries with the 0x40 flag, and submits the remainder through the terrain render path",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra live decompilation of Terrain::cTerrainSphere::RenderTerrainDecals"
+        }
+      ],
+      "name": "Terrain::cTerrainSphere::RenderTerrainDecals",
+      "parameters": [
+        "RenderStatistics*",
+        "render flags"
+      ],
+      "returns": "void",
+      "semantics": "terrain decal pass; decal ownership and placement mutations are outside this callback"
+    },
+    {
+      "address": "0x00f98170",
+      "consumers": [
+        "terrain atmosphere render layer"
+      ],
+      "evidence": [
+        {
+          "address": "0x00f98170",
+          "claim": "iterates atmosphere rendering entries, skips entries with the 0x40 flag, and submits the remaining atmosphere chunks",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Terrain__cTerrainSphere__RenderTerrainAtmosphere.c"
+        }
+      ],
+      "name": "Terrain::cTerrainSphere::RenderTerrainAtmosphere",
+      "parameters": [
+        "RenderStatistics*",
+        "render flags"
+      ],
+      "returns": "void",
+      "semantics": "atmosphere pass; atmosphere-state mutation is owned by terrain state data rather than this render callback"
+    },
+    {
+      "address": "0x01021d40",
+      "consumers": [
+        "Simulator space initialization"
+      ],
+      "evidence": [
+        {
+          "address": "0x01021d40",
+          "claim": "allocates 0x34-byte SpacePlayerData, nulls active planet/star/relationship/empire/colonies, sets context=-1 and player ID=-1, and sets rotation-rate factor=1.0",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra live decompilation of FUN_01021d40"
+        },
+        {
+          "address": "Simulator::sSpacePlayerData",
+          "claim": "KG/global xrefs identify the 0x016dda8c global and 56 references, including reads and initialization writes",
+          "kind": "kg_global",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/spore.db"
+        }
+      ],
+      "name": "FUN_01021d40",
+      "parameters": [],
+      "returns": "void",
+      "semantics": "space-player state initializer; this is the strongest initial-state evidence for world navigation"
+    },
+    {
+      "address": "0x01021960",
+      "consumers": [
+        "space navigation callers",
+        "Galaxy transition follow-up path"
+      ],
+      "evidence": [
+        {
+          "address": "0x01021960",
+          "claim": "writes the requested value to SpacePlayerData+0x10; when the new value is Galaxy and both companion pointers resolve, calls 0x01001360 after the write",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra live decompilation of FUN_01021960"
+        },
+        {
+          "address": "struct:Simulator/SpaceContext",
+          "claim": "SDK enum provides None=-1, Planet=0, SolarSystem=1, Galaxy=2",
+          "kind": "sdk_enum",
+          "level": "CONFIRMED",
+          "source": "/home/juanr/apps/Spore-ModAPI/SDKtoGhidra/SporeGhidra_march2017.xml"
+        }
+      ],
+      "name": "FUN_01021960",
+      "parameters": [
+        "SpaceContext value"
+      ],
+      "returns": "void",
+      "semantics": "context setter; the Galaxy-only helper's side effects are unresolved"
+    },
+    {
+      "address": "0x010219b0",
+      "consumers": [
+        "active planet/star binding"
+      ],
+      "evidence": [
+        {
+          "address": "0x010219b0",
+          "claim": "resolves active star and planet records through star-manager helpers, replaces SpacePlayerData+0x08 and +0x04, and releases the replaced intrusive pointers",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra live decompilation of FUN_010219b0"
+        }
+      ],
+      "name": "FUN_010219b0",
+      "parameters": [
+        "active star/record identifier",
+        "candidate record pointer"
+      ],
+      "returns": "void",
+      "semantics": "active-world binding update; exact identifier types and null/default policy are only partially recovered"
+    },
+    {
+      "address": "0x01022580",
+      "consumers": [
+        "space activation path"
+      ],
+      "evidence": [
+        {
+          "address": "0x01022580",
+          "claim": "on first activation, creates or obtains a temporary star when active star is null, activates it, and forces context to Planet when the context is not already Planet",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra live decompilation of FUN_01022580"
+        }
+      ],
+      "name": "FUN_01022580",
+      "parameters": [],
+      "returns": "void",
+      "semantics": "space activation bootstrap; the global one-shot flag is not identified beyond the observed byte guard"
+    },
+    {
+      "address": "0x010225d0",
+      "consumers": [
+        "space per-frame update"
+      ],
+      "evidence": [
+        {
+          "address": "0x010225d0",
+          "claim": "accumulates SpacePlayerData+0x00 time, updates active celestial/planet objects, advances orbit-related state, and iterates additional space objects",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra live decompilation of FUN_010225d0"
+        }
+      ],
+      "name": "FUN_010225d0",
+      "parameters": [
+        "active object/context pointer",
+        "delta milliseconds"
+      ],
+      "returns": "uint32/result code",
+      "semantics": "space temporal update; the SDK export address for SpaceTeleportTo is not equated with this body"
+    },
+    {
+      "address": "0x01022920",
+      "consumers": [
+        "space per-frame update"
+      ],
+      "evidence": [
+        {
+          "address": "0x01022920",
+          "claim": "when context is Planet or SolarSystem and an active star exists, advances the solar-system update with the elapsed milliseconds",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra live decompilation of FUN_01022920"
+        }
+      ],
+      "name": "FUN_01022920",
+      "parameters": [
+        "delta milliseconds"
+      ],
+      "returns": "void",
+      "semantics": "context-gated temporal tick; Galaxy is not advanced by this path"
+    },
+    {
+      "address": "0x00b8d420",
+      "consumers": [
+        "terrain geometry/surface construction"
+      ],
+      "evidence": [
+        {
+          "address": "0x00b8d420",
+          "claim": "normalizes and scales surface points, builds a temporary geometry record, and submits it through the terrain object's virtual method",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra live decompilation of FUN_00b8d420"
+        }
+      ],
+      "name": "FUN_00b8d420",
+      "parameters": [
+        "terrain/planet-model owner",
+        "geometry record"
+      ],
+      "returns": "void",
+      "semantics": "surface geometry construction; it is evidence for terrain shape, not for persistent planet-object placement"
+    },
+    {
+      "address": "0x00b8da30",
+      "consumers": [
+        "planet terrain key mutation"
+      ],
+      "evidence": [
+        {
+          "address": "0x00b8da30",
+          "claim": "writes the three words of a ResourceKey into cPlanetRecord+0x188/+0x18c/+0x190",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra live decompilation of cPlanetRecord_GetGeneratedTerrainKey"
+        }
+      ],
+      "name": "cPlanetRecord_GetGeneratedTerrainKey",
+      "parameters": [
+        "cPlanetRecord*",
+        "ResourceKey*"
+      ],
+      "returns": "void",
+      "semantics": "generated-terrain-key setter; naming is import/decompiler-derived and the field write is direct"
+    },
+    {
+      "address": "0x00fe0f40",
+      "consumers": [
+        "space/planet transition sequencer",
+        "GameSpace-like update owner"
+      ],
+      "evidence": [
+        {
+          "address": "0x00fe0f40",
+          "claim": "uses a countdown at owner+0x194, accumulates owner+0x164, checks owner+0x18e, then advances byte flags +0x18f, +0x190, +0x191, and +0x192 through separate guard getters before a terminal mode request",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra live decompilation of FUN_00fe0f40"
+        },
+        {
+          "address": "0x00e36de0",
+          "claim": "writes owner+0x3f0=9 and owner+0x454=0",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra live decompilation of FUN_00e36de0"
+        },
+        {
+          "address": "0x00e36dd0",
+          "claim": "reads owner+0x454 as a guard result",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra live decompilation of FUN_00e36dd0"
+        },
+        {
+          "address": "0x00e36e10",
+          "claim": "reads owner+0x528 as a guard result",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra live decompilation of FUN_00e36e10"
+        },
+        {
+          "address": "0x00e36fa0",
+          "claim": "reads owner+0x370 as the initial transition gate",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra live decompilation of FUN_00e36fa0"
+        }
+      ],
+      "name": "FUN_00fe0f40",
+      "parameters": [
+        "transition owner",
+        "update delta milliseconds"
+      ],
+      "returns": "void",
+      "semantics": "world-transition sequencer; the owner type and semantic names of the byte flags are unresolved"
+    }
+  ],
+  "domain": "World/Planet",
+  "events": [
+    {
+      "consumers": [
+        "cStarManager::StarGenerationMessageHandler at 0x00bb5d80"
+      ],
+      "evidence": [
+        {
+          "address": "0x00bb5d80",
+          "claim": "message handler consumes DistributeEffectMessageData records and creates star records",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra live decompilation of FUN_00bb5d80"
+        },
+        {
+          "address": "SimulatorMessages.h",
+          "claim": "SDK defines distinct GalaxyGenerate messages for StarG, StarO, StarM, BlackHole, ProtoPlanetary, GalacticCore, and binary-star types",
+          "kind": "sdk_message_contract",
+          "level": "CONFIRMED",
+          "source": "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/SimulatorMessages.h"
+        }
+      ],
+      "id": "galaxy_star_generation_message",
+      "kind": "message",
+      "producers": [
+        "galaxy generation effect; exact producer body not recovered"
+      ],
+      "status": "consumer_static_only"
+    },
+    {
+      "consumers": [
+        "FUN_00bb4af0",
+        "cStarManager planet generation path"
+      ],
+      "evidence": [
+        {
+          "address": "0x00bb4af0",
+          "claim": "the no-planet and timing guard precedes regeneration",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra live decompilation of FUN_00bb4af0"
+        },
+        {
+          "address": "docs/analysis/dossiers/unknown-high/star-system-regen.md",
+          "claim": "the committed dossier records the same regeneration sequence",
+          "kind": "research_dossier",
+          "level": "SUPPORTED",
+          "source": "docs/analysis/dossiers/unknown-high/star-system-regen.md"
+        }
+      ],
+      "id": "planet_generation_request",
+      "kind": "analytical_event",
+      "producers": [
+        "star discovery/regeneration callers"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "consumers": [
+        "active-planet presentation",
+        "cPlanet::GetTemperatureScore and representation consumers"
+      ],
+      "evidence": [
+        {
+          "address": "0x00ba61b0",
+          "claim": "creates and initializes a cPlanetRecord before it can be materialized",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra live decompilation of FUN_00ba61b0"
+        },
+        {
+          "address": "0x00bb5b50",
+          "claim": "SDK RecordToPlanet accepts a cPlanetRecord and output cPlanetPtr",
+          "kind": "sdk_signature",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/sdk_functions.tsv"
+        }
+      ],
+      "id": "planet_record_materialized",
+      "kind": "analytical_event",
+      "producers": [
+        "cStarManager::RecordToPlanet"
+      ],
+      "status": "static_contract_and_call_boundary"
+    },
+    {
+      "consumers": [
+        "space navigation callers",
+        "Galaxy follow-up helper"
+      ],
+      "evidence": [
+        {
+          "address": "0x01021960",
+          "claim": "writes sSpacePlayerData+0x10 before the Galaxy-specific follow-up call",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra live decompilation of FUN_01021960"
+        }
+      ],
+      "id": "space_context_request",
+      "kind": "analytical_event",
+      "producers": [
+        "0x00b32b20",
+        "0x00b32ce0",
+        "0x00b33350",
+        "0x00fda9f0",
+        "0x00fdf5f0",
+        "0x01003490",
+        "0x01003690",
+        "0x01003a50",
+        "0x0100a960"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "consumers": [
+        "0x01001360"
+      ],
+      "evidence": [
+        {
+          "address": "0x01021960",
+          "claim": "after storing Galaxy context, resolves companion objects and invokes 0x01001360 when both are non-null",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra live decompilation of FUN_01021960"
+        }
+      ],
+      "id": "space_context_galaxy_followup",
+      "kind": "analytical_event",
+      "producers": [
+        "0x01021960"
+      ],
+      "status": "static_call_boundary_only"
+    },
+    {
+      "consumers": [
+        "solar-system graphics lifecycle"
+      ],
+      "evidence": [
+        {
+          "address": "0x00c86760",
+          "claim": "Load populates the persistent-to-runtime cSolarSystem object and its owner star",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra live decompilation of FUN_00c86760"
+        },
+        {
+          "address": "0x00c86e00",
+          "claim": "GenerateGraphics accepts a create flag and iterates body/planet collections through virtual calls",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cSolarSystem__GenerateGraphics.c"
+        }
+      ],
+      "id": "solar_system_load_or_graphics_request",
+      "kind": "analytical_event",
+      "producers": [
+        "FUN_00c8b700",
+        "FUN_00c86760",
+        "Simulator::cSolarSystem::GenerateGraphics"
+      ],
+      "status": "static_lifecycle"
+    },
+    {
+      "consumers": [
+        "space/planet transition owner"
+      ],
+      "evidence": [
+        {
+          "address": "0x00fe0f40",
+          "claim": "the owner+0x18e gate advances four independent byte flags through separate guard checks",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra live decompilation of FUN_00fe0f40"
+        }
+      ],
+      "id": "world_transition_step",
+      "kind": "analytical_event",
+      "producers": [
+        "per-frame space/planet update"
+      ],
+      "status": "static_flag_sequence"
+    },
+    {
+      "consumers": [
+        "space tool/planet interaction consumers; exact listener set unresolved"
+      ],
+      "evidence": [
+        {
+          "address": "SimulatorMessages.h",
+          "claim": "SDK defines kMsgSculptOrColorToolHit=0xf46092db and kMsgToolOnHit=0x056690bb for space tool hits",
+          "kind": "sdk_message_contract",
+          "level": "CONFIRMED",
+          "source": "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/SimulatorMessages.h"
+        }
+      ],
+      "id": "planet_tool_hit",
+      "kind": "message",
+      "producers": [
+        "space tool strategies; exact binary producer not recovered"
+      ],
+      "status": "sdk_only"
+    },
+    {
+      "consumers": [
+        "star/empire UI and simulation consumers; exact listener set unresolved"
+      ],
+      "evidence": [
+        {
+          "address": "SimulatorMessages.h",
+          "claim": "SDK defines kMsgStarOwnershipChanged=0x55bd8f7 and states that star ownership changes emit it",
+          "kind": "sdk_message_contract",
+          "level": "CONFIRMED",
+          "source": "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/SimulatorMessages.h"
+        }
+      ],
+      "id": "star_ownership_changed",
+      "kind": "message",
+      "producers": [
+        "cEmpire star ownership path; exact binary producer not recovered"
+      ],
+      "status": "sdk_only"
+    },
+    {
+      "consumers": [
+        "cross-stage transition consumers; exact listener set unresolved"
+      ],
+      "evidence": [
+        {
+          "address": "SimulatorMessages.h",
+          "claim": "SDK defines CellToCreatureTransition=0x02a4f8f0 and CreatureToTribeTransition=0x0477f66c as cross-stage transition messages",
+          "kind": "sdk_message_contract",
+          "level": "CONFIRMED",
+          "source": "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/SimulatorMessages.h"
+        }
+      ],
+      "id": "cross_stage_world_transition",
+      "kind": "message",
+      "producers": [
+        "stage/cinematic systems; exact binary producer not recovered"
+      ],
+      "status": "sdk_only"
+    }
+  ],
+  "scope": {
+    "binary": "SPORE/SporeBin/SporeApp.exe",
+    "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+    "boundaries": [
+      "No binary, OpenSpore source, SPORE file, or historical triage artifact is modified.",
+      "The artifact describes static state and lifecycle contracts only; it does not claim original runtime observations.",
+      "SDK names, enum values, and field offsets establish shape only unless corroborated by a body or disassembly.",
+      "No integer-to-state inference is used for raw flags, transition fields, lighting state, or unnamed owner fields.",
+      "Persistent planet records, visual cPlanet objects, terrain assets, and world-object records are kept as separate domains until a producer/consumer link is proven."
+    ],
+    "build": "SporeApp.exe 3.1.0.22",
+    "evidence_policy": {
+      "decompilation": "Committed Ghidra exports and live Ghidra decompilation are behavior evidence; decompiler casts, missing names, and damaged signatures are not authoritative.",
+      "disassembly": "Read-only Ghidra control-flow and call relationships are used where an imported body is missing or address alignment is inconsistent.",
+      "kg": "The read-only KG sidecar and committed KG projections are used for structure association, xref inventory, and provenance; no KG write is performed.",
+      "levels": [
+        "APPROXIMATION",
+        "CONFIRMED",
+        "INFERRED",
+        "OBSERVED",
+        "SUPPORTED",
+        "UNKNOWN",
+        "VERIFIED"
+      ],
+      "runtime": "No original world/planet runtime trace exists in the current corpus; runtime validation remains a future read-only experiment.",
+      "sdk_name_only": "SDK structures and method names are capped at interface-shape evidence unless a matching body or disassembly is present."
+    },
+    "image_base": "0x00400000",
+    "method": [
+      "Queried the read-only KG sidecar for Simulator, Terrain, cPlanetModel, cSolarSystem, cStarManager, and cTimeOfDay structure associations.",
+      "Read the existing simulator, space, terrain, unknown-high, and reconstruction-readiness documents.",
+      "Used committed Ghidra SDK exports, structure-field exports, decompiled SDK bodies, and read-only live Ghidra decompilation for the strongest functions.",
+      "Separated persistent record generation, active-world binding, solar-system runtime materialization, terrain rendering, and continuous illumination.",
+      "Marked address mismatches between SDK exports and current Ghidra function entries instead of treating them as proof of identity."
+    ],
+    "sources": [
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cPlanetModel__ToSurface.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cPlanetRecord__Create.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cSolarSystem__GenerateGraphics.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cStarRecord__GetPlanetRecords.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Terrain__cTerrainSphere__GetSimDataRTT.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Terrain__cTerrainSphere__RenderTerrainAtmosphere.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Terrain__cTerrainSphere__RenderTerrainDecals.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Terrain__cTerrainSphere__RenderTerrainLand.c",
+      ".spore-analysis/ghidra-exports/sdk_functions.tsv",
+      ".spore-analysis/ghidra-exports/structs_fields.tsv",
+      "docs/analysis/dossiers/unknown-high/space-player-data-accessors.md",
+      "docs/analysis/dossiers/unknown-high/space-player-data-accessors-2.md",
+      "docs/analysis/dossiers/unknown-high/space-player-data-accessors-3.md",
+      "docs/analysis/dossiers/unknown-high/star-system-regen.md",
+      "docs/analysis/reconstruction-readiness.md",
+      "docs/analysis/semantic-atlas.md",
+      "docs/analysis/simulator-shared-state-interface.md",
+      "knowledgegraph/research/data-model/06-empire-space-data.json",
+      "knowledgegraph/research/state-machines/simulator-core.json",
+      "knowledgegraph/research/types/05-empire-space.json",
+      "knowledgegraph/spore.db",
+      "/home/juanr/apps/Spore-ModAPI/SDKtoGhidra/SporeGhidra_march2017.xml",
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/SimulatorMessages.h",
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cPlanetRecord.h",
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/SubSystem/PlanetModel.h",
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/SubSystem/SpacePlayerData.h",
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/SubSystem/StarManager.h",
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cSolarSystem.h",
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Terrain/cTerrainSphere.h",
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Terrain/cTerrainStateMgr.h"
+    ]
+  },
+  "state_machines": [
+    {
+      "confidence": {
+        "level": "SUPPORTED",
+        "reason": "SpaceContext enum values and the sSpacePlayerData accessor/setter are explicit; the exact Galaxy helper and cross-callback order remain unresolved.",
+        "score": 0.78
+      },
+      "entry_actions": [
+        {
+          "action": "allocate SpacePlayerData, null active planet/star/relationship/empire/colonies, set context None, set player ID -1, and set rotation-rate factor 1.0",
+          "conditions": [],
+          "evidence": "0x01021d40"
+        }
+      ],
+      "evidence": [
+        {
+          "address": "0x01021d40",
+          "claim": "initializes all addressable space-player state slots",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra live decompilation of FUN_01021d40"
+        },
+        {
+          "address": "0x01021080",
+          "claim": "returns SpacePlayerData+0x10, the current context",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "docs/analysis/dossiers/unknown-high/space-player-data-accessors-3.md"
+        },
+        {
+          "address": "SpaceContext",
+          "claim": "SDK enum defines None=-1, Planet=0, SolarSystem=1, Galaxy=2",
+          "kind": "sdk_enum",
+          "level": "CONFIRMED",
+          "source": "/home/juanr/apps/Spore-ModAPI/SDKtoGhidra/SporeGhidra_march2017.xml"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "clear active planet, active star, empire, relationship manager, and colony storage; reset player ID to -1",
+          "conditions": [],
+          "evidence": "0x01022460"
+        }
+      ],
+      "guards": [
+        "sSpacePlayerData must be non-null for most reads/writes",
+        "Galaxy follow-up requires the companion object and the active star pointer to be non-null",
+        "SpaceContext is constrained to the four SDK values; arbitrary integers are not modeled"
+      ],
+      "name": "space_context_navigation",
+      "possible_states": [
+        {
+          "address": "Simulator::sSpacePlayerData+0x10",
+          "evidence": "SpaceContext enum",
+          "initial": true,
+          "name": "None",
+          "raw_value": -1,
+          "state_variable": "mCurrentContext"
+        },
+        {
+          "address": "Simulator::sSpacePlayerData+0x10",
+          "evidence": "SpaceContext enum and active-planet update path",
+          "initial": false,
+          "name": "Planet",
+          "raw_value": 0,
+          "state_variable": "mCurrentContext"
+        },
+        {
+          "address": "Simulator::sSpacePlayerData+0x10",
+          "evidence": "SpaceContext enum and cSolarSystem update path",
+          "initial": false,
+          "name": "SolarSystem",
+          "raw_value": 1,
+          "state_variable": "mCurrentContext"
+        },
+        {
+          "address": "Simulator::sSpacePlayerData+0x10",
+          "evidence": "SpaceContext enum and Galaxy follow-up path",
+          "initial": false,
+          "name": "Galaxy",
+          "raw_value": 2,
+          "state_variable": "mCurrentContext"
+        }
+      ],
+      "state_variables": [
+        {
+          "address": "0x016dda8c+0x10",
+          "evidence": "SDK field and direct accessor",
+          "name": "mCurrentContext",
+          "type": "SpaceContext",
+          "value_domain": "None=-1, Planet=0, SolarSystem=1, Galaxy=2"
+        },
+        {
+          "address": "0x016dda8c+0x04",
+          "evidence": "SDK field and direct accessor",
+          "name": "mpActivePlanet",
+          "type": "cPlanetPtr",
+          "value_domain": "null or cPlanet pointer"
+        },
+        {
+          "address": "0x016dda8c+0x08",
+          "evidence": "SDK field and direct accessor",
+          "name": "mpActiveStar",
+          "type": "cStarPtr",
+          "value_domain": "null or cStar pointer"
+        },
+        {
+          "address": "0x016dda8c+0x14",
+          "evidence": "SDK field and initialization write",
+          "name": "mfRotationRateFactor",
+          "type": "float",
+          "value_domain": "continuous multiplier; exact units unresolved"
+        }
+      ],
+      "transitions": [
+        {
+          "effects": [
+            "store the requested context value",
+            "when Galaxy is selected and both companion pointers resolve, invoke 0x01001360"
+          ],
+          "event": "space_context_request",
+          "evidence": "0x01021960",
+          "from": "any valid SpaceContext",
+          "guard": "requested value is one of the four SDK SpaceContext values",
+          "to": "requested SpaceContext"
+        },
+        {
+          "effects": [
+            "if active star is null, obtain/activate a temporary star through the star-manager path",
+            "if context is not already Planet, write Planet"
+          ],
+          "event": "space_activation",
+          "evidence": "0x01022580",
+          "from": "None or unresolved activation state",
+          "guard": "one-shot activation flag is clear",
+          "to": "Planet"
+        },
+        {
+          "effects": [
+            "bind or replace active star/planet records",
+            "release replaced intrusive pointers"
+          ],
+          "event": "active_world_binding_request",
+          "evidence": "0x010219b0",
+          "from": "context with old active star/planet",
+          "guard": "record resolution succeeds; exact null policy is partial",
+          "to": "context with new active star/planet"
+        }
+      ],
+      "validation": {
+        "differential": "Probe 0x01021080, 0x01021960, 0x010219b0, 0x01022580, and 0x010225d0; assert context value, pointer replacement order, and Galaxy helper call order.",
+        "runtime": "A hash-pinned original trace must capture menu-to-space and planet/solar/galaxy transitions; current corpus has no such trace.",
+        "static_checks": [
+          "retain only the four SDK SpaceContext values",
+          "verify initialization writes -1 and rotation factor 1.0",
+          "verify 0x01021960 stores before any Galaxy follow-up"
+        ],
+        "status": "static_supported_runtime_unvalidated"
+      }
+    },
+    {
+      "confidence": {
+        "level": "SUPPORTED",
+        "reason": "mPlanetCount zero guard, record allocation, score initialization, and count increment are directly decompiled; exact SDK function-address identity is not claimed.",
+        "score": 0.84
+      },
+      "entry_actions": [
+        {
+          "action": "request planets for a star",
+          "conditions": [
+            "cStarRecord+0xac is zero",
+            "timing check in the caller path passes"
+          ],
+          "evidence": "0x00bb4af0"
+        }
+      ],
+      "evidence": [
+        {
+          "address": "0x00bb4af0",
+          "claim": "checks cStarRecord+0xac, records mLastObservedTime, removes the pending star entry, resets manager state, and invokes generation",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra live decompilation of FUN_00bb4af0"
+        },
+        {
+          "address": "0x00bb4100",
+          "claim": "allocates and initializes planet records and increments the cStarRecord planet count",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra live decompilation of FUN_00bb4100"
+        },
+        {
+          "address": "struct:Simulator/cStarRecord",
+          "claim": "mLastObservedTime+0x0c, mPlanets+0x84, and mPlanetCount+0xac are addressable",
+          "kind": "sdk_structure",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "materialize the generated count on demand through cStarRecord::GetPlanetRecords and later cStarManager::RecordToPlanet",
+          "conditions": [
+            "mPlanetCount is nonzero"
+          ],
+          "evidence": "0x00bba900 and 0x00bb5b50"
+        }
+      ],
+      "guards": [
+        "generation is gated by cStarRecord.mPlanetCount==0",
+        "regeneration additionally requires the caller timing check to pass",
+        "the generation body uses filter/property inputs and does not prove that every theoretical planet is created"
+      ],
+      "name": "star_planet_generation",
+      "possible_states": [
+        {
+          "address": "cStarRecord+0xac",
+          "evidence": "zero guard and count increment in decompilation",
+          "initial": true,
+          "name": "not_generated",
+          "raw_value": 0,
+          "state_variable": "mPlanetCount"
+        },
+        {
+          "address": "cStarRecord+0xac",
+          "evidence": "positive count after generation",
+          "initial": false,
+          "name": "counted_planet_records",
+          "raw_value": "nonzero count; exact domain is bounded by generation code and unresolved",
+          "state_variable": "mPlanetCount"
+        }
+      ],
+      "state_variables": [
+        {
+          "address": "cStarRecord+0xac",
+          "evidence": "SDK field and direct guard",
+          "name": "mPlanetCount",
+          "type": "uint8_t/char",
+          "value_domain": "zero or positive count"
+        },
+        {
+          "address": "cStarRecord+0x0c",
+          "evidence": "SDK field and regeneration write",
+          "name": "mLastObservedTime",
+          "type": "int",
+          "value_domain": "minutes-like observed time; exact timestamp semantics unresolved"
+        },
+        {
+          "address": "cStarRecord+0x84",
+          "evidence": "SDK field and lazy materialization contract",
+          "name": "mPlanets",
+          "type": "vector<intrusive_ptr<cPlanetRecord>>",
+          "value_domain": "empty before materialization; not assumed equal to mPlanetCount"
+        }
+      ],
+      "transitions": [
+        {
+          "effects": [
+            "set mLastObservedTime from the current time divided by 60000",
+            "remove the star from a pending manager list",
+            "reset manager generation state",
+            "call the generation body"
+          ],
+          "event": "planet_generation_request",
+          "evidence": "0x00bb4af0",
+          "from": "not_generated",
+          "guard": "mPlanetCount==0 and timing check passes",
+          "to": "counted_planet_records"
+        },
+        {
+          "effects": [
+            "allocate cPlanetRecord",
+            "initialize generated terrain key and type/scores",
+            "increment mPlanetCount"
+          ],
+          "event": "planet_record_generation",
+          "evidence": "0x00ba61b0, 0x00ba64a0, 0x00bb4100",
+          "from": "not_generated",
+          "guard": "generation slot and property/filter admission pass",
+          "to": "counted_planet_records"
+        }
+      ],
+      "validation": {
+        "differential": "Probe 0x00bb4af0, 0x00bb4100, 0x00ba61b0, and 0x00ba64a0; record mPlanetCount before/after, generated-terrain key, mType, three scores, and whether mPlanets is appended.",
+        "runtime": "A star-discovery trace must correlate a real visit with the count transition and later record materialization.",
+        "static_checks": [
+          "do not equate mPlanetCount with mPlanets.size()",
+          "do not infer the generation count from enum integer values",
+          "keep the current-Ghidra entry 0x00bb4100 distinct from SDK export address 0x00bb42a0 until resolved"
+        ],
+        "status": "static_supported_runtime_unvalidated"
+      }
+    },
+    {
+      "confidence": {
+        "level": "SUPPORTED",
+        "reason": "cSolarSystem pointer absence, Load body, vector fields, and graphics request body are directly observed; persistent graphics state is not.",
+        "score": 0.8
+      },
+      "entry_actions": [
+        {
+          "action": "lazily allocate cSolarSystem and invoke Load",
+          "conditions": [
+            "owner solar-system pointer is null"
+          ],
+          "evidence": "0x00c8b700"
+        }
+      ],
+      "evidence": [
+        {
+          "address": "0x00c8b700",
+          "claim": "null guard triggers cSolarSystem allocation and Load",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra live decompilation of FUN_00c8b700"
+        },
+        {
+          "address": "0x00c86760",
+          "claim": "Load stores owner star and populates runtime solar-system vectors and star slots",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra live decompilation of FUN_00c86760"
+        },
+        {
+          "address": "0x00c86e00",
+          "claim": "GenerateGraphics iterates runtime collections and invokes virtual graphics operations",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cSolarSystem__GenerateGraphics.c"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "destroy or release graphics/hit-sphere effects",
+          "conditions": [
+            "GenerateGraphics(false)"
+          ],
+          "evidence": "SDK method contract at 0x00c86e00"
+        }
+      ],
+      "guards": [
+        "Load is guarded by the owner pointer at +0x40",
+        "graphics create/destroy is a function argument and is not treated as a persistent enum state",
+        "Load data generation and graphics generation are separate phases"
+      ],
+      "name": "solar_system_materialization_lifecycle",
+      "possible_states": [
+        {
+          "address": "owner+0x40",
+          "evidence": "null guard in FUN_00c8b700",
+          "initial": true,
+          "name": "solar_system_absent",
+          "raw_value": null,
+          "state_variable": "cSolarSystem pointer"
+        },
+        {
+          "address": "cSolarSystem+0x0c/+0x10/+0x24/+0x38/+0x3c",
+          "evidence": "Load writes owner, planets, bodies, and star slots",
+          "initial": false,
+          "name": "solar_system_data_loaded",
+          "raw_value": null,
+          "state_variable": "runtime cSolarSystem object and collections"
+        },
+        {
+          "address": "GenerateGraphics argument",
+          "evidence": "SDK signature and decompiled body",
+          "initial": false,
+          "name": "graphics_request_in_flight",
+          "raw_value": "create=true/false request, not a persistent state",
+          "state_variable": "cSolarSystem::GenerateGraphics(bool create)"
+        }
+      ],
+      "state_variables": [
+        {
+          "address": "cSolarSystem+0x0c",
+          "evidence": "SDK structure and Load write",
+          "name": "mpOwnerStar",
+          "type": "cStarPtr",
+          "value_domain": "null or owner star"
+        },
+        {
+          "address": "cSolarSystem+0x10",
+          "evidence": "SDK structure and Load population",
+          "name": "mPlanets",
+          "type": "vector<cPlanetPtr>",
+          "value_domain": "runtime planet collection"
+        },
+        {
+          "address": "cSolarSystem+0x24",
+          "evidence": "SDK structure and Load/update population",
+          "name": "mCelestialBodies",
+          "type": "vector<cCelestialBodyPtr>",
+          "value_domain": "runtime celestial-body collection"
+        },
+        {
+          "address": "cSolarSystem+0x38/+0x3c",
+          "evidence": "SDK structure and Load/update population",
+          "name": "mpStar1/mpStar2",
+          "type": "cCelestialBodyPtr",
+          "value_domain": "null or runtime star body"
+        }
+      ],
+      "transitions": [
+        {
+          "effects": [
+            "allocate cSolarSystem",
+            "replace owner pointer",
+            "call Load"
+          ],
+          "event": "solar_system_access",
+          "evidence": "0x00c8b700",
+          "from": "solar_system_absent",
+          "guard": "owner+0x40 == null",
+          "to": "solar_system_data_loaded"
+        },
+        {
+          "effects": [
+            "populate runtime planets, bodies, star slots, and orbit data",
+            "do not infer graphics creation from data population"
+          ],
+          "event": "solar_system_load",
+          "evidence": "0x00c86760",
+          "from": "solar_system_absent or stale runtime object",
+          "guard": "owner star is resolvable",
+          "to": "solar_system_data_loaded"
+        },
+        {
+          "effects": [
+            "create or destroy models/effects and hit spheres through virtual calls"
+          ],
+          "event": "solar_system_graphics_request",
+          "evidence": "0x00c86e00",
+          "from": "solar_system_data_loaded",
+          "guard": "create argument selects direction; branch details are decompiler-incomplete",
+          "to": "graphics request applied; persistent visual state unresolved"
+        }
+      ],
+      "validation": {
+        "differential": "Probe 0x00c8b700, 0x00c86760, 0x00c86e00, 0x00c86390, and 0x00c85380; compare pointer identity, vector sizes, star slots, and create/destroy callback order.",
+        "runtime": "A space-stage trace must capture first visit, repeated visit, and leaving the system to verify whether graphics are unloaded or retained.",
+        "static_checks": [
+          "separate cSolarSystem data load from graphics load",
+          "do not assign a persistent graphics enum to the bool argument",
+          "preserve the SDK/Ghidra address mismatch as unresolved"
+        ],
+        "status": "static_supported_runtime_unvalidated"
+      }
+    },
+    {
+      "confidence": {
+        "level": "SUPPORTED",
+        "reason": "terrain pointer ownership, terrain map vectors, model arrays, assets-loaded flag, and render callbacks are explicit; placement-to-runtime conversion is incomplete.",
+        "score": 0.75
+      },
+      "entry_actions": [
+        {
+          "action": "associate cPlanetModel with terrain and construct/update the six-face terrain sphere",
+          "conditions": [
+            "active cPlanetModel and terrain service are available"
+          ],
+          "evidence": "struct:Simulator/cPlanetModel; Terrain::cTerrainSphere layout"
+        }
+      ],
+      "evidence": [
+        {
+          "address": "struct:Simulator/cPlanetModel",
+          "claim": "mpTerrain+0x24 and mpTerrain2+0x28 join the planet model to terrain state",
+          "kind": "sdk_structure",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv"
+        },
+        {
+          "address": "struct:Terrain/cTerrainSphere",
+          "claim": "six full/low-resolution quads, three texture-map arrays, terrain state, assets-loaded flag, model keys/transforms/models, and player-modification vectors are addressable",
+          "kind": "sdk_structure",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv"
+        },
+        {
+          "address": "0x00f97ef0/0x00f98110/0x00f98170",
+          "claim": "land, decal, and atmosphere render passes consume terrain sphere state and submit chunks",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Terrain__cTerrainSphere__RenderTerrainLand.c and related exports"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "unload terrain assets and render contributions",
+          "conditions": [
+            "terrain/planet owner requests disposal or graphics destruction"
+          ],
+          "evidence": "SDK ITerrain/cTerrainSphere interface; exact disposal body not exported"
+        }
+      ],
+      "guards": [
+        "terrain rendering requires a valid owner/map set and active rendering chunk",
+        "0x40 flags suppress decal or atmosphere chunks in the observed render passes",
+        "world-object record data is not assumed to be the same as cTerrainSphere model transforms"
+      ],
+      "name": "terrain_surface_and_world_object_materialization",
+      "possible_states": [
+        {
+          "address": "cPlanetModel+0x24",
+          "evidence": "SDK field; terrain association",
+          "initial": false,
+          "name": "terrain_unassociated",
+          "raw_value": null,
+          "state_variable": "mpTerrain"
+        },
+        {
+          "address": "cTerrainSphere+0x76c",
+          "evidence": "SDK field named mAssetsLoaded",
+          "initial": false,
+          "name": "terrain_assets_loaded",
+          "raw_value": "boolean field; exact initial value is not asserted",
+          "state_variable": "mAssetsLoaded"
+        },
+        {
+          "address": "cTerrainSphere+0x7b0/+0x7c4/+0x7d8",
+          "evidence": "SDK/Ghidra structure fields",
+          "initial": false,
+          "name": "surface_models_materialized",
+          "raw_value": "collection sizes; not a finite enum",
+          "state_variable": "mModelKeys/mModelTransforms/mModels"
+        }
+      ],
+      "state_variables": [
+        {
+          "address": "cPlanetModel+0x24",
+          "evidence": "Ghidra structure field",
+          "name": "mpTerrain",
+          "type": "intrusive_ptr<Terrain::ITerrain>",
+          "value_domain": "null or terrain service"
+        },
+        {
+          "address": "cPlanetModel+0x54",
+          "evidence": "Ghidra structure field; exact owner type is opaque",
+          "name": "mpPlanetObstacles",
+          "type": "void* in current export",
+          "value_domain": "opaque obstacle data"
+        },
+        {
+          "address": "cTerrainSphere+0x76c",
+          "evidence": "Ghidra structure field",
+          "name": "mAssetsLoaded",
+          "type": "bool",
+          "value_domain": "boolean; initial value unresolved"
+        },
+        {
+          "address": "cTerrainSphere+0x7ac",
+          "evidence": "Ghidra structure field",
+          "name": "mNumModels",
+          "type": "int",
+          "value_domain": "nonnegative runtime model count"
+        },
+        {
+          "address": "cTerrainSphere+0x7b0/+0x7c4/+0x7d8",
+          "evidence": "Ghidra structure fields",
+          "name": "mModelKeys/mModelTransforms/mModels",
+          "type": "parallel runtime collections",
+          "value_domain": "addressable model placement output; ordering invariant not proven"
+        },
+        {
+          "address": "cPlanetRecord+0x134",
+          "evidence": "SDK/Ghidra structure field",
+          "name": "mPlanetObjects",
+          "type": "vector<cPlanetObjectData>",
+          "value_domain": "persistent object records, not assumed equal to mModelKeys/mModelTransforms"
+        }
+      ],
+      "transitions": [
+        {
+          "effects": [
+            "associate the planet model with terrain state",
+            "prepare terrain maps/quads and runtime surface representation"
+          ],
+          "event": "planet_surface_load",
+          "evidence": "0x00b3d450, cPlanetModel/cTerrainSphere structures",
+          "from": "terrain_unassociated",
+          "guard": "planet model and terrain service are valid",
+          "to": "terrain_assets_loaded or runtime surface initialization"
+        },
+        {
+          "effects": [
+            "populate mModelKeys, mModelTransforms, and mModels",
+            "retain persistent cPlanetObjectData separately"
+          ],
+          "event": "terrain_model_materialization",
+          "evidence": "cTerrainSphere field map; exact producer body unresolved",
+          "from": "terrain_assets_loaded",
+          "guard": "model assets and transforms are available",
+          "to": "surface_models_materialized"
+        },
+        {
+          "effects": [
+            "render land, decals, and atmosphere using chunk flags and terrain state",
+            "do not claim that rendering mutates gameplay state"
+          ],
+          "event": "terrain_render_tick",
+          "evidence": "0x00f97ef0, 0x00f98110, 0x00f98170",
+          "from": "surface_models_materialized",
+          "guard": "chunk is present and not suppressed by the 0x40 flag",
+          "to": "rendered frame output"
+        }
+      ],
+      "validation": {
+        "differential": "Probe cPlanetModel+0x24, cTerrainSphere+0x76c, +0x7ac, +0x7b0, +0x7c4, +0x7d8, and the three render callbacks; compare counts, transforms, and chunk flags.",
+        "runtime": "Capture a matched original planet-surface frame and trace model/asset creation; current runtime corpus has no such frame.",
+        "static_checks": [
+          "keep cPlanetRecord.mPlanetObjects separate from cTerrainSphere model arrays",
+          "do not derive scene coordinates from the undecoded 0x0f43029a world-object records",
+          "verify the cPlanetModel/Ghidra field offsets against the imported structure export"
+        ],
+        "status": "static_supported_runtime_unvalidated"
+      }
+    },
+    {
+      "confidence": {
+        "level": "SUPPORTED",
+        "reason": "cTimeOfDay fields/method names, cPlanetRecord rotation fields, cTerrainStateMgr day/dusk/night data, and per-frame sun/context updates are explicit; exact phase thresholds are not.",
+        "score": 0.72
+      },
+      "entry_actions": [
+        {
+          "action": "initialize or configure a time-of-day domain and terrain illumination parameters",
+          "conditions": [],
+          "evidence": "SDK cTimeOfDay method surface and TerrainMaterial fields"
+        }
+      ],
+      "evidence": [
+        {
+          "address": "struct:Simulator/cTimeOfDay",
+          "claim": "field_10 is vector<float> at +0x10 and mDayDuration is float at +0x24; SDK methods SetTimeOfDay, SetDayDuration, SetSpeedMultiplier, and Get are exported",
+          "kind": "sdk_structure_and_method_surface",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv and sdk_functions.tsv"
+        },
+        {
+          "address": "struct:Simulator/cPlanetRecord",
+          "claim": "mbRotationIsNull+0x98, mRotationAxis+0x9c, and mRotationPeriod+0xa8 define planet self-rotation inputs",
+          "kind": "sdk_structure",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv"
+        },
+        {
+          "address": "struct:Terrain/cTerrainStateMgr/TerrainMaterial",
+          "claim": "mLightingState+0x78, day/dusk/night colors, kDuskDawnStartEnd+0x108, and kFogDistBiasByTimeOfDay+0x1a0 are addressable",
+          "kind": "sdk_structure",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv"
+        },
+        {
+          "address": "0x010225d0/0x01022920",
+          "claim": "space time accumulates and context-gated solar-system update advances orbital/celestial state",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra live decompilation of FUN_010225d0 and FUN_01022920"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "stop or reconfigure time sampling when the owning simulation/mode is disposed",
+          "conditions": [
+            "owner disposal path is not recovered"
+          ],
+          "evidence": "SDK cStrategy/terrain interface only"
+        }
+      ],
+      "guards": [
+        "mbRotationIsNull explicitly disables planet self-rotation",
+        "SpaceContext Planet/SolarSystem gates the observed solar-system update; Galaxy is excluded",
+        "mLightingState and field_0c..field_0e remain raw fields and are not assigned day/night integer states"
+      ],
+      "name": "terrain_illumination_time_domain",
+      "possible_states": [
+        {
+          "address": "cTimeOfDay+0x10",
+          "evidence": "SDK field; continuous sample vector",
+          "initial": false,
+          "name": "time_sample_domain",
+          "raw_value": null,
+          "state_variable": "cTimeOfDay.field_10"
+        },
+        {
+          "address": "cTimeOfDay+0x24",
+          "evidence": "SDK field",
+          "initial": false,
+          "name": "day_duration_domain",
+          "raw_value": null,
+          "state_variable": "mDayDuration"
+        },
+        {
+          "address": "cPlanetRecord+0x98/+0x9c/+0xa8",
+          "evidence": "SDK fields",
+          "initial": false,
+          "name": "planet_rotation_domain",
+          "raw_value": null,
+          "state_variable": "mbRotationIsNull/mRotationAxis/mRotationPeriod"
+        },
+        {
+          "address": "TerrainMaterial+0x78/+0xc0..+0x114/+0x1a0",
+          "evidence": "SDK/Ghidra structure fields",
+          "initial": false,
+          "name": "continuous_illumination_mix",
+          "raw_value": null,
+          "state_variable": "lighting colors, dusk/dawn range, fog bias"
+        }
+      ],
+      "state_variables": [
+        {
+          "address": "cTimeOfDay+0x10",
+          "evidence": "Ghidra structure field",
+          "name": "field_10",
+          "type": "vector<float>",
+          "value_domain": "continuous time samples; sample count and normalization unresolved"
+        },
+        {
+          "address": "cTimeOfDay+0x24",
+          "evidence": "Ghidra structure field",
+          "name": "mDayDuration",
+          "type": "float",
+          "value_domain": "positive/possibly scaled duration; units unresolved"
+        },
+        {
+          "address": "cPlanetRecord+0x98",
+          "evidence": "Ghidra structure field",
+          "name": "mbRotationIsNull",
+          "type": "bool",
+          "value_domain": "true disables self-rotation"
+        },
+        {
+          "address": "cPlanetRecord+0x9c",
+          "evidence": "Ghidra structure field",
+          "name": "mRotationAxis",
+          "type": "Vector3",
+          "value_domain": "continuous axis"
+        },
+        {
+          "address": "cPlanetRecord+0xa8",
+          "evidence": "Ghidra structure field",
+          "name": "mRotationPeriod",
+          "type": "float",
+          "value_domain": "continuous period; units/relationship to mDayDuration unresolved"
+        },
+        {
+          "address": "cTerrainStateMgr+0x20c",
+          "evidence": "Ghidra structure field",
+          "name": "mWaterLevel",
+          "type": "float",
+          "value_domain": "continuous terrain water threshold"
+        }
+      ],
+      "transitions": [
+        {
+          "effects": [
+            "sample/advance time-of-day data",
+            "interpolate day/dusk/night lighting and fog using TerrainMaterial fields"
+          ],
+          "event": "time_of_day_update",
+          "evidence": "SDK cTimeOfDay methods; TerrainMaterial fields",
+          "from": "time_sample_domain",
+          "guard": "owner update/dispatch path; exact body unavailable",
+          "to": "time_sample_domain with a new continuous value"
+        },
+        {
+          "effects": [
+            "update celestial/planet positions and terrain sun direction through the context-gated space tick"
+          ],
+          "event": "space_temporal_tick",
+          "evidence": "0x010225d0, 0x01022920, 0x00c86390",
+          "from": "Planet or SolarSystem context",
+          "guard": "active star exists and context is Planet or SolarSystem",
+          "to": "same context with advanced continuous orbital/rotation state"
+        }
+      ],
+      "validation": {
+        "differential": "Probe cTimeOfDay methods, cPlanetRecord rotation fields, TerrainMaterial lighting fields, cTerrainSphere.mSunDir+0x32c, and the space update; compare continuous values over equal deltas.",
+        "runtime": "A controlled original trace must sample day/night transitions and planet rotation; no current runtime evidence supports phase names or thresholds.",
+        "static_checks": [
+          "do not map mLightingState or field_0c..field_0e integers to Day/Dusk/Night",
+          "do not infer day length from mRotationPeriod or mDayDuration without a body",
+          "retain time as a continuous domain rather than a finite state enumeration"
+        ],
+        "status": "static_shape_supported_behavior_unresolved"
+      }
+    },
+    {
+      "confidence": {
+        "level": "SUPPORTED",
+        "reason": "the transition owner, guard getters, countdown, accumulator, and four flag writes are directly decompiled; the owner type and semantic flag names are not.",
+        "score": 0.7
+      },
+      "entry_actions": [
+        {
+          "action": "open the transition gate when owner+0x18e is set and the owner+0x370 guard is true",
+          "conditions": [
+            "owner+0x194 is zero",
+            "owner+0x370 guard returns true"
+          ],
+          "evidence": "0x00fe0f40 and 0x00e36fa0"
+        }
+      ],
+      "evidence": [
+        {
+          "address": "0x00fe0f40",
+          "claim": "countdown and elapsed-time guards precede the phase-flag sequence",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra live decompilation of FUN_00fe0f40"
+        },
+        {
+          "address": "0x00e36de0/0x00e36dd0/0x00e36e10",
+          "claim": "separate helpers write/read transition subconditions",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra live decompilation of FUN_00e36de0, FUN_00e36dd0, and FUN_00e36e10"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "clear the final phase flag and issue the terminal mode request",
+          "conditions": [
+            "final phase flag is set",
+            "final guard is true"
+          ],
+          "evidence": "0x00fe0f40"
+        }
+      ],
+      "guards": [
+        "countdown owner+0x194 must reach zero before the sequence runs",
+        "each phase has a separate guard getter; guards are not collapsed into one integer state",
+        "the owner+0x164 elapsed-time accumulator is addressable but its unit/caller is not fully recovered"
+      ],
+      "name": "space_surface_transition_sequencer",
+      "possible_states": [
+        {
+          "address": "owner+0x18e..+0x192",
+          "evidence": "direct flag accesses in FUN_00fe0f40",
+          "initial": true,
+          "name": "opaque_transition_gate",
+          "raw_value": null,
+          "state_variable": "independent transition byte flags"
+        }
+      ],
+      "state_variables": [
+        {
+          "address": "owner+0x164",
+          "evidence": "direct accumulation in FUN_00fe0f40",
+          "name": "transition_elapsed_time",
+          "type": "int",
+          "value_domain": "accumulated delta milliseconds; exact owner/caller unresolved"
+        },
+        {
+          "address": "owner+0x18e",
+          "evidence": "initial transition gate",
+          "name": "transition_gate_flag",
+          "type": "byte/bool-like",
+          "value_domain": "opaque flag; no state name inferred"
+        },
+        {
+          "address": "owner+0x18f",
+          "evidence": "first phase flag",
+          "name": "transition_phase_flag_1",
+          "type": "byte/bool-like",
+          "value_domain": "opaque flag; no state name inferred"
+        },
+        {
+          "address": "owner+0x190",
+          "evidence": "second phase flag",
+          "name": "transition_phase_flag_2",
+          "type": "byte/bool-like",
+          "value_domain": "opaque flag; no state name inferred"
+        },
+        {
+          "address": "owner+0x191",
+          "evidence": "third phase flag",
+          "name": "transition_phase_flag_3",
+          "type": "byte/bool-like",
+          "value_domain": "opaque flag; no state name inferred"
+        },
+        {
+          "address": "owner+0x192",
+          "evidence": "final phase flag",
+          "name": "transition_phase_flag_4",
+          "type": "byte/bool-like",
+          "value_domain": "opaque flag; no state name inferred"
+        },
+        {
+          "address": "owner+0x194",
+          "evidence": "countdown guard",
+          "name": "transition_countdown",
+          "type": "int",
+          "value_domain": "positive countdown or zero; semantics unresolved"
+        }
+      ],
+      "transitions": [
+        {
+          "effects": [
+            "clear flag at owner+0x18f and set flag at owner+0x190 when the next guard passes"
+          ],
+          "event": "world_transition_step_1",
+          "evidence": "0x00fe0f40",
+          "from": "flag owner+0x18f set",
+          "guard": "owner+0x454 getter returns true",
+          "to": "flag owner+0x190 set and owner+0x18f clear"
+        },
+        {
+          "effects": [
+            "clear flag at owner+0x190 and set flag at owner+0x191 when the next guard passes"
+          ],
+          "event": "world_transition_step_2",
+          "evidence": "0x00fe0f40",
+          "from": "flag owner+0x190 set",
+          "guard": "owner+0x528 getter returns true",
+          "to": "flag owner+0x191 set and owner+0x190 clear"
+        },
+        {
+          "effects": [
+            "clear flag at owner+0x191 and set flag at owner+0x192 when the next guard passes"
+          ],
+          "event": "world_transition_step_3",
+          "evidence": "0x00fe0f40",
+          "from": "flag owner+0x191 set",
+          "guard": "final transition guard returns true",
+          "to": "flag owner+0x192 set and owner+0x191 clear"
+        },
+        {
+          "effects": [
+            "clear final flag and call 0x00b3d410 with DAT_01654c05 and 1",
+            "invoke 0x00e3e350 with the same transition context"
+          ],
+          "event": "world_transition_step_4",
+          "evidence": "0x00fe0f40",
+          "from": "flag owner+0x192 set",
+          "guard": "terminal branch reached",
+          "to": "terminal transition request; exact resulting mode unresolved"
+        }
+      ],
+      "validation": {
+        "differential": "Probe owner+0x164, +0x18e..+0x192, +0x194, the three guard helpers, and 0x00b3d410/0x00e3e350; record each flag write and terminal call order.",
+        "runtime": "A hash-pinned space trace must identify the owner object, the mode represented by DAT_01654c05, and the transition's entry/exit effects.",
+        "static_checks": [
+          "keep the four byte flags independent",
+          "do not assign phase names or an integer state domain",
+          "do not merge this sequencer with SpaceContext until the owner and terminal callback are identified"
+        ],
+        "status": "static_flag_sequence_owner_unresolved"
+      }
+    }
+  ],
+  "temporal_semantics": {
+    "call_order": [
+      {
+        "claim": "SpacePlayerData initialization establishes None before any active-world binding.",
+        "evidence": [
+          "0x01021d40"
+        ],
+        "order": [
+          "allocate SpacePlayerData",
+          "null active pointers",
+          "set context None",
+          "set player ID -1",
+          "set rotation-rate factor 1.0"
+        ]
+      },
+      {
+        "claim": "Space context is stored before Galaxy-specific follow-up work.",
+        "evidence": [
+          "0x01021960"
+        ],
+        "order": [
+          "store requested context",
+          "resolve companion",
+          "call 0x01001360 when guards pass"
+        ]
+      },
+      {
+        "claim": "The active star/planet binding path resolves records and replaces the corresponding intrusive-pointer slots before temporal updates consume them.",
+        "evidence": [
+          "0x010219b0",
+          "0x010225d0"
+        ],
+        "order": [
+          "resolve records",
+          "replace active star/planet pointers",
+          "release replaced pointer",
+          "advance space update"
+        ]
+      },
+      {
+        "claim": "Solar-system data load precedes per-frame celestial update; graphics generation is a separate request surface.",
+        "evidence": [
+          "0x00c8b700",
+          "0x00c86760",
+          "0x00c86390",
+          "0x00c86e00"
+        ],
+        "order": [
+          "lazy allocate cSolarSystem",
+          "load runtime data",
+          "generate/destroy graphics by request",
+          "advance orbital/celestial state per frame"
+        ]
+      }
+    ],
+    "continuous_domains": [
+      {
+        "claim": "SpacePlayerData.mfRotationRateFactor is a continuous multiplier and cPlanetRecord rotation fields describe planet self-rotation; their exact coupling is unresolved.",
+        "evidence": [
+          "0x01021d40",
+          "struct:Simulator/cPlanetRecord"
+        ],
+        "fields": [
+          "SpacePlayerData+0x14",
+          "cPlanetRecord+0x98",
+          "cPlanetRecord+0x9c",
+          "cPlanetRecord+0xa8"
+        ]
+      },
+      {
+        "claim": "Terrain illumination is represented by explicit day/dusk/night colors, dusk/dawn range, fog bias, sun direction, and a time-of-day sample vector; no finite phase state is established.",
+        "evidence": [
+          "struct:Terrain/cTerrainStateMgr/TerrainMaterial",
+          "struct:Simulator/cTimeOfDay",
+          "cTerrainSphere+0x32c"
+        ],
+        "fields": [
+          "cTimeOfDay+0x10",
+          "cTimeOfDay+0x24",
+          "cPlanetRecord+0x98",
+          "cPlanetRecord+0x9c",
+          "cPlanetRecord+0xa8",
+          "cTerrainStateMgr+0x20c",
+          "cTerrainStateMgr+0x5c8",
+          "cTerrainSphere+0x32c"
+        ]
+      }
+    ],
+    "determinism": {
+      "claim": "Planet generation consumes property/filter inputs and random-looking helpers, but the exact seed source and deterministic replay boundary are not recovered.",
+      "evidence": [
+        "0x00bb4100",
+        "0x00ba64a0"
+      ],
+      "replay_status": "not_demonstrated"
+    },
+    "global_validation": [
+      "Use hash-pinned Ghidra captures for all current-Ghidra entry addresses and keep SDK export address mismatches explicit.",
+      "Use a future original trace to compare field writes and callback order, not merely rendered output.",
+      "Use static field-offset assertions for every persisted record, terrain asset list, and world-object record before attempting behavioral equivalence.",
+      "Do not use integer values as inferred state names when only raw fields or opaque flags are observed."
+    ],
+    "ownership": [
+      {
+        "evidence_level": "SUPPORTED",
+        "fact": "sSpacePlayerData at 0x016dda8c owns active planet, active star, context, rotation-rate factor, player ID, empire cache, and colony storage."
+      },
+      {
+        "evidence_level": "SUPPORTED",
+        "fact": "cStarManager owns star-record grids, planet-record databases, empire registries, message-listener data, and generation properties."
+      },
+      {
+        "evidence_level": "SUPPORTED",
+        "fact": "cSolarSystem owns runtime planet/celestial collections and star slots; cPlanetModel owns the planet-to-terrain association."
+      },
+      {
+        "evidence_level": "SUPPORTED",
+        "fact": "cTerrainSphere owns terrain quads, terrain state, map textures, model keys/transforms/models, decal lists, and assets-loaded state."
+      },
+      {
+        "evidence_level": "INFERRED",
+        "fact": "FUN_00fe0f40 likely belongs to a space/GameSpace-like owner based on field use, but the exact owner type is not proven."
+      }
+    ],
+    "update_loops": [
+      {
+        "evidence": "SUPPORTED decompilation",
+        "loop": "SpacePlayerData temporal accumulation",
+        "status": "FUN_010225d0 accumulates elapsed time and updates active world objects"
+      },
+      {
+        "evidence": "SUPPORTED decompilation",
+        "loop": "context-gated space update",
+        "status": "FUN_01022920 advances the solar-system update only for Planet or SolarSystem context"
+      },
+      {
+        "evidence": "SUPPORTED decompilation",
+        "loop": "cSolarSystem per-frame update",
+        "status": "FUN_00c86390 and FUN_00c85380 update celestial/planet positions and presentation"
+      },
+      {
+        "evidence": "SDK interface plus Ghidra render bodies",
+        "loop": "terrain render",
+        "status": "land, decal, and atmosphere passes are callbacks; their exact frame ordering is unresolved"
+      },
+      {
+        "evidence": "SDK method surface plus structure fields",
+        "loop": "time-of-day sampling",
+        "status": "cTimeOfDay setters/getter and terrain lighting fields exist, but bodies and runtime phase behavior are not recovered"
+      }
+    ]
+  },
+  "unresolved": [
+    {
+      "blocking_question": "What is the exact owner type and semantic meaning of the transition owner fields at +0x18e..+0x194 in FUN_00fe0f40?",
+      "evidence": [
+        "0x00fe0f40",
+        "0x00e36de0",
+        "0x00e36dd0",
+        "0x00e36e10",
+        "0x00e36fa0"
+      ],
+      "id": "transition_owner_identity",
+      "impact": "The flag sequence is mechanically visible but cannot yet be named as Galaxy/SolarSystem/Planet or another semantic path.",
+      "required_evidence": "Caller-side type/vtable proof, constructor, and a hash-pinned transition trace with owner identity.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "What exact side effects does the Galaxy-only helper 0x01001360 perform after SpaceContext is set to Galaxy?",
+      "evidence": [
+        "0x01021960"
+      ],
+      "id": "galaxy_followup_effects",
+      "impact": "Galaxy context write and helper invocation are known, but entry/exit effects remain incomplete.",
+      "required_evidence": "Decompile 0x01001360, its direct callees, and trace the helper in an original Galaxy transition.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "Which exact functions in the current Ghidra build correspond to SDK cStarManager::RequirePlanetsForStar and GeneratePlanetsForStar addresses 0x00bb4c90 and 0x00bb42a0?",
+      "evidence": [
+        ".spore-analysis/ghidra-exports/sdk_functions.tsv",
+        "0x00bb4af0",
+        "0x00bb4100"
+      ],
+      "id": "star_generation_address_identity",
+      "impact": "The zero guard and generation mechanics are supported, but SDK/current-Ghidra function identity is intentionally not asserted.",
+      "required_evidence": "Function-boundary repair or build-matched SDK import plus caller/callee correlation.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "How are persistent cPlanetRecord.mPlanetObjects entries transferred into terrain model keys/transforms, underwater objects, decals, or other runtime collections?",
+      "evidence": [
+        "struct:Simulator/cPlanetRecord",
+        "struct:Terrain/cTerrainSphere",
+        "src/assets/WorldObject.hpp"
+      ],
+      "id": "world_object_placement_mapping",
+      "impact": "Record layout and terrain runtime layout are known separately, but no direct producer/consumer mapping is proven.",
+      "required_evidence": "All direct writers/readers of cPlanetRecord+0x134 and terrain model/decal vectors, plus a matched planet surface trace.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "What are the exact cTimeOfDay field_10 sample semantics, mDayDuration units, and method bodies for SetTimeOfDay, SetDayDuration, SetSpeedMultiplier, and Get?",
+      "evidence": [
+        "struct:Simulator/cTimeOfDay",
+        ".spore-analysis/ghidra-exports/sdk_functions.tsv"
+      ],
+      "id": "time_of_day_semantics",
+      "impact": "Terrain lighting state can be described only as a continuous domain with explicit day/dusk/night data, not as a verified phase machine.",
+      "required_evidence": "Correct decompiled method bodies, callers, and a time-controlled original trace.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "What are the exact bodies and entry/exit effects of cSolarSystem::GenerateGraphics(create=false) and cSolarSystem::GenerateCelestialBodiesEffects?",
+      "evidence": [
+        "0x00c86e00",
+        "0x00c847b0",
+        "struct:Simulator/cSolarSystem"
+      ],
+      "id": "solar_graphics_teardown",
+      "impact": "Load and request boundaries are visible, but persistent visual-resource state and destruction order are not.",
+      "required_evidence": "Decompile current-Ghidra effect functions, virtual targets, and a repeated space-stage visit trace.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "What are the direct producers and consumers of planet-object, terraforming, sculpt/color, star-ownership, and cross-stage messages?",
+      "evidence": [
+        "SimulatorMessages.h",
+        "struct:Simulator/cStarManager",
+        "struct:Simulator/cPlanetRecord"
+      ],
+      "id": "world_event_producer_consumer_map",
+      "impact": "Message IDs and SDK contracts are known, but listener registration and emission sites are not fully mapped.",
+      "required_evidence": "Message-listener registration tables, direct xrefs to message IDs, and original event traces.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "Does mPlanetCount always equal the number of eventually materialized cPlanetRecord objects, and what causes lazy record loading?",
+      "evidence": [
+        "0x00bba900",
+        "struct:Simulator/cStarRecord"
+      ],
+      "id": "planet_count_materialization",
+      "impact": "The count guard is reliable, but the record vector is explicitly allowed to remain unloaded; exact equivalence conditions are unknown.",
+      "required_evidence": "All record-database load paths, cStarRecord::GetPlanetRecord(s) callers, and a save/load differential.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "What runtime evidence is available for menu-to-space, planet-to-solar-system, solar-system-to-galaxy, and cross-stage transitions?",
+      "evidence": [
+        "docs/analysis/CELL-RUNTIME-OBSERVATION.md",
+        "docs/STATE.md"
+      ],
+      "id": "world_runtime_oracle",
+      "impact": "All world/planet conclusions remain static; current runtime evidence does not reach space or terrain transitions.",
+      "required_evidence": "Hash-pinned original Wine trace with display/input, world-mode probes, and field snapshots.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "Which exact raw fields or callbacks in the terrain model encode day/night, weather, and terrain lifecycle state?",
+      "evidence": [
+        "struct:Terrain/cTerrainStateMgr",
+        "struct:Terrain/cTerrainSphere",
+        "struct:Simulator/cTimeOfDay"
+      ],
+      "id": "terrain_state_domain",
+      "impact": "Explicit lighting, water, assets-loaded, and model fields are known, but their owner lifecycle and transition writer set are incomplete.",
+      "required_evidence": "Direct writer xrefs, cTerrainStateMgr initialization/update bodies, and matched surface frames.",
+      "status": "unresolved"
+    }
+  ]
+}

@@ -1,0 +1,766 @@
+{
+  "$schema": "global-campaign-track-g-editor-ui-input-1",
+  "status": "complete",
+  "scope": {
+    "repository": "/home/juanr/Proyectos/OpenSpore",
+    "research_only": true,
+    "implementation_changed": false,
+    "covered": [
+      "current src/apps, src/renderer, src/compat, and src/sim roots",
+      "tests and deterministic contract coverage",
+      "committed documentation, dossiers, triage projections, and Ghidra export artifacts",
+      "read-only GhidraMCP queries against the open SporeApp.exe program"
+    ],
+    "not_covered": [
+      "proprietary source or assets",
+      "a new runtime trace of the original editor or cell stage",
+      "implementation proposals beyond recording reconstruction candidates and evidence gaps"
+    ]
+  },
+  "conclusion": "The current tree has a tested cell-stage slice with a clean input-to-sim bridge, but it does not contain the original editor or general UTFWin UI runtime. Static Ghidra/SDK evidence identifies Editors::cEditor as the editor interaction root, Simulator::cGameInputManager as the input/mode boundary, App::cMessageManager and UTFWin::Window as message/UI boundaries, and Anim::IAnimManager plus EditorCreatureController/cEditorAnimWorld as the pose and animation boundary. The cell slice currently routes SDL input directly to CellSim; it does not route the original IGameMode input callbacks or animation state into the renderer.",
+  "actual_roots": [
+    {
+      "id": "cell-stage-entry",
+      "kind": "in_tree_entry",
+      "path": "src/apps/cell_stage.cpp:1214",
+      "evidence": "main parses package, --input, --scene, --bgmap, --interactive and --frames; initializes CellModeStrategy, preloads scene records, enters the mode, and selects fixed/sim/interactive rendering.",
+      "flow": ["scene config", "package/resource decode", "CellModeStrategy initialize", "CellGfx preload", "OnEnter", "fixed or sim or interactive run", "OnExit", "Dispose"],
+      "status": "implemented clean-room slice"
+    },
+    {
+      "id": "cell-input-root",
+      "kind": "in_tree_contract",
+      "path": "src/apps/CellInput.hpp:19",
+      "evidence": "SDL-free Key/Action/Frame/CameraDirs contract and CellInput state holder.",
+      "flow": ["Key", "Table lookup", "Frame thrust and boost", "CameraDirs", "consume-on-read health toggle"],
+      "status": "implemented and unit-tested"
+    },
+    {
+      "id": "cell-sim-root",
+      "kind": "in_tree_contract",
+      "path": "src/sim/Sim.hpp:167",
+      "evidence": "InputFrame, MovementPlane, CameraState, PlayerState, SimEvent, CellSim, and ScriptedInputSource are the explicit cell simulation contract.",
+      "flow": ["InputFrame", "camera and movement plane", "player state", "Entity alive state", "SimEvent", "stateString/manifest"],
+      "status": "implemented with deterministic fixtures"
+    },
+    {
+      "id": "cell-render-root",
+      "kind": "in_tree_contract",
+      "path": "src/renderer/Renderer.hpp:53",
+      "evidence": "IRenderer exposes init/shutdown, mesh and texture creation, begin/draw/end, offscreen readback; Vulkan present mode is backend-only.",
+      "flow": ["SceneEntity", "asset mesh", "BakedMesh", "device mesh/texture", "draw pass", "PPM or swapchain presentation"],
+      "status": "implemented at cell-slice scope"
+    },
+    {
+      "id": "compat-resource-root",
+      "kind": "engine_boundary",
+      "path": "src/compat/ResourceProvider.hpp:24",
+      "evidence": "IResourceProvider fetches bytes by type/group/instance and hides package versus memory provider; GmdlMeshSource and submitMeshSource consume the seam.",
+      "flow": ["resource identity", "provider", "GMDL parse", "host mesh", "renderer upload/draw"],
+      "status": "implemented boundary; not an editor/UI boundary"
+    },
+    {
+      "id": "editor-input-root",
+      "kind": "ghidra_sdk_root",
+      "path": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnMouseMove.c:8",
+      "va": "0x005737d0",
+      "evidence": "SDK-named cEditor::OnMouseMove. Triage/readiness names this function the rank-1 editor-core entry and records 373 bytes in the committed function export.",
+      "flow": ["editor pointer", "mouse coordinates", "editor hover/active state", "mode-specific subobject callback", "consume result"],
+      "status": "static evidence only"
+    },
+    {
+      "id": "editor-lifecycle-root",
+      "kind": "ghidra_sdk_root",
+      "path": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__SetActiveMode.c:8",
+      "va": "0x00587270",
+      "evidence": "SetActiveMode tears down the previous editor mode, updates editor/anim-world state, and emits an animation event through cEditorAnimEvent::MessageSend.",
+      "flow": ["previous mode", "mode-specific cleanup", "cEditorAnimWorld target/creature state", "new mode", "animation event"],
+      "status": "static evidence only"
+    },
+    {
+      "id": "input-manager-root",
+      "kind": "ghidra_sdk_root",
+      "path": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cGameInputManager__Get.c:8",
+      "va": "0x00b3d350",
+      "evidence": "The named cGameInputManager accessor returns DAT_0167eaf8. The SDK export has a 27-slot vtable and OnKeyDown/OnKeyUp/OnMouseDown/OnMouseUp/OnMouseMove/OnMouseWheel slots.",
+      "flow": ["global input manager", "mode/current-game-mode fields", "input regions", "input callbacks", "active game mode"],
+      "status": "static accessor and interface evidence; routing body remains incomplete"
+    },
+    {
+      "id": "message-manager-root",
+      "kind": "ghidra_sdk_root",
+      "path": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cMessageManager__ProcessQueue.c:6",
+      "va": "0x008841f0",
+      "evidence": "ProcessQueue walks queue-like storage with 0x18-byte entries, follows a 0xc0-sized range, and releases referenced objects. IMessageManager exports MessageSend, MessagePost, MessagePostFunction, AddListener, AddUnmanagedListener, AddHandler, ProcessQueue, ProcessQueue2, GetMessageQueue, Lock, AddEntry and RemoveEntry.",
+      "flow": ["message or callback entry", "priority/list storage", "listener/handler dispatch", "release/refcount boundary"],
+      "status": "static API and partial queue mechanics; exact message IDs and dispatch order unresolved"
+    },
+    {
+      "id": "animation-manager-root",
+      "kind": "ghidra_sdk_root",
+      "path": ".spore-analysis/ghidra-exports/decompiled_sdk/Anim__IAnimManager__Get.c:8",
+      "va": "0x0067cae0",
+      "evidence": "Anim::IAnimManager::Get returns DAT_015fcc5c. The SDK export identifies AnimatedCreature, IAnimWorld, AnimationMessage, and a 32-slot AnimatedCreature vtable.",
+      "flow": ["animation manager", "IAnimWorld", "AnimatedCreature", "animation ID/state", "renderer/model pose"],
+      "status": "static interface evidence; manager internals are not reconstructed"
+    },
+    {
+      "id": "editor-anim-world-root",
+      "kind": "ghidra_sdk_root",
+      "path": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditorAnimWorld__GetCreatureController.c:8",
+      "va": "0x0059cac0",
+      "evidence": "cEditorAnimWorld maps creature IDs through map_int_whatever_find and map_int_EditorCreatureControllerPtr__get, then returns the controller or AnimatedCreature.",
+      "flow": ["creature ID", "editor anim-world map", "EditorCreatureController", "AnimatedCreature", "target position/angle or animation"],
+      "status": "static evidence only"
+    },
+    {
+      "id": "cell-ui-root",
+      "kind": "in_tree_boundary",
+      "path": "src/apps/CellUI.hpp:19",
+      "evidence": "UIRollover is a 56-byte clean-room cCellUIRollover model; CellUI::Load sets GlobalUICell-3 and layout constants; ShowHealthRollover handles one health rollover.",
+      "flow": ["CellSim/player health", "CellUI rollover record", "cell_stage readback overlay"],
+      "status": "implemented minimal HUD, not general editor UI"
+    }
+  ],
+  "current_data_flow": {
+    "cell_interactive": [
+      {
+        "step": 1,
+        "source": "SDL_Event keyboard state",
+        "sink": "CellInput::press",
+        "evidence": "src/apps/cell_stage.cpp:997-1084",
+        "transform": "SDL scancodes are mapped to layout-stable CellInput keys; the keyboard state is polled rather than routed through IGameMode callbacks."
+      },
+      {
+        "step": 2,
+        "source": "CellInput",
+        "sink": "sim::InputFrame",
+        "evidence": "src/apps/cell_stage.cpp:1086-1100",
+        "transform": "Frame thrustLeft/Right/Forward/Back and boost are copied; the last mouse position is copied as NDC hasMouse/mouseX/mouseY."
+      },
+      {
+        "step": 3,
+        "source": "SDL camera arrows and wheel",
+        "sink": "InputFrame.hasCamera",
+        "evidence": "src/apps/cell_stage.cpp:1102-1130",
+        "transform": "The app applies yaw/pitch/zoom steps, clamps pitch and zoom, and writes absolute camera values only when changed."
+      },
+      {
+        "step": 4,
+        "source": "sim::CellSim",
+        "sink": "player, camera, entities, SimEvent",
+        "evidence": "src/sim/Sim.cpp:103-260 and docs/CELL-CONTRACT.md:69-100",
+        "transform": "Camera input, turn, mouse ray-plane target, flee, target velocity, damping, integration, eat, camera follow, and event recording occur in the pinned order."
+      },
+      {
+        "step": 5,
+        "source": "CellSim state",
+        "sink": "VulkanRenderer",
+        "evidence": "src/apps/cell_stage.cpp:656-720 and :1132-1179",
+        "transform": "Player/background/entity positions are transformed into frame meshes; beginPresentFrame/drawTextured/drawMesh/endPresentFrame submit to the swapchain."
+      }
+    ],
+    "editor_static": [
+      {
+        "step": 1,
+        "source": "OS input / DINPUT8 and GameInput",
+        "sink": "cGameInputManager and mode callbacks",
+        "evidence": "docs/RECON-3.1.0.22.md:74-81; .spore-analysis/ghidra-exports/structs_fields.tsv:4656-4682",
+        "transform": "The original has a central input manager with mode/current-mode fields, maps, mouse fields, input regions, and key/mouse callback slots; exact input-region routing is not yet reconstructed."
+      },
+      {
+        "step": 2,
+        "source": "cEditor input vtable",
+        "sink": "editor selection/tool/pose state",
+        "evidence": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnMouseMove.c:17-60; OnMouseDown.c:84-124; OnKeyDown.c:33-47",
+        "transform": "OnMouseMove stores the editor pointer, x/y and active flag; OnMouseDown enters a drag/tool path; OnKeyDown first calls GameInput and then dispatches editor commands, commit/undo, and mode changes."
+      },
+      {
+        "step": 3,
+        "source": "editor tool/actor objects",
+        "sink": "model/pose and edit history",
+        "evidence": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnMouseDown.c:239-305 and :768-775; .spore-analysis/ghidra-exports/functions.tsv:4257",
+        "transform": "The editor queries renderer/shadow-world layers, performs hit/selection work, routes through active tool vtables, and commits the edit history."
+      },
+      {
+        "step": 4,
+        "source": "message and animation events",
+        "sink": "App::IAppSystem / editor anim event dispatch",
+        "evidence": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditorAnimEvent__MessageSend.c:18-30 and MessagePost.c:18-30",
+        "transform": "The event object is packed into a local message-like structure and sent through an IAppSystem virtual call; Send uses the recovered Init slot and Post uses the recovered InitPlugins slot. The local type label is decompiler-sensitive."
+      }
+    ]
+  },
+  "state_transitions": {
+    "in_tree_cell_mode": [
+      {
+        "state": "uninitialized",
+        "transition": "CellModeStrategy.initialize",
+        "evidence": "src/apps/CellModeStrategy.cpp:7-16",
+        "effects": "Loads CellUI, initializes CellGfx/world slots, resets background clear and frame/input observability, sets mInitialized."
+      },
+      {
+        "state": "initialized_not_entered",
+        "transition": "CellModeStrategy.onEnter",
+        "evidence": "src/apps/CellModeStrategy.cpp:32-36",
+        "effects": "Starts display and sets mEntered."
+      },
+      {
+        "state": "entered_running",
+        "transition": "CellModeStrategy.update",
+        "evidence": "src/apps/CellModeStrategy.cpp:56-60",
+        "effects": "Increments mFrame; the original per-frame body is not present in this abstraction."
+      },
+      {
+        "state": "entered_but_display_stopped",
+        "transition": "CellModeStrategy.onExit",
+        "evidence": "src/apps/CellModeStrategy.cpp:38-42",
+        "effects": "Resets background clear globals and clears mEntered."
+      },
+      {
+        "state": "disposed",
+        "transition": "CellModeStrategy.dispose",
+        "evidence": "src/apps/CellModeStrategy.cpp:18-30",
+        "effects": "Clears UI rollover pool, GFX display/worlds/preloads, frame and lifecycle flags."
+      }
+    ],
+    "cell_simulation": [
+      {
+        "state": "player_target",
+        "transition": "CellSim::update camera and turn",
+        "evidence": "docs/CELL-CONTRACT.md:73-80",
+        "effects": "Applies absolute camera values, then left/right turn before mouse target."
+      },
+      {
+        "state": "mouse_steer_or_keyboard_fallback",
+        "transition": "CellSim::update steering",
+        "evidence": "docs/CELL-CONTRACT.md:81-92",
+        "effects": "Mouse target is primary; keys add reduced secondary bias. Without mouse, keyboard thrust is the target path."
+      },
+      {
+        "state": "fleeing",
+        "transition": "prey proximity check",
+        "evidence": "docs/CELL-CONTRACT.md:81-84 and src/sim/Sim.cpp:145-162",
+        "effects": "Faces away, boosts, emits flee, and overrides target velocity."
+      },
+      {
+        "state": "integrated",
+        "transition": "eat and camera follow",
+        "evidence": "docs/CELL-CONTRACT.md:93-100",
+        "effects": "Damps velocity, integrates position, culls nearby food, increments growMeter, follows camera, increments frame and records events."
+      }
+    ],
+    "editor_static": [
+      {
+        "state": "hover_or_idle",
+        "transition": "cEditor::OnMouseMove",
+        "evidence": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnMouseMove.c:17-60",
+        "effects": "Stores the current editor and mouse coordinates, marks movement active, and delegates according to editor mode/tool state."
+      },
+      {
+        "state": "drag_or_selection",
+        "transition": "cEditor::OnMouseDown",
+        "evidence": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnMouseDown.c:84-124 and :415-775",
+        "effects": "Checks lock/selected tool/shadow world, obtains renderer layer data, constructs tool objects, and routes mouse-button-specific edits."
+      },
+      {
+        "state": "edit_committed",
+        "transition": "cEditor::OnMouseUp / CommitEditHistory",
+        "evidence": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnMouseUp.c:8-29; CommitEditHistory decompilation at 0x00586410; .spore-analysis/ghidra-exports/functions.tsv:4242",
+        "effects": "Finalizes the interaction, updates history, may call Undo, clears active tool state, and can emit a message/animation event."
+      },
+      {
+        "state": "editor_mode_changed",
+        "transition": "cEditor::SetActiveMode",
+        "evidence": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__SetActiveMode.c:8-37",
+        "effects": "Cleans prior mode, updates cEditorAnimWorld target position/angle and creature controller state, enters the new mode, and emits MessageSend."
+      }
+    ]
+  },
+  "input_contracts": {
+    "original_static_contract": {
+      "central_input_root": "Simulator::cGameInputManager::Get @ 0x00b3d350",
+      "sdk_vtable": "27 slots; OnKeyDown/OnKeyUp/OnMouseDown/OnMouseUp/OnMouseMove/OnMouseWheel are explicit slots in .spore-analysis/ghidra-exports/structs_fields.tsv:4656-4682",
+      "mode_routing": "The manager has mLastGameMode and mCurrentGameMode fields in the committed interface dossier, plus maps, mouse fields, and input regions. The exact region-to-mode routing remains uncharacterized.",
+      "game_input": "GameInput::OnKeyDown/OnKeyUp are SDK-named and directly manipulate a 32-bit bit-set for codes below 0x100 in the recovered body; decompiler calling-convention warnings make the field/parameter interpretation noisy.",
+      "editor_callbacks": "cEditor::OnKeyDown calls GameInput::OnKeyDown before editor command dispatch; cEditor::OnMouseMove stores coordinates; OnMouseDown/OnMouseUp use MouseButton, mouseX, mouseY and MouseState parameters.",
+      "direct_evidence": [
+        ".spore-analysis/ghidra-exports/structs_fields.tsv:4656-4682",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/GameInput__OnKeyDown.c:8-14",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/GameInput__OnKeyUp.c:8-14",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnKeyDown.c:8-47",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnMouseMove.c:8-24"
+      ]
+    },
+    "current_clean_room_contract": {
+      "key_map": "src/apps/CellInput.cpp:5-17",
+      "actions": "W/S/A/D/Shift/Escape/arrows plus virtual-key-2 health toggle are modeled in src/apps/CellInput.hpp:19-48",
+      "frame": "thrustLeft/right/forward/back and boost are emitted from held keys in src/apps/CellInput.cpp:48-75",
+      "camera": "arrow direction is held-state only; the app owns yaw/pitch/zoom step magnitudes and clamps in src/apps/cell_stage.cpp:1102-1130",
+      "mouse": "last motion is converted to NDC and marked persistent in src/apps/cell_stage.cpp:1007-1018",
+      "quit": "interactive checks SDLK_ESCAPE directly in the event loop at src/apps/cell_stage.cpp:1002-1006; CellInput::wantsQuit exists but is not the interactive loop's decision path",
+      "known_gap": "interactive polling never calls stage->onKeyDown, stage->onMouseMove, stage->onMouseDown, stage->onMouseUp, or stage->onMouseWheel; it only calls stage->update at src/apps/cell_stage.cpp:1132-1135"
+    }
+  },
+  "ui_to_gameplay_bridges": [
+    {
+      "bridge": "editor-to-tool",
+      "path": "cEditor::OnMouseDown/OnMouseMove/OnMouseUp -> active editor/tool/actor vtable",
+      "evidence": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnMouseDown.c:239-305 and :768-775; .spore-analysis/ghidra-exports/functions.tsv:4257",
+      "semantics": "Mouse coordinates and button state are transformed through renderer/shadow-world layer data into tool-specific edit operations. The active tool pointer and its vtable are the bridge."
+    },
+    {
+      "bridge": "play-mode-to-actors",
+      "path": "EditorPlayMode::OnMouseDown -> actor/tool vtable slot 0x18",
+      "evidence": "Ghidra read-only decompilation of Editors::EditorPlayMode::OnMouseDown at 0x0062a820",
+      "semantics": "The function loops an actor array and ORs the result of each actor callback. This is a concrete gameplay-interaction fan-out boundary, but exact actor types and message semantics remain unresolved."
+    },
+    {
+      "bridge": "editor-to-animation-world",
+      "path": "cEditor::SetActiveMode -> cEditorAnimWorld::SetTargetPosition/SetTargetAngle -> EditorCreatureController",
+      "evidence": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditorAnimWorld__SetTargetPosition.c:8-25; SetTargetAngle.c:8-23",
+      "semantics": "Mode changes and editor state updates target creature position/angle. The controller exposes current/real target position, target angle, movement speed and rotation speed in the SDK field export."
+    },
+    {
+      "bridge": "editor-to-anim-manager",
+      "path": "EditorAnimWorld_PlayAnimation -> creature map -> AnimatedCreature vtable slot 0x04",
+      "evidence": "Ghidra read-only decompilation at 0x0059cb10; .spore-analysis/ghidra-exports/structs_fields.tsv:5965-6014",
+      "semantics": "The world looks up the creature ID, finds its EditorCreatureController, then calls the AnimatedCreature PlayAnimation slot when both controller and creature exist."
+    },
+    {
+      "bridge": "animation-event-to-app-message-system",
+      "path": "cEditorAnimEvent::MessageSend/MessagePost -> IAppSystem vtable",
+      "evidence": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditorAnimEvent__MessageSend.c:18-30; MessagePost.c:18-30",
+      "semantics": "The event packs editor model/event parameters and invokes an app-system message dispatch slot. The Send/Post distinction is observable; the exact message object type and queue priority are not."
+    },
+    {
+      "bridge": "cell-input-to-sim",
+      "path": "SDL scancode state -> CellInput::Frame -> CellSim::InputFrame -> CameraState/PlayerState",
+      "evidence": "src/apps/cell_stage.cpp:1037-1135; src/apps/CellInput.cpp:48-75; src/sim/Sim.cpp:103-260",
+      "semantics": "This bridge is implemented and deterministic. Keyboard is secondary when a mouse target exists; without a mouse, keyboard thrust is the fallback."
+    },
+    {
+      "bridge": "cell-sim-to-render",
+      "path": "CellSim::PlayerState/Entity -> buildFrameDraws -> renderer draw calls",
+      "evidence": "src/apps/cell_stage.cpp:656-720 and :779-801",
+      "semantics": "Position, heading, culled entity state and camera matrices are baked into per-frame meshes. There is no animation or pose stream in this bridge."
+    }
+  ],
+  "animation_pose_semantics": {
+    "sdk_animation_surface": [
+      {
+        "type": "AnimatedCreature",
+        "evidence": ".spore-analysis/ghidra-exports/structs_fields.tsv:5965-6014",
+        "fields": {
+          "mPosition": "offset 0x04, Vector3",
+          "mOrientation": "offset 0x10, Quaternion",
+          "p_cid": "offset 0x17c, anim_cid pointer",
+          "mpModel": "offset 0x180, Graphics::Model intrusive pointer",
+          "field_18C": "offset 0x18c, AnimIndex",
+          "mpAnimWorld": "offset 0x190, IAnimWorld pointer"
+        },
+        "vtable": "32 slots include PlayAnimation, LoadAnimation, SetAnimationMode, SetAnimationIdle, SetAnimationBlendInTime, StartAnimation, SetLoop, SetLoopTimes, SetAnimationID, GetCurrentAnimation, GetAnimationLength and GetAnimWorld."
+      },
+      {
+        "type": "AnimationMessage",
+        "evidence": ".spore-analysis/ghidra-exports/structs_fields.tsv:6096-6101",
+        "fields": ["messageID uint32", "pName char*", "pCreature AnimatedCreature*", "blockIndex int", "parameter0 int", "parameter1 float"],
+        "semantics": "The message record is the clearest SDK boundary between animation dispatch and a creature/pose target. The current tree does not model this record."
+      },
+      {
+        "type": "IAnimWorld",
+        "evidence": ".spore-analysis/ghidra-exports/structs_fields.tsv:10630-10655",
+        "vtable": "AddRef, Release, DrawLayer, SetEffectWorld, SetModelWorld, Dispose, Update, UpdateCreatures, PostUpdateCreatures, LoadCreature, LoadCreatureByName, DestroyCreature and GetCreatures."
+      },
+      {
+        "type": "EditorCreatureController",
+        "evidence": ".spore-analysis/ghidra-exports/structs_fields.tsv:19726-19743",
+        "fields": ["mpAnimatedCreature", "mpModelWorld", "mCurrentAnimID", "mRealTargetPosition", "mTargetPosition", "mCurrentPosition", "mTargetAngle", "mCurrentAngle", "mMovementSpeed", "mRotateSpeed", "field_54", "field_55"]
+      }
+    ],
+    "cell_animation_surface": {
+      "sdk_enum": "CellAnimations is a 32-bit enum; the export includes kAnimIndexCellIdle, movement, eat, damage, death, mood, and NPC variants.",
+      "evidence": ".spore-analysis/ghidra-exports/spore_sdk.xml:35602-35717",
+      "cell_object_fields": "cCellObjectData stores mTargetOrientation at 0x14, mTransform at 0x48, mCurrentAnimation at 0x1b0, field_1B4 at 0x1b4, field_1B8 at 0x1b8 and mGFXObjectIndex at 0x248 in the SDK export; the clean-room src/sim/CellPool.hpp exposes the same named subset.",
+      "current_tree": "src/apps/CellAnim.hpp:26-86 models only CellAnimations, blend in/out times, effect-map slot selection, event-to-effect IDs and effect instance parameter placement. src/apps/CellAnim.cpp:7-82 implements those pure transformations. The current cell_stage main/runInteractive path has no call to animBlend, instanceEffect or effectIDForEvent; only src/apps/cellanim_test.cpp exercises them.",
+      "pose_gap": "The current renderer draws static baked meshes with position/heading and no skeleton, bone, morph, blend-shape, animation-time or pose-stream contract. The current CellSim PlayerState has heading and position but no pose/animation state."
+    },
+    "editor_anim_event_semantics": {
+      "send": "cEditorAnimEvent::MessageSend at 0x0059d8b0 packs editorModel, eventID, event object, and scalar parameters then calls the recovered IAppSystem Init slot.",
+      "post": "cEditorAnimEvent::MessagePost at 0x0059d840 performs the same pack and calls the recovered IAppSystem InitPlugins slot.",
+      "neutral_pose": "cEditor::SetCreatureToNeutralPose at 0x00573970 emits MessagePost when the editor neutral-pose condition is active, then stores a 250.0-like float sentinel and releases the temporary event object; exact meaning of the sentinel is unresolved.",
+      "commit": "cEditor::CommitEditHistory at 0x00586410 appends state/model history, updates UI state, and may destroy/recreate editor anim-world creatures; this is a pose/model synchronization boundary, not merely a UI event."
+    }
+  },
+  "event_message_boundaries": [
+    {
+      "name": "Win32 message pump",
+      "root": "FUN_00848210",
+      "evidence": "docs/RECON-3.1.0.22.md:41-43",
+      "boundary": "PeekMessageW/TranslateMessage/DispatchMessageW/WM_QUIT feeds a vtable frame-render slot; this is below editor/gameplay code and is not reproduced in src.",
+      "status": "static engine boundary"
+    },
+    {
+      "name": "App message manager",
+      "root": "App::cMessageManager",
+      "evidence": ".spore-analysis/ghidra-exports/structs_fields.tsv:3959-3986; .spore-analysis/ghidra-exports/sdk_functions.tsv:737-751; ProcessQueue decomp at 0x008841f0",
+      "boundary": "IMessageListener/IMessageManager provide message IDs, standard messages with five MessageParameter slots, handler/object entries, priority, locking and queue processing. The exact dispatch order and message-ID constants are not yet characterized.",
+      "status": "static API plus partial queue mechanics"
+    },
+    {
+      "name": "UTFWin window messages",
+      "root": "UTFWin::Window",
+      "evidence": ".spore-analysis/ghidra-exports/structs.tsv:479-497 and :1166-1167; .spore-analysis/ghidra-exports/structs_fields.tsv:13726-13758; SendMsg decomp at 0x00960250",
+      "boundary": "IWindow has 71 vtable slots; Window owns manager, parent/children lists, WinProc list, control/command IDs, real area, area, cursor ID, state flags, caption and font ID. SendMsg delegates through window-proc vtable state, but the recovered pseudocode is not type-safe enough to name every slot.",
+      "status": "static framework structure; runtime grammar unresolved"
+    },
+    {
+      "name": "editor message dispatcher",
+      "root": "Editors::cEditor::HandleMessage @ 0x00591fa0",
+      "evidence": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__HandleMessage.c:9-809; docs/analysis/reconstruction-readiness.md:18-20",
+      "boundary": "The function is a large message-ID switch that reaches editor UI, property access, game mode manager, renderer layers, resource/model helpers, edit history, mode switching, and cEditorAnimEvent::MessageSend. The decompiler comparison of this/message arguments is noisy; exact IDs and payload schemas remain open.",
+      "status": "dependency-first reconstruction candidate"
+    },
+    {
+      "name": "pdtk UI command boundary",
+      "root": "FUN_00a4e9c0",
+      "evidence": "docs/analysis/dossiers/unknown-high/pdtk-text-widget.md:18-41 and :67-73",
+      "boundary": "UTFWin text widgets build pdtk_text_new/select/focus/icursor command strings and update widget size/cursor. The pdtk grammar has no SDK symbols and is not part of the current renderer interface.",
+      "status": "partial engine reconstruction candidate"
+    },
+    {
+      "name": "space event records",
+      "root": "FUN_00e39ab0",
+      "evidence": "docs/analysis/dossiers/unknown-high/space-event-record-pair.md:18-40 and :77-83",
+      "boundary": "This separate space-mode event builder emits two records with object refs, cell IDs, millisecond timestamp, slot sentinel, IDs and float3 positions. It demonstrates that event records are mode-specific and not a universal SimEvent ABI.",
+      "status": "inferred static evidence; layout not in SDK TSV"
+    }
+  ],
+  "structures": [
+    {
+      "name": "IGameMode",
+      "path": "src/apps/IGameMode.hpp:19-52",
+      "role": "Current clean-room mode lifecycle and input callback surface.",
+      "fields": ["InputEvent.virtualKey", "InputEvent.modifiers", "InputEvent.x", "InputEvent.y", "lifecycle virtuals", "onKeyDown", "onMouseMove", "onMouseDown", "onMouseUp", "onMouseWheel", "update"],
+      "gap": "InputEvent has no button, wheel delta, mouse-state or held/released edge fields; the current CellInput path is richer but bypasses these callbacks."
+    },
+    {
+      "name": "CellSim contracts",
+      "path": "src/sim/Sim.hpp:79-187 and :208-260",
+      "role": "Current deterministic gameplay state and event contract.",
+      "fields": ["Entity role/group/instance/pos/alive", "PlayerState pos/heading/vel/growMeter", "CameraState yaw/pitch/zoom/baseDist/target/fov", "InputFrame thrust/boost/camera/mouse", "SimEvent frame/type/entity"],
+      "gap": "No editor pointer, animation ID, pose quaternion, skeletal state, UI model, or event listener callback."
+    },
+    {
+      "name": "cGameInputManager",
+      "path": ".spore-analysis/ghidra-exports/structs_fields.tsv:4656-4682",
+      "role": "Original input/mode-routing object.",
+      "fields": ["27-slot vtable", "mLastGameMode", "mCurrentGameMode", "maps", "mouse fields", "input regions", "OnKeyDown/Up", "OnMouseDown/Up/Move/Wheel"],
+      "gap": "The object size and offsets are SDK/interface evidence; the routing algorithm and ownership are not reconstructed."
+    },
+    {
+      "name": "IMessageManager",
+      "path": ".spore-analysis/ghidra-exports/structs_fields.tsv:3959-3986",
+      "role": "Original message listener/handler registry.",
+      "fields": ["MessageListenerData", "MessageParameter[5] in standard messages", "IMessageManager Entry listener/priority/refcount/handler/object", "MessageSend", "MessagePost", "AddListener", "AddUnmanagedListener", "AddHandler", "ProcessQueue", "ProcessQueue2", "Lock", "AddEntry"],
+      "gap": "Message IDs, payload names, priority comparison and queue invariants are unresolved."
+    },
+    {
+      "name": "UTFWin::Window",
+      "path": ".spore-analysis/ghidra-exports/structs_fields.tsv:13726-13758",
+      "role": "Original UI window/proc/drawable composition object.",
+      "fields": ["IWindow vtable", "parent and children windows", "WinProc list", "control/command IDs", "real area and area", "cursor ID", "state flags", "caption", "text font ID"],
+      "gap": "No current C++ UTFWin window/proc/layout/message implementation exists."
+    },
+    {
+      "name": "cCellObjectData",
+      "path": ".spore-analysis/ghidra-exports/structs_fields.tsv:18140-18245; src/sim/CellPool.hpp:23-64",
+      "role": "Original cell gameplay/render/animation object and current clean-room layout subset.",
+      "fields": ["mTargetPosition", "mTargetOrientation", "mTransform", "mOpacity/mTargetOpacity", "mTargetSize", "field_B8/field_BC", "mModelKey", "mCellResource", "mCurrentAnimation", "field_1B4", "field_1B8", "mGFXObjectIndex"],
+      "gap": "The current Entity keeps animation/orientation fields inert for the deterministic contract; it does not render animation or pose."
+    },
+    {
+      "name": "UIRollover",
+      "path": "src/apps/CellUI.hpp:19-55",
+      "role": "Current minimal health rollover model.",
+      "fields": ["object pool index", "cell index", "field_8 health/6", "disappear time 0.5", "layout handle"],
+      "gap": "This is not a general UTFWin widget/message model."
+    }
+  ],
+  "engine_boundaries": [
+    {
+      "boundary": "B1 resource",
+      "path": "src/compat/ResourceProvider.hpp:24-88",
+      "status": "replaced/usable for asset seams",
+      "constraint": "Fetch by type/group/instance only; no original resource-manager cache, priority or cross-package semantics."
+    },
+    {
+      "boundary": "B2 mesh source",
+      "path": "src/compat/MeshSource.hpp:24-84",
+      "status": "replaced/usable for static mesh seam",
+      "constraint": "Version-8 static path; no RW4 animation, skeleton, skin, blend shape or UI widget decoding."
+    },
+    {
+      "boundary": "B3 renderer",
+      "path": "src/renderer/Renderer.hpp:53-87; src/renderer/VulkanRenderer.hpp:48-68",
+      "status": "offscreen and Vulkan present available",
+      "constraint": "No editor widget/drawable/message contract, no full RenderWare material/shader contract, and no animation/pose upload."
+    },
+    {
+      "boundary": "App input/message",
+      "path": "Ghidra/SDK roots 0x00b3d350, 0x008841f0, UTFWin Window vtables",
+      "status": "not implemented in current tree",
+      "constraint": "Treat as engine-facing interface stubs until exact routing, message IDs and UI command grammar are reconstructed."
+    },
+    {
+      "boundary": "animation manager",
+      "path": "Ghidra/SDK roots 0x0067cae0, 0x0059cb10 and AnimatedCreature/IAnimWorld vtables",
+      "status": "not implemented in current tree",
+      "constraint": "CellAnim is a pure cell-specific approximation, not a general animation manager or pose engine."
+    }
+  ],
+  "reconstruction_candidates": [
+    {
+      "priority": 1,
+      "id": "utfwin-message-and-window-dispatch",
+      "roots": ["UTFWin::Window", "UTFWin::IWindow", "App::cMessageManager", "pdtk text widget"],
+      "why": "All editor and UI actions ultimately cross a message/window/proc boundary. The current tree has no UTFWin system.",
+      "minimum_evidence": ["SDK vtable/field map", "menu_transition runtime trace", "message ID/payload catalog", "pdtk command grammar and widget lifecycle"],
+      "testability": "Pure message/window model can be unit tested with fake listeners and proc arrays; fidelity requires a trace and screen/input correlation."
+    },
+    {
+      "priority": 2,
+      "id": "editor-input-and-edit-history",
+      "roots": ["Editors::cEditor::OnMouseMove", "OnMouseDown", "OnMouseUp", "OnKeyDown", "Update", "CommitEditHistory", "Undo/Redo"],
+      "why": "This is the rank-1 editor-core triage entry and the concrete UI-to-editor interaction surface. It is dependency-first because the decompilation reaches many unknown callees.",
+      "minimum_evidence": ["field type recovery for cEditor offsets", "message constants/payloads", "tool/actor vtable contract", "mouse coordinate/button contract", "edit-history state transitions"],
+      "testability": "Input snapshots, fake renderer layers, fake tools, and edit-history sequences are testable; original coordinate and tool semantics require live evidence."
+    },
+    {
+      "priority": 3,
+      "id": "input-mode-routing",
+      "roots": ["Simulator::cGameInputManager", "GameInput", "App::cGameModeManager", "cMouseCamera", "EditorCamera"],
+      "why": "The named input manager is the central input boundary, while cEditor and cell mode are downstream virtual consumers. Current IGameMode does not model buttons/wheel or routing.",
+      "minimum_evidence": ["cGameInputManager field meanings", "input-region/mode lookup", "key and mouse bit-state ownership", "camera input routing", "active-mode transition ordering"],
+      "testability": "A deterministic input router can be tested independently with fake mode/camera objects; fidelity needs menu/editor/cell traces."
+    },
+    {
+      "priority": 4,
+      "id": "editor-animation-pose",
+      "roots": ["Anim::IAnimManager", "IAnimWorld", "AnimatedCreature", "EditorCreatureController", "cEditorAnimWorld", "AnimationMessage", "cEditorAnimEvent"],
+      "why": "Editor selection and mode changes drive creature target position/angle and animation messages; this is the bridge from UI state to pose/animation state.",
+      "minimum_evidence": ["AnimationMessage dispatch table", "AnimatedCreature animation state/transition semantics", "controller interpolation/update", "model/skeleton transform contract", "event ID names"],
+      "testability": "Controller interpolation and message packing are deterministic unit-test candidates; skeleton/animation fidelity needs asset/runtime evidence."
+    },
+    {
+      "priority": 5,
+      "id": "cell-mode-callback-and-animation-integration",
+      "roots": ["src/apps/IGameMode", "src/apps/CellModeStrategy", "src/apps/CellInput", "src/apps/CellAnim", "src/sim/SimEvent", "src/apps/cell_stage"],
+      "why": "The current cell bridge is implemented but bypasses the original mode callbacks and does not consume CellAnim. This is a local reconstruction candidate rather than an original editor root.",
+      "minimum_evidence": ["event-to-animation policy", "event-to-effect placement", "cell input routing through mode slots", "cell pose/render contract"],
+      "testability": "Already high: unit tests cover CellInput, CellModeStrategy, CellAnim, CellSim, fixed rendering, scripted replay and manifests."
+    },
+    {
+      "priority": 6,
+      "id": "cell-ui-generalization",
+      "roots": ["CellUI", "UIRollover", "UTFWin Window/Drawable", "Graphics IRenderer"],
+      "why": "The current HUD is a readback overlay, while the original editor/game UI is a UTFWin window/proc/drawable system.",
+      "minimum_evidence": ["UTFWin widget/proc lifecycle", "UI message contracts", "renderer-to-window composition", "cell health/message source"],
+      "testability": "CellUI is unit tested; a generalized UI boundary needs fake windows/drawables and eventually a rendered original frame."
+    }
+  ],
+  "testability": {
+    "existing_green_areas": [
+      {
+        "area": "cell input",
+        "tests": ["src/apps/cellinput_test.cpp", "src/apps/cellmode_test.cpp"],
+        "checks": ["key/action table", "held thrust/boost", "camera directions", "toggle consume-on-read", "mode lifecycle"],
+        "evidence": "docs/STATE.md:94-96 and source paths"
+      },
+      {
+        "area": "cell simulation",
+        "tests": ["src/sim/tests/sim_test.cpp", "src/sim/tests/sim_contract_test.cpp", "tests/test_sim.py"],
+        "checks": ["zero input", "keyboard movement", "eat", "flee", "mouse steer", "script replay", "event order", "float32 exact fixture replay", "double-run determinism"],
+        "evidence": "docs/CELL-CONTRACT.md:102-132 and docs/STATE.md:74-76"
+      },
+      {
+        "area": "cell UI/animation/gfx",
+        "tests": ["src/apps/cellui_test.cpp", "src/apps/cellanim_test.cpp", "src/apps/cellgfx_test.cpp"],
+        "checks": ["GlobalUICell-3 and layout constants", "health rollover formula", "blend special cases", "effect slot/event mapping", "world table and preload records"],
+        "evidence": "docs/analysis/campaigns/cell-stage-campaign.md:455-472 and :486-508"
+      },
+      {
+        "area": "cell render/script replay",
+        "tests": ["tests/test_cellstage.py", "tests/test_sim.py", "src/sim/tests/sim_contract_test.cpp"],
+        "checks": ["byte-identical manifests", "byte-identical PPMs", "scene render content", "event and final state manifest"],
+        "evidence": "tests/test_cellstage.py:23-42 and tests/test_sim.py:82-123"
+      },
+      {
+        "area": "static Ghidra/MCP evidence",
+        "tests": ["tests/mcp/test_ghidra.py", "tests/mcp/test_assets_runtime.py", "tests/test_dossier.py"],
+        "checks": ["envelope provenance", "snapshot/cache fallback", "deterministic vtable projection", "trace analysis determinism", "dossier idempotence"],
+        "evidence": "tests/mcp/test_ghidra.py:1002-1050 and docs/RE-AUTOMATION-ARCHITECTURE.md:613-641"
+      }
+    ],
+    "gaps": [
+      "No in-tree C++ or Python behavioral test for Editors::cEditor::OnMouseMove/OnMouseDown/OnMouseUp/HandleMessage/Update.",
+      "No test for cGameInputManager mode routing, input regions, key bitset ownership or active-game-mode transitions.",
+      "No test for IMessageManager send/post/handler priority, queue locking, listener lifetime or exact message payload layouts.",
+      "No test for UTFWin Window/IWindow proc routing, drawable/layout behavior or pdtk command grammar.",
+      "No test for AnimatedCreature/IAnimWorld/EditorCreatureController pose interpolation and AnimationMessage dispatch.",
+      "No test proves current CellAnim is used by cell_stage rendering; it is only directly unit tested.",
+      "Original cell/editor runtime evidence remains absent: committed observations record zero cell-stage probe events in nine runs and the S5 run was negative.",
+      "Ghidra live read-only metadata reported 59,245 functions while committed triage/docs snapshot 58,757; snapshot drift must be reconciled before queue promotion."
+    ],
+    "recommended_test_seams": [
+      "Fake input source -> normalized event -> active mode -> InputFrame",
+      "Fake UTFWin Window/Proc -> Message/handler registry -> ordered dispatch",
+      "Fake renderer layer/shadow world -> editor hit test -> tool/controller",
+      "AnimationMessage -> fake AnimatedCreature vtable -> pose/transform snapshot",
+      "CellSim event -> CellAnim blend/effect policy -> render manifest",
+      "trace manifest -> message/input/payload/event correlation -> no-delta/no-response negative evidence"
+    ]
+  },
+  "unresolved_questions": [
+    {
+      "question": "What are the exact cEditor message IDs and payload layouts used by HandleMessage?",
+      "why_open": "The recovered switch compares a noisy first argument and calls many helpers; the SDK names the interface but not the constants.",
+      "evidence": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__HandleMessage.c:9-809; docs/analysis/reconstruction-readiness.md:18-20",
+      "needed_evidence": "A focused vtable/message trace or a typed SDK/message header plus message-id catalog."
+    },
+    {
+      "question": "How does cGameInputManager route key/mouse input to the active game mode, camera and input regions?",
+      "why_open": "The accessor and vtable/field map are known, but the routing body and ownership are not.",
+      "evidence": ".spore-analysis/ghidra-exports/structs_fields.tsv:4656-4682; docs/analysis/simulator-shared-state-interface.md:81-94",
+      "needed_evidence": "Decompile/dispatch callers of the cGameInputManager vtable and correlate a menu/editor/cell trace."
+    },
+    {
+      "question": "What is the original UI message dispatch order and priority rule?",
+      "why_open": "IMessageManager exposes priority and multiple process functions, but the recovered ProcessQueue body is partial and send/post bodies are not yet characterized.",
+      "evidence": ".spore-analysis/ghidra-exports/structs_fields.tsv:3959-3986; .spore-analysis/ghidra-exports/sdk_functions.tsv:737-751",
+      "needed_evidence": "Message manager decompilation plus a trace that records queue order and handler return values."
+    },
+    {
+      "question": "What are the UTFWin Window proc slots and pdtk commands?",
+      "why_open": "The window structure and vtable size are known, but the UI command grammar is absent from SDK symbols and SendMsg is poorly typed.",
+      "evidence": "docs/analysis/dossiers/unknown-high/pdtk-text-widget.md:67-73; .spore-analysis/ghidra-exports/structs.tsv:479-497",
+      "needed_evidence": "UTFWin Window/Proc decompilation, command-string callers, and a menu/widget trace."
+    },
+    {
+      "question": "How do editor selection/tool operations map to model and pose mutations?",
+      "why_open": "OnMouseDown and Update reach many unnamed helpers and vtable callbacks; the cEditor and tool fields are only partially named.",
+      "evidence": "docs/analysis/reconstruction-readiness.md:18-20, :152-166; .spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnMouseDown.c:239-775",
+      "needed_evidence": "Typed cEditor/tool structures, vtable labels, and an editor interaction trace with before/after model snapshots."
+    },
+    {
+      "question": "What are the exact animation/pose semantics for AnimationMessage and EditorCreatureController?",
+      "why_open": "The SDK exposes the message and controller fields, but the manager internals and event ID dispatch are not fully reconstructed.",
+      "evidence": ".spore-analysis/ghidra-exports/structs_fields.tsv:19726-19743 and :6096-6101; Ghidra decompilation at 0x0059cb10",
+      "needed_evidence": "Animation manager/vtable decompilation, event ID table, and an editor animation trace with transform/bone snapshots."
+    },
+    {
+      "question": "Should current CellAnim become a gameplay animation policy, a render effect policy, or both?",
+      "why_open": "Current code has pure blend/effect functions and event mapping, but cell_stage does not call them and the renderer has no pose/skeleton interface.",
+      "evidence": "src/apps/CellAnim.hpp:47-86; src/apps/cell_stage.cpp:1214-1436; src/renderer/Renderer.hpp:53-87",
+      "needed_evidence": "A deliberate boundary contract tying SimEvent to CellAnim, pose state and renderer animation upload."
+    },
+    {
+      "question": "What is the current authoritative function universe after live Ghidra reports 59,245 functions?",
+      "why_open": "Committed triage and docs use snapshot 58,757 while the live read-only program metadata reports 59,245.",
+      "evidence": "ghidra_get_current_program_info read-only result: function_count=59245; docs/RECON-3.1.0.22.md:18-20; docs/analysis/reconstruction-readiness.md:1-5",
+      "needed_evidence": "A pinned Ghidra export/snapshot refresh and deterministic queue reconciliation before using live counts for prioritization."
+    }
+  ],
+  "evidence_inconsistencies": [
+    {
+      "issue": "function_count drift",
+      "details": "Live GhidraMCP read-only program info reported 59,245 functions; committed docs/triage use 58,757 for snapshot f0e310e0. This artifact uses committed triage counts for readiness and records the live count only as an unresolved snapshot boundary."
+    },
+    {
+      "issue": "decompiler calling-convention warnings",
+      "details": "Many editor/message/camera SDK decompilations carry unknown calling-convention warnings. Field offsets, vtable names and call structure are used as evidence; local parameter type guesses are not promoted to exact semantics."
+    },
+    {
+      "issue": "runtime gap",
+      "details": "Static artifacts are strong enough to identify roots and interfaces, but the original cell-stage trace is recorded as negative and editor/UI runtime behavior has no committed positive trace."
+    }
+  ],
+  "scope_boundary": {
+    "current_tree_can_do_now": [
+      "deterministic cell simulation and event logging",
+      "table-driven cell input and mode lifecycle tests",
+      "pure cell animation blend/effect mapping tests",
+      "minimal cell HUD and renderer presentation tests",
+      "scripted input replay and byte-identical render manifests"
+    ],
+    "requires_reconstruction": [
+      "general editor input and tool routing",
+      "UTFWin window/proc/drawable/layout UI",
+      "message manager send/post/priority semantics",
+      "original animation manager and pose pipeline",
+      "UI-to-gameplay event and message payload contracts",
+      "runtime-verified original behavior"
+    ]
+  },
+  "source_index": [
+    "src/apps/cell_stage.cpp:864-1209",
+    "src/apps/cell_stage.cpp:1214-1436",
+    "src/apps/CellInput.hpp:19-108",
+    "src/apps/CellInput.cpp:5-95",
+    "src/apps/IGameMode.hpp:19-52",
+    "src/apps/CellModeStrategy.cpp:7-94",
+    "src/apps/CellUI.hpp:19-55",
+    "src/apps/CellUI.cpp:5-25",
+    "src/apps/CellAnim.hpp:26-86",
+    "src/apps/CellAnim.cpp:7-82",
+    "src/sim/Sim.hpp:79-260",
+    "src/sim/Sim.cpp:103-260",
+    "src/sim/CellPool.hpp:23-164",
+    "src/sim/CellGame.hpp:60-155",
+    "src/sim/CellGame.cpp:22-152",
+    "src/renderer/Renderer.hpp:53-87",
+    "src/renderer/VulkanRenderer.hpp:48-68",
+    "src/renderer/VulkanRenderer.cpp:285-335 and :1272-1400",
+    "src/compat/ResourceProvider.hpp:24-88",
+    "src/compat/MeshSource.hpp:24-84",
+    "tests/test_cellstage.py:23-42",
+    "tests/test_sim.py:69-123",
+    "docs/CELL-CONTRACT.md:19-152",
+    "docs/CELLSTAGE-RECON.md:64-116",
+    "docs/BOUNDARIES.md:48-145",
+    "docs/replacement-boundaries.md:20-121",
+    "docs/RECON-3.1.0.22.md:25-129",
+    "docs/analysis/GUI-BOUNDARY.md:22-112",
+    "docs/analysis/simulator-shared-state-interface.md:34-321",
+    "docs/analysis/reconstruction-readiness.md:9-220",
+    "docs/analysis/unknown-high-resolution.md:72-112",
+    "docs/analysis/dossiers/unknown-high/message-handler-registration.md:18-83",
+    "docs/analysis/dossiers/unknown-high/space-event-record-pair.md:18-87",
+    "docs/analysis/dossiers/unknown-high/pdtk-text-widget.md:18-77",
+    ".spore-analysis/ghidra-exports/structs_fields.tsv:1263-1285",
+    ".spore-analysis/ghidra-exports/structs_fields.tsv:2842-2844",
+    ".spore-analysis/ghidra-exports/structs_fields.tsv:3055-3082",
+    ".spore-analysis/ghidra-exports/structs_fields.tsv:3959-3986",
+    ".spore-analysis/ghidra-exports/structs_fields.tsv:4656-4682",
+    ".spore-analysis/ghidra-exports/structs_fields.tsv:5965-6014",
+    ".spore-analysis/ghidra-exports/structs_fields.tsv:6096-6101",
+    ".spore-analysis/ghidra-exports/structs_fields.tsv:10630-10655",
+    ".spore-analysis/ghidra-exports/structs_fields.tsv:13726-13758",
+    ".spore-analysis/ghidra-exports/structs_fields.tsv:18140-18245",
+    ".spore-analysis/ghidra-exports/spore_sdk.xml:35602-35717",
+    ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnMouseMove.c:8-62",
+    ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnMouseDown.c:9-776",
+    ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnKeyDown.c:8-343",
+    ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__HandleMessage.c:9-809",
+    ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditorAnimEvent__MessageSend.c:8-33",
+    ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditorAnimEvent__MessagePost.c:8-33",
+    ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditorAnimWorld__GetCreatureController.c:8-26",
+    ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditorAnimWorld__SetTargetPosition.c:8-26",
+    ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditorAnimWorld__SetTargetAngle.c:8-23",
+    ".spore-analysis/ghidra-exports/decompiled_sdk/App__cMessageManager__ProcessQueue.c:6-40",
+    ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCameraManager__HandleMessage.c:8-21",
+    ".spore-analysis/ghidra-exports/decompiled_sdk/App__cMouseCamera__OnKeyDown.c:8-16",
+    ".spore-analysis/ghidra-exports/decompiled_sdk/Anim__IAnimManager__Get.c:8-13",
+    "Ghidra read-only decompilation: 0x0059cb10, 0x0059d840, 0x0059d8b0, 0x0062a820, 0x007d8d40, 0x00697a50, 0x00697a80"
+  ]
+}

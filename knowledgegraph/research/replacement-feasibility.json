@@ -1,0 +1,526 @@
+{
+  "$schema": "replacement-feasibility-1",
+  "metadata": {
+    "title": "Original executable replacement feasibility synthesis",
+    "subject": "SporeApp.exe 3.1.0.22",
+    "purpose": "Assess technically supported replacement seams without modifying or running the original executable.",
+    "repository_scope": "clean-room read-only synthesis",
+    "evidence_cutoff": "2026-09-24",
+    "current_status": "technically_feasible_not_implemented"
+  },
+  "answer_summary": {
+    "decision": "technically_feasible_not_implemented",
+    "summary": "A 5-byte x86 entry detour is proven on a native 32-bit Linux synthetic. No replacement has been installed in SporeApp.exe, and no live Cell trace exists.",
+    "recommendation": "Build a read-only preflight/identity validator, then a 32-bit ABI-compatible one-float shim and a reversible call-site or entry detour on a disposable copy/process with dedicated entry, return, and memory validation.",
+    "not_authorized_by_this_record": [
+      "patching SPORE or any binary",
+      "running the game as part of this synthesis",
+      "claiming current Cell field layout or runtime semantics are verified"
+    ]
+  },
+  "evidence_vocabulary": {
+    "CONFIRMED": "Identity or contract supported by the committed SDK, direct byte evidence, or multiple independent committed sources.",
+    "VERIFIED": "Byte-level or synthetic behavior was directly checked in the repository.",
+    "OBSERVED": "Seen in a recorded runtime trace or direct inspection artifact; it does not by itself prove the complete semantic model.",
+    "SUPPORTED": "Multiple static evidence sources support the interpretation.",
+    "INFERRED": "Reasoned from partial decompilation, SDK structure, or xrefs; not runtime-confirmed.",
+    "APPROXIMATION": "A stand-in or guessed value/layout used for a bounded experiment, not an original contract.",
+    "UNKNOWN": "No reliable evidence is currently available.",
+    "decompiler_boundary": "Ghidra output is evidence, not truth; the original has no MSVC RTTI."
+  },
+  "binary_and_address_conventions": {
+    "binary": "SPORE/SporeBin/SporeApp.exe",
+    "version": "3.1.0.22",
+    "format": "x86 PE32/i386 Windows executable",
+    "image_base": "0x00400000",
+    "rva_formula": "RVA = linked VA - 0x00400000",
+    "linked_va_formula": "linked VA = image base + PE RVA",
+    "file_offset_rule": "Resolve file offsets through the PE section mapping; do not subtract the image base from every historical artifact field.",
+    "engine_layout": "Engine code is statically linked in SporeApp.exe; there are no engine DLLs to replace as units.",
+    "rtti": "absent",
+    "rtti_consequence": "Class hierarchy and object identity must not be inferred from RTTI; vtable data, SDK names, and xrefs remain distinct evidence types.",
+    "tooling": "Wine-hosted 32-bit ptrace/INT3 tracing is the existing analysis runtime."
+  },
+  "supported_mechanisms": [
+    {
+      "mechanism": "import_replacement",
+      "status": "supported_in_principle_not_implemented",
+      "safe_use": "Only an actual PE import entry point.",
+      "not_applicable_to": "Statically linked Spore engine internals.",
+      "limitations": "Does not intercept an internal function merely because it has an SDK name."
+    },
+    {
+      "mechanism": "vtable_replacement",
+      "status": "supported_in_principle_not_implemented",
+      "safe_use": "Confirmed object dispatch with a proven vtable base and slot.",
+      "limitations": "No MSVC RTTI; static vtable association is not runtime object identity proof."
+    },
+    {
+      "mechanism": "call_site_patch",
+      "status": "supported_in_principle_not_implemented",
+      "safe_use": "One proven call site or narrowly bounded call chain.",
+      "limitations": "Misses other callers and requires exact call-instruction and argument evidence."
+    },
+    {
+      "mechanism": "function_pointer_replacement",
+      "status": "not_implemented",
+      "safe_use": "A pointer with a proven writer, reader, lifetime, and synchronization model.",
+      "limitations": "Unknown writer/reader and lifetime make an in-place write unsafe."
+    },
+    {
+      "mechanism": "inline_entry_detour",
+      "status": "verified_synthetic_only",
+      "safe_use": "All callers entering a function at a proven instruction boundary.",
+      "limitations": "Existing synthetic has no production unhook, relocator, range check, page-boundary handling, or thread safety."
+    },
+    {
+      "mechanism": "trampoline",
+      "status": "not_implemented",
+      "safe_use": "The original must remain callable or callers need fall-through behavior.",
+      "limitations": "Requires instruction decoding, relocation, exact return behavior, and lifetime management."
+    },
+    {
+      "mechanism": "wrapper_interception",
+      "status": "architectural_facade_only",
+      "safe_use": "Host code may expose a wrapper, but interception still needs one concrete attachment mechanism above.",
+      "limitations": "A wrapper alone does not modify or observe the original binary."
+    }
+  ],
+  "current_infrastructure": {
+    "synthetic_replacement": {
+      "path": "tools/replace/synthetic",
+      "status": "verified_synthetic_only",
+      "implementation": "Linux-native 32-bit non-PIE target using mprotect, a 5-byte E9 rel32 entry jump, readback validation, and original-byte retention.",
+      "proven": [
+        "BEFORE calls reach the original function and not the replacement",
+        "AFTER redirected behavior and replacement execution flag",
+        "mprotect and E9 rel32 encoding behavior"
+      ],
+      "not_implemented": [
+        "unhook",
+        "range-checked relocation",
+        "relocation of arbitrary overwritten instructions",
+        "page-boundary handling",
+        "thread-safe installation or removal",
+        "Spore PE/module identity validation"
+      ],
+      "constraint": "It is not a Spore installer and has not patched SporeApp.exe."
+    },
+    "observatory": {
+      "path": "tools/observatory",
+      "status": "existing_observation_only",
+      "implementation": "32-bit ptrace/INT3 tracer with module discovery, temporary breakpoints, function-entry JSONL events, register snapshots, and detach restoration.",
+      "available_observables": [
+        "function-entry counts",
+        "thread IDs",
+        "entry registers",
+        "module discovery",
+        "temporary breakpoint lifecycle",
+        "menu_walk/cell_trace screenshot and input logs"
+      ],
+      "not_available": [
+        "replacement code injection",
+        "return values from entry-only probes",
+        "a positive Cell-stage trace",
+        "a dedicated side-effect and aggregate-return oracle"
+      ],
+      "historical_reachability": {
+        "runs": 9,
+        "cell_stage_probes": "0 events in every run",
+        "environment": "Xvfb and xdotool absent",
+        "interpretation": "Cell mode was never entered; this is a negative result, not a failed Cell implementation."
+      }
+    },
+    "host_compat_seams": {
+      "paths": [
+        "src/compat/ResourceProvider.hpp",
+        "src/compat/MeshSource.hpp",
+        "src/renderer/Renderer.hpp"
+      ],
+      "status": "existing_host_only",
+      "meaning": "Real host abstractions for resource, mesh, and renderer substitution.",
+      "not_meaning": "They are not ABI-compatible replacements for original SporeApp.exe functions or calls."
+    },
+    "host_replacement_stand_in": {
+      "path": "src/replace/Replace.cpp",
+      "status": "host_stand_in_not_directly_jumpable",
+      "observed_signature": "four arguments: float, SCellGameView*, CameraView*, MovementPlane*",
+      "original_target_signature": "one float argument, void return, cdecl likely/inferred",
+      "consequence": "The current host function cannot be jumped to as the original target."
+    }
+  },
+  "missing_components": [
+    {
+      "component": "read_only_preflight_identity_validator",
+      "status": "not_implemented",
+      "why_needed": "Resolve PE identity, linked VA/RVA/file offset, current target bytes, module mapping, global address, callers, and vtable/import evidence before any write.",
+      "gate": "No patch or game run is needed for this component."
+    },
+    {
+      "component": "abi_compatible_32bit_one_float_shim",
+      "status": "not_implemented",
+      "why_needed": "The existing host stand-in has the wrong four-argument signature and cannot be directly installed.",
+      "gate": "Native disposable harness and explicit cdecl/return/register contract."
+    },
+    {
+      "component": "reversible_production_patcher",
+      "status": "not_implemented",
+      "why_needed": "The synthetic constructor has no unhook, relocator, range check, page-boundary logic, or thread quiescence.",
+      "gate": "Disposable process only until all patch lifecycle checks pass."
+    },
+    {
+      "component": "entry_return_memory_oracle",
+      "status": "not_implemented",
+      "why_needed": "Entry-only INT3 probes cannot validate return values, hidden sret data, callee-saved registers, or side effects.",
+      "gate": "Record entry, return/continuation, memory, and lifecycle observables for each selected call."
+    },
+    {
+      "component": "positive_cell_runtime_trace",
+      "status": "blocked",
+      "why_needed": "Current field meanings, plane point, global address conflict, and target reachability cannot be promoted from static evidence.",
+      "gate": "Reach Cell Stage with controlled display/input and capture the existing probe set plus return/memory observations."
+    }
+  ],
+  "abi_requirements": {
+    "architecture": "x86-32 Windows ABI",
+    "conventions": [
+      "cdecl",
+      "thiscall"
+    ],
+    "rules": {
+      "thiscall_receiver": "ECX",
+      "stack_arguments": "Passed according to the exact prototype and observed entry layout.",
+      "return_address": "The return address remains on the stack for a normal call/entry jump.",
+      "stack_balance": "ESP must be balanced; match RET versus RET N exactly.",
+      "callee_saved": "EBX, EBP, ESI, and EDI must be preserved under the applicable convention.",
+      "wide_returns": "EDX:EAX may carry a wide scalar return; select by prototype and verify.",
+      "aggregate_returns": "A caller-provided hidden sret pointer may be stack-passed; prove its location and lifetime.",
+      "floating_point": "Read and return floats according to the original x86 ABI and observed machine code.",
+      "exceptions": "No selected target has an observed local SEH frame, but the original contains SEH elsewhere; global exception irrelevance is not established."
+    },
+    "current_target_abi": {
+      "return": "void",
+      "parameters": ["float deltaTime"],
+      "convention": "cdecl likely/inferred; return and one-float parameter are SDK-confirmed",
+      "entry_frame": "An entry jump inherits the caller ESP/argument layout; a replacement must return with the frame balanced."
+    }
+  },
+  "candidates": [
+    {
+      "name": "App::IAppSystem::Get",
+      "role": "behaviorless positive control",
+      "linked_va": "0x0067DCC0",
+      "rva": "0x0027DCC0",
+      "prototype": {
+        "return": "global app-system pointer; exact type inferred",
+        "parameters": [],
+        "convention": "cdecl inferred"
+      },
+      "evidence": [
+        "static global-pointer return",
+        "startup-reachable",
+        "trivial getter"
+      ],
+      "observable": [
+        "entry registers",
+        "returned pointer",
+        "call count",
+        "module and target identity"
+      ],
+      "mechanism": "call_site_patch_or_entry_detour",
+      "confidence": "medium_high_static",
+      "risks": [
+        "behaviorless positive control does not validate gameplay side effects",
+        "must not be confused with an engine-internal replacement"
+      ],
+      "status": "candidate"
+    },
+    {
+      "name": "App::cPropManager::SetDevMode",
+      "role": "simple receiver-relative setter",
+      "linked_va": "0x006A3300",
+      "rva": "0x002A3300",
+      "prototype": {
+        "return": "void",
+        "parameters": ["receiver in ECX", "bool value"],
+        "convention": "thiscall inferred"
+      },
+      "evidence": [
+        "writes receiver+0x15",
+        "vtable association is medium confidence",
+        "no RTTI"
+      ],
+      "observable": [
+        "receiver identity",
+        "store at receiver+0x15",
+        "call count"
+      ],
+      "mechanism": "vtable_replacement_after_slot_confirmation",
+      "confidence": "medium",
+      "risks": [
+        "receiver identity and layout are unresolved",
+        "vtable association is not runtime dispatch proof"
+      ],
+      "status": "candidate"
+    },
+    {
+      "name": "Math::MatrixToEuler",
+      "role": "deterministic aggregate-return fixture",
+      "linked_va": "0x006A3920",
+      "rva": "0x002A3920",
+      "prototype": {
+        "return": "likely Vector3 via hidden sret",
+        "parameters": ["exact input parameter order unresolved"],
+        "convention": "caller must confirm sret convention"
+      },
+      "evidence": [
+        "likely hidden-sret Vector3 ABI",
+        "deterministic scratch fixtures are suitable",
+        "aggregate return is not yet confirmed"
+      ],
+      "observable": [
+        "hidden sret address",
+        "input values",
+        "output Vector3 bytes",
+        "return-path stack and registers"
+      ],
+      "mechanism": "entry_detour_or_call_site_patch_after_sret_confirmation",
+      "confidence": "medium_low_abi",
+      "risks": [
+        "incorrect hidden-pointer placement corrupts the stack",
+        "unconfirmed aggregate return"
+      ],
+      "status": "candidate"
+    },
+    {
+      "name": "Simulator::cCreatureGameData::SetEvolutionPoints",
+      "role": "simple global-memory side-effect candidate",
+      "linked_va": "0x00D2E480",
+      "rva": "0x0092E480",
+      "prototype": {
+        "return": "void is likely",
+        "parameters": ["float value"],
+        "convention": "cdecl likely/inferred"
+      },
+      "evidence": [
+        "cdecl float setter",
+        "writes 0x0169E398",
+        "runtime reachability is unconfirmed"
+      ],
+      "observable": [
+        "input float",
+        "pre/post bytes at 0x0169E398",
+        "return behavior",
+        "call count and caller"
+      ],
+      "mechanism": "call_site_patch_preferred_or_entry_detour",
+      "confidence": "medium_static",
+      "risks": [
+        "runtime reachability unknown",
+        "global identity and exact return convention need oracle confirmation"
+      ],
+      "status": "candidate"
+    },
+    {
+      "name": "Transform::PreTransformBy",
+      "role": "rich reference/scratch-return candidate",
+      "linked_va": "0x0040CCB0",
+      "rva": "0x0000CCB0",
+      "prototype": {
+        "return": "Transform&",
+        "parameters": ["exact input parameter list unresolved"],
+        "convention": "thiscall inferred"
+      },
+      "evidence": [
+        "thiscall Transform& return",
+        "0x38-byte Transform object size; decompilation shows a 0x48-byte frame and a separate approximately 0x24-byte matrix temporary; exact scratch lifetime unresolved",
+        "richer behavior and ABI surface"
+      ],
+      "observable": [
+        "return reference",
+        "scratch object bytes and lifetime",
+        "input arguments",
+        "memory side effects"
+      ],
+      "mechanism": "trampoline_or_entry_detour_after_contract_confirmation",
+      "confidence": "medium_low_abi",
+      "risks": [
+        "reference and scratch lifetime",
+        "aggregate/object return behavior",
+        "higher behavioral blast radius"
+      ],
+      "status": "candidate"
+    },
+    {
+      "name": "Simulator::Cell::MovePlayerToMousePosition",
+      "role": "current gameplay replacement target",
+      "linked_va": "0x00E5B790",
+      "rva": "0x00A5B790",
+      "file_offset": "0x00A5AB90",
+      "entry_bytes": "a1 04 3c 6b 01",
+      "direct_caller": "0x00E8083B",
+      "prototype": {
+        "return": "void",
+        "parameters": ["float deltaTime"],
+        "convention": "cdecl likely/inferred; return and parameter count confirmed"
+      },
+      "evidence": [
+        "SDK name confirmed",
+        "true RVA and file offset verified",
+        "one complete 5-byte mov entry verified",
+        "ray-plane target/orientation/moving behavior observed in decompilation",
+        "no live Cell trace"
+      ],
+      "observable": [
+        "entry float argument",
+        "call count and caller",
+        "sCellGame and player memory before/after",
+        "target/orientation/moving writes",
+        "return-path registers and stack"
+      ],
+      "mechanism": "call_site_patch_or_entry_detour_not_selected",
+      "confidence": "static_medium_abi_partial",
+      "risks": [
+        "field meanings and layout are unresolved at runtime",
+        "global address conflict exists between current and older artifacts",
+        "no Cell reachability",
+        "the existing host stand-in has the wrong signature"
+      ],
+      "status": "not_selected"
+    }
+  ],
+  "recommended_first_experiments": [
+    "App::IAppSystem::Get as the zero-argument return-path positive control",
+    "App::cPropManager::SetDevMode as a scratch receiver memory-effect test after object/slot confirmation",
+    "Simulator::cCreatureGameData::SetEvolutionPoints as a cdecl float global-store test if reachability is confirmed",
+    "Math::MatrixToEuler only after hidden-sret ABI confirmation",
+    "Transform::PreTransformBy only after temporary layout and floating-point order confirmation"
+  ],
+  "oracle_observables": {
+    "existing_observatory_provides": [
+      "function-entry JSONL events",
+      "entry registers",
+      "module discovery",
+      "temporary breakpoint installation and restoration",
+      "thread IDs and call counts"
+    ],
+    "required_but_missing": [
+      "return values at call-site continuation or trampoline return",
+      "post-call ESP and RET/RET N verification",
+      "callee-saved register comparison",
+      "pre/post memory snapshots",
+      "hidden-sret address and aggregate output capture",
+      "positive Cell-stage reachability"
+    ],
+    "per_call_record": [
+      "binary/module identity and target bytes",
+      "entry EIP, ESP, EBP, EAX, EBX, ECX, EDX, ESI, EDI, EFLAGS",
+      "original argument words and float interpretation",
+      "return EAX, EDX, ESP, flags, and return instruction behavior",
+      "target global/receiver/player/scratch memory before and after",
+      "thread ID, caller, call count, detach/unhook state, and crash status"
+    ]
+  },
+  "validation_workflow": [
+    {
+      "step": 1,
+      "name": "read_only_preflight",
+      "status": "not_implemented",
+      "actions": [
+        "verify PE identity, image base, linked VA, true RVA, and file offset",
+        "verify entry instruction boundary and expected bytes",
+        "verify loaded module mapping without patching",
+        "resolve current global address and caller/vtable/import evidence"
+      ],
+      "patch_or_game_required": false
+    },
+    {
+      "step": 2,
+      "name": "abi_harness",
+      "status": "not_implemented",
+      "actions": [
+        "build a 32-bit one-float void shim",
+        "test cdecl argument and stack layout",
+        "test RET/RET N and callee-saved register behavior",
+        "keep the existing four-argument host stand-in separate"
+      ],
+      "patch_or_game_required": false
+    },
+    {
+      "step": 3,
+      "name": "reversible_detour_containment",
+      "status": "not_implemented",
+      "actions": [
+        "add instruction-boundary validation",
+        "add rel32 range and page-boundary checks",
+        "retain exact original bytes",
+        "implement unhook",
+        "quiesce or synchronize all affected threads"
+      ],
+      "patch_or_game_required": false
+    },
+    {
+      "step": 4,
+      "name": "behaviorless_positive_control",
+      "status": "blocked",
+      "actions": [
+        "select a startup-reachable trivial target such as App::IAppSystem::Get",
+        "validate entry, return, and memory oracle records",
+        "detach and restore before any broader test"
+      ],
+      "patch_or_game_required": "disposable_process_only"
+    },
+    {
+      "step": 5,
+      "name": "cell_reachability_and_target_oracle",
+      "status": "blocked",
+      "actions": [
+        "reach Cell Stage using controlled display/input",
+        "capture the existing Cell probe set",
+        "capture return and memory observables",
+        "resolve the global address and field-layout conflict"
+      ],
+      "patch_or_game_required": true
+    },
+    {
+      "step": 6,
+      "name": "current_target_decision",
+      "status": "blocked",
+      "actions": [
+        "review ABI and oracle evidence",
+        "evaluate reversible call-site versus entry detour",
+        "use a disposable process or copy only",
+        "do not infer live parity from decompilation-only 64/64 host comparison"
+      ],
+      "patch_or_game_required": true
+    }
+  ],
+  "safety_constraints": [
+    "Do not modify SPORE or any original binary.",
+    "Do not install a replacement into SporeApp.exe as part of this feasibility record.",
+    "Use a disposable process or disposable copy for any future write experiment.",
+    "Resolve current binary identity and address mappings before any patch.",
+    "Do not assume a host C++ signature is an original x86 ABI signature.",
+    "Do not treat static vtable association as MSVC RTTI or runtime object identity.",
+    "Do not replace statically linked engine internals through the PE import table.",
+    "Do not patch a function entry without checking instruction boundaries and rel32 reachability.",
+    "Do not patch while another tracer owns the same bytes; INT3 and an entry detour conflict.",
+    "Preserve original bytes and provide an exact unhook path.",
+    "Quiesce or synchronize threads before writing executable pages and before removal.",
+    "Capture return, stack, register, memory, thread, and lifecycle evidence; entry-only probes are insufficient.",
+    "Keep the movement replacement at approximation status until positive live Cell evidence exists."
+  ],
+  "current_status": {
+    "binary_replacement": "not_implemented",
+    "synthetic_mechanism": "verified_synthetic_only",
+    "host_compat_seams": "existing_host_only",
+    "host_movement_replacement": "replaced-approx",
+    "original_cell_runtime_trace": "blocked",
+    "current_cell_target": "static_candidate_not_runtime_verified",
+    "read_only_preflight": "not_implemented",
+    "abi_shim": "not_implemented",
+    "reversible_spore_patcher": "not_implemented",
+    "return_memory_oracle": "not_implemented",
+    "next_gate": "read-only preflight and dedicated entry/return/memory oracle before any disposable detour experiment"
+  }
+}

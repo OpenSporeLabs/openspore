@@ -60,18 +60,20 @@ def run_seed(db, *extra):
 
 
 def logical_dump(path):
-    """Full logical state of all 6 tables.
+    """Full logical state of all 7 tables.
 
-    Excludes id / created_at / updated_at (wall-clock, non-logical); edges
-    and field rows are resolved to node names so row ids never leak in.
+    Excludes id / created_at / updated_at / classified_at / captured_at
+    (wall-clock, non-logical); edges and field rows are resolved to node names
+    so row ids never leak in.
     """
     c = sqlite3.connect(path)
     out = {}
     for t in ("node", "edge", "test_result", "field", "trace_run",
-              "investigations"):
+              "investigations", "triage"):
         cols = [r[1] for r in c.execute(f"PRAGMA table_info({t})")]
         keep = [x for x in cols if x not in ("id", "created_at",
-                                             "updated_at")]
+                                             "updated_at", "classified_at",
+                                             "captured_at")]
         if t == "node":
             rows = c.execute(
                 f"SELECT {', '.join(keep)} FROM node "
@@ -100,6 +102,10 @@ def logical_dump(path):
                 f"SELECT {', '.join(keep)} FROM trace_run "
                 "ORDER BY binary_sha256, jsonl_path, probes_sha256"
             ).fetchall()
+        elif t == "triage":
+            rows = c.execute(
+                f"SELECT {', '.join(keep)} FROM triage ORDER BY va"
+            ).fetchall()
         else:  # investigations
             rows = c.execute(
                 f"SELECT {', '.join(keep)} FROM investigations ORDER BY id"
@@ -127,7 +133,8 @@ class SeedSpineTest(unittest.TestCase):
             "SELECT name FROM sqlite_master WHERE type='table' "
             "AND name NOT LIKE 'sqlite_%'")}
         self.assertEqual(tables, {"node", "edge", "test_result", "field",
-                                  "trace_run", "investigations"})
+                                  "trace_run", "investigations", "triage",
+                                  "xref"})
         for t in ("node", "edge", "test_result", "investigations"):
             self.assertGreater(
                 c.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0], 0,
@@ -188,6 +195,16 @@ class SeedSpineTest(unittest.TestCase):
         run_seed(db2, "--build-agnostic")
         self.assertEqual(logical_dump(self.db), logical_dump(db2),
                          "two fresh DBs must converge on one logical state")
+
+    def test_logical_dump_ignores_trace_capture_time(self):
+        db2 = os.path.join(self.dir, "seed2.db")
+        run_seed(self.db, "--build-agnostic")
+        run_seed(db2, "--build-agnostic")
+        c = sqlite3.connect(self.db)
+        c.execute("UPDATE trace_run SET captured_at='non-logical'")
+        c.commit()
+        c.close()
+        self.assertEqual(logical_dump(self.db), logical_dump(db2))
 
     # -- 4. no duplicates -------------------------------------------------- #
     def test_no_duplicate_nodes_or_edges(self):

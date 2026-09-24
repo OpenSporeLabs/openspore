@@ -1,0 +1,75 @@
+{
+  "_comment": "triage-v1 deterministic classification rules. Stdlib-only classifier: tools/triage/classify.py. Category rule order is load-bearing (first match wins); priority and evidence are computed independently per spec.",
+  "version": "triage-v1",
+  "image_base": "0x00400000",
+  "categories": [
+    "ENGINE_INTERFACE",
+    "ENGINE_IMPLEMENTATION",
+    "GAMEPLAY_SUPPORT",
+    "GAMEPLAY_SYSTEM",
+    "THIRD_PARTY_OR_RUNTIME",
+    "UNKNOWN"
+  ],
+  "priorities": ["P0", "P1", "P2", "P3", "IGNORE"],
+  "evidence_levels": ["UNKNOWN", "APPROXIMATION", "INFERRED", "SUPPORTED", "OBSERVED", "CONFIRMED", "VERIFIED"],
+  "triage_statuses": ["UNTRIAGED", "QUEUED", "PRIORITIZED", "RECON_CANDIDATE", "ASSIGNED", "DONE", "DROPPED", "SUPERSEDED"],
+  "engine_namespaces": [
+    "App", "Resource", "IO", "UTFWin", "ArgScript", "Graphics",
+    "RenderWare", "Audio", "Clock", "Math", "Transform", "GameInput",
+    "LocalizedString", "GeneralAllocator", "FixedPoolAllocator",
+    "Anim", "Swarm"
+  ],
+  "game_namespaces": [
+    "Simulator", "Editors", "Sporepedia", "Palettes", "Skinner",
+    "Terrain", "Pollinator", "UI", "GalaxyGameEntry", "ResourceKey"
+  ],
+  "namespace_subsystem": {
+    "App": "App", "Resource": "Resource", "IO": "IO", "UTFWin": "UTFWin",
+    "ArgScript": "ArgScript", "Graphics": "Graphics", "RenderWare": "RenderWare",
+    "Audio": "Audio", "Clock": "Clock", "Math": "Math", "Transform": "Transform",
+    "GameInput": "GameInput", "LocalizedString": "LocalizedString",
+    "GeneralAllocator": "Runtime", "FixedPoolAllocator": "Runtime",
+    "Anim": "Anim", "Swarm": "Swarm",
+    "Simulator": "Simulator", "Editors": "Editor", "Sporepedia": "Sporepedia",
+    "Palettes": "Palettes", "Skinner": "Skinner", "Terrain": "Terrain",
+    "Pollinator": "Pollinator", "UI": "UI",
+    "GalaxyGameEntry": "Space", "ResourceKey": "Resource"
+  },
+  "game_global_prefixes": [
+    "Editor", "Sporepedia", "Spore_", "Cell", "Creature", "Creat", "Tribe",
+    "Civ", "Space", "Galaxy", "Terrain", "Render", "Graphics", "Anim",
+    "UI_", "Prop_", "Palett", "Skinner", "Pollinat", "cEditor", "cCreature",
+    "cCell", "cTribe", "GameInput", "EditorAnim", "TexturePtr", "Simulator",
+    "map_", "Quaternion", "Editor_"
+  ],
+  "third_party_global_regexes": [
+    "^thunk_",
+    "^Catch@",
+    "^Unwind@",
+    "^`",
+    "^operator(<|>|!|=)",
+    "^_Unchecked",
+    "^__",
+    "^_Z",
+    "^SteamAPI_",
+    "^(GetTickCount|VerQueryValue|GetProcAddress|LoadLibrary|FreeLibrary)$",
+    "^D3D",
+    "^Direct(3D|Draw|Sound|Input)",
+    "^IDirect"
+  ],
+  "third_party_global_names": [
+    "wcschr", "_vsnprintf", "memcpy", "memmove", "memset", "memcmp",
+    "strlen", "strcpy", "strcat", "strcmp", "malloc", "calloc",
+    "realloc", "free", "qsort", "abort", "exit", "rand", "srand",
+    "fopen", "fread", "fwrite", "fclose", "printf", "fprintf",
+    "sprintf", "sscanf"
+  ],
+  "singleton_regex": "(^|::)(Get|Set)([A-Z0-9_]|$)|Property|Prop_",
+  "notes": {
+    "category_order": "1) thunk/external/non-.text/third-party-name -> THIRD_PARTY_OR_RUNTIME; 2) sdk top-namespace in engine_namespaces -> ENGINE_INTERFACE; 3) vtable-slot member -> ENGINE_IMPLEMENTATION; 4) singleton Get/Set/Property pattern -> GAMEPLAY_SUPPORT; 5) named in game namespaces (or game-global prefix) -> GAMEPLAY_SYSTEM; 6) else UNKNOWN.",
+    "priority": "IGNORE=thunk/external/non-.text; P0=sdk AND vtable AND decomp; P1=sdk XOR (vtable OR decomp); P2=named non-sdk in game namespaces/globals; P3=everything else resident in .text (incl. FUN_ and CRT leftovers).",
+    "evidence": "sdk_name -> CONFIRMED; named non-sdk (ghidra analysis) -> SUPPORTED; FUN_ with vtable slot or heuristic subsystem -> INFERRED; else UNKNOWN. Never OBSERVED/VERIFIED without trace_run/test_result.",
+    "struct_assoc": "Best-effort: SDK class prefix matched against normalized struct names; may be empty. caller_count/callee_count are always NULL (no xref export); never zero-filled.",
+    "known_gaps": "Itanium-mangled game symbols (_ZN6EditorC2Ev) match ^_Z and land THIRD_PARTY_OR_RUNTIME/INFERRED (2 rows); revisit with demangling in triage-v2."
+  }
+}

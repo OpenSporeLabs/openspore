@@ -1,0 +1,778 @@
+{
+  "$schema": "track-m-oracle-plan-1",
+  "title": "Track M original-binary semantic oracle plan",
+  "as_of": "2026-09-24",
+  "purpose": "Research-only assessment of the original SporeApp.exe as a semantic oracle for cell gameplay, movement, shared state, engine boundaries, events, and replacement interfaces.",
+  "scope": {
+    "runtime_launched_in_this_task": false,
+    "database_written": false,
+    "spore_directory_edited": false,
+    "implementation_edited": false,
+    "frozen_or_final_docs_edited": false,
+    "outputs": [
+      "knowledgegraph/research/track-m-oracle-plan.json",
+      "knowledgegraph/research/track-m-oracle-plan.md"
+    ],
+    "excluded": [
+      "game launch",
+      "Wine registration or renderer changes",
+      "runtime patching or hook installation",
+      "status promotion",
+      "knowledgegraph database writes",
+      "frozen/final documentation edits"
+    ]
+  },
+  "evidence_policy": {
+    "observed_runtime_evidence": "Only existing logs, JSONL, manifests, screenshots metadata, and environment checks are listed as observed.",
+    "proposed_experiments": "Every future run or instrumentation proposal is marked PROPOSED and is not evidence of original behavior.",
+    "decompilation": "EVIDENCE-NOT-TRUTH: call shape and offsets are evidence, not proof of runtime semantics.",
+    "negative_result_rule": "Zero events, a clean process exit, a boot stall, or a missed probe is a negative observation. It is never treated as behavioral agreement.",
+    "source_precedence": [
+      "raw trace JSONL and run manifests",
+      "committed observatory logs and run summaries",
+      "committed decompilation captures and byte-verified probe definitions",
+      "status and analysis prose"
+    ]
+  },
+  "observed_runtime_evidence": [
+    {
+      "id": "OBS-01",
+      "classification": "OBSERVED",
+      "claim": "The ptrace INT3 pipeline works on a native 32-bit target, not on Spore itself.",
+      "observation": "The m32 self-test produced 1801 events: main once, beta 800, alpha 1000 with one cap drop.",
+      "sources": [
+        "tools/observatory/README.md:71-83",
+        "tools/observatory/SCENARIO-main_menu.md:69-82",
+        "tools/observatory/examples/obs_m32_example.jsonl:1-10"
+      ],
+      "limits": "This validates tracer mechanics only; m32target is not SporeApp.exe and cannot establish gameplay semantics."
+    },
+    {
+      "id": "OBS-02",
+      "classification": "OBSERVED",
+      "claim": "A historical fresh-wineserver main-menu capture reached startup and recorded the expected bootstrap order.",
+      "observation": "Obj 6.1d recorded 1004 events: entry once, InitPlugins once, Init once, Startup once, and IAppSystem::Get 1000 times plus one cap drop; local_main and stateMachine were not reached in the 30 second window.",
+      "sources": [
+        "tools/observatory/README.md:104-128",
+        "tools/observatory/SCENARIO-main_menu.md:163-183",
+        "tools/observatory/examples/obs_main_menu_example.jsonl:1-10"
+      ],
+      "limits": "This is historical positive startup evidence, not a current cell-mode capture. The current ignored out/obs_main_menu.jsonl is empty."
+    },
+    {
+      "id": "OBS-03",
+      "classification": "OBSERVED",
+      "claim": "The one older run that reached the menu exposed a generic approximately 30 Hz function, not a cell marker.",
+      "observation": "The run recorded entry once and FUN_0069b600 226 times at about 33 ms median interval; all cell-stage probes were zero.",
+      "sources": [
+        "docs/analysis/CELL-RUNTIME-OBSERVATION.md:44-63",
+        "docs/analysis/CELL-RUNTIME-OBSERVATION.md:70-84"
+      ],
+      "limits": "FUN_0069b600 must not be used as a cell-stage reachability sentinel; the menu and cell mode can share per-frame engine/camera code."
+    },
+    {
+      "id": "OBS-04",
+      "classification": "OBSERVED",
+      "claim": "The approved focused-window input fallback produced an attributable UI response.",
+      "observation": "S4 used windowactivate --sync followed by a focused Return; the registration form visibly changed to Email is required, Screen Name is required, and Password is required. The XSendEvent --window path remained inconclusive.",
+      "sources": [
+        "docs/devlog/017-s4-x11-input-feasibility.md:7-35",
+        "docs/STATE.md:163-185"
+      ],
+      "limits": "This proves a key reached the registration UI, not that a menu path or cell-stage path is reachable."
+    },
+    {
+      "id": "OBS-05",
+      "classification": "OBSERVED",
+      "claim": "S5 run 1 booted, accepted the fixed input plan visibly, but never reached Cell Stage and the process tree self-exited.",
+      "observation": "Run S5-20260922T212936Z-396838 recorded nine screenshots with hash deltas, the D3D swapchain marker, and entry once. The process tree self-exited cleanly about 12.7 seconds into the trace; all 11 non-control cell probes recorded zero.",
+      "sources": [
+        "docs/devlog/018-s5-cell-runtime-evidence.md:25-43",
+        "tools/observatory/out/cell/S5-20260922T212936Z-396838/manifest.json:1-23",
+        "tools/observatory/out/cell/S5-20260922T212936Z-396838/wine_stderr.log:1-185",
+        "tools/observatory/out/cell/S5-20260922T212936Z-396838/shots.jsonl:1-9"
+      ],
+      "limits": "Screenshot deltas are annotations, not semantic proof; the entry control and boot marker do not prove any cell transition."
+    },
+    {
+      "id": "OBS-06",
+      "classification": "OBSERVED",
+      "claim": "S5 runs 2 and 3 did not produce a window or any trace event.",
+      "observation": "Both runs loaded 12 probes and found the module host, but the process tree self-exited before a window mapped; each trace had zero events and no manifest was produced.",
+      "sources": [
+        "docs/devlog/018-s5-cell-runtime-evidence.md:38-55",
+        "tools/observatory/out/cell/S5-20260922T213524Z-397779/wine_stderr.log:1-102",
+        "tools/observatory/out/cell/S5-20260922T214226Z-399437/wine_stderr.log:1-100"
+      ],
+      "limits": "This is a boot/registration/runtime negative, not evidence about cell functions."
+    },
+    {
+      "id": "OBS-07",
+      "classification": "OBSERVED",
+      "claim": "The read-only machine preflight currently has the tools and display that the older limitation text says are missing.",
+      "observation": "On 2026-09-24, command lookup found wine, wineserver, xdotool, maim, xwininfo, xrandr, and xprop; DISPLAY was :0 and xrandr -q returned output. No process was launched.",
+      "sources": [
+        "read-only environment check performed for this assessment",
+        "tools/observatory/cell_trace.sh:29-37",
+        "docs/STATE.md:81-91"
+      ],
+      "limits": "Tool presence does not guarantee renderer stability, focus, registration completion, or a successful game boot."
+    }
+  ],
+  "negative_evidence": [
+    {
+      "id": "NEG-01",
+      "classification": "OBSERVED_NEGATIVE",
+      "claim": "Cell-stage movement has never been observed in the original.",
+      "observation": "The older nine-run record reports zero cell-stage probe events in all nine runs; the only positive boot exposed generic menu-loop activity.",
+      "sources": [
+        "docs/analysis/CELL-RUNTIME-OBSERVATION.md:44-84",
+        "docs/devlog/018-s5-cell-runtime-evidence.md:48-76"
+      ],
+      "interpretation": "Stable negative for reachability under the tested Wine/input conditions; not evidence that the functions are absent or inert."
+    },
+    {
+      "id": "NEG-02",
+      "classification": "OBSERVED_NEGATIVE",
+      "claim": "The latest main-menu trace artifact is empty.",
+      "observation": "tools/observatory/out/obs_main_menu.jsonl has zero lines, while the committed example is a historical positive capture.",
+      "sources": [
+        "tools/observatory/out/obs_main_menu.jsonl:1",
+        "tools/observatory/examples/obs_main_menu_example.jsonl:1-10",
+        "docs/analysis/CELL-RUNTIME-OBSERVATION.md:44-63"
+      ],
+      "interpretation": "Do not infer current startup health from the committed example or from an empty ignored artifact."
+    },
+    {
+      "id": "NEG-03",
+      "classification": "OBSERVED_NEGATIVE",
+      "claim": "The original's exact exit trigger remains unknown.",
+      "observation": "S5 observed clean status 0 exits after one renderer boot and before any window in two other runs. D3D errors and a possible registration/renderer interaction were hypotheses only.",
+      "sources": [
+        "docs/devlog/018-s5-cell-runtime-evidence.md:48-63",
+        "tools/observatory/out/cell/S5-20260922T212936Z-396838/wine_stderr.log:48-62"
+      ],
+      "interpretation": "Do not treat registration, license, D3D, or ntsync as the cause without a new experiment."
+    },
+    {
+      "id": "NEG-04",
+      "classification": "OBSERVED_NEGATIVE",
+      "claim": "The current replacement differential is not a live oracle.",
+      "observation": "The 64/64 result is replacement versus a decompilation-derived reference, with environment-dependent calls and field meanings omitted or inferred.",
+      "sources": [
+        "src/replace/tests/diff_test.cpp:1-14",
+        "docs/REPLACEMENT-DIFF.md:7-24",
+        "docs/REPLACEMENT-DIFF.md:105-120"
+      ],
+      "interpretation": "The result establishes reference agreement only; it cannot promote replaced-approx to replaced-verified."
+    }
+  ],
+  "static_byte_decomp_and_contract_evidence": [
+    {
+      "id": "STA-01",
+      "classification": "OBSERVED_STATIC",
+      "claim": "The cell_movement probe set is byte-verified and aligned to the linked PE address space.",
+      "observation": "The set contains 12 probes at image_base 0x400000, including cell strategy update/body, input handlers, movement, camera source, player lookup, orientation, and the entry control. The dossier records all 11 non-control probes as byte-checked in SporeApp.exe 3.1.0.22.",
+      "sources": [
+        "tools/observatory/probes/cell_movement.json:1-66",
+        "docs/analysis/CELL-RUNTIME-OBSERVATION.md:21-43"
+      ],
+      "limits": "Probe validity does not imply reachability or correct classification of every mid-body SDK slot."
+    },
+    {
+      "id": "STA-02",
+      "classification": "OBSERVED_STATIC",
+      "claim": "The decompiled movement body contains a lock guard, pool lookup, camera/UI gates, ray-plane math, target stores, moving flag, and orientation call.",
+      "observation": "The committed capture reads sCellGame+0x5158, resolves sCellGame+0x411c through FUN_00b721d0, calls FUN_00e5b2e0 and camera/UI functions, checks denom and t, writes player+0x08..0x10, sCellGame+0x5270, and player+0x14..0x20.",
+      "sources": [
+        "tools/re/data/decompiled/MovePlayerToMousePosition.c:5-42",
+        "docs/REPLACEMENT-ABI.md:40-82"
+      ],
+      "evidence_boundary": "Call shape and offsets are decompiler evidence; runtime field meanings and omitted side effects remain unresolved."
+    },
+    {
+      "id": "STA-03",
+      "classification": "OBSERVED_STATIC",
+      "claim": "The real per-frame body gates movement on a state word and a secondary flag.",
+      "observation": "FUN_00e806b0 reads sCellGame+0x51e0, checks sCellGame+0x515c, scales delta time, updates a counter, calls MovePlayerToMousePosition, then runs interaction/update callees including a branch gated by sCellGame+0x51d8.",
+      "sources": [
+        "tools/re/data/decompiled/FUN_00e806b0.c:20-51",
+        "tools/re/data/ghidra_snapshot_cell_movement.json:27-55"
+      ],
+      "evidence_boundary": "The state values and transition ownership are not runtime-observed."
+    },
+    {
+      "id": "STA-04",
+      "classification": "OBSERVED_STATIC",
+      "claim": "The cell mode lifecycle is vtable-shaped as Initialize, OnEnter, Update, OnExit, Dispose, with mode-manager dispatch.",
+      "observation": "The static campaign maps cCellModeStrategy addresses, the 27-slot vtable, and cGameModeManager::SetActiveModeAt; this is a reconstruction contract, not a live ordering observation.",
+      "sources": [
+        "docs/analysis/campaigns/cell-stage-campaign.md:473-485",
+        "docs/analysis/campaigns/cell-stage-campaign.md:58-102",
+        "docs/analysis/reconstruction-readiness.md:154-164"
+      ],
+      "limits": "The static lifecycle mapping can be wrong at transition boundaries without a live trace."
+    },
+    {
+      "id": "STA-05",
+      "classification": "OBSERVED_STATIC",
+      "claim": "Shared-state and engine ownership is broad and not fully named.",
+      "observation": "The reconstruction-readiness report identifies high-fan-in unnamed singleton accessors, cGameInputManager/cGameModeManager/cSpaceTrading roots, editor dispatch roots, cCellGFX, cTribe, cStarManager, and cCellObjectData. No runtime trace currently marks these functions OBSERVED or VERIFIED.",
+      "sources": [
+        "docs/analysis/reconstruction-readiness.md:132-166",
+        "docs/analysis/reconstruction-readiness.md:191-218",
+        "docs/RECON-3.1.0.22.md:91-103"
+      ],
+      "limits": "Static fan-in and SDK names do not identify every shared object, event source, or engine boundary."
+    },
+    {
+      "id": "REP-01",
+      "classification": "OBSERVED_DIFFERENTIAL",
+      "claim": "The movement replacement matches the decompilation reference on the covered fields.",
+      "observation": "Eight cases cover hit, parallel ray, behind-origin ray, lock, and null-player paths; 64/64 position/orientation/moving comparisons match with float tolerance 1e-6 and exact flag comparison.",
+      "sources": [
+        "docs/REPLACEMENT-DIFF.md:26-36",
+        "docs/REPLACEMENT-DIFF.md:36-120",
+        "src/replace/tests/diff_test.cpp:101-233"
+      ],
+      "evidence_boundary": "The cases use identical stand-in inputs on both sides and do not exercise real pool-index lookup, real plane point, camera/UI gates, omitted per-frame calls, runtime thread state, or live event ordering."
+    },
+    {
+      "id": "REP-02",
+      "classification": "OBSERVED_INTERFACE_LIMIT",
+      "claim": "The current replacement interface is explicitly approximate.",
+      "observation": "The real +0x411c value is a pool index, while the clean-room unit treats the same four bytes as a resolved pointer; orientation layout and field meanings are inferred; environment-dependent calls are omitted; the current status is replaced-approx.",
+      "sources": [
+        "src/replace/Replace.hpp:39-80",
+        "src/replace/CellGameView.hpp:22-62",
+        "docs/replacement-status.json:94-111",
+        "docs/replacement-boundaries.md:123-131"
+      ],
+      "consequence": "A live read-only ABI characterization must precede any claim that the real hook is substitutable."
+    }
+  ],
+  "known_runtime_gates": {
+    "approval": {
+      "requirement": "Human approval is required before any original-binary runtime run. The committed gate is approve=true plus OPENSPORE_MCP_TRUSTED=1; the direct cell_trace.sh gate is --approve plus OPENSPORE_MCP_TRUSTED=1.",
+      "sources": [
+        "tools/mcp/safety.py:21-92",
+        "tools/observatory/cell_trace.sh:21-37",
+        "tools/observatory/cell_trace.sh:601-629"
+      ],
+      "rule": "No experiment in this plan is authorized by this document."
+    },
+    "display": {
+      "required": "DISPLAY must be :0 or :0.* for the current cell_trace path; the current read-only check found DISPLAY=:0 and working xrandr output.",
+      "window": "A discovered Wine window must be pinned to the committed geometry; geometry drift is a stop condition.",
+      "sources": [
+        "tools/observatory/cell_trace.sh:29-37",
+        "tools/observatory/cell_trace.sh:534-547",
+        "read-only environment check performed for this assessment"
+      ]
+    },
+    "wine_generation": {
+      "required": "Use a fresh wineserver generation before every original launch. The historical rule is wineserver -k before each run; later boots can stall in ntsync_schedule or silently exit.",
+      "warning": "Generic MCP trace_run intentionally does not run wineserver -k because it must not kill unrelated Wine services; a human/operator must establish generation discipline for an approved original run.",
+      "sources": [
+        "tools/observatory/README.md:130-135",
+        "tools/mcp/runtime_tools.py:9-24",
+        "docs/analysis/CELL-RUNTIME-OBSERVATION.md:76-96"
+      ]
+    },
+    "input": {
+      "current_committed_path": "Focused-window xdotool path: windowactivate --sync then key --clearmodifiers; no XSendEvent --window form in cell_trace.sh.",
+      "allowlist": ["Return", "Escape", "Up", "Down", "Left", "Right"],
+      "typing": "No letters or digits; no xdotool type. A letter/digit key or geometry drift stops the walk.",
+      "sources": [
+        "tools/observatory/cell_trace.sh:29-43",
+        "tools/observatory/cell_trace.sh:316-359",
+        "tests/test_cell_trace.py:39-68",
+        "tests/test_cell_trace.py:93-153"
+      ]
+    },
+    "lock_and_teardown": {
+      "required": "Acquire the shared /tmp/openspore-machine.lock and park without attempt burn if held. The direct S5 path uses wineserver -k for teardown and must probe the lock afterward.",
+      "sources": [
+        "tools/mcp/runtime_tools.py:156-205",
+        "tools/observatory/cell_trace.sh:611-627",
+        "tools/observatory/cell_trace.sh:509-531"
+      ]
+    },
+    "evidence_hygiene": {
+      "rules": [
+        "The JSONL is primary; screenshots are hash-pinned annotations only.",
+        "A screenshot without a corresponding event window is junk, not semantic evidence.",
+        "Record binary_sha256, probe-set sha256, Wine version, display/compositor, xdotool, module host, event count, and exact outcome.",
+        "Do not record payloads or proprietary memory dumps.",
+        "Do not write to SPORE/ and do not promote status from a decompilation-only result."
+      ],
+      "sources": [
+        "docs/analysis/GUI-BOUNDARY.md:37-58",
+        "docs/analysis/ORCHESTRATOR.md:243-252",
+        "tools/mcp/runtime_tools.py:35-40"
+      ]
+    },
+    "tracer_limits": {
+      "known_limits": [
+        "Function-entry INT3 probes only; no return or post-state event.",
+        "Register snapshots include eax/ebx/ecx/edx/esi/edi/ebp/eip/esp, not documented memory values.",
+        "Call depth is a heuristic nesting stack, not a real unwind.",
+        "Per-function event caps retire a breakpoint after the cap; later calls are unobserved.",
+        "A generic menu-loop function can be high-frequency without being cell-specific."
+      ],
+      "sources": [
+        "tools/observatory/probe_tracer.cpp:1-22",
+        "tools/observatory/probe_tracer.cpp:161-170",
+        "tools/observatory/README.md:167-176"
+      ]
+    }
+  },
+  "document_and_artifact_conflicts": [
+    {
+      "id": "CONFLICT-01",
+      "finding": "Older prose says xdotool/Xvfb are absent, while the current read-only command check finds xdotool and the committed S5 artifacts use it.",
+      "sources": [
+        "docs/analysis/CELL-RUNTIME-OBSERVATION.md:8-19",
+        "docs/STATE.md:87-91",
+        "docs/devlog/018-s5-cell-runtime-evidence.md:17-23",
+        "read-only environment check performed for this assessment"
+      ],
+      "handling": "Treat current command availability and S5 artifacts as current for gate planning; retain older prose as historical context only."
+    },
+    {
+      "id": "CONFLICT-02",
+      "finding": "The campaign text says S5 was not run, while devlog 018 and raw S5 directories record a three-run S5 attempt.",
+      "sources": [
+        "docs/analysis/campaigns/cell-stage-campaign.md:511-519",
+        "docs/devlog/018-s5-cell-runtime-evidence.md:1-8",
+        "tools/observatory/out/cell/S5-20260922T212936Z-396838/manifest.json:1-23"
+      ],
+      "handling": "Use devlog 018 plus raw artifacts as the historical S5 record. The campaign CS-32 status is not a reason to rerun blindly; its runtime gate remains open and negative."
+    }
+  ],
+  "proposed_experiments": [
+    {
+      "rank": 1,
+      "id": "M0",
+      "status": "PROPOSED",
+      "name": "Fresh-generation main-menu positive control and boot triage",
+      "question": "Can the current machine produce a reproducible original boot and clean tracer attach before testing cell navigation?",
+      "information_gain": 4,
+      "cost": {"class": "low-medium", "estimate": "one approved 30-60 second trace plus bounded diagnostics"},
+      "prerequisites": [
+        "human approval",
+        "current executable and tracer",
+        "fresh wineserver generation",
+        "free machine lock",
+        "DISPLAY gate"
+      ],
+      "safety": "No synthetic input. Read-only observation, fixed duration, fresh generation, and bounded teardown. The original is launched only by the approved command surface.",
+      "gates": {
+        "approval": "required",
+        "display": "required",
+        "wine": "required; operator establishes wineserver -k before launch",
+        "input": "none",
+        "lock": "required",
+        "stop": "module timeout, renderer marker absence, hard stop, or lock contention"
+      },
+      "probe_or_input_plan": "Use tools/observatory/probes/main_menu.json unchanged: entry, InitPlugins, Init, Startup, IAppSystem::Get, local_main, and stateMachine. Record the historical positive-control pattern and current process outcome.",
+      "expected_observations": [
+        "Positive: entry and startup probes fire in the expected order, proving the current boot and tracer path.",
+        "Negative: module maps and breakpoints are planted but startup probes remain zero, which moves the blocker to boot/registration/renderer timing rather than cell semantics.",
+        "Any exit, stall, D3D signature, module-host identity, and event count must be recorded as a bounded negative or positive result."
+      ],
+      "discriminators": {
+        "positive": "entry/Init/Startup sequence exists and renderer marker is observed",
+        "negative": "no startup sequence, clean exit, or ntsync/renderer timeout"
+      },
+      "testable_contracts": ["C-PROV", "C-NEG", "C-BOOT"],
+      "artifacts": "A new run manifest, raw JSONL, stderr, analyzer output, and screenshot metadata only if a run is actually approved and executed."
+    },
+    {
+      "rank": 2,
+      "id": "M1",
+      "status": "PROPOSED",
+      "name": "Three-run Cell entry, lifecycle, and state-transition trace",
+      "question": "Does the original reach Cell Stage, and what is the actual entry/update/exit order and state gating?",
+      "information_gain": 5,
+      "cost": {"class": "medium-high", "estimate": "up to three bounded 150-second human-watched runs"},
+      "prerequisites": [
+        "M0 positive control or explicit decision to proceed after a negative",
+        "human approval",
+        "current focused-window input path",
+        "renderer marker and pinned window",
+        "machine lock"
+      ],
+      "safety": "Reuse cell_trace.sh unchanged: fixed navigation keys, no typing, one retry per no-op, stop key, pinned geometry, bounded fresh generation, and teardown. Three attempts maximum; stop and record negative on repeated failure.",
+      "gates": {
+        "approval": "required",
+        "display": "required; current check is open",
+        "wine": "required; fresh generation per run",
+        "input": "Return, Escape, Up, Down, Left, Right only; focused-window path",
+        "lock": "required",
+        "stop": "registration_blocked, input-no-response, renderer-marker-absent, geometry-drift, machine_locked, timeout, or human stop"
+      },
+      "probe_or_input_plan": "Use cell_movement.json unchanged, adding no patch and no new implementation. Correlate entry, cCellModeStrategy::Update, cell_update_body_FUN_00e806b0, per-frame update, and the existing input probes. The static campaign also identifies cCellModeStrategy OnEnter 0xe552f0, OnExit 0xe7fc00, Initialize 0xe81cf0, Dispose 0xe81f30, and cGameModeManager::SetActiveModeAt 0x7d8d40 as static follow-up anchors, not as already-armed runtime probes.",
+      "expected_observations": [
+        "If Cell is reached: cell strategy update/body and movement probes should fire after the entry control; frame cadence and thread IDs should be recorded.",
+        "If only the menu is reached: entry may fire while cell probes remain zero; generic per-frame activity is not a Cell result.",
+        "If registration persists or input is refused: classify registration_blocked/input-no-response and do not infer gameplay behavior.",
+        "The run outcome should be a negative result if no non-control Cell probe fires; it must not be upgraded by screenshots alone."
+      ],
+      "discriminators": {
+        "cell_reached": "at least one non-control cell_movement probe fires after a visible stage transition",
+        "not_reached": "only entry/menu activity, or process/boot failure before the stage"
+      },
+      "testable_contracts": ["C-PROV", "C-ENTRY", "C-ORDER", "C-NEG"],
+      "artifacts": "Run manifest, raw JSONL, input log, shot manifest, stderr, and analyzer output. A zero-event or partial file is a valid artifact."
+    },
+    {
+      "rank": 3,
+      "id": "M2",
+      "status": "PROPOSED",
+      "name": "Read-only pre/post ABI and side-effect characterization of MovePlayerToMousePosition",
+      "question": "What does the real target read and write, including pool lookup, lock, plane, camera/UI gates, and omitted callees?",
+      "information_gain": 5,
+      "cost": {"class": "medium", "estimate": "one approved original run plus an observation-only entry/return or post-state adapter"},
+      "prerequisites": [
+        "M1 reaches Cell Stage",
+        "byte-verified target address 0xe5b790",
+        "static identification of entry and safe return observation points",
+        "human approval and the normal display/Wine/lock gates"
+      ],
+      "safety": "No patch, no hook, no memory writes, no payload dump. Only the minimum scalar/vector fields needed for the ABI contract may be sampled, subject to clean-room and artifact-size review.",
+      "gates": {
+        "approval": "required",
+        "display": "required",
+        "wine": "required; fresh generation",
+        "input": "M1's approved path only",
+        "lock": "required",
+        "stop": "unsafe sample address, unstable address, non-diagnostic payload, or any attempt to mutate target state"
+      },
+      "probe_or_input_plan": "At target entry and a safe post-return point, sample only the cdecl float argument, sCellGame pointer, +0x411c pool index, +0x5158 lock, +0x5270 moving flag, player target/current/orientation offsets, plane normal/point, camera-mode/UI words, and event-relevant state words. Record whether each sample is pre, post, or unavailable. Do not treat entry-only register snapshots as sufficient.",
+      "expected_observations": [
+        "The live pool index and resolved entity relationship become distinguishable, resolving the current pointer stand-in approximation.",
+        "The real plane point and per-world variation can be compared with the static normal and the pinned zero load-time point.",
+        "The actual order and side effects of FUN_00e5b2e0, camera/UI gates, and the movement stores can be separated from the reference's omitted calls.",
+        "If no post-state observation is possible, the experiment remains a negative and the replacement stays replaced-approx."
+      ],
+      "discriminators": {
+        "resolves_abi": "observed pre/post scalar fields and call/return order with matching address provenance",
+        "insufficient": "entry-only registers, no stable player pointer, or unobservable BSS point"
+      },
+      "testable_contracts": ["C-ABI", "C-SIDE", "C-STATE", "C-REPLACEMENT"],
+      "artifacts": "Hash-pinned ABI observation record, not proprietary bytes; raw event metadata and a concise field table."
+    },
+    {
+      "rank": 4,
+      "id": "M3",
+      "status": "PROPOSED",
+      "name": "Controlled mouse-position and camera-ray input trace",
+      "question": "Does the original's mouse event path set movement targets through the camera ray, and which state changes accompany it?",
+      "information_gain": 5,
+      "cost": {"class": "medium", "estimate": "one bounded Cell run with a fixed pointer waypoint sequence plus M2 sampling"},
+      "prerequisites": [
+        "M1 reaches Cell Stage",
+        "M2 observation-only state sampling if side effects are required",
+        "new human-approved fixed-pointer input manifest",
+        "pinned window and no typing"
+      ],
+      "safety": "Pointer motion only inside the pinned game window; no clicks, letters, digits, or free-form input. Each waypoint is logged before issuance, with geometry/stop checks and a bounded retry ladder.",
+      "gates": {
+        "approval": "required; this is a new input capability",
+        "display": "required",
+        "wine": "required; fresh generation",
+        "input": "fixed pointer waypoints and existing key allowlist only",
+        "lock": "required",
+        "stop": "pointer leaves confinement, human stop, stage exits, or no-op ladder exhausted"
+      },
+      "probe_or_input_plan": "Use cCellModeStrategy::OnMouseMove, OnKeyDown, cell_update_body_FUN_00e806b0, MovePlayerToMousePosition, FUN_007c4900 camera source, FUN_00e4ce40 camera-mode getter, and orientation helper. Correlate each pointer waypoint with a trace event; do not use generic FUN_0069b600 as a Cell marker.",
+      "expected_observations": [
+        "Mouse movement should precede or accompany movement calls and change the camera/ray-derived target path if the input is accepted.",
+        "The existing key path may fire OnKeyDown without proving keyboard thrust semantics; arrows and Return are not equivalent to the full original key set.",
+        "A visible pointer movement with no OnMouseMove event is a GUI/input negative, not evidence that mouse steering is absent."
+      ],
+      "discriminators": {
+        "input_observed": "OnMouseMove and/or Move events correlate with fixed waypoints and state changes",
+        "input_not_attributable": "screenshots change but no input probe or state transition correlates"
+      },
+      "testable_contracts": ["C-MOUSE", "C-SIDE", "C-PROV", "C-NEG"],
+      "artifacts": "Input log with window-local coordinates, raw JSONL, shot metadata, and field-level pre/post table."
+    },
+    {
+      "rank": 5,
+      "id": "M4",
+      "status": "PROPOSED",
+      "name": "Cell shared-state, object-pool, and GFX engine-boundary trace",
+      "question": "Which objects and engine services own player identity, pooled objects, world handles, and lifecycle state?",
+      "information_gain": 4,
+      "cost": {"class": "medium", "estimate": "one expanded entry-only Cell trace; a post-state extension only if ownership remains ambiguous"},
+      "prerequisites": [
+        "M1 reaches Cell Stage",
+        "static addresses already committed in the cell-stage campaign",
+        "normal approval/display/Wine/lock gates"
+      ],
+      "safety": "Read-only INT3 observation; no hook or patch. Keep the probe set bounded and cap high-frequency functions.",
+      "gates": {
+        "approval": "required",
+        "display": "required",
+        "wine": "required; fresh generation",
+        "input": "M1 fixed path",
+        "lock": "required",
+        "stop": "probe cap, high-frequency disturbance, or any process instability"
+      },
+      "probe_or_input_plan": "Add only static candidates in a future probe definition: cCellModeStrategy Initialize 0xe81cf0, OnEnter 0xe552f0, OnExit 0xe7fc00, Dispose 0xe81f30; cCellGame::Initialize 0xe80ba0; cCellGFX::Initialize 0xe5dba0, PreloadResources 0xe666f0, PreloadCellResource 0xe663b0, PreloadPopulateResource 0xe665c0, PreloadCreature 0xe64980, StartDisplay 0xe55120; object-pool lifecycle FUN_00e780a0; cGameInputManager::Get 0xb3d350, cGameModeManager::Get 0xb3d420, cSpaceTrading::Get 0xb3d4d0.",
+      "expected_observations": [
+        "The expected lifecycle order can be compared with Initialize, OnEnter, Update, OnExit, and Dispose static claims.",
+        "The player pool index should show whether it is created, replaced, cleared, or preserved across stage entry and object rebuilds.",
+        "GFX world handles and resource preload calls should identify the engine boundary without assuming that graphics state is gameplay state.",
+        "If only generic frame functions fire, shared-state ownership remains unresolved."
+      ],
+      "discriminators": {
+        "ownership_resolved": "stable pointer/handle identity and field transitions correlate across the ordered calls",
+        "ownership_unresolved": "same function fires but object identity cannot be correlated"
+      },
+      "testable_contracts": ["C-ORDER", "C-STATE", "C-BOUNDARY", "C-NEG"],
+      "artifacts": "Probe-set hash, raw JSONL, per-function counts/order, and a pointer/handle identity table."
+    },
+    {
+      "rank": 6,
+      "id": "M5",
+      "status": "PROPOSED",
+      "name": "Menu dispatch, frame heartbeat, and resource-load trace",
+      "question": "What UI event, pump, resource, and frame calls form the transition into a playable stage?",
+      "information_gain": 4,
+      "cost": {"class": "medium", "estimate": "one approved menu/input run with the existing eight-probe menu_transition set"},
+      "prerequisites": [
+        "M0 boot result",
+        "human approval/display/Wine/lock gates",
+        "a safe existing menu input path or an approved minimal variant"
+      ],
+      "safety": "Use the existing menu/cell input confinement and no-typing policy. No arbitrary clicks, no proprietary payload capture, and bounded teardown.",
+      "gates": {
+        "approval": "required",
+        "display": "required",
+        "wine": "required; fresh generation",
+        "input": "existing fixed key allowlist and pinned window",
+        "lock": "required",
+        "stop": "geometry drift, input no-response, renderer marker absence, or timeout"
+      },
+      "probe_or_input_plan": "Use menu_transition.json unchanged: cEditor::HandleMessage, OnMouseDown, Update, MessagePump::PeekDispatch, cResourceManager::Initialize, DatabasePackedFile::Lock, PFIndexModifiable::Read, and Frame::TimeAtStartOfFrame.",
+      "expected_observations": [
+        "A UI transition should show message pump/dispatch and editor callbacks with a frame heartbeat.",
+        "A resource transition should show resource initialization before DBPF lock/index reads in a stable order.",
+        "If only the frame heartbeat fires, the run is evidence of a render loop, not resource or event semantics.",
+        "If the menu never reaches the dispatch path, record the boot/UI negative and do not infer resource behavior."
+      ],
+      "discriminators": {
+        "dispatch_observed": "HandleMessage/PeekDispatch/Update events correlate with the logged input",
+        "resource_observed": "Initialize/Lock/Read events occur in a coherent transition window",
+        "negative": "no attributable UI/resource event despite a rendered frame"
+      },
+      "testable_contracts": ["C-EVENT", "C-BOUNDARY", "C-PROV", "C-NEG"],
+      "artifacts": "Raw JSONL, input log, shot manifest, stderr, analyzer output, and a stage/resource order table."
+    },
+    {
+      "rank": 7,
+      "id": "M6",
+      "status": "PROPOSED",
+      "name": "Renderer/material engine-boundary characterization",
+      "question": "Which original graphics interfaces and state transitions are the minimum observable contract for a modern replacement?",
+      "information_gain": 3,
+      "cost": {"class": "medium-high", "estimate": "one or more approved rendered-state captures; pixel comparison is separate and expensive"},
+      "prerequisites": [
+        "M0 or M1 renderer marker",
+        "static RenderWare/Graphics anchors already committed",
+        "display/Wine/approval gates"
+      ],
+      "safety": "Read-only original observation and screen annotations. Do not install a replacement or alter graphics state.",
+      "gates": {
+        "approval": "required",
+        "display": "required",
+        "wine": "required; fresh generation",
+        "input": "none or approved fixed input",
+        "lock": "required",
+        "stop": "renderer instability, no present marker, or excessive probe perturbation"
+      },
+      "probe_or_input_plan": "Use static anchors from the renderer report: Graphics::IRenderer::Get 0x67dd10, ITextureManager::Get 0x67dd20, IMaterialManager::Get 0x67dd30, ILightingManager::Get 0x67dd50, Renderer::Init/Resize 0x75e900, MaterialShader functions, CompiledState raster functions, and RenderWare::Mesh::Render 0x11f9740. Start with a small set and cap per-frame functions.",
+      "expected_observations": [
+        "The renderer readiness flag, QPC stamp, world/layer setup, and material/raster state transitions can be separated from gameplay state.",
+        "The static claim that RenderWare is linked in the EXE and D3D is driven internally can be corroborated by observed call order, but no direct Present xref is expected.",
+        "A screenshot is not a pixel oracle until the original frame, camera, and timing are matched."
+      ],
+      "discriminators": {
+        "boundary_observed": "graphics interface calls and state transitions correlate with a known frame",
+        "not_resolved": "only generic frame functions or D3D fixmes are visible"
+      },
+      "testable_contracts": ["C-BOUNDARY", "C-PROV", "C-NEG"],
+      "artifacts": "Probe trace plus renderer call/state summary; no asset payload or memory dump."
+    }
+  ],
+  "global_testable_contracts": [
+    {
+      "id": "C-PROV",
+      "name": "Trace provenance",
+      "requirements": [
+        "binary_sha256 of SporeApp.exe",
+        "probe-set path and sha256",
+        "image_base and linked/RVA convention",
+        "Wine version and generation identifier",
+        "display/compositor and xdotool version",
+        "window identity and pinned geometry",
+        "raw JSONL path and events_total",
+        "exact outcome and negative-result reason"
+      ],
+      "pass_condition": "A result is reviewable and cannot be confused with the historical example or another build."
+    },
+    {
+      "id": "C-NEG",
+      "name": "Negative-result semantics",
+      "requirements": [
+        "zero events is reported as zero events",
+        "clean exit and boot stall are distinct outcomes",
+        "generic menu-loop activity is not Cell evidence",
+        "screenshot deltas never substitute for correlated JSONL events"
+      ],
+      "pass_condition": "No status or semantic claim is promoted from an uncorrelated or zero-event run."
+    },
+    {
+      "id": "C-BOOT",
+      "name": "Original boot control",
+      "requirements": [
+        "fresh wineserver generation",
+        "module host discovered",
+        "entry/startup control probes for startup claims",
+        "renderer marker for rendered claims"
+      ],
+      "pass_condition": "The run isolates boot, registration, renderer, and Cell reachability as separate causes."
+    },
+    {
+      "id": "C-ENTRY",
+      "name": "Cell entry",
+      "requirements": [
+        "at least one Cell-specific probe fires",
+        "entry and Cell events have a trace-time ordering",
+        "the observed stage is not inferred from a generic frame function"
+      ],
+      "pass_condition": "Cell reachability is established independently of screenshots."
+    },
+    {
+      "id": "C-ORDER",
+      "name": "Lifecycle ordering",
+      "requirements": [
+        "Initialize, OnEnter, Update, OnExit, and Dispose are observed in order where claimed",
+        "mode-manager dispatch is correlated where claimed",
+        "this/object identity is stable or changes are explained"
+      ],
+      "pass_condition": "The static lifecycle reconstruction is either corroborated or explicitly rejected."
+    },
+    {
+      "id": "C-SIDE",
+      "name": "Function side effects",
+      "requirements": [
+        "pre-state and post-state are distinguished",
+        "documented fields and flags are compared before/after",
+        "omitted callees are observed separately from stores",
+        "return/entry timing is explicit"
+      ],
+      "pass_condition": "A replacement contract can be stated as observable effects rather than decompiled code shape alone."
+    },
+    {
+      "id": "C-STATE",
+      "name": "Shared state",
+      "requirements": [
+        "sCellGame pointer and relevant field offsets are read from the live process",
+        "player pool index and resolved entity identity are separate fields",
+        "state words that gate movement are captured",
+        "pool and GFX handle lifetimes are correlated"
+      ],
+      "pass_condition": "The plan can distinguish gameplay state, engine state, and transient per-frame state."
+    },
+    {
+      "id": "C-MOUSE",
+      "name": "Input attribution",
+      "requirements": [
+        "input event is logged before issuance",
+        "window identity and geometry are pinned",
+        "OnMouseMove/OnKeyDown and movement events are correlated",
+        "no typing or free-form input is used"
+      ],
+      "pass_condition": "A visible pointer/key response is not counted as a movement semantic unless a matching event/state observation exists."
+    },
+    {
+      "id": "C-ABI",
+      "name": "Replacement ABI",
+      "requirements": [
+        "target VA, entry bytes, linked address, cdecl stack argument, and stack balance are recorded",
+        "real pool-index lookup is distinguished from the unit pointer stand-in",
+        "lock, plane, camera/UI gates, and omitted callees are accounted for",
+        "target/orientation/moving stores are observed live"
+      ],
+      "pass_condition": "Only then may a live original trace contribute to replaced-approx promotion review."
+    },
+    {
+      "id": "C-EVENT",
+      "name": "Event and transition order",
+      "requirements": [
+        "message pump and editor callbacks are timestamped",
+        "resource Initialize/Lock/Read order is captured when a load occurs",
+        "frame heartbeat is used as an annotation, not a substitute for event order"
+      ],
+      "pass_condition": "UI, resource, and gameplay boundaries have an evidence-backed ordering or remain UNKNOWN."
+    },
+    {
+      "id": "C-BOUNDARY",
+      "name": "Engine boundary",
+      "requirements": [
+        "graphics/render calls are distinguished from gameplay state",
+        "world/layer/material handles are identified separately from player/pool state",
+        "no direct D3D call or renderer claim is inferred from imports alone"
+      ],
+      "pass_condition": "A proposed compatibility interface covers only observed behavior."
+    },
+    {
+      "id": "C-REPLACEMENT",
+      "name": "Replacement promotion",
+      "requirements": [
+        "live original trace exists and is hash-pinned",
+        "field offsets and meanings meet the evidence gate",
+        "differential compares original and replacement observable outputs",
+        "independent adjudication and human status approval remain required"
+      ],
+      "pass_condition": "A decompilation-only 64/64 result remains replaced-approx and cannot promote by itself."
+    }
+  ],
+  "ranking_summary": [
+    {"rank": 1, "id": "M0", "information_gain": 4, "cost": "low-medium", "primary_value": "Separate current boot/attach health from Cell semantics."},
+    {"rank": 2, "id": "M1", "information_gain": 5, "cost": "medium-high", "primary_value": "Unblock and establish Cell lifecycle/state reachability."},
+    {"rank": 3, "id": "M2", "information_gain": 5, "cost": "medium", "primary_value": "Resolve the replacement ABI and omitted side effects."},
+    {"rank": 4, "id": "M3", "information_gain": 5, "cost": "medium", "primary_value": "Resolve mouse/camera steering causality."},
+    {"rank": 5, "id": "M4", "information_gain": 4, "cost": "medium", "primary_value": "Resolve shared state, pool ownership, and GFX boundaries."},
+    {"rank": 6, "id": "M5", "information_gain": 4, "cost": "medium", "primary_value": "Resolve UI events, resource loads, and stage transition order."},
+    {"rank": 7, "id": "M6", "information_gain": 3, "cost": "medium-high", "primary_value": "Characterize graphics/material boundaries, secondary to Track M gameplay semantics."}
+  ],
+  "excluded_or_already_covered": [
+    {
+      "item": "Native synthetic inline-hook proof",
+      "reason": "Already OBSERVED and useful for the 5-byte patch mechanism; it cannot provide new Spore gameplay semantics.",
+      "sources": ["tools/replace/synthetic/README.md:32-58", "docs/REPLACEMENT-ABI.md:102-118"]
+    },
+    {
+      "item": "Destructive real Spore hook installation",
+      "reason": "Excluded by the task and the current evidence gate. M2 is read-only and must precede any future install decision."
+    },
+    {
+      "item": "EP1 differential oracle",
+      "reason": "Different binary identity; not needed to resolve the current Track M 3.1.0.22 ambiguity and would multiply provenance complexity."
+    },
+    {
+      "item": "General-purpose GUI automation",
+      "reason": "Not justified. The committed path is one reviewable script with a fixed key/input surface and bounded stop conditions."
+    }
+  ],
+  "conclusion": {
+    "highest_value_next_step": "M0 followed, if positive, by M1. M2 is the decisive experiment for replacement-interface claims; M3 is the decisive experiment for mouse/camera causality.",
+    "current_status": "No live Cell Stage evidence exists. The original has only positive startup/menu evidence and stable negatives for Cell reachability. The current replacement remains an honest decompilation-reference differential, not a live-runtime replacement.",
+    "promotion_rule": "Do not edit replacement-status.json or the knowledgegraph database from this assessment. Any later promotion requires an approved live trace, testable field evidence, independent adjudication, and the existing human status gate."
+  }
+}

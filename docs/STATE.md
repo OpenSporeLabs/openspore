@@ -1,6 +1,6 @@
 # OpenSpore — Project State
 
-Current phase: **Reconstruction phase (2026-09-23) — community Ghidra work made directly usable + playable Cell Stage slice** (see §6). Priority is REUSE → UNDERSTAND → REIMPLEMENT → TEST → PLAYABLE (docs/SPORE-RECONSTRUCTION-ROADMAP.md). The community SDK (Spore-ModAPI, rev cbf9206) + local Ghidra project (58,757 fns, 1,666 SDK-named, 2,035 structs) are the knowledge base; exports at git-ignored `.spore-analysis/ghidra-exports/`; KG indexes the full binary (65,461 nodes / 20,397 edges / 25,561 fields, provenance on every ingested row). `cell_stage` now runs the original Cell-Stage pipeline end-to-end on real GOG assets (decode → sim → gfx → scene → render + HUD; deterministic raster output; ctest 36/36). The cell-movement replacement stays `replaced-approx` (differential-verified against the decompilation reference); promotion to `replaced-verified` is blocked on the cell-mode trace, and S5 was already run 2026-09-22 and recorded **NEGATIVE** (devlog 018: SporeApp.exe self-exits under Wine before Cell Stage; run #1 reached the menu then the process tree exited clean ~12.7 s in).
+Current phase: **Reconstruction phase (2026-09-23) — community Ghidra work made directly usable + playable Cell Stage slice + UNKNOWN-HIGH adjudication (triage-v6, 699/862 resolved) + Reconstruction Readiness Audit (strategy D)** (see §6, §14, §15). Priority is REUSE → UNDERSTAND → REIMPLEMENT → TEST → PLAYABLE (docs/SPORE-RECONSTRUCTION-ROADMAP.md). The community SDK (Spore-ModAPI, rev cbf9206) + local Ghidra project (58,757 fns, 1,666 SDK-named, 2,035 structs) are the knowledge base; exports at git-ignored `.spore-analysis/ghidra-exports/`; KG indexes the full binary (65,461 nodes / 20,397 edges / 25,561 fields, provenance on every ingested row). `cell_stage` now runs the original Cell-Stage pipeline end-to-end on real GOG assets (decode → sim → gfx → scene → render + HUD; deterministic raster output; ctest 36/36). The cell-movement replacement stays `replaced-approx` (differential-verified against the decompilation reference); promotion to `replaced-verified` is blocked on the cell-mode trace, and S5 was already run 2026-09-22 and recorded **NEGATIVE** (devlog 018: SporeApp.exe self-exits under Wine before Cell Stage; run #1 reached the menu then the process tree exited clean ~12.7 s in).
 Cell campaign: **COMPLETE 2026-09-23** — all 32 targets executed: 31 DONE, CS-32 PARTIAL (only its trace-gated verification sub-part BLOCKED). `docs/replacement-status.json` (18 subsystems): 4 replaced-verified / 1 replaced-approx / 3 replaced-stub / 1 approximated / 3 supported / 2 inferred / 2 hypothesis / 2 unknown. The CS-32 trace sub-part is verification-only: it pins sCellGame field semantics beyond decompilation, records KG trace_run artifacts, and would promote the replaced-approx entry; it cannot run until the Wine boot-stability blocker from devlog 018 is diagnosed. The campaign is complete without it.
 Machine: **CachyOS / Arch** (use `pacman`, not `apt`).
 
@@ -48,6 +48,7 @@ Machine: **CachyOS / Arch** (use `pacman`, not `apt`).
 - Obj 36C/D replacement + differential (`b44e683`): `src/replace/` (SCellGameView + replacement impl) + `Reference.cpp` (decomp transcription) + `diff_test` → **64/64 MATCH** vs the decompilation reference; `docs/REPLACEMENT-DIFF.md`; status `replaced-approx` (NOT a live-runtime verification).
 - Obj 37/38 boundary + workflow docs (`cfd0da6`): `docs/replacement-boundaries.md` (18-subsystem status table + gates) + `docs/RE-WORKFLOW.md` (7-stage pipeline + evidence decision table + known limitations).
 - Obj 39/41/42 KG + devlog + roadmap (`ace8e1d`): KG 88→96 nodes / 102→115 edges / +3 test records; `docs/devlog/014-re-intelligence-and-first-replacement.md`; `docs/ASSET-IMPORT-ROADMAP.md`.
+- Reconstruction Readiness Audit (triage-v6 baseline): 368-function queue → 6 READY / 29 READY_WITH_LOCAL_CONTEXT / 24 DEPENDENCY_FIRST / 23 ENGINE_BOUNDARY / 101 NEEDS_RE / 185 LIKELY_INFRASTRUCTURE; 172/2149 decomp; strategy D (hybrid); `knowledgegraph/triage/reconstruction-readiness-f0e310e0.json` + `docs/analysis/reconstruction-readiness.md` (see §15).
 
 ## 3. Architecture (current tree)
 ```
@@ -182,3 +183,136 @@ verified `machine_locked=false`. Physical Ctrl+Alt+Backspace was not performed, 
 only. No S5 walk, Cell trace, Cell reachability claim, status update, or evidence
 promotion was made. S5 remains not started and requires separate approval and a
 human-watched run.
+
+## 11. Full-function triage v4 (done 2026-09-23; superseded by §12 v5, same snapshot 2540f2ca)
+
+Deterministic classification of **all 58,757 functions** (`tools/triage/classify.py`
+stdlib-only + `tools/triage/rules-v4.json`; two `--dry-run`s byte-identical,
+sha256 `4cd8b052…85423`). Live-DB counts: GAMEPLAY_LOGIC 117 /
+GAMEPLAY_SUPPORT 75 / ENGINE_INTERFACE 302 / ENGINE_IMPLEMENTATION 5759 /
+THIRD_PARTY_OR_RUNTIME 3564 / UNKNOWN 48940; P0 159 (= recon candidates, all
+with decomp) / P1 5759 / P2 19 / P3 52642 / IGNORE 178; CONFIRMED 474
+(SDK-name provenance only — name-level, not EA source) / SUPPORTED 3440 /
+INFERRED 5755 / UNKNOWN 49088. SDK rows 477, all with decomp; caller/callee
+NULL everywhere (no xref export); 1186 SDK VAs have no function entry.
+Queue `knowledgegraph/triage/queue-2540f2ca.json` (207 rows: queued 153 /
+candidate 19 / implemented 35 Cell reference; 7-state lifecycle with DB
+mapping; `replacement-tested`/`runtime-validated` never assigned — S5
+NEGATIVE). Note: live-DB `investigations` shows queued 1665 — that is the full
+investigation ledger, not the reconstruction projection (207). Clusters
+`clusters-2540f2ca.json` (20, sum 58757 ✓). Tests: 408/408 unittest OK +
+ctest 36/36. Full report: `docs/analysis/function-triage.md`.
+**Next step: mass semantic reconstruction of the selected gameplay surface, no
+re-inventory** — entry point is queue rank 1 (`005737d0
+Editors::cEditor::OnMouseMove`); wave order utfwin-framework → app-lifecycle →
+resource-io → sim-core → editor/sporepedia, then carve `unknown-vtable-impl`
+via pair-clusters; `unknown-fun-mass` needs the xref export first.
+
+## 12. Full-function triage v5 (done 2026-09-23; classifier triage-v5, snapshot f0e310e0 over 2540f2ca)
+
+`triage-v5` re-runs the v4 rule chain over the same frozen 58,757-function
+snapshot with three evidence layers (SDK contained-alias policy, vtable-family
+attribution, middleware identification) + a priority-quirk fix. Projections only
+(no DB writes by default); 3 consecutive runs byte-identical; 408/408 unittest OK;
+v4 dry-run regression matches `summary-2540f2ca.json`; 2540f2ca artifacts
+unchanged. v5 counts: GAMEPLAY_LOGIC 493 / GAMEPLAY_SUPPORT 85 / ENGINE_INTERFACE
+680 / ENGINE_IMPLEMENTATION 5496 / THIRD_PARTY_OR_RUNTIME 3707 / UNKNOWN 48296
+(−644 vs v4); CONFIRMED 1168 (694 via alias) / P1 6261 (192 quirk-fixed); 143
+CRT-wrapper rows rescued out of UNKNOWN; 71 vtable-family rows flipped to
+GAMEPLAY_LOGIC (INFERRED); 81 queue rows promoted (`candidate`, 207 v4 rows
+preserved verbatim → 288 total). DirectX + EASTL confirmed ABSENT (GOG build uses
+RenderWare). Full handoff: `docs/analysis/function-triage-v5-handoff.md`.
+**Next step: ingest v5 into the live DB** (`classify.py --rules rules-v5.json
+--db knowledgegraph/spore.db`), then mass reconstruction from queue rank 1; the
+4,398 anonymous-family vtable rows are the residual debt (need deeper vtable work,
+not more rules).
+
+## 13. Xref resolution + UNKNOWN debt map (done 2026-09-23; read-only, no Ghidra state writes)
+
+Phase closed with the UNKNOWN debt map (`tools/triage/debt_map.py` →
+`knowledgegraph/triage/debtmap-f0e310e0.json`, two runs byte-identical,
+sha256 `b5b98ede…968fa`): all 48,296 UNKNOWN rows scored with absolute,
+documented thresholds — connectivity isolated 8,362 / low 26,450 / high
+13,484 (distinct call-type endpoints); ownership gameplay_affinity 2,950 /
+engine_runtime 8,789 / third_party_hint 786 / genuinely_unknown 35,771;
+tiers **UNKNOWN-HIGH 862** (747 gameplay-affinity; all need a fresh decompile
+pass — none have decomp files) / MEDIUM 6,400 / LOW 41,034. Zero UNKNOWN rows
+carry a vtable slot (v5 resolved every vtable member); the 4,398-row
+anonymous-family pool is tracked separately in `attribution-f0e310e0.json`.
+Queue integrity verified: 288 rows = 207 v4 verbatim (zero field diffs; 35
+implemented preserved) + 81 family-backed v5 candidates; all 207 v4 rows
+match `investigations.triage_status` 1:1; the 81 promoted rows stay
+projection-only until the §12 opt-in ingest. Validation: xref re-export from
+cached raw MCP TSV byte-identical (223,704 edges / 362 externals / summary);
+v5 classifier re-run byte-identical across all 5 projections; v4 dry-run
+regression clean; 58,757 unique VAs (no dups); 20 clusters sum to 58,757;
+408/408 unittest OK; C++ build + ctest green; tracked files untouched beyond
+this §13 append. Full report: `docs/analysis/xref-resolution.md`.
+**Next step (unchanged from §12):** opt-in v5 DB ingest, then decompile pass
+over the 862 UNKNOWN-HIGH rows (747 gameplay first), then queue-rank-1
+reconstruction.
+
+## 14. UNKNOWN-HIGH adjudication (triage-v6, 2026-09-23) — 699/862 resolved
+The 862 UNKNOWN-HIGH rows (all high connectivity, none with decomp files) were
+adjudicated in three sequential passes over the §13 snapshot (f0e310e0, 58,757
+functions; binary `25d42a7a…d914e`):
+- SA-2 decompiled 5 hubs + call-graph/vtable expansion → 921 working rows (862 + 59
+  adjacent; 44 are Ghidra non-function addresses).
+- SA-3 category propagation (single-category caller rule) → 7,955 rows; 87
+  blocked-flag rows + 7 misattributed regions excluded.
+- SA-4 180-region subsystem map; 7 regions flagged `review` and blocked from propagation.
+
+Result: **699 resolved / 163 parked** (all 163 "insufficient evidence" — clean
+justified UNKNOWN, none forced). Resolved by category ENGINE_IMPL 396 /
+GAMEPLAY_LOGIC 194 / ENGINE_IF 61 / GAMEPLAY_SUPPORT 45 / THIRD_PARTY 3; evidence
+SUPPORTED 414 / INFERRED 285 (0 CONFIRMED — no SDK names; nothing OBSERVED/VERIFIED);
+ownership gameplay_affinity 614 / engine_runtime 83 / third_party_hint 2. 15 per-hub
+dossiers in `docs/analysis/dossiers/unknown-high/` (cEmpire ID-color, cell-pool
+lifecycle, space event records, pdtk text widget, star-system regen + accessor
+families). Artifacts: `unknown-high-investigation-f0e310e0.json`,
+`summary-f0e310e0.triage-v6.json` (whole binary: ENGINE_IMPL 11,585 / ENGINE_IF 1,227
+/ GAMEPLAY_LOGIC 1,656 / GAMEPLAY_SUPPORT 493 / THIRD_PARTY 4,080 / UNKNOWN 39,716),
+`clusters-f0e310e0-v6.json` (20 clusters sum 58,757 + 180 regions),
+`queue-f0e310e0-v6.json` (368 rows = 207 v4 + 81 v5 + 80 new v6 candidates; 153
+queued / 180 candidate / 35 implemented). Full report:
+`docs/analysis/unknown-high-resolution.md`.
+**Next step (rank 1 of `queue-f0e310e0-v6.json`):** the mass semantic reconstruction
+campaign over the 368-row queue (entry `005737d0 Editors::cEditor::OnMouseMove`,
+P0/CONFIRMED/`editor-core`); 163 parked + 7 `review` regions remain open. NOT started
+now.
+
+## 15. Reconstruction Readiness Audit (triage-v6 baseline, done 2026-09-23)
+
+Read-only structural audit over the 2,149 gameplay functions (ground truth:
+`/tmp/opencode/audit/00`–`03` artifacts built from
+`triage-f0e310e0.triage-v6.jsonl` + `queue-f0e310e0-v6.json` +
+`xrefs-2540f2ca.tsv`; no v1–v6 artifacts modified). Headline numbers:
+172/2149 decomp (8.0%); 368 queue → 6 READY / 29 READY_WITH_LOCAL_CONTEXT /
+24 DEPENDENCY_FIRST / 23 ENGINE_BOUNDARY / 101 NEEDS_RE / 185 LIKELY_INFRASTRUCTURE;
+dependency: ONE 1,761-node core (81.9%, ~1,600 unnamed `FUN_*`) + 21 small (58 nodes)
++ 330 isolated singletons (55 decomp-backed); 12 foundations — 11 shared-state
+singleton accessors (top: `00b3d300` gl_fan_in=252 / 1,097 total callers) +
+`map_int_whatever_find` (`00e5c780`, the only genuine algorithm). Strategy **D**
+(hybrid): Phase-0 interface freeze on the ~11 shared-state roots, then the 35
+READY/READY_WITH_LOCAL_CONTEXT fns, then subsystem-first on decomp-covered clusters
+(sim-cell / editor-core / sporepedia-online), isolated singletons as parallel units;
+185 LIKELY_INFRASTRUCTURE + 23 ENGINE_BOUNDARY excluded (stubs only). Test baseline
+python 408/408 + ctest 36/36. Deliverables:
+`knowledgegraph/triage/reconstruction-readiness-f0e310e0.json` (deterministic, no
+wall-clock fields, sha256 `44e89b29…`) + `docs/analysis/reconstruction-readiness.md`
+(9-section report).
+
+## 16. Phase-0 Root Closure — final synthesis (2026-09-24)
+
+Final static synthesis is complete across the six track pairs, cross-root pair, and five follow-up pairs. The closure covers exactly 11 roots on snapshot `f0e310e0` / canonical xrefs `2540f2ca`; no runtime, Wine, trace, differential, OBSERVED, or VERIFIED evidence was used.
+
+- **Root identities:** `00b3d300` is a strong alternate `cGameNounManager*` accessor (`DAT_0167eae0`), not a generic service locator; `00b3d2a0` is an alternate `cStarManager*`-compatible accessor (`DAT_0167eae4`) while canonical SDK getters are `00b3d400/DAT_0167eb60` and `00b3d3a0/DAT_0167eb0c`. Alternate/canonical equality and lifecycle remain unresolved.
+- **Closed contracts:** `00b5b800` remains an opaque borrowed `receiver+0x20` forwarding state/handle with `0xffffffff` null semantics; `00b3d350` remains the separate named `cGameInputManager*`; `00b1fdb0` returns a raw borrowed `cCreatureBase/cCreatureAnimal*`, with `00b1fd50` proving AddRef/store/Release at receiver `+0x54`.
+- **Noun/identity chain:** `00b21340` is the actual `cGameNounManager::GetData` implementation; SDK `00b212d0` is a split continuation/misclassified xref, not a second implementation. `00b25fb0` has no caller stack fallback: its no-empire path returns saved incoming ECX and plain `ret`; its normal result is `cCivilization`-compatible. `01021300` retains exact cache AddRef/store/Release ordering, while `00ba9370` retains lower-bound/ceiling rather than exact-find semantics.
+- **Space lifecycle:** `01021260` and `01021080` remain read views. `01021d40` allocation/publication, `01021960` conditional context writing, `01022580` independent context normalization, `010219b0`/`010221f0` active planet/star replacement, and `01022460` field teardown are now characterized. Whole-object teardown and the unowned `01022572` write remain open; SpaceContext, scenario mode, and input/game mode remain separate axes.
+- **Cross-root model:** the roots are a shared Simulator state substrate with independent owners/domains. `Simulator::sSpacePlayerData` is the common authoritative container for the three target fields, not a single global singleton. Direct calls, receiver propagation, conditional paths, and transitive dependencies remain explicitly distinct.
+- **Downstream metrics:** 11 roots; 2,303 distinct direct callers; 6,077 direct-call edges; 516 gameplay-caller union; 948 multi-root callers; 390 callers reaching at least 3 roots; 7 curated high-information callers; 3,896 per-root memberships. The 2,303 population is mechanically constrained, not fully semantically understood; only the evidence-selected 40 callers (33 gameplay) are semantically adjudicated.
+- **Highest-impact remainder:** `00b3d300` alternate noun-manager publication/alias/lifecycle. The smallest next experiment is a read-only trace of computed/indirect publishers and teardown for `DAT_0167eae0` versus `DAT_0167eb60`, checked through `00b3d400` and one `00bff2d0` receiver window.
+- **Phase-1 boundary:** seven proposed packages are characterization-only (manager slots, noun materialization, empire/civilization chain, SpacePlayerData lifecycle, avatar lifetime, opaque forwarded state, and bounded semantic callers). No replacement is implemented and Phase 1 is not started.
+
+Final outputs: `knowledgegraph/research/root-closure-f0e310e0.json` and `docs/analysis/simulator-root-closure.md`. No `SPORE/`, OpenSpore source, historical v1-v6 artifact, or Phase-0 interface artifact was modified.

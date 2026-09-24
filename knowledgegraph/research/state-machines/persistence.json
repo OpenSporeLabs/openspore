@@ -1,0 +1,3049 @@
+{
+  "$schema": "state-machine-research-1",
+  "callbacks": [
+    {
+      "address": "0x006a1540",
+      "consumers": [
+        "serializable resource writers",
+        "profile/property persistence"
+      ],
+      "evidence": [
+        {
+          "address": "0x006a1540",
+          "claim": "writes an entry count and then each local property ID/value through stream helpers, short-circuiting on the first failed operation",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/App__PropertyList__Write.c"
+        },
+        {
+          "address": "0x006a1640",
+          "claim": "DirectPropertyList::Write forwards to the same count/entry operation shape",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/App__DirectPropertyList__Write.c"
+        }
+      ],
+      "name": "App::PropertyList::Write",
+      "parameters": [
+        "this",
+        "IO::IStream* output"
+      ],
+      "returns": "bool success flag",
+      "semantics": "Bounded local-entry transfer; parent persistence, exact typed-value bytes, compression, and whole-save transaction scope are not established."
+    },
+    {
+      "address": "0x006a2f60",
+      "consumers": [
+        "serializable resource readers",
+        "profile/property restoration"
+      ],
+      "evidence": [
+        {
+          "address": "0x006a2f60",
+          "claim": "reads framing, may resolve or replace a parent list, resizes the local entry vector, and reads each property ID/value with first-failure short-circuiting",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/App__PropertyList__Read.c"
+        },
+        {
+          "address": "0x006a3170",
+          "claim": "DirectPropertyList::Read forwards to PropertyList::Read",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/App__DirectPropertyList__Read.c"
+        }
+      ],
+      "name": "App::PropertyList::Read",
+      "parameters": [
+        "this",
+        "IO::IStream* input"
+      ],
+      "returns": "bool success flag",
+      "semantics": "Bounded restore transfer; exact wire format, parent ownership, version negotiation, rollback, and atomicity remain unresolved."
+    },
+    {
+      "address": "0x00692880 and 0x00692f90",
+      "consumers": [
+        "ClassSerializer setup",
+        "stars.db writer",
+        "stars.db reader"
+      ],
+      "evidence": [
+        {
+          "address": "0x00692880",
+          "claim": "containing body initializes ClassSerializer object/attribute metadata, count, serialized count, class ID, and up to 128 attribute-pointer entries",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00692880"
+        },
+        {
+          "address": "0x00692f90",
+          "claim": "wrapper constructs the serializer metadata object; callers follow it with the attribute transfer helper",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00692f90"
+        },
+        {
+          "address": "0x006928c0",
+          "claim": "SDK XML labels this interior address ClassSerializer::Write, but it is inside the constructor body rather than a standalone writer",
+          "kind": "sdk_boundary_conflict",
+          "level": "SUPPORTED",
+          "source": "SporeGhidra_march2017.xml plus Ghidra MCP read-only containing-function query"
+        }
+      ],
+      "name": "Simulator::ClassSerializer constructor/wrapper",
+      "parameters": [
+        "serializer storage",
+        "object pointer",
+        "attribute array",
+        "class ID"
+      ],
+      "returns": "constructed serializer context",
+      "semantics": "Static serializer metadata preparation; does not by itself establish a standalone Write method or field coverage."
+    },
+    {
+      "address": "0x00692900",
+      "consumers": [
+        "stars.db write",
+        "serialized simulator objects"
+      ],
+      "evidence": [
+        {
+          "address": "0x00692900",
+          "claim": "writes class/stream framing, iterates serialized attributes, invokes each attribute write callback, records serialized data sizes, and fails when a callback or stream operation fails",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00692900"
+        },
+        {
+          "address": "0x00bb4ba0",
+          "claim": "stars.db writer invokes the attribute transfer helper for multiple class/object records before closing streams and renaming stars.db.tmp to stars.db",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00bb4ba0"
+        }
+      ],
+      "name": "ClassSerializer attribute write dispatcher",
+      "parameters": [
+        "ClassSerializer context",
+        "serializer stream/context"
+      ],
+      "returns": "bool success",
+      "semantics": "Attribute-driven binary write path; exact record envelope, version gates, pointer table, and field order remain unresolved."
+    },
+    {
+      "address": "0x00693e10",
+      "consumers": [
+        "stars.db read",
+        "serializable object restoration"
+      ],
+      "evidence": [
+        {
+          "address": "0x00693e10",
+          "claim": "reads class/stream framing, validates a stored object count, resolves each object identity, invokes each attribute read callback, counts restored attributes, and returns false on count/callback/stream failure",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00693e10"
+        },
+        {
+          "address": "0x00bb8b20",
+          "claim": "stars.db reader invokes the read dispatcher and class-object loading path before materializing profile-dependent databases and records",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00bb8b20"
+        }
+      ],
+      "name": "ClassSerializer attribute read dispatcher",
+      "parameters": [
+        "ClassSerializer context",
+        "serializer read stream"
+      ],
+      "returns": "bool restoration success",
+      "semantics": "Object identity is resolved before attribute callbacks; exact pointer/object-table encoding and post-read lifecycle callbacks remain unresolved."
+    },
+    {
+      "address": "0x00692ec0",
+      "consumers": [
+        "serializer database",
+        "class-object load path"
+      ],
+      "evidence": [
+        {
+          "address": "0x00692ec0",
+          "claim": "calls the serializer database/context virtual operation at +0x40 after the read dispatcher is used by the stars.db reader",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00692ec0"
+        },
+        {
+          "address": "0x00692ea0",
+          "claim": "checks the active stream/context good state and is called around class-object read and close paths",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00692ea0"
+        }
+      ],
+      "name": "SerializerDatabase class-object lifecycle callback",
+      "parameters": [
+        "serializer database/context"
+      ],
+      "returns": "void or status-dependent result",
+      "semantics": "Bounded virtual call boundary; the concrete database type and exact LoadClassObjects/SaveClassObjects target are not repaired."
+    },
+    {
+      "address": "0x00693d60 and 0x00693900",
+      "consumers": [
+        "stars.db writer",
+        "profile save orchestration",
+        "serializer stream cleanup"
+      ],
+      "evidence": [
+        {
+          "address": "0x00693d60",
+          "claim": "constructs a serializer/database context and initializes stream fields before the read/write path",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00693d60"
+        },
+        {
+          "address": "0x00693900",
+          "claim": "closes/releases active serializer records and database context after class-object transfer",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00693900"
+        }
+      ],
+      "name": "SerializerDatabase/stream setup and teardown",
+      "parameters": [
+        "database/path context",
+        "resource keys"
+      ],
+      "returns": "setup/cleanup status",
+      "semantics": "Static stream lifecycle evidence; database framing, flush grouping, and crash consistency are not fully established."
+    },
+    {
+      "address": "0x00bb4ba0",
+      "consumers": [
+        "stars.db persistence",
+        "profile save orchestration"
+      ],
+      "evidence": [
+        {
+          "address": "0x00bb4ba0",
+          "claim": "updates timestamp/version-related fields, serializes class/object records through the attribute writer, closes the serializer context, and replaces stars.db.tmp with stars.db",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00bb4ba0"
+        },
+        {
+          "address": "0x014661dc",
+          "claim": "static string stars.db.tmp is referenced by the writer",
+          "kind": "string_xref",
+          "level": "CONFIRMED",
+          "source": "Ghidra MCP read-only string/xref query"
+        }
+      ],
+      "name": "stars.db temporary replacement writer",
+      "parameters": [
+        "star-manager-like owner"
+      ],
+      "returns": "void or status-dependent result",
+      "semantics": "The temporary-file/rename boundary is directly visible; it is not proof that the complete .spo save is atomic."
+    },
+    {
+      "address": "0x00b282e0 and 0x00b28750",
+      "consumers": [
+        "save/profile inventory",
+        "load/continuation validation"
+      ],
+      "evidence": [
+        {
+          "address": "0x00b282e0",
+          "claim": "builds profile paths and probes .old/planetRecords.pkp, planetscripts.pld, stars.db, GGEUserData.dat, wildcard *.spo files, and a valid marker",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00b282e0"
+        },
+        {
+          "address": "0x00b28750",
+          "claim": "checks for .old/complete as a separate continuation/validity marker",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00b28750"
+        }
+      ],
+      "name": "profile save inventory/validity probe",
+      "parameters": [
+        "profile/game directory context"
+      ],
+      "returns": "bool validity result",
+      "semantics": "Static file-presence and marker checks; slot count, user/account ownership, and marker contents remain unresolved."
+    },
+    {
+      "address": "0x00b28850",
+      "consumers": [
+        "save-slot deletion"
+      ],
+      "evidence": [
+        {
+          "address": "0x00b28850",
+          "claim": "appends .spo, routes the named save through helper calls, removes the resolved file, and conditionally recreates the containing directory",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00b28850"
+        }
+      ],
+      "name": "save-slot delete helper",
+      "parameters": [
+        "base path",
+        "save name"
+      ],
+      "returns": "void",
+      "semantics": "Static deletion/cleanup path; whether helper calls update indexes or profile metadata is not established."
+    },
+    {
+      "address": "0x00b28ec0 and 0x00b294c0",
+      "consumers": [
+        "save/profile orchestration",
+        "load-context selection"
+      ],
+      "evidence": [
+        {
+          "address": "0x00b28ec0",
+          "claim": "constructs a temporary save path, initializes serializer/database context, writes through serializer helpers, closes streams, and performs a temporary-path replacement before conditional stars.db handling",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00b28ec0"
+        },
+        {
+          "address": "0x00b294c0",
+          "claim": "resolves the .spo name, checks profile/legacy validity when requested, changes mode/manager flags, invokes the orchestration body, and rechecks validity",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00b294c0"
+        }
+      ],
+      "name": "save/load/profile orchestration body",
+      "parameters": [
+        "string16 save name or .spo path",
+        "boolean operation/validation flag"
+      ],
+      "returns": "boolean/status-dependent result",
+      "semantics": "Bounded orchestration evidence; the exact distinction between save, load, snapshot, and migration modes is not promoted without the missing vtable/control context."
+    },
+    {
+      "address": "0x00b3d440",
+      "consumers": [
+        "simulator persistence service lookups"
+      ],
+      "evidence": [
+        {
+          "address": "0x00b3d440",
+          "claim": "six-byte getter returns the global manager slot DAT_0167eb34",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00b3d440"
+        }
+      ],
+      "name": "Simulator::cGamePersistenceManager::Get",
+      "parameters": [],
+      "returns": "cGamePersistenceManager*",
+      "semantics": "Named service lookup only; it does not establish save, load, slot, profile, or transaction behavior."
+    },
+    {
+      "address": "cGamePersistenceManager vtable +0x10",
+      "consumers": [
+        "load orchestration"
+      ],
+      "evidence": [
+        {
+          "address": null,
+          "claim": "SDK declares bool LoadGame(const GameLoadParameters&) at primary vtable slot +0x10 and instructs callers to ensure the player noun first",
+          "kind": "sdk_contract",
+          "level": "CONFIRMED",
+          "source": "Spore ModAPI Simulator/SubSystem/GamePersistenceManager.h"
+        }
+      ],
+      "name": "Simulator::cGamePersistenceManager::LoadGame",
+      "parameters": [
+        "this",
+        "GameLoadParameters const&"
+      ],
+      "returns": "bool",
+      "semantics": "Load entry surface only; concrete target, GameLoadParameters consumption, restore order, and failure behavior are unresolved."
+    },
+    {
+      "address": "0x007e6470",
+      "consumers": [
+        "application pre-shutdown listeners",
+        "shutdown checkpoint dispatch"
+      ],
+      "evidence": [
+        {
+          "address": "0x007e6470",
+          "claim": "releases application-owned resources, clears preference/config state, dispatches message 0x0212d3e7 to the application listener path, then releases remaining job/config services",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x007e6470"
+        }
+      ],
+      "name": "App::cAppSystem::PreShutdown",
+      "parameters": [
+        "this"
+      ],
+      "returns": "bool success flag",
+      "semantics": "Static pre-shutdown ordering is visible; the listener message's exact user-data role is only partially attributable."
+    },
+    {
+      "address": "0x00676c80 and 0x00677140",
+      "consumers": [
+        "Pollinator achievement manager",
+        "progress/checkpoint listener"
+      ],
+      "evidence": [
+        {
+          "address": "0x00676c80",
+          "claim": "initializes AchievementSerializer state and registers the manager for message ID 0x0212d3e7 plus other message IDs",
+          "kind": "disassembly",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only disassembly of SporeApp.exe@0x00676c80"
+        },
+        {
+          "address": "0x00677140",
+          "claim": "raw listener bytes compare 0x0212d3e7 and branch to a handler that mutates achievement 0xA3434A32 and then writes the manager byte at +0x24",
+          "kind": "raw_bytes",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only memory inspection of SporeApp.exe@0x00677140"
+        }
+      ],
+      "name": "Pollinator::cAchievementsManager message checkpoint",
+      "parameters": [
+        "manager",
+        "message ID"
+      ],
+      "returns": "bool/message result",
+      "semantics": "The pre-shutdown message is associated with achievement-manager registration, but the observed branch does not call a serializer/database writer; cross-game profile serialization is not proven."
+    },
+    {
+      "address": "0x00e63d10, 0x00e819b0, and 0x00e80ba0",
+      "consumers": [
+        "Cell serializable-data handoff"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e63d10",
+          "claim": "publishes a newly created serializable-data object into the global handoff slot and releases the replaced object",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00e63d10"
+        },
+        {
+          "address": "0x00e819b0",
+          "claim": "republishes the active Cell serializable-data object into the global handoff slot before Cell UI/game reinitialization",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00e819b0"
+        },
+        {
+          "address": "0x00e80ba0",
+          "claim": "adopts a non-null global serializable-data object at cCellGame+0x5190, marks cCellGame+0x51da, then clears the global slot; otherwise creates fresh state",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGame__Initialize.c"
+        }
+      ],
+      "name": "Cell serializable-data handoff",
+      "parameters": [
+        "Cell game owner",
+        "global sCellSerializableData pointer"
+      ],
+      "returns": "void/status-dependent result",
+      "semantics": "In-process stage handoff is directly visible; it is not evidence of a disk save/load round trip."
+    },
+    {
+      "address": "0x00e7fc00 and 0x00e81f30",
+      "consumers": [
+        "Cell mode shutdown"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e7fc00",
+          "claim": "restores Cell global/display values, releases mode gameplay/presentation state, and performs message/service cleanup without a visible serializer write call",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnExit.c"
+        },
+        {
+          "address": "0x00e81f30",
+          "claim": "releases Cell GFX/UI/game singleton resources, resets display state, and performs pause/unpause side effects without a visible serializer write call",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__Dispose.c"
+        }
+      ],
+      "name": "Cell mode exit/dispose",
+      "parameters": [
+        "Cell mode strategy"
+      ],
+      "returns": "void/bool depending on callback",
+      "semantics": "Teardown is directly bounded; automatic save on mode exit is not established."
+    },
+    {
+      "address": "0x00f48850 and 0x00f47ed0",
+      "consumers": [
+        "application bootstrap"
+      ],
+      "evidence": [
+        {
+          "address": "0x00f48850",
+          "claim": "main body creates the application object, invokes initialization, conditionally invokes shutdown/cleanup, releases the object, and returns its result",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00f48850"
+        },
+        {
+          "address": "0x00f47ed0",
+          "claim": "initialization body constructs services, configures directories, initializes app/editor/simulator services, and gates later startup on returned success flags",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00f47ed0"
+        }
+      ],
+      "name": "App::cSporeApp bootstrap/initialization boundary",
+      "parameters": [
+        "application object",
+        "command-line context"
+      ],
+      "returns": "boolean/status-dependent result",
+      "semantics": "Bootstrap order is visible at coarse boundaries; exact service order and whether the named Run callback is reached through the same body are not fully resolved."
+    },
+    {
+      "address": "ISimulatorStrategy +0x28/+0x2c/+0x30",
+      "consumers": [
+        "Simulator subsystem save/load orchestration"
+      ],
+      "evidence": [
+        {
+          "address": null,
+          "claim": "SDK declares Write, Read, and OnLoad(cSavedGameHeader) callbacks for simulator strategies; AddStrategy initializes strategies and its data is saved/loaded in player games",
+          "kind": "sdk_contract",
+          "level": "CONFIRMED",
+          "source": "Spore ModAPI Simulator/SubSystem/cStrategy.h"
+        }
+      ],
+      "name": "Simulator subsystem serialization callbacks",
+      "parameters": [
+        "strategy this",
+        "ISerializerStream*",
+        "cSavedGameHeader const& for OnLoad"
+      ],
+      "returns": "bool for Write/Read; void for OnLoad",
+      "semantics": "Interface and ownership architecture are established; concrete subsystem iteration order, default implementations, and post-read callbacks remain unresolved."
+    }
+  ],
+  "domain": "Persistence, serialization, save/load, progress/profile state, lifecycle checkpoints, and state restoration",
+  "events": [
+    {
+      "consumers": [
+        "PropertyList persistence owners",
+        "property readers/writers"
+      ],
+      "evidence": [
+        {
+          "address": "0x006a1540",
+          "claim": "property write count/entry transfer",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "App__PropertyList__Write.c"
+        },
+        {
+          "address": "0x006a2f60",
+          "claim": "property read count/entry transfer",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "App__PropertyList__Read.c"
+        }
+      ],
+      "id": "property_list_transfer",
+      "kind": "stream_callback",
+      "producers": [
+        "serialized object/resource owners",
+        "configuration/property persistence callers"
+      ],
+      "status": "static_stream_boundary"
+    },
+    {
+      "consumers": [
+        "ClassSerializer attribute callbacks",
+        "serializer streams"
+      ],
+      "evidence": [
+        {
+          "address": "0x00692900",
+          "claim": "attribute write dispatch",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00692900"
+        }
+      ],
+      "id": "simulator_object_write",
+      "kind": "serializer_callback",
+      "producers": [
+        "stars.db writer",
+        "serialized simulator object owners"
+      ],
+      "status": "static_attribute_dispatch"
+    },
+    {
+      "consumers": [
+        "ClassSerializer attribute callbacks",
+        "object identity resolver",
+        "serializer streams"
+      ],
+      "evidence": [
+        {
+          "address": "0x00693e10",
+          "claim": "attribute read dispatch and object identity validation",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00693e10"
+        }
+      ],
+      "id": "simulator_object_read",
+      "kind": "serializer_callback",
+      "producers": [
+        "stars.db reader",
+        "serialized simulator object owners"
+      ],
+      "status": "static_attribute_dispatch"
+    },
+    {
+      "consumers": [
+        "star database",
+        "profile/save orchestration"
+      ],
+      "evidence": [
+        {
+          "address": "0x00bb4ba0",
+          "claim": "stars.db.tmp write and stars.db replacement",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00bb4ba0"
+        }
+      ],
+      "id": "star_database_checkpoint",
+      "kind": "file_transaction_boundary",
+      "producers": [
+        "star-manager/profile save path"
+      ],
+      "status": "static_file_lifecycle"
+    },
+    {
+      "consumers": [
+        "save/profile inventory",
+        "load/continuation validation"
+      ],
+      "evidence": [
+        {
+          "address": "0x00b282e0",
+          "claim": "probes profile files and enumerates *.spo",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00b282e0"
+        },
+        {
+          "address": "0x00b28750",
+          "claim": "checks .old/complete",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00b28750"
+        }
+      ],
+      "id": "profile_save_inventory_validity",
+      "kind": "filesystem_probe",
+      "producers": [
+        "profile/save selection and migration paths"
+      ],
+      "status": "static_file_presence"
+    },
+    {
+      "consumers": [
+        "save-slot cleanup"
+      ],
+      "evidence": [
+        {
+          "address": "0x00b28850",
+          "claim": "resolves .spo path and removes the file",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00b28850"
+        }
+      ],
+      "id": "save_slot_delete",
+      "kind": "filesystem_operation",
+      "producers": [
+        "save-slot deletion UI/path"
+      ],
+      "status": "static_cleanup"
+    },
+    {
+      "consumers": [
+        "application pre-shutdown listeners",
+        "achievement/progress manager"
+      ],
+      "evidence": [
+        {
+          "address": "0x007e6470",
+          "claim": "PreShutdown dispatches message ID 0x0212d3e7",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x007e6470"
+        },
+        {
+          "address": "0x00676c80",
+          "claim": "Achievement manager registers for message ID 0x0212d3e7",
+          "kind": "disassembly",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only disassembly of SporeApp.exe@0x00676c80"
+        }
+      ],
+      "id": "application_pre_shutdown_checkpoint",
+      "kind": "application_message",
+      "producers": [
+        "App::cAppSystem::PreShutdown"
+      ],
+      "status": "static_message_dispatch"
+    },
+    {
+      "consumers": [
+        "Pollinator::cAchievementsManager"
+      ],
+      "evidence": [
+        {
+          "address": "0x00677140",
+          "claim": "listener branch for 0x0212d3e7 mutates achievement progress state and manager byte +0x24",
+          "kind": "raw_bytes",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only memory inspection of SporeApp.exe@0x00677140"
+        }
+      ],
+      "id": "achievement_progress_checkpoint_message",
+      "kind": "application_message",
+      "producers": [
+        "application pre-shutdown dispatch",
+        "achievement-manager message registration"
+      ],
+      "status": "static_listener_body; persistence_write_unproven"
+    },
+    {
+      "consumers": [
+        "Cell game initialization",
+        "Cell UI/game reinitialization"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e80ba0",
+          "claim": "CellGame adopts and clears the global serializable-data handoff slot",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Simulator__Cell__cCellGame__Initialize.c"
+        }
+      ],
+      "id": "cell_serializable_handoff",
+      "kind": "in_process_handoff",
+      "producers": [
+        "Cell reset/reinitialize paths",
+        "active Cell serializable-data owner"
+      ],
+      "status": "static_memory_handoff"
+    },
+    {
+      "consumers": [
+        "mode-specific OnExit/OnEnter callbacks",
+        "transition UI and persistence-sensitive state"
+      ],
+      "evidence": [
+        {
+          "address": "0x007d8d40",
+          "claim": "SDK/imported name identifies SetActiveModeAt, but the recovered body has a conflicting vtable/temporary-object shape",
+          "kind": "sdk_decompilation_conflict",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x007d8d40"
+        }
+      ],
+      "id": "game_mode_transition",
+      "kind": "lifecycle_event",
+      "producers": [
+        "stage/editor/menu orchestration"
+      ],
+      "status": "interface_order_supported; binary_boundary_conflicted"
+    },
+    {
+      "consumers": [
+        "cGamePersistenceManager::LoadGame surface",
+        "load orchestration"
+      ],
+      "evidence": [
+        {
+          "address": null,
+          "claim": "SDK declares kMessageLoadGame and LoadGame(GameLoadParameters) but no concrete load body is recovered",
+          "kind": "sdk_contract",
+          "level": "CONFIRMED",
+          "source": "Spore ModAPI Simulator/SimulatorMessages.h and Simulator/SubSystem/GamePersistenceManager.h"
+        }
+      ],
+      "id": "load_game_request",
+      "kind": "sdk_message_and_callback",
+      "producers": [
+        "load-game UI or orchestration"
+      ],
+      "status": "sdk_interface_only"
+    },
+    {
+      "consumers": [
+        "save dialog/UI",
+        "Cell UI save path",
+        "application message listeners"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e53f20",
+          "claim": "Cell save-related body references ui_global_save and message constant 0x1CD20F0, then sets cCellGame+0x51DA",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00e53f20"
+        },
+        {
+          "address": null,
+          "claim": "SDK defines kMsgSaveGame as 0x01CD20F0 and says it pauses the game and shows a success dialog",
+          "kind": "sdk_semantics",
+          "level": "CONFIRMED",
+          "source": "Spore ModAPI Simulator/SimulatorMessages.h"
+        }
+      ],
+      "id": "save_game_request",
+      "kind": "sdk_message_and_static_handler",
+      "producers": [
+        "save UI",
+        "Cell save-related path"
+      ],
+      "status": "message_and_early_handler_static; full_writer_unresolved"
+    },
+    {
+      "consumers": [
+        "snapshot save/load selection"
+      ],
+      "evidence": [
+        {
+          "address": "0x00b2a100",
+          "claim": "snapshot helper calls the save/load orchestration entry with snapshot.spo and flag 0",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00b2a100"
+        }
+      ],
+      "id": "snapshot_request",
+      "kind": "filesystem_orchestration_event",
+      "producers": [
+        "snapshot helper"
+      ],
+      "status": "static_helper_path"
+    }
+  ],
+  "scope": {
+    "binary": "SporeApp.exe 3.1.0.22 x86:LE:32:windows",
+    "boundaries": [
+      "Read-only investigation only; no SPORE/ directory access or mutation.",
+      "No Ghidra patch, save, re-analysis, rename, type edit, or project rewrite was performed.",
+      "No historical triage artifact was modified.",
+      "No original-process save/load/profile trace was available or claimed.",
+      "Current OpenSpore CellSerializer/record decoders are comparison evidence only and are not original save-state evidence.",
+      "Static serializer mechanics are separated from lifecycle and save/load ordering; a direct body is not promoted to a whole-game transaction."
+    ],
+    "build": "SporeApp.exe 3.1.0.22",
+    "evidence_policy": {
+      "decompilation": "Direct Ghidra bodies support observed branches, calls, guards, and side effects; imported SDK names and decompiler prototypes remain non-authoritative where boundaries conflict.",
+      "levels": [
+        "CONFIRMED",
+        "INFERRED",
+        "SUPPORTED",
+        "UNKNOWN"
+      ],
+      "runtime": "No positive original save/load/profile trace exists. Committed historical main-menu traces do not establish persistence ordering.",
+      "source_precedence": [
+        "pinned SporeApp.exe and read-only Ghidra bodies",
+        "Spore-ModAPI SDK declarations and documented semantics",
+        "existing persistence, serializer, Cell campaign, and state-machine research",
+        "knowledgegraph/spore.db",
+        "current clean-room OpenSpore source"
+      ]
+    },
+    "image_base": "0x00400000",
+    "method": [
+      "Opened /SporeApp.exe from the existing Ghidra project read-only and queried current function, decompilation, disassembly, xref, string, and memory boundaries.",
+      "Read the existing persistence, serialization, CellSerializer, save/load, state-machine, and KG research artifacts.",
+      "Read SDK declarations for PropertyList, ClassSerializer, ISimulatorSerializable, cStrategy, cGamePersistenceManager, cSavedGameHeader, GameLoadParameters, cCellSerializableData, cStarManager, cStarRecord, Resource::Database, and Pollinator progress structures.",
+      "Used the existing clean-room CellSerializer/Cell resource decoder evidence to separate static content serialization from runtime persistence."
+    ],
+    "program": "Ghidra program SporeApp.exe at /SporeApp.exe",
+    "runtime_evidence": false,
+    "sources": [
+      ".spore-analysis/ghidra-exports/decompiled_sdk/App__PropertyList__Read.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/App__PropertyList__Write.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGame__Initialize.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnExit.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__Dispose.c",
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/App/PropertyList.h",
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/Serialization.h",
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/SerializationTypes.h",
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/ISimulatorSerializable.h",
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/SubSystem/GamePersistenceManager.h",
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/SubSystem/cSavedGameHeader.h",
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/SubSystem/cStrategy.h",
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/SubSystem/StarManager.h",
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/Cell/cCellSerialiazibleData.h",
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/Cell/cCellResource.h",
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Pollinator/AchievementsManager.h",
+      "knowledgegraph/research/data-model/09-save-load-persistence.json",
+      "knowledgegraph/research/data-model/10-serialization.json",
+      "knowledgegraph/research/data-model/17-persistence-synthesis.json",
+      "knowledgegraph/research/types/08-persistence-serialization.json",
+      "knowledgegraph/research/state-machines/empire-space.json",
+      "knowledgegraph/research/state-machines/simulator-core.json",
+      "knowledgegraph/spore.db"
+    ],
+    "target": "Original Spore save/load and persistence architecture"
+  },
+  "state_machines": [
+    {
+      "confidence": {
+        "level": "high",
+        "reason": "PropertyList count/entry loops, local vector resizing, and first-failure short-circuit are directly visible; the machine intentionally excludes whole-save semantics."
+      },
+      "entry_actions": [
+        {
+          "action": "initialize transfer success from the first stream operation",
+          "conditions": [
+            "Write or Read entry"
+          ],
+          "evidence": "0x006a1540 and 0x006a2f60"
+        }
+      ],
+      "event_consumers": [
+        "PropertyList Write",
+        "PropertyList Read"
+      ],
+      "event_producers": [
+        "serialized object/resource owners",
+        "configuration/property persistence callers"
+      ],
+      "evidence": [
+        {
+          "address": "0x006a1540",
+          "claim": "write count then each local property ID/value; false propagates from the first failed helper",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/App__PropertyList__Write.c"
+        },
+        {
+          "address": "0x006a2f60",
+          "claim": "read framing, possibly parent setup, resize local entries, and stop on the first failed read",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/App__PropertyList__Read.c"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "return final stream-operation success flag",
+          "conditions": [
+            "function exit"
+          ],
+          "evidence": "0x006a1540 and 0x006a2f60"
+        }
+      ],
+      "guards": [
+        "count is transferred before entries",
+        "first failed count, ID, or value operation makes the local transfer fail",
+        "successful local transfer does not prove parent persistence, rollback, or complete save consistency",
+        "not_started is analytical pre-call state, not a stored field"
+      ],
+      "name": "property_list_transfer",
+      "relevant_functions": [
+        "0x006a1540 App::PropertyList::Write",
+        "0x006a2f60 App::PropertyList::Read",
+        "0x006a1640 App::DirectPropertyList::Write",
+        "0x006a3170 App::DirectPropertyList::Read",
+        "0x006a2e20 App::PropertyList::SetProperty",
+        "0x006a2530 App::PropertyList::GetProperty"
+      ],
+      "relevant_structures": [
+        "App::PropertyList",
+        "App::DirectPropertyList",
+        "App::Property",
+        "Resource::Database",
+        "IO::IStream"
+      ],
+      "side_effects": [
+        "reads or writes a property-entry count",
+        "reads or writes each local property ID/value",
+        "resizes the local property vector on read",
+        "may replace a parent pointer during read",
+        "does not establish file atomicity or whole-save rollback"
+      ],
+      "state_variable": {
+        "expression": "transfer phase and local bool success flag for PropertyList Read/Write",
+        "owner": "App::PropertyList",
+        "type": "analytical transfer state"
+      },
+      "states": [
+        {
+          "actions": [
+            "await first stream operation"
+          ],
+          "guards": [
+            "call has not transferred data"
+          ],
+          "name": "transfer_not_started",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "transfer count and entries"
+          ],
+          "guards": [
+            "all required operations remain successful"
+          ],
+          "name": "transfer_in_progress",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "return true"
+          ],
+          "guards": [
+            "all count and entry operations succeeded"
+          ],
+          "name": "transfer_succeeded",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "stop and return false"
+          ],
+          "guards": [
+            "at least one required operation failed"
+          ],
+          "name": "transfer_failed",
+          "raw_value": null
+        }
+      ],
+      "transitions": [
+        {
+          "actions": [
+            "write count and all local entries"
+          ],
+          "cause": "serialize PropertyList",
+          "event": "property_list_transfer",
+          "from_state": "transfer_not_started",
+          "guard": "all stream helpers succeed",
+          "to_state": "transfer_succeeded"
+        },
+        {
+          "actions": [
+            "stop on first failed helper"
+          ],
+          "cause": "serialize PropertyList",
+          "event": "property_list_transfer",
+          "from_state": "transfer_not_started",
+          "guard": "at least one stream helper fails",
+          "to_state": "transfer_failed"
+        },
+        {
+          "actions": [
+            "read framing and all local entries"
+          ],
+          "cause": "deserialize PropertyList",
+          "event": "property_list_transfer",
+          "from_state": "transfer_not_started",
+          "guard": "all required stream helpers succeed",
+          "to_state": "transfer_succeeded"
+        },
+        {
+          "actions": [
+            "stop on first failed helper"
+          ],
+          "cause": "deserialize PropertyList",
+          "event": "property_list_transfer",
+          "from_state": "transfer_not_started",
+          "guard": "at least one required stream helper fails",
+          "to_state": "transfer_failed"
+        }
+      ],
+      "validation": [
+        "Trace PropertyList::Write/Read against a legal synthetic stream and verify count-before-entry order.",
+        "Force count, ID, and value failures independently and verify first-failure short-circuiting.",
+        "Verify whether parent linkage and operation counter survive any higher-level save/load round trip."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "medium",
+        "reason": "Attribute write/read dispatch, object-count validation, callbacks, and stream-good checks are directly visible; the outer SPO/class-object wire framing and complete class registry remain unresolved."
+      },
+      "entry_actions": [
+        {
+          "action": "initialize ClassSerializer object, attribute table, count, serialized count, and class ID",
+          "conditions": [
+            "serializer metadata construction"
+          ],
+          "evidence": "0x00692880 and 0x00692f90"
+        }
+      ],
+      "event_consumers": [
+        "ClassSerializer attribute write",
+        "ClassSerializer attribute read",
+        "SerializerDatabase class-object lifecycle"
+      ],
+      "event_producers": [
+        "serialized object owners",
+        "stars.db writer/reader",
+        "serializer database load/save paths"
+      ],
+      "evidence": [
+        {
+          "address": "0x00692900",
+          "claim": "writes class/stream framing and serialized attribute values through callbacks, updating serialized sizes/counts",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00692900"
+        },
+        {
+          "address": "0x00693e10",
+          "claim": "reads class/stream framing, validates count, resolves object identities, invokes attribute read callbacks, and checks stream good state",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00693e10"
+        },
+        {
+          "address": "0x00693e10",
+          "claim": "the SDK XML address conflict means the imported ClassSerializer::Read anchor is not treated as the complete standalone read body",
+          "kind": "sdk_boundary_conflict",
+          "level": "SUPPORTED",
+          "source": "SporeGhidra_march2017.xml plus Ghidra MCP read-only query"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "return true only after all expected attributes/objects and stream checks succeed",
+          "conditions": [
+            "write or read dispatcher exit"
+          ],
+          "evidence": "0x00692900 and 0x00693e10"
+        }
+      ],
+      "guards": [
+        "attribute table is bounded at 128 entries",
+        "attribute name/ID termination is used by the constructor",
+        "write failure or read count mismatch fails the transfer",
+        "read object identity must resolve before attribute callbacks",
+        "stream must report good after transfer",
+        "exact field order, version gates, pointer table, and rollback are unresolved"
+      ],
+      "name": "class_serializer_object_transfer",
+      "relevant_functions": [
+        "0x00692880 ClassSerializer metadata constructor",
+        "0x00692f90 metadata wrapper",
+        "0x00692900 attribute write dispatcher",
+        "0x00693e10 attribute read dispatcher",
+        "0x00692ea0 stream good check",
+        "0x00692ec0 class-object virtual callback",
+        "0x00693d60 stream/database setup",
+        "0x00693900 stream/database teardown"
+      ],
+      "relevant_structures": [
+        "Simulator::ClassSerializer",
+        "Simulator::Attribute",
+        "Simulator::ISimulatorSerializable",
+        "Simulator::SerializerDatabase",
+        "Simulator::ISerializerReadStream",
+        "Simulator::ISerializerWriteStream"
+      ],
+      "side_effects": [
+        "mutates ClassSerializer count/countSerialized and attribute state",
+        "seeks or positions streams while writing framed attribute sizes",
+        "binds restored objects through identity resolution",
+        "invokes per-attribute read/write callbacks",
+        "propagates callback/stream failures without proven rollback"
+      ],
+      "state_variable": {
+        "expression": "ClassSerializer.count, countSerialized, id, pObject, pAttributes plus current serializer stream position",
+        "owner": "Simulator::ClassSerializer",
+        "type": "attribute-table and transfer-phase state"
+      },
+      "states": [
+        {
+          "actions": [
+            "hold object, attribute array, and class ID"
+          ],
+          "guards": [
+            "metadata constructor completed"
+          ],
+          "name": "constructed",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "write/read class and stream framing"
+          ],
+          "guards": [
+            "transfer direction selected"
+          ],
+          "name": "transfer_header",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "invoke attribute callbacks in table order"
+          ],
+          "guards": [
+            "all prior operations succeeded"
+          ],
+          "name": "transfer_attributes",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "record completed count and close/commit transfer"
+          ],
+          "guards": [
+            "expected count and stream good checks pass"
+          ],
+          "name": "transfer_complete",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "stop and return false"
+          ],
+          "guards": [
+            "callback, count, identity, framing, or stream failure"
+          ],
+          "name": "transfer_failed",
+          "raw_value": null
+        }
+      ],
+      "transitions": [
+        {
+          "actions": [
+            "initialize attribute-pointer table and counters"
+          ],
+          "cause": "serializer construction",
+          "event": "simulator_object_write/read",
+          "from_state": "constructed",
+          "guard": "attribute array and object context are available",
+          "to_state": "constructed"
+        },
+        {
+          "actions": [
+            "write class/stream framing"
+          ],
+          "cause": "serialize object",
+          "event": "simulator_object_write",
+          "from_state": "constructed",
+          "guard": "write stream is open and good",
+          "to_state": "transfer_header"
+        },
+        {
+          "actions": [
+            "read and validate class/stream framing"
+          ],
+          "cause": "deserialize object",
+          "event": "simulator_object_read",
+          "from_state": "constructed",
+          "guard": "read stream is open and good",
+          "to_state": "transfer_header"
+        },
+        {
+          "actions": [
+            "invoke write callbacks and update sizes/count"
+          ],
+          "cause": "header accepted",
+          "event": "simulator_object_write",
+          "from_state": "transfer_header",
+          "guard": "attribute count is valid",
+          "to_state": "transfer_attributes"
+        },
+        {
+          "actions": [
+            "resolve objects and invoke read callbacks"
+          ],
+          "cause": "header accepted",
+          "event": "simulator_object_read",
+          "from_state": "transfer_header",
+          "guard": "object count and identities are valid",
+          "to_state": "transfer_attributes"
+        },
+        {
+          "actions": [
+            "finalize serialized count and return success"
+          ],
+          "cause": "all attributes succeed",
+          "event": "simulator_object_write",
+          "from_state": "transfer_attributes",
+          "guard": "all callbacks and stream checks succeed",
+          "to_state": "transfer_complete"
+        },
+        {
+          "actions": [
+            "finalize restoration count and return success"
+          ],
+          "cause": "all attributes and objects succeed",
+          "event": "simulator_object_read",
+          "from_state": "transfer_attributes",
+          "guard": "all callbacks, identities, counts, and stream checks succeed",
+          "to_state": "transfer_complete"
+        },
+        {
+          "actions": [
+            "return false; no rollback proven"
+          ],
+          "cause": "transfer error",
+          "event": "simulator_object_write/read",
+          "from_state": "transfer_header or transfer_attributes",
+          "guard": "any required operation fails",
+          "to_state": "transfer_failed"
+        }
+      ],
+      "validation": [
+        "Resolve concrete ClassSerializer/COMSerializer/SerializerDatabase vtables and compare the SDK address conflict against containing-function boundaries.",
+        "Use a synthetic object with scalar, ResourceKey, pointer, and nested-object attributes; record exact callback order and stream positions.",
+        "Inject count, identity, callback, and stream failures and verify whether any partial object state remains visible after return false.",
+        "Trace stars.db and one .spo through class-object load/save without modifying SPORE files."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "medium",
+        "reason": "The stars.db temporary write/read bodies visibly open streams, transfer class/object records, close context, and rename; complete SPO scope and crash consistency are not recovered."
+      },
+      "entry_actions": [
+        {
+          "action": "create stars.db.tmp serializer/database context and initialize class/object streams",
+          "conditions": [
+            "star database checkpoint is requested",
+            "owner checkpoint flag is nonzero"
+          ],
+          "evidence": "0x00bb4ba0 and 0x00693d60"
+        }
+      ],
+      "event_consumers": [
+        "ClassSerializer write/read dispatchers",
+        "stars.db profile loader"
+      ],
+      "event_producers": [
+        "profile/save orchestration",
+        "star manager checkpoint path"
+      ],
+      "evidence": [
+        {
+          "address": "0x00bb4ba0",
+          "claim": "writes stars.db.tmp, serializes class/object records, closes streams/context, and calls rename stars.db.tmp -> stars.db",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00bb4ba0"
+        },
+        {
+          "address": "0x00bb8b20",
+          "claim": "reads profile/star database data, opens serializer streams, performs class/object read, closes context, and materializes planet/collectable/empire-related state",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00bb8b20"
+        },
+        {
+          "address": "0x00b294c0",
+          "claim": "orchestration resolves .spo/profile paths, validates legacy/profile state, and invokes the save/load body",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00b294c0"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "leave stars.db replaced by stars.db.tmp and return to caller",
+          "conditions": [
+            "stream/class-object close completes"
+          ],
+          "evidence": "0x00bb4ba0"
+        }
+      ],
+      "guards": [
+        "owner checkpoint flag at +0x21c is checked before writing",
+        "temporary file name is stars.db.tmp",
+        "rename is the first directly visible durability boundary",
+        "database flush/index/rollback behavior beyond the visible close/rename is not proven",
+        "SPO container and whole-save transaction remain distinct from stars.db"
+      ],
+      "name": "star_database_checkpoint",
+      "relevant_functions": [
+        "0x00bb4ba0 stars.db writer",
+        "0x00bb8b20 stars.db/profile reader",
+        "0x00b294c0 save/load orchestration",
+        "0x00b28ec0 temporary save orchestration",
+        "0x00693d60 serializer stream setup",
+        "0x00693900 serializer stream teardown"
+      ],
+      "relevant_structures": [
+        "Simulator::cStarManager",
+        "Simulator::cStarRecord",
+        "Simulator::cPlanetRecord",
+        "Resource::Database",
+        "Resource::RecordInfo",
+        "Resource::PFRecordWrite",
+        "Simulator::SerializerDatabase"
+      ],
+      "side_effects": [
+        "updates star/save timestamp and version-related fields",
+        "creates and writes stars.db.tmp",
+        "serializes class/object records and profile databases",
+        "closes serializer records/database context",
+        "replaces stars.db with stars.db.tmp",
+        "loads planetRecords.pkp and profile-dependent databases"
+      ],
+      "state_variable": {
+        "expression": "owner checkpoint flag plus database path and serializer stream/class-object status",
+        "owner": "star-manager-like persistence owner",
+        "type": "bounded file/serializer lifecycle state"
+      },
+      "states": [
+        {
+          "actions": [
+            "hold no active checkpoint operation"
+          ],
+          "guards": [
+            "owner flag or request is inactive"
+          ],
+          "name": "checkpoint_inactive",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "create stars.db.tmp and serializer/database context"
+          ],
+          "guards": [
+            "owner checkpoint flag is nonzero",
+            "temporary path can be created"
+          ],
+          "name": "checkpoint_prepared",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "write class/object records and dependent profile data"
+          ],
+          "guards": [
+            "streams and callbacks remain good"
+          ],
+          "name": "checkpoint_writing",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "close records/database context"
+          ],
+          "guards": [
+            "all required close operations complete"
+          ],
+          "name": "checkpoint_closed",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "replace stars.db with stars.db.tmp"
+          ],
+          "guards": [
+            "rename path is available"
+          ],
+          "name": "checkpoint_replaced",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "retain partial output or return status"
+          ],
+          "guards": [
+            "stream/write/rename failure"
+          ],
+          "name": "checkpoint_failed",
+          "raw_value": null
+        }
+      ],
+      "transitions": [
+        {
+          "actions": [
+            "create temporary path and serializer context"
+          ],
+          "cause": "star/profile checkpoint request",
+          "event": "star_database_checkpoint",
+          "from_state": "checkpoint_inactive",
+          "guard": "owner flag is nonzero",
+          "to_state": "checkpoint_prepared"
+        },
+        {
+          "actions": [
+            "serialize class/object records"
+          ],
+          "cause": "checkpoint starts",
+          "event": "star_database_checkpoint",
+          "from_state": "checkpoint_prepared",
+          "guard": "serializer context is open",
+          "to_state": "checkpoint_writing"
+        },
+        {
+          "actions": [
+            "close records and database context"
+          ],
+          "cause": "all writes complete",
+          "event": "star_database_checkpoint",
+          "from_state": "checkpoint_writing",
+          "guard": "all required writes succeed",
+          "to_state": "checkpoint_closed"
+        },
+        {
+          "actions": [
+            "rename stars.db.tmp to stars.db"
+          ],
+          "cause": "database close completes",
+          "event": "star_database_checkpoint",
+          "from_state": "checkpoint_closed",
+          "guard": "rename succeeds",
+          "to_state": "checkpoint_replaced"
+        },
+        {
+          "actions": [
+            "return failure or retain partial state"
+          ],
+          "cause": "write/close/rename error",
+          "event": "star_database_checkpoint",
+          "from_state": "checkpoint_prepared or checkpoint_writing or checkpoint_closed",
+          "guard": "a required operation fails",
+          "to_state": "checkpoint_failed"
+        }
+      ],
+      "validation": [
+        "Use a legal synthetic profile directory and verify stars.db.tmp content before rename and stars.db content after rename.",
+        "Interrupt each write/close/rename stage and record whether the previous stars.db remains usable.",
+        "Compare cStarRecord version/timestamp fields and object-count data across repeated checkpoint calls.",
+        "Do not generalize stars.db atomicity to the whole .spo container without a direct trace."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "high",
+        "reason": "The file/marker probes and .spo deletion path are direct static bodies; user/profile ownership and slot semantics are not."
+      },
+      "entry_actions": [
+        {
+          "action": "build profile and legacy-relative paths and probe save artifacts",
+          "conditions": [
+            "inventory or validity request"
+          ],
+          "evidence": "0x00b282e0 and 0x00b28750"
+        }
+      ],
+      "event_consumers": [
+        "save/load orchestration",
+        "profile inventory"
+      ],
+      "event_producers": [
+        "save-slot selection",
+        "profile validation",
+        "save-slot deletion"
+      ],
+      "evidence": [
+        {
+          "address": "0x00b282e0",
+          "claim": "checks .old/planetRecords.pkp, planetscripts.pld, stars.db, GGEUserData.dat, wildcard *.spo, and valid marker",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00b282e0"
+        },
+        {
+          "address": "0x00b28850",
+          "claim": "resolves .spo path, routes helpers, removes the file, and may recreate the directory",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00b28850"
+        },
+        {
+          "address": "0x0145f8b0/0x0145fb7c/0x0145fc58",
+          "claim": "binary contains .spo, *.spo, and snapshot.spo strings referenced by orchestration paths",
+          "kind": "string_xref",
+          "level": "CONFIRMED",
+          "source": "Ghidra MCP read-only string/xref queries"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "return validity result or finish file removal",
+          "conditions": [
+            "probe/delete exit"
+          ],
+          "evidence": "0x00b282e0, 0x00b28750, and 0x00b28850"
+        }
+      ],
+      "guards": [
+        "file existence and size checks gate validity",
+        "valid marker is checked separately from file presence",
+        "*.spo enumeration is a directory scan, not proof of a fixed slot count",
+        "legacy .old/complete is not identified as a migration transaction",
+        "delete path does not establish database index cleanup"
+      ],
+      "name": "profile_save_inventory_and_deletion",
+      "relevant_functions": [
+        "0x00b282e0 profile inventory probe",
+        "0x00b28750 legacy completion probe",
+        "0x00b28850 save-slot delete helper",
+        "0x00b294c0 save/load orchestration",
+        "0x00b2a100 snapshot helper"
+      ],
+      "relevant_structures": [
+        "Resource::Paths::SaveAreaID",
+        "Resource::DatabaseDirectoryFiles",
+        "Simulator::cStarManager",
+        "Simulator::cSavedGameHeader"
+      ],
+      "side_effects": [
+        "reads filesystem paths and file sizes",
+        "enumerates .spo files",
+        "removes a resolved .spo file",
+        "may recreate a containing directory",
+        "does not establish account/profile ownership or lock semantics"
+      ],
+      "state_variable": {
+        "expression": "artifact presence, valid marker, .old/complete marker, and selected .spo path",
+        "owner": "profile/save orchestration",
+        "type": "filesystem validity and selection state"
+      },
+      "states": [
+        {
+          "actions": [
+            "hold no selected save path"
+          ],
+          "guards": [
+            "inventory request not started"
+          ],
+          "name": "inventory_unstarted",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "hold one or more detected profile artifacts"
+          ],
+          "guards": [
+            "planet records, stars, scripts, user data, or .spo exists"
+          ],
+          "name": "artifacts_present",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "hold legacy completion marker"
+          ],
+          "guards": [
+            ".old/complete exists"
+          ],
+          "name": "legacy_marker_present",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "accept selected save/profile state"
+          ],
+          "guards": [
+            "valid marker check succeeds"
+          ],
+          "name": "valid",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "reject or require regeneration"
+          ],
+          "guards": [
+            "required artifact or valid marker missing"
+          ],
+          "name": "invalid_or_incomplete",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "remove selected .spo and clean directory"
+          ],
+          "guards": [
+            "delete path is resolved"
+          ],
+          "name": "deleted",
+          "raw_value": null
+        }
+      ],
+      "transitions": [
+        {
+          "actions": [
+            "probe fixed profile files and enumerate *.spo"
+          ],
+          "cause": "inventory request",
+          "event": "profile_save_inventory_validity",
+          "from_state": "inventory_unstarted",
+          "guard": "profile directory is available",
+          "to_state": "artifacts_present"
+        },
+        {
+          "actions": [
+            "check legacy completion marker"
+          ],
+          "cause": "legacy state detected",
+          "event": "profile_save_inventory_validity",
+          "from_state": "artifacts_present",
+          "guard": ".old/complete exists",
+          "to_state": "legacy_marker_present"
+        },
+        {
+          "actions": [
+            "accept valid marker"
+          ],
+          "cause": "validity probe",
+          "event": "profile_save_inventory_validity",
+          "from_state": "artifacts_present",
+          "guard": "valid marker exists",
+          "to_state": "valid"
+        },
+        {
+          "actions": [
+            "return invalid/incomplete result"
+          ],
+          "cause": "validity probe",
+          "event": "profile_save_inventory_validity",
+          "from_state": "artifacts_present",
+          "guard": "valid marker is absent",
+          "to_state": "invalid_or_incomplete"
+        },
+        {
+          "actions": [
+            "remove resolved .spo"
+          ],
+          "cause": "delete request",
+          "event": "save_slot_delete",
+          "from_state": "valid or artifacts_present",
+          "guard": "save path resolves",
+          "to_state": "deleted"
+        }
+      ],
+      "validation": [
+        "Create only legal synthetic profile fixtures outside SPORE and exercise each file/marker combination.",
+        "Verify the exact directory tree for Games/Game0, .old, and editor/save areas.",
+        "Trace save-slot deletion with an open file/index and record helper side effects.",
+        "Do not infer a fixed slot count or account model from wildcard enumeration."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "high",
+        "reason": "Global pointer publication, adoption, flagging, clearing, and fresh-object construction are direct Cell bodies; disk survival is explicitly not claimed."
+      },
+      "entry_actions": [
+        {
+          "action": "inspect global sCellSerializableData and active cCellGame pointer",
+          "conditions": [
+            "CellGame initialization or handoff path"
+          ],
+          "evidence": "0x00e80ba0, 0x00e63d10, and 0x00e819b0"
+        }
+      ],
+      "event_consumers": [
+        "cCellGame::Initialize",
+        "Cell UI/game reinitialization"
+      ],
+      "event_producers": [
+        "active Cell state reset paths",
+        "Cell restart/reinitialize paths"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e63d10",
+          "claim": "creates/publishes serializable data into the global handoff slot and releases replaced state",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00e63d10"
+        },
+        {
+          "address": "0x00e80ba0",
+          "claim": "adopts non-null global handoff state at cCellGame+0x5190, marks +0x51DA, clears global slot, otherwise creates fresh state",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Simulator__Cell__cCellGame__Initialize.c"
+        },
+        {
+          "address": "0x00e819b0",
+          "claim": "re-publishes active state before Cell UI/Game reinitialization",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00e819b0"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "leave global handoff slot empty and active Cell owner holding adopted pointer",
+          "conditions": [
+            "adoption completes"
+          ],
+          "evidence": "0x00e80ba0"
+        }
+      ],
+      "guards": [
+        "global handoff pointer is non-null on adoption path",
+        "fresh-object path is selected when global handoff is null",
+        "cCellGame+0x51DA is a state flag with mixed runtime uses; it is not independently promoted to a disk-save marker",
+        "handoff is in-process and does not prove cross-stage or process-restart survival"
+      ],
+      "name": "cell_serializable_handoff",
+      "relevant_functions": [
+        "0x00e61630 cCellSerializableData fresh construction",
+        "0x00e63d10 publish handoff",
+        "0x00e819b0 republish before reinitialize",
+        "0x00e80ba0 cCellGame initialization",
+        "0x013c7d90 global cleanup"
+      ],
+      "relevant_structures": [
+        "Simulator::Cell::cCellGame",
+        "Simulator::Cell::cCellSerializableData",
+        "Simulator::Cell::cCellMission"
+      ],
+      "side_effects": [
+        "publishes and clears an intrusive serializable-data pointer",
+        "constructs fresh Cell progression state when no handoff exists",
+        "adopts state before Cell UI/game reinitialization",
+        "does not show a PropertyList/ClassSerializer write"
+      ],
+      "state_variable": {
+        "expression": "DAT_016b3de0 plus cCellGame+0x5190 and cCellGame+0x51DA",
+        "owner": "Cell serialization and mode lifecycle",
+        "type": "intrusive pointer handoff plus bounded flag"
+      },
+      "states": [
+        {
+          "actions": [
+            "hold no global handoff pointer"
+          ],
+          "guards": [
+            "global slot is null"
+          ],
+          "name": "no_handoff",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "hold serializable state awaiting Cell adoption"
+          ],
+          "guards": [
+            "global slot is non-null"
+          ],
+          "name": "published_handoff",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "active cCellGame owns serializable state"
+          ],
+          "guards": [
+            "cCellGame+0x5190 is assigned"
+          ],
+          "name": "adopted_by_cell_game",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "hold active runtime state and no handoff"
+          ],
+          "guards": [
+            "global slot cleared after adoption"
+          ],
+          "name": "cell_runtime_owner",
+          "raw_value": null
+        }
+      ],
+      "transitions": [
+        {
+          "actions": [
+            "construct and publish serializable state"
+          ],
+          "cause": "Cell reset/reinitialize",
+          "event": "cell_serializable_handoff",
+          "from_state": "no_handoff",
+          "guard": "active state is being handed off",
+          "to_state": "published_handoff"
+        },
+        {
+          "actions": [
+            "assign global pointer to cCellGame+0x5190 and set +0x51DA"
+          ],
+          "cause": "CellGame initialization",
+          "event": "cell_serializable_handoff",
+          "from_state": "published_handoff",
+          "guard": "global pointer is non-null",
+          "to_state": "adopted_by_cell_game"
+        },
+        {
+          "actions": [
+            "clear global handoff slot"
+          ],
+          "cause": "adoption completes",
+          "event": "cell_serializable_handoff",
+          "from_state": "adopted_by_cell_game",
+          "guard": "pointer was assigned",
+          "to_state": "cell_runtime_owner"
+        },
+        {
+          "actions": [
+            "create fresh serializable state"
+          ],
+          "cause": "CellGame initialization",
+          "event": "cell_serializable_handoff",
+          "from_state": "no_handoff",
+          "guard": "global pointer is null",
+          "to_state": "cell_runtime_owner"
+        }
+      ],
+      "validation": [
+        "Trace DAT_016b3de0, cCellGame+0x5190, and +0x51DA across publish/adopt/clear without changing file data.",
+        "Exercise fresh, handoff, and reinitialize paths separately and compare all cCellSerializableData fields.",
+        "Correlate any later serializer write to this object rather than assuming handoff equals save."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "medium",
+        "reason": "Bootstrap and PreShutdown order are directly visible, while exact cAppSystem::Shutdown and cSimulatorSystem callback bodies are not."
+      },
+      "entry_actions": [
+        {
+          "action": "create application object and enter initialization",
+          "conditions": [
+            "process startup"
+          ],
+          "evidence": "0x00f48850 and 0x00f47ed0"
+        }
+      ],
+      "event_consumers": [
+        "cAppSystem::PreShutdown",
+        "application message listeners",
+        "Simulator subsystem lifecycle"
+      ],
+      "event_producers": [
+        "process bootstrap",
+        "application shutdown request"
+      ],
+      "evidence": [
+        {
+          "address": "0x00f48850",
+          "claim": "creates application object, calls initialization, conditionally calls shutdown/cleanup, releases object, and returns result",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00f48850"
+        },
+        {
+          "address": "0x007e6470",
+          "claim": "PreShutdown releases resource/preference/config state, dispatches 0x0212d3e7, then releases remaining services",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x007e6470"
+        },
+        {
+          "address": null,
+          "claim": "cStrategy declares Initialize, Dispose, Write, Read, and OnLoad(cSavedGameHeader), and AddStrategy initializes strategies whose data is saved/loaded in player games",
+          "kind": "sdk_contract",
+          "level": "CONFIRMED",
+          "source": "Spore ModAPI Simulator/SubSystem/cStrategy.h"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "release application-owned services and return application result",
+          "conditions": [
+            "shutdown path completes"
+          ],
+          "evidence": "0x00f48850"
+        }
+      ],
+      "guards": [
+        "initialization success gates the direct shutdown/cleanup call in the main body",
+        "PreShutdown message dispatch occurs before later service release in the recovered body",
+        "cSimulatorSystem InitializeSubSystems/DisposeSubSystems and strategy iteration order are interface-level only",
+        "no claim is made that every mode transition or process exit autosaves"
+      ],
+      "name": "application_lifecycle_and_shutdown_checkpoint",
+      "relevant_functions": [
+        "0x00f48850 cSporeApp main body",
+        "0x00f47ed0 cSporeApp/application initialization body",
+        "0x007e6470 App::cAppSystem::PreShutdown",
+        "0x00b3d330 Simulator::cSimulatorSystem::Get",
+        "0x00e7fc00 Cell OnExit",
+        "0x00e81f30 Cell Dispose"
+      ],
+      "relevant_structures": [
+        "App::cSporeApp",
+        "App::cAppSystem",
+        "Simulator::cSimulatorSystem",
+        "Simulator::ISimulatorStrategy",
+        "Simulator::cSavedGameHeader"
+      ],
+      "side_effects": [
+        "constructs application/services",
+        "initializes resource, property, editor, simulator, and mode-related services at coarse boundaries",
+        "dispatches pre-shutdown message checkpoint",
+        "releases jobs, config, rendering, and mode resources",
+        "does not prove save-before-dispose for every subsystem"
+      ],
+      "state_variable": {
+        "expression": "cSporeApp.mHasInitialized/mIsRunning, cAppSystem service pointers, and lifecycle phase",
+        "owner": "App::cSporeApp and App::cAppSystem",
+        "type": "coarse lifecycle phase"
+      },
+      "states": [
+        {
+          "actions": [
+            "hold process/application state"
+          ],
+          "guards": [
+            "application object not initialized"
+          ],
+          "name": "process_start",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "construct and initialize application services"
+          ],
+          "guards": [
+            "initialization steps return success"
+          ],
+          "name": "initializing",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "run initialized application and mode lifecycle"
+          ],
+          "guards": [
+            "initialization completed"
+          ],
+          "name": "initialized_running",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "release pre-shutdown-owned services and dispatch checkpoint message"
+          ],
+          "guards": [
+            "shutdown requested"
+          ],
+          "name": "pre_shutdown",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "release remaining services and return"
+          ],
+          "guards": [
+            "pre-shutdown completed"
+          ],
+          "name": "shutdown_disposed",
+          "raw_value": null
+        }
+      ],
+      "transitions": [
+        {
+          "actions": [
+            "construct app and call initialization"
+          ],
+          "cause": "process startup",
+          "event": "application_lifecycle",
+          "from_state": "process_start",
+          "guard": "application allocation succeeds",
+          "to_state": "initializing"
+        },
+        {
+          "actions": [
+            "publish initialized services"
+          ],
+          "cause": "initialization success",
+          "event": "application_lifecycle",
+          "from_state": "initializing",
+          "guard": "initialization body returns true",
+          "to_state": "initialized_running"
+        },
+        {
+          "actions": [
+            "release pre-shutdown resources and dispatch 0x0212d3e7"
+          ],
+          "cause": "shutdown request",
+          "event": "application_pre_shutdown_checkpoint",
+          "from_state": "initialized_running",
+          "guard": "pre-shutdown is reached",
+          "to_state": "pre_shutdown"
+        },
+        {
+          "actions": [
+            "release remaining app services and return"
+          ],
+          "cause": "pre-shutdown completed",
+          "event": "application_lifecycle",
+          "from_state": "pre_shutdown",
+          "guard": "cleanup body completes",
+          "to_state": "shutdown_disposed"
+        }
+      ],
+      "validation": [
+        "Trace startup and shutdown with a harmless non-save exit and record all cAppSystem service releases.",
+        "Instrument the 0x0212d3e7 dispatch and correlate receiver/message data without modifying files.",
+        "Recover concrete cSimulatorSystem InitializeSubSystems/DisposeSubSystems and strategy loop order before claiming save order."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "medium",
+        "reason": "Achievement message registration and listener mutation are direct; serializable progress structure exists, but the observed checkpoint handler does not visibly call its serializer or a database writer."
+      },
+      "entry_actions": [
+        {
+          "action": "allocate/initialize cAchievementsManager and cSPAchievementSerializer",
+          "conditions": [
+            "achievement manager initialization"
+          ],
+          "evidence": "0x00676c80 and 0x00675d70"
+        }
+      ],
+      "event_consumers": [
+        "cAchievementsManager listener",
+        "cSPAchievementSerializer state"
+      ],
+      "event_producers": [
+        "application PreShutdown",
+        "achievement test/cheat message paths"
+      ],
+      "evidence": [
+        {
+          "address": "0x00676c80",
+          "claim": "manager allocates cSPAchievementSerializer, loads configuration, registers message 0x0212d3e7, and creates notifier UI",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00676c80"
+        },
+        {
+          "address": "0x00677140",
+          "claim": "listener branch for 0x0212d3e7 updates achievement 0xA3434A32 progress/flags and writes manager byte +0x24",
+          "kind": "raw_bytes",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only memory inspection of SporeApp.exe@0x00677140"
+        },
+        {
+          "address": null,
+          "claim": "SDK defines kMsgSaveAchievements as 0x0212d3e7 and cSPAchievementSerializer is ISimulatorSerializable with cross-game sets",
+          "kind": "sdk_contract",
+          "level": "CONFIRMED",
+          "source": "Spore ModAPI Pollinator/AchievementsManager.h and Pollinator/cSPAchievementSerializer.h"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "return after message handler mutation",
+          "conditions": [
+            "message dispatch completes"
+          ],
+          "evidence": "0x00677140 raw listener branch"
+        }
+      ],
+      "guards": [
+        "manager byte +0x24 is checked before progress mutation",
+        "the 0x0212d3e7 raw value is also declared by simulator switch-message constants, so message identity is not semantically unique",
+        "no visible serializer/database call occurs in the recovered branch",
+        "cSPAchievementSerializer membership in the simulator serializer architecture does not prove this handler writes it"
+      ],
+      "name": "achievement_progress_checkpoint",
+      "relevant_functions": [
+        "0x00675d70 cSPAchievementSerializer construction",
+        "0x00676c80 achievement manager initialization/registration",
+        "0x00677140 raw message listener dispatch",
+        "0x00676710/0x00676660 achievement state helpers",
+        "0x007e6470 application PreShutdown dispatch"
+      ],
+      "relevant_structures": [
+        "Pollinator::cAchievementsManager",
+        "Pollinator::cSPAchievementSerializer",
+        "Pollinator::cAchievementDefinition",
+        "Pollinator::cSPAchievementSerializer::CrossGameData"
+      ],
+      "side_effects": [
+        "mutates achievement progress/flag state",
+        "mutates manager +0x24 byte",
+        "can dispatch achievement evaluation/UI helpers",
+        "no direct cross-game profile write is established"
+      ],
+      "state_variable": {
+        "expression": "cAchievementsManager+0x24, cSPAchievementSerializer progress map, and cross-game ID sets",
+        "owner": "Pollinator::cAchievementsManager and cSPAchievementSerializer",
+        "type": "progress/profile state with unresolved persistence write"
+      },
+      "states": [
+        {
+          "actions": [
+            "hold uninitialized progress state"
+          ],
+          "guards": [
+            "manager constructor not complete"
+          ],
+          "name": "progress_uninitialized",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "hold loaded/registered progress state"
+          ],
+          "guards": [
+            "serializer and listener are initialized"
+          ],
+          "name": "progress_registered",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "hold message mutation result"
+          ],
+          "guards": [
+            "0x0212d3e7 branch executes"
+          ],
+          "name": "progress_mutated",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "serialized state remains unknown"
+          ],
+          "guards": [
+            "no visible serializer/database write in observed handler"
+          ],
+          "name": "profile_write_unproven",
+          "raw_value": null
+        }
+      ],
+      "transitions": [
+        {
+          "actions": [
+            "construct serializer and register listener"
+          ],
+          "cause": "manager initialization",
+          "event": "achievement_progress_checkpoint_message",
+          "from_state": "progress_uninitialized",
+          "guard": "allocation and config load succeed",
+          "to_state": "progress_registered"
+        },
+        {
+          "actions": [
+            "mutate achievement progress and manager byte +0x24"
+          ],
+          "cause": "checkpoint message",
+          "event": "achievement_progress_checkpoint_message",
+          "from_state": "progress_registered",
+          "guard": "message ID is 0x0212d3e7 and manager byte permits mutation",
+          "to_state": "progress_mutated"
+        },
+        {
+          "actions": [
+            "leave serialized profile state unresolved"
+          ],
+          "cause": "message handler returns",
+          "event": "achievement_progress_checkpoint_message",
+          "from_state": "progress_mutated",
+          "guard": "no direct writer call is observed",
+          "to_state": "profile_write_unproven"
+        }
+      ],
+      "validation": [
+        "Resolve the concrete cAchievementsManager vtable and message payload for 0x0212d3e7.",
+        "Trace a controlled message dispatch and record progress, manager+0x24, and all I/O calls.",
+        "Compare the listener with cSPAchievementSerializer Write/Read vtable targets before calling it a profile checkpoint."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "low",
+        "reason": "The SDK establishes OnExit/OnEnter order and load-game mode identity, but the current SetActiveModeAt body is boundary-conflicted and no state survival relation is directly proven."
+      },
+      "entry_actions": [
+        {
+          "action": "select target registered mode",
+          "conditions": [
+            "mode transition request"
+          ],
+          "evidence": "SDK cGameModeManager contract plus 0x007d8d40 conflict"
+        }
+      ],
+      "event_consumers": [
+        "current mode OnExit",
+        "target mode OnEnter",
+        "mode UI/persistence-sensitive listeners"
+      ],
+      "event_producers": [
+        "stage transitions",
+        "editor requests",
+        "main-menu navigation"
+      ],
+      "evidence": [
+        {
+          "address": "0x007d8d40",
+          "claim": "SDK/imported function identifies SetActiveModeAt; recovered body mutates temporary vtable state and delegates through unresolved helpers",
+          "kind": "sdk_decompilation_conflict",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x007d8d40"
+        },
+        {
+          "address": null,
+          "claim": "SDK documents mode switching as current OnExit followed by target OnEnter",
+          "kind": "sdk_contract",
+          "level": "CONFIRMED",
+          "source": "Spore ModAPI App/IGameModeManager.h and cGameModeManager.h"
+        },
+        {
+          "address": null,
+          "claim": "SDK identifies kLoadGameMode as mode 0x01654C08 and GameLoadParameters as load context",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": "Spore ModAPI App/CommonIDs.h and Simulator/SubSystem/GamePersistenceManager.h"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "retain only state proven to survive; no universal persistence handoff claimed",
+          "conditions": [
+            "target OnEnter completes"
+          ],
+          "evidence": "SDK mode contract; no direct save body"
+        }
+      ],
+      "guards": [
+        "target mode registration is required",
+        "same-mode and invalid-index behavior is unresolved in current binary body",
+        "load mode identity is SDK-defined but cross-stage state survival is not",
+        "no automatic save on every mode transition is established"
+      ],
+      "name": "mode_transition_and_state_survival",
+      "relevant_functions": [
+        "0x007d8d40 App::cGameModeManager::SetActiveModeAt",
+        "0x00b335d0 mode transition orchestration",
+        "0x00e7fc00 Cell OnExit",
+        "0x00e81f30 Cell Dispose",
+        "0x00b3d440 cGamePersistenceManager::Get"
+      ],
+      "relevant_structures": [
+        "App::cGameModeManager",
+        "App::IGameMode",
+        "Simulator::cStrategy",
+        "Simulator::cGamePersistenceManager"
+      ],
+      "side_effects": [
+        "exits current mode and enters target mode per SDK contract",
+        "updates active mode state",
+        "may invoke mode transition UI/listeners",
+        "does not prove active mode, current planet, or mode-specific objects are serialized"
+      ],
+      "state_variable": {
+        "expression": "App game mode active index and selected mode ID",
+        "owner": "App::cGameModeManager",
+        "type": "registered mode identifier/index"
+      },
+      "states": [
+        {
+          "actions": [
+            "hold current mode active"
+          ],
+          "guards": [
+            "mode is initialized"
+          ],
+          "name": "active_mode",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "run current OnExit and transition helpers"
+          ],
+          "guards": [
+            "target differs and is registered"
+          ],
+          "name": "exiting_current",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "run target OnEnter"
+          ],
+          "guards": [
+            "exit path accepted"
+          ],
+          "name": "entering_target",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "hold target mode; persistence survival unknown"
+          ],
+          "guards": [
+            "OnEnter completes"
+          ],
+          "name": "target_mode",
+          "raw_value": null
+        }
+      ],
+      "transitions": [
+        {
+          "actions": [
+            "invoke current OnExit"
+          ],
+          "cause": "mode change request",
+          "event": "game_mode_transition",
+          "from_state": "active_mode",
+          "guard": "target mode is registered and differs",
+          "to_state": "exiting_current"
+        },
+        {
+          "actions": [
+            "select target and invoke OnEnter"
+          ],
+          "cause": "exit path accepted",
+          "event": "game_mode_transition",
+          "from_state": "exiting_current",
+          "guard": "target selection succeeds",
+          "to_state": "entering_target"
+        },
+        {
+          "actions": [
+            "complete transition"
+          ],
+          "cause": "target OnEnter returns",
+          "event": "game_mode_transition",
+          "from_state": "entering_target",
+          "guard": "no failure is observed",
+          "to_state": "target_mode"
+        }
+      ],
+      "validation": [
+        "Repair SetActiveModeAt receiver/field layout and trace OnExit, active-index write, OnEnter, and messages in one run.",
+        "At each transition record cCellSerializableData, cStrategy mode fields, cSavedGameHeader consumers, and filesystem timestamps.",
+        "Use the load mode only after a controlled load request; do not infer state survival from the enum."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "low",
+        "reason": "The SDK and static evidence establish a layered save/load architecture and several concrete stream/profile boundaries, but the whole-game request-to-commit sequence is not directly recovered."
+      },
+      "entry_actions": [
+        {
+          "action": "construct load context or save request context",
+          "conditions": [
+            "save/load/profile orchestration request"
+          ],
+          "evidence": "SDK GameLoadParameters, 0x00b294c0, and message constants"
+        }
+      ],
+      "event_consumers": [
+        "cGamePersistenceManager::LoadGame",
+        "SerializerDatabase",
+        "ClassSerializer",
+        "PropertyList",
+        "profile/star database loaders"
+      ],
+      "event_producers": [
+        "save UI/message",
+        "load UI/message",
+        "snapshot helper",
+        "profile/save orchestration"
+      ],
+      "evidence": [
+        {
+          "address": null,
+          "claim": "SDK layers Resource::Database/IRecord, ISerializerDatabase, serializer read/write streams, ClassSerializer, ISimulatorSerializable, cSavedGameHeader, and GameLoadParameters",
+          "kind": "sdk_contract",
+          "level": "CONFIRMED",
+          "source": "Spore ModAPI Serialization.h, SerializationTypes.h, ISimulatorSerializable.h, GamePersistenceManager.h, cSavedGameHeader.h"
+        },
+        {
+          "address": "0x00b28ec0",
+          "claim": "observed profile/save body creates temporary path, opens serializer context, writes, closes, and performs temporary replacement",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00b28ec0"
+        },
+        {
+          "address": "0x00b294c0",
+          "claim": "observed orchestration resolves .spo/profile paths, validates legacy/profile state, and gates mode/manager transitions",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00b294c0"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "return success/failure after close/rename or restore-side completion",
+          "conditions": [
+            "operation exits"
+          ],
+          "evidence": "0x00b28ec0 and 0x00b294c0; exact whole-save return contract unresolved"
+        }
+      ],
+      "guards": [
+        "profile validity/legacy markers gate orchestration",
+        "stream good state gates class/object transfer",
+        "attribute/object count and identity checks gate restoration",
+        "no universal rollback, checksum, encryption, or slot transaction is established",
+        "header and GameLoadParameters consumption order is unresolved"
+      ],
+      "name": "whole_game_save_load_orchestration",
+      "relevant_functions": [
+        "0x00b3d440 cGamePersistenceManager::Get",
+        "cGamePersistenceManager vtable +0x10 LoadGame",
+        "0x00b294c0 profile/save/load orchestration",
+        "0x00b28ec0 temporary save body",
+        "0x00bb4ba0 stars.db writer",
+        "0x00bb8b20 stars.db/profile reader",
+        "0x00693d60 serializer stream setup",
+        "0x00693900 serializer stream teardown",
+        "0x006a1540/0x006a2f60 PropertyList write/read"
+      ],
+      "relevant_structures": [
+        "Simulator::cGamePersistenceManager",
+        "Simulator::GameLoadParameters",
+        "Simulator::cSavedGameHeader",
+        "Simulator::SerializerDatabase",
+        "Simulator::ClassSerializer",
+        "Simulator::ISimulatorSerializable",
+        "App::PropertyList",
+        "Resource::Database",
+        "Resource::IRecord"
+      ],
+      "side_effects": [
+        "resolves profile/.spo context",
+        "opens/closes resource and serializer streams",
+        "transfers class/object attributes and properties",
+        "may update stars.db/profile databases",
+        "may replace temporary profile files",
+        "exact object order, header order, pointer remapping, and failure recovery unresolved"
+      ],
+      "state_variable": {
+        "expression": "requested operation, GameLoadParameters/profile identity, serializer stream state, class/object counts, and file replacement status",
+        "owner": "cGamePersistenceManager plus serializer/database/profile helpers",
+        "type": "multi-layer save/load transaction"
+      },
+      "states": [
+        {
+          "actions": [
+            "hold save/load request"
+          ],
+          "guards": [
+            "request exists"
+          ],
+          "name": "request_received",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "resolve save name/profile/legacy validity"
+          ],
+          "guards": [
+            "context can be resolved"
+          ],
+          "name": "context_resolved",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "open resource/serializer streams"
+          ],
+          "guards": [
+            "database/path available"
+          ],
+          "name": "streams_open",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "load/save class objects and serializable objects"
+          ],
+          "guards": [
+            "class/object and attribute callbacks succeed"
+          ],
+          "name": "objects_transferred",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "close streams and commit temporary file/profile databases"
+          ],
+          "guards": [
+            "close/flush/rename succeeds"
+          ],
+          "name": "committed",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "return failure or partial state"
+          ],
+          "guards": [
+            "resolution, stream, callback, close, or rename failure"
+          ],
+          "name": "failed_or_partial",
+          "raw_value": null
+        }
+      ],
+      "transitions": [
+        {
+          "actions": [
+            "resolve context and validate profile"
+          ],
+          "cause": "save/load/profile request",
+          "event": "load_game_request/save_game_request",
+          "from_state": "request_received",
+          "guard": "request carries a usable context",
+          "to_state": "context_resolved"
+        },
+        {
+          "actions": [
+            "open database/serializer streams"
+          ],
+          "cause": "context accepted",
+          "event": "load_game_request/save_game_request",
+          "from_state": "context_resolved",
+          "guard": "path and database are available",
+          "to_state": "streams_open"
+        },
+        {
+          "actions": [
+            "invoke class/object/property transfer"
+          ],
+          "cause": "streams open",
+          "event": "simulator_object_write/read",
+          "from_state": "streams_open",
+          "guard": "class and stream checks pass",
+          "to_state": "objects_transferred"
+        },
+        {
+          "actions": [
+            "close streams and commit temporary/profile output"
+          ],
+          "cause": "object transfer completes",
+          "event": "star_database_checkpoint",
+          "from_state": "objects_transferred",
+          "guard": "close/rename/flush path succeeds",
+          "to_state": "committed"
+        },
+        {
+          "actions": [
+            "return failure or retain partial state"
+          ],
+          "cause": "any operation fails",
+          "event": "load_game_request/save_game_request",
+          "from_state": "context_resolved or streams_open or objects_transferred",
+          "guard": "required operation fails",
+          "to_state": "failed_or_partial"
+        }
+      ],
+      "validation": [
+        "Recover the concrete cGamePersistenceManager vtable and trace both load and save request paths from UI/message to file close.",
+        "Use legal synthetic .spo and profile fixtures to record header placement, class/object order, property placement, pointer remapping, and version gates.",
+        "Inject failures at context resolution, stream open, attribute callback, close, and rename; record rollback and next-startup behavior.",
+        "Keep static serializer callback order separate from actual runtime event order until an original trace exists."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "medium",
+        "reason": "Editor save is a separate asset/resource boundary with paired Load/Save or Read/Write anchors; profile/slot/game-state persistence is not established."
+      },
+      "entry_actions": [
+        {
+          "action": "construct asset metadata and route authored resource state to save boundary",
+          "conditions": [
+            "editor save request"
+          ],
+          "evidence": "0x00577650 and existing editor research"
+        }
+      ],
+      "event_consumers": [
+        "EditorModel::Save",
+        "cCreatureDataResource::Write",
+        "resource manager/database"
+      ],
+      "event_producers": [
+        "Editor_Save",
+        "editor UI"
+      ],
+      "evidence": [
+        {
+          "address": "0x00577650",
+          "claim": "constructs metadata and routes asset/resource operations to an editor/Pollinator save boundary",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/data-model/09-save-load-persistence.json:800-807"
+        },
+        {
+          "address": "0x004af780",
+          "claim": "EditorModel::Save is a paired authored asset save boundary",
+          "kind": "sdk_name_and_research",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/state-machines/editor-workflows.json and data-model/09-save-load-persistence.json"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "return asset/resource save result",
+          "conditions": [
+            "asset save path exits"
+          ],
+          "evidence": "existing editor persistence research; exact whole editor exit ordering unresolved"
+        }
+      ],
+      "guards": [
+        "authored model/resource is distinct from in-memory edit history",
+        "asset save does not prove game profile/slot save",
+        "save-before-editor-dispose is unresolved",
+        "wire format, validation, and round trip remain unknown"
+      ],
+      "name": "editor_asset_persistence",
+      "relevant_functions": [
+        "0x00577650 Editor_Save",
+        "0x004af780 EditorModel::Save",
+        "0x004bfc40 cCreatureDataResource::Write",
+        "0x00587a20 cEditor::OnExit",
+        "0x00576c50 cEditor::Dispose"
+      ],
+      "relevant_structures": [
+        "Editors::cEditor",
+        "Editors::EditorModel",
+        "Simulator::cCreatureDataResource",
+        "Resource::Database"
+      ],
+      "side_effects": [
+        "writes authored asset metadata/resource data",
+        "may update editor-save database",
+        "does not establish game-save or profile-save behavior"
+      ],
+      "state_variable": {
+        "expression": "authored editor model/resource dirty and save status",
+        "owner": "Editors::cEditor and resource objects",
+        "type": "asset persistence state"
+      },
+      "states": [
+        {
+          "actions": [
+            "hold authored model in memory"
+          ],
+          "guards": [
+            "editor active"
+          ],
+          "name": "authored",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "construct metadata and route save"
+          ],
+          "guards": [
+            "save request"
+          ],
+          "name": "save_requested",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "write authored resource"
+          ],
+          "guards": [
+            "resource write succeeds"
+          ],
+          "name": "asset_written",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "retain dirty/partial state"
+          ],
+          "guards": [
+            "write or validation fails"
+          ],
+          "name": "asset_save_failed",
+          "raw_value": null
+        }
+      ],
+      "transitions": [
+        {
+          "actions": [
+            "construct metadata and invoke resource writer"
+          ],
+          "cause": "editor save request",
+          "event": "editor_asset_save",
+          "from_state": "authored",
+          "guard": "authored resource exists",
+          "to_state": "save_requested"
+        },
+        {
+          "actions": [
+            "write asset and clear save boundary"
+          ],
+          "cause": "resource write succeeds",
+          "event": "editor_asset_save",
+          "from_state": "save_requested",
+          "guard": "writer returns success",
+          "to_state": "asset_written"
+        },
+        {
+          "actions": [
+            "retain authored state and report failure"
+          ],
+          "cause": "resource write fails",
+          "event": "editor_asset_save",
+          "from_state": "save_requested",
+          "guard": "writer or validation fails",
+          "to_state": "asset_save_failed"
+        }
+      ],
+      "validation": [
+        "Use a legal synthetic editor asset outside SPORE and record metadata/resource bytes and database flush behavior.",
+        "Trace Editor_Save immediately before OnExit/Dispose to determine whether active edits are saved automatically.",
+        "Do not mix editor asset persistence with Game0/profile or .spo save state."
+      ]
+    }
+  ],
+  "temporal_semantics": {
+    "runtime_evidence": {
+      "available": false,
+      "historical_main_menu_trace": "Committed historical main-menu observations cover application startup only and do not validate save/load, profile, or shutdown persistence ordering.",
+      "status": "NO_POSITIVE_ORIGINAL_SAVE_LOAD_TRACE"
+    },
+    "runtime_ordering": [
+      {
+        "boundary": "application startup",
+        "claim": "0x00f48850 constructs the application object, invokes initialization, conditionally invokes shutdown/cleanup, and releases the object",
+        "level": "SUPPORTED_STATIC",
+        "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x00f48850"
+      },
+      {
+        "boundary": "application pre-shutdown",
+        "claim": "0x007e6470 releases selected application resources, dispatches 0x0212d3e7, then releases later services; exact message semantics are unresolved",
+        "level": "SUPPORTED_STATIC",
+        "source": "Ghidra MCP read-only decompilation of SporeApp.exe@0x007e6470"
+      },
+      {
+        "boundary": "Cell initialization",
+        "claim": "0x00e80ba0 adopts an in-process global serializable-data handoff or creates fresh state, then initializes pools/world/presentation state",
+        "level": "SUPPORTED_STATIC",
+        "source": "Simulator__Cell__cCellGame__Initialize.c"
+      },
+      {
+        "boundary": "Cell exit/dispose",
+        "claim": "0x00e7fc00 and 0x00e81f30 restore globals and release gameplay/presentation state without a visible serializer write call",
+        "level": "SUPPORTED_STATIC",
+        "source": "App__cCellModeStrategy__OnExit.c and App__cCellModeStrategy__Dispose.c"
+      },
+      {
+        "boundary": "mode transition",
+        "claim": "SDK documents OnExit then OnEnter, but current 0x007d8d40 body is boundary-conflicted; no state-survival order is promoted",
+        "level": "SUPPORTED_INTERFACE_ONLY",
+        "source": "Spore ModAPI App/IGameModeManager.h and Ghidra MCP read-only decompilation"
+      }
+    ],
+    "separation": {
+      "runtime_ordering": "Lifecycle, message, mode, and handoff ordering is separate from the codec state machines. Static call order is not treated as an observed original-process timeline.",
+      "static_serializer": "PropertyList, ClassSerializer, SerializerDatabase, CellSerializer metadata, and stars.db transfer bodies describe bounded static data operations. They do not prove which UI/mode event invokes the whole save/load operation."
+    },
+    "static_serializer_evidence": [
+      {
+        "claim": "PropertyList writes/reads count and entries and short-circuits failures",
+        "level": "SUPPORTED",
+        "source": "0x006a1540 and 0x006a2f60"
+      },
+      {
+        "claim": "ClassSerializer write/read dispatchers invoke per-attribute callbacks and validate stream/object counts",
+        "level": "SUPPORTED",
+        "source": "0x00692900 and 0x00693e10"
+      },
+      {
+        "claim": "CellSerializer metadata names/field IDs/callbacks exist, while recovered Cell resource records are direct content layouts without a name/ID envelope",
+        "level": "SUPPORTED",
+        "source": "Spore ModAPI Cell/cCellResource.h, Cell campaign research, and clean-room CellResource.cpp"
+      },
+      {
+        "claim": "stars.db uses a visible temporary-file replacement boundary, but SPO outer framing and whole-save atomicity remain unknown",
+        "level": "SUPPORTED_FOR_STARS_DB_ONLY",
+        "source": "0x00bb4ba0 and persistence research"
+      }
+    ]
+  },
+  "unresolved": [
+    {
+      "blocking_question": "What are the concrete cGamePersistenceManager vtable targets for LoadGame, save callbacks, and message handling?",
+      "evidence": [
+        "0x00b3d440",
+        "cGamePersistenceManager vtable +0x10",
+        "0x00b294c0",
+        "0x00b28ec0"
+      ],
+      "id": "persistence_manager_vtable",
+      "impact": "Whole-game save/load request ownership, object order, and failure behavior remain interface-level.",
+      "required_evidence": "Runtime vtable publication or a directly repaired vtable/body for the concrete manager and all message entry points.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "What is the exact SPO outer container, header placement, record framing, and transaction boundary?",
+      "evidence": [
+        "cSavedGameHeader",
+        "GameLoadParameters",
+        "0x00b28ec0",
+        "0x00b294c0"
+      ],
+      "id": "spo_container_framing",
+      "impact": "Blocks exact saved-game parsing, checksum/encryption analysis, and whole-file atomicity claims.",
+      "required_evidence": "A legal synthetic or original .spo capture plus direct read/write body correlation; do not inspect or modify SPORE files.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "What are the exact ClassSerializer/SerializerDatabase stream framing, object-pointer table, and class-object record order?",
+      "evidence": [
+        "0x00692900",
+        "0x00693e10",
+        "0x00692ec0",
+        "0x00693d60",
+        "0x00693900"
+      ],
+      "id": "serializer_wire_and_pointer_table",
+      "impact": "Blocks exact class/object restoration, pointer remapping, and deterministic stream round trips.",
+      "required_evidence": "Concrete COMSerializer/SerializerDatabase implementations and legal stream fixtures.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "What is the exact PROP byte format, parent encoding, and typed Property layout?",
+      "evidence": [
+        "0x006a1540",
+        "0x006a2f60",
+        "App::Property",
+        "App::PropertyList"
+      ],
+      "id": "prop_wire_format",
+      "impact": "Blocks exact property/config/profile round trips and parent restoration.",
+      "required_evidence": "PropertyList/Property bodies plus a legal synthetic .prop fixture; SDK/import Property layout remains contradictory.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "Which simulator strategies are iterated during save/load, in what order, and when is OnLoad(cSavedGameHeader) called?",
+      "evidence": [
+        "Simulator::cSimulatorSystem",
+        "Simulator::ISimulatorStrategy Write/Read/OnLoad",
+        "0x00b3d330"
+      ],
+      "id": "strategy_serialization_order",
+      "impact": "Blocks cross-mode restoration order and mode-specific survival claims.",
+      "required_evidence": "Concrete InitializeSubSystems/Write/Read/DisposeSubSystems bodies and vector iteration traces.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "Does Cell serializable-data handoff cross stage/mode boundaries, or is it only a Cell reset/restart mechanism?",
+      "evidence": [
+        "0x00e63d10",
+        "0x00e819b0",
+        "0x00e80ba0",
+        "cCellSerializableData"
+      ],
+      "id": "cell_cross_stage_handoff",
+      "impact": "Cell progression survival across process/mode boundaries cannot be asserted.",
+      "required_evidence": "Correlate global handoff, mode transition, serializer writer, and restart trace in one controlled original run.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "What does 0x0212d3e7 mean at the PreShutdown dispatch, and does the achievement handler persist cross-game progress?",
+      "evidence": [
+        "0x007e6470",
+        "0x00676c80",
+        "0x00677140",
+        "SDK message-ID collision"
+      ],
+      "id": "shutdown_message_semantics",
+      "impact": "Cross-game progress/profile checkpoint and shutdown ordering remain unresolved.",
+      "required_evidence": "Concrete message payload, listener vtable, cSPAchievementSerializer Write/Read target, and I/O trace.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "What are the exact save-slot/profile ownership, slot count, and lock semantics?",
+      "evidence": [
+        "0x00b282e0",
+        "0x00b28750",
+        "0x00b28850",
+        "*.spo",
+        "Games/Game0"
+      ],
+      "id": "save_slot_profile_ownership",
+      "impact": "No fixed slot count, account model, or user-visible profile boundary can be claimed.",
+      "required_evidence": "Named slot/profile roots, path resolution, UI enumeration, and controlled save/load trace.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "What is the exact meaning and migration behavior of .old/planetRecords.pkp, .old/complete, GGEUserData.dat, and valid markers?",
+      "evidence": [
+        "0x00b282e0",
+        "0x00b28750",
+        "0x00bb8b20"
+      ],
+      "id": "legacy_profile_migration",
+      "impact": "Cannot claim atomic migration, rollback, or compatibility behavior.",
+      "required_evidence": "Marker contents, direct migration body, and legal fixture transition tests.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "Does stars.db.tmp replacement protect the full .spo/profile transaction, or only the star database?",
+      "evidence": [
+        "0x00bb4ba0",
+        "0x00b28ec0",
+        "0x00b294c0"
+      ],
+      "id": "cross_file_atomicity",
+      "impact": "Whole-save crash consistency and rollback remain unknown.",
+      "required_evidence": "Synchronized trace of all profile files, streams, flush, close, rename, and post-failure startup.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "What exact fields are emitted for cCellSerializableData, cStarRecord, cEmpire, missions, inventory, achievements, and PropertyLists?",
+      "evidence": [
+        "cCellSerializableData",
+        "cStarRecord",
+        "cEmpire",
+        "cMission",
+        "cSPAchievementSerializer",
+        "PropertyList"
+      ],
+      "id": "field_coverage_and_migration",
+      "impact": "Field presence cannot be promoted to save coverage or cross-version compatibility.",
+      "required_evidence": "Concrete per-class Write/Read bodies, version gates, and legal round-trip fixtures.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "Can a controlled original-process trace reach a successful save/load/profile operation without modifying SPORE files?",
+      "evidence": [
+        "docs/STATE.md",
+        "docs/devlog/018-s5-cell-runtime-evidence.md",
+        "no positive save/load trace in research"
+      ],
+      "id": "original_runtime_validation",
+      "impact": "All lifecycle ordering and restoration claims remain static or interface-level.",
+      "required_evidence": "Read-only controlled trace of save, load, profile inventory, shutdown, and restart using non-proprietary or legally permitted fixtures.",
+      "status": "unresolved"
+    }
+  ]
+}

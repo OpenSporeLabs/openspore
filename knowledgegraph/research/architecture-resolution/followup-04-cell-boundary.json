@@ -1,0 +1,477 @@
+{
+  "$schema": "openspore-followup-04-cell-boundary-1",
+  "artifact": {
+    "name": "followup-04-cell-boundary",
+    "title": "Cell lifecycle boundary observation",
+    "research_date": "2026-09-24",
+    "program": "SporeApp.exe",
+    "version": "3.1.0.22",
+    "analysis_only": true,
+    "ghidra_mutation_requested": false,
+    "implementation_modified": false,
+    "historical_artifacts_modified": false,
+    "spore_filesystem_accessed": false,
+    "knowledgegraph_database_accessed": false,
+    "clean_room_rule": "Ghidra observations are static evidence from SporeApp.exe; imported names and decompiler types are bounded evidence, not a claim of complete original runtime truth."
+  },
+  "scope": {
+    "question": "Whether cCellGFX/mGFXObjectIndex can detach and rebuild while retaining the same cCellObjectData/pool identity, and how cCellGame+0x411c, cCellObjectData+0x108, and cCellObjectData+0x248 behave across creation, despawn, reload, OnExit, and Dispose.",
+    "explicit_program": "SporeApp.exe",
+    "read_only_observations": [
+      "function decompilation",
+      "function xrefs and callers/callees",
+      "function disassembly",
+      "structure layouts",
+      "global xrefs",
+      "constructor/destructor/service teardown bodies"
+    ],
+    "excluded": [
+      "Ghidra mutation",
+      "SPORE/ traversal or runtime launch",
+      "spore.db access",
+      "implementation",
+      "historical edits",
+      "runtime trace claims"
+    ]
+  },
+  "verdict": {
+    "status": "BOUNDED_SUPPORTED",
+    "headline": "A static in-place per-cell GFX association seam exists, but no single straight-line invocation was proven to detach and rebuild the association while retaining the same cell. The same cell/pool identity is retained across the separate detach and rebuild branches; despawn and stage reload are identity-destructive.",
+    "positive_path": "FUN_00e7c8c0 -> FUN_00e78c00 -> (FUN_00e66010 detach when +0x248 is present) or (FUN_00e6d8f0 rebuild when +0x248 is absent) -> FUN_00e5ce90 initializes the new GFX record",
+    "positive_path_limit": "The detach and rebuild calls are mutually exclusive branches of FUN_00e78c00. The evidence supports same identity across separate per-cell operations, not an atomic detach-then-rebuild transaction or a runtime guarantee.",
+    "negative_paths": [
+      "FUN_00e780a0 detaches/releases GFX state and then always releases the input cCellObjectData pool object.",
+      "FUN_00e7fd00 clears sCellGame+0x411c, drains the cell pool, detaches GFX records, and releases the old cCellObjectData pool objects before setup/population work."
+    ],
+    "modern_invariant": "Use a stable simulation CellId/pool identity independent of an optional, replaceable GFX association index; keep content references, gameplay state, GFX/UI state, and serializable save state in separate ownership domains.",
+    "recovered_original_behavior": "The original uses a cell pool index as simulation identity and a separate GFX pool index at cCellObjectData+0x248. The original also has a per-cell detach/rebuild seam, but its despawn and stage-rebuild helpers release the old cell object rather than preserving it."
+  },
+  "structures": {
+    "cCellObjectData": {
+      "size": 920,
+      "fields": [
+        {"offset": "0x00", "name": "mObjectPoolIndex", "type": "cObjectPoolIndex", "meaning": "pool identity"},
+        {"offset": "0xfc", "name": "mModelKey", "type": "ResourceKey", "meaning": "resolved model/content key"},
+        {"offset": "0x108", "name": "mCellResource", "type": "cCellDataReference<cCellCellResource> *", "meaning": "runtime resource reference"},
+        {"offset": "0x244", "name": "mHealthPoints", "type": "int", "meaning": "gameplay state"},
+        {"offset": "0x248", "name": "mGFXObjectIndex", "type": "cObjectPoolIndex", "meaning": "per-cell GFX association"},
+        {"offset": "0x358", "name": "mScale", "type": "CellStageScale", "meaning": "gameplay/stage state"},
+        {"offset": "0x35c", "name": "mpQuery", "type": "cCellQueryLinkedPool *", "meaning": "simulation/query state"}
+      ]
+    },
+    "cCellGame": {
+      "size": 20964,
+      "fields": [
+        {"offset": "0x1c", "name": "mCells", "type": "cObjectPool<cCellObjectData>", "meaning": "main cell pool"},
+        {"offset": "0x4104", "name": "mpCellObjectPool", "type": "void/pointer", "meaning": "pool handle used by cell construction and query paths"},
+        {"offset": "0x411c", "name": "mAvatarCellIndex", "type": "cObjectPoolIndex", "meaning": "selected/player cell identity"},
+        {"offset": "0x5190", "name": "mpSerializableData", "type": "intrusive_ptr<cCellSerializableData>", "meaning": "mode-specific serializable-state candidate"},
+        {"offset": "0x51d8", "name": "field_51D8", "type": "int", "meaning": "reload-request flag observed in the frame orchestrator"}
+      ]
+    },
+    "cCellGFX": {
+      "size": 90716,
+      "fields": [
+        {"offset": "0x168", "name": "mCellGFXObjects", "type": "cObjectPool<cCellGFX::CellGFXObjectData>", "meaning": "per-cell GFX record pool"},
+        {"offset": "0x161a0-0x161d8", "name": "world/layer handles", "type": "presentation handles", "meaning": "stage-level GFX services"},
+        {"offset": "0x161e0-0x16258", "name": "effect/display state", "type": "presentation state", "meaning": "effect instances and display services"}
+      ],
+      "cell_gfx_record_note": "The imported structure names the pool but does not expose a complete cCellGFX::CellGFXObjectData layout. The record's reciprocal cell association is recovered from FUN_00e6d8f0/FUN_00e5ce90 and from FUN_00e66010's pool accesses."
+    },
+    "cCellDataReference_": {
+      "size": 16,
+      "fields": [
+        {"offset": "0x00", "name": "mInstanceID", "type": "uint32_t", "meaning": "content instance identity"},
+        {"offset": "0x04", "name": "mpSerializer", "type": "CellSerializer *", "meaning": "resource resolution context"},
+        {"offset": "0x08", "name": "mpResource", "type": "intrusive_ptr<cCellResource>", "meaning": "resolved runtime resource"},
+        {"offset": "0x0c", "name": "mCounter", "type": "int", "meaning": "reference/runtime bookkeeping"}
+      ]
+    },
+    "cCellSerializableData": {
+      "size": 236,
+      "fields": ["mGameMode", "mPlayerCreatureKey", "mFoodProgression", "mUnlockedParts", "mKillCount", "mDeathCount", "gameTimeMS", "gameID", "difficulty", "missions", "playerHasMoved", "playerHasEaten", "mNanites", "mNanovirusActive", "mAddedStartTelemetry"],
+      "meaning": "Explicit mode-specific serializable state candidate, distinct from live cCellObjectData and Cell content records."
+    },
+    "cCellUI": {
+      "size": 2372,
+      "relevant_fields": ["mRollovers at 0x9c", "UI layout and input state"],
+      "meaning": "separate presentation/UI service; not part of cCellObjectData identity."
+    }
+  },
+  "recovered_original_behavior": {
+    "creation": [
+      {
+        "address": "0x00e74a20",
+        "name": "Simulator::Cell::CreateCellObject",
+        "observations": [
+          "Allocates a cObjectPoolIndex from the cell pool.",
+          "Initializes transform, orientation, size, scale, health, query, and gameplay fields.",
+          "Calls GetModelKeyForCellResource and writes the resulting ResourceKey to cCellObjectData+0xfc.",
+          "Writes the cCellDataReference<cCellCellResource>* to cCellObjectData+0x108.",
+          "The direct create body does not establish the later GFX association write; the observed writer of +0x248 is FUN_00e6d8f0."
+        ]
+      },
+      {
+        "address": "0x00e65640",
+        "name": "Simulator::Cell::GetModelKeyForCellResource",
+        "observations": [
+          "Resolves the cCellDataReference before inspecting the resource's model-key table.",
+          "Can derive a key from resource records or the current serializable-data player key.",
+          "The returned ResourceKey is copied into cCellObjectData+0xfc by CreateCellObject."
+        ]
+      }
+    ],
+    "per_cell_gfx_detach": {
+      "address": "0x00e66010",
+      "name": "FUN_00e66010",
+      "observations": [
+        "The implicit EAX input is a cCellObjectData pool index; disassembly uses the cCellGame cell pool at sCellGame+0x1c.",
+        "Reads cCellObjectData+0x248 and resolves that index through cCellGFX.mCellGFXObjects at sCellGFX+0x168.",
+        "Writes zero to cCellObjectData+0x248.",
+        "Invokes FUN_00e65ad0 on the GFX record and then releases the GFX record pool entry.",
+        "Does not release the cCellObjectData pool entry itself."
+      ]
+    },
+    "per_cell_gfx_rebuild": {
+      "address": "0x00e6d8f0",
+      "name": "FUN_00e6d8f0",
+      "observations": [
+        "Resolves the existing cCellObjectData from param_1 through the cell pool.",
+        "Allocates a new GFX object through FUN_00b72160.",
+        "Writes the new GFX pool index to puVar3[0x92], which is cCellObjectData+0x248.",
+        "Calls FUN_00e5ce90 with the new GFX index and the existing cell's mObjectPoolIndex; FUN_00e5ce90 writes the cell index to the GFX record at +0x0c.",
+        "Replays idle animation on the same cCellObjectData and does not release the cell object.",
+        "The only direct xref to FUN_00e6d8f0 is the +0x248==0 branch of FUN_00e78c00."
+      ]
+    },
+    "positive_same_identity_seam": {
+      "caller": "0x00e7c8c0",
+      "callee": "0x00e78c00",
+      "detached_branch": {
+        "condition": "FUN_00e5cde0 returns nonzero and the cell has a nonzero +0x248 GFX index",
+        "call": "FUN_00e66010 with the same cell pool index",
+        "cell_release": false
+      },
+      "rebuilt_branch": {
+        "condition": "FUN_00e78c00 reaches its non-detach path with cCellObjectData+0x248 == 0",
+        "call": "FUN_00e6d8f0 with the same cCellObjectData",
+        "cell_release": false
+      },
+      "interpretation": "The same cCellObjectData/pool identity can be the owner before and after a per-cell GFX association is detached and later reattached. The two operations are separate conditional branches, not a proven single-call sequence."
+    },
+    "despawn": {
+      "address": "0x00e780a0",
+      "name": "FUN_00e780a0",
+      "observations": [
+        "Resolves param_1 as a cCellObjectData pool index.",
+        "If it equals sCellGame+0x411c, clears the avatar index to zero.",
+        "Removes the cell from query/linked state and releases related query handles.",
+        "If +0x248 is nonzero, detaches the GFX record through FUN_00e66010.",
+        "When the scale-replacement mode is active, calls FUN_00e67890 and may call FUN_00e771d0 using the old cell's +0x108 resource reference and +0xfc model key to populate replacement/child cells.",
+        "Always calls FUN_00b72260(param_1) after the conditional work, releasing the input cCellObjectData pool object.",
+        "There are 27 xrefs from 23 caller functions, including death, interaction, population, and setup/rebuild helpers."
+      ],
+      "identity_result": "The GFX association is detached in place as an intermediate operation, but the old cCellObjectData identity is not retained after the helper returns. Any replacement is a newly created/selected object, not the same pool record."
+    },
+    "stage_reload": {
+      "address": "0x00e7fd00",
+      "name": "FUN_00e7fd00",
+      "observations": [
+        "Clears sCellGame+0x51d8 and sCellGame+0x411c.",
+        "Drains the transient interaction list through FUN_00e7e130.",
+        "Iterates the cell pool, clears a matching avatar index, detaches +0x248 through FUN_00e66010, and releases each cCellObjectData pool object with FUN_00b72260.",
+        "Drains GFX/effect/UI state and resets world/scale/setup state before population/setup work.",
+        "Reads mode fields from cCellSerializableData at cCellGame+0x5190 and writes them into the serializable object during setup."
+      ],
+      "xrefs": ["0x00e806b0 reload branch", "0x00e80ba0 cCellGame::Initialize", "0x00e80660", "0x00e809a0"],
+      "identity_result": "No old cCellObjectData/pool identity is retained across the reload drain. This is a rebuild of runtime state, not a same-cell visual refresh."
+    },
+    "mode_exit": {
+      "address": "0x00e7fc00",
+      "name": "App::cCellModeStrategy::OnExit",
+      "observations": [
+        "Restores global display/background values.",
+        "Drains and releases transient interaction records through FUN_00e7e130.",
+        "Calls FUN_00e64a00, which drains cCellGFX preloaded/visual records and presentation handles, resets the shadow/light/model/effect services, and resets UI state.",
+        "Calls FUN_00e82d40 for additional service cleanup.",
+        "The direct body has no cCellObjectData+0x108, +0x248, or sCellGame+0x411c field rewrite and no cCellObjectData pool release."
+      ],
+      "identity_result": "OnExit is a mode/presentation cleanup boundary. It does not itself prove either retention or destruction of the cell pool; that distinction belongs to the subsequent stage reload or service Dispose path."
+    },
+    "mode_dispose": {
+      "address": "0x00e81f30",
+      "name": "App::cCellModeStrategy::Dispose",
+      "observations": [
+        "Performs mode-specific conditional cleanup and GFX world cleanup.",
+        "Calls FUN_00e63f90 for cCellGame, FUN_00e64090 for cCellGFX, and FUN_00e61b00 for cCellUI through separate service bodies.",
+        "FUN_00e64090 releases cCellGFX world/layer/model/effect/preload handles and the GFX object pool storage.",
+        "FUN_00e61b00 releases UI layout/rollover state.",
+        "FUN_00e63f90 releases cCellGame-owned runtime/service state through generic pool/refcount cleanup; its direct body does not explicitly rewrite +0x411c, +0x108, or +0x248."
+      ],
+      "identity_result": "Dispose is a deeper owner/service release boundary than OnExit. It is not an in-place GFX association rebuild."
+    },
+    "serializable_state": {
+      "constructor": "0x00e61550 allocates 0xec bytes and installs serializable/refcount vtables; 0x00e61630 initializes mode/player/resource-related state around that constructor.",
+      "ownership": "cCellGame+0x5190 holds mpSerializableData; cCellGame::Initialize allocates or adopts it, and cCellGame::Initialize xrefs the global serializable slot.",
+      "handoff": "FUN_00e63d10 allocates a new 0xec object, swaps it into Simulator::Cell::sCellSerializableData, and copies state through FUN_00e627a0. FUN_00e819b0 can similarly adopt/swap the global object before cCellGame::Initialize.",
+      "save_candidate_classification": "Explicit mode-specific serializable state candidate, separate from cCellObjectData gameplay state, cCellGFX/cCellUI presentation, and Cell content records. This pass did not observe a disk transaction and does not claim one."
+    }
+  },
+  "field_ownership_and_classification": [
+    {
+      "item": "cCellGame+0x411c",
+      "recovered_owner": "cCellGame.mAvatarCellIndex",
+      "classification": "simulation identity",
+      "evidence": ["cCellGame structure field", "MovePlayer-style pool lookups and gameplay event paths", "FUN_00e780a0 clears it only when the despawned index matches", "FUN_00e7fd00 clears it at reload start"],
+      "modern_invariant": "A stable CellId/pool index is authoritative and is not replaced by a GFX object index."
+    },
+    {
+      "item": "cCellObjectData+0x248",
+      "recovered_owner": "cCellObjectData.mGFXObjectIndex",
+      "classification": "presentation association",
+      "evidence": ["cCellObjectData structure field", "FUN_00e66010 clears it while releasing the GFX record", "FUN_00e6d8f0 writes a newly allocated GFX index into the same cell", "FUN_00e5ce90 writes the reciprocal cell index into the GFX record"],
+      "modern_invariant": "The association is optional and replaceable; it is not the simulation identity."
+    },
+    {
+      "item": "cCellObjectData+0x108",
+      "recovered_owner": "cCellObjectData.mCellResource",
+      "classification": "persistent-content reference boundary",
+      "evidence": ["CreateCellObject stores the cCellDataReference pointer", "GetModelKeyForCellResource resolves through it", "FUN_00e67890 and FUN_00e771d0 consume it during effect/child/replacement work", "FUN_00e6d8f0 resolves it before rebuilding the GFX record"],
+      "modern_invariant": "Keep stable content identity separate from the resolved resource pointer and from runtime GFX handles."
+    },
+    {
+      "item": "cCellObjectData+0xfc",
+      "recovered_owner": "cCellObjectData.mModelKey",
+      "classification": "persistent content identity",
+      "evidence": ["CreateCellObject writes the ResourceKey returned by GetModelKeyForCellResource", "The key is separate from the GFX index at +0x248"],
+      "modern_invariant": "Model/content key is not presentation state and should not be discarded merely because a GFX association is rebuilt."
+    },
+    {
+      "item": "cCellObjectData gameplay state",
+      "recovered_owner": "cCellObjectData pool record",
+      "classification": "simulation",
+      "fields": ["mObjectPoolIndex", "transform/target fields", "mHealthPoints", "mScale", "mpQuery", "animation intent and AI/death state"],
+      "modern_invariant": "Gameplay state belongs to the simulation identity and survives a presentation detach/rebuild when the cell is not despawned."
+    },
+    {
+      "item": "cCellGFX and cCellUI",
+      "recovered_owner": "separate singleton service objects",
+      "classification": "presentation",
+      "evidence": ["Separate global slots and structures", "cCellGFX::Initialize creates world/layer handles", "FUN_00e64a00 drains presentation state on OnExit", "Dispose separately calls cCellGFX and cCellUI destructors"],
+      "modern_invariant": "GFX/UI owners coordinate with simulation but do not become the Cell identity."
+    },
+    {
+      "item": "cCellSerializableData",
+      "recovered_owner": "cCellGame+0x5190 / mode serializable handoff",
+      "classification": "cross-boundary persistence candidate",
+      "evidence": ["0xec-byte constructor and structure", "serializable/refcount vtables", "cCellGame ownership and in-memory pointer handoff", "mode setup writes selected mode fields"],
+      "modern_invariant": "Use an explicit save DTO/transaction separate from live pool, GFX, UI, and content-resource runtime objects; do not infer disk persistence from teardown."
+    }
+  ],
+  "lifecycle_trace": [
+    {
+      "order": 1,
+      "phase": "create",
+      "address": "0x00e74a20",
+      "identity": "new cCellObjectData pool index",
+      "fields": ["mModelKey+0xfc", "mCellResource+0x108", "gameplay state", "query/scale"],
+      "gfx": "not established by the direct create-body write; later association builder is 0x00e6d8f0"
+    },
+    {
+      "order": 2,
+      "phase": "per-cell visual detach",
+      "address": "0x00e66010",
+      "identity": "same cCellObjectData/pool index remains live at return",
+      "fields": ["+0x248 cleared", "GFX record released", "cCellGame+0x411c not changed by this helper"]
+    },
+    {
+      "order": 3,
+      "phase": "per-cell visual rebuild",
+      "address": "0x00e6d8f0",
+      "identity": "same cCellObjectData/pool index remains live",
+      "fields": ["+0x248 replaced with new GFX index", "new GFX record receives reciprocal cell index", "idle animation replayed"]
+    },
+    {
+      "order": 4,
+      "phase": "despawn",
+      "address": "0x00e780a0",
+      "identity": "old cCellObjectData released",
+      "fields": ["matching +0x411c cleared", "+0x248 detached", "+0x108 consumed for possible replacement/children", "old pool record released"]
+    },
+    {
+      "order": 5,
+      "phase": "stage reload",
+      "address": "0x00e7fd00",
+      "identity": "old cells drained/released",
+      "fields": ["+0x411c cleared", "+0x248 detached for each old cell", "UI/GFX/world state drained", "serializable mode state copied/updated"]
+    },
+    {
+      "order": 6,
+      "phase": "mode exit",
+      "address": "0x00e7fc00",
+      "identity": "no direct cell-pool identity rewrite observed",
+      "fields": ["transient interactions drained", "presentation/UI service cleanup"]
+    },
+    {
+      "order": 7,
+      "phase": "mode dispose",
+      "address": "0x00e81f30",
+      "identity": "service owners released separately",
+      "fields": ["cCellGame release", "cCellGFX release", "cCellUI release"]
+    }
+  ],
+  "hypotheses": [
+    {
+      "id": "H1",
+      "name": "in_place_gfx_association_seam",
+      "claim": "A cCellObjectData pool identity can survive a per-cell GFX association detach and later reattach.",
+      "predictions": [
+        "A detach helper must clear cCellObjectData+0x248 without calling the cell pool release on its input cell index.",
+        "A rebuild helper must receive an existing cCellObjectData and write a newly allocated GFX index to +0x248.",
+        "The caller must continue using the same cell object after the rebuild helper returns."
+      ],
+      "evidence": [
+        "FUN_00e66010 clears +0x248 and releases the GFX record, not the cell record.",
+        "FUN_00e6d8f0 resolves the existing cell, allocates a GFX record, writes +0x248, and calls PlayAnimation on the same cell.",
+        "FUN_00e7c8c0 iterates the cell pool and invokes FUN_00e78c00 without releasing the loop cell in the positive branch."
+      ],
+      "outcome": "supported_with_branch_limit"
+    },
+    {
+      "id": "H2",
+      "name": "single_call_atomic_detach_rebuild",
+      "claim": "One recovered function unconditionally detaches and rebuilds the GFX association while retaining the same cell identity.",
+      "predictions": [
+        "The same function would call FUN_00e66010 and then FUN_00e6d8f0 for the same cell.",
+        "The cell would remain valid between the two calls and no despawn branch would intervene."
+      ],
+      "evidence": [
+        "FUN_00e78c00 contains mutually exclusive detach and rebuild branches.",
+        "FUN_00e6d8f0 has one direct caller, FUN_00e78c00, and is reached when +0x248 is already zero.",
+        "FUN_00e66010's callers are FUN_00e780a0, FUN_00e78c00, and FUN_00e7fd00; none is a proven straight-line same-cell detach-then-e6d8f0 pair."
+      ],
+      "outcome": "not_proven"
+    },
+    {
+      "id": "H3",
+      "name": "despawn_releases_cell_identity",
+      "claim": "FUN_00e780a0 is a despawn/transition boundary rather than a presentation-only refresh.",
+      "predictions": [
+        "A matching sCellGame+0x411c should be cleared.",
+        "The old GFX record should be detached before the cell pool entry is released.",
+        "The cell pool release call should occur after the detach and optional replacement/child work."
+      ],
+      "evidence": [
+        "FUN_00e780a0 clears +0x411c only on a match.",
+        "It calls FUN_00e66010 and conditionally FUN_00e67890/FUN_00e771d0.",
+        "It unconditionally calls FUN_00b72260(param_1) at the end.",
+        "It has 27 xrefs from 23 callers spanning death, interaction, population, and setup paths."
+      ],
+      "outcome": "supported"
+    },
+    {
+      "id": "H4",
+      "name": "reload_discards_old_pool_identity",
+      "claim": "Stage reload rebuilds runtime state from drained pools rather than refreshing the existing cells in place.",
+      "predictions": [
+        "The avatar index should be cleared at reload entry.",
+        "Each old cCellObjectData should have its GFX association detached and then be released.",
+        "The body should perform later world/UI/setup work after the drain rather than reattaching the old cell records."
+      ],
+      "evidence": [
+        "FUN_00e7fd00 sets sCellGame+0x411c to zero.",
+        "Its cell loop calls FUN_00e66010 and then FUN_00b72260 for each old pool index.",
+        "Its callers include the frame reload branch at 0x00e806b0 and cCellGame::Initialize."
+      ],
+      "outcome": "supported"
+    },
+    {
+      "id": "H5",
+      "name": "content_identity_survives_gfx_association_changes",
+      "claim": "mModelKey and mCellResource are content/resource ownership fields, not GFX handles.",
+      "predictions": [
+        "CreateCellObject should populate +0xfc from GetModelKeyForCellResource and +0x108 from the resource reference.",
+        "GFX detach/rebuild should change +0x248 without clearing +0xfc or +0x108.",
+        "Effect/child/replacement helpers should resolve the resource through +0x108."
+      ],
+      "evidence": [
+        "CreateCellObject writes the model key and resource reference.",
+        "FUN_00e66010 only clears +0x248 on the cell.",
+        "FUN_00e6d8f0, FUN_00e67890, and FUN_00e771d0 consume +0x108.",
+        "GetModelKeyForCellResource resolves through the cCellDataReference and writes a ResourceKey."
+      ],
+      "outcome": "supported"
+    },
+    {
+      "id": "H6",
+      "name": "mode_service_teardown_is_separate_from_save",
+      "claim": "OnExit and Dispose are service/mode cleanup boundaries, while cCellSerializableData is a separate in-memory save candidate.",
+      "predictions": [
+        "OnExit should drain transient/presentation state without directly serializing the cell pool.",
+        "Dispose should release cCellGame, cCellGFX, and cCellUI through separate service paths.",
+        "cCellSerializableData should have its own 0xec allocation, vtables, and cCellGame+0x5190 ownership.",
+        "No direct disk transaction should be inferred from these teardown calls."
+      ],
+      "evidence": [
+        "OnExit calls interaction/display/GFX/UI cleanup helpers and has no direct +0x411c/+0x108/+0x248 rewrite.",
+        "Dispose calls separate cCellGame, cCellGFX, and cCellUI teardown bodies.",
+        "FUN_00e61550 allocates 0xec bytes with serializable/refcount vtables; cCellGame+0x5190 owns mpSerializableData.",
+        "FUN_00e63d10 and FUN_00e819b0 show in-memory handoff/adoption, not a recovered disk write."
+      ],
+      "outcome": "supported_as_bounded_save_candidate"
+    }
+  ],
+  "modern_design_invariant": {
+    "status": "normative_architecture_recommendation_not_original_claim",
+    "rules": [
+      "Simulation identity is a stable CellId/pool index independent of presentation.",
+      "GFX association is optional, replaceable, and keyed by CellId; GFX/UI handles never become the simulation identity.",
+      "Model/content keys and resource references are separate from runtime resolved resource pointers and GFX handles.",
+      "Gameplay state remains authoritative in simulation; animation/pose/render output remains downstream.",
+      "Create, gameplay mutation, presentation detach, presentation rebuild, despawn, stage reload, OnExit, and Dispose are explicit lifecycle transitions.",
+      "cCellSerializableData is a separate mode-state DTO/candidate; live pool, GFX, UI, world, and resolved-resource handles are not presumed save-surviving."
+    ]
+  },
+  "boundaries": {
+    "resolved": [
+      "The field ownership and the positive per-cell GFX detach/rebuild seam.",
+      "The negative result for retaining the old cell identity through FUN_00e780a0 and FUN_00e7fd00.",
+      "The separation of mModelKey/mCellResource, gameplay state, GFX/UI, and cCellSerializableData.",
+      "The distinction between per-cell GFX record rebuild and stage-level cCellGFX world/layer initialization."
+    ],
+    "not_resolved": [
+      "Whether runtime callers always take the positive per-cell rebuild branch when a GFX association is absent.",
+      "The exact GFX pool reuse/sentinel behavior and hidden virtual-call retirement timing.",
+      "A runtime-observed detach -> rebuild sequence; this is a static observation only.",
+      "The complete cCellGFX::CellGFXObjectData layout because the imported structure exposes the pool but not the full record layout.",
+      "Complete cCellSerializableData field coverage, wire encoding, migration, and whether mode exit ever initiates a save."
+    ]
+  },
+  "citations": [
+    {"source": "ghidra://SporeApp.exe@0x00e74a20", "use": "CreateCellObject pool allocation, +0xfc model key, +0x108 resource reference, gameplay initialization"},
+    {"source": "ghidra://SporeApp.exe@0x00e65640", "use": "GetModelKeyForCellResource resolution through cCellDataReference"},
+    {"source": "ghidra://SporeApp.exe@0x00e66010", "use": "cell-index GFX detach, +0x248 clear, GFX record release"},
+    {"source": "ghidra://SporeApp.exe@0x00e6d8f0", "use": "new GFX record allocation, +0x248 replacement, same-cell PlayAnimation"},
+    {"source": "ghidra://SporeApp.exe@0x00e5ce90", "use": "reciprocal GFX-record cell-index initialization"},
+    {"source": "ghidra://SporeApp.exe@0x00e78c00", "use": "mutually exclusive detach and rebuild branches"},
+    {"source": "ghidra://SporeApp.exe@0x00e7c8c0", "use": "per-cell pool iteration and positive caller seam"},
+    {"source": "ghidra://SporeApp.exe@0x00e780a0", "use": "despawn, avatar clear, GFX detach, +0x108 consumption, pool release, 27 xrefs"},
+    {"source": "ghidra://SporeApp.exe@0x00e7fd00", "use": "reload drain, avatar clear, GFX detach, pool release, world/UI/setup reset"},
+    {"source": "ghidra://SporeApp.exe@0x00e7fc00", "use": "OnExit transient/presentation cleanup"},
+    {"source": "ghidra://SporeApp.exe@0x00e81f30", "use": "Dispose separate cCellGame/cCellGFX/cCellUI teardown"},
+    {"source": "ghidra://SporeApp.exe@0x00e63f90", "use": "cCellGame destructor/service release"},
+    {"source": "ghidra://SporeApp.exe@0x00e64090", "use": "cCellGFX destructor/world/layer/GFX pool release"},
+    {"source": "ghidra://SporeApp.exe@0x00e61b00", "use": "cCellUI destructor/rollover release"},
+    {"source": "ghidra://SporeApp.exe@0x00e5dba0", "use": "stage-level cCellGFX world/layer initialization"},
+    {"source": "ghidra://SporeApp.exe@0x00e61550", "use": "0xec cCellSerializableData allocation and vtables"},
+    {"source": "ghidra://SporeApp.exe@0x00e63d10", "use": "in-memory serializable-data handoff"},
+    {"source": "ghidra://SporeApp.exe@structure:cCellObjectData", "use": "920-byte field layout including +0xfc, +0x108, +0x248, +0x358, +0x35c"},
+    {"source": "ghidra://SporeApp.exe@structure:cCellGame", "use": "cCellGame layout including +0x411c and +0x5190"},
+    {"source": "ghidra://SporeApp.exe@structure:cCellGFX", "use": "cCellGFX layout including mCellGFXObjects at +0x168 and stage handles"},
+    {"source": "ghidra://SporeApp.exe@structure:cCellDataReference_", "use": "16-byte resource-reference carrier"},
+    {"source": "ghidra://SporeApp.exe@structure:cCellSerializableData", "use": "236-byte serializable state layout"},
+    {"source": "ghidra://SporeApp.exe@0x00e806b0", "use": "reload branch reaching FUN_00e7fd00"},
+    {"source": "ghidra://SporeApp.exe@0x00e819b0", "use": "GFX/UI/Cell initialization and serializable handoff"},
+    {"source": "ghidra://SporeApp.exe@0x00e82420", "use": "cCellDataReference_ creation/deduplication by instance and serializer"}
+  ]
+}

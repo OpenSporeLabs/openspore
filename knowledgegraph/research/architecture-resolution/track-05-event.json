@@ -1,0 +1,755 @@
+{
+  "$schema": "openspore-track-05-architecture-resolution-1",
+  "track": "Track 5",
+  "conflict_id": "CONFLICT-MESSAGE-QUEUE-AND-EVENT-ABI",
+  "campaign_classification": "RESOLVED_SUPPORTED",
+  "scope": {
+    "binary": "SporeApp.exe",
+    "version": "3.1.0.22",
+    "language": "x86:LE:32:default",
+    "compiler": "windows",
+    "image_base": "0x00400000",
+    "ghidra_program": "SporeApp.exe",
+    "ghidra_access": "read_only_explicit_program",
+    "historical_artifacts": "read_only",
+    "implementation": false,
+    "runtime_trace": "not_performed",
+    "runtime_decision": "not_needed_for_architecture_boundary",
+    "runtime_reason": "Direct producer, registration, outer-ProcessQueue, record-walker, second-processor, and ownership bytes already separate immediate send from deferred post, distinguish 0x14 registration records from 0x18 queue records, and establish that 0x008841f0 is cleanup/storage walking rather than dispatch. Runtime would refine reentrancy, cross-thread timing, and exact frame placement, but would not decide the minimum transport abstraction."
+  },
+  "classification_taxonomy": {
+    "concept_values": [
+      "transport",
+      "presentation",
+      "domain",
+      "persistence"
+    ],
+    "use": "Every event-family matrix row and every adversarial-step classification uses exactly one of these four values. Resolution status uses the campaign taxonomy."
+  },
+  "hypotheses": [
+    {
+      "id": "H1",
+      "name": "universal_event_abi",
+      "claim": "App messages, UTFWin messages, animation records, deferred events, communication events, and anonymous space records share one universal payload/event ABI.",
+      "prediction": "A shared semantic field-wise ABI prefix or base subobject, universal queue carrier, universal callback shape, and shared ownership/order rules should exist across families.",
+      "evidence_for": [
+        "Several event-like records expose a 32-bit ID and pointer or scalar fields.",
+        "Some domain messages can be transported by the App cMessageManager."
+      ],
+      "evidence_against": [
+        "The tested field prefixes are not one semantic ABI: StandardMessage begins MultithreadObject vtable, refcount, five parameters; UTFWin::Message begins IWindow source, field_04, eventType; AnimationMessage begins uint32 messageID, char* name, creature pointer; cCommEvent begins ISimulatorSerializable vtable, IVirtual vtable, refcount, event type; the anonymous 0x6c/0x60 space records begin with opaque discriminators and timestamp-like words.",
+        "Incidental 32-bit pointer or scalar first words do not establish a shared base subobject: pointer roles and refcount offsets differ, and no tested family begins with the same semantic sequence.",
+        "Registration Entry is 0x14 bytes, while deferred queue records copied by producers and the record walker are 0x18 bytes with a distinct six-dword transport layout.",
+        "Callback contracts differ: bool HandleMessage(uint32,void*), void MessageHandler_t(uint32,void*,void*), UTFWin filter/priority/proc callbacks, runtime communication-domain cCommEvent with a persistence interface, and value-owned deferred records.",
+        "cCommEvent is a runtime communication-domain object that crosses into persistence through ISimulatorSerializable; it is not a persistence-only record, and no direct App queue edge is shown. The anonymous space pair belongs to a separate space state-handler SCC."
+      ],
+      "outcome": "rejected",
+      "status": "RESOLVED_SUPPORTED"
+    },
+    {
+      "id": "H2",
+      "name": "single_app_record_abi",
+      "claim": "Inside App messaging, registration metadata and deferred delivery use one universal event record.",
+      "prediction": "The same object should be inserted into the listener map, carried in the queue, and passed to callbacks without a layout or ownership transition.",
+      "evidence_for": [
+        "Both registration and delivery are selected by the same 32-bit message ID and eventually reach the same listener/callback vocabulary."
+      ],
+      "evidence_against": [
+        "The 0x14 Entry is copied into 0x1c allocated linked-list nodes as registration metadata.",
+        "The 0x18 queue record is built by FUN_00885890/FUN_00885930, copied by the 0x00884550 record walker, and consumed by the 0x00884700 second processor; its fields are message ID, payload, optional listener, integer ordering key, optional handler, and context.",
+        "Registration can fan out by priority; a deferred post targets one snapshot listener or one callback/context pair and the processor has a distinct three-way dispatch branch."
+      ],
+      "outcome": "rejected",
+      "status": "RESOLVED_SUPPORTED"
+    },
+    {
+      "id": "H3",
+      "name": "send_post_aliases",
+      "claim": "MessageSend, MessagePost, and MessagePostFunction are naming variants over one timing and ownership contract.",
+      "prediction": "Each surface should enqueue the same record, retain/release the same objects, and dispatch at the same phase.",
+      "evidence_for": [
+        "All three are adjacent IMessageManager methods and share message ID and payload concepts."
+      ],
+      "evidence_against": [
+        "The MessageSend body around 0x008854a0 locks, looks up the listener map/list, and invokes matching entries before returning; it does not call the queue insertion helper 0x00885710.",
+        "MessagePost around 0x00885980 and MessagePostFunction at 0x00885930 both build a 0x18 record and call 0x00885710.",
+        "MessagePost/Function optionally retain the payload and target before insertion and release them after callback; MessageSend accepts an unmanaged payload/listener and shows no queue ownership transfer.",
+        "The listener callback returns bool, but the deferred processor ignores it and dispatches every queued record; MessageHandler_t is void."
+      ],
+      "outcome": "rejected",
+      "status": "RESOLVED_SUPPORTED"
+    },
+    {
+      "id": "H4",
+      "name": "shared_transport_implies_shared_family",
+      "claim": "If a record uses the App transport, it belongs to the same ABI/ownership/order family as StandardMessage.",
+      "prediction": "All App-transported records could be represented as StandardMessage-derived 0x40 values and inherit the same callback and ordering rules.",
+      "evidence_for": [
+        "The App transport passes a generic void* and therefore can carry many domain payloads."
+      ],
+      "evidence_against": [
+        "The transport deliberately separates registration Entry, queue record, and payload object; payload interpretation is listener-specific.",
+        "Editors::cEditorAnimEvent MessageSend/MessagePost at 0x0059d8b0/0x0059d840 are not recovered as IMessageManager calls; they pack a 0x30 editor record and call different IAppSystem virtual slots.",
+        "UTFWin, tDeferredEvent, cCommEvent, Cell interaction records, and anonymous space records have separate owners and dispatch paths."
+      ],
+      "outcome": "rejected",
+      "status": "RESOLVED_SUPPORTED"
+    },
+    {
+      "id": "H5",
+      "name": "common_bus_global_order",
+      "claim": "One common event ABI provides a total ordering guarantee across all event families.",
+      "prediction": "A send or post in one family would establish observable order relative to UI, animation, deferred, communication, and space records.",
+      "evidence_for": [],
+      "evidence_against": [
+        "Only the App bus has a recovered listener registry and queue processor.",
+        "UTFWin priority/filter order, tDeferredEvent scheduler order, cCommEvent presentation order, animation delivery, and space-record SCC order remain separate contracts.",
+        "A shared message ID namespace, where present, does not imply a shared clock, queue, or release boundary."
+      ],
+      "outcome": "rejected",
+      "status": "RESOLVED_SUPPORTED"
+    },
+    {
+      "id": "H6",
+      "name": "bounded_app_transport_abstraction",
+      "claim": "OpenSpore needs an immediate broadcast/target dispatch surface, a deferred targeted surface, typed registration metadata, and family-specific payload views, but no universal payload record.",
+      "prediction": "This minimum separates the architecture-deciding facts from unresolved binary quirks while preserving family ownership and avoiding false cross-family order.",
+      "evidence_for": [
+        "Immediate and deferred producers/processors have different call paths and record lifetimes.",
+        "Registration and queue records have different layouts and responsibilities.",
+        "The event-family corpus supplies multiple independent owner/layout boundaries."
+      ],
+      "evidence_against": [
+        "The unresolved +0x14 function target in the structurally identified concrete vtable, signed queue-key semantics, thread affinity, and queued cancellation remain open; these do not invalidate the minimum semantic split."
+      ],
+      "outcome": "supported_for_architecture_boundary",
+      "status": "RESOLVED_SUPPORTED"
+    }
+  ],
+  "adversarial_steps": [
+    {
+      "step": 1,
+      "name": "universal_record_test",
+      "hypothesis": "H1",
+      "prediction": "If one universal ABI exists, a shared semantic field-wise prefix/base subobject, callback target, owner, and order contract should converge.",
+      "evidence_for": [
+        "All candidate families have event-like IDs and are sometimes described as messages."
+      ],
+      "evidence_against": [
+        "At offset 0, StandardMessage stores a MultithreadObject vtable, UTFWin::Message stores an IWindow source, AnimationMessage stores a uint32 message ID, cCommEvent stores an ISimulatorSerializable vtable, and each anonymous space record stores an opaque discriminator.",
+        "The next words are also semantically incompatible: StandardMessage refcount versus cCommEvent second vtable then refcount, UTFWin field_04/eventType, AnimationMessage name/creature pointers, and space mode/derived or timestamp-like words.",
+        "Therefore no tested family exposes a shared semantic field-wise ABI prefix or base subobject; the incidental common word width is not a shared type."
+      ],
+      "independence": "The field-wise test uses independently queried live Ghidra structures/raw record writes, not the historical size-only comparison; equal use of the word message is not evidence.",
+      "repetition": "Multiple historical reports repeat the family list, but those reports share the same SDK/type corpus and are counted once for independence.",
+      "separator_result": "Common event vocabulary survives, but no shared semantic ABI prefix/base subobject survives; the universal payload ABI is rejected independently of record size.",
+      "classification": "transport"
+    },
+    {
+      "step": 2,
+      "name": "entry_queue_separator",
+      "hypothesis": "H2",
+      "prediction": "Registration and delivery should share a carrier if they are one record ABI.",
+      "evidence_for": [
+        "Both are keyed by message ID and refer to listener/callback metadata."
+      ],
+      "evidence_against": [
+        "AddEntry at 0x00884c80 copies five Entry dwords into a 0x1c linked node and orders by Entry priority.",
+        "MessagePost/PostFunction build six dwords and 0x00885710 inserts them into 0x18 queue storage.",
+        "0x00884550 is the record walker: it copies six dwords and advances the 0x18-stride storage cursor. 0x00884700 is the second processor and dispatches through listener, handler/context, or owner fallback branches."
+      ],
+      "independence": "Registration insertion, deferred insertion, dequeue, and dispatch are different function bodies. The producer/consumer field correspondence is reciprocal structural evidence, not two independent semantic discoveries.",
+      "repetition": "Repeated 0x18 strides inside the same allocator helper are repetition within one implementation, not independent corroboration.",
+      "separator_result": "After the cross-family semantic-prefix test fails, the smallest App-internal separator is the 0x14 registration Entry versus the 0x18 queue record. They are distinct transport-state records, not merely two sizes.",
+      "classification": "transport"
+    },
+    {
+      "step": 3,
+      "name": "immediate_deferred_test",
+      "hypothesis": "H3",
+      "prediction": "Aliases should share a call edge to the same queue insertion helper.",
+      "evidence_for": [
+        "The methods are adjacent in the SDK interface and share ID/payload parameters."
+      ],
+      "evidence_against": [
+        "The MessageSend body at the 0x008854a0 branch performs direct map/list lookup and callback invocation and lacks a 0x00885710 enqueue edge.",
+        "The 0x00885980 MessagePost body and 0x00885930 MessagePostFunction body both call 0x00885710.",
+        "Outer ProcessQueue at 0x00884100 calls the second processor at 0x00884700 through the +0x38 virtual slot; 0x008841f0 is not that dispatch entry."
+      ],
+      "independence": "Direct producer control flow and an independent processor call path distinguish timing; SDK names alone do not.",
+      "repetition": "The same immediate/deferred distinction is repeated in mode, editor, and event-map artifacts, but those narratives are not counted as independent binary proof.",
+      "separator_result": "MessageSend is immediate; MessagePost and MessagePostFunction are deferred. Exact queue-key naming and reentrancy remain bounded limits.",
+      "classification": "transport"
+    },
+    {
+      "step": 4,
+      "name": "subscriber_callback_abi_test",
+      "hypothesis": "H1 versus H2",
+      "prediction": "A universal callback ABI would use one target shape and one result convention.",
+      "evidence_for": [
+        "IMessageListener and MessageHandler_t are both registered through the same Entry/list infrastructure."
+      ],
+      "evidence_against": [
+        "IUnmanagedMessageListener::HandleMessage is bool(uint32,void*) at vtable +0x04.",
+        "IMessageListener adds AddRef +0x08 and Release +0x0c.",
+        "MessageHandler_t is void(uint32,void*,void*) and receives a context pointer.",
+        "FUN_00884700 branches among listener, handler/context, and an untargeted MessageSend fallback."
+      ],
+      "independence": "SDK slot declarations, registration raw bytes, and deferred dispatch raw bytes are separate evidence classes.",
+      "repetition": "Listener and handler entries share priority storage, but that shared storage is not proof of a shared invocation ABI.",
+      "separator_result": "Use a tagged target union conceptually: listener, callback/context, or broadcast. Do not erase the bool/void return distinction.",
+      "classification": "transport"
+    },
+    {
+      "step": 5,
+      "name": "ownership_release_test",
+      "hypothesis": "H2",
+      "prediction": "A universal queue record would have one ownership rule for payload and target.",
+      "evidence_for": [
+        "All deferred records are copied through the same queue helper."
+      ],
+      "evidence_against": [
+        "With the manager +0xc4 refcount option, post paths call payload vtable +0x04 AddRef and either listener vtable +0x08 AddRef or handler(1,0,context) before insertion.",
+        "After callback, the processor calls listener Release at +0x0c or handler(2,0,context), then payload Release at +0x08.",
+        "RemoveEntry separately releases a refcounted registration entry, and MessageSend is the unmanaged/borrowed surface.",
+        "When +0xc4 is false, the examined deferred path does not retain payload or target across enqueue."
+      ],
+      "independence": "Pre-enqueue retention, post-callback release, and registration-removal release are separate control-flow sites.",
+      "repetition": "MessagePost and PostFunction repeat the same refcount protocol; this is convergent transport behavior, not proof of cross-family ownership.",
+      "separator_result": "The App transport has an explicit retained-payload mode and a borrowed/no-retain mode. Other families retain independent ownership rules.",
+      "classification": "transport"
+    },
+    {
+      "step": 6,
+      "name": "processor_consume_test",
+      "hypothesis": "H3",
+      "prediction": "A bool HandleMessage result might consume/stop a message and explain multiple processor paths.",
+      "evidence_for": [
+        "IUnmanagedMessageListener::HandleMessage returns bool in the SDK declaration."
+      ],
+      "evidence_against": [
+        "FUN_00884700 stores no tested result from the +0x04 listener call; execution always reaches target release and the next dequeue condition.",
+        "MessageHandler_t returns void, so listener and callback targets cannot share consume semantics.",
+        "The queue record is removed by FUN_00884550 before callback invocation."
+      ],
+      "independence": "The SDK return declaration and the processor control flow are independent; the processor wins for actual consume behavior.",
+      "repetition": "Immediate and deferred paths both iterate entries/records rather than branching on a common consume bit.",
+      "separator_result": "The recovered App transport is broadcast-to-target, not first-handler-wins. Consume/cancellation must not be added to the minimum abstraction without new evidence.",
+      "classification": "transport"
+    },
+    {
+      "step": 7,
+      "name": "priority_tie_order_test",
+      "hypothesis": "H2",
+      "prediction": "If registration and queue records are universal, one priority rule should explain both.",
+      "evidence_for": [
+        "Both Entry and queue record contain a 32-bit integer that can be called priority."
+      ],
+      "evidence_against": [
+        "AddEntry compares linked-node priority and inserts a new entry before the first existing priority less than or equal to it, giving descending immediate registration order and newest-first equal-priority ties.",
+        "Deferred insertion at 0x00885710 compares queue record +0x0c and uses ordered insertion around a left-end dequeue; ordinary positive equal keys remain after existing equals. The signed-zero boundary and semantic name are not fully recovered.",
+        "The two integers occur in different record roles and are not proven to share units or direction semantics."
+      ],
+      "independence": "Registration ordering and deferred insertion are separate algorithms. Their similar field type is not independent proof of one priority concept.",
+      "repetition": "Several queued producers repeat the same six-dword template; only the insertion and processor algorithms are counted as independent mechanisms.",
+      "separator_result": "Freeze immediate registration order (descending, equal-newest-first) and treat deferred +0x0c as an ordering key with bounded lower-first semantics; do not promise a shared priority abstraction across both records.",
+      "classification": "transport"
+    },
+    {
+      "step": 8,
+      "name": "cancel_snapshot_drain_test",
+      "hypothesis": "H2",
+      "prediction": "A universal event record should support one cancellation model from registration through queued delivery.",
+      "evidence_for": [
+        "Registration removal and deferred delivery are both owned by cMessageManager."
+      ],
+      "evidence_against": [
+        "RemoveEntry at 0x008845d0 searches the message-ID registration list and optionally priority, then unlinks the registration node; no queued-record removal is present in the examined vtable/helpers.",
+        "The second processor at 0x00884700 snapshots the initial record count and processes at least that many; when manager +0xc3 is set it continues until the queue empties, allowing callback-produced posts to extend the drain. 0x00884100 is the outer bounded ProcessQueue entry, while 0x008841f0 is only a cleanup/storage walker.",
+        "A deferred record stores target pointers/snapshots rather than an Entry pointer, so unregistering an Entry is not shown to cancel an already queued delivery."
+      ],
+      "independence": "Registry removal, queue dequeue, and processor loop bounds are separate bodies.",
+      "repetition": "The historical claim that cancellation is unresolved is repeated across reports; current direct control flow narrows but does not globally prove the absence of an undiscovered cancel path.",
+      "separator_result": "Registration removal and queued delivery are separate lifecycles. Do not promise queued cancellation; expose bounded snapshot/drain processing.",
+      "classification": "transport"
+    },
+    {
+      "step": 9,
+      "name": "family_smallest_separator_test",
+      "hypothesis": "H1/H4 versus H6",
+      "prediction": "The architecture changes materially depending on whether one universal event ABI or a family-separated transport is used.",
+      "evidence_for": [
+        "The App bus has a reusable ID/target/queue abstraction independent of payload schema.",
+        "The field-wise test finds no shared semantic ABI prefix or base subobject across the tested families.",
+        "UTFWin, editor animation, deferred city events, cCommEvent runtime/persistence domain state, Cell interactions, and anonymous space records have separate owners, layouts, and callback/dispatch contracts."
+      ],
+      "evidence_against": [
+        "Using StandardMessage or cCommEvent as the universal envelope would erase UI filtering, animation targets, scheduler value ownership, serialization, and space-domain allocation.",
+        "Assuming cross-family total order would require an owner and clock that the corpus does not provide."
+      ],
+      "independence": "The queue/transport evidence is independent of family-specific layouts and owners; the final synthesis is performed by the primary investigator.",
+      "repetition": "Family separation appears in several reports, but shared historical source ancestry means it is counted as convergent static support rather than independent runtime proof.",
+      "separator_result": "Universal ABI rejected. Minimum architecture: immediate App dispatch + deferred App post + typed registration/queue state + family-specific payload views; no cross-family total order.",
+      "classification": "transport"
+    }
+  ],
+  "address_adjudication": {
+    "result": "The follow-up boundary/xref pass separates the outer ProcessQueue entry, queue record walker, cleanup/storage walker, and second processor. Historical SDK/Ghidra labels at interior or cleanup addresses are retained only as provenance and are not function roles.",
+    "items": [
+      {
+        "historical_label": "AddUnmanagedListener @ 0x00883a90",
+        "concrete_body_anchor": "0x008839a0",
+        "result": "The raw 0x008839a0 body constructs a 0x14 Entry with priority/refcount/handler/object cleared and calls IMessageManager+0x44. 0x00883a90 is in adjacent removal/helper code."
+      },
+      {
+        "historical_label": "AddListener @ 0x00883ad0",
+        "concrete_body_anchor": "0x008839e0",
+        "result": "The raw 0x008839e0 body sets Entry.mbRefCounted, optionally calls listener AddRef, and calls AddEntry. 0x00883ad0 is not the AddListener body entry."
+      },
+      {
+        "historical_label": "AddHandler @ 0x00883b20",
+        "concrete_body_anchor": "0x00883a30",
+        "result": "The raw 0x00883a30 body builds listener-as-function, priority, refcount flag, handler, and object before optional retain and AddEntry. 0x00883b20 is not the AddHandler body entry."
+      },
+      {
+        "historical_label": "stale SDK/Ghidra ProcessQueue label @ 0x008841f0",
+        "exact_role": "cleanup/storage walker",
+        "body": "0x008841f0..0x00884258",
+        "vtable_slot": null,
+        "result": "Walks 0x18-stride/0xc0-block queue storage and releases storage/object pointers through FUN_00f47380 during teardown. It does not copy the six record words or dispatch listener/handler/owner branches."
+      },
+      {
+        "historical_label": "outer ProcessQueue",
+        "exact_role": "outer ProcessQueue entry wrapper",
+        "body": "0x00884100..0x008841e9",
+        "vtable_slot": "0x01427920 + 0x34",
+        "result": "Checks manager+0xc2, computes queue-count-like state, applies a stack-supplied loop/timing bound, and invokes [vtable+0x38], reaching the second processor at 0x00884700."
+      },
+      {
+        "historical_label": "queue record walker",
+        "exact_role": "six-word record walker",
+        "body": "0x00884550",
+        "vtable_slot": null,
+        "result": "Copies the six queue-record words, advances by 0x18, and transitions to the next 0xc0 usable block; it is distinct from both processors."
+      },
+      {
+        "historical_label": "interior SDK address 0x00847f0",
+        "exact_role": "second queue processor",
+        "body": "0x00884700..0x00884895",
+        "vtable_slot": "0x01427920 + 0x38",
+        "result": "Calls 0x00884550, updates counters, dispatches listener/handler-context/owner-fallback records, conditionally releases, and implements the bounded-pass/drain loop. 0x00847f0 is an interior historical address."
+      },
+      {
+        "historical_label": "MessageSend @ 0x008854a0",
+        "concrete_body_anchor": "body around 0x008853e7; immediate listener/handler branch at 0x008854a0",
+        "result": "0x008854a0 is an interior dispatch branch, not a function entry."
+      },
+      {
+        "historical_label": "MessagePost @ 0x00885980",
+        "concrete_vtable_anchor": "0x00885890",
+        "result": "0x00885980 is the enqueue tail inside the deferred listener-target body."
+      },
+      {
+        "historical_label": "MessagePostFunction @ 0x00885a20",
+        "concrete_vtable_anchor": "0x00885930",
+        "result": "0x00885a20 lies in a 0x18-record comparator/helper, not the callback-post body. The callback/context producer is 0x00885930."
+      }
+    ],
+    "vtable_ownership": {
+      "address": "0x01427920",
+      "classification": "structurally_identified_concrete_cMessageManager_vtable_not_RTTI_proof",
+      "ownership_evidence": [
+        "Constructor/initialization body 0x00884a20 writes 0x01427920 to object+0x00.",
+        "Teardown body 0x00884fb0 writes 0x01427920 to object+0x00 before the cleanup path.",
+        "Table word +0x00 points to 0x00885390, whose body calls 0x00884fb0, matching a destructor slot.",
+        "The table contains 19 consecutive 4-byte words from 0x01427920 through 0x01427968; strings begin around 0x0142796c."
+      ],
+      "anchors": {
+        "+0x00": "0x00885390 destructor/teardown thunk",
+        "+0x14": "0x008853b0 unresolved raw word",
+        "+0x18": "0x00885890 MessagePost",
+        "+0x1c": "0x00885930 MessagePostFunction",
+        "+0x34": "0x00884100 outer ProcessQueue",
+        "+0x38": "0x00884700 second processor",
+        "+0x44": "0x00884c80 AddEntry",
+        "+0x48": "0x008845d0 RemoveEntry"
+      },
+      "reconciled_role": "0x008841f0 is absent from the table; its teardown caller 0x00884fb0 independently explains its cleanup/storage-walker body. 0x00884550 is an internal record walker called by 0x00884700, not a vtable processor entry.",
+      "unresolved": "The +0x14 word is 0x008853b0, for which current Ghidra reports no function. It is not repaired or named from this table."
+    }
+  },
+  "recovered_app_contracts": {
+    "registration_entry": {
+      "size": "0x14",
+      "fields": [
+        {"offset": "0x00", "size": 4, "field": "listener_or_function"},
+        {"offset": "0x04", "size": 4, "field": "priority"},
+        {"offset": "0x08", "size": 1, "field": "ref_counted"},
+        {"offset": "0x09", "size": 3, "field": "padding"},
+        {"offset": "0x0c", "size": 4, "field": "handler"},
+        {"offset": "0x10", "size": 4, "field": "object_or_context"}
+      ],
+      "role": "Persistent per-message-ID subscription metadata; copied into 0x1c linked-list nodes.",
+      "addresses": ["0x008839a0", "0x008839e0", "0x00883a30", "0x00884260", "0x00884c80", "0x008845d0"]
+    },
+    "deferred_queue_record": {
+      "size": "0x18",
+      "fields": [
+        {"offset": "0x00", "size": 4, "field": "message_id"},
+        {"offset": "0x04", "size": 4, "field": "payload"},
+        {"offset": "0x08", "size": 4, "field": "listener_target_or_zero"},
+        {"offset": "0x0c", "size": 4, "field": "integer_order_key"},
+        {"offset": "0x10", "size": 4, "field": "handler_or_zero"},
+        {"offset": "0x14", "size": 4, "field": "handler_context_or_zero"}
+      ],
+      "role": "One deferred delivery snapshot; not a registration Entry and not a domain payload. 0x00884550 walks/copies records, while 0x00884700 dispatches them.",
+      "addresses": ["0x00885710", "0x00885890", "0x00885930", "0x00884550", "0x00884700"],
+      "block_surface": "0x18 record stride in 0xc0-byte usable blocks; the exact names/ownership of manager range/cursor fields remain unresolved."
+    },
+    "dispatch_rules": {
+      "immediate": {
+        "surface": "MessageSend",
+        "timing": "synchronous before return",
+        "target": "optional unmanaged listener target; otherwise matching registered entries",
+        "order": "registration priority descending; equal-priority newest entry first",
+        "consume": "HandleMessage bool is not used to stop traversal",
+        "ownership": "unmanaged/borrowed payload surface; no deferred queue retention established"
+      },
+      "deferred": {
+        "surface": "MessagePost and MessagePostFunction",
+        "timing": "insert through 0x00885710 and dispatch only in a later processor pass",
+        "target": "one listener snapshot or one handler/context pair",
+        "order": "queue +0x0c ordering key; ordinary positive lower-first, equal existing-before-new; exact signed-zero semantics deferred",
+        "consume": "listener bool ignored; handler is void",
+        "ownership": "with manager +0xc4, payload and target are retained before enqueue and released after callback; without +0xc4, no cross-enqueue retain is established",
+        "processor": "0x00884550 is the record walker; 0x00884700 is the second processor and handles at least the initial snapshot, with +0xc3 enabling drain-until-empty; outer ProcessQueue 0x00884100 applies enable/count/time-like bounds"
+      }
+    },
+    "removal": {
+      "address": "0x008845d0",
+      "behavior": "Finds the message-ID registration list, matches listener or handler and optional priority (-9999 wildcard), conditionally releases a refcounted registration, unlinks one node, and removes an empty list.",
+      "queued_cancel": "not exposed or observed in the examined queue records/helpers"
+    }
+  },
+  "family_ownership_order_matrix": {
+    "rows": [
+      {
+        "family": "App cMessageManager transport",
+        "representatives": ["IMessageManager", "cMessageManager", "Entry", "0x18 queue record"],
+        "classification": "transport",
+        "abi": "0x14 registration metadata plus distinct 0x18 delivery record; listener bool and void handler/context are tagged targets",
+        "ownership": "manager owns registry and queued snapshots; retained mode conditionally owns payload/target references",
+        "order": "immediate descending priority/newest-first ties; deferred ordering-key queue; snapshot or drain-until-empty",
+        "addresses": ["0x008839a0", "0x008839e0", "0x00883a30", "0x00884100", "0x008841f0", "0x00884550", "0x00884700", "0x008853e7", "0x008854a0", "0x00885890", "0x00885930", "0x00885980"]
+      },
+      {
+        "family": "App StandardMessage-derived domain payloads",
+        "representatives": ["OnModeExitMessage", "OnModeEnterMessage", "MissionUpdateMessage", "CombatantKilledMessage", "PlayerEmpireAlliedMessage", "SpaceRareFoundMessage"],
+        "classification": "domain",
+        "abi": "0x40 bytes: refcount, five 8-byte parameter slots, ID, and trailing flags/fields",
+        "ownership": "domain/refcount object; App transport ownership is conditional and separate from the record's own meaning",
+        "order": "domain record order only when posted through the App queue; no standalone total order",
+        "addresses": ["0x007d85b0", "0x00b63510"]
+      },
+      {
+        "family": "UTFWin UI messages",
+        "representatives": ["UTFWin::Message", "IWinProc", "InteractiveWinProc"],
+        "classification": "presentation",
+        "abi": "0x0c exported base plus type-specific payload at logical +0x0c; IWinProc has priority/filter/handle slots",
+        "ownership": "Window/widget/proc graph; no proven App queue ownership",
+        "order": "priority exists, but traversal, bubbling, tie order, and return consumption are unresolved",
+        "addresses": ["0x00960250", "0x00960370"]
+      },
+      {
+        "family": "Animation and editor animation",
+        "representatives": ["Anim::AnimationMessage", "Editors::cEditorAnimEvent"],
+        "classification": "presentation",
+        "abi": "0x18 AnimationMessage; 0x30 refcounted cEditorAnimEvent with editor model/event/scalars",
+        "ownership": "animation/editor subsystem; cEditorAnimWorld owns intrusive editor records; pName lifetime unresolved",
+        "order": "editor Send/Post differ by IAppSystem slots; final animation delivery order unresolved",
+        "addresses": ["0x0059d840", "0x0059d8b0"]
+      },
+      {
+        "family": "Deferred gameplay value",
+        "representatives": ["Simulator::tDeferredEvent", "eastl::vector<tDeferredEvent>", "cCity.mDeferredEvents@+0x7f8"],
+        "classification": "domain",
+        "abi": "0x1c POD: GUID, unaligned u64 trigger time, two floats, two uints",
+        "ownership": "vector/container-owned value; no vtable or App queue release protocol",
+        "order": "trigger comparison is intended, but epoch, same-time order, duplicates, expiry, and callback owner are unresolved",
+        "addresses": []
+      },
+      {
+        "family": "Cell interaction queue",
+        "representatives": ["pooled Cell action/interaction records", "FUN_00e7e130"],
+        "classification": "domain",
+        "abi": "mode-specific type word at +0x24 and domain payload; no StandardMessage derivation",
+        "ownership": "Cell pool/queue releases each record after dispatch",
+        "order": "queued interaction dispatch order/timer coupling is separate from App message order",
+        "addresses": ["0x00e7e130", "0x00e7e6c0"]
+      },
+      {
+        "family": "Serializable communication domain event",
+        "representatives": ["Simulator::cCommEvent", "cCommManager"],
+        "classification": "domain",
+        "boundary": "runtime_domain_to_persistence",
+        "abi": "0xa0 ISimulatorSerializable/refcount object with political, city/civ, mission, timing/priority, and response-vector fields",
+        "ownership": "runtime communication/mission simulation with intrusive references; its serializable interface crosses the domain into persistence rather than making it persistence-only; codec/version/defaulting unresolved",
+        "order": "domain priority exists but App queue order and presentation order are not established",
+        "addresses": ["0x00aeb0e0", "0x00aeb1c0", "0x00aebe90"]
+      },
+      {
+        "family": "Anonymous space records",
+        "representatives": ["FUN_00e39ab0 27-field record", "FUN_00e39ab0 24-field record"],
+        "classification": "domain",
+        "abi": "two allocated mode-specific records with object/cell IDs, timestamp, -10 slot sentinel, IDs, and positions; exact sizes unknown",
+        "ownership": "space trading/tool/state-handler subsystem; allocation and SCC use are known, full release path is not",
+        "order": "state-handler SCC order unresolved; no App queue edge proven",
+        "addresses": ["0x00e39ab0", "0x00e39420", "0x00e39450"]
+      }
+    ]
+  },
+  "shared_semantic_abi_prefix_test": {
+    "hypothesis": "The tested event families expose one shared semantic field-wise ABI prefix or base subobject.",
+    "tested_records": [
+      {
+        "family": "StandardMessage",
+        "prefix": "+0x00 MultithreadObject vtable; +0x04 int refcount; +0x08 MessageParameter[5]; +0x30 uint32 id"
+      },
+      {
+        "family": "UTFWin::Message",
+        "prefix": "+0x00 IWindow* source; +0x04 field_04; +0x08 eventType; payload variants begin at logical +0x0c"
+      },
+      {
+        "family": "AnimationMessage",
+        "prefix": "+0x00 uint32 messageID; +0x04 char* pName; +0x08 AnimatedCreature* pCreature"
+      },
+      {
+        "family": "cCommEvent",
+        "prefix": "+0x00 ISimulatorSerializable vtable; +0x04 IVirtual vtable; +0x08 int refcount; +0x0c cCommEventType"
+      },
+      {
+        "family": "anonymous space primary/companion",
+        "prefix": "0x6c/0x60 raw records: +0x00 opaque discriminator; +0x04 zero or mode/derived scalar; +0x08 timestamp-like value"
+      }
+    ],
+    "result": "no_shared_semantic_abi_prefix_or_base_subobject",
+    "incidental_overlap": "Several records contain a 32-bit pointer or scalar at offset zero, but the pointed-to roles, following fields, and refcount positions differ. A common word width is not a common ABI.",
+    "conclusion": "The universal payload-family ABI is rejected by the semantic prefix/base-subobject test independently of record size. The App 0x18 queue record is generic transport state and does not supply a shared payload base."
+  },
+  "universal_abi_test": {
+    "hypothesis": "H1 universal_event_abi",
+    "survives": false,
+    "smallest_separator": "At the first two 32-bit words, StandardMessage has MultithreadObject vtable/refcount, cCommEvent has ISimulatorSerializable vtable/IVirtual vtable, UTFWin::Message has IWindow source/field_04, AnimationMessage has message ID/name pointer, and the anonymous records have discriminator/derived words. No common semantic base subobject starts there. Within the surviving App family, the next separator is the 0x14 registration Entry versus the 0x18 queue record and its three-way dispatch.",
+    "result": "The universal payload/callback/ownership/order hypothesis fails on field semantics, not merely size. A narrower universal App transport SPI survives.",
+    "architecture_dependency": "yes",
+    "what_would_change_it": "A direct field/body test showing a common semantic base subobject across families, a direct body showing the same 0x14 Entry enqueued and consumed without a 0x18 transport record, or a direct cross-family path proving shared callback/ownership/order semantics would reopen the hypothesis."
+  },
+  "resolution": {
+    "overall_status": "RESOLVED_SUPPORTED",
+    "architecture_decision": "Adopt a family-separated event architecture with one bounded App transport SPI. Do not implement a universal event payload or promise cross-family ordering.",
+    "what_is_resolved": [
+      "No tested event family shares a semantic field-wise ABI prefix or base subobject; incidental pointer/scalar width overlap is not ABI evidence.",
+      "Registration Entry and deferred queue record are distinct 0x14 and 0x18 state records.",
+      "MessageSend is an immediate registry traversal; MessagePost and MessagePostFunction enqueue 0x18 delivery records.",
+      "Listener and handler/context targets have distinct callback and return ABIs.",
+      "Deferred callback bool results are ignored; the recovered App processor has no first-handler-wins consume rule.",
+      "Immediate registration order is descending priority with equal-priority newest-first insertion.",
+      "Outer ProcessQueue is 0x00884100, 0x00884550 is the record walker, 0x008841f0 is cleanup/storage walking, and 0x00884700 is the second processor.",
+      "The second processor covers an initial snapshot by default and supports a drain-until-empty option.",
+      "With +0xc4 refcounting, payload and target are retained before deferred enqueue and released after callback.",
+      "Universal event ABI is rejected; family-specific payload schemas remain required."
+    ],
+    "what_is_not_resolved": [
+      "Exact operation/function boundary for the structurally identified concrete vtable's unresolved +0x14 word 0x008853b0.",
+      "Semantic name/units and full signed-zero behavior of deferred queue key +0x0c.",
+      "Exact outer ProcessQueue time/count parameter semantics.",
+      "Thread affinity, recursive callback behavior, and lock policy across all callers.",
+      "A positive runtime trace of send/post, callback, and release order.",
+      "Queued cancellation outside the examined vtable/helpers.",
+      "UTFWin order/bubbling, tDeferredEvent scheduler order, cCommEvent codec/presentation order, animation final delivery, and anonymous space-record ownership/order."
+    ],
+    "runtime_resolution": "INSUFFICIENT_EVIDENCE",
+    "exact_native_abi_resolution": "INSUFFICIENT_EVIDENCE",
+    "architecture_dependency": "yes"
+  },
+  "minimum_openspore_event_abstraction": {
+    "transport": [
+      "MessageId: typed 32-bit/hash identifier, with payload meaning owned by a family schema.",
+      "PayloadView: non-owning read-only view for immediate delivery; no universal StandardMessage layout.",
+      "SharedPayload: explicit retained payload for deferred delivery.",
+      "SubscriptionTarget: tagged listener or callback/context target.",
+      "Registration: message ID plus target, registration priority, and retained-registration policy.",
+      "QueuedDelivery: message ID, shared payload, target snapshot, ordering key, and enqueue sequence."
+    ],
+    "operations": [
+      "dispatchNow(id, payload_view, optional_target): synchronous registry traversal.",
+      "post(id, shared_payload, ordering_key, listener_target): deferred targeted listener delivery.",
+      "postFunction(id, shared_payload, ordering_key, callback, context): deferred callback/context delivery.",
+      "process(max_count_or_budget, drain_mode): dispatch at least the current snapshot; optionally drain newly posted work until empty."
+    ],
+    "ordering_guarantees": [
+      "Immediate eligible registrations run synchronously before dispatchNow returns.",
+      "Immediate registration order is priority descending; equal-priority registrations are newest-first to match recovered insertion.",
+      "No callback return consumes or stops later App deliveries.",
+      "Deferred deliveries are ordered by an explicit ordering key; retain an enqueue sequence as a deterministic tie-breaker rather than relying on the unresolved signed-zero native edge.",
+      "A normal processing pass covers records present at pass start. Drain mode may include posts made by callbacks until the queue is empty.",
+      "No ordering guarantee crosses App, UTFWin, animation, deferred-city, communication, Cell-interaction, or anonymous-space families."
+    ],
+    "ownership_guarantees": [
+      "Immediate payload views are borrowed and valid only for the callback duration unless the caller supplies a separate retained type.",
+      "Deferred payloads and targets remain alive until delivery completes or the queued delivery is explicitly abandoned by an architecture decision.",
+      "Registration removal affects future dispatch, not an already queued target snapshot.",
+      "Queued cancellation is not part of the minimum contract until native behavior is resolved."
+    ],
+    "family_rule": "StandardMessage, UTFWin::Message, AnimationMessage/cEditorAnimEvent, tDeferredEvent, cCommEvent, Cell interaction records, and anonymous space records remain separate payload/owner contracts even when they use the App transport."
+  },
+  "exact_dependent_decisions": [
+    {"id": "D1", "decision": "Reject a universal event payload ABI because the tested families have no shared semantic field-wise prefix/base subobject; preserve family-specific payload schemas.", "depends_on": ["shared_semantic_abi_prefix_test", "0x00884c80", "0x00885710", "0x00884700", "StandardMessage", "UTFWin::Message", "AnimationMessage", "tDeferredEvent", "cCommEvent", "0x00e39ab0"]},
+    {"id": "D2", "decision": "Model registration Entry and deferred queue delivery as separate records with distinct responsibilities.", "depends_on": ["Entry size 0x14", "queue record size 0x18", "FUN_00884260", "FUN_00885710"]},
+    {"id": "D3", "decision": "Expose immediate dispatch separately from deferred post; do not alias MessageSend with Post surfaces.", "depends_on": ["0x008854a0 immediate branch", "0x00885980 deferred enqueue", "0x00885930", "0x00885710"]},
+    {"id": "D4", "decision": "Represent listener and callback/context as tagged targets; preserve bool listener versus void handler behavior.", "depends_on": ["IMessageListener vtable", "MessageHandler_t", "FUN_00884700"]},
+    {"id": "D5", "decision": "Do not stop App delivery on callback return; a bool result is informational in the recovered transport.", "depends_on": ["0x00884700 listener call and unconditional continuation"]},
+    {"id": "D6", "decision": "Freeze immediate registration order as descending priority with equal-priority newest-first insertion.", "depends_on": ["FUN_00884c80", "FUN_00884260"]},
+    {"id": "D7", "decision": "Use an explicit deferred ordering key plus deterministic enqueue sequence; do not assume registration priority and queue key are the same contract.", "depends_on": ["FUN_00885710", "queue record +0x0c", "FUN_00884550"]},
+    {"id": "D8", "decision": "Use 0x00884100 as the outer ProcessQueue entry and 0x00884700 as the second processor; provide snapshot processing and explicit drain mode, with callbacks extending only drain-mode work.", "depends_on": ["0x01427954 vtable +0x34", "0x00884199 indirect +0x38 call", "0x00884700 +0xc3 loop", "0x00884550 record walker"]},
+    {"id": "D9", "decision": "Use explicit borrowed versus retained ownership; do not expose releaseable deferred pointers without a retained owner.", "depends_on": ["0x00885890", "0x00885930", "0x00884700", "0x008845d0"]},
+    {"id": "D10", "decision": "Treat registration removal and queued cancellation as different operations; omit queued cancellation until directly evidenced.", "depends_on": ["0x008845d0", "0x18 queue record target snapshot"]},
+    {"id": "D11", "decision": "Keep UTFWin, editor/animation, deferred-city, communication, Cell-interaction, and anonymous-space ordering outside the App ordering contract.", "depends_on": ["family_ownership_order_matrix"]},
+    {"id": "D12", "decision": "Treat 0x01427920 as the structurally identified cMessageManager concrete vtable; assign +0x34 to outer ProcessQueue 0x00884100 and +0x38 to second processor 0x00884700; keep 0x008841f0 as cleanup/storage walking and 0x00884550 as the record walker.", "depends_on": ["0x00884a20 vtable assignment", "0x00884fb0 teardown assignment", "0x01427920 table", "address_adjudication"]}
+  ],
+  "freeze_defer": {
+    "freeze": [
+      "No tested event family shares a semantic field-wise ABI prefix or base subobject.",
+      "Entry is 0x14 bytes; deferred queue record is 0x18 bytes; they are not aliases.",
+      "Processor roles: 0x00884100 outer ProcessQueue, 0x00884550 record walker, 0x008841f0 cleanup/storage walker, 0x00884700 second processor.",
+      "MessageSend is immediate registry dispatch; MessagePost and MessagePostFunction are deferred queue producers.",
+      "Queue record logical fields: ID, payload, listener, order key, handler, context.",
+      "Listener and handler/context callback ABIs and their AddRef/Release protocol.",
+      "No App callback-return consume rule in the recovered processors.",
+      "Immediate registration priority direction and equal-priority tie insertion.",
+      "Snapshot versus drain-until-empty processor behavior.",
+      "Borrowed immediate versus conditionally retained deferred ownership split.",
+      "Family boundaries and absence of a recovered cross-family total order."
+    ],
+    "defer": [
+      "Exact operation/function boundary of the concrete vtable +0x14 word 0x008853b0.",
+      "Exact MessagePost build-specific extra integer and queue-key units/semantics.",
+      "Full signed queue-key behavior, including zero and negative keys.",
+      "Outer ProcessQueue count/time parameter interpretation.",
+      "All thread, lock, and recursive-dispatch behavior.",
+      "Any queued cancellation path outside the examined manager surface.",
+      "UTFWin order/bubbling/consume, tDeferredEvent scheduler order, cCommEvent codec/presentation order, animation final delivery, and anonymous space ownership/order.",
+      "Runtime frame placement and positive callback/release trace."
+    ]
+  },
+  "blockers": [
+    {
+      "id": "B1",
+      "priority": "high",
+      "blocker": "The structurally identified concrete vtable +0x14 at 0x01427934 contains 0x008853b0, for which current Ghidra reports no function; its operation remains unrepaired.",
+      "next_observation": "Resolve the concrete +0x14 pointer from a runtime object or independently verified relocation/table context, then correlate one slot call with the immediate map/list body around 0x008854a0."
+    },
+    {
+      "id": "B2",
+      "priority": "high",
+      "blocker": "Deferred key +0x0c direction is supported for ordinary positive keys, but its semantic name, units, and signed-zero behavior are not exact.",
+      "next_observation": "Enumerate representative callers with constants and record a static insertion/dequeue table for negative, zero, equal, and increasing keys."
+    },
+    {
+      "id": "B3",
+      "priority": "medium",
+      "blocker": "RemoveEntry unregisters a target, but queued records retain target snapshots; no examined path cancels queued delivery.",
+      "next_observation": "Post to a refcounted target, remove its registration before the 0x00884700 second processor, and record whether delivery/release still occurs."
+    },
+    {
+      "id": "B4",
+      "priority": "medium",
+      "blocker": "Thread affinity, recursive posts during immediate/deferred callbacks, and the exact lock domain are not established.",
+      "next_observation": "A narrow trace with manager address, thread ID, lock calls, callback entry/exit, enqueue, and dequeue timestamps."
+    },
+    {
+      "id": "B5",
+      "priority": "medium",
+      "blocker": "The anonymous space pair and tDeferredEvent ordering remain independent family blockers and cannot be repaired through the App queue ABI.",
+      "next_observation": "Recover one construction-to-dispatch-to-release path for each family and compare ownership/order without adapting either to StandardMessage."
+    }
+  ],
+  "supporting_evidence_streams": [
+    {
+      "stream": "queue_send_post_process",
+      "scope": ["0x00884100", "0x008841f0", "0x00884550", "0x00884700", "0x008853e7", "0x008854a0", "0x00885710", "0x00885890", "0x00885930", "0x00885980"],
+      "result": "Separates immediate traversal from deferred insertion and distinguishes outer ProcessQueue 0x00884100, record walker 0x00884550, cleanup/storage walker 0x008841f0, and second processor 0x00884700; it also recovers the six-dword queue record, target branches, snapshot/drain bounds, and post-callback release order."
+    },
+    {
+      "stream": "listener_registration_ownership",
+      "scope": ["0x008839a0", "0x008839e0", "0x00883a30", "0x00884260", "0x008845d0", "0x00884c80", "IMessageManager::Entry"],
+      "result": "Recovers 0x14 registration metadata, linked insertion order, handler/listener target representation, and registration removal/release."
+    },
+    {
+      "stream": "event_family_boundaries",
+      "scope": ["StandardMessage", "UTFWin::Message", "AnimationMessage", "cEditorAnimEvent", "tDeferredEvent", "cCommEvent", "FUN_00e39ab0", "FUN_00e7e130"],
+      "result": "Confirms separate owners, layouts, and callback/persistence contracts; no universal family ABI or cross-family total order."
+    }
+  ],
+  "subagent_status": "No subagent interface was exposed. Three supporter-equivalent evidence streams were collected in parallel through independent read-only Ghidra and historical-artifact queries; the primary investigator performed synthesis and did not treat stream labels as independent agents.",
+  "citations": [
+    {"source": "ghidra://SporeApp.exe@0x01427920", "use": "structurally identified concrete cMessageManager vtable; +0x34 outer ProcessQueue and +0x38 second processor anchors"},
+    {"source": "ghidra://SporeApp.exe@0x008839a0", "use": "raw AddUnmanagedListener body and 0x14 Entry construction"},
+    {"source": "ghidra://SporeApp.exe@0x008839e0", "use": "raw AddListener body, refcount flag, optional AddRef, AddEntry call"},
+    {"source": "ghidra://SporeApp.exe@0x00883a30", "use": "raw AddHandler body, priority, refcount flag, handler/object"},
+    {"source": "ghidra://SporeApp.exe@0x00884260", "use": "0x1c linked registration node allocation and Entry copy"},
+    {"source": "ghidra://SporeApp.exe@0x00884c80", "use": "AddEntry message-ID map insertion and descending/equal priority order"},
+    {"source": "ghidra://SporeApp.exe@0x008845d0", "use": "RemoveEntry lookup, optional priority, release, unlink, and empty-list removal"},
+    {"source": "ghidra://SporeApp.exe@0x00884100", "use": "bounded outer ProcessQueue wrapper and +0x38 processor call"},
+    {"source": "ghidra://SporeApp.exe@0x008841f0", "use": "cleanup/storage walker: 0x18/0xc0 storage traversal and pointer release without record dispatch"},
+    {"source": "ghidra://SporeApp.exe@0x00884550", "use": "six-word queue record walker with 0x18 stride and 0xc0 block transitions"},
+    {"source": "ghidra://SporeApp.exe@0x00884700", "use": "second processor: record-walker call, target dispatch, counters, snapshot/drain loop, and release order"},
+    {"source": "ghidra://SporeApp.exe@0x00884a20", "use": "cMessageManager object assignment of concrete vtable 0x01427920"},
+    {"source": "ghidra://SporeApp.exe@0x00884fb0", "use": "vtable reassignment and teardown path that reaches the 0x008841f0 cleanup/storage walker"},
+    {"source": "ghidra://SporeApp.exe@0x00885710", "use": "0x18 deferred record insertion and +0x0c ordering-key branches"},
+    {"source": "ghidra://SporeApp.exe@0x00885890", "use": "MessagePost candidate: listener target, order key, optional retain, enqueue"},
+    {"source": "ghidra://SporeApp.exe@0x00885930", "use": "MessagePostFunction candidate: handler/context target, order key, optional retain, enqueue"},
+    {"source": "ghidra://SporeApp.exe@0x008853e7..0x008854a0", "use": "MessageSend immediate map/list traversal and callback branch"},
+    {"source": "ghidra://SporeApp.exe@structure:App::IMessageManager::Entry", "use": "0x14 registration layout and callback fields"},
+    {"source": "ghidra://SporeApp.exe@structure:App::StandardMessage", "use": "0x40 domain payload layout"},
+    {"source": "ghidra://SporeApp.exe@structure:UTFWin::Message", "use": "0x0c base and logical payload boundary"},
+    {"source": "ghidra://SporeApp.exe@structure:Anim::AnimationMessage", "use": "0x18 animation record layout"},
+    {"source": "ghidra://SporeApp.exe@structure:Simulator::tDeferredEvent", "use": "0x1c scheduler-value layout"},
+    {"source": "ghidra://SporeApp.exe@structure:Simulator::cCommEvent", "use": "0xa0 runtime communication-domain record with serializable persistence boundary"},
+    {"source": "knowledgegraph/research/architecture-resolution/followup-01-event-abi.json:34-134,192-268", "use": "exact queue-surface boundaries, concrete vtable ownership evidence, six-word record, and negative semantic-prefix test"},
+    {"source": "knowledgegraph/research/architecture-resolution/followup-01-event-abi.md:7-18,22-70,72-120", "use": "human-readable exact roles, vtable reconciliation, and common-prefix result"},
+    {"source": "ghidra://SporeApp.exe@0x00e39ab0", "use": "anonymous space record pair and domain-specific contents"},
+    {"source": "ghidra://SporeApp.exe@0x0059d840", "use": "editor animation Post call shape and alternate IAppSystem slot"},
+    {"source": "ghidra://SporeApp.exe@0x0059d8b0", "use": "editor animation Send call shape and alternate IAppSystem slot"},
+    {".spore-analysis": "spore_sdk.xml:13027-13185", "use": "MessageHandler_t, Entry, manager prototypes, and slot offsets"},
+    {".spore-analysis": "spore_sdk.xml:42137-42260", "use": "concrete manager declarations and 0xc8 state layout"},
+    {".spore-analysis": "spore_sdk.xml:9875-9937", "use": "StandardMessage 0x40 and mode records"},
+    {".spore-analysis": "spore_sdk.xml:8553-8580", "use": "UTFWin anonymous payloads and 0x0c base"},
+    {".spore-analysis": "spore_sdk.xml:18436-18443", "use": "AnimationMessage 0x18 layout"},
+    {".spore-analysis": "spore_sdk.xml:21610-21617", "use": "tDeferredEvent 0x1c layout"},
+    {".spore-analysis": "spore_sdk.xml:27547-27572", "use": "cCommEvent 0xa0 serializable layout"},
+    {".spore-analysis": "structs_fields.tsv:1250-1313", "use": "listener adapters and callback storage"},
+    {".spore-analysis": "structs_fields.tsv:3955-3986", "use": "IMessageRC, Entry, and vtable slots"},
+    {".spore-analysis": "structs_fields.tsv:4509-4513", "use": "MessageListenerData ownership helper"},
+    {".spore-analysis": "structs_fields.tsv:21276-21285", "use": "cMessageManager state, mutexes, map, and flags"},
+    {"source": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cMessageManager__ProcessQueue.c:1-40", "use": "historical mislabeled export of the 0x008841f0 cleanup/storage walker; not used as the ProcessQueue dispatch entry"},
+    {"source": "docs/analysis/event-message-map.md:34-45,56-78,114-120,172-176", "use": "historical family split, unknown timing/order, and limitations"},
+    {"source": "knowledgegraph/research/types/07-event-message.md:155-255,428-534,546-617,671-697", "use": "SDK ABI, records, family lifecycle, preserved conflicts, and open questions"},
+    {"source": "knowledgegraph/research/types/19-audit-conflicts.md:18-41,55-69,109-130", "use": "canonical family separation and unresolved queue/order claims"},
+    {"source": "knowledgegraph/research/state-machines/global-events.json:3-60,298-408,758-830,905-1047", "use": "historical registration, send/post, processor, and family records"},
+    {"source": "knowledgegraph/research/state-machines/temporal-semantics.json:143-220,516-554", "use": "SDK slot contracts and deferred record historical limit"},
+    {"source": "docs/analysis/dossiers/unknown-high/space-event-record-pair.md:18-93", "use": "anonymous space-record contents, callers, and unresolved ownership"},
+    {"source": "knowledgegraph/research/conflicts/00-corpus-inventory.json:820-856,1055-1086", "use": "original conflict statement, metrics, and do-not-infer guard"},
+    {"source": "knowledgegraph/research/conflict-adjudication.json:327-344,759-801,14087-14219,15115-15289,15648-15841", "use": "prior blocker, stale address set, and superseded unresolved claims"}
+  ],
+  "limitations": [
+    "No Ghidra mutation, disassembly creation, type application, labeling, saving, or project change was performed; only read/decompile/memory/call-graph tools were used with explicit program SporeApp.exe.",
+    "No SPORE/ filesystem traversal and no spore.db access were performed.",
+    "No implementation was performed and neither report is implementation authorization.",
+    "The current Ghidra program has no MSVC RTTI; 0x01427920 ownership is structurally identified as the concrete cMessageManager vtable by object assignment, teardown, and slot shape, not by RTTI.",
+    "SDK names/layouts are community-header provenance; direct target bytes outrank them where they conflict.",
+    "The structurally identified concrete vtable's +0x14 word 0x008853b0 has no current Ghidra function; its operation is explicitly blocked rather than silently repaired.",
+    "Deferred +0x0c lower-first ordering is static for ordinary positive keys; exact semantic and signed edge behavior remains unresolved.",
+    "No runtime evidence is claimed. The static architecture boundary is resolved, but runtime timing, thread behavior, and frame placement are not."
+  ]
+}

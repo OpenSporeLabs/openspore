@@ -1,0 +1,1484 @@
+{
+  "$schema": "openspore-lifecycle-dossier-1",
+  "schema": "openspore-lifecycle-dossier-1",
+  "artifact": {
+    "id": "lifecycle",
+    "title": "SporeApp global object lifecycle research",
+    "purpose": "Static, reverse-engineering-only characterization of allocation, initialization, registration, reuse, cleanup, and teardown boundaries.",
+    "scope": [
+      "Application and game-mode lifecycle",
+      "Cell state, graphics, UI, and object pools",
+      "Shared simulator accessors and state",
+      "Space inventory, trading, communication, and star regeneration",
+      "Message and editor service registration",
+      "OpenSpore clean-room counterparts and unresolved boundaries"
+    ],
+    "exclusions": [
+      "No proprietary EA source, assets, models, textures, sounds, or scripts",
+      "No replacement implementation is prescribed by this artifact",
+      "No runtime behavior is claimed without runtime evidence",
+      "No SDK name, vtable slot, or graph edge is treated as ownership proof by itself"
+    ]
+  },
+  "snapshot": {
+    "binary": "SPORE/SporeBin/SporeApp.exe",
+    "product": "Spore 3.1.0.22",
+    "architecture": "x86:LE:32:windows",
+    "image_base": "0x00400000",
+    "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+    "triage_snapshot": "f0e310e0c83fc960ed38d490ff6d2a78d53925969206b4c4db7a012ddbf8b54b",
+    "xref_snapshot": "2540f2ca7cd361a72b559448fa5cf247eff3cee20d375b14ed0dd256c45229c8",
+    "xref_artifact": "knowledgegraph/triage/xrefs-2540f2ca.tsv",
+    "xref_edge_count": 223704,
+    "xref_edge_sha256": "89e74b8a03c4db38a1927f8c95c38db507bf99cb8a11de6b6eb6a9484d8c79cb",
+    "runtime_evidence": false,
+    "analysis_tool": "Ghidra 12.1.2 headless, read-only analysis",
+    "sdk_commit": "cbf9206b9a823f0911cd9be0217104a49d72380b",
+    "sdk_sha256": "5d894677c1835082da0392e8b794f3c93a0251733898c3c5b81cf7945f458f09"
+  },
+  "evidence_policy": {
+    "scale": [
+      "UNKNOWN",
+      "APPROXIMATION",
+      "INFERRED",
+      "SUPPORTED",
+      "OBSERVED",
+      "CONFIRMED",
+      "VERIFIED"
+    ],
+    "meanings": {
+      "UNKNOWN": "The fact is not established by the available evidence.",
+      "APPROXIMATION": "A usable clean-room value or boundary with material uncertainty.",
+      "INFERRED": "A semantic interpretation follows from structure, names, or multiple indirect observations.",
+      "SUPPORTED": "A static contract is supported by decompilation plus structure, field, or dossier evidence.",
+      "OBSERVED": "A literal or operation is present in a targeted static body, but the semantic identity is not fully proven.",
+      "CONFIRMED": "The operation or identity is established by a direct body and corroborating evidence.",
+      "VERIFIED": "The fact is directly read from the binary or an explicitly pinned canonical artifact."
+    },
+    "source_precedence": [
+      "direct targeted body and exact field access",
+      "committed dossier or targeted static observation",
+      "SDK structure, function, and vtable export",
+      "canonical xref topology and call counts",
+      "triage category, cluster, or historical campaign wording"
+    ],
+    "confidence": [
+      "high",
+      "medium",
+      "low",
+      "unresolved"
+    ],
+    "runtime_rule": "No lifecycle relation is VERIFIED by runtime unless a runtime evidence record is added to this artifact.",
+    "ownership_rule": "Ownership is asserted only when a direct allocation, intrusive AddRef/Release, destructor, pool insertion/removal, or explicit owner field establishes it. A singleton getter or vtable membership alone is insufficient."
+  },
+  "source_register": [
+    {
+      "id": "s01",
+      "path": ".spore-analysis/ghidra-exports/sdk_functions.tsv",
+      "kind": "sdk-export",
+      "use": "Function address anchors and SDK names."
+    },
+    {
+      "id": "s02",
+      "path": ".spore-analysis/ghidra-exports/structs.tsv",
+      "kind": "sdk-export",
+      "use": "Object sizes and structure anchors."
+    },
+    {
+      "id": "s03",
+      "path": ".spore-analysis/ghidra-exports/structs_fields.tsv",
+      "kind": "sdk-export",
+      "use": "Vtable slots, intrusive fields, and object layout."
+    },
+    {
+      "id": "s04",
+      "path": ".spore-analysis/ghidra-exports/vtables.json",
+      "kind": "sdk-export",
+      "use": "Vtable family and slot membership."
+    },
+    {
+      "id": "s05",
+      "path": "knowledgegraph/triage/simulator-shared-state-interface-f0e310e0.json",
+      "kind": "triage",
+      "use": "Shared-state globals, accessors, helper paths, and unresolved contracts."
+    },
+    {
+      "id": "s06",
+      "path": "knowledgegraph/triage/xrefs-2540f2ca.tsv",
+      "kind": "xref",
+      "use": "Canonical call, reference, caller, and callee topology."
+    },
+    {
+      "id": "s07",
+      "path": "knowledgegraph/research/decomp-gap/sim-core-00.json",
+      "kind": "static-gap-review",
+      "use": "Singleton and simulator structural reviews."
+    },
+    {
+      "id": "s08",
+      "path": "knowledgegraph/research/decomp-gap/sim-core-01.json",
+      "kind": "static-gap-review",
+      "use": "Simulator accessors and unresolved body records."
+    },
+    {
+      "id": "s09",
+      "path": "knowledgegraph/research/decomp-gap/sim-core-03.json",
+      "kind": "static-gap-review",
+      "use": "Pool-index replacement and pointer cleanup."
+    },
+    {
+      "id": "s10",
+      "path": "knowledgegraph/research/decomp-gap/sim-core-04.json",
+      "kind": "static-gap-review",
+      "use": "Space, planet, star, and inventory structural context."
+    },
+    {
+      "id": "s11",
+      "path": "knowledgegraph/research/decomp-gap/sim-core-05.json",
+      "kind": "static-gap-review",
+      "use": "Cell lifecycle and pool-related structural context."
+    },
+    {
+      "id": "s12",
+      "path": "knowledgegraph/research/decomp-gap/sim-space-00.json",
+      "kind": "static-gap-review",
+      "use": "Space communication, inventory, and targeted static bodies."
+    },
+    {
+      "id": "s13",
+      "path": "knowledgegraph/research/decomp-gap/ui-shell-00.json",
+      "kind": "static-gap-review",
+      "use": "EditorNamePanel and UI replacement paths."
+    },
+    {
+      "id": "s14",
+      "path": "knowledgegraph/research/decomp-gap/editor-core-00.json",
+      "kind": "static-gap-review",
+      "use": "EditorModel and species-profile lifecycle observations."
+    },
+    {
+      "id": "s15",
+      "path": "docs/analysis/dossiers/unknown-high/cell-object-pool-lifecycle.json",
+      "kind": "dossier",
+      "use": "Cell GFX/pool replacement sequence and callers."
+    },
+    {
+      "id": "s16",
+      "path": "docs/analysis/dossiers/unknown-high/message-handler-registration.json",
+      "kind": "dossier",
+      "use": "Message-handler registration behavior."
+    },
+    {
+      "id": "s17",
+      "path": "docs/analysis/dossiers/unknown-high/star-system-regen.json",
+      "kind": "dossier",
+      "use": "Empty-star regeneration sequence."
+    },
+    {
+      "id": "s18",
+      "path": "src/sim/CellPool.hpp",
+      "kind": "openspore-source",
+      "use": "Current preallocated pool implementation and tests."
+    },
+    {
+      "id": "s19",
+      "path": "src/sim/CellGame.hpp",
+      "kind": "openspore-source",
+      "use": "Current CellGame state projection and initialization."
+    },
+    {
+      "id": "s20",
+      "path": "src/apps/CellModeStrategy.hpp",
+      "kind": "openspore-source",
+      "use": "Current mode-manager ownership declarations and slot model."
+    },
+    {
+      "id": "s21",
+      "path": "src/apps/CellModeStrategy.cpp",
+      "kind": "openspore-source",
+      "use": "Current initialize/dispose/enter/exit/update and mode switch behavior."
+    },
+    {
+      "id": "s22",
+      "path": "src/apps/CellGfx.hpp",
+      "kind": "openspore-source",
+      "use": "Current GFX world token and resource-key projection."
+    },
+    {
+      "id": "s23",
+      "path": "src/apps/CellGfx.cpp",
+      "kind": "openspore-source",
+      "use": "Current GFX initialization and display state."
+    },
+    {
+      "id": "s24",
+      "path": "src/apps/CellUI.hpp",
+      "kind": "openspore-source",
+      "use": "Current HUD and rollover projection."
+    },
+    {
+      "id": "s25",
+      "path": "src/apps/CellUI.cpp",
+      "kind": "openspore-source",
+      "use": "Current rollover allocation behavior."
+    },
+    {
+      "id": "s26",
+      "path": "src/apps/CellAnim.hpp",
+      "kind": "openspore-source",
+      "use": "Current animation/effect projection and unresolved integration boundary."
+    },
+    {
+      "id": "s27",
+      "path": "src/apps/CellAnim.cpp",
+      "kind": "openspore-source",
+      "use": "Current animation blend, effect selection, and event mapping."
+    },
+    {
+      "id": "s28",
+      "path": "src/sim/Sim.cpp",
+      "kind": "openspore-source",
+      "use": "Current deterministic simulation lifecycle."
+    },
+    {
+      "id": "s29",
+      "path": "src/sim/Sim.hpp",
+      "kind": "openspore-source",
+      "use": "Current simulation state and movement-plane approximations."
+    }
+  ],
+  "object_lifecycles": [
+    {
+      "id": "object.app.cGameModeManager",
+      "name": "App::cGameModeManager",
+      "subsystem": "application lifecycle",
+      "original_shape": "52-byte SDK struct with an intrusive mode-entry vector, active index, camera manager, and viewer fields.",
+      "lifecycle": {
+        "construct": "SDK layout and vtable membership establish the object shape; exact construction body is not needed for the mode contract.",
+        "initialize": "007d8120 is SDK-associated with cGameModeManager::Initialize.",
+        "register_mode": "007d9320 is SDK-associated with AddGameMode.",
+        "activate": "007d8d40 is SDK-associated with SetActiveModeAt; IGameMode slots define OnExit/OnEnter transition boundaries.",
+        "dispose": "007d91e0 is SDK-associated with Dispose; the exact body and order are not established here.",
+        "destroy": "IVirtual/IGameMode vtable exposes a virtual destructor, but the concrete manager destructor body is not reconstructed."
+      },
+      "ownership": "Mode entries are typed as intrusive_ptr<IGameMode> in the SDK export, so manager-owned references are supported at the layout level; the exact AddRef/Release balance is not runtime-proven.",
+      "evidence": "SDK vtable/field exports, function export, and current source comparison.",
+      "evidence_level": "SUPPORTED",
+      "confidence": "medium",
+      "provenance": ["s01", "s03", "s20", "s21"],
+      "unknowns": [
+        "Concrete mode allocation body",
+        "Exact AddGameMode duplicate/replacement behavior",
+        "Exact Dispose order and whether the manager releases every mode",
+        "Runtime ordering of camera/viewer release"
+      ]
+    },
+    {
+      "id": "object.app.ICellModeStrategy",
+      "name": "App::cCellModeStrategy",
+      "subsystem": "Cell application lifecycle",
+      "original_shape": "12-byte SDK object behind the Cell mode vtable; the current clean-room class intentionally owns CellGfx and CellUI members instead of using original globals.",
+      "lifecycle": {
+        "construct": "SDK vtable and layout establish the object; exact constructor body is not treated as the original global bootstrap.",
+        "initialize": "00e81cf0 is SDK-associated with Initialize; mode initialization creates/attaches Cell state and GFX resources in the campaign evidence.",
+        "enter": "00e552f0 is SDK-associated with OnEnter and starts the cell display.",
+        "update": "00e806b0 is the SDK-associated per-frame orchestration target; 00e80980 is an update adapter.",
+        "exit": "00e7fc00 is SDK-associated with OnExit and restores Cell globals/display state.",
+        "dispose": "00e81f30 is SDK-associated with Dispose and tears down mode resources/singletons.",
+        "release": "00dd3ca0 is SDK-associated with AddRef; vtable slots 0 and 4 identify AddRef/Release, but the exact original balance is unresolved."
+      },
+      "ownership": "The original uses global Cell singletons; the current source uses owned CellGfx and CellUI value members.",
+      "evidence": "SDK function/field exports, Cell campaign research, and current source.",
+      "evidence_level": "SUPPORTED",
+      "confidence": "medium",
+      "provenance": ["s01", "s03", "s20", "s21"],
+      "unknowns": [
+        "Exact original singleton attach/detach order",
+        "Whether current mode update matches FUN_00e806b0",
+        "Original AddRef/Release behavior for cCellModeStrategy"
+      ]
+    },
+    {
+      "id": "object.cell.cCellGame",
+      "name": "Simulator::Cell::sCellGame",
+      "subsystem": "Cell simulation state",
+      "original_shape": "20,964-byte SDK object with the main cObjectPool<cCellObjectData>, query-pool handles, current world references, and avatar cell index.",
+      "lifecycle": {
+        "construct": "The SDK identifies the global state object; exact constructor body is not promoted from a layout alone.",
+        "initialize": "00e80ba0 is associated with cCellGame::Initialize; observed behavior resets flags, loads time scale, allocates the main pool, and writes background bounding-box state.",
+        "create_object": "00e74a20 is associated with CreateCellObject and populates a pooled object from a resource, transform, elevation, and scale.",
+        "update": "The original per-frame orchestrator remains FUN_00e806b0-bound and is not fully reconstructed.",
+        "dispose": "The exact original global release body is unresolved.",
+        "reuse": "Pool object replacement is established by FUN_00e780a0 and pool structure; allocation/deallocation details are bounded by the pool layout and targeted body observations."
+      },
+      "ownership": "sCellGame owns the main pool and avatar index; pool objects retain their first-word index and the CellGFX record contains the object index and dependent resources.",
+      "evidence": "SDK size/fields, Cell pool dossier, CellGame current projection, and Cell campaign evidence.",
+      "evidence_level": "SUPPORTED",
+      "confidence": "medium",
+      "provenance": ["s02", "s03", "s15", "s19"],
+      "unknowns": [
+        "Exact original cCellGame destructor and global singleton release",
+        "Runtime ownership of the current/background world references",
+        "Full lifecycle ordering relative to mode Initialize, GFX Initialize, and renderer submission"
+      ]
+    },
+    {
+      "id": "object.cell.cObjectPool",
+      "name": "Simulator::cObjectPool<T>",
+      "subsystem": "Cell object storage",
+      "original_shape": "28-byte SDK pool with data pointer, free-list head, pool identifier, capacity, allocated count, object size, and trailing field.",
+      "lifecycle": {
+        "construct": "Pool data is allocated during Cell initialization; exact object constructor order is not required by the static pool contract.",
+        "initialize": "FUN_00b72160 is a high-fan-in pool bulk initialization/reset body; the SDK label cObjectPool_::Initialize is anchored nearby but has an address discrepancy.",
+        "allocate": "FUN_00b72260 is the pool operation associated with CreateObject by the dossier; exact entry/offset identity is contradicted by nearby SDK anchors.",
+        "deallocate": "Pool-index release behavior is partially observed; FUN_00c70110 performs replacement through unknown vtable slots and does not establish a universal null/error contract.",
+        "destroy": "Exact original pool destructor/free-buffer body is not established in the available artifacts."
+      },
+      "ownership": "The pool owns a contiguous object buffer and a free-list head; callers own cleanup of object-specific resources before returning a slot.",
+      "evidence": "SDK pool fields, Cell pool dossier, targeted sim-core records, and current pool implementation.",
+      "evidence_level": "SUPPORTED",
+      "confidence": "medium",
+      "provenance": ["s03", "s07", "s09", "s11", "s15", "s18"],
+      "unknowns": [
+        "Exact address-to-SDK identity of FUN_00b72160 and FUN_00b72260",
+        "Pool destruction/deallocation failure behavior",
+        "Whether all pool types share the same bulk initialization routine"
+      ]
+    },
+    {
+      "id": "object.cell.cCellGFX",
+      "name": "Simulator::Cell::cCellGFX",
+      "subsystem": "Cell presentation and render worlds",
+      "original_shape": "Large SDK object with preloaded model/texture/creature containers, a cObjectPool<CellGFXObjectData>, lighting/beach/background worlds, model/anim/effect worlds, and audio tracks.",
+      "lifecycle": {
+        "construct": "The SDK struct and vtable establish the object and service pointers; exact construction body is not required to characterize the world graph.",
+        "initialize": "00e5dba0 is associated with cCellGFX::Initialize and builds skybox, background, beach, main model, effects, and foreground worlds plus named layers.",
+        "preload": "00e666f0 is associated with PreloadResources and registers cell/populate resource records.",
+        "start_display": "00e55120 is associated with StartDisplay and activates the display.",
+        "create_effect": "00e66840 is associated with InstanceEffectOnCell; current source models a deterministic effect instance but not the original renderer ownership.",
+        "dispose": "The exact original teardown body is not fully reconstructed; current source clears slots/resources in CellModeStrategy::dispose."
+      },
+      "ownership": "The original stores intrusive world/model/effect pointers in cCellGFX; exact destruction order for every world/effect is unresolved. The current source uses integer world tokens and vectors.",
+      "evidence": "SDK CellGFX fields, Cell campaign research, current GFX source, and targeted animation/effect source.",
+      "evidence_level": "SUPPORTED",
+      "confidence": "medium",
+      "provenance": ["s03", "s19", "s22", "s23", "s26", "s27"],
+      "unknowns": [
+        "Complete original world release order",
+        "Resource manager ownership of model/texture/effect records",
+        "Runtime linkage from CellAnim events to renderer-owned pose/effect instances"
+      ]
+    },
+    {
+      "id": "object.cell.cCellUI",
+      "name": "Simulator::Cell::cCellUI",
+      "subsystem": "Cell HUD and rollover UI",
+      "original_shape": "2,372-byte SDK object with global layout pointers, progress bar, a cObjectPool<cCellUIRollover>, zoom state, and current hover name.",
+      "lifecycle": {
+        "construct": "The SDK struct establishes the state and pool fields; exact constructor body is not required for the rollover contract.",
+        "load": "00e54270 is associated with Load and establishes GlobalUICell-3 and layout constants.",
+        "create_rollover": "00e62340 is associated with ShowHealthRollover; it rejects a missing GFX object, allocates a rollover, sets health fraction and disappear time, and returns an index.",
+        "update": "HUD update and expiry behavior are not fully reconstructed.",
+        "dispose": "The original pool/world release body is unresolved; current source clears rollovers through CellModeStrategy::dispose."
+      },
+      "ownership": "The rollover pool owns rollover records; the current vector projection owns records without reproducing original pool indexing.",
+      "evidence": "SDK CellUI fields, current UI source, and Cell campaign evidence.",
+      "evidence_level": "SUPPORTED",
+      "confidence": "medium",
+      "provenance": ["s03", "s19", "s24", "s25"],
+      "unknowns": [
+        "Original rollover pool capacity and reuse ordering",
+        "Expiry/removal and layout-pointer release order",
+        "Original relationship between cCellUI, cCellGFX, and the global layout service"
+      ]
+    },
+    {
+      "id": "object.space.cSpaceInventoryItem",
+      "name": "Simulator::cSpaceInventoryItem",
+      "subsystem": "Space inventory and economy",
+      "original_shape": "0x7c-byte SDK object with refcount, listener interfaces, item count/type/cost, cargo, PropertyList, localized text, resource key, and message fields.",
+      "lifecycle": {
+        "construct": "00c877f0 is a constructor-like property initialization body: it manages PropertyList ownership, populates localized fields, conditionally writes item position, and calls a virtual slot.",
+        "register": "The SDK layout exposes message-manager/listener fields; exact registration/deregistration pairing is not fully recovered.",
+        "resource_update": "FUN_00de9fc0 applies PropertyList data, calls receiver slot +0x4c, and invokes dependent service paths.",
+        "resource_cleanup": "The destructor/cleanup path releases the ResourceObject and owned vectors through virtual operations.",
+        "reuse": "The object is refcounted and may be retained in cargo, tool, or trading containers; exact owner balance is not runtime-observed."
+      },
+      "ownership": "Intrusive pointers and explicit PropertyList/ResourceObject release paths support owned reference members; the precise producer/consumer ownership graph is unresolved.",
+      "evidence": "SDK fields, targeted sim-space body, and space campaign evidence.",
+      "evidence_level": "SUPPORTED",
+      "confidence": "medium",
+      "provenance": ["s02", "s03", "s10", "s12"],
+      "unknowns": [
+        "Complete constructor/destructor body identity",
+        "Exact message-listener registration and removal pairing",
+        "Whether the +0x4c virtual operation is a refresh, availability, or ownership hook"
+      ]
+    },
+    {
+      "id": "object.space.cSpaceTrading",
+      "name": "Simulator::cSpaceTrading",
+      "subsystem": "Space economy and trading",
+      "original_shape": "Refcounted strategy with mode fields, message listener, spice vectors, NPC stores, object vectors, rare map, and rare groups.",
+      "lifecycle": {
+        "construct": "SDK fields establish a service/strategy object; exact allocation body is not reconstructed.",
+        "acquire": "00de58c0 uses the trading/inventory service path to acquire a delivery/resource object, append it, and release the acquired temporary reference.",
+        "replace": "00de9fc0 obtains a ResourceObject, stores it at +0x1c, releases the previous resource, and returns the new pointer.",
+        "release": "Intrusive vectors and refcounted object types support release through their owning containers; exact top-level manager disposal is unresolved."
+      },
+      "ownership": "Trading owns intrusive NPC/object collections and resource references at the field level; the producer of temporary acquired references is not always distinguishable from the eventual owner.",
+      "evidence": "SDK fields and targeted trading/inventory static observations.",
+      "evidence_level": "SUPPORTED",
+      "confidence": "medium",
+      "provenance": ["s03", "s10", "s12"],
+      "unknowns": [
+        "Exact cSpaceTrading constructor and Dispose order",
+        "Mapping between delivery-object vector fields and the trading mode",
+        "ResourceManager ownership for resource references"
+      ]
+    },
+    {
+      "id": "object.space.cCommEvent",
+      "name": "Simulator::cCommEvent / communication event",
+      "subsystem": "Space communication",
+      "original_shape": "Targeted body creates a 0xa0-byte event and appends it to cCommManager+0x28; the SDK event identity is not fully aligned with the recovered thunk address.",
+      "lifecycle": {
+        "construct": "FUN_00aeb160 allocates and initializes the event with supplied fields.",
+        "append": "FUN_00aeb720 creates an event with a default trailing duration value and appends it through the internal creator.",
+        "dispatch": "The created event is passed to FUN_00aebe90.",
+        "release": "The event vector and intrusive_ptr shape support release, but the exact removal/destruction path is not recovered."
+      },
+      "ownership": "cCommManager owns the intrusive event list; event-field producer ownership is bounded by the static body.",
+      "evidence": "Targeted sim-space body, SDK cCommManager fields, and disputed SDK function association.",
+      "evidence_level": "OBSERVED",
+      "confidence": "medium",
+      "provenance": ["s03", "s12"],
+      "unknowns": [
+        "Whether the address is CreateSpaceCommEvent, HandleSpaceCommAction, or a compiler wrapper",
+        "Exact runtime ordering and interruption conditions in FUN_00aebe90",
+        "Event removal and completion ownership"
+      ]
+    },
+    {
+      "id": "object.space.cStarRecord",
+      "name": "Simulator::cStarRecord",
+      "subsystem": "Space system state",
+      "original_shape": "Refcounted serializable record with observation time, version, timestamp, position/type/technology, empire identity, species profile, and intrusive planet vectors.",
+      "lifecycle": {
+        "construct": "SDK fields establish record ownership; exact constructor body is not reconstructed.",
+        "observe": "FUN_00bb4af0 reads planet count and updates last observation time when the timing condition passes.",
+        "regenerate": "FUN_00bb4af0 erases the star from pending state, resets manager state, and calls cStarManager::GeneratePlanetsForStar.",
+        "release": "Intrusive planet and profile pointers are expected to be released by their owning record, but the full destructor body is not recovered."
+      },
+      "ownership": "Record-level intrusive vectors establish member ownership at the type level; manager pending-list ownership and profile ownership require runtime/container confirmation.",
+      "evidence": "SDK fields, star-regeneration dossier, and space campaign evidence.",
+      "evidence_level": "SUPPORTED",
+      "confidence": "medium",
+      "provenance": ["s02", "s03", "s17"],
+      "unknowns": [
+        "Exact cStarManager pending-list ownership",
+        "cSpeciesProfile ownership in mSpeciesProfile",
+        "Planet vector release order on record destruction"
+      ]
+    },
+    {
+      "id": "object.app.cMessageManager",
+      "name": "App::cMessageManager / IMessageManager",
+      "subsystem": "Event and listener registration",
+      "original_shape": "Manager with a mutex, listener hash map, and listener entry containing priority, handler, object, and reference-count flag.",
+      "lifecycle": {
+        "construct": "SDK struct and vtable exports establish the manager and entry layout.",
+        "register": "SDK exports expose AddListener, AddUnmanagedListener, and AddHandler; FUN_00b21340 performs map lookup and registration/fallback traversal.",
+        "dispatch": "SDK exports expose ProcessQueue; exact queue ordering and callback contract are not fully recovered.",
+        "remove": "SDK exports expose RemoveHandler, RemoveEntry, and Dispose; the exact pairing for every registration path remains unresolved.",
+        "destroy": "Manager disposal must release owned listener entries, but no complete body is claimed."
+      },
+      "ownership": "Manager-owned listener map is supported by the SDK layout; the mbRefCounted field indicates conditional listener ownership, not a complete refcount contract.",
+      "evidence": "SDK fields/functions and message-handler registration dossier.",
+      "evidence_level": "SUPPORTED",
+      "confidence": "medium",
+      "provenance": ["s01", "s03", "s16"],
+      "unknowns": [
+        "Exact map key and listener priority ordering",
+        "Whether each AddListener variant AddRefs the listener",
+        "Exact RemoveHandler/RemoveEntry matching and duplicate behavior"
+      ]
+    },
+    {
+      "id": "object.ui.EditorNamePanel",
+      "name": "UI::EditorNamePanel",
+      "subsystem": "Editor UI",
+      "original_shape": "SDK-associated panel with layout/entity fields, intrusive layout/window members, and service-registration state.",
+      "lifecycle": {
+        "construct": "The targeted body is initialization of an already allocated panel; factory allocation is not fully resolved.",
+        "initialize": "FUN_005bfd40 stores initialization inputs, release-before-assigns layout/entity-related members, creates a 0x18-byte Editor object, and registers graphics/message services.",
+        "register": "The body invokes IAppSystem service paths and initializes four message IDs; whether each call is registration, immediate work, or both is unresolved.",
+        "replace": "Existing intrusive members are released before replacement; exact release method names are not promoted from vtable slots.",
+        "destroy": "Exact panel destructor and service deregistration are not recovered."
+      },
+      "ownership": "Panel fields at +0x14 and +0x18 are intrusive pointers and replacement paths support owner-managed references; service ownership is unresolved.",
+      "evidence": "Targeted UI body, SDK boundary repair record, and UI structural evidence.",
+      "evidence_level": "SUPPORTED",
+      "confidence": "medium",
+      "provenance": ["s01", "s03", "s13"],
+      "unknowns": [
+        "Concrete type of the 0x18-byte Editor object",
+        "Owner of the eight-element service collection",
+        "Whether four InitGraphics calls are registrations or operations"
+      ]
+    },
+    {
+      "id": "object.editors.EditorModel",
+      "name": "Editors::EditorModel",
+      "subsystem": "Editor",
+      "original_shape": "SDK-associated model object; exact body and fields are not sufficient for a complete lifecycle contract.",
+      "lifecycle": {
+        "construct": "UNKNOWN",
+        "initialize": "UNKNOWN",
+        "register": "UNKNOWN",
+        "dispose": "004ad6f0 is SDK-associated with Dispose; the observed body iterates model/part data, transforms bounding boxes, and applies transforms, but semantic lifecycle ownership is unresolved.",
+        "destroy": "UNKNOWN"
+      },
+      "ownership": "UNKNOWN; model/part traversal and transform application do not establish owner relationships.",
+      "evidence": "SDK name association and targeted static observation.",
+      "evidence_level": "INFERRED",
+      "confidence": "low",
+      "provenance": ["s01", "s14"],
+      "unknowns": [
+        "Whether the recovered body is actually Dispose",
+        "Owner of model/part list entries",
+        "All resource and UI cleanup operations"
+      ]
+    },
+    {
+      "id": "object.editors.cSpeciesProfile",
+      "name": "Simulator::cSpeciesProfile / cSpeciesManager result",
+      "subsystem": "Editor and species data",
+      "original_shape": "A targeted body can allocate a 0xa18-byte object labeled cSpeciesProfile; exact type and owner are unresolved.",
+      "lifecycle": {
+        "construct": "FUN_004df550 may allocate the 0xa18-byte object after a keyed lookup/validation path and fallback fields.",
+        "cache_or_return": "The caller/manager path is not enough to prove whether the result is cached, returned, or transferred.",
+        "destroy": "UNKNOWN"
+      },
+      "ownership": "UNKNOWN; allocation is observed but transfer/release ownership is not.",
+      "evidence": "Targeted editor-core body and SDK association.",
+      "evidence_level": "OBSERVED",
+      "confidence": "low",
+      "provenance": ["s01", "s14"],
+      "unknowns": [
+        "Exact object type and constructor",
+        "Manager cache ownership",
+        "Release/destructor path"
+      ]
+    },
+    {
+      "id": "object.cell.CellAnim",
+      "name": "Simulator::Cell animation/effect integration",
+      "subsystem": "Cell animation and renderer boundary",
+      "original_shape": "Static evidence supports animation blend, effect-map selection, and event/effect mapping, but the integration graph from event to stage/renderer/pose is not complete.",
+      "lifecycle": {
+        "construct": "UNRESOLVED",
+        "play": "00e6d200 is associated with PlayAnimation; the current clean-room blend function preserves observed defaults and special cases.",
+        "effect": "00e66840 and 00e63560 support effect instantiation/map selection, but renderer ownership and queue lifetime are not established.",
+        "update": "Per-frame pose/effect submission is not reconstructed.",
+        "destroy": "UNRESOLVED"
+      },
+      "ownership": "UNRESOLVED; the current effect instance is a value projection, not proof of original renderer ownership.",
+      "evidence": "Current animation source and campaign unresolved handoff.",
+      "evidence_level": "UNKNOWN",
+      "confidence": "unresolved",
+      "provenance": ["s26", "s27"],
+      "unknowns": [
+        "SimEvent -> CellAnim -> stage/renderer/pose order",
+        "Pose ownership and release timing",
+        "Effect instance queue lifetime",
+        "Whether event-to-effect mappings in current source are original semantics or clean-room approximations"
+      ]
+    }
+  ],
+  "global_ownership": [
+    {
+      "id": "global.shared-accessor-block",
+      "name": "DAT_0167eac0 accessor block",
+      "evidence": "Accessor-like functions around 0x00b3d240..0x00b3d380 read pointers from 0x0167eac0+; observed offsets include +0x04, +0x20, +0x24, and +0x44.",
+      "evidence_level": "VERIFIED",
+      "confidence": "high",
+      "provenance": ["s05", "s07"],
+      "boundary": "The storage and accessor shape are established; concrete singleton identities are not."
+    },
+    {
+      "id": "global.sCellGame",
+      "name": "sCellGame",
+      "evidence": "The current source records the verified global address 0x16b3c04 and the SDK-backed 20,964-byte shape; pool and world fields are used by cell lifecycle paths.",
+      "evidence_level": "VERIFIED",
+      "confidence": "high",
+      "provenance": ["s03", "s19"],
+      "boundary": "Global address and object shape are established; the original global construction/release order is not fully recovered."
+    },
+    {
+      "id": "global.sCellGFX",
+      "name": "sCellGFX",
+      "evidence": "The Cell campaign and current clean-room source establish the original global CellGFX service boundary and its world/resource collections.",
+      "evidence_level": "SUPPORTED",
+      "confidence": "medium",
+      "provenance": ["s03", "s19", "s22", "s23"],
+      "boundary": "The global role and fields are established; exact global allocation and destruction body are not."
+    },
+    {
+      "id": "global.sCellUI",
+      "name": "sCellUI",
+      "evidence": "The Cell campaign and current clean-room source establish the original global CellUI service boundary and rollover pool.",
+      "evidence_level": "SUPPORTED",
+      "confidence": "medium",
+      "provenance": ["s03", "s19", "s24", "s25"],
+      "boundary": "The global role and fields are established; exact global allocation and destruction body are not."
+    },
+    {
+      "id": "global.space-player-cache",
+      "name": "Simulator::sSpacePlayerData cached empire pointer",
+      "evidence": "The shared-state triage records an ID at +0x18 with -1 sentinel and a cached empire pointer at +0x1c; the cached object is revalidated through FUN_00ba9370.",
+      "evidence_level": "SUPPORTED",
+      "confidence": "medium",
+      "provenance": ["s05"],
+      "boundary": "The cache and revalidation path are established; whether replacement is destruction or AddRef/Release is contradicted and unresolved."
+    }
+  ],
+  "lifecycle_stages": [
+    {
+      "stage": "construct",
+      "original": "SDK structures and vtables establish types; direct constructors are known for cSpaceInventoryItem-like initialization, pool data, Cell objects, and event creation, but several global constructors remain unresolved.",
+      "evidence_level": "SUPPORTED",
+      "confidence": "medium",
+      "provenance": ["s02", "s03", "s11", "s12", "s14"]
+    },
+    {
+      "stage": "initialize",
+      "original": "Cell mode, CellGame, CellGFX, CellUI, message, and space-specific services have SDK-associated or targeted initialization paths. Initialization order is not universally runtime-observed.",
+      "evidence_level": "SUPPORTED",
+      "confidence": "medium",
+      "provenance": ["s01", "s11", "s12", "s13", "s14"]
+    },
+    {
+      "stage": "register",
+      "original": "Message handlers, app graphics/message services, and listener entries are registered through service maps or callback lists. Exact duplicate and removal semantics are unresolved.",
+      "evidence_level": "SUPPORTED",
+      "confidence": "medium",
+      "provenance": ["s01", "s03", "s13", "s16"]
+    },
+    {
+      "stage": "enter_and_update",
+      "original": "Game modes use OnEnter/OnExit boundaries; Cell mode OnEnter starts the display, Update is a distinct per-frame orchestration path, and communication/trading paths are event-driven.",
+      "evidence_level": "SUPPORTED",
+      "confidence": "medium",
+      "provenance": ["s01", "s03", "s11", "s12", "s21"]
+    },
+    {
+      "stage": "reuse_or_replace",
+      "original": "Pool slots are reused, Cell GFX objects are released/rebuilt, intrusive fields release-before-replace, and property/resource paths replace old references.",
+      "evidence_level": "SUPPORTED",
+      "confidence": "medium",
+      "provenance": ["s09", "s12", "s13", "s15", "s18", "s19"]
+    },
+    {
+      "stage": "exit",
+      "original": "Cell mode OnExit resets display/global state; message and service deregistration are not fully recovered.",
+      "evidence_level": "SUPPORTED",
+      "confidence": "medium",
+      "provenance": ["s01", "s20", "s21"]
+    },
+    {
+      "stage": "dispose_and_destroy",
+      "original": "Cell mode Dispose, trading/inventory cleanup, pool cleanup, and service manager disposal are supported at different confidence levels. Complete global teardown order is unresolved.",
+      "evidence_level": "SUPPORTED",
+      "confidence": "low",
+      "provenance": ["s01", "s02", "s03", "s09", "s10", "s12", "s18", "s21"]
+    }
+  ],
+  "factories": [
+    {
+      "id": "factory.space-comm-event",
+      "product": "0xa0-byte communication event",
+      "creator": "FUN_00aeb160",
+      "wrapper": "FUN_00aeb720",
+      "consumer": "FUN_00aebe90",
+      "status": "OBSERVED",
+      "evidence_level": "OBSERVED",
+      "confidence": "medium",
+      "provenance": ["s12"],
+      "caveat": "The SDK association to CreateSpaceCommEvent versus HandleSpaceCommAction is contested."
+    },
+    {
+      "id": "factory.space-inventory-item",
+      "product": "cSpaceInventoryItem",
+      "creator": "Caller allocates/base-constructs, then cSpaceInventoryItem_ctor-like body at 00c877f0 applies properties",
+      "consumer": "Trading, inventory, tool, and message paths",
+      "status": "OBSERVED",
+      "evidence_level": "SUPPORTED",
+      "confidence": "medium",
+      "provenance": ["s12"],
+      "caveat": "The body is constructor-like; canonical constructor identity remains unresolved."
+    },
+    {
+      "id": "factory.species-profile",
+      "product": "0xa18-byte cSpeciesProfile-labeled object",
+      "creator": "FUN_004df550",
+      "consumer": "cSpeciesManager callers",
+      "status": "OBSERVED",
+      "evidence_level": "OBSERVED",
+      "confidence": "low",
+      "provenance": ["s14"],
+      "caveat": "Allocation is observed; cache/transfer/destruction ownership is not."
+    },
+    {
+      "id": "factory.editor-name-panel",
+      "product": "0x18-byte Editor object and panel state",
+      "creator": "FUN_005bfd40, within an already allocated EditorNamePanel-compatible object",
+      "consumer": "Editor/UI initialization and service registration paths",
+      "status": "OBSERVED",
+      "evidence_level": "SUPPORTED",
+      "confidence": "medium",
+      "provenance": ["s13"],
+      "caveat": "The concrete Editor type is unknown and the SDK Initialize label is contained at +0x100."
+    },
+    {
+      "id": "factory.cell-object",
+      "product": "cCellObjectData",
+      "creator": "cCellGame::CreateCellObject at 00e74a20, using cObjectPool allocation",
+      "consumer": "Cell movement, query, GFX, and combat paths",
+      "status": "SUPPORTED",
+      "evidence_level": "SUPPORTED",
+      "confidence": "medium",
+      "provenance": ["s02", "s11", "s15", "s19"],
+      "caveat": "Full field semantics from +0x100 through +0x358 remain unresolved."
+    }
+  ],
+  "pools": [
+    {
+      "id": "pool.cell-main",
+      "name": "cCellGame::mCells / cObjectPool<cCellObjectData>",
+      "size": "28-byte pool descriptor",
+      "element_size": "920 bytes",
+      "capacity": "4096 in current source; original capacity is SDK/campaign evidence",
+      "free_list": "First object word stores the next free index while free and the object's own index while allocated",
+      "allocation": "00e74a20 / cObjectPool CreateObject path",
+      "replacement": "FUN_00e780a0 releases old GFX/associated state, rebuilds on stage-scale change, and recreates a pooled object",
+      "deallocation": "Pool-index release behavior is observed in surrounding Cell code, but null and failure semantics are unresolved",
+      "destruction": "Exact original pool buffer destruction is unresolved",
+      "evidence_level": "SUPPORTED",
+      "confidence": "medium",
+      "provenance": ["s03", "s11", "s15", "s18", "s19"]
+    },
+    {
+      "id": "pool.cell-gfx",
+      "name": "cCellGFX::mCellGFXObjects",
+      "size": "28-byte cObjectPool descriptor",
+      "element_size": "CellGFXObjectData layout extends through at least offset 0xa0; exact complete object size is not required for the lifecycle dossier",
+      "capacity": "UNKNOWN",
+      "free_list": "SDK pool layout supports the same descriptor pattern, but this pool's exact initialization body is not independently recovered",
+      "allocation": "FUN_00e780a0 calls the SDK-associated pool CreateObject path",
+      "replacement": "Old GFX and associated object are released before pool object creation",
+      "deallocation": "The pool operation is partly known through the dossier and targeted cell records",
+      "destruction": "Exact cCellGFX pool teardown is unresolved",
+      "evidence_level": "SUPPORTED",
+      "confidence": "low",
+      "provenance": ["s03", "s15", "s22", "s23"]
+    },
+    {
+      "id": "pool.cell-ui-rollover",
+      "name": "cCellUI::mRollovers / cObjectPool<cCellUIRollover>",
+      "size": "28-byte pool descriptor",
+      "element_size": "56 bytes",
+      "capacity": "61914 is a current source observation; exact original allocation body is unresolved",
+      "free_list": "SDK descriptor supports free-list fields",
+      "allocation": "00e62340 / current showHealthRollover projection",
+      "replacement": "Current source appends a value record and returns vector position; this does not reproduce original free-list index ownership",
+      "deallocation": "Original expiry/removal path is unresolved",
+      "destruction": "Original pool destruction is unresolved",
+      "evidence_level": "SUPPORTED",
+      "confidence": "medium",
+      "provenance": ["s03", "s24", "s25"]
+    }
+  ],
+  "managers": [
+    {
+      "id": "manager.game-mode",
+      "name": "App::cGameModeManager",
+      "owns": "Intrusive mode entries and active-index state",
+      "create": "SDK-associated AddGameMode 007d9320",
+      "activate": "SDK-associated SetActiveModeAt 007d8d40",
+      "release": "SDK-associated Dispose 007d91e0; exact release body unresolved",
+      "current_openspore": "GameModeManager stores raw IGameMode* entries and calls OnExit/OnEnter on a different mode; no refcount or manager dispose is implemented in current source.",
+      "evidence_level": "SUPPORTED",
+      "confidence": "medium",
+      "provenance": ["s01", "s03", "s20", "s21"]
+    },
+    {
+      "id": "manager.message",
+      "name": "App::cMessageManager",
+      "owns": "Listener map and handler/listener entries",
+      "create": "AddListener, AddUnmanagedListener, AddHandler",
+      "dispatch": "ProcessQueue",
+      "release": "RemoveHandler, RemoveEntry, Dispose",
+      "current_openspore": "No general message manager counterpart is present in the compared CellModeStrategy/CellPool/CellUI files.",
+      "evidence_level": "SUPPORTED",
+      "confidence": "medium",
+      "provenance": ["s01", "s03", "s16"]
+    },
+    {
+      "id": "manager.commerce",
+      "name": "Simulator::cSpaceTrading",
+      "owns": "Intrusive NPC/object/resource collections and mode state",
+      "create": "Resource and delivery acquisition paths",
+      "release": "Release previous resource and release temporary acquired object; exact top-level disposal unresolved",
+      "current_openspore": "No direct cSpaceTrading counterpart is present in the compared current Cell lifecycle files.",
+      "evidence_level": "SUPPORTED",
+      "confidence": "medium",
+      "provenance": ["s03", "s10", "s12"]
+    },
+    {
+      "id": "manager.communication",
+      "name": "Simulator::cCommManager",
+      "owns": "Intrusive communication-event list at +0x28",
+      "create": "FUN_00aeb160 via wrapper FUN_00aeb720",
+      "release": "Event completion/removal path unresolved",
+      "current_openspore": "No direct communication manager counterpart is present in the compared current Cell lifecycle files.",
+      "evidence_level": "OBSERVED",
+      "confidence": "medium",
+      "provenance": ["s03", "s12"]
+    }
+  ],
+  "registrations": [
+    {
+      "id": "registration.message-handler",
+      "subject": "message handler or listener",
+      "registrar": "FUN_00b21340 and IMessageManager registration APIs",
+      "data_structure": "ID map, fallback linked list with 0x0c stride, listener map with priority and handler fields",
+      "removal": "SDK RemoveHandler/RemoveEntry/Dispose exports; exact pairing unresolved",
+      "evidence_level": "SUPPORTED",
+      "confidence": "medium",
+      "provenance": ["s01", "s03", "s16"]
+    },
+    {
+      "id": "registration.editor-services",
+      "subject": "graphics/message services",
+      "registrar": "FUN_005bfd40 through IAppSystem service paths",
+      "data_structure": "Panel fields at +0x14/+0x18 and an unresolved eight-element service collection",
+      "removal": "UNRESOLVED",
+      "evidence_level": "SUPPORTED",
+      "confidence": "medium",
+      "provenance": ["s13"]
+    },
+    {
+      "id": "registration.cell-event-listener",
+      "subject": "cSpaceInventoryItem message listener",
+      "registrar": "SDK fields expose IMessageManager and IMessageListener pointers",
+      "data_structure": "Per-item message manager/listener and message-ID array",
+      "removal": "The intrusive cleanup path is supported, but exact listener removal pairing is unresolved",
+      "evidence_level": "SUPPORTED",
+      "confidence": "medium",
+      "provenance": ["s03", "s12"]
+    }
+  ],
+  "cleanup": [
+    {
+      "id": "cleanup.cell-gfx-rebuild",
+      "trigger": "FUN_00e780a0 cell object lifecycle call",
+      "sequence": [
+        "Clear sCellGame+0x411c avatar reference if it matches the input index",
+        "Release old GFX object",
+        "Destroy associated object",
+        "Rebuild if stage scale changed",
+        "Create a new pooled object"
+      ],
+      "evidence_level": "SUPPORTED",
+      "confidence": "medium",
+      "provenance": ["s15", "s19"],
+      "caveat": "The individual GFX release/rebuild callees remain incompletely characterized."
+    },
+    {
+      "id": "cleanup.intrusive-replace",
+      "trigger": "Replacement of intrusive member pointers",
+      "sequence": [
+        "Acquire or construct the new pointer",
+        "Release the previous pointer",
+        "Store the new pointer"
+      ],
+      "evidence_level": "SUPPORTED",
+      "confidence": "medium",
+      "provenance": ["s12", "s13"],
+      "caveat": "The exact order in every replacement path is not universal; the cited bodies show it in the named paths."
+    },
+    {
+      "id": "cleanup.pointer-replacement-unknown",
+      "trigger": "FUN_00c70110 pointer replacement path",
+      "sequence": [
+        "If the requested pointer differs, call old pointee vtable slot +0xbc",
+        "Store the new pointer",
+        "Call old pointee vtable slot +0xc0"
+      ],
+      "evidence_level": "SUPPORTED",
+      "confidence": "low",
+      "provenance": ["s09"],
+      "caveat": "Pointee type and slot meanings are unknown; do not label the slots as AddRef/Release without further evidence."
+    },
+    {
+      "id": "cleanup.star-regeneration",
+      "trigger": "Empty cStarRecord plus timing condition",
+      "sequence": [
+        "Set mLastObservedTime",
+        "Erase star from pending list",
+        "Reset manager state",
+        "Call GeneratePlanetsForStar"
+      ],
+      "evidence_level": "SUPPORTED",
+      "confidence": "high",
+      "provenance": ["s17"],
+      "caveat": "The planet-generation body is outside the targeted lifecycle recovery."
+    },
+    {
+      "id": "cleanup.inventory-resource",
+      "trigger": "Inventory property/resource replacement",
+      "sequence": [
+        "Acquire the new PropertyList or ResourceObject",
+        "Release the old member",
+        "Store the new member",
+        "Invoke the item's dependent virtual operation"
+      ],
+      "evidence_level": "SUPPORTED",
+      "confidence": "medium",
+      "provenance": ["s12"],
+      "caveat": "The +0x4c virtual operation is not semantically named."
+    }
+  ],
+  "exception_paths": [
+    {
+      "id": "exception.pool-exhaustion",
+      "subject": "cObjectPool allocation",
+      "condition": "No available free-list index",
+      "observed_or_current": "Current source returns nullptr on exhaustion; original CreateObject return/failure behavior is not fully recovered.",
+      "evidence_level": "SUPPORTED",
+      "confidence": "medium",
+      "provenance": ["s18", "s19"]
+    },
+    {
+      "id": "exception.cell-ui-no-gfx",
+      "subject": "cCellUI::ShowHealthRollover",
+      "condition": "Missing GFX object index",
+      "behavior": "Return -1 / no rollover",
+      "evidence_level": "SUPPORTED",
+      "confidence": "high",
+      "provenance": ["s24", "s25"]
+    },
+    {
+      "id": "exception.pointer-noop",
+      "subject": "Pointer replacement helpers",
+      "condition": "Requested pointer equals existing pointer",
+      "behavior": "No replacement in the observed FUN_00c70110 path",
+      "evidence_level": "SUPPORTED",
+      "confidence": "medium",
+      "provenance": ["s09"]
+    },
+    {
+      "id": "exception.resource-null",
+      "subject": "Trading/inventory resource path",
+      "condition": "ResourceObject or PropertyList is null",
+      "behavior": "Apply guarded release/replace paths; exact status/error return is unresolved",
+      "evidence_level": "SUPPORTED",
+      "confidence": "low",
+      "provenance": ["s12"]
+    },
+    {
+      "id": "exception.species-profile-fallback",
+      "subject": "cSpeciesManager::GetSpeciesProfile",
+      "condition": "Keyed lookup/validation path does not produce a profile",
+      "behavior": "Fallback fields at +0xa4/+0xa8/+0xac are used; a 0xa18-byte profile may be allocated, but ownership is unresolved",
+      "evidence_level": "OBSERVED",
+      "confidence": "low",
+      "provenance": ["s14"]
+    },
+    {
+      "id": "exception.editor-name-panel-contained-label",
+      "subject": "EditorNamePanel Initialize identity",
+      "condition": "SDK alias is used as exact function identity",
+      "behavior": "Do not use the alias as exact; target body begins at 005bfd40 and contains the SDK label at 005bfe40",
+      "evidence_level": "SUPPORTED",
+      "confidence": "high",
+      "provenance": ["s13"]
+    }
+  ],
+  "contradictions": [
+    {
+      "id": "contradiction.pool-addresses",
+      "topic": "cObjectPool initialization/create labels",
+      "observations": [
+        "SDK-associated cObjectPool_::Initialize is anchored near 00b72190 while the recovered bulk body is 00b72160.",
+        "SDK-associated cObjectPool_::CreateObject is anchored near 00b72270 while the recovered operation is often described as 00b72260.",
+        "The offset difference is preserved rather than silently corrected."
+      ],
+      "resolution": "UNRESOLVED_ADDRESS_IDENTITY",
+      "evidence_level": "OBSERVED",
+      "confidence": "high",
+      "provenance": ["s01", "s11", "s15"]
+    },
+    {
+      "id": "contradiction.cached-space-pointer",
+      "topic": "sSpacePlayerData cached empire pointer replacement",
+      "observations": [
+        "One dossier describes destruction through vtable slot +4.",
+        "Shared-state evidence describes AddRef/Release-style reference management."
+      ],
+      "resolution": "UNRESOLVED",
+      "evidence_level": "SUPPORTED",
+      "confidence": "high",
+      "provenance": ["s05"]
+    },
+    {
+      "id": "contradiction.create-cell-object",
+      "topic": "CreateCellObject allocation semantics",
+      "observations": [
+        "00b184c0 is observed to allocate and return a new 0x28-byte object without a visible destructor/Release.",
+        "00b22190 is SDK-associated with a path reported to return a pool object.",
+        "00b1fda0 only returns its argument."
+      ],
+      "resolution": "UNRESOLVED_ALIAS_OR_HELPER_DISTINCTION",
+      "evidence_level": "OBSERVED",
+      "confidence": "high",
+      "provenance": ["s07", "s08", "s11", "s19"]
+    },
+    {
+      "id": "contradiction.c-object-reference",
+      "topic": "00e82340 versus 00e82420",
+      "observations": [
+        "SDK association places cCellDataReference_::Create at 00e82420.",
+        "The recovered 00e82340 body is a separate static function and is not automatically the same identity."
+      ],
+      "resolution": "ALIAS_AND_IDENTITY_UNRESOLVED",
+      "evidence_level": "SUPPORTED",
+      "confidence": "high",
+      "provenance": ["s05", "s11", "s19"]
+    },
+    {
+      "id": "contradiction.communication-sdk-label",
+      "topic": "00aeb720 SDK identity",
+      "observations": [
+        "The recovered thunk creates a 0xa0-byte event, appends it, and dispatches it.",
+        "Triage/SDK artifacts associate the entry with HandleSpaceCommAction while the live symbol and shape suggest a creation wrapper."
+      ],
+      "resolution": "CONTESTED_SDK_ASSOCIATION",
+      "evidence_level": "OBSERVED",
+      "confidence": "high",
+      "provenance": ["s12"]
+    },
+    {
+      "id": "contradiction.editor-name-panel",
+      "topic": "EditorNamePanel Initialize",
+      "observations": [
+        "The SDK label is at 005bfe40.",
+        "The recovered body begins at 005bfd40."
+      ],
+      "resolution": "CONTAINED_SDK_ALIAS_NOT_EXACT",
+      "evidence_level": "SUPPORTED",
+      "confidence": "high",
+      "provenance": ["s13"]
+    },
+    {
+      "id": "contradiction.ui-text-zoom",
+      "topic": "cSPUITextZoom Initialize",
+      "observations": [
+        "Target body has eight decompiler parameters and writes offsets beyond the named SDK padding."
+      ],
+      "resolution": "UNRESOLVED_ABI_AND_FIELD_SEMANTICS",
+      "evidence_level": "SUPPORTED",
+      "confidence": "high",
+      "provenance": ["s13"]
+    }
+  ],
+  "openspore_comparison": [
+    {
+      "id": "comparison.pool",
+      "original": "SDK 28-byte cObjectPool descriptor with bulk initialization and pooled cell objects; CellGame owns the main pool.",
+      "openspore": "src/sim/CellPool.hpp preallocates a typed cCellObjectData array, builds a free list, and returns typed pointers through allocate/deallocate.",
+      "fit": "PARTIAL_CLEAN_ROOM_PROJECTION",
+      "evidence_level": "SUPPORTED",
+      "confidence": "high",
+      "provenance": ["s15", "s18", "s19"],
+      "gaps": [
+        "Original pool address/identity ambiguity",
+        "Original object constructor and pool destruction",
+        "Original failure behavior"
+      ]
+    },
+    {
+      "id": "comparison.mode",
+      "original": "SDK-backed cGameModeManager and cCellModeStrategy lifecycle slots, global Cell services, and AddRef/Release interface.",
+      "openspore": "src/apps/CellModeStrategy.cpp owns CellGfx and CellUI as value members; initialize calls UI load and GFX initialization; dispose clears state; mode switch calls OnExit/OnEnter.",
+      "fit": "HOST_LIFECYCLE_SHELL_ONLY",
+      "evidence_level": "SUPPORTED",
+      "confidence": "high",
+      "provenance": ["s01", "s03", "s20", "s21"],
+      "gaps": [
+        "No original global singleton attach/detach",
+        "No manager refcount/dispose equivalence",
+        "No original per-frame orchestrator"
+      ]
+    },
+    {
+      "id": "comparison.gfx",
+      "original": "cCellGFX owns render worlds, model/texture/effect/anim pointers, and display state.",
+      "openspore": "src/apps/CellGfx.hpp/cpp records integer world tokens, resource-key vectors, and displayActive; it does not create RenderWare-equivalent resources.",
+      "fit": "PRESENTATION_TOKEN_PROJECTION",
+      "evidence_level": "SUPPORTED",
+      "confidence": "high",
+      "provenance": ["s03", "s22", "s23"],
+      "gaps": [
+        "World/resource ownership",
+        "Layer creation and frame submission",
+        "Exact teardown"
+      ]
+    },
+    {
+      "id": "comparison.ui",
+      "original": "cCellUI owns a 0x0c-stride rollover pool and layout/progress-bar state.",
+      "openspore": "src/apps/CellUI.hpp/cpp stores layout constants and a vector of UIRollover values; showHealthRollover rejects zero GFX and returns vector position.",
+      "fit": "HUD_BEHAVIOR_PROJECTION",
+      "evidence_level": "SUPPORTED",
+      "confidence": "high",
+      "provenance": ["s03", "s24", "s25"],
+      "gaps": [
+        "Original pool reuse/expiry",
+        "Layout service ownership",
+        "Update and disposal"
+      ]
+    },
+    {
+      "id": "comparison.animation",
+      "original": "Static evidence supports PlayAnimation, effect-map selection, and event/effect behavior, but integration ownership is unresolved.",
+      "openspore": "src/apps/CellAnim.cpp reproduces blend special cases, three-slot effect-map selection, and deterministic event/effect mapping as values.",
+      "fit": "MECHANICS_PROJECTION_WITH_UNRESOLVED_OWNER",
+      "evidence_level": "SUPPORTED",
+      "confidence": "medium",
+      "provenance": ["s26", "s27"],
+      "gaps": [
+        "Renderer-owned effect lifetime",
+        "Pose and event ordering",
+        "Original event type completeness"
+      ]
+    },
+    {
+      "id": "comparison.simulation",
+      "original": "CellGame/cCellObjectData and per-frame movement/query/combat paths are partially recovered from static bodies.",
+      "openspore": "src/sim/Sim.cpp provides a fixed-step deterministic vector-based simulation with movement-plane, flee, eat, and event outputs.",
+      "fit": "DETERMINISTIC_BEHAVIOR_CONTRACT_NOT_ORIGINAL_RUNTIME",
+      "evidence_level": "SUPPORTED",
+      "confidence": "medium",
+      "provenance": ["s19", "s28", "s29"],
+      "gaps": [
+        "Original object pool/query integration",
+        "Runtime placement and player identity",
+        "Original service graph"
+      ]
+    }
+  ],
+  "unknowns": [
+    {
+      "id": "unknown.cell-anim-integration",
+      "status": "UNRESOLVED",
+      "statement": "No provenance-bearing SimEvent -> CellAnim -> stage/renderer/pose trace establishes ownership, ordering, pose lifecycle, and submission.",
+      "required_resolution": "Recover a concrete event producer, animation target, renderer/world boundary, and cleanup path before implementing an original-compatible integration.",
+      "evidence_level": "UNKNOWN",
+      "confidence": "unresolved",
+      "provenance": ["s26", "s27"]
+    },
+    {
+      "id": "unknown.track-f-ownership",
+      "status": "UNRESOLVED",
+      "statement": "Track-F empire/economy ownership and lifecycle contracts are not established by static field or graph topology alone.",
+      "required_resolution": "Bind resource acquisition, storage, transfer, release, and persistence operations to a concrete owner chain.",
+      "evidence_level": "UNKNOWN",
+      "confidence": "unresolved",
+      "provenance": ["s05", "s10", "s12"]
+    },
+    {
+      "id": "unknown.pool-destruction",
+      "status": "UNRESOLVED",
+      "statement": "Original cObjectPool buffer destruction and failure behavior are not fully recovered.",
+      "required_resolution": "Recover the pool destructor and all return/deallocate callers with exact null and exhaustion behavior.",
+      "evidence_level": "UNKNOWN",
+      "confidence": "unresolved",
+      "provenance": ["s09", "s18"]
+    },
+    {
+      "id": "unknown.global-shutdown-order",
+      "status": "UNRESOLVED",
+      "statement": "The global shutdown order across mode, CellGame, CellGFX, CellUI, message, resource, and editor services is not runtime-observed.",
+      "required_resolution": "Obtain a runtime or complete static teardown spine for application shutdown.",
+      "evidence_level": "UNKNOWN",
+      "confidence": "unresolved",
+      "provenance": ["s01", "s05", "s13", "s21"]
+    },
+    {
+      "id": "unknown.species-profile-owner",
+      "status": "UNRESOLVED",
+      "statement": "The 0xa18-byte cSpeciesProfile allocation is observed, but cache, transfer, and destruction ownership are unknown.",
+      "required_resolution": "Trace allocation callers, return consumers, cache mutation, and the matching release path.",
+      "evidence_level": "UNKNOWN",
+      "confidence": "unresolved",
+      "provenance": ["s14"]
+    },
+    {
+      "id": "unknown.editor-dispose",
+      "status": "UNRESOLVED",
+      "statement": "EditorModel::Dispose has an SDK identity but no trustworthy persisted lifecycle body.",
+      "required_resolution": "Recover the exact constructor/dispose pair and identify owned model/part/resource members.",
+      "evidence_level": "UNKNOWN",
+      "confidence": "unresolved",
+      "provenance": ["s14"]
+    }
+  ],
+  "relations": [
+    {
+      "id": "relation.001",
+      "from": "App::cGameModeManager",
+      "to": "IGameMode::OnExit/OnEnter",
+      "type": "transition",
+      "statement": "SetActiveModeAt transitions through the current mode's OnExit and the next mode's OnEnter.",
+      "evidence": "SDK function/vtable exports and current source's explicit setActiveModeAt sequence.",
+      "provenance": ["s01", "s03", "s21"],
+      "confidence": "medium",
+      "evidence_level": "SUPPORTED"
+    },
+    {
+      "id": "relation.002",
+      "from": "App::cCellModeStrategy",
+      "to": "sCellGFX/sCellUI",
+      "type": "initialization-ownership",
+      "statement": "The original mode lifecycle is the bootstrap/teardown boundary for global CellGFX and CellUI services; the current source instead owns value members.",
+      "evidence": "SDK Cell layout, Cell campaign lifecycle map, and current CellModeStrategy members.",
+      "provenance": ["s03", "s19", "s20", "s21"],
+      "confidence": "medium",
+      "evidence_level": "SUPPORTED"
+    },
+    {
+      "id": "relation.003",
+      "from": "sCellGame",
+      "to": "cObjectPool<cCellObjectData>",
+      "type": "contains",
+      "statement": "sCellGame contains the main cell object pool and maintains the avatar cell index.",
+      "evidence": "SDK field layout and Cell pool dossier.",
+      "provenance": ["s03", "s15", "s19"],
+      "confidence": "high",
+      "evidence_level": "SUPPORTED"
+    },
+    {
+      "id": "relation.004",
+      "from": "FUN_00e780a0",
+      "to": "cObjectPool::CreateObject",
+      "type": "recreate",
+      "statement": "FUN_00e780a0 releases the old GFX/associated state, conditionally rebuilds after stage-scale change, and creates a replacement pooled object.",
+      "evidence": "cell-object-pool-lifecycle dossier and exact callsite in static records.",
+      "provenance": ["s11", "s15"],
+      "confidence": "high",
+      "evidence_level": "SUPPORTED"
+    },
+    {
+      "id": "relation.005",
+      "from": "cObjectPool<T>",
+      "to": "T::mObjectPoolIndex",
+      "type": "free-list",
+      "statement": "The first object word stores the next free index while free and the object's own index while allocated.",
+      "evidence": "SDK pool/object layout and current pool implementation.",
+      "provenance": ["s03", "s18", "s19"],
+      "confidence": "high",
+      "evidence_level": "SUPPORTED"
+    },
+    {
+      "id": "relation.006",
+      "from": "cCellGFX",
+      "to": "cell-stage render worlds",
+      "type": "contains-and-activates",
+      "statement": "cCellGFX stores world/effect/model/animation service pointers and starts the cell display through the mode OnEnter path.",
+      "evidence": "SDK CellGFX field exports, campaign lifecycle evidence, and current GFX token projection.",
+      "provenance": ["s03", "s22", "s23"],
+      "confidence": "medium",
+      "evidence_level": "SUPPORTED"
+    },
+    {
+      "id": "relation.007",
+      "from": "cCellUI",
+      "to": "cCellUIRollover",
+      "type": "pool-allocation",
+      "statement": "ShowHealthRollover rejects a missing GFX object and creates a rollover record with health-derived and disappearance fields.",
+      "evidence": "SDK CellUI fields and current UI projection of the targeted body.",
+      "provenance": ["s03", "s24", "s25"],
+      "confidence": "high",
+      "evidence_level": "SUPPORTED"
+    },
+    {
+      "id": "relation.008",
+      "from": "cSpaceInventoryItem",
+      "to": "PropertyList/ResourceObject",
+      "type": "intrusive-replace",
+      "statement": "Inventory property/resource paths manage intrusive member references and release old members before replacement.",
+      "evidence": "SDK inventory fields and targeted sim-space bodies.",
+      "provenance": ["s03", "s12"],
+      "confidence": "medium",
+      "evidence_level": "SUPPORTED"
+    },
+    {
+      "id": "relation.009",
+      "from": "cSpaceTrading",
+      "to": "delivery/resource object",
+      "type": "acquire-append-release",
+      "statement": "The targeted trading path acquires a delivery/resource object, appends it, and releases the temporary acquired reference.",
+      "evidence": "Targeted sim-space static observations.",
+      "provenance": ["s12"],
+      "confidence": "medium",
+      "evidence_level": "SUPPORTED"
+    },
+    {
+      "id": "relation.010",
+      "from": "FUN_00aeb160",
+      "to": "cCommManager event list",
+      "type": "append",
+      "statement": "The communication-event creator allocates and appends a 0xa0-byte event to cCommManager+0x28.",
+      "evidence": "Targeted sim-space body and cCommManager field layout.",
+      "provenance": ["s03", "s12"],
+      "confidence": "high",
+      "evidence_level": "OBSERVED"
+    },
+    {
+      "id": "relation.011",
+      "from": "FUN_00bb4af0",
+      "to": "cStarRecord planet state",
+      "type": "conditional-regeneration",
+      "statement": "Empty-star and timing conditions cause observation-time update, pending-state removal, manager reset, and GeneratePlanetsForStar.",
+      "evidence": "star-system-regen dossier.",
+      "provenance": ["s17"],
+      "confidence": "high",
+      "evidence_level": "SUPPORTED"
+    },
+    {
+      "id": "relation.012",
+      "from": "FUN_00b21340",
+      "to": "IMessageManager registration path",
+      "type": "register-or-fallback-traverse",
+      "statement": "The handler registration function first performs an ID map lookup, then registers or walks a 0x0c-stride fallback list.",
+      "evidence": "message-handler-registration dossier and SDK message-manager exports.",
+      "provenance": ["s01", "s03", "s16"],
+      "confidence": "high",
+      "evidence_level": "SUPPORTED"
+    },
+    {
+      "id": "relation.013",
+      "from": "FUN_005bfd40",
+      "to": "EditorNamePanel intrusive members",
+      "type": "release-before-assign",
+      "statement": "The targeted EditorNamePanel body release-before-assigns layout/entity-related members and registers app services.",
+      "evidence": "Targeted UI body and SDK field layout.",
+      "provenance": ["s03", "s13"],
+      "confidence": "medium",
+      "evidence_level": "SUPPORTED"
+    },
+    {
+      "id": "relation.014",
+      "from": "FUN_004df550",
+      "to": "0xa18-byte cSpeciesProfile-labeled object",
+      "type": "possible-allocation",
+      "statement": "The targeted body may allocate a 0xa18-byte cSpeciesProfile-labeled object after keyed lookup/validation and fallback field access.",
+      "evidence": "Targeted editor-core body observation.",
+      "provenance": ["s14"],
+      "confidence": "low",
+      "evidence_level": "OBSERVED"
+    },
+    {
+      "id": "relation.015",
+      "from": "FUN_00c70110",
+      "to": "old pointee vtable slots +0xbc/+0xc0",
+      "type": "pointer-replacement",
+      "statement": "When pointers differ, the old pointee is called at +0xbc, the new pointer is stored, and the old pointee is called at +0xc0.",
+      "evidence": "Targeted sim-core-03 body.",
+      "provenance": ["s09"],
+      "confidence": "medium",
+      "evidence_level": "SUPPORTED"
+    },
+    {
+      "id": "relation.016",
+      "from": "CellSim",
+      "to": "SimEvent",
+      "type": "deterministic-output",
+      "statement": "The current deterministic simulation emits eat and flee events and updates player/entity state from fixed-step input.",
+      "evidence": "Current Sim.cpp and Sim.hpp source.",
+      "provenance": ["s28", "s29"],
+      "confidence": "high",
+      "evidence_level": "OBSERVED"
+    },
+    {
+      "id": "relation.017",
+      "from": "CellAnim",
+      "to": "stage/renderer/pose",
+      "type": "UNRESOLVED",
+      "statement": "No ownership-bearing integration relation is established between current animation/effect values and original renderer/pose lifetime.",
+      "evidence": "Semantic atlas handoff and current animation source; no provenance-bearing runtime trace.",
+      "provenance": ["s26", "s27"],
+      "confidence": "unresolved",
+      "evidence_level": "UNKNOWN"
+    },
+    {
+      "id": "relation.018",
+      "from": "FUN_00b184c0",
+      "to": "new 0x28-byte object",
+      "type": "observed-allocation",
+      "statement": "The body is observed to allocate and return a new 0x28-byte object without a visible destructor or Release call.",
+      "evidence": "Simulator gap static review and related contradiction record.",
+      "provenance": ["s07", "s08"],
+      "confidence": "medium",
+      "evidence_level": "OBSERVED"
+    },
+    {
+      "id": "relation.019",
+      "from": "00b184c0",
+      "to": "00b22190",
+      "type": "contradictory-interpretation",
+      "statement": "One path reports direct new-object allocation while another SDK-associated path reports pool-object return; identity and aliasing remain unresolved.",
+      "evidence": "SDK/function and static gap records.",
+      "provenance": ["s01", "s07", "s08", "s19"],
+      "confidence": "high",
+      "evidence_level": "OBSERVED"
+    },
+    {
+      "id": "relation.020",
+      "from": "FUN_00e82340",
+      "to": "FUN_00e82420",
+      "type": "identity-contradiction",
+      "statement": "The recovered 00e82340 body and SDK-associated 00e82420 cCellDataReference Create label are kept distinct pending adjudication.",
+      "evidence": "Campaign verification and SDK/static identity records.",
+      "provenance": ["s05", "s11", "s19"],
+      "confidence": "high",
+      "evidence_level": "SUPPORTED"
+    }
+  ],
+  "validation": {
+    "artifact_checks": [
+      "JSON parses as a single object",
+      "Top-level keys are stable and timestamp-free",
+      "Arrays are sorted by stable IDs or addresses where applicable",
+      "Every relation contains evidence, provenance, confidence, and evidence_level",
+      "No source file, binary, Ghidra program, or knowledge graph was modified",
+      "No implementation is promoted to original-game fidelity"
+    ],
+    "static_limits": [
+      "No runtime evidence was obtained",
+      "Targeted Ghidra bodies are read-only observations and do not change persisted decomp availability",
+      "Call graph topology is not ownership evidence",
+      "Current OpenSpore source is a clean-room projection, not a binary-equivalent implementation"
+    ],
+    "next_research_actions": [
+      "Resolve pool SDK address drift with exact callers and bodies",
+      "Recover original global teardown spine and mode dispose ordering",
+      "Trace cSpaceInventoryItem message listener registration/removal",
+      "Trace cSpeciesProfile allocation consumers and release",
+      "Recover CellAnim event-to-renderer/pose ownership and submission order",
+      "Resolve Track-F resource and empire ownership chains"
+    ]
+  }
+}

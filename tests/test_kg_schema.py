@@ -2,7 +2,7 @@
 
 Covers the schema patch from docs/RE-AUTOMATION-ARCHITECTURE.md §5/§6 and
 docs/analysis/SCHEMA-DELTA.md:
-  - fresh DB from schema.sql has every table/column/index, user_version=1
+  - fresh DB from schema.sql has every table/column/index, user_version=4
   - migration from the pre-patch 41-line schema leaves legacy rows intact
     (byte-for-byte on the original columns) and adds the new columns with
     correct defaults, including legacy 5-level confidence values
@@ -17,8 +17,12 @@ Run from the repo root:
 """
 import os
 import sqlite3
+import sys
 import tempfile
 import unittest
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(ROOT, "knowledgegraph"))
 
 import knowledgegraph.kg as kg
 
@@ -85,10 +89,15 @@ INV_COLS = ["id", "kind", "va", "name", "subsystem", "mode",
             "why_interesting", "stage", "status", "block_reason",
             "prerequisites", "attempts", "checkpoint", "evidence_refs",
             "implementer_id", "adjudicator_id", "created_at", "updated_at",
-            "binary_sha256"]
+            "binary_sha256", "triage_status"]
+XREF_COLS = ["caller_va", "callee_va", "reference_type", "callsite_va",
+             "source", "snapshot_sha256"]
 EXPECTED_INDEXES = {"idx_node_label", "idx_edge_src", "idx_edge_dst",
                     "idx_node_name", "idx_node_evidence", "idx_inv_status",
-                    "ix_inv_dedup", "idx_field_struct", "idx_trace_run_sha"}
+                    "ix_inv_dedup", "idx_field_struct", "idx_trace_run_sha",
+                    "idx_triage_prio_cat", "idx_triage_sub_prio",
+                    "idx_inv_triage_status", "idx_xref_caller",
+                    "idx_xref_callee"}
 
 
 def full_dump(c):
@@ -97,7 +106,10 @@ def full_dump(c):
         "SELECT name FROM sqlite_master WHERE type='table' "
         "AND name NOT LIKE 'sqlite_%' ORDER BY name")]
     for t in tables:
-        out[t] = [tuple(r) for r in c.execute(f"SELECT * FROM {t} ORDER BY id")]
+        cols = [r[1] for r in c.execute(f"PRAGMA table_info({t})")]
+        order = "ORDER BY id" if "id" in cols else f"ORDER BY {cols[0]}"
+        out[t] = [tuple(r) for r in
+                  c.execute(f"SELECT * FROM {t} {order}")]
     out["ddl"] = [tuple(r) for r in c.execute(
         "SELECT type, name, sql FROM sqlite_master "
         "WHERE sql IS NOT NULL ORDER BY type, name")]
@@ -131,12 +143,13 @@ class KGSchemeTest(unittest.TestCase):
                 "AND name NOT LIKE 'sqlite_%'")}
             self.assertEqual(
                 tables, {"node", "edge", "test_result", "field",
-                         "trace_run", "investigations"})
-            self.assertEqual(c.execute("PRAGMA user_version").fetchone()[0], 1)
+                         "trace_run", "investigations", "triage", "xref"})
+            self.assertEqual(c.execute("PRAGMA user_version").fetchone()[0], 4)
             self.assertEqual(self.cols(c, "node"), NEW_NODE_COLS)
             self.assertEqual(self.cols(c, "field"), FIELD_COLS)
             self.assertEqual(self.cols(c, "trace_run"), TRACE_COLS)
             self.assertEqual(self.cols(c, "investigations"), INV_COLS)
+            self.assertEqual(self.cols(c, "xref"), XREF_COLS)
             idx = {r[0] for r in c.execute(
                 "SELECT name FROM sqlite_master WHERE type='index' "
                 "AND name NOT LIKE 'sqlite_%'")}
@@ -180,7 +193,7 @@ class KGSchemeTest(unittest.TestCase):
             self.assertEqual(ev, "UNKNOWN")
             self.assertTrue(upd)
             self.assertIsNone(sha)
-        self.assertEqual(c.execute("PRAGMA user_version").fetchone()[0], 1)
+        self.assertEqual(c.execute("PRAGMA user_version").fetchone()[0], 4)
         c.close()
 
     def test_migration_idempotent(self):
@@ -252,6 +265,21 @@ class KGSchemeTest(unittest.TestCase):
                                    "function", "0x00e5b790", "replace",
                                    "SELECTED", "active", "impl-1", "adj-1",
                                    "b2"))
+            c.execute(
+                "INSERT INTO xref(caller_va,callee_va,reference_type,"
+                "callsite_va,source,snapshot_sha256) "
+                "VALUES('00e5b790','00e5c0f0','direct-call','00e5b7aa',"
+                "'ghidra:SporeApp.exe','2540f2ca')")
+            row = c.execute("SELECT caller_va,callee_va,reference_type,"
+                            "callsite_va FROM xref").fetchone()
+            self.assertEqual(row, ("00e5b790", "00e5c0f0", "direct-call",
+                                   "00e5b7aa"))
+            with self.assertRaises(sqlite3.IntegrityError):
+                c.execute(
+                    "INSERT INTO xref(caller_va,callee_va,reference_type,"
+                    "callsite_va,source,snapshot_sha256) "
+                    "VALUES('00e5b790','00e5c0f0','BOGUS','00e5b7ab',"
+                    "'ghidra:SporeApp.exe','2540f2ca')")
             c.close()
 
     def test_evidence_level_check(self):

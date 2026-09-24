@@ -1,0 +1,2512 @@
+{
+  "$schema": "state-machine-research-1",
+  "callbacks": [
+    {
+      "address": "0x0067dcc0",
+      "consumers": [
+        "application bootstrap",
+        "application services",
+        "Cell mode lifecycle"
+      ],
+      "evidence": [
+        {
+          "address": "0x0067dcc0",
+          "claim": "returns the raw application service pointer stored at DAT_015fd890",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/App__IAppSystem__Get.c:1-10"
+        },
+        {
+          "address": "0x0067dcc0",
+          "claim": "historical main-menu trace repeatedly entered the accessor after Startup",
+          "kind": "runtime",
+          "level": "OBSERVED",
+          "source": "tools/observatory/examples/obs_main_menu_example.jsonl:4-150"
+        }
+      ],
+      "name": "App::IAppSystem::Get",
+      "parameters": [],
+      "returns": "IAppSystem*",
+      "semantics": "Global service accessor; it does not establish the owner's initialization state."
+    },
+    {
+      "address": "0x007d8060",
+      "consumers": [
+        "App::cGameModeManager::Initialize",
+        "mode message registration"
+      ],
+      "evidence": [
+        {
+          "address": "0x007d8060",
+          "claim": "initializes camera state, installs an id-generator helper, and registers messages 0x00d3c602, 0x00e11332, and 0x00e11333",
+          "kind": "live_ghidra_decompilation",
+          "level": "SUPPORTED",
+          "source": "ghidra://SporeApp.exe@0x007d8060; knowledgegraph/research/state-machines/ui-gameplay.json:763-770"
+        }
+      ],
+      "name": "App::cGameModeManager::Initialize",
+      "parameters": [
+        "this"
+      ],
+      "returns": "void-like initialization result",
+      "semantics": "Mode-manager initialization boundary; exact service side effects are unresolved."
+    },
+    {
+      "address": "0x007d85b0",
+      "consumers": [
+        "SetActiveMode",
+        "SetActiveModeAt",
+        "SetActiveModeByName"
+      ],
+      "evidence": [
+        {
+          "address": "0x007d85b0",
+          "claim": "different-index request calls old OnExit, writes the active index, sends mode-exit 0x0212d3e7, calls new OnEnter, and sends mode-enter 0x022d1adc",
+          "kind": "live_ghidra_disassembly",
+          "level": "CONFIRMED",
+          "source": "ghidra://SporeApp.exe@0x007d85b0; knowledgegraph/research/state-machines/ui-gameplay.json:789-795"
+        }
+      ],
+      "name": "App::cGameModeManager::mode_transition_helper",
+      "parameters": [
+        "this",
+        "requested index"
+      ],
+      "returns": "transition result",
+      "semantics": "Synchronous-looking mode switch; old OnExit precedes the active-index write and new OnEnter follows mode-exit."
+    },
+    {
+      "address": "0x007d8c80",
+      "consumers": [
+        "App::IGameModeManager::SetActiveModeAt"
+      ],
+      "evidence": [
+        {
+          "address": "0x007d8c80",
+          "claim": "concrete vtable slot +0x40 range-checks the requested index and delegates to 0x007d85b0",
+          "kind": "live_ghidra_decompilation",
+          "level": "CONFIRMED",
+          "source": "ghidra://SporeApp.exe@0x01412598+0x40,0x007d8c80"
+        }
+      ],
+      "name": "App::cGameModeManager::SetActiveModeAt",
+      "parameters": [
+        "this",
+        "int32 requested_index"
+      ],
+      "returns": "bool; false for an out-of-range index",
+      "semantics": "Validated activation wrapper; the SDK-labeled body at 0x007d8d40 is a teardown body, not this activation path."
+    },
+    {
+      "address": "0x007d9120",
+      "consumers": [
+        "App::cGameModeManager::Dispose",
+        "application shutdown"
+      ],
+      "evidence": [
+        {
+          "address": "0x007d9120",
+          "claim": "unregisters messages, exits a valid active mode, disposes registered modes, clears entries, sets mnActiveIndex to -1, and clears references",
+          "kind": "live_ghidra_disassembly",
+          "level": "SUPPORTED",
+          "source": "ghidra://SporeApp.exe@0x007d9120; knowledgegraph/research/state-machines/ui-gameplay.json:818-825"
+        }
+      ],
+      "name": "App::cGameModeManager::Dispose",
+      "parameters": [
+        "this"
+      ],
+      "returns": "void-like teardown result",
+      "semantics": "Manager teardown boundary; per-mode release ordering is not fully recovered."
+    },
+    {
+      "address": "0x007e6140",
+      "consumers": [
+        "application frame loop",
+        "post-update consumers"
+      ],
+      "evidence": [
+        {
+          "address": "0x007e6140",
+          "claim": "SDK export names App::cAppSystem::PostUpdate; body and ordering relative to Update are not exported",
+          "kind": "sdk_function",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/sdk_functions.tsv:583-598"
+        }
+      ],
+      "name": "App::cAppSystem::PostUpdate",
+      "parameters": [
+        "this",
+        "frame delta values"
+      ],
+      "returns": "void",
+      "semantics": "Post-update phase surface; implementation order is unresolved."
+    },
+    {
+      "address": "0x007e67a0",
+      "consumers": [
+        "application bootstrap",
+        "subsystem startup"
+      ],
+      "evidence": [
+        {
+          "address": "0x007e67a0",
+          "claim": "historical probe observed one Startup entry after Init and InitPlugins; notes describe subsystem creation, preference loading, and renderer startup",
+          "kind": "runtime",
+          "level": "OBSERVED",
+          "source": "tools/observatory/examples/obs_main_menu_example.jsonl:9; tools/observatory/probes/main_menu.json:14-15"
+        }
+      ],
+      "name": "App::cAppSystem::Startup",
+      "parameters": [
+        "this"
+      ],
+      "returns": "void-like startup result",
+      "semantics": "Historical startup boundary; complete internal call graph is unresolved."
+    },
+    {
+      "address": "0x007e6850",
+      "consumers": [
+        "App::IAppSystem::Init",
+        "application bootstrap"
+      ],
+      "evidence": [
+        {
+          "address": "0x007e6850",
+          "claim": "SDK export names App::cAppSystem::Init, while the historical probe hit 0x007e8ba0 for Init; the addresses are not silently merged",
+          "kind": "sdk_function_and_probe",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/sdk_functions.tsv:589-590; tools/observatory/probes/main_menu.json:12-13"
+        }
+      ],
+      "name": "App::cAppSystem::Init",
+      "parameters": [
+        "this",
+        "initialization arguments"
+      ],
+      "returns": "initialization result",
+      "semantics": "Core initialization boundary; the body and address discrepancy require adjudication."
+    },
+    {
+      "address": "0x007e93d0",
+      "consumers": [
+        "application bootstrap",
+        "plugin or command-line initialization"
+      ],
+      "evidence": [
+        {
+          "address": "0x007e93d0",
+          "claim": "body walks command-line string storage and calls FUN_00423650 and FUN_004f6510; no concrete plugin registry body is visible",
+          "kind": "decompilation",
+          "level": "OBSERVED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cAppSystem__InitPlugins.c:6-32"
+        },
+        {
+          "address": "0x007e93d0",
+          "claim": "historical main-menu trace observed one InitPlugins entry immediately before Init",
+          "kind": "runtime",
+          "level": "OBSERVED",
+          "source": "tools/observatory/examples/obs_main_menu_example.jsonl:2-3"
+        }
+      ],
+      "name": "App::cAppSystem::InitPlugins",
+      "parameters": [
+        "this",
+        "CommandLine*"
+      ],
+      "returns": "bool-like result",
+      "semantics": "Initialization boundary; plugin identity, ownership, and helper semantics remain unresolved."
+    },
+    {
+      "address": "0x00b5b960",
+      "consumers": [
+        "Simulator strategy construction",
+        "mode request and commit helpers"
+      ],
+      "evidence": [
+        {
+          "address": "0x00b5b960",
+          "claim": "constructor writes -1 to mLastGameMode, mCurrentGameMode, and pending mode +0x14, and writes 0 to pending path +0x18",
+          "kind": "disassembly",
+          "level": "CONFIRMED",
+          "source": "SPORE/SporeBin/SporeApp.exe (read-only objdump); knowledgegraph/research/state-machines/simulator-core.json:1193-1208"
+        }
+      ],
+      "name": "Simulator::cStrategy constructor state",
+      "parameters": [
+        "this"
+      ],
+      "returns": "constructed strategy",
+      "semantics": "Initializes strategy mode-request and commit slots; it is not the App mode registry."
+    },
+    {
+      "address": "0x00b63510",
+      "consumers": [
+        "mode-exit announcement",
+        "mode-enter announcement",
+        "Simulator mode-ID commits"
+      ],
+      "evidence": [
+        {
+          "address": "0x00b63510",
+          "claim": "listener handles both mode messages, reads payload words +0x08 and +0x10, normalizes them, and selects last/current commit behavior",
+          "kind": "live_ghidra_disassembly",
+          "level": "SUPPORTED",
+          "source": "ghidra://SporeApp.exe@0x00b63510; knowledgegraph/research/state-machines/ui-gameplay.json:1260-1266"
+        }
+      ],
+      "name": "Simulator mode-message listener",
+      "parameters": [
+        "this",
+        "mode announcement"
+      ],
+      "returns": "message handling result",
+      "semantics": "Bridges App mode messages to Simulator strategy commit state; queue timing is unresolved."
+    },
+    {
+      "address": "0x00b3d330",
+      "consumers": [
+        "Simulator service consumers",
+        "subsystem lifecycle consumers"
+      ],
+      "evidence": [
+        {
+          "address": "0x00b3d330",
+          "claim": "returns the packed global slot DAT_0167eaf0",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "knowledgegraph/research/types/01-simulator-core.md:123-144; docs/RECON-3.1.0.22.md:95-103"
+        }
+      ],
+      "name": "Simulator::cSimulatorSystem::Get",
+      "parameters": [],
+      "returns": "cSimulatorSystem*",
+      "semantics": "Service-root accessor; publication and ownership are not established by the getter."
+    },
+    {
+      "address": "0x00e552f0",
+      "consumers": [
+        "IGameMode::OnEnter dispatch",
+        "Cell display and UI services"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e552f0",
+          "claim": "resets mode and Cell flags, starts CellGFX display, clears a pending global, and invokes service/UI setup paths",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnEnter.c:8-46"
+        }
+      ],
+      "name": "App::cCellModeStrategy::OnEnter",
+      "parameters": [
+        "this"
+      ],
+      "returns": "bool-like mode entry result",
+      "semantics": "Cell mode entry boundary; indirect service identities remain partial."
+    },
+    {
+      "address": "0x00e7fc00",
+      "consumers": [
+        "IGameMode::OnExit dispatch",
+        "Cell cleanup and service disable"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e7fc00",
+          "claim": "restores background globals, drains transient state, disables a service, and calls Cell cleanup paths",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnExit.c:8-35"
+        }
+      ],
+      "name": "App::cCellModeStrategy::OnExit",
+      "parameters": [
+        "this"
+      ],
+      "returns": "void",
+      "semantics": "Cell mode exit boundary; exact resource ownership is unresolved."
+    },
+    {
+      "address": "0x00e80980",
+      "consumers": [
+        "active Cell mode update dispatch"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e80980",
+          "claim": "thin adapter calls FUN_00e806b0 with mode update arguments; the body gates on sCellGame+0x51e0 and +0x515c, scales delta, and handles reload state",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__Update.c:8-13; knowledgegraph/research/state-machines/cell-stage.json:114-137"
+        }
+      ],
+      "name": "App::cCellModeStrategy::Update",
+      "parameters": [
+        "this",
+        "delta_time",
+        "game_delta_time"
+      ],
+      "returns": "void",
+      "semantics": "Cell per-frame boundary; timing and reload ordering are static observations, not runtime-verified."
+    },
+    {
+      "address": "0x00e81f30",
+      "consumers": [
+        "IGameMode::Dispose dispatch",
+        "Cell resource teardown"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e81f30",
+          "claim": "resets Cell globals, releases GFX and Cell state, frees sCellGame, sCellGFX, and sCellUI, and invokes service-disable plus pause/unpause paths",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__Dispose.c:8-86"
+        }
+      ],
+      "name": "App::cCellModeStrategy::Dispose",
+      "parameters": [
+        "this"
+      ],
+      "returns": "bool-like teardown result",
+      "semantics": "Cell resource disposal boundary; singleton release and pause semantics need adjudication."
+    },
+    {
+      "address": "0x11e11a0",
+      "consumers": [
+        "MSVC CRT bootstrap",
+        "application bootstrap"
+      ],
+      "evidence": [
+        {
+          "address": "0x11e11a0",
+          "claim": "PE entry has a call/jump bootstrap shape and was observed once in the historical trace",
+          "kind": "runtime_and_bytes",
+          "level": "OBSERVED",
+          "source": "tools/observatory/probes/main_menu.json:6-7; tools/observatory/examples/obs_main_menu_example.jsonl:1"
+        }
+      ],
+      "name": "PE entry",
+      "parameters": [],
+      "returns": "process bootstrap result",
+      "semantics": "Entry control; the CRT/WinMain link is outside the recovered state machine."
+    }
+  ],
+  "domain": "Application Lifecycle",
+  "events": [
+    {
+      "boundary": "original_static",
+      "consumers": [
+        "application bootstrap",
+        "AppSystem lifecycle"
+      ],
+      "evidence": [
+        {
+          "address": "0x11e11a0",
+          "claim": "one PE entry event was captured at relative time zero",
+          "kind": "runtime",
+          "level": "OBSERVED",
+          "source": "tools/observatory/examples/obs_main_menu_example.jsonl:1"
+        }
+      ],
+      "id": "app_bootstrap_entry",
+      "kind": "process_event",
+      "producers": [
+        "0x11e11a0"
+      ],
+      "status": "historical_positive"
+    },
+    {
+      "boundary": "original_static",
+      "consumers": [
+        "app_process_bootstrap"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e20860",
+          "claim": "state machine contains the six-entry jump table and state reads/writes, but the historical trace recorded zero entries",
+          "kind": "runtime",
+          "level": "OBSERVED",
+          "source": "tools/observatory/SCENARIO-main_menu.md:173-180"
+        }
+      ],
+      "id": "app_bootstrap_state_tick",
+      "kind": "analytical_event",
+      "producers": [
+        "0x00de4c20",
+        "0x00df5ac0"
+      ],
+      "status": "static_not_reached"
+    },
+    {
+      "boundary": "sdk_interface",
+      "consumers": [
+        "app_system_lifecycle"
+      ],
+      "evidence": [
+        {
+          "address": "0x007e8c40",
+          "claim": "IAppSystem vtable exposes PreInit at +0x10",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv:20749-20758"
+        }
+      ],
+      "id": "app_system_pre_init",
+      "kind": "lifecycle_event",
+      "producers": [
+        "App::cAppSystem caller"
+      ],
+      "status": "interface_exposed"
+    },
+    {
+      "boundary": "original_static",
+      "consumers": [
+        "app_system_lifecycle"
+      ],
+      "evidence": [
+        {
+          "address": "0x007e8ba0",
+          "claim": "historical probe observed one Init event after InitPlugins",
+          "kind": "runtime",
+          "level": "OBSERVED",
+          "source": "tools/observatory/examples/obs_main_menu_example.jsonl:2-3"
+        }
+      ],
+      "id": "app_system_init",
+      "kind": "lifecycle_event",
+      "producers": [
+        "App::IAppSystem vtable Init slot"
+      ],
+      "status": "historical_positive"
+    },
+    {
+      "boundary": "original_static",
+      "consumers": [
+        "app_system_lifecycle"
+      ],
+      "evidence": [
+        {
+          "address": "0x007e93d0",
+          "claim": "InitPlugins preceded Init in the historical startup trace",
+          "kind": "runtime",
+          "level": "OBSERVED",
+          "source": "tools/observatory/examples/obs_main_menu_example.jsonl:2-3"
+        }
+      ],
+      "id": "app_plugins_initialized",
+      "kind": "lifecycle_event",
+      "producers": [
+        "0x007e93d0"
+      ],
+      "status": "historical_positive_order"
+    },
+    {
+      "boundary": "sdk_interface",
+      "consumers": [
+        "app_system_lifecycle",
+        "graphics and UI service setup"
+      ],
+      "evidence": [
+        {
+          "address": "0x007eaae0",
+          "claim": "IAppSystem vtable exposes InitGraphics at +0x20; EditorNamePanel calls it four times but registration versus operation is unresolved",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv:20755-20758; knowledgegraph/research/decomp-gap/ui-shell-00.json:625-635"
+        }
+      ],
+      "id": "app_graphics_initialized",
+      "kind": "lifecycle_event",
+      "producers": [
+        "App::cAppSystem caller",
+        "UI service initialization"
+      ],
+      "status": "interface_exposed_callers_observed"
+    },
+    {
+      "boundary": "original_static",
+      "consumers": [
+        "app_system_lifecycle",
+        "service consumers"
+      ],
+      "evidence": [
+        {
+          "address": "0x007e67a0",
+          "claim": "Startup was observed once after Init in the historical trace",
+          "kind": "runtime",
+          "level": "OBSERVED",
+          "source": "tools/observatory/examples/obs_main_menu_example.jsonl:9"
+        }
+      ],
+      "id": "app_system_startup",
+      "kind": "lifecycle_event",
+      "producers": [
+        "0x007e67a0"
+      ],
+      "status": "historical_positive"
+    },
+    {
+      "boundary": "original_static",
+      "consumers": [
+        "application service consumers"
+      ],
+      "evidence": [
+        {
+          "address": "0x0067dcc0",
+          "claim": "IAppSystem::Get was repeatedly observed after Startup",
+          "kind": "runtime",
+          "level": "OBSERVED",
+          "source": "tools/observatory/examples/obs_main_menu_example.jsonl:4-150"
+        }
+      ],
+      "id": "app_service_request",
+      "kind": "accessor_event",
+      "producers": [
+        "application callers"
+      ],
+      "status": "historical_capped"
+    },
+    {
+      "boundary": "sdk_interface",
+      "consumers": [
+        "app_system_lifecycle",
+        "Cell mode teardown"
+      ],
+      "evidence": [
+        {
+          "address": "0x007e5f20",
+          "claim": "IAppSystem vtable exposes Pause and Unpause; Cell Dispose invokes both around teardown",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv:20758-20764; .spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__Dispose.c:41-85"
+        }
+      ],
+      "id": "app_system_pause",
+      "kind": "lifecycle_event",
+      "producers": [
+        "App::cAppSystem caller",
+        "Cell mode Dispose"
+      ],
+      "status": "interface_exposed_static_consumer"
+    },
+    {
+      "boundary": "sdk_interface",
+      "consumers": [
+        "app_system_lifecycle"
+      ],
+      "evidence": [
+        {
+          "address": "0x007e6520",
+          "claim": "IAppSystem vtable exposes PreShutdown at +0x24; Cell Initialize contains calls through that slot with decompiler-sensitive argument identity",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv:20757-20760; .spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__Initialize.c:56-105"
+        }
+      ],
+      "id": "app_system_pre_shutdown",
+      "kind": "lifecycle_event",
+      "producers": [
+        "App::cAppSystem caller",
+        "Cell mode Initialize"
+      ],
+      "status": "interface_exposed_static_consumer"
+    },
+    {
+      "boundary": "sdk_interface",
+      "consumers": [
+        "app_system_lifecycle"
+      ],
+      "evidence": [
+        {
+          "address": "0x007e9520",
+          "claim": "IAppSystem vtable exposes Shutdown at +0x28; no runtime shutdown trace is committed",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv:20757-20760"
+        }
+      ],
+      "id": "app_system_shutdown",
+      "kind": "lifecycle_event",
+      "producers": [
+        "App::cSporeApp shutdown path"
+      ],
+      "status": "interface_exposed_runtime_unobserved"
+    },
+    {
+      "boundary": "original_static",
+      "consumers": [
+        "app_game_mode_registry"
+      ],
+      "evidence": [
+        {
+          "address": "0x007d9320",
+          "claim": "SDK export names AddGameMode; duplicate and insertion behavior is unresolved",
+          "kind": "sdk_function",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/sdk_functions.tsv:544-560"
+        }
+      ],
+      "id": "app_game_mode_registered",
+      "kind": "registry_event",
+      "producers": [
+        "App::cGameModeManager::AddGameMode"
+      ],
+      "status": "interface_exposed_behavior_partial"
+    },
+    {
+      "boundary": "original_static",
+      "consumers": [
+        "app_game_mode_registry"
+      ],
+      "evidence": [
+        {
+          "address": "0x007d8c80",
+          "claim": "indexed activation validates the requested mode and delegates to the synchronous transition helper",
+          "kind": "live_ghidra_decompilation",
+          "level": "CONFIRMED",
+          "source": "ghidra://SporeApp.exe@0x007d8c80"
+        }
+      ],
+      "id": "app_active_mode_requested",
+      "kind": "mode_transition_request",
+      "producers": [
+        "UI/menu/command producers remain unresolved"
+      ],
+      "status": "static_producer_unresolved"
+    },
+    {
+      "boundary": "original_static",
+      "consumers": [
+        "Simulator mode listener",
+        "last-mode commit"
+      ],
+      "evidence": [
+        {
+          "address": "0x007d866d",
+          "claim": "transition helper sends 0x0212d3e7 after old OnExit and active-index overwrite, before new OnEnter",
+          "kind": "live_ghidra_disassembly",
+          "level": "CONFIRMED",
+          "source": "ghidra://SporeApp.exe@0x007d85b0; knowledgegraph/research/state-machines/ui-gameplay.json:349-375"
+        }
+      ],
+      "id": "mode_exit_announcement",
+      "kind": "app_message",
+      "producers": [
+        "0x007d85b0"
+      ],
+      "status": "static_send_order_confirmed"
+    },
+    {
+      "boundary": "original_static",
+      "consumers": [
+        "Simulator mode listener",
+        "current-mode commit"
+      ],
+      "evidence": [
+        {
+          "address": "0x007d86ee",
+          "claim": "transition helper sends 0x022d1adc after new OnEnter with new and prior mode-ID words",
+          "kind": "live_ghidra_disassembly",
+          "level": "CONFIRMED",
+          "source": "ghidra://SporeApp.exe@0x007d85b0; knowledgegraph/research/state-machines/ui-gameplay.json:320-347"
+        }
+      ],
+      "id": "mode_enter_announcement",
+      "kind": "app_message",
+      "producers": [
+        "0x007d85b0"
+      ],
+      "status": "static_send_order_confirmed"
+    },
+    {
+      "boundary": "original_static",
+      "consumers": [
+        "simulator_strategy_mode_commit"
+      ],
+      "evidence": [
+        {
+          "address": "0x00b5b880",
+          "claim": "request path 1 writes pending state 1 and preserves the first pending mode identifier",
+          "kind": "disassembly",
+          "level": "CONFIRMED",
+          "source": "SPORE/SporeBin/SporeApp.exe (read-only objdump); knowledgegraph/research/state-machines/simulator-core.json:1210-1215"
+        }
+      ],
+      "id": "simulator_mode_request",
+      "kind": "analytical_event",
+      "producers": [
+        "Simulator strategy request helpers"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "boundary": "sdk_interface",
+      "consumers": [
+        "simulator_subsystem_lifecycle"
+      ],
+      "evidence": [
+        {
+          "address": "0x00b5e160",
+          "claim": "cSimulatorSystem exposes InitializeSubSystems, DisposeSubSystems, InitializeGameModes, Update, PostUpdate, and UI-graphic registry slots",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv:4583-4600"
+        }
+      ],
+      "id": "simulator_subsystem_update",
+      "kind": "frame_phase_event",
+      "producers": [
+        "application frame loop"
+      ],
+      "status": "interface_exposed_order_unresolved"
+    },
+    {
+      "boundary": "original_static",
+      "consumers": [
+        "cell_mode_subsystem_lifecycle"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e81cf0",
+          "claim": "Cell Initialize allocates global sCellGame, sCellGFX, and sCellUI and resets selected fields",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__Initialize.c:9-55"
+        }
+      ],
+      "id": "cell_mode_initialized",
+      "kind": "mode_lifecycle_event",
+      "producers": [
+        "0x00e81cf0"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "boundary": "original_static",
+      "consumers": [
+        "cell_mode_subsystem_lifecycle"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e552f0",
+          "claim": "Cell OnEnter starts CellGFX display and invokes service/UI enable paths",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnEnter.c:19-45"
+        }
+      ],
+      "id": "cell_mode_entered",
+      "kind": "mode_lifecycle_event",
+      "producers": [
+        "0x00e552f0"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "boundary": "original_static",
+      "consumers": [
+        "cell_mode_subsystem_lifecycle"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e7fc00",
+          "claim": "Cell OnExit restores globals, drains transient state, disables a service, and invokes cleanup paths",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnExit.c:15-35"
+        }
+      ],
+      "id": "cell_mode_exited",
+      "kind": "mode_lifecycle_event",
+      "producers": [
+        "0x00e7fc00"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "boundary": "original_static",
+      "consumers": [
+        "cell_mode_subsystem_lifecycle"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e81f30",
+          "claim": "Cell Dispose frees Cell global resources and invokes service-disable and pause/unpause paths",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__Dispose.c:41-86"
+        }
+      ],
+      "id": "cell_mode_disposed",
+      "kind": "mode_lifecycle_event",
+      "producers": [
+        "0x00e81f30"
+      ],
+      "status": "static_mechanics"
+    }
+  ],
+  "scope": {
+    "binary": "SporeApp.exe 3.1.0.22",
+    "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+    "boundaries": [
+      "Read-only static and historical-trace characterization; no patch or implementation.",
+      "No SPORE/, Ghidra project, KG row, or historical triage artifact is modified.",
+      "SDK names, vtable slots, global adjacency, and KG edges establish structure but do not prove ownership.",
+      "Current OpenSpore source is comparison context only and is not original SporeApp.exe evidence.",
+      "No positive original shutdown, mode-transition, or menu-to-stage runtime trace is claimed."
+    ],
+    "build": "GOG 3.1.0.22",
+    "evidence_policy": {
+      "confidence": "High means direct control/data flow or multiple agreeing static sources; medium means one direct body plus structural support or bounded inference; low/unresolved means interface or semantic identity remains missing.",
+      "levels": [
+        "APPROXIMATION",
+        "CONFIRMED",
+        "INFERRED",
+        "OBSERVED",
+        "SUPPORTED",
+        "UNKNOWN",
+        "VERIFIED"
+      ],
+      "runtime_rule": "Historical startup observations are bounded to the recorded main-menu run and are not evidence of shutdown or stage transitions.",
+      "source_precedence": [
+        "direct decompilation or disassembly",
+        "committed live-Ghidra vtable or helper evidence",
+        "SDK fields, vtables, and function exports",
+        "committed lifecycle, manager, and state-machine artifacts",
+        "KG node and edge corroboration",
+        "historical Observatory trace"
+      ]
+    },
+    "image_base": "0x00400000",
+    "kg_queries": [
+      "Subsystem sub:bootstrap-appsystem-lifecycle observes entry, InitPlugins, Init, Startup, and IAppSystem_Get.",
+      "Subsystem sub:App and sub:Simulator are distinct KG nodes; structural class nodes are non-RTTI associations.",
+      "Neighbors of struct:/Spore/App/cGameModeManager include 0x007d8060, 0x007d8230, 0x007d8360, 0x007d8d40, 0x007d90a0, 0x00b1dc60, and 0x00b3d420.",
+      "Neighbors of struct:/Spore/App/IAppSystem include 0x0067dcc0.",
+      "Neighbors of struct:/Spore/Simulator/cGameInputManager include 0x00b3d350."
+    ],
+    "method": [
+      "Read existing app-lifecycle, simulator-core, UI-gameplay, Cell-stage, manager-registry, and engine-boundary artifacts.",
+      "Read SDK function, field, structure, and vtable exports and targeted committed decompilation exports.",
+      "Queried the read-only KG for bootstrap observations, App/Simulator subsystems, manager structures, and function neighbors.",
+      "Compared the historical Observatory startup trace and current negative/no-stage state without modifying historical records.",
+      "Queried the Ghidra bridge; no program was open, so no live Ghidra mutation or new decompilation was performed."
+    ],
+    "not_covered": [
+      "Exact cSporeApp Run/Init/EAMain state flags and process-exit trigger.",
+      "Concrete plugin list, plugin ownership, and InitPlugins helper semantics.",
+      "Complete cAppSystem Init, Startup, Configure, PreShutdown, Shutdown, Update, and PostUpdate bodies.",
+      "Global writer/clearer order for DAT_015fd890 and DAT_0167eaf0..DAT_0167eb54.",
+      "Concrete cSimulatorSystem mSubSystems insertion and iteration order.",
+      "Full duplicate-name, active-removal, message-removal, and listener-priority behavior.",
+      "Runtime menu-to-stage transition, in-game mode switch, and orderly shutdown."
+    ],
+    "runtime_evidence": "Historical main-menu positive only: entry, InitPlugins, Init, Startup, and capped IAppSystem::Get; local_main and stateMachine were not reached in the 30-second window. Current Cell-stage runtime evidence remains unavailable.",
+    "sdk_commit": "cbf9206b9a823f0911cd9be0217104a49d72380b",
+    "sdk_sha256": "5d894677c1835082da0392e8b794f3c93a0251733898c3c5b81cf7945f458f09",
+    "sources": [
+      ".spore-analysis/ghidra-exports/decompiled_sdk/App__IAppSystem__Get.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/App__cAppSystem__InitPlugins.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__Initialize.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnEnter.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__Update.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__OnExit.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__Dispose.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/App__cGameModeManager__SetActiveModeAt.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cGameModeManager__Get.c",
+      ".spore-analysis/ghidra-exports/sdk_functions.tsv",
+      ".spore-analysis/ghidra-exports/structs.tsv",
+      ".spore-analysis/ghidra-exports/structs_fields.tsv",
+      "docs/RECON-3.1.0.22.md:25-42,91-103",
+      "knowledgegraph/research/state-machines/simulator-core.json:713-1409",
+      "knowledgegraph/research/state-machines/ui-gameplay.json:757-955",
+      "knowledgegraph/research/state-machines/cell-stage.json:114-137,301-327",
+      "knowledgegraph/research/types/01-simulator-core.md:59-80,123-144,197-216",
+      "knowledgegraph/research/types/10-managers-registries.md:91-109,145-153",
+      "knowledgegraph/research/types/13-lifecycle.json:250-300,514-529,269-279",
+      "knowledgegraph/research/global-campaign-2026/track-k-engine-boundaries.json:76-147",
+      "knowledgegraph/research/global-campaign-2026/track-o-packages-testability.json:174-188",
+      "tools/observatory/probes/main_menu.json",
+      "tools/observatory/examples/obs_main_menu_example.jsonl",
+      "tools/observatory/SCENARIO-main_menu.md:163-183",
+      "src/apps/IGameMode.hpp:28-51",
+      "src/apps/CellModeStrategy.cpp:7-92"
+    ]
+  },
+  "state_machines": [
+    {
+      "confidence": {
+        "level": "medium",
+        "reason": "Raw state values, jump-table dispatch, writes, and caller entry points are directly disassembled, but the owner type and semantic meaning of raw states 1-11 remain unresolved."
+      },
+      "entry_actions": [
+        {
+          "action": "read owner+0x3c and owner+0x08, invoke owner+0x10 when active, then dispatch through the six-entry jump table",
+          "conditions": [
+            "owner+0x08 is nonzero"
+          ],
+          "evidence": "0x00e20860"
+        }
+      ],
+      "event_consumers": [
+        "app_bootstrap_state_tick",
+        "owner_callback_0x1c",
+        "owner_callback_0x24",
+        "owner_callback_0x2c",
+        "owner_callback_0x30"
+      ],
+      "event_producers": [
+        "app_bootstrap_state_tick"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e20860",
+          "claim": "function contains the state reads, writes, callbacks, allocations, and jump-table entries used by this model",
+          "kind": "disassembly",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/state-machines/simulator-core.json:732-760"
+        },
+        {
+          "address": "0x00e20d04",
+          "claim": "six-entry jump table dispatches raw states 1 through 6",
+          "kind": "disassembly",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/state-machines/simulator-core.json:741-746"
+        },
+        {
+          "address": "0x00e20860",
+          "claim": "historical probe was byte-verified but recorded zero events in the main-menu window",
+          "kind": "runtime",
+          "level": "OBSERVED",
+          "source": "tools/observatory/SCENARIO-main_menu.md:173-180"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "no centralized exit action; transition blocks perform allocation, callback, disposal, or no-op directly before return",
+          "conditions": [],
+          "evidence": "0x00e20860"
+        }
+      ],
+      "functions": [
+        "0x00de4c20",
+        "0x00df5ac0",
+        "0x00e205e0",
+        "0x00e20860"
+      ],
+      "guards": [
+        "owner+0x08 must be nonzero for dispatch",
+        "same-state calls through owner+0x24 may be no-ops",
+        "state 2 item admission requires owner+0x64 == 100",
+        "state 3 behavior depends on owner callback +0x2c and a selected result"
+      ],
+      "name": "app_process_bootstrap",
+      "side_effects": [
+        "allocates 0x40-byte helper objects",
+        "invokes App::IAppSystem virtual callbacks at +0x14 and +0x18",
+        "invokes owner callbacks at +0x10, +0x1c, +0x24, +0x2c, and +0x30",
+        "mutates item bytes +0x2c and +0x2d",
+        "increments owner+0x5c and compares it with owner+0x58",
+        "releases strings and temporary objects"
+      ],
+      "state_variable": {
+        "expression": "owner+0x3c",
+        "owner": "unresolved bootstrap object",
+        "type": "uint32_t raw state"
+      },
+      "states": [
+        {
+          "actions": [
+            "if owner+0x08 is zero return unchanged",
+            "otherwise initialize an allocated object through App::IAppSystem +0x14 and normally set state 9",
+            "owner+0x10 true or current state 9 skips allocation and dispatch"
+          ],
+          "guards": [
+            "owner+0x08 != 0 required to leave initialization"
+          ],
+          "name": "initialization",
+          "raw_value": 0
+        },
+        {
+          "actions": [
+            "invoke owner+0x1c with current item+0x10 and an output slot",
+            "set state 9 on true or state 7 on false"
+          ],
+          "guards": [],
+          "name": "callback_probe_1",
+          "raw_value": 1
+        },
+        {
+          "actions": [
+            "invoke owner+0x30 with current item+0x10 and owner+0x64",
+            "handle results 7-10 through allocation and owner+0x30 initialization",
+            "admit an item when owner+0x64 is 100, mark item bytes +0x2c/+0x2d, increment owner+0x5c, and set state 1 or 11"
+          ],
+          "guards": [
+            "unrecognized result and owner+0x64 != 100 leaves state 2"
+          ],
+          "name": "item_admission",
+          "raw_value": 2
+        },
+        {
+          "actions": [
+            "walk enabled item strings and release temporary string storage",
+            "invoke an OS selection callback and owner+0x2c",
+            "set state 9 for callback-false/result-zero and state 11 for result 3"
+          ],
+          "guards": [
+            "other true callback results leave state 3"
+          ],
+          "name": "selection_dialog",
+          "raw_value": 3
+        },
+        {
+          "actions": [
+            "invoke owner+0x24",
+            "set state 2 on false and state 5 on true"
+          ],
+          "guards": [],
+          "name": "callback_probe_4",
+          "raw_value": 4
+        },
+        {
+          "actions": [
+            "return without changing state"
+          ],
+          "guards": [],
+          "name": "no_op_dispatch_5",
+          "raw_value": 5
+        },
+        {
+          "actions": [
+            "invoke owner+0x24",
+            "set state 2 whether callback is true or false"
+          ],
+          "guards": [],
+          "name": "callback_probe_6",
+          "raw_value": 6
+        },
+        {
+          "actions": [
+            "invoke owner+0x24",
+            "set state 2 on false and state 5 on true"
+          ],
+          "guards": [],
+          "name": "callback_probe_7",
+          "raw_value": 7
+        },
+        {
+          "actions": [
+            "invoke owner+0x24",
+            "set state 2 on false and state 5 on true"
+          ],
+          "guards": [],
+          "name": "callback_probe_8",
+          "raw_value": 8
+        },
+        {
+          "actions": [
+            "invoke owner+0x24",
+            "set state 2 on false and state 5 on true"
+          ],
+          "guards": [],
+          "name": "callback_probe_9",
+          "raw_value": 9
+        },
+        {
+          "actions": [
+            "invoke owner+0x24",
+            "set state 2 on false and state 5 on true"
+          ],
+          "guards": [],
+          "name": "callback_probe_10",
+          "raw_value": 10
+        },
+        {
+          "actions": [
+            "return unchanged because the dispatch range check rejects values above 6"
+          ],
+          "guards": [],
+          "name": "no_op_dispatch_11",
+          "raw_value": 11
+        }
+      ],
+      "structures": [
+        "App::IAppSystem callback surface",
+        "CommandLine",
+        "unresolved bootstrap owner using offsets +0x08, +0x10, +0x1c, +0x24, +0x30, +0x3c, +0x54, +0x58, +0x5c, +0x64"
+      ],
+      "transitions": [
+        {
+          "actions": [
+            "return unchanged"
+          ],
+          "cause": "owner inactive flag",
+          "event": "app_bootstrap_state_tick",
+          "from_state": 0,
+          "guard": "owner+0x08 == 0",
+          "to_state": 0
+        },
+        {
+          "actions": [
+            "allocate and initialize helper object",
+            "set state 9"
+          ],
+          "cause": "initialization completed",
+          "event": "app_bootstrap_state_tick",
+          "from_state": 0,
+          "guard": "owner+0x08 != 0 and owner+0x10 false and current state is not 9",
+          "to_state": 9
+        },
+        {
+          "actions": [
+            "set state 7 or 9 from owner+0x1c result"
+          ],
+          "cause": "probe callback",
+          "event": "owner_callback_0x1c",
+          "from_state": 1,
+          "guard": "false selects 7; true selects 9",
+          "to_state": "7 or 9"
+        },
+        {
+          "actions": [
+            "mark item admitted and set state 1",
+            "or remain state 2",
+            "or initialize helper and set state 9",
+            "or set state 11 and invoke IAppSystem +0x14 at capacity"
+          ],
+          "cause": "item admission result",
+          "event": "owner_callback_0x30",
+          "from_state": 2,
+          "guard": "result, owner+0x64, and owner+0x5c/owner+0x58 capacity checks",
+          "to_state": "1, 2, 9, or 11"
+        },
+        {
+          "actions": [
+            "set state 9 or 11 from selection result",
+            "or remain state 3 for unhandled true result"
+          ],
+          "cause": "selection result",
+          "event": "owner_callback_0x2c",
+          "from_state": 3,
+          "guard": "false/zero selects 9; 3 selects 11; other true results remain 3",
+          "to_state": "3, 9, or 11"
+        },
+        {
+          "actions": [
+            "invoke owner+0x24 and set state 2 or 5"
+          ],
+          "cause": "callback probe",
+          "event": "owner_callback_0x24",
+          "from_state": "4, 6, 7, 8, 9, or 10",
+          "guard": "false selects 2 except state 6 which always selects 2; true selects 5 except state 6",
+          "to_state": "2 or 5"
+        },
+        {
+          "actions": [
+            "return unchanged"
+          ],
+          "cause": "no-op dispatch",
+          "event": "app_bootstrap_state_tick",
+          "from_state": 5,
+          "guard": "always",
+          "to_state": 5
+        },
+        {
+          "actions": [
+            "return unchanged"
+          ],
+          "cause": "out-of-range dispatch",
+          "event": "app_bootstrap_state_tick",
+          "from_state": 11,
+          "guard": "always",
+          "to_state": 11
+        }
+      ],
+      "validation": [
+        "Byte-verify the function entry, six-entry jump table, and every state write before implementation work.",
+        "Re-run the hash-pinned historical-equivalent startup trace and record owner+0x3c before and after every call to 0x00e20860.",
+        "Identify the unresolved bootstrap owner and correlate owner callbacks with each branch.",
+        "Do not promote raw states 1-11 to semantic names until runtime objects and resources identify each branch."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "medium",
+        "reason": "The interface phase vocabulary and historical InitPlugins -> Init -> Startup order are strong, but no single original AppSystem state variable or complete shutdown body is established."
+      },
+      "entry_actions": [
+        {
+          "action": "create or acquire cAppSystem and publish or expose DAT_015fd890",
+          "conditions": [
+            "service publication must precede treating Get as valid"
+          ],
+          "evidence": "0x0067dcc0; cSporeApp field evidence in structs_fields.tsv:20796-20814"
+        },
+        {
+          "action": "invoke InitPlugins with CommandLine data",
+          "conditions": [
+            "historical startup path"
+          ],
+          "evidence": "0x007e93d0; observatory example:2"
+        }
+      ],
+      "event_consumers": [
+        "app_bootstrap_entry",
+        "app_system_pre_init",
+        "app_system_init",
+        "app_plugins_initialized",
+        "app_graphics_initialized",
+        "app_system_startup",
+        "app_system_pause",
+        "app_system_pre_shutdown",
+        "app_system_shutdown"
+      ],
+      "event_producers": [
+        "app_system_pre_init",
+        "app_system_init",
+        "app_plugins_initialized",
+        "app_graphics_initialized",
+        "app_system_startup",
+        "app_system_pause",
+        "app_system_pre_shutdown",
+        "app_system_shutdown"
+      ],
+      "evidence": [
+        {
+          "address": "IAppSystem+0x0c..0x84",
+          "claim": "SDK vtable names PreInit, Init, InitPlugins, Configure, InitGraphics, PreShutdown, Shutdown, Pause, Unpause, Update, and related operations",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv:20749-20784"
+        },
+        {
+          "address": "0x007e8ba0 / 0x007e6850",
+          "claim": "historical Init probe target and SDK-named Init export disagree on the address; no concrete body was substituted",
+          "kind": "address_conflict",
+          "level": "SUPPORTED",
+          "source": "tools/observatory/probes/main_menu.json:12-13; sdk_functions.tsv:589-590"
+        },
+        {
+          "address": "0x007e93d0",
+          "claim": "InitPlugins body manipulates command-line storage and unknown helpers but exposes no concrete plugin registry",
+          "kind": "decompilation",
+          "level": "OBSERVED",
+          "source": "App__cAppSystem__InitPlugins.c:6-32"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "PreShutdown is the exposed preparation boundary; body and order are unresolved",
+          "conditions": [
+            "shutdown path invokes +0x24"
+          ],
+          "evidence": "0x007e6520"
+        },
+        {
+          "action": "Shutdown is the exposed teardown boundary; no runtime call was observed",
+          "conditions": [
+            "shutdown path invokes +0x28"
+          ],
+          "evidence": "0x007e9520"
+        }
+      ],
+      "functions": [
+        "0x0067dcc0 IAppSystem::Get",
+        "0x007e8c40 PreInit",
+        "0x007e6850 / 0x007e8ba0 Init conflict",
+        "0x007e93d0 InitPlugins",
+        "0x007e7430 Configure",
+        "0x007eaae0 InitGraphics",
+        "0x007e67a0 Startup probe",
+        "0x007e6520 PreShutdown",
+        "0x007e9520 Shutdown",
+        "0x007e5f20 Pause",
+        "0x007e5f30 Unpause",
+        "0x007e9e80 Update",
+        "0x007e6140 PostUpdate"
+      ],
+      "guards": [
+        "IAppSystem pointer must be published before Get is service-valid",
+        "historical InitPlugins before Init before Startup is observed only for the positive main-menu run",
+        "SDK slot order is interface layout, not runtime call order",
+        "PreShutdown and Shutdown are not runtime-observed"
+      ],
+      "name": "app_system_lifecycle",
+      "side_effects": [
+        "exposes DAT_015fd890 through IAppSystem::Get",
+        "initializes command-line and plugin-related helper state",
+        "starts subsystems and renderer-related services",
+        "supports pause, unpause, graphics, and shutdown operations",
+        "Cell mode calls app pause/unpause/pre-shutdown/shutdown slots in static bodies, but the phase relation is unresolved"
+      ],
+      "state_variable": {
+        "expression": "logical phase; no single original cAppSystem state word is established",
+        "owner": "App::cAppSystem / App::IAppSystem",
+        "type": "phase projection over vtable operations and historical observations"
+      },
+      "states": [
+        {
+          "actions": [
+            "service is absent or not published"
+          ],
+          "guards": [
+            "IAppSystem::Get has no usable service"
+          ],
+          "name": "uninitialized",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "service is available for PreInit and Init"
+          ],
+          "guards": [
+            "IAppSystem::Get returns a service"
+          ],
+          "name": "service_available",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "InitPlugins has run in positive startup path"
+          ],
+          "guards": [
+            "historical InitPlugins event observed"
+          ],
+          "name": "plugins_initialized",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "core Init has run after InitPlugins"
+          ],
+          "guards": [
+            "historical Init event observed"
+          ],
+          "name": "initialized",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "Startup has run and downstream service access is active"
+          ],
+          "guards": [
+            "historical Startup event observed"
+          ],
+          "name": "running",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "application requests are suspended"
+          ],
+          "guards": [
+            "Pause operation is active"
+          ],
+          "name": "paused",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "shutdown preparation has begun"
+          ],
+          "guards": [
+            "PreShutdown invoked"
+          ],
+          "name": "pre_shutdown",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "teardown complete or service unavailable"
+          ],
+          "guards": [
+            "Shutdown completed or service never available"
+          ],
+          "name": "shutdown",
+          "raw_value": null
+        }
+      ],
+      "structures": [
+        "App::IAppSystem",
+        "App::cAppSystem",
+        "App::cSporeApp",
+        "App::CommandLine",
+        "App::cGameModeManager",
+        "Resource::cResourceManager"
+      ],
+      "transitions": [
+        {
+          "actions": [
+            "create/acquire cAppSystem and publish service pointer"
+          ],
+          "cause": "application construction",
+          "event": "cAppSystem_create_or_service_publication",
+          "from_state": "uninitialized",
+          "guard": "publication path resolved",
+          "to_state": "service_available"
+        },
+        {
+          "actions": [
+            "invoke PreInit"
+          ],
+          "cause": "pre-initialization",
+          "event": "app_system_pre_init",
+          "from_state": "service_available",
+          "guard": "PreInit slot available",
+          "to_state": "service_available"
+        },
+        {
+          "actions": [
+            "invoke InitPlugins and process CommandLine helper state"
+          ],
+          "cause": "plugin initialization",
+          "event": "app_plugins_initialized",
+          "from_state": "service_available",
+          "guard": "CommandLine supplied",
+          "to_state": "plugins_initialized"
+        },
+        {
+          "actions": [
+            "invoke core Init"
+          ],
+          "cause": "core initialization",
+          "event": "app_system_init",
+          "from_state": "plugins_initialized",
+          "guard": "InitPlugins completed in observed sequence",
+          "to_state": "initialized"
+        },
+        {
+          "actions": [
+            "invoke Configure/InitGraphics when requested"
+          ],
+          "cause": "configuration or graphics",
+          "event": "app_system_configure_or_graphics_initialized",
+          "from_state": "initialized",
+          "guard": "corresponding slot invoked",
+          "to_state": "initialized"
+        },
+        {
+          "actions": [
+            "start subsystems and renderer-related services"
+          ],
+          "cause": "application startup",
+          "event": "app_system_startup",
+          "from_state": "initialized",
+          "guard": "core Init completed",
+          "to_state": "running"
+        },
+        {
+          "actions": [
+            "invoke Pause"
+          ],
+          "cause": "pause",
+          "event": "app_system_pause",
+          "from_state": "running",
+          "guard": "Pause slot invoked",
+          "to_state": "paused"
+        },
+        {
+          "actions": [
+            "invoke Unpause"
+          ],
+          "cause": "unpause",
+          "event": "app_system_unpause",
+          "from_state": "paused",
+          "guard": "Unpause slot invoked",
+          "to_state": "running"
+        },
+        {
+          "actions": [
+            "invoke PreShutdown preparation"
+          ],
+          "cause": "shutdown preparation",
+          "event": "app_system_pre_shutdown",
+          "from_state": "running",
+          "guard": "PreShutdown invoked",
+          "to_state": "pre_shutdown"
+        },
+        {
+          "actions": [
+            "invoke Shutdown and release services"
+          ],
+          "cause": "application shutdown",
+          "event": "app_system_shutdown",
+          "from_state": "pre_shutdown",
+          "guard": "host invokes Shutdown",
+          "to_state": "shutdown"
+        }
+      ],
+      "validation": [
+        "Byte-verify the concrete cAppSystem vtable and resolve the 0x007e8ba0 versus 0x007e6850 Init address conflict.",
+        "Recover Create, Init, Startup, PreShutdown, Shutdown, Update, and PostUpdate bodies from function boundaries.",
+        "Trace the publication and clearing writers of DAT_015fd890 and DAT_015fd894.",
+        "Repeat a positive startup trace with PreInit, Configure, InitGraphics, PreShutdown, Shutdown, and cSporeApp::Run probes.",
+        "Keep runtime order separate from SDK vtable order until a complete trace records actual calls."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "high",
+        "reason": "The concrete App mode-manager vtable, range guard, ModeEntry layout, old-exit/new-enter order, announcements, and Dispose state changes are directly observed; duplicate registration and listener removal remain incomplete."
+      },
+      "entry_actions": [
+        {
+          "action": "Initialize creates camera state, installs an id-generator helper, and registers messages 0x00d3c602, 0x00e11332, and 0x00e11333",
+          "conditions": [
+            "field_10 is initially false"
+          ],
+          "evidence": "0x007d8060"
+        }
+      ],
+      "event_consumers": [
+        "app_game_mode_registered",
+        "app_active_mode_requested",
+        "mode_exit_announcement",
+        "mode_enter_announcement"
+      ],
+      "event_producers": [
+        "app_game_mode_registered",
+        "app_active_mode_requested",
+        "mode_exit_announcement",
+        "mode_enter_announcement"
+      ],
+      "evidence": [
+        {
+          "address": "0x01412598",
+          "claim": "concrete vtable maps SetActiveMode=0x007d8c30, SetActiveModeAt=0x007d8c80, and SetActiveModeByName=0x007d8360",
+          "kind": "live_ghidra_vtable_data",
+          "level": "CONFIRMED",
+          "source": "ghidra://SporeApp.exe@0x01412598; ui-gameplay.json:781-787"
+        },
+        {
+          "address": "0x007d85b0",
+          "claim": "different-index transition calls old OnExit, writes active index, sends mode-exit, calls new OnEnter, then sends mode-enter",
+          "kind": "live_ghidra_disassembly",
+          "level": "CONFIRMED",
+          "source": "ghidra://SporeApp.exe@0x007d85b0; ui-gameplay.json:789-795"
+        },
+        {
+          "address": "0x007d8d40",
+          "claim": "SDK-labeled SetActiveModeAt body is a teardown body, contradicting the stale SDK label",
+          "kind": "live_ghidra_disassembly",
+          "level": "CONFIRMED",
+          "source": "ghidra://SporeApp.exe@0x007d8d40; ui-gameplay.json:803-808"
+        },
+        {
+          "address": "cGameModeManager+0x14/+0x28",
+          "claim": "ModeEntry vector is at +0x14 and mnActiveIndex at +0x28",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": "structs_fields.tsv:21245-21264; types/10-managers-registries.md:91-109"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "Dispose unregisters messages, exits valid active mode, disposes registered modes, clears ModeEntry storage, sets mnActiveIndex to -1, and clears manager references",
+          "conditions": [
+            "field_10 is true"
+          ],
+          "evidence": "0x007d9120"
+        }
+      ],
+      "functions": [
+        "0x007d8060 Initialize",
+        "0x007d8230 HandleMessage",
+        "0x007d8360 SetActiveModeByName",
+        "0x007d8c80 SetActiveModeAt wrapper",
+        "0x007d85b0 transition helper",
+        "0x007d8d40 SDK-labeled teardown body",
+        "0x007d9120 Dispose",
+        "0x007d9320 AddGameMode",
+        "0x007d90b0 RemoveGameMode"
+      ],
+      "guards": [
+        "requested index must satisfy 0 <= index < mode_count",
+        "requesting current mnActiveIndex is a no-op",
+        "old OnExit runs only when current index is valid",
+        "ModeEntry stores mpMode, mModeID, and a 16-byte name",
+        "duplicate names and active-entry removal are unresolved"
+      ],
+      "name": "app_game_mode_registry",
+      "side_effects": [
+        "maintains intrusive mode pointers in mEntries",
+        "stores mode IDs and names in 24-byte ModeEntry records",
+        "invokes IGameMode Initialize, Dispose, OnEnter, and OnExit",
+        "sends mode-exit before new OnEnter and mode-enter after new OnEnter",
+        "clears entries and active index during Dispose",
+        "manager owns camera manager, viewer, and difficulty/property state alongside the registry"
+      ],
+      "state_variable": {
+        "expression": "App::cGameModeManager+0x28 with registry at +0x14 and flag at +0x10",
+        "owner": "App::cGameModeManager",
+        "type": "int32 active index plus field_10 flag and vector<ModeEntry>"
+      },
+      "states": [
+        {
+          "actions": [
+            "manager is not initialized or has completed Dispose"
+          ],
+          "guards": [
+            "field_10 == false"
+          ],
+          "name": "manager_uninitialized_or_disposed",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "manager is initialized and no mode selected"
+          ],
+          "guards": [
+            "field_10 == true and mnActiveIndex == -1"
+          ],
+          "name": "initialized_no_active_mode",
+          "raw_value": -1
+        },
+        {
+          "actions": [
+            "selected mode receives OnEnter, update, and input dispatch"
+          ],
+          "guards": [
+            "0 <= mnActiveIndex < mEntries.size()"
+          ],
+          "name": "active_mode",
+          "raw_value": "0..mode_count-1"
+        },
+        {
+          "actions": [
+            "mEntries contains registered records and index remains selected"
+          ],
+          "guards": [
+            "field_10 == true"
+          ],
+          "name": "registered_modes",
+          "raw_value": null
+        }
+      ],
+      "structures": [
+        "App::cGameModeManager",
+        "App::cGameModeManager::ModeEntry",
+        "App::IGameMode",
+        "App::IGameModeManager",
+        "App::cCameraManager",
+        "App::cViewer"
+      ],
+      "transitions": [
+        {
+          "actions": [
+            "initialize manager and register mode messages"
+          ],
+          "cause": "manager initialization",
+          "event": "constructor_and_initialize",
+          "from_state": "manager_uninitialized_or_disposed",
+          "guard": "field_10 false",
+          "to_state": "initialized_no_active_mode"
+        },
+        {
+          "actions": [
+            "append or replace ModeEntry according to AddGameMode body"
+          ],
+          "cause": "mode registration",
+          "event": "app_game_mode_registered",
+          "from_state": "initialized_no_active_mode or active_mode",
+          "guard": "mode pointer, ID, and name accepted",
+          "to_state": "registered_modes"
+        },
+        {
+          "actions": [
+            "remove or retain requested ModeEntry"
+          ],
+          "cause": "mode removal",
+          "event": "app_game_mode_removed",
+          "from_state": "registered_modes or active_mode",
+          "guard": "RemoveGameMode identifies entry",
+          "to_state": "registered_modes"
+        },
+        {
+          "actions": [
+            "self-transition is a no-op"
+          ],
+          "cause": "same mode requested",
+          "event": "app_active_mode_requested",
+          "from_state": "active_mode",
+          "guard": "requested index equals mnActiveIndex",
+          "to_state": "active_mode"
+        },
+        {
+          "actions": [
+            "call old OnExit",
+            "save old mode ID",
+            "write requested index",
+            "send mode-exit",
+            "call new OnEnter",
+            "send mode-enter"
+          ],
+          "cause": "different mode requested",
+          "event": "app_active_mode_requested",
+          "from_state": "initialized_no_active_mode or active_mode",
+          "guard": "valid index differs from current",
+          "to_state": "active_mode"
+        },
+        {
+          "actions": [
+            "exit valid active mode",
+            "dispose all modes",
+            "clear entries",
+            "set index to -1"
+          ],
+          "cause": "manager disposal",
+          "event": "app_game_mode_manager_dispose",
+          "from_state": "active_mode or initialized_no_active_mode",
+          "guard": "field_10 true",
+          "to_state": "manager_uninitialized_or_disposed"
+        }
+      ],
+      "validation": [
+        "Instrument vtable slots +0x20, +0x28, +0x40, +0x4c, and helper 0x007d85b0.",
+        "Record index, mode ID/name, OnExit/OnEnter, message sends, and registry vector in one transition trace.",
+        "Exercise same-index, invalid-index, no-active, valid-to-valid, active removal, duplicate registration, and Dispose cases.",
+        "Resolve the UI producer of 0x00e11333 and exact listener-removal pairing."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "high",
+        "reason": "The three request states, first-request-wins guard, commit helpers, message bridge, and stable predicate are exact disassembly; mode-ID semantics and listener timing remain unresolved."
+      },
+      "entry_actions": [
+        {
+          "action": "initialize mLastGameMode, mCurrentGameMode, and pending identifier to 0xffffffff and pending path to 0",
+          "conditions": [
+            "cStrategy construction"
+          ],
+          "evidence": "0x00b5b960"
+        }
+      ],
+      "event_consumers": [
+        "simulator_mode_request",
+        "simulator_last_mode_commit",
+        "simulator_current_mode_commit",
+        "mode_exit_announcement",
+        "mode_enter_announcement"
+      ],
+      "event_producers": [
+        "simulator_mode_request",
+        "simulator_last_mode_commit",
+        "simulator_current_mode_commit"
+      ],
+      "evidence": [
+        {
+          "address": "0x00b5b960",
+          "claim": "constructor initializes strategy mode slots and pending fields",
+          "kind": "disassembly",
+          "level": "CONFIRMED",
+          "source": "simulator-core.json:1193-1208"
+        },
+        {
+          "address": "0x00b5b880 / 0x00b5b8a0",
+          "claim": "request helpers write pending path 1 or 2 and only store the identifier when none is pending",
+          "kind": "disassembly",
+          "level": "CONFIRMED",
+          "source": "simulator-core.json:1210-1222"
+        },
+        {
+          "address": "0x00b63510",
+          "claim": "listener chooses last/current commit behavior from mode announcement",
+          "kind": "live_ghidra_disassembly",
+          "level": "SUPPORTED",
+          "source": "ghidra://SporeApp.exe@0x00b63510; ui-gameplay.json:1260-1266"
+        },
+        {
+          "address": "0x00b5b840",
+          "claim": "stable predicate requires candidate to equal both committed IDs and no pending request",
+          "kind": "disassembly",
+          "level": "CONFIRMED",
+          "source": "simulator-core.json:1238-1244"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "clear pending identifier to 0xffffffff and pending path to 0 after either commit helper",
+          "conditions": [
+            "commit-last or commit-current"
+          ],
+          "evidence": "0x00b5b8c0, 0x00b5b8e0"
+        }
+      ],
+      "functions": [
+        "0x00b5b840 stable predicate",
+        "0x00b5b880 request path 1",
+        "0x00b5b8a0 request path 2",
+        "0x00b5b8c0 commit last",
+        "0x00b5b8e0 commit current",
+        "0x00b5b960 constructor",
+        "0x00b63510 mode-message listener",
+        "0x00b1db60 OnModeExited",
+        "0x00b1dbd0 OnModeEntered"
+      ],
+      "guards": [
+        "pending identifier 0xffffffff means no request",
+        "repeated requests preserve the first pending identifier",
+        "stable candidate equals both committed IDs with no pending request",
+        "equal normalized mode IDs are ignored before commit",
+        "message queueing and callback timing are not runtime-observed"
+      ],
+      "name": "simulator_strategy_mode_commit",
+      "side_effects": [
+        "first pending mode identifier wins",
+        "commit-last changes mLastGameMode",
+        "commit-current changes mCurrentGameMode",
+        "mode-exit and mode-enter messages drive separate commits",
+        "transition-effect callbacks react after commit but do not directly write mode slots"
+      ],
+      "state_variable": {
+        "expression": "cStrategy+0x18 with pending identifier +0x14 and committed IDs at +0x0c/+0x10",
+        "owner": "Simulator::cStrategy-derived manager",
+        "type": "int32 request path plus uint32 mode identifiers"
+      },
+      "states": [
+        {
+          "actions": [
+            "no pending mode request is represented"
+          ],
+          "guards": [
+            "field_18 == 0"
+          ],
+          "name": "no_pending_request",
+          "raw_value": 0
+        },
+        {
+          "actions": [
+            "request path 1 and first identifier are recorded"
+          ],
+          "guards": [
+            "field_18 == 1"
+          ],
+          "name": "pending_request_path_1",
+          "raw_value": 1
+        },
+        {
+          "actions": [
+            "request path 2 and first identifier are recorded"
+          ],
+          "guards": [
+            "field_18 == 2"
+          ],
+          "name": "pending_request_path_2",
+          "raw_value": 2
+        }
+      ],
+      "structures": [
+        "Simulator::cStrategy",
+        "Simulator::ISimulatorStrategy",
+        "Simulator::cGameModeManager",
+        "Simulator::cGameInputManager",
+        "Simulator::cUIEventLog"
+      ],
+      "transitions": [
+        {
+          "actions": [
+            "set state 0 and initialize all mode slots to -1"
+          ],
+          "cause": "strategy construction",
+          "event": "constructor",
+          "from_state": "uninitialized",
+          "guard": "always",
+          "to_state": "no_pending_request"
+        },
+        {
+          "actions": [
+            "set state 1 and store identifier only if none pending"
+          ],
+          "cause": "request path 1",
+          "event": "simulator_mode_request",
+          "from_state": "any",
+          "guard": "always",
+          "to_state": "pending_request_path_1"
+        },
+        {
+          "actions": [
+            "set state 2 and store identifier only if none pending"
+          ],
+          "cause": "request path 2",
+          "event": "simulator_mode_request",
+          "from_state": "any",
+          "guard": "always",
+          "to_state": "pending_request_path_2"
+        },
+        {
+          "actions": [
+            "copy pending ID to mLastGameMode",
+            "clear pending fields",
+            "set state 0"
+          ],
+          "cause": "mode-exit commit",
+          "event": "simulator_last_mode_commit",
+          "from_state": "pending_request_path_1 or pending_request_path_2",
+          "guard": "listener permits valid commit",
+          "to_state": "no_pending_request"
+        },
+        {
+          "actions": [
+            "copy pending ID to mCurrentGameMode",
+            "clear pending fields",
+            "set state 0"
+          ],
+          "cause": "mode-enter commit",
+          "event": "simulator_current_mode_commit",
+          "from_state": "pending_request_path_1 or pending_request_path_2",
+          "guard": "listener permits valid commit",
+          "to_state": "no_pending_request"
+        }
+      ],
+      "validation": [
+        "Instrument construction and every request/commit helper call.",
+        "Record mode IDs and pending fields before and after each request and commit.",
+        "Issue simultaneous or repeated requests to verify first-request-wins behavior.",
+        "Trace message ID, listener invocation, commit helper, and transition-effect callback in one mode switch."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "medium",
+        "reason": "The subsystem vector, UI-graphic list, lifecycle slots, and update phases are SDK-confirmed, but insertion order, enable/disable semantics, and teardown iteration are not reconstructed."
+      },
+      "entry_actions": [
+        {
+          "action": "create cSimulatorSystem and retrieve the service root from DAT_0167eaf0",
+          "conditions": [
+            "service root is created or recovered"
+          ],
+          "evidence": "0x00b3d330; 0x00b5e160"
+        }
+      ],
+      "event_consumers": [
+        "simulator_subsystem_update"
+      ],
+      "event_producers": [
+        "simulator_subsystem_update"
+      ],
+      "evidence": [
+        {
+          "address": "0x00b5e160",
+          "claim": "vtable exposes Initialize, Dispose, InitializeSubSystems, DisposeSubSystems, InitializeGameModes, Update, PostUpdate, UpdateUIGraphics, and UI-graphic registry operations",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": "structs_fields.tsv:4583-4600; types/01-simulator-core.md:63-78"
+        },
+        {
+          "address": "0x00b3d330",
+          "claim": "cSimulatorSystem::Get returns DAT_0167eaf0",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": "Simulator__cSimulatorSystem__Get.c; types/10-managers-registries.md:52-77"
+        },
+        {
+          "address": "0x0167eaf0..0x0167eb54",
+          "claim": "packed global accessor block is a shared service seam, not proof of independent ownership or publication order",
+          "kind": "kg_and_artifact",
+          "level": "SUPPORTED",
+          "source": "types/10-managers-registries.md:52-89; types/01-simulator-core.md:123-144"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "DisposeSubSystems and Dispose are exposed teardown boundaries, but strategy iteration and release order are unresolved",
+          "conditions": [
+            "root is initialized"
+          ],
+          "evidence": "SDK vtable slots +0x14 and +0x1c"
+        }
+      ],
+      "functions": [
+        "0x00b3d330 cSimulatorSystem::Get",
+        "0x00b5e160 cSimulatorSystem::Create",
+        "cSimulatorSystem+0x18 InitializeSubSystems",
+        "cSimulatorSystem+0x1c DisposeSubSystems",
+        "cSimulatorSystem+0x24 InitializeGameModes",
+        "cSimulatorSystem+0x2c Update",
+        "cSimulatorSystem+0x30 PostUpdate",
+        "cSimulatorSystem+0x34 UpdateUIGraphics"
+      ],
+      "guards": [
+        "mSubSystems membership and intrusive ownership are not proven by layout alone",
+        "UI graphic add/remove/clear bodies are unresolved",
+        "Update and PostUpdate order is interface shape plus unknown runtime iteration",
+        "cGameModeManager's Simulator-strategy Update/PostUpdate resolve to ret 8 in the existing static artifact, but broader system iteration is not recovered"
+      ],
+      "name": "simulator_subsystem_lifecycle",
+      "side_effects": [
+        "maintains mSubSystems vector of intrusive ISimulatorStrategy pointers at +0x5c",
+        "maintains list of intrusive ISimulatorUIGraphic at +0x20",
+        "supports add/contains/remove/clear UI-graphic operations",
+        "provides Update, PostUpdate, and UpdateUIGraphics phases",
+        "exact manager insertion and persistence across mode transitions are unresolved"
+      ],
+      "state_variable": {
+        "expression": "cSimulatorSystem.mSubSystems at +0x5c plus UI-graphic list at +0x20",
+        "owner": "Simulator::cSimulatorSystem",
+        "type": "vector of intrusive strategy pointers plus list of UI-graphic pointers"
+      },
+      "states": [
+        {
+          "actions": [
+            "service root exists without recovered initialized subsystem set"
+          ],
+          "guards": [
+            "root created but initialization state unresolved"
+          ],
+          "name": "uninitialized_or_unknown",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "root is initialized and subsystem vector may be populated"
+          ],
+          "guards": [
+            "Initialize or InitializeSubSystems called"
+          ],
+          "name": "subsystems_initialized",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "game-mode initialization slot has been called"
+          ],
+          "guards": [
+            "InitializeGameModes called"
+          ],
+          "name": "game_modes_initialized",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "active strategies are eligible for Update/PostUpdate"
+          ],
+          "guards": [
+            "frame phase executes"
+          ],
+          "name": "updating",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "UI graphics are registered and eligible for UpdateUIGraphics"
+          ],
+          "guards": [
+            "AddUpdatableUIGraphic called"
+          ],
+          "name": "ui_graphics_registered",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "root and subsystem storage are released"
+          ],
+          "guards": [
+            "Dispose or DisposeSubSystems completes"
+          ],
+          "name": "disposed",
+          "raw_value": null
+        }
+      ],
+      "structures": [
+        "Simulator::cSimulatorSystem",
+        "Simulator::ISimulatorStrategy",
+        "Simulator::ISimulatorUIGraphic",
+        "Simulator::cGameModeManager",
+        "Simulator::cGameTimeManager",
+        "Simulator::cGameInputManager"
+      ],
+      "transitions": [
+        {
+          "actions": [
+            "create service root"
+          ],
+          "cause": "root construction",
+          "event": "cSimulatorSystem_create",
+          "from_state": "uninitialized_or_unknown",
+          "guard": "root allocation succeeds",
+          "to_state": "uninitialized_or_unknown"
+        },
+        {
+          "actions": [
+            "invoke root and/or subsystem initialization"
+          ],
+          "cause": "subsystem initialization",
+          "event": "simulator_subsystem_initialized",
+          "from_state": "uninitialized_or_unknown",
+          "guard": "InitializeSubSystems slot called",
+          "to_state": "subsystems_initialized"
+        },
+        {
+          "actions": [
+            "invoke game-mode initialization"
+          ],
+          "cause": "game-mode initialization",
+          "event": "simulator_game_modes_initialized",
+          "from_state": "subsystems_initialized",
+          "guard": "InitializeGameModes slot called",
+          "to_state": "game_modes_initialized"
+        },
+        {
+          "actions": [
+            "invoke Update then PostUpdate phases"
+          ],
+          "cause": "frame update",
+          "event": "simulator_subsystem_update",
+          "from_state": "game_modes_initialized",
+          "guard": "frame phase enters root update",
+          "to_state": "updating"
+        },
+        {
+          "actions": [
+            "add, contains, remove, or clear UI graphic list entries"
+          ],
+          "cause": "UI-graphic registration",
+          "event": "simulator_ui_graphic_registry_change",
+          "from_state": "any initialized state",
+          "guard": "corresponding cSimulatorSystem slot called",
+          "to_state": "ui_graphics_registered or same lifecycle phase"
+        },
+        {
+          "actions": [
+            "invoke DisposeSubSystems and Dispose"
+          ],
+          "cause": "subsystem teardown",
+          "event": "simulator_subsystem_disposed",
+          "from_state": "subsystems_initialized or game_modes_initialized or updating",
+          "guard": "teardown slot called",
+          "to_state": "disposed"
+        }
+      ],
+      "validation": [
+        "Recover cSimulatorSystem InitializeSubSystems, InitializeGameModes, Update, PostUpdate, and DisposeSubSystems bodies.",
+        "Trace every writer and clearer of DAT_0167eaf0..DAT_0167eb54.",
+        "Record concrete mSubSystems insertion order and per-frame iteration order.",
+        "Trace UI-graphic add/remove/clear calls and their owners.",
+        "Do not infer subsystem enable/disable semantics from vector membership alone."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "medium",
+        "reason": "The Cell mode vtable lifecycle and concrete side effects are directly decompiled, but global singleton ownership, service identities, and several apparent shutdown/pause calls remain unresolved."
+      },
+      "entry_actions": [
+        {
+          "action": "Initialize allocates sCellGame, sCellGFX, and sCellUI, resets selected flags, and invokes app-system virtual calls labeled Shutdown/PreShutdown in the body",
+          "conditions": [
+            "allocator and app-system pointers are usable"
+          ],
+          "evidence": "0x00e81cf0; App__cCellModeStrategy__Initialize.c:22-114"
+        }
+      ],
+      "event_consumers": [
+        "cell_mode_initialized",
+        "cell_mode_entered",
+        "cell_mode_exited",
+        "cell_mode_disposed"
+      ],
+      "event_producers": [
+        "cell_mode_initialized",
+        "cell_mode_entered",
+        "cell_mode_exited",
+        "cell_mode_disposed"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e81cf0",
+          "claim": "initializes global CellGame, GFX, UI, flags, and additional Cell setup",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCellModeStrategy__Initialize.c:9-55"
+        },
+        {
+          "address": "0x00e552f0",
+          "claim": "OnEnter resets flags, starts CellGFX display, and invokes service/UI setup",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "App__cCellModeStrategy__OnEnter.c:19-45"
+        },
+        {
+          "address": "0x00e7fc00",
+          "claim": "OnExit restores globals, drains transient records, disables a service, and calls cleanup",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "App__cCellModeStrategy__OnExit.c:15-35"
+        },
+        {
+          "address": "0x00e81f30",
+          "claim": "Dispose frees Cell global resources and invokes service-disable plus pause/unpause paths",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "App__cCellModeStrategy__Dispose.c:41-86"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "OnExit restores background globals, drains queued interaction state, disables a service, and calls Cell cleanup helpers",
+          "conditions": [
+            "active Cell mode leaves"
+          ],
+          "evidence": "0x00e7fc00"
+        },
+        {
+          "action": "Dispose frees sCellGame, sCellGFX, and sCellUI after global/resource cleanup",
+          "conditions": [
+            "mode object is disposed after manager teardown"
+          ],
+          "evidence": "0x00e81f30"
+        }
+      ],
+      "functions": [
+        "0x00e81cf0 cCellModeStrategy::Initialize",
+        "0x00e552f0 OnEnter",
+        "0x00e80980 Update adapter",
+        "0x00e806b0 per-frame body",
+        "0x00e7fc00 OnExit",
+        "0x00e81f30 Dispose",
+        "0x00dd3ca0 AddRef"
+      ],
+      "guards": [
+        "mode lifecycle callbacks are dispatched through IGameMode vtable slots",
+        "Cell update body gates on sCellGame flags",
+        "service and pause calls are indirect/decompiler-sensitive",
+        "current OpenSpore CellModeStrategy is a host projection and does not prove original global bootstrap"
+      ],
+      "name": "cell_mode_subsystem_lifecycle",
+      "side_effects": [
+        "allocates and frees global CellGame, CellGFX, and CellUI",
+        "resets Cell flags and background globals",
+        "starts and stops CellGFX display",
+        "drains transient interaction records during OnExit",
+        "invokes service enable/disable and pause/unpause paths",
+        "runs per-frame gameplay through FUN_00e806b0"
+      ],
+      "state_variable": {
+        "expression": "Cell global pointers plus sCellGame+0x4121/+0x410c/+0x4110 and CellGFX display state",
+        "owner": "App::cCellModeStrategy with Simulator::Cell globals",
+        "type": "pointer/lifecycle flag/display projection"
+      },
+      "states": [
+        {
+          "actions": [
+            "Cell global pointers are absent or uninitialized"
+          ],
+          "guards": [
+            "sCellGame/sCellGFX/sCellUI are null or not recovered"
+          ],
+          "name": "absent",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "mode resources allocated and initialization side effects run"
+          ],
+          "guards": [
+            "Initialize completed"
+          ],
+          "name": "initialized",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "display active and mode entered"
+          ],
+          "guards": [
+            "OnEnter completed and CellGFX display active"
+          ],
+          "name": "entered",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "Cell update adapter reaches per-frame body"
+          ],
+          "guards": [
+            "sCellGame+0x51e0 and +0x515c gates pass"
+          ],
+          "name": "updating",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "mode left, globals restored, transient state drained"
+          ],
+          "guards": [
+            "OnExit completed"
+          ],
+          "name": "exited",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "Cell global resources released and flags cleared"
+          ],
+          "guards": [
+            "Dispose completed"
+          ],
+          "name": "disposed",
+          "raw_value": null
+        }
+      ],
+      "structures": [
+        "App::cCellModeStrategy",
+        "App::IGameMode",
+        "Simulator::Cell::cCellGame",
+        "Simulator::Cell::cCellGFX",
+        "Simulator::Cell::cCellUI",
+        "Simulator::Cell::cObjectPool<cCellObjectData>"
+      ],
+      "transitions": [
+        {
+          "actions": [
+            "allocate sCellGame, sCellGFX, and sCellUI",
+            "reset selected flags",
+            "call app virtuals labeled Shutdown/PreShutdown in the recovered body"
+          ],
+          "cause": "mode initialization",
+          "event": "cell_mode_initialized",
+          "from_state": "absent",
+          "guard": "allocation succeeds",
+          "to_state": "initialized"
+        },
+        {
+          "actions": [
+            "reset mode/UI flags",
+            "start CellGFX display",
+            "invoke service/UI setup"
+          ],
+          "cause": "mode entry",
+          "event": "cell_mode_entered",
+          "from_state": "initialized",
+          "guard": "manager has selected this mode",
+          "to_state": "entered"
+        },
+        {
+          "actions": [
+            "call FUN_00e806b0 and handle gated gameplay/reload"
+          ],
+          "cause": "per-frame update",
+          "event": "cell_mode_updated",
+          "from_state": "entered",
+          "guard": "Cell update gates pass",
+          "to_state": "updating"
+        },
+        {
+          "actions": [
+            "restore background globals",
+            "drain transient records",
+            "disable service",
+            "call cleanup helpers"
+          ],
+          "cause": "mode exit",
+          "event": "cell_mode_exited",
+          "from_state": "entered or updating",
+          "guard": "manager invokes OnExit",
+          "to_state": "exited"
+        },
+        {
+          "actions": [
+            "release Cell global resources and invoke service-disable/pause/unpause paths"
+          ],
+          "cause": "mode disposal",
+          "event": "cell_mode_disposed",
+          "from_state": "exited",
+          "guard": "manager disposes registered mode",
+          "to_state": "disposed"
+        }
+      ],
+      "validation": [
+        "Byte-verify the vtable slot mapping and every global-pointer release in 0x00e81f30.",
+        "Trace all readers/writers of sCellGame flags and CellGFX display state across OnEnter, Update, OnExit, and Dispose.",
+        "Adjudicate whether Initialize's Shutdown/PreShutdown calls are true lifecycle calls, decompiler slot errors, or setup notifications.",
+        "Acquire a positive original Cell-mode trace before validating enable/disable timing, pause behavior, reload ordering, and global ownership.",
+        "Use current src/apps/CellModeStrategy.cpp only as a clean-room comparison, not original lifecycle proof."
+      ]
+    }
+  ],
+  "temporal_semantics": {
+    "app_bootstrap": "The positive historical order is entry -> InitPlugins -> Init -> Startup -> repeated IAppSystem::Get. The bootstrap state machine at 0x00e20860 was not reached in that 30-second window; its raw states are not inferred from the startup order.",
+    "app_system": "SDK vtable order is a phase vocabulary, not runtime order. The only positive observed order is InitPlugins before Init before Startup. Shutdown, Pause, Unpause, Configure, InitGraphics, and PreShutdown are interface or static-consumer evidence without a complete runtime sequence.",
+    "cell_mode": "IGameMode dispatch exposes Initialize, OnEnter, Update, OnExit, and Dispose. The Cell static bodies show display/service enable on entry, per-frame work, global restoration and service disable on exit, and resource release on Dispose; the app calls appearing inside Initialize/Dispose remain decompiler-sensitive.",
+    "mode_transition": "The strongest original transition order is old OnExit -> write active index -> send mode-exit message -> new OnEnter -> send mode-enter message. The Simulator listener then commits last/current mode IDs through separate pending-state helpers; transition-effect callbacks are related effects but do not directly write those IDs.",
+    "runtime_evidence": "Only the historical main-menu startup capture is positive. No original orderly shutdown, in-game mode switch, menu-to-stage transition, or Cell-mode trace is available in this artifact.",
+    "subsystem_update": "cSimulatorSystem exposes separate Update, PostUpdate, and UpdateUIGraphics phases, but the concrete mSubSystems iteration order, persistence across mode changes, and subsystem enable/disable semantics are unresolved. The shared packed global block is a service seam, not ownership proof."
+  },
+  "unresolved": [
+    {
+      "id": "U01",
+      "impact": "Prevents naming the raw bootstrap states and explaining the process re-spawn/install-items handshake.",
+      "next_validation": "Re-open 0x00e20860, identify the owner through callers and field writes, and run a positive trace that reaches local_main/stateMachine.",
+      "question": "What is the owner structure and semantic meaning of owner+0x3c states 0-11, especially states 2, 3, 7-10, and 11?",
+      "status": "highest_priority"
+    },
+    {
+      "id": "U02",
+      "impact": "Prevents a reliable application startup/shutdown contract.",
+      "next_validation": "Recover concrete cAppSystem vtable data and decompile Create, Init, Startup, Configure, InitGraphics, PreShutdown, Shutdown, Update, and PostUpdate at verified boundaries.",
+      "question": "Which cAppSystem vtable is concrete, and why do Init anchors 0x007e6850 and 0x007e8ba0 disagree?",
+      "status": "highest_priority"
+    },
+    {
+      "id": "U03",
+      "impact": "Prevents naming plugin work and distinguishing setup from operation.",
+      "next_validation": "Byte-verify FUN_00423650 and FUN_004f6510, inspect the command-line object, and identify any registry or callback-list writes reachable from InitPlugins.",
+      "question": "What concrete plugins, services, or state entries does InitPlugins initialize?",
+      "status": "high"
+    },
+    {
+      "id": "U04",
+      "impact": "Prevents a complete process shutdown ordering across application, simulator, mode, resource, and UI services.",
+      "next_validation": "Trace cSporeApp Shutdown/Run and IAppSystem PreShutdown/Shutdown callers with a controlled termination capture.",
+      "question": "What is the original global shutdown order and which service is released first?",
+      "status": "highest_priority"
+    },
+    {
+      "id": "U05",
+      "impact": "Prevents identifying the concrete simulator composition and lifecycle persistence boundary.",
+      "next_validation": "Recover cSimulatorSystem InitializeSubSystems, InitializeGameModes, Update, PostUpdate, DisposeSubSystems, and all writers of DAT_0167eaf0..DAT_0167eb54.",
+      "question": "Which concrete strategies enter mSubSystems, in what order, and when are they removed or disabled?",
+      "status": "highest_priority"
+    },
+    {
+      "id": "U06",
+      "impact": "Prevents closing mode registry mutation and listener cleanup semantics.",
+      "next_validation": "Trace AddGameMode, RemoveGameMode, ClearActiveMode, Dispose, 0x00e11333, and message-handler removal for active, duplicate, and no-active cases.",
+      "question": "What are duplicate-name, active-entry removal, message priority, and listener-removal rules?",
+      "status": "high"
+    },
+    {
+      "id": "U07",
+      "impact": "Prevents identifying the UI/menu producer that initiates game-to-game mode changes.",
+      "next_validation": "Trace callers of SetActiveMode, SetActiveModeAt, and SetActiveModeByName and correlate 0x00e11333 with actual menu commands.",
+      "question": "Which menu/resource command activates each game mode, and what is the producer of 0x00e11333?",
+      "status": "high"
+    },
+    {
+      "id": "U08",
+      "impact": "Prevents asserting synchronous versus queued message semantics and exact commit timing.",
+      "next_validation": "Instrument MessageSend/ProcessQueue and 0x00b63510 around one mode switch, recording message, listener, commit helper, and transition-effect callback order.",
+      "question": "Are mode announcements sent synchronously or queued, and what are listener priority and filtering rules?",
+      "status": "high"
+    },
+    {
+      "id": "U09",
+      "impact": "Prevents declaring the Cell subsystem as a reliable original enable/disable implementation.",
+      "next_validation": "Adjudicate the vtable calls in 0x00e81cf0 and 0x00e81f30, then trace service slot targets and globals with a positive Cell-mode trace.",
+      "question": "Are the apparent Shutdown, PreShutdown, Pause, and Unpause calls true application lifecycle operations or decompiler slot/argument contamination?",
+      "status": "highest_priority"
+    },
+    {
+      "id": "U10",
+      "impact": "Prevents runtime validation of mode persistence, stage resource teardown, and process exit behavior.",
+      "next_validation": "Obtain a positive hash-pinned original trace covering startup, menu-to-stage, in-game mode switch, and orderly termination.",
+      "question": "What runtime lifecycle events occur after Startup and before process exit, and which survive a mode transition?",
+      "status": "highest_priority"
+    }
+  ]
+}

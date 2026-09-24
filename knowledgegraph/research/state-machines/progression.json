@@ -1,0 +1,3042 @@
+{
+  "$schema": "state-machine-research-1",
+  "callbacks": [
+    {
+      "address": "0x00d2e350",
+      "consumers": [
+        "creature-stage UI",
+        "brain-level requirement calculations"
+      ],
+      "evidence": [
+        {
+          "address": "0x00d2e350",
+          "claim": "returns the current evolution-point value",
+          "kind": "sdk_name_only",
+          "level": "CONFIRMED",
+          "source": "~/.spore-analysis/ghidra-exports/functions.tsv"
+        }
+      ],
+      "name": "Simulator::cCreatureGameData::GetEvolutionPoints",
+      "parameters": [],
+      "returns": "float",
+      "semantics": "reads the creature progression point value; no transition is performed"
+    },
+    {
+      "address": "0x00d2e380",
+      "consumers": [
+        "brain-level requirement display",
+        "creature-stage progression checks"
+      ],
+      "evidence": [
+        {
+          "address": "0x00d2e380",
+          "claim": "levels 0 through 3 select DAT_01582e38, DAT_01582e3c, DAT_01582e40, and DAT_01582e44 respectively; other levels return zero",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cCreatureGameData__GetEvoPointsToNextBrainLevel.c"
+        },
+        {
+          "address": "0x00d2e380",
+          "claim": "the default currentLevel value is -1 and asks the avatar for its current level through virtual slot +0xd8",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cCreatureGameData__GetEvoPointsToNextBrainLevel.c"
+        }
+      ],
+      "name": "Simulator::cCreatureGameData::GetEvoPointsToNextBrainLevel",
+      "parameters": [
+        "int currentLevel"
+      ],
+      "returns": "float requirement; zero for an unrecognized level",
+      "semantics": "queries a threshold; it does not change brain level or spend points"
+    },
+    {
+      "address": "0x00d2e480",
+      "consumers": [
+        "save restoration",
+        "development or scripted initialization"
+      ],
+      "evidence": [
+        {
+          "address": "0x00d2e480",
+          "claim": "writes the requested value to the evolution-point storage",
+          "kind": "sdk_name_only",
+          "level": "CONFIRMED",
+          "source": "~/.spore-analysis/ghidra-exports/functions.tsv"
+        },
+        {
+          "address": null,
+          "claim": "the SDK states that SetEvolutionPoints only sets mEvolutionPoints and has no other game effect",
+          "kind": "sdk_semantics",
+          "level": "SUPPORTED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cCreatureGameData.h"
+        }
+      ],
+      "name": "Simulator::cCreatureGameData::SetEvolutionPoints",
+      "parameters": [
+        "float points"
+      ],
+      "returns": "void",
+      "semantics": "overwrites the point value without goal progress, UI, strategy action, or brain-level transition side effects"
+    },
+    {
+      "address": "0x00d2e8a0",
+      "consumers": [
+        "creature-stage progression events",
+        "player goal-progress UI"
+      ],
+      "evidence": [
+        {
+          "address": "0x00d2e8a0",
+          "claim": "a nonzero amount is added to the point value and clamped to DAT_01582e54",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cCreatureGameData__AddEvolutionPoints.c"
+        },
+        {
+          "address": "0x00d2e8a0",
+          "claim": "the same amount is added to cPlayer+0x10f0 and conditionally packaged into a cCreatureModeStrategy action 0x45ab96e",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cCreatureGameData__AddEvolutionPoints.c"
+        }
+      ],
+      "name": "Simulator::cCreatureGameData::AddEvolutionPoints",
+      "parameters": [
+        "float points"
+      ],
+      "returns": "void",
+      "semantics": "authoritative additive creature-progression mutation; the recovered body does not directly advance brain level"
+    },
+    {
+      "address": "cMission::SetState",
+      "consumers": [
+        "mission acceptance",
+        "mission completion",
+        "mission failure",
+        "mission abort",
+        "mission rejection",
+        "mission step completion"
+      ],
+      "evidence": [
+        {
+          "address": "cMission+0x84",
+          "claim": "mState is a MissionState field at offset 0x84",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cMission.h"
+        },
+        {
+          "address": null,
+          "claim": "SetState clears mTitle and field_15c and emits kMsgMissionUpdate when entering Active",
+          "kind": "sdk_semantics",
+          "level": "SUPPORTED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cMission.h"
+        }
+      ],
+      "name": "Simulator::cMission::SetState",
+      "parameters": [
+        "Simulator::MissionState state"
+      ],
+      "returns": "void",
+      "semantics": "central mission state writer; exact native body boundary and callback-before/after ordering are unresolved"
+    },
+    {
+      "address": "cMission+0x88",
+      "consumers": [
+        "MissionState::Accepted transition to MissionState::Active"
+      ],
+      "evidence": [
+        {
+          "address": "cMission+0x88",
+          "claim": "virtual OnMissionAccept callback is declared at vtable offset 0x88",
+          "kind": "sdk_name_only",
+          "level": "CONFIRMED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cMission.h"
+        },
+        {
+          "address": null,
+          "claim": "accepting a mission calls OnMissionAccept and immediately enters Active",
+          "kind": "sdk_semantics",
+          "level": "SUPPORTED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/SimulatorEnums.h"
+        }
+      ],
+      "name": "Simulator::cMission::OnMissionAccept",
+      "parameters": [
+        "this"
+      ],
+      "returns": "void",
+      "semantics": "accept-side mission callback; exact implementation and mutation order are unresolved"
+    },
+    {
+      "address": "cMission+0x94",
+      "consumers": [
+        "MissionState::Completed transition"
+      ],
+      "evidence": [
+        {
+          "address": "cMission+0x94",
+          "claim": "virtual OnMissionCompleted callback is declared at vtable offset 0x94",
+          "kind": "sdk_name_only",
+          "level": "CONFIRMED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cMission.h"
+        },
+        {
+          "address": null,
+          "claim": "the default completion callback updates tutorial state, empire advancement, tool unlocks or grants, reward tool, money, and relationships",
+          "kind": "sdk_semantics",
+          "level": "SUPPORTED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cMission.h"
+        }
+      ],
+      "name": "Simulator::cMission::OnMissionCompleted",
+      "parameters": [
+        "this"
+      ],
+      "returns": "void",
+      "semantics": "completion-reward boundary; the SDK comment uses uncertainty for whether tools are unlocked or granted and omits additional side effects"
+    },
+    {
+      "address": "cMission+0x98",
+      "consumers": [
+        "MissionState::Failed transition"
+      ],
+      "evidence": [
+        {
+          "address": "cMission+0x98",
+          "claim": "virtual OnMissionFailed callback is declared at vtable offset 0x98",
+          "kind": "sdk_name_only",
+          "level": "CONFIRMED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cMission.h"
+        }
+      ],
+      "name": "Simulator::cMission::OnMissionFailed",
+      "parameters": [
+        "this"
+      ],
+      "returns": "void",
+      "semantics": "failure callback; concrete mission-type overrides and side effects are unresolved"
+    },
+    {
+      "address": "cMission+0x90",
+      "consumers": [
+        "MissionState::Aborted transition"
+      ],
+      "evidence": [
+        {
+          "address": "cMission+0x90",
+          "claim": "virtual OnMissionAbort callback is declared at vtable offset 0x90",
+          "kind": "sdk_name_only",
+          "level": "CONFIRMED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cMission.h"
+        }
+      ],
+      "name": "Simulator::cMission::OnMissionAbort",
+      "parameters": [
+        "this"
+      ],
+      "returns": "void",
+      "semantics": "abort callback; concrete implementation is unresolved"
+    },
+    {
+      "address": "cMission+0x8c",
+      "consumers": [
+        "MissionState::Rejected transition"
+      ],
+      "evidence": [
+        {
+          "address": "cMission+0x8c",
+          "claim": "virtual OnMissionReject callback is declared at vtable offset 0x8c",
+          "kind": "sdk_name_only",
+          "level": "CONFIRMED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cMission.h"
+        }
+      ],
+      "name": "Simulator::cMission::OnMissionReject",
+      "parameters": [
+        "this"
+      ],
+      "returns": "void",
+      "semantics": "rejection callback; concrete implementation is unresolved"
+    },
+    {
+      "address": "0x00598db0",
+      "consumers": [
+        "collectable configuration loading",
+        "AddUnlockableItemFromProp"
+      ],
+      "evidence": [
+        {
+          "address": "0x00598db0",
+          "claim": "inserts an UnlockableItem record keyed by collectable item ID and expands the category table when needed",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cCollectableItems__AddUnlockableItem.c"
+        }
+      ],
+      "name": "Simulator::cCollectableItems::AddUnlockableItem",
+      "parameters": [
+        "this",
+        "uint32_t instanceID",
+        "uint32_t groupID",
+        "int itemUnlockLevel",
+        "uint32_t categoryID",
+        "int row",
+        "int column",
+        "int pageIndex",
+        "float itemUnlockFindPercentage",
+        "uint32_t itemUnlockEffect"
+      ],
+      "returns": "void",
+      "semantics": "registers unlock requirements; registration alone is not evidence that the part is unlocked"
+    },
+    {
+      "address": "0x00598e90",
+      "consumers": [
+        "collectable property-list loading"
+      ],
+      "evidence": [
+        {
+          "address": "0x00598e90",
+          "claim": "reads an item property list and calls AddUnlockableItem",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cCollectableItems__AddUnlockableItemFromProp.c"
+        },
+        {
+          "address": null,
+          "claim": "the SDK states that itemUnlockFindPercentage greater than or equal to 1 unlocks the item",
+          "kind": "sdk_semantics",
+          "level": "SUPPORTED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cCollectableItems.h"
+        }
+      ],
+      "name": "Simulator::cCollectableItems::AddUnlockableItemFromProp",
+      "parameters": [
+        "this",
+        "ResourceKey key",
+        "uint32_t categoryID",
+        "int row",
+        "int column",
+        "int pageIndex"
+      ],
+      "returns": "bool",
+      "semantics": "property-driven registration and possible immediate unlock; exact argument recovery in the committed decompilation is unreliable"
+    },
+    {
+      "address": "0x00ff3bf0",
+      "consumers": [
+        "space inventory tool lookup"
+      ],
+      "evidence": [
+        {
+          "address": "0x00ff3bf0",
+          "claim": "SDK contract searches mInventoryItems and mUnlockableTools for the requested ResourceKey",
+          "kind": "sdk_semantics",
+          "level": "SUPPORTED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cPlayerInventory.h"
+        },
+        {
+          "address": "0x00ff3bf0",
+          "claim": "committed decompilation is present but has unreliable recovered types and return reconstruction",
+          "kind": "decompilation",
+          "level": "INFERRED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cPlayerInventory__GetUnlockableTool.c"
+        }
+      ],
+      "name": "Simulator::cPlayerInventory::GetUnlockableTool",
+      "parameters": [
+        "const ResourceKey* id"
+      ],
+      "returns": "cSpaceToolData* or null",
+      "semantics": "query over ordinary inventory and unlockable tools; it does not itself grant a tool"
+    },
+    {
+      "address": "0x007d8cf0",
+      "consumers": [
+        "editor requests",
+        "stage transitions",
+        "main-menu transitions"
+      ],
+      "evidence": [
+        {
+          "address": "0x007d8cf0",
+          "claim": "SDK identifies SetActiveMode as the ID-based active-mode transition",
+          "kind": "sdk_name_only",
+          "level": "CONFIRMED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/App/cGameModeManager.h"
+        }
+      ],
+      "name": "App::cGameModeManager::SetActiveMode",
+      "parameters": [
+        "this",
+        "uint32_t modeID"
+      ],
+      "returns": "bool",
+      "semantics": "switches the registered active mode and drives current-mode OnExit and target-mode OnEnter; exact native body boundary is unresolved"
+    },
+    {
+      "address": "0x007d8d40",
+      "consumers": [
+        "ID-based SetActiveMode path"
+      ],
+      "evidence": [
+        {
+          "address": "0x007d8d40",
+          "claim": "SetActiveModeAt is the index-based active-mode transition entry",
+          "kind": "sdk_name_only",
+          "level": "CONFIRMED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/App/cGameModeManager.h"
+        },
+        {
+          "address": "0x007d8d40",
+          "claim": "committed decompilation delegates through an unresolved helper and has an incorrect recovered vtable shape",
+          "kind": "decompilation",
+          "level": "INFERRED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cGameModeManager__SetActiveModeAt.c"
+        }
+      ],
+      "name": "App::cGameModeManager::SetActiveModeAt",
+      "parameters": [
+        "this",
+        "size_t index"
+      ],
+      "returns": "bool",
+      "semantics": "selects a registered mode by vector index; same-mode and failure behavior remain unresolved"
+    },
+    {
+      "address": "0x00587270",
+      "consumers": [
+        "editor message handling",
+        "editor input and UI",
+        "editor exit"
+      ],
+      "evidence": [
+        {
+          "address": "0x00587270",
+          "claim": "the body rejects a BuildMode-to-BuildMode request and another unresolved guard before writing the new mode at editor+0x31c",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__SetActiveMode.c"
+        },
+        {
+          "address": null,
+          "claim": "Modes::BuildMode, PaintMode, and PlayMode have raw values 0, 1, and 2",
+          "kind": "sdk_name_only",
+          "level": "CONFIRMED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Editors/Editor.h"
+        }
+      ],
+      "name": "Editors::cEditor::SetActiveMode",
+      "parameters": [
+        "this",
+        "Editors::Mode mode",
+        "bool flag"
+      ],
+      "returns": "void",
+      "semantics": "changes the internal editor mode and rebuilds or updates the animation world, creature controller, animation events, and editor UI state"
+    },
+    {
+      "address": "0x00fe52c0",
+      "consumers": [
+        "space-stage event handlers",
+        "badge UI"
+      ],
+      "evidence": [
+        {
+          "address": "0x00fe52c0",
+          "claim": "AddToBadgeProgress adds a signed value to an existing badge progress entry and emits message 0x38cf2fb",
+          "kind": "sdk_semantics",
+          "level": "SUPPORTED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cBadgeManager.h"
+        }
+      ],
+      "name": "Simulator::cBadgeManager::AddToBadgeProgress",
+      "parameters": [
+        "this",
+        "Simulator::BadgeManagerEvent badge",
+        "int addedValue"
+      ],
+      "returns": "void",
+      "semantics": "badge progress accumulation and notification; completion thresholds and unlock mutation are unresolved"
+    },
+    {
+      "address": "cCreatureBase+0x78",
+      "consumers": [
+        "creature growth systems",
+        "tribe and herd lifecycle code"
+      ],
+      "evidence": [
+        {
+          "address": "cCreatureBase+0x78",
+          "claim": "GrowUp is a virtual callback declared at offset 0x78",
+          "kind": "sdk_name_only",
+          "level": "CONFIRMED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cCreatureBase.h"
+        }
+      ],
+      "name": "Simulator::cCreatureBase::GrowUp",
+      "parameters": [
+        "this"
+      ],
+      "returns": "void",
+      "semantics": "growth transition callback; timer owner, stage substitutions, and exact side effects are unresolved"
+    },
+    {
+      "address": "Editors::EditorRequest::Submit",
+      "consumers": [
+        "stage UI",
+        "Sporepedia",
+        "editor entry code"
+      ],
+      "evidence": [
+        {
+          "address": null,
+          "claim": "Submit processes a request and opens its selected editor",
+          "kind": "sdk_semantics",
+          "level": "SUPPORTED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Editors/EditorRequest.h"
+        }
+      ],
+      "name": "Editors::EditorRequest::Submit",
+      "parameters": [
+        "Editors::EditorRequest* request"
+      ],
+      "returns": "bool",
+      "semantics": "editor request handoff carrying mCallingGameModeID, mConsequenceTraits, collectable-item context, first-entry state, and an optional chained request"
+    }
+  ],
+  "domain": "Progression, Evolution, Growth, Traits, Milestones, Unlocks, Stage Completion, and Editor-to-Gameplay Lifecycle",
+  "events": [
+    {
+      "consumers": [
+        "creature-stage UI",
+        "goal progress"
+      ],
+      "evidence": [
+        {
+          "address": "0x00d2e8a0",
+          "claim": "nonzero AddEvolutionPoints invokes a cCreatureModeStrategy action carrying the amount",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cCreatureGameData__AddEvolutionPoints.c"
+        }
+      ],
+      "id": "creature_evolution_points_added",
+      "kind": "analytical_event",
+      "producers": [
+        "Simulator::cCreatureGameData::AddEvolutionPoints"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "consumers": [
+        "brain-level requirement UI",
+        "creature progression checks"
+      ],
+      "evidence": [
+        {
+          "address": "0x00d2e380",
+          "claim": "the accessor resolves current level when passed -1 and selects one of four threshold globals",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cCreatureGameData__GetEvoPointsToNextBrainLevel.c"
+        }
+      ],
+      "id": "creature_brain_requirement_queried",
+      "kind": "analytical_event",
+      "producers": [
+        "Simulator::cCreatureGameData::GetEvoPointsToNextBrainLevel"
+      ],
+      "status": "static_query"
+    },
+    {
+      "consumers": [
+        "mission UI",
+        "mission manager"
+      ],
+      "evidence": [
+        {
+          "address": "cMission::SetState",
+          "claim": "entering MissionState::Active emits SimulatorMessages::kMsgMissionUpdate",
+          "kind": "sdk_semantics",
+          "level": "SUPPORTED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cMission.h"
+        }
+      ],
+      "id": "mission_update_message",
+      "kind": "simulator_message",
+      "producers": [
+        "Simulator::cMission::SetState(Active)"
+      ],
+      "status": "static_contract"
+    },
+    {
+      "consumers": [
+        "mission tutorial state",
+        "player empire",
+        "player inventory",
+        "relationships and rewards"
+      ],
+      "evidence": [
+        {
+          "address": "cMission+0x94",
+          "claim": "completion callback owns tutorial, empire-advancement, tool, money, and relationship side effects",
+          "kind": "sdk_semantics",
+          "level": "SUPPORTED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cMission.h"
+        }
+      ],
+      "id": "mission_completion_rewards",
+      "kind": "analytical_event",
+      "producers": [
+        "Simulator::cMission::OnMissionCompleted"
+      ],
+      "status": "callback_contract_exact_order_unresolved"
+    },
+    {
+      "consumers": [
+        "collectable pages",
+        "creature editor visibility"
+      ],
+      "evidence": [
+        {
+          "address": "0x00598db0",
+          "claim": "AddUnlockableItem registers level, percentage, placement, and effect metadata",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cCollectableItems__AddUnlockableItem.c"
+        }
+      ],
+      "id": "collectable_unlock_rule_registered",
+      "kind": "analytical_event",
+      "producers": [
+        "Simulator::cCollectableItems::AddUnlockableItem",
+        "Simulator::cCollectableItems::AddUnlockableItemFromProp"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "consumers": [
+        "cCollectableItems::mItemStatusInfos",
+        "cCollectableItems::mUnlockedItems",
+        "creature editor"
+      ],
+      "evidence": [
+        {
+          "address": null,
+          "claim": "SDK documents UnlockPart, LockPart, and the cCreatureModeStrategy UnlockPart action consumer",
+          "kind": "sdk_semantics",
+          "level": "SUPPORTED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cCollectableItems.h"
+        }
+      ],
+      "id": "collectable_part_unlocked",
+      "kind": "analytical_event",
+      "producers": [
+        "unresolved part-unlock callers"
+      ],
+      "status": "callback_contract"
+    },
+    {
+      "consumers": [
+        "cPlayerInventory",
+        "tool UI"
+      ],
+      "evidence": [
+        {
+          "address": "0x00ff3bf0",
+          "claim": "GetUnlockableTool queries the inventory and mUnlockableTools",
+          "kind": "sdk_semantics",
+          "level": "SUPPORTED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cPlayerInventory.h"
+        }
+      ],
+      "id": "unlockable_tool_requested",
+      "kind": "analytical_event",
+      "producers": [
+        "space tool consumers"
+      ],
+      "status": "static_query"
+    },
+    {
+      "consumers": [
+        "App::cGameModeManager",
+        "mode lifecycle listeners"
+      ],
+      "evidence": [
+        {
+          "address": "0x007d8cf0",
+          "claim": "SDK documents active-mode switching through OnExit and OnEnter",
+          "kind": "sdk_semantics",
+          "level": "SUPPORTED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/App/IGameModeManager.h"
+        }
+      ],
+      "id": "game_mode_change_requested",
+      "kind": "analytical_event",
+      "producers": [
+        "stage code",
+        "editor request processing",
+        "main-menu navigation"
+      ],
+      "status": "static_contract"
+    },
+    {
+      "consumers": [
+        "mode lifecycle listeners",
+        "transition UI"
+      ],
+      "evidence": [
+        {
+          "address": null,
+          "claim": "kMsgOnModeExit is 0x0212d3e7 and carries current and previous mode IDs",
+          "kind": "sdk_name_only",
+          "level": "CONFIRMED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/App/IGameModeManager.h"
+        }
+      ],
+      "id": "game_mode_exit_message",
+      "kind": "app_message",
+      "producers": [
+        "App::cGameModeManager"
+      ],
+      "status": "sdk_contract"
+    },
+    {
+      "consumers": [
+        "mode lifecycle listeners",
+        "transition UI"
+      ],
+      "evidence": [
+        {
+          "address": null,
+          "claim": "kMsgOnModeEnter is 0x022d1adc and carries current and previous mode IDs",
+          "kind": "sdk_name_only",
+          "level": "CONFIRMED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/App/IGameModeManager.h"
+        }
+      ],
+      "id": "game_mode_enter_message",
+      "kind": "app_message",
+      "producers": [
+        "App::cGameModeManager"
+      ],
+      "status": "sdk_contract"
+    },
+    {
+      "consumers": [
+        "editor animation world",
+        "editor UI",
+        "editor message listeners"
+      ],
+      "evidence": [
+        {
+          "address": "0x00587270",
+          "claim": "the body has distinct old-mode branches for raw values 0, 1, and 2 before writing the new mode",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__SetActiveMode.c"
+        }
+      ],
+      "id": "editor_internal_mode_changed",
+      "kind": "analytical_event",
+      "producers": [
+        "Editors::cEditor::SetActiveMode"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "consumers": [
+        "editor selection mode",
+        "editor setup"
+      ],
+      "evidence": [
+        {
+          "address": null,
+          "claim": "EditorRequest carries mCallingGameModeID at +0x1c, mConsequenceTraits at +0x70, collectable-item context at +0x94, and mpNext at +0x98",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Editors/EditorRequest.h"
+        }
+      ],
+      "id": "editor_request_submitted",
+      "kind": "analytical_event",
+      "producers": [
+        "stage UI",
+        "Sporepedia"
+      ],
+      "status": "sdk_contract"
+    },
+    {
+      "consumers": [
+        "badge UI",
+        "badge state map",
+        "event counters"
+      ],
+      "evidence": [
+        {
+          "address": "0x00fe52c0",
+          "claim": "AddToBadgeProgress updates progress and emits message 0x38cf2fb",
+          "kind": "sdk_semantics",
+          "level": "SUPPORTED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cBadgeManager.h"
+        }
+      ],
+      "id": "badge_progress_changed",
+      "kind": "simulator_message",
+      "producers": [
+        "Simulator::cBadgeManager::AddToBadgeProgress"
+      ],
+      "status": "static_contract"
+    },
+    {
+      "consumers": [
+        "cCreatureBase::GrowUp"
+      ],
+      "evidence": [
+        {
+          "address": "cNpcTribeController+0x60",
+          "claim": "cNpcTribeController owns a map from cCreatureBase pointers to growth timers",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cNpcTribeController.h"
+        }
+      ],
+      "id": "npc_baby_growth_timer_expired",
+      "kind": "analytical_event",
+      "producers": [
+        "cNpcTribeController growth timer"
+      ],
+      "status": "ownership_inferred_callback_owner_unresolved"
+    }
+  ],
+  "scope": {
+    "binary": "SPORE/SporeBin/SporeApp.exe",
+    "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+    "boundaries": [
+      "No binary patch, Ghidra project rewrite, historical triage rewrite, or SPORE-directory change was made.",
+      "No positive original-runtime trace exists for evolution, missions, badges, editor entry or exit, stage completion, or cross-stage progression.",
+      "SDK names, comments, enum values, fields, and virtual slots establish interface shape but are not promoted to observed runtime behavior without body corroboration.",
+      "Committed decompiler casts and undefined helpers are non-authoritative where recovered types or function boundaries are visibly wrong.",
+      "OpenSpore Cell simulation and asset code is clean-room context and is not treated as original SporeApp.exe behavior.",
+      "Exact finite domains, threshold values, writers, rewards, and stage-transition triggers are left explicit in unresolved when not recovered."
+    ],
+    "build": "SporeApp.exe 3.1.0.22",
+    "evidence_policy": {
+      "decompilation": "Committed Ghidra exports support observed memory operations, calls, guards, and branch structure; unreliable signatures and helper names remain non-authoritative.",
+      "levels": [
+        "APPROXIMATION",
+        "CONFIRMED",
+        "INFERRED",
+        "OBSERVED",
+        "SUPPORTED",
+        "UNKNOWN",
+        "VERIFIED"
+      ],
+      "runtime": "Runtime evidence is absent for this domain. No transition or callback ordering is labeled OBSERVED or VERIFIED.",
+      "sdk_name_only": "SDK declarations establish names, layouts, enum raw values, callback slots, and documented contracts only.",
+      "source_precedence": [
+        "pinned binary and committed Ghidra export bodies",
+        "Spore-ModAPI declarations and semantics",
+        "committed research dossiers and type partitions",
+        "knowledgegraph SQLite and clean-room current source"
+      ]
+    },
+    "image_base": "0x00400000",
+    "method": [
+      "Surveyed committed progression, creature, empire-space, editor, gameplay-entity, and event-message research.",
+      "Read SDK layouts and semantics for creature game data, missions, Cell serialization, collectables, player traits, badges, herds, NPC growth, editor requests, and game-mode management.",
+      "Reviewed committed Ghidra exports for evolution points, brain-level requirements, editor mode changes, collectable registration, and unlockable-tool lookup.",
+      "Attempted Ghidra MCP; the connected headless instance had no open program and could not open one in GUI mode, so no new Ghidra mutation or project write was performed."
+    ],
+    "runtime_evidence": false,
+    "sources": [
+      ".spore-analysis/ghidra-exports/decompiled_sdk/App__cGameModeManager__SetActiveModeAt.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__SetActiveMode.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cCollectableItems__AddUnlockableItem.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cCollectableItems__AddUnlockableItemFromProp.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cCreatureGameData__AddEvolutionPoints.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cCreatureGameData__GetEvoPointsToNextBrainLevel.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cPlayerInventory__GetUnlockableTool.c",
+      "docs/analysis/campaigns/cell-stage-campaign.md",
+      "docs/analysis/simulator-shared-state-interface.md",
+      "knowledgegraph/research/global-campaign-2026/track-f-empire-economy.json",
+      "knowledgegraph/research/types/02-gameplay-entity.json",
+      "knowledgegraph/research/types/03-creature.json",
+      "knowledgegraph/research/types/05-empire-space.json",
+      "knowledgegraph/research/types/06-editor-ui.json",
+      "knowledgegraph/research/types/07-event-message.json",
+      "knowledgegraph/spore.db",
+      "src/assets/CellResource.cpp",
+      "src/assets/CellResource.hpp",
+      "~/apps/Spore-ModAPI/Spore ModAPI/Spore/App/IGameModeManager.h",
+      "~/apps/Spore-ModAPI/Spore ModAPI/Spore/App/cGameModeManager.h",
+      "~/apps/Spore-ModAPI/Spore ModAPI/Spore/CommonIDs.h",
+      "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Editors/Editor.h",
+      "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Editors/EditorRequest.h",
+      "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/Cell/cCellSerialiazibleData.h",
+      "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/SimulatorEnums.h",
+      "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cBadgeManager.h",
+      "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cCollectableItems.h",
+      "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cCreatureBase.h",
+      "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cCreatureGameData.h",
+      "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cHerd.h",
+      "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cMission.h",
+      "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cMissionManager.h",
+      "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cNpcTribeController.h",
+      "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cPlayer.h",
+      "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cPlayerInventory.h"
+    ]
+  },
+  "state_machines": [
+    {
+      "confidence": {
+        "level": "high",
+        "reason": "The mutation body, clamp, goal-progress update, conditional strategy dispatch, threshold selector, and level query are directly visible in committed decompilation. Exact numeric globals, action meaning, and the brain-level writer remain unresolved."
+      },
+      "consumers": [
+        "creature-stage UI",
+        "goal progress",
+        "brain-level requirement logic"
+      ],
+      "entry_actions": [
+        {
+          "action": "ignore the request when points equals zero",
+          "conditions": [
+            "points == 0.0"
+          ],
+          "evidence": "0x00d2e8a0"
+        }
+      ],
+      "evidence": [
+        {
+          "address": "0x00d2e8a0",
+          "claim": "AddEvolutionPoints writes min(existing + points, DAT_01582e54)",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cCreatureGameData__AddEvolutionPoints.c"
+        },
+        {
+          "address": "0x00d2e8a0",
+          "claim": "cPlayer+0x10f0 receives the unclamped requested amount",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cCreatureGameData__AddEvolutionPoints.c"
+        },
+        {
+          "address": "0x00d2e380",
+          "claim": "brain levels 0 through 3 map to four threshold globals and all other levels return zero",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cCreatureGameData__GetEvoPointsToNextBrainLevel.c"
+        },
+        {
+          "address": "0x00d2e480",
+          "claim": "SDK documents SetEvolutionPoints as assignment with no other game effect",
+          "kind": "sdk_semantics",
+          "level": "SUPPORTED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cCreatureGameData.h"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "no centralized exit action; state and side effects update synchronously",
+          "conditions": [],
+          "evidence": "0x00d2e8a0"
+        }
+      ],
+      "generated_events": [
+        "creature_brain_requirement_queried",
+        "creature_evolution_points_added"
+      ],
+      "guards": [
+        "zero amount is a no-op",
+        "point storage is clamped at DAT_01582e54",
+        "goal progress receives the requested amount rather than the clamped delta",
+        "strategy action 0x45ab96e is conditional on a mode/context check and a non-null action handler",
+        "brain-level requirements are known only for levels 0 through 3"
+      ],
+      "name": "creature_evolution_point_accumulation",
+      "possible_states": [
+        {
+          "actions": [
+            "no state or side-effect update"
+          ],
+          "guards": [
+            "requested points == 0"
+          ],
+          "name": "unchanged",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "store an increased value below the cap"
+          ],
+          "guards": [
+            "requested points != 0",
+            "old value + points < cap"
+          ],
+          "name": "increased_below_cap",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "store the cap"
+          ],
+          "guards": [
+            "requested points != 0",
+            "old value + points >= cap"
+          ],
+          "name": "increased_at_cap",
+          "raw_value": null
+        }
+      ],
+      "relevant_functions": [
+        "0x00d2e350",
+        "0x00d2e380",
+        "0x00d2e480",
+        "0x00d2e8a0",
+        "0x00d3fcf0"
+      ],
+      "relevant_structures": [
+        "Simulator::cCreatureGameData",
+        "Simulator::cPlayer",
+        "App::cCreatureModeStrategy"
+      ],
+      "side_effects": [
+        "mutates DAT_0169e398, corresponding to cCreatureGameData.mEvolutionPoints",
+        "increments cPlayer.mCurrentGoalProgress at +0x10f0 by the requested amount",
+        "calls update/UI helpers",
+        "conditionally dispatches cCreatureModeStrategy action 0x45ab96e with the requested amount",
+        "does not directly mutate mCurrentBrainLevel in the recovered AddEvolutionPoints body"
+      ],
+      "state_variable": {
+        "expression": "DAT_0169e398 / cCreatureGameData.mEvolutionPoints+0x28, interpreted with cCreatureGameData.mCurrentBrainLevel+0x00",
+        "owner": "Simulator::cCreatureGameData",
+        "type": "float point balance plus integer brain level"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "return without mutation"
+          ],
+          "cause": "zero-point request",
+          "event": "creature_evolution_points_added",
+          "from_state": "any",
+          "guard": "points == 0",
+          "to_state": "unchanged"
+        },
+        {
+          "actions": [
+            "store old + points",
+            "add points to cPlayer.mCurrentGoalProgress",
+            "run update helpers",
+            "conditionally dispatch action 0x45ab96e"
+          ],
+          "cause": "evolution reward",
+          "event": "creature_evolution_points_added",
+          "from_state": "any",
+          "guard": "points != 0 and old + points < DAT_01582e54",
+          "to_state": "increased_below_cap"
+        },
+        {
+          "actions": [
+            "store DAT_01582e54",
+            "add points to cPlayer.mCurrentGoalProgress",
+            "run update helpers",
+            "conditionally dispatch action 0x45ab96e"
+          ],
+          "cause": "evolution reward reaches cap",
+          "event": "creature_evolution_points_added",
+          "from_state": "any",
+          "guard": "points != 0 and old + points >= DAT_01582e54",
+          "to_state": "increased_at_cap"
+        }
+      ],
+      "validation_strategy": [
+        "Trace AddEvolutionPoints with zero, positive, negative, below-cap, exact-cap, and above-cap values.",
+        "Record the pre/post point value, cPlayer+0x10f0, current brain level, resolved mode/context, and action-handler pointer.",
+        "Locate the action 0x45ab96e consumer and correlate it with the recovered AddEvolutionPoints call sites.",
+        "Find every writer of cCreatureGameData.mCurrentBrainLevel and verify whether thresholds are absolute or incremental."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "medium",
+        "reason": "The finite enum, state field, message contract, and transition/callback descriptions are SDK-defined. Exact SetState body, all transition triggers, and reward ordering were not recovered."
+      },
+      "consumers": [
+        "mission UI",
+        "mission manager",
+        "player empire",
+        "player inventory",
+        "tutorial state"
+      ],
+      "entry_actions": [
+        {
+          "action": "clear mTitle and field_15c before storing the new MissionState",
+          "conditions": [
+            "every SetState call"
+          ],
+          "evidence": "SDK cMission::SetState contract"
+        }
+      ],
+      "evidence": [
+        {
+          "address": "cMission+0x84",
+          "claim": "MissionState is stored at cMission+0x84",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cMission.h"
+        },
+        {
+          "address": null,
+          "claim": "the SDK defines raw values Unaccepted=0, Finished=1, Accepted=2, Active=3, Completed=5, Failed=6, Aborted=7, Rejected=8, and StepCompleted=9",
+          "kind": "sdk_name_only",
+          "level": "CONFIRMED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/SimulatorEnums.h"
+        },
+        {
+          "address": null,
+          "claim": "the SDK documents accept, complete, fail, abort, and reject callback sequences",
+          "kind": "sdk_semantics",
+          "level": "SUPPORTED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/SimulatorEnums.h"
+        },
+        {
+          "address": "cMission+0x94",
+          "claim": "completion callback documents tutorial, empire, tool, money, and relationship side effects",
+          "kind": "sdk_semantics",
+          "level": "SUPPORTED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cMission.h"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "destroy the mission after Finished",
+          "conditions": [
+            "MissionState::Finished"
+          ],
+          "evidence": "SDK MissionState documentation"
+        }
+      ],
+      "generated_events": [
+        "mission_completion_rewards",
+        "mission_update_message"
+      ],
+      "guards": [
+        "Accepted immediately enters Active",
+        "Completed enters StepCompleted for a sub-mission and otherwise enters Finished",
+        "Failed, Aborted, and Rejected enter Finished after their callbacks",
+        "the enum has no declared value 4",
+        "mission availability depends on active-mission capacity, recent requests, and relationships"
+      ],
+      "name": "mission_lifecycle",
+      "possible_states": [
+        {
+          "actions": [
+            "mission has not been accepted"
+          ],
+          "guards": [
+            "mState == 0"
+          ],
+          "name": "Unaccepted",
+          "raw_value": 0
+        },
+        {
+          "actions": [
+            "mission is terminal and scheduled for destruction"
+          ],
+          "guards": [
+            "mState == 1"
+          ],
+          "name": "Finished",
+          "raw_value": 1
+        },
+        {
+          "actions": [
+            "mission has just been accepted"
+          ],
+          "guards": [
+            "mState == 2"
+          ],
+          "name": "Accepted",
+          "raw_value": 2
+        },
+        {
+          "actions": [
+            "mission receives Update calls and elapsed-time processing"
+          ],
+          "guards": [
+            "mState == 3"
+          ],
+          "name": "Active",
+          "raw_value": 3
+        },
+        {
+          "actions": [
+            "mission completed successfully before terminal routing"
+          ],
+          "guards": [
+            "mState == 5"
+          ],
+          "name": "Completed",
+          "raw_value": 5
+        },
+        {
+          "actions": [
+            "mission failed before terminal routing"
+          ],
+          "guards": [
+            "mState == 6"
+          ],
+          "name": "Failed",
+          "raw_value": 6
+        },
+        {
+          "actions": [
+            "mission was aborted before terminal routing"
+          ],
+          "guards": [
+            "mState == 7"
+          ],
+          "name": "Aborted",
+          "raw_value": 7
+        },
+        {
+          "actions": [
+            "mission was rejected before terminal routing"
+          ],
+          "guards": [
+            "mState == 8"
+          ],
+          "name": "Rejected",
+          "raw_value": 8
+        },
+        {
+          "actions": [
+            "one step of a larger mission completed"
+          ],
+          "guards": [
+            "mState == 9"
+          ],
+          "name": "StepCompleted",
+          "raw_value": 9
+        }
+      ],
+      "relevant_functions": [
+        "0x00feebc0",
+        "0x00feb880",
+        "0x00febce0",
+        "0x00fec420",
+        "0x00fee020",
+        "0x00fee260",
+        "0x00fee310",
+        "cMission::SetState",
+        "cMission+0x7c"
+      ],
+      "relevant_structures": [
+        "Simulator::MissionState",
+        "Simulator::cMission",
+        "Simulator::cMissionManager"
+      ],
+      "side_effects": [
+        "active entry emits kMsgMissionUpdate",
+        "completion may update tutorial mission state and empire advancement",
+        "completion may unlock or grant listed and reward tools",
+        "completion may add money and apply relationships",
+        "manager persists first-communication, flight-school, mission-201, tracked-mission, recent-mission, and tutorial-state records",
+        "mission destruction follows Finished"
+      ],
+      "state_variable": {
+        "expression": "Simulator::cMission.mState+0x84",
+        "owner": "Simulator::cMission",
+        "type": "Simulator::MissionState"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "store Accepted",
+            "call OnMissionAccept",
+            "store Active",
+            "emit kMsgMissionUpdate"
+          ],
+          "cause": "mission accepted",
+          "event": "mission_state_change_requested",
+          "from_state": "Unaccepted",
+          "guard": "acceptance succeeds",
+          "to_state": "Active"
+        },
+        {
+          "actions": [
+            "store Completed",
+            "call OnMissionCompleted",
+            "route according to parent-mission structure"
+          ],
+          "cause": "mission completed",
+          "event": "mission_state_change_requested",
+          "from_state": "Active",
+          "guard": "completion succeeds",
+          "to_state": "Completed"
+        },
+        {
+          "actions": [
+            "call completion callback",
+            "store StepCompleted"
+          ],
+          "cause": "sub-mission step completed",
+          "event": "mission_completion_routed",
+          "from_state": "Completed",
+          "guard": "mission is a step of a larger mission",
+          "to_state": "StepCompleted"
+        },
+        {
+          "actions": [
+            "call completion callback",
+            "store Finished"
+          ],
+          "cause": "top-level mission completed",
+          "event": "mission_completion_routed",
+          "from_state": "Completed",
+          "guard": "mission is not a sub-mission step",
+          "to_state": "Finished"
+        },
+        {
+          "actions": [
+            "store Failed",
+            "call OnMissionFailed",
+            "store Finished"
+          ],
+          "cause": "mission failed",
+          "event": "mission_state_change_requested",
+          "from_state": "Active",
+          "guard": "failure condition or timeout occurs",
+          "to_state": "Failed"
+        },
+        {
+          "actions": [
+            "store Aborted",
+            "call OnMissionAbort",
+            "store Finished"
+          ],
+          "cause": "mission aborted",
+          "event": "mission_state_change_requested",
+          "from_state": "any_nonterminal_state",
+          "guard": "abort is accepted",
+          "to_state": "Aborted"
+        },
+        {
+          "actions": [
+            "store Rejected",
+            "call OnMissionReject",
+            "store Finished"
+          ],
+          "cause": "mission rejected",
+          "event": "mission_state_change_requested",
+          "from_state": "Unaccepted",
+          "guard": "rejection is accepted",
+          "to_state": "Rejected"
+        }
+      ],
+      "validation_strategy": [
+        "Trace SetState, OnMissionAccept, OnMissionCompleted, OnMissionFailed, OnMissionAbort, and OnMissionReject on one mission object.",
+        "Record mState, elapsed time, parent mission, and kMsgMissionUpdate delivery for every transition.",
+        "Exercise top-level, sub-mission, timeout, abort, and reject paths independently.",
+        "Correlate each completion reward field with pre/post mission-manager, empire, inventory, relationship, and tutorial state."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "low",
+        "reason": "The Cell progression fields and serializable boundary are SDK-confirmed, but writers, finite values, update triggers, save format, and stage-completion handoff are not recovered."
+      },
+      "consumers": [
+        "Cell persistence",
+        "Cell stage progression UI",
+        "Cell editor entry tracking"
+      ],
+      "entry_actions": [
+        {
+          "action": "materialize or restore cCellSerializableData through its simulator-serializable interface",
+          "conditions": [
+            "Cell state is loaded or created"
+          ],
+          "evidence": "SDK ISimulatorSerializableRefCounted relation"
+        }
+      ],
+      "evidence": [
+        {
+          "address": "cCellSerializableData+0x1c..0x34",
+          "claim": "four food progression integers, evolution points spent, and thirteen unlocked-part integers are persisted fields",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/Cell/cCellSerialiazibleData.h"
+        },
+        {
+          "address": "cCellSerializableData+0x80",
+          "claim": "six cCellMission records persist state, progress, plant progress, and one unknown integer",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/Cell/cCellSerialiazibleData.h"
+        },
+        {
+          "address": "cCellSerializableData+0xe2",
+          "claim": "mFirstEditorEntry records first entry into the editor",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/Cell/cCellSerialiazibleData.h"
+        },
+        {
+          "address": null,
+          "claim": "clean-room CellCell decoding exposes unlockType and triggersEscapeMission",
+          "kind": "clean_room_context",
+          "level": "APPROXIMATION",
+          "source": "src/assets/CellResource.hpp"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "serialize the current progression record",
+          "conditions": [
+            "Cell save or snapshot boundary"
+          ],
+          "evidence": "ISimulatorSerializableRefCounted interface; exact Write body unresolved"
+        }
+      ],
+      "generated_events": [
+        "cell_progress_record_changed"
+      ],
+      "guards": [
+        "food, plant, over-plant, over-animal, points-spent, unlocked-part, and mission domains are unknown",
+        "mFirstEditorEntry is a persisted milestone rather than proof of the current editor mode",
+        "unlockType and triggersEscapeMission are asset fields, not proven transition triggers"
+      ],
+      "name": "cell_stage_progression_persistence",
+      "possible_states": [
+        {
+          "actions": [
+            "no current progression record"
+          ],
+          "guards": [
+            "serializable data is not materialized"
+          ],
+          "name": "unmaterialized",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "hold current-session progression values"
+          ],
+          "guards": [
+            "serializable data is materialized"
+          ],
+          "name": "current_session",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "hold a serialized progression snapshot"
+          ],
+          "guards": [
+            "Cell state is written"
+          ],
+          "name": "serialized_snapshot",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "restore progression values into a current-session object"
+          ],
+          "guards": [
+            "a compatible snapshot is read"
+          ],
+          "name": "rehydrated",
+          "raw_value": null
+        }
+      ],
+      "relevant_functions": [],
+      "relevant_structures": [
+        "Simulator::Cell::cCellMission",
+        "Simulator::Cell::cCellSerializableData",
+        "Simulator::Cell::cCellCellResource"
+      ],
+      "side_effects": [
+        "persists independent food progression categories",
+        "persists spent evolution points and thirteen part slots",
+        "persists six Cell mission records",
+        "persists first-editor-entry milestone",
+        "does not yet define the stage-transition trigger or gameplay reward order"
+      ],
+      "state_variable": {
+        "expression": "composite(cCellSerializableData+0x1c..0xec)",
+        "owner": "Simulator::Cell::cCellSerializableData",
+        "type": "236-byte serializable progression record"
+      },
+      "status": "partial_persistence_model",
+      "transitions": [
+        {
+          "actions": [
+            "create a progression record"
+          ],
+          "cause": "Cell state creation",
+          "event": "cell_state_created",
+          "from_state": "unmaterialized",
+          "guard": "Cell state requires serializable data",
+          "to_state": "current_session"
+        },
+        {
+          "actions": [
+            "update one or more progression fields"
+          ],
+          "cause": "Cell gameplay progression",
+          "event": "cell_progress_record_changed",
+          "from_state": "current_session",
+          "guard": "exact field writers and thresholds unresolved",
+          "to_state": "current_session"
+        },
+        {
+          "actions": [
+            "write a progression snapshot"
+          ],
+          "cause": "save or snapshot",
+          "event": "cell_state_serialized",
+          "from_state": "current_session",
+          "guard": "serialization boundary is invoked",
+          "to_state": "serialized_snapshot"
+        },
+        {
+          "actions": [
+            "restore progression fields"
+          ],
+          "cause": "load or state restoration",
+          "event": "cell_state_deserialized",
+          "from_state": "serialized_snapshot",
+          "guard": "snapshot version is compatible",
+          "to_state": "rehydrated"
+        }
+      ],
+      "validation_strategy": [
+        "Enumerate all direct writers and readers of cCellSerializableData+0x1c through +0xec.",
+        "Run a new Cell game and record every progression field after food, part, mission, death, and editor-entry events.",
+        "Save, reload, and compare the full record byte-for-byte.",
+        "Trace the first stage-completion request and identify which Cell fields are consumed by editor or Creature-stage setup."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "medium",
+        "reason": "The collectable status bits, persisted unlock containers, registration body, and SDK unlock contracts are strong. Random-find, level, effect, highlighting, and all unlock callers remain unresolved."
+      },
+      "consumers": [
+        "collectable pages",
+        "creature editor",
+        "creature-stage part availability"
+      ],
+      "entry_actions": [
+        {
+          "action": "LoadConfig creates the category and item registries used by unlock evaluation",
+          "conditions": [
+            "creature collectables are configured"
+          ],
+          "evidence": "SDK cCollectableItems and address 0x00599440"
+        }
+      ],
+      "evidence": [
+        {
+          "address": "0x00598db0",
+          "claim": "AddUnlockableItem stores a keyed UnlockableItem record with level, percentage, placement, and effect fields",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cCollectableItems__AddUnlockableItem.c"
+        },
+        {
+          "address": "cCollectableItems+0x4d00",
+          "claim": "mItemStatusInfos stores per-item status bytes",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cCollectableItems.h"
+        },
+        {
+          "address": "cCollectableItems+0x6d5c",
+          "claim": "mUnlocksPerLevel, mUnlockPoints, and mUnlockedItems are persisted progression containers",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cCollectableItems.h"
+        },
+        {
+          "address": null,
+          "claim": "CollectableItemStatusFlags defines Unlocked=1, Highlighted=2, and NotUnlockable=4",
+          "kind": "sdk_name_only",
+          "level": "CONFIRMED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cCollectableItems.h"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "LockPart removes or changes unlocked status after caller-side visibility synchronization",
+          "conditions": [
+            "explicit lock request"
+          ],
+          "evidence": "SDK LockPart contract"
+        }
+      ],
+      "generated_events": [
+        "collectable_part_unlocked",
+        "collectable_unlock_rule_registered"
+      ],
+      "guards": [
+        "registration and unlock are distinct operations",
+        "NotUnlockable suppresses or marks an item",
+        "Highlighted is independent of Unlocked",
+        "UnlockPart and LockPart do not themselves update editor visibility",
+        "the cCreatureModeStrategy UnlockPart action is a separate consumer"
+      ],
+      "name": "collectable_part_unlock",
+      "possible_states": [
+        {
+          "actions": [
+            "retain no status entry for the item"
+          ],
+          "guards": [
+            "no status byte is present"
+          ],
+          "name": "unconfigured",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "retain unlock requirements but no Unlocked bit"
+          ],
+          "guards": [
+            "item exists in mUnlockableItems",
+            "Unlocked bit is clear"
+          ],
+          "name": "configured_locked",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "expose the unlocked part"
+          ],
+          "guards": [
+            "Unlocked bit is set"
+          ],
+          "name": "unlocked",
+          "raw_value": 1
+        },
+        {
+          "actions": [
+            "mark the item as newly available"
+          ],
+          "guards": [
+            "Highlighted bit is set"
+          ],
+          "name": "highlighted",
+          "raw_value": 2
+        },
+        {
+          "actions": [
+            "prevent normal unlock"
+          ],
+          "guards": [
+            "NotUnlockable bit is set"
+          ],
+          "name": "not_unlockable",
+          "raw_value": 4
+        }
+      ],
+      "relevant_functions": [
+        "0x00594b10",
+        "0x00596da0",
+        "0x00597390",
+        "0x00597400",
+        "0x00598db0",
+        "0x00598e90",
+        "0x00599440"
+      ],
+      "relevant_structures": [
+        "Simulator::CollectableItemStatusFlags",
+        "Simulator::cCollectableItemID",
+        "Simulator::cCollectableItems",
+        "Simulator::cCollectableItems::UnlockableItem"
+      ],
+      "side_effects": [
+        "registers unlock metadata",
+        "stores per-item status",
+        "appends unlocked item IDs",
+        "may update highlight and editor visibility through unresolved callers",
+        "updates unlock counters by level"
+      ],
+      "state_variable": {
+        "expression": "pair(cCollectableItems.mItemStatusInfos[itemID], membership(itemID, cCollectableItems.mUnlockedItems))",
+        "owner": "Simulator::cCollectableItems",
+        "type": "status byte plus unlocked-item membership"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "insert UnlockableItem metadata"
+          ],
+          "cause": "configuration or property registration",
+          "event": "collectable_unlock_rule_registered",
+          "from_state": "unconfigured",
+          "guard": "item key is accepted",
+          "to_state": "configured_locked"
+        },
+        {
+          "actions": [
+            "set Unlocked",
+            "add item to mUnlockedItems",
+            "update per-level and point counters",
+            "synchronize visibility"
+          ],
+          "cause": "part unlock rule succeeds",
+          "event": "collectable_part_unlocked",
+          "from_state": "configured_locked",
+          "guard": "level, random-find, effect, and NotUnlockable requirements pass; exact formula unresolved",
+          "to_state": "unlocked"
+        },
+        {
+          "actions": [
+            "set Highlighted"
+          ],
+          "cause": "newly unlocked item presentation",
+          "event": "collectable_part_unlocked",
+          "from_state": "unlocked",
+          "guard": "highlight follow-up is requested",
+          "to_state": "highlighted"
+        },
+        {
+          "actions": [
+            "clear Unlocked and remove membership"
+          ],
+          "cause": "part lock",
+          "event": "collectable_part_locked",
+          "from_state": "unlocked_or_highlighted",
+          "guard": "LockPart is called",
+          "to_state": "configured_locked"
+        }
+      ],
+      "validation_strategy": [
+        "Trace all writes to mItemStatusInfos and mUnlockedItems.",
+        "Exercise level threshold, random percentage below and above one, effect failure, NotUnlockable, highlight, relock, and editor visibility.",
+        "Correlate each cCreatureModeStrategy UnlockPart action with the exact item ID and resulting status byte.",
+        "Save and reload at each status boundary."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "low",
+        "reason": "Mission reward fields, inventory containers, and query contract are SDK-confirmed, but the grant writer and the distinction between unlock and grant are not resolved."
+      },
+      "consumers": [
+        "space inventory",
+        "tool selection UI",
+        "mission rewards"
+      ],
+      "entry_actions": [
+        {
+          "action": "populate mUnlockableTools and ordinary inventory through unresolved mission or load paths",
+          "conditions": [
+            "player inventory is initialized or rewards are applied"
+          ],
+          "evidence": "SDK layout and query contract"
+        }
+      ],
+      "evidence": [
+        {
+          "address": "cMission+0xa4",
+          "claim": "mRewardToolID stores a reward tool ResourceKey",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cMission.h"
+        },
+        {
+          "address": "cMission+0x11c",
+          "claim": "mUnlockToolIDList stores the mission's tool keys",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cMission.h"
+        },
+        {
+          "address": "cPlayerInventory+0x4c",
+          "claim": "mUnlockableTools and mUpgradedToolIds are player-inventory progression containers",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cPlayerInventory.h"
+        },
+        {
+          "address": "0x00ff3bf0",
+          "claim": "SDK contract checks both ordinary inventory and mUnlockableTools for a requested tool",
+          "kind": "sdk_semantics",
+          "level": "SUPPORTED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cPlayerInventory.h"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "no grant or removal; GetUnlockableTool is a query",
+          "conditions": [
+            "tool lookup completes"
+          ],
+          "evidence": "0x00ff3bf0"
+        }
+      ],
+      "generated_events": [
+        "mission_completion_rewards",
+        "unlockable_tool_requested"
+      ],
+      "guards": [
+        "mission data mentioning a tool does not prove inventory availability",
+        "the SDK completion comment says unlock or give, leaving the persistence distinction unresolved",
+        "ordinary inventory and mUnlockableTools are separate query sources"
+      ],
+      "name": "mission_tool_unlock_availability",
+      "possible_states": [
+        {
+          "actions": [
+            "query returns null"
+          ],
+          "guards": [
+            "key is in neither queried source"
+          ],
+          "name": "not_available",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "query resolves ordinary inventory entry"
+          ],
+          "guards": [
+            "key is in mInventoryItems"
+          ],
+          "name": "ordinary_inventory_match",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "query resolves mUnlockableTools entry"
+          ],
+          "guards": [
+            "key is in mUnlockableTools"
+          ],
+          "name": "unlockable_tool_match",
+          "raw_value": null
+        }
+      ],
+      "relevant_functions": [
+        "0x00ff3bf0",
+        "cMission+0x94"
+      ],
+      "relevant_structures": [
+        "Simulator::cMission",
+        "Simulator::cPlayerInventory",
+        "Simulator::cSpaceInventoryItem"
+      ],
+      "side_effects": [
+        "GetUnlockableTool itself is read-only",
+        "mission completion is the documented owner of tool unlock or grant side effects",
+        "mUpgradedToolIds records upgrades independently of availability"
+      ],
+      "state_variable": {
+        "expression": "membership(ResourceKey, cPlayerInventory.mInventoryItems + mUnlockableTools)",
+        "owner": "Simulator::cPlayerInventory",
+        "type": "set membership"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "record reward and unlock keys on the mission"
+          ],
+          "cause": "mission configuration",
+          "event": "mission_created",
+          "from_state": "not_available",
+          "guard": "mission defines tool keys",
+          "to_state": "not_available"
+        },
+        {
+          "actions": [
+            "apply documented completion callback"
+          ],
+          "cause": "mission completion",
+          "event": "mission_completion_rewards",
+          "from_state": "not_available",
+          "guard": "resource key is in mUnlockToolIDList or equals mRewardToolID",
+          "to_state": "unlockable_tool_match_or_ordinary_inventory_match"
+        },
+        {
+          "actions": [
+            "return matching tool"
+          ],
+          "cause": "tool query",
+          "event": "unlockable_tool_requested",
+          "from_state": "ordinary_inventory_match_or_unlockable_tool_match",
+          "guard": "requested key matches a queried source",
+          "to_state": "ordinary_inventory_match_or_unlockable_tool_match"
+        }
+      ],
+      "validation_strategy": [
+        "Trace every writer of mUnlockableTools and mUpgradedToolIds.",
+        "Complete missions with empty, single, duplicate, already-owned, and reward-tool-only configurations.",
+        "Record whether each result is unlocked, granted, upgraded, or merely present in a query-only list.",
+        "Save and reload before and after each reward."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "medium",
+        "reason": "Manager layout, mode IDs, lifecycle interface, and message IDs are SDK-confirmed. Native same-mode and failure behavior plus exact callback order are not runtime-observed."
+      },
+      "consumers": [
+        "stage code",
+        "editor code",
+        "main-menu code",
+        "mode transition UI"
+      ],
+      "entry_actions": [
+        {
+          "action": "resolve the requested mode ID in mEntries",
+          "conditions": [
+            "SetActiveMode finds a registered mode"
+          ],
+          "evidence": "SDK IGameModeManager contract"
+        }
+      ],
+      "evidence": [
+        {
+          "address": "cGameModeManager+0x14",
+          "claim": "mEntries is a vector of ModeEntry records",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/App/cGameModeManager.h"
+        },
+        {
+          "address": "cGameModeManager+0x28",
+          "claim": "mnActiveIndex identifies the current entry",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/App/cGameModeManager.h"
+        },
+        {
+          "address": "0x007d8cf0",
+          "claim": "SDK documents OnExit on the current mode and OnEnter on the selected mode",
+          "kind": "sdk_semantics",
+          "level": "SUPPORTED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/App/IGameModeManager.h"
+        },
+        {
+          "address": null,
+          "claim": "GameModeIDs includes Cell 0x01654c00, Creature 0x01654c01, Tribe 0x01654c02, Civilization 0x01654c04, Space 0x01654c05, Edit 0x01654c06, Load 0x01654c08, Scenario 0x01654c10, and Editor 0x00dbdba1",
+          "kind": "sdk_name_only",
+          "level": "CONFIRMED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/CommonIDs.h"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "call the current mode's OnExit and publish kMsgOnModeExit",
+          "conditions": [
+            "a different active mode is being replaced"
+          ],
+          "evidence": "SDK manager contract; exact event timing unresolved"
+        }
+      ],
+      "generated_events": [
+        "game_mode_change_requested",
+        "game_mode_enter_message",
+        "game_mode_exit_message"
+      ],
+      "guards": [
+        "the target must exist in mEntries",
+        "active identity is an opaque registered mode ID plus entry index",
+        "same-mode and invalid-index behavior is unresolved"
+      ],
+      "name": "app_game_mode_transition",
+      "possible_states": [
+        {
+          "actions": [
+            "there is no active mode"
+          ],
+          "guards": [
+            "active entry is absent"
+          ],
+          "name": "no_active_mode",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "Cell mode owns lifecycle"
+          ],
+          "guards": [
+            "active mode ID == 0x01654c00"
+          ],
+          "name": "Cell",
+          "raw_value": 23405792
+        },
+        {
+          "actions": [
+            "Creature mode owns lifecycle"
+          ],
+          "guards": [
+            "active mode ID == 0x01654c01"
+          ],
+          "name": "Creature",
+          "raw_value": 23405793
+        },
+        {
+          "actions": [
+            "Tribe mode owns lifecycle"
+          ],
+          "guards": [
+            "active mode ID == 0x01654c02"
+          ],
+          "name": "Tribe",
+          "raw_value": 23405794
+        },
+        {
+          "actions": [
+            "Civilization mode owns lifecycle"
+          ],
+          "guards": [
+            "active mode ID == 0x01654c04"
+          ],
+          "name": "Civilization",
+          "raw_value": 23405796
+        },
+        {
+          "actions": [
+            "Space mode owns lifecycle"
+          ],
+          "guards": [
+            "active mode ID == 0x01654c05"
+          ],
+          "name": "Space",
+          "raw_value": 23405797
+        },
+        {
+          "actions": [
+            "game-mode edit lifecycle"
+          ],
+          "guards": [
+            "active mode ID == 0x01654c06"
+          ],
+          "name": "EditGameMode",
+          "raw_value": 23405798
+        },
+        {
+          "actions": [
+            "load-game lifecycle"
+          ],
+          "guards": [
+            "active mode ID == 0x01654c08"
+          ],
+          "name": "LoadGame",
+          "raw_value": 23405800
+        },
+        {
+          "actions": [
+            "scenario lifecycle"
+          ],
+          "guards": [
+            "active mode ID == 0x01654c10"
+          ],
+          "name": "Scenario",
+          "raw_value": 23405808
+        },
+        {
+          "actions": [
+            "editor lifecycle"
+          ],
+          "guards": [
+            "active mode ID == 0x00dbdba1"
+          ],
+          "name": "Editor",
+          "raw_value": 23034273
+        }
+      ],
+      "relevant_functions": [
+        "0x0067dcd0",
+        "0x007d8cf0",
+        "0x007d8d40",
+        "0x00b3d420"
+      ],
+      "relevant_structures": [
+        "App::IGameMode",
+        "App::IGameModeManager",
+        "App::cGameModeManager",
+        "App::cGameModeManager::ModeEntry"
+      ],
+      "side_effects": [
+        "exits the current mode",
+        "changes active mode and camera/viewer ownership",
+        "enters the target mode",
+        "emits mode-exit and mode-enter messages",
+        "editor request processing is a major entry path"
+      ],
+      "state_variable": {
+        "expression": "pair(App::cGameModeManager.mnActiveIndex+0x28, selected ModeEntry.mModeID)",
+        "owner": "App::cGameModeManager",
+        "type": "signed active index plus uint32 mode identifier"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "select target entry",
+            "call target OnEnter",
+            "publish kMsgOnModeEnter"
+          ],
+          "cause": "first mode activation",
+          "event": "game_mode_change_requested",
+          "from_state": "no_active_mode",
+          "guard": "target mode is registered",
+          "to_state": "target_mode"
+        },
+        {
+          "actions": [
+            "call current OnExit",
+            "publish kMsgOnModeExit",
+            "select target entry",
+            "call target OnEnter",
+            "publish kMsgOnModeEnter"
+          ],
+          "cause": "stage or editor transition",
+          "event": "game_mode_change_requested",
+          "from_state": "active_mode",
+          "guard": "target mode exists and differs from current mode",
+          "to_state": "target_mode"
+        },
+        {
+          "actions": [
+            "return failure"
+          ],
+          "cause": "unknown mode request",
+          "event": "game_mode_change_requested",
+          "from_state": "any",
+          "guard": "target mode is not registered",
+          "to_state": "same"
+        }
+      ],
+      "validation_strategy": [
+        "Trace SetActiveMode and SetActiveModeAt with the same mode, unknown ID, invalid index, and valid different mode.",
+        "Record OnExit, active-index change, OnEnter, and both message deliveries on one object.",
+        "Trace EditorRequest::Submit from each caller game mode into editor mode and back.",
+        "Resolve the complete mode registration list and names."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "medium",
+        "reason": "The three raw modes, current-mode write, old-mode branches, controller changes, and animation messages are visible in decompilation. Some guards and helper meanings remain unresolved."
+      },
+      "consumers": [
+        "editor animation world",
+        "editor UI",
+        "editor input"
+      ],
+      "entry_actions": [
+        {
+          "action": "read current mode from editor+0x31c and apply early guards",
+          "conditions": [
+            "SetActiveMode is called"
+          ],
+          "evidence": "0x00587270"
+        }
+      ],
+      "evidence": [
+        {
+          "address": "0x00587270",
+          "claim": "the old mode is branched as raw value 0, 1, or 2 before the requested mode is written at editor+0x31c",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__SetActiveMode.c"
+        },
+        {
+          "address": "0x00587270",
+          "claim": "BuildMode-to-BuildMode is rejected, and another unresolved mode-field guard can also reject the request",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__SetActiveMode.c"
+        },
+        {
+          "address": null,
+          "claim": "Editors::Mode defines BuildMode=0, PaintMode=1, and PlayMode=2",
+          "kind": "sdk_name_only",
+          "level": "CONFIRMED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Editors/Editor.h"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "rebuild selected editor state, notify animation/controller consumers, and run final UI setup",
+          "conditions": [
+            "transition accepted"
+          ],
+          "evidence": "0x00587270"
+        }
+      ],
+      "generated_events": [
+        "editor_internal_mode_changed"
+      ],
+      "guards": [
+        "BuildMode-to-BuildMode is a no-op",
+        "an unresolved editor+0x38c value other than zero and six can reject a transition",
+        "old PaintMode updates controller flags for all creature controllers",
+        "old PlayMode enters a different animation and controller setup path"
+      ],
+      "name": "editor_internal_mode",
+      "possible_states": [
+        {
+          "actions": [
+            "maintain and edit the creation"
+          ],
+          "guards": [
+            "current mode == 0"
+          ],
+          "name": "BuildMode",
+          "raw_value": 0
+        },
+        {
+          "actions": [
+            "paint and update the animation world"
+          ],
+          "guards": [
+            "current mode == 1"
+          ],
+          "name": "PaintMode",
+          "raw_value": 1
+        },
+        {
+          "actions": [
+            "play the creation in the editor world"
+          ],
+          "guards": [
+            "current mode == 2"
+          ],
+          "name": "PlayMode",
+          "raw_value": 2
+        }
+      ],
+      "relevant_functions": [
+        "0x00582fe0",
+        "0x00587270",
+        "0x0058be50",
+        "0x0058e6d0",
+        "0x00591fa0"
+      ],
+      "relevant_structures": [
+        "Editors::cEditor",
+        "Editors::Mode",
+        "Editors::cEditorAnimWorld",
+        "Editors::EditorCreatureController"
+      ],
+      "side_effects": [
+        "destroys or recreates animation creatures under pointer guards",
+        "changes animation target position and angle",
+        "updates creature controller mode flags",
+        "sends mode-specific animation messages including 0xcb52be29 and 0x565d8223",
+        "updates editor UI and message handling"
+      ],
+      "state_variable": {
+        "expression": "Editors::cEditor+0x31c",
+        "owner": "Editors::cEditor",
+        "type": "Editors::Mode"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "run the BuildMode old-mode path",
+            "store BuildMode",
+            "rebuild animation state",
+            "send editor animation message 0xcb52be29"
+          ],
+          "cause": "editor build request",
+          "event": "editor_internal_mode_changed",
+          "from_state": "any",
+          "guard": "request is BuildMode, current mode is not BuildMode, and unresolved guard permits transition",
+          "to_state": "BuildMode"
+        },
+        {
+          "actions": [
+            "clear current PaintMode controller flag",
+            "set all creature controllers to mode 3",
+            "store PaintMode",
+            "send editor animation message 0x565d8223"
+          ],
+          "cause": "editor paint request",
+          "event": "editor_internal_mode_changed",
+          "from_state": "any",
+          "guard": "unresolved guard permits transition",
+          "to_state": "PaintMode"
+        },
+        {
+          "actions": [
+            "run PlayMode animation and controller setup",
+            "store PlayMode",
+            "set target position and angle"
+          ],
+          "cause": "editor play request",
+          "event": "editor_internal_mode_changed",
+          "from_state": "any",
+          "guard": "unresolved guard permits transition",
+          "to_state": "PlayMode"
+        }
+      ],
+      "validation_strategy": [
+        "Exercise all nine distinct mode pairs plus same-mode requests.",
+        "Record editor+0x31c, editor+0x38c, creature-controller modes, animation-world pointer, and emitted messages.",
+        "Trace cEditor::OnEnter and OnExit around the internal mode change and the App game-mode transition.",
+        "Resolve editor+0x38c and animation-message 0xcb52be29/0x565d8223 meanings."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "low",
+        "reason": "The progress mutation and notification are SDK-documented, but badge status values, thresholds, event producers, and unlock behavior are not recovered."
+      },
+      "consumers": [
+        "badge UI",
+        "space-stage event systems"
+      ],
+      "entry_actions": [
+        {
+          "action": "resolve the selected badge progress entry",
+          "conditions": [
+            "AddToBadgeProgress is called"
+          ],
+          "evidence": "SDK AddToBadgeProgress contract"
+        }
+      ],
+      "evidence": [
+        {
+          "address": "0x00fe52c0",
+          "claim": "AddToBadgeProgress adds the supplied value to existing badge progress and emits message 0x38cf2fb",
+          "kind": "sdk_semantics",
+          "level": "SUPPORTED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cBadgeManager.h"
+        },
+        {
+          "address": "cBadgeManager+0x2c",
+          "claim": "mBadgeMap stores badge state or progress and mEventCounts stores event-kind counters",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cBadgeManager.h"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "publish message 0x38cf2fb",
+          "conditions": [
+            "progress update completes"
+          ],
+          "evidence": "SDK AddToBadgeProgress contract"
+        }
+      ],
+      "generated_events": [
+        "badge_progress_changed"
+      ],
+      "guards": [
+        "the semantic domain of mBadgeMap values is unresolved",
+        "zero, negative, overflow, and missing-entry behavior is unresolved",
+        "an event may count separately from directly adding badge progress"
+      ],
+      "name": "badge_progress_accumulation",
+      "possible_states": [
+        {
+          "actions": [
+            "retain current progress and event count"
+          ],
+          "guards": [
+            "state domain unresolved"
+          ],
+          "name": "unchanged",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "increase progress and optionally event count"
+          ],
+          "guards": [
+            "a positive valid delta is added"
+          ],
+          "name": "progress_increased",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "decrease progress or event count"
+          ],
+          "guards": [
+            "a negative valid delta is added"
+          ],
+          "name": "progress_decreased",
+          "raw_value": null
+        }
+      ],
+      "relevant_functions": [
+        "0x00fe52c0"
+      ],
+      "relevant_structures": [
+        "Simulator::BadgeManagerEvent",
+        "Simulator::cBadgeManager"
+      ],
+      "side_effects": [
+        "updates a badge progress map entry",
+        "may update event counters through the unresolved body",
+        "emits message 0x38cf2fb",
+        "does not expose the exact badge-unlock side effect"
+      ],
+      "state_variable": {
+        "expression": "pair(Simulator::cBadgeManager.mBadgeMap+0x2c, mEventCounts+0x64)",
+        "owner": "Simulator::cBadgeManager",
+        "type": "badge-state integer plus event-count integer"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "add addedValue to the selected badge progress"
+          ],
+          "cause": "badge-relevant event",
+          "event": "badge_progress_changed",
+          "from_state": "any",
+          "guard": "selected badge entry is valid; missing-entry behavior unresolved",
+          "to_state": "progress_updated"
+        }
+      ],
+      "validation_strategy": [
+        "Decompile AddToBadgeProgress and identify the exact map writes and zero or negative guards.",
+        "Enumerate BadgeManagerEvent values and map every producer to a mission, event, or gameplay action.",
+        "Trace every completion threshold and badge unlock state write.",
+        "Correlate message 0x38cf2fb delivery with UI refresh."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "low",
+        "reason": "Growth and herd-evolution fields and GrowUp's virtual slot are SDK-confirmed, but timer expiry, growth stages, DNA evaluation, and evolution transition bodies are unresolved."
+      },
+      "consumers": [
+        "NPC tribe simulation",
+        "herd simulation",
+        "creature lifecycle"
+      ],
+      "entry_actions": [
+        {
+          "action": "create or obtain a timer for a baby creature in mBabyGrowthTimers",
+          "conditions": [
+            "NPC tribe growth system schedules maturation"
+          ],
+          "evidence": "SDK cNpcTribeController layout"
+        }
+      ],
+      "evidence": [
+        {
+          "address": "cNpcTribeController+0x60",
+          "claim": "mBabyGrowthTimers maps cCreatureBase owners to timers",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cNpcTribeController.h"
+        },
+        {
+          "address": "cCreatureBase+0x78",
+          "claim": "GrowUp is a virtual callback",
+          "kind": "sdk_name_only",
+          "level": "CONFIRMED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cCreatureBase.h"
+        },
+        {
+          "address": "cHerd+0x85",
+          "claim": "cHerd stores mbShouldEvolve and mDNAEvolutionThreshold",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cHerd.h"
+        },
+        {
+          "address": "cHerd+0xa8",
+          "claim": "cHerd stores evolved species profile keys, generation, target herd size, and activation brain levels",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cHerd.h"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "remove or replace the completed growth timer and update herd membership",
+          "conditions": [
+            "growth callback completes"
+          ],
+          "evidence": "ownership inferred; exact mutation unresolved"
+        }
+      ],
+      "generated_events": [
+        "npc_baby_growth_timer_expired"
+      ],
+      "guards": [
+        "timer ownership is known but the exact scheduling body is unresolved",
+        "mbShouldEvolve and DNA threshold domains are not recovered",
+        "herd evolution may be independent of individual baby growth"
+      ],
+      "name": "npc_baby_growth_and_herd_evolution",
+      "possible_states": [
+        {
+          "actions": [
+            "baby growth is pending"
+          ],
+          "guards": [
+            "growth timer exists"
+          ],
+          "name": "baby_scheduled",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "invoke growth transition"
+          ],
+          "guards": [
+            "growth timer expires"
+          ],
+          "name": "growth_due",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "retain herd without DNA transition"
+          ],
+          "guards": [
+            "mbShouldEvolve is false or threshold is not met"
+          ],
+          "name": "herd_stable",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "select an evolved species and update generation"
+          ],
+          "guards": [
+            "mbShouldEvolve is true and DNA threshold is met"
+          ],
+          "name": "herd_evolution_due",
+          "raw_value": null
+        }
+      ],
+      "relevant_functions": [
+        "0x00cc8c90",
+        "cCreatureBase+0x78"
+      ],
+      "relevant_structures": [
+        "Simulator::cNpcTribeController",
+        "Simulator::cHerd",
+        "Simulator::cCreatureBase"
+      ],
+      "side_effects": [
+        "baby timers may invoke GrowUp",
+        "herd evolution may select among up to four evolved species profile keys",
+        "generation and herd size are progression fields",
+        "activation and deactivation brain levels gate herd behavior"
+      ],
+      "state_variable": {
+        "expression": "pair(cNpcTribeController.mBabyGrowthTimers[creature], cHerd.{mbShouldEvolve,mDNAEvolutionThreshold,mGeneration})",
+        "owner": "Simulator::cNpcTribeController and Simulator::cHerd",
+        "type": "timer map plus herd evolution tuple"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "invoke cCreatureBase::GrowUp"
+          ],
+          "cause": "baby maturation timer expires",
+          "event": "npc_baby_growth_timer_expired",
+          "from_state": "baby_scheduled",
+          "guard": "timer is due",
+          "to_state": "growth_due"
+        },
+        {
+          "actions": [
+            "retain current herd species"
+          ],
+          "cause": "herd DNA check",
+          "event": "herd_evolution_checked",
+          "from_state": "herd_stable",
+          "guard": "mbShouldEvolve is false or threshold is not met",
+          "to_state": "herd_stable"
+        },
+        {
+          "actions": [
+            "select evolved species profile and advance generation"
+          ],
+          "cause": "herd DNA threshold met",
+          "event": "herd_evolution_checked",
+          "from_state": "herd_stable",
+          "guard": "mbShouldEvolve is true and threshold condition passes",
+          "to_state": "herd_evolution_due"
+        }
+      ],
+      "validation_strategy": [
+        "Trace every insertion, read, and removal in mBabyGrowthTimers.",
+        "Resolve the concrete GrowUp override and record the pre/post creature stage fields.",
+        "Enumerate writes to mbShouldEvolve and mDNAEvolutionThreshold.",
+        "Correlate DNA checks with evolved species selection and generation updates."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "low",
+        "reason": "The per-stage consequence-trait fields and social/combat progress values are SDK-confirmed, but their writers, thresholds, and stage handoff are not recovered."
+      },
+      "consumers": [
+        "editor request construction",
+        "stage-specific player traits"
+      ],
+      "entry_actions": [
+        {
+          "action": "load one consequence trait key per progression stage",
+          "conditions": [
+            "player data is restored"
+          ],
+          "evidence": "SDK cPlayer layout"
+        }
+      ],
+      "evidence": [
+        {
+          "address": "cPlayer+0x10fc..0x110c",
+          "claim": "cPlayer stores consequence trait IDs for Cell, Creature, Tribe, Civilization, and Space",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cPlayer.h"
+        },
+        {
+          "address": "cPlayer+0x1278",
+          "claim": "mSocialTraitProgress and mCombatTraitProgress store float progression values",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cPlayer.h"
+        },
+        {
+          "address": "EditorRequest+0x70",
+          "claim": "EditorRequest carries ConsequenceTraits values in Cell-to-Space order",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Editors/EditorRequest.h"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "pass the trait vector to editor setup or stage handoff",
+          "conditions": [
+            "EditorRequest::Submit processes the request"
+          ],
+          "evidence": "SDK EditorRequest layout; exact consumer unresolved"
+        }
+      ],
+      "generated_events": [
+        "editor_request_submitted"
+      ],
+      "guards": [
+        "one stored consequence trait exists per stage",
+        "social and combat progress domains and thresholds are unknown",
+        "EditorRequest trait order is named but mutation semantics are not"
+      ],
+      "name": "consequence_trait_progression",
+      "possible_states": [
+        {
+          "actions": [
+            "retain current trait and progress values"
+          ],
+          "guards": [
+            "no progression event"
+          ],
+          "name": "unchanged",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "update social-trait progress"
+          ],
+          "guards": [
+            "social progression event occurs"
+          ],
+          "name": "social_progress_changed",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "update combat-trait progress"
+          ],
+          "guards": [
+            "combat progression event occurs"
+          ],
+          "name": "combat_progress_changed",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "replace one stage consequence trait"
+          ],
+          "guards": [
+            "stage-completion or editor handoff selects a new trait"
+          ],
+          "name": "trait_changed",
+          "raw_value": null
+        }
+      ],
+      "relevant_functions": [
+        "Editors::EditorRequest::Submit"
+      ],
+      "relevant_structures": [
+        "Editors::EditorRequest",
+        "Simulator::cPlayer"
+      ],
+      "side_effects": [
+        "stores up to five stage consequence traits",
+        "stores separate social and combat progress floats",
+        "passes a five-value trait vector through editor requests",
+        "exact stage-completion mutation remains unresolved"
+      ],
+      "state_variable": {
+        "expression": "pair(cPlayer+0x10fc..0x110c, pair(cPlayer+0x1278,cPlayer+0x127c))",
+        "owner": "Simulator::cPlayer",
+        "type": "five uint32 trait IDs plus two float progress values"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "add or set social or combat progress"
+          ],
+          "cause": "trait-relevant gameplay",
+          "event": "consequence_trait_progress_requested",
+          "from_state": "unchanged",
+          "guard": "specific event and threshold unresolved",
+          "to_state": "social_or_combat_progress_changed"
+        },
+        {
+          "actions": [
+            "replace a stage consequence trait and update social/combat progress"
+          ],
+          "cause": "stage progression",
+          "event": "stage_consequence_trait_resolved",
+          "from_state": "any",
+          "guard": "stage-completion rule and resulting trait unresolved",
+          "to_state": "trait_changed"
+        },
+        {
+          "actions": [
+            "populate mConsequenceTraits in stage order"
+          ],
+          "cause": "editor handoff",
+          "event": "editor_request_submitted",
+          "from_state": "any",
+          "guard": "calling stage provides five values",
+          "to_state": "same"
+        }
+      ],
+      "validation_strategy": [
+        "Enumerate all writers and readers of cPlayer+0x10fc through +0x110c and +0x1278 through +0x127c.",
+        "Trace one consequence selection from stage-completion event to the next stage and editor request.",
+        "Correlate social and combat progress deltas with the gameplay events that produce them.",
+        "Record EditorRequest.mConsequenceTraits before Submit and after editor entry."
+      ]
+    }
+  ],
+  "temporal_semantics": {
+    "call_order": [
+      {
+        "claim": "For nonzero evolution points, AddEvolutionPoints stores the clamped point value before adding goal progress and conditionally dispatching the strategy action.",
+        "evidence": [
+          "0x00d2e8a0"
+        ],
+        "order": [
+          "clamp and store evolution points",
+          "add cPlayer.mCurrentGoalProgress",
+          "update helpers",
+          "conditional strategy action"
+        ]
+      },
+      {
+        "claim": "The SDK describes acceptance as an immediate Accepted-to-Active sequence with OnMissionAccept and an Active-entry update message.",
+        "evidence": [
+          "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cMission.h",
+          "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/SimulatorEnums.h"
+        ],
+        "order": [
+          "Accepted",
+          "OnMissionAccept",
+          "Active",
+          "kMsgMissionUpdate"
+        ]
+      },
+      {
+        "claim": "The SDK describes mission completion as a transient Completed state routed to StepCompleted for sub-missions or Finished otherwise.",
+        "evidence": [
+          "~/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/SimulatorEnums.h"
+        ],
+        "order": [
+          "Completed",
+          "OnMissionCompleted",
+          "StepCompleted or Finished"
+        ]
+      },
+      {
+        "claim": "The SDK game-mode contract exits the current mode before entering the target and publishes mode lifecycle messages; exact native event placement is not runtime-observed.",
+        "evidence": [
+          "~/apps/Spore-ModAPI/Spore ModAPI/Spore/App/IGameModeManager.h"
+        ],
+        "order": [
+          "current OnExit",
+          "active-mode commit",
+          "target OnEnter",
+          "mode messages"
+        ]
+      },
+      {
+        "claim": "The editor internal mode body runs old-mode cleanup and world updates before storing the new mode at editor+0x31c.",
+        "evidence": [
+          "0x00587270"
+        ],
+        "order": [
+          "old-mode branch",
+          "shared cleanup and controller updates",
+          "store new mode",
+          "new-mode setup and animation message"
+        ]
+      }
+    ],
+    "ownership": [
+      {
+        "evidence_level": "CONFIRMED",
+        "fact": "Simulator::cCreatureGameData owns current brain level and evolution points; the additive mutation also writes cPlayer.mCurrentGoalProgress."
+      },
+      {
+        "evidence_level": "CONFIRMED",
+        "fact": "Simulator::cMission owns the active MissionState and cMissionManager owns saved tutorial and tracked-mission state."
+      },
+      {
+        "evidence_level": "CONFIRMED",
+        "fact": "Simulator::Cell::cCellSerializableData owns the Cell progression snapshot and first-editor-entry milestone."
+      },
+      {
+        "evidence_level": "CONFIRMED",
+        "fact": "Simulator::cCollectableItems owns unlock configuration, per-item status, per-level unlock counts, unlock points, and unlocked-item membership."
+      },
+      {
+        "evidence_level": "CONFIRMED",
+        "fact": "App::cGameModeManager owns the registered mode vector and active index; Editors::cEditor separately owns its internal Build, Paint, and Play mode."
+      },
+      {
+        "evidence_level": "CONFIRMED",
+        "fact": "Simulator::cBadgeManager owns badge state, stage state, and event counters; Simulator::cPlayer owns stage consequence traits and social/combat progress."
+      },
+      {
+        "evidence_level": "CONFIRMED",
+        "fact": "Simulator::cHerd owns herd DNA-evolution state; Simulator::cNpcTribeController owns the baby-growth timer map."
+      }
+    ],
+    "state_variable_invariants": [
+      "AddEvolutionPoints accepts signed input; only zero is an explicit no-op and only the stored point balance is capped.",
+      "cPlayer.mCurrentGoalProgress receives the requested delta, which can differ from the clamped evolution-point delta.",
+      "GetEvoPointsToNextBrainLevel returns zero for every level outside 0 through 3.",
+      "SetEvolutionPoints is a raw assignment and does not run AddEvolutionPoints side effects.",
+      "MissionState value 4 is absent from the SDK enum.",
+      "cMission.SetState clears display/title state on every state write and only the Active entry is documented to emit kMsgMissionUpdate.",
+      "Cell progression fields form a persistence snapshot, not a recovered finite gameplay-state enum.",
+      "Collectable registration, unlock, highlight, and NotUnlockable status are distinct concepts.",
+      "A mission tool key is not equivalent to an mUnlockableTools inventory entry until the unresolved reward writer runs.",
+      "App game mode and Editors::cEditor internal mode are separate state machines.",
+      "No transition in this domain has positive original-runtime evidence."
+    ],
+    "update_loops": [
+      {
+        "evidence": "SDK virtual interface",
+        "loop": "App::IGameModeManager active-mode lifecycle",
+        "status": "OnExit, active commit, OnEnter, and messages are SDK-defined; same-mode and failure paths are unresolved."
+      },
+      {
+        "evidence": "committed decompilation",
+        "loop": "Editors::cEditor::SetActiveMode",
+        "status": "old-mode branches and new-mode write are static; runtime reachability and guard meanings are unresolved."
+      },
+      {
+        "evidence": "SDK contract",
+        "loop": "Simulator::cMission::Update while Active",
+        "status": "updates elapsed time, fails on timeout, advances clocks, and sends message 0x38cf2fd sometimes; exact update frequency and return-state writers are unresolved."
+      },
+      {
+        "evidence": "SDK layout",
+        "loop": "Simulator::cNpcTribeController growth timers",
+        "status": "timer ownership is confirmed; expiry callback and GrowUp override are unresolved."
+      },
+      {
+        "evidence": "SDK layout",
+        "loop": "Simulator::cBadgeManager event counters",
+        "status": "event storage is confirmed; producers and update loop are unresolved."
+      }
+    ]
+  },
+  "unresolved": [
+    {
+      "blocking_question": "What are the exact values of DAT_01582e38, DAT_01582e3c, DAT_01582e40, DAT_01582e44, and DAT_01582e54, and are the first four absolute or incremental requirements?",
+      "evidence": [
+        "0x00d2e380",
+        "0x00d2e8a0"
+      ],
+      "id": "evolution_numeric_thresholds",
+      "impact": "Brain-level requirements and maximum point balance can be structurally modeled but not reproduced numerically.",
+      "required_evidence": "Pinned binary data values plus a controlled progression trace across levels 0 through 4.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "Which function writes cCreatureGameData.mCurrentBrainLevel and what guards decide when a point threshold produces a level transition?",
+      "evidence": [
+        "0x00d2e380",
+        "0x00d2e8a0"
+      ],
+      "id": "brain_level_transition_writer",
+      "impact": "The point accumulation machine is complete, but the actual level-advancement state transition remains unproved.",
+      "required_evidence": "All writes to cCreatureGameData+0x00 and callers of the action 0x45ab96e consumer.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "What does cCreatureModeStrategy action 0x45ab96e do, and what exact mode or context guard surrounds it?",
+      "evidence": [
+        "0x00d2e8a0"
+      ],
+      "id": "evolution_strategy_action",
+      "impact": "UI, avatar, and part-unlock side effects of evolution-point gain cannot be named.",
+      "required_evidence": "Resolved action dispatch table, handler body, payload layout, and callers.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "What are the exact SetState call order, all valid source states, and concrete mission-type overrides for every MissionState transition?",
+      "evidence": [
+        "cMission::SetState",
+        "cMission+0x88..0x98"
+      ],
+      "id": "mission_transition_implementation",
+      "impact": "The SDK lifecycle is known, but malformed or alternate source-to-state paths and callback ordering are not.",
+      "required_evidence": "Correct native SetState body, all virtual overrides, and a mission transition trace.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "On mission completion, are listed tools unlocked, granted, or transformed into inventory entries, and in what order are money and relationships applied?",
+      "evidence": [
+        "cMission+0x94",
+        "cMission+0xa4",
+        "cMission+0x11c",
+        "0x00ff3bf0"
+      ],
+      "id": "mission_reward_payout",
+      "impact": "Mission completion cannot yet be connected to a closed tool-unlock state machine.",
+      "required_evidence": "Concrete OnMissionCompleted body, mUnlockableTools writers, and reward traces.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "Which values and writers define Cell food progression, evolution points spent, unlocked parts, six Cell mission records, and first-editor-entry?",
+      "evidence": [
+        "Simulator::Cell::cCellSerializableData"
+      ],
+      "id": "cell_progression_semantics",
+      "impact": "The Cell record is mapped as persistence shape only; progression and stage-completion transitions cannot be reproduced.",
+      "required_evidence": "All field writers, save/load version mapping, and a complete Cell progression trace.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "How do level, itemUnlockFindPercentage, random selection, itemUnlockEffect, mUnlockPoints, and NotUnlockable combine into a part-unlock decision?",
+      "evidence": [
+        "0x00598db0",
+        "0x00598e90",
+        "Simulator::cCollectableItems"
+      ],
+      "id": "collectable_unlock_formula",
+      "impact": "Collectable states are known but deterministic unlock decisions are not.",
+      "required_evidence": "Evaluation body, RNG call sites, threshold properties, and controlled unlock traces.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "What are the exact SetActiveMode success, same-mode, invalid-ID, invalid-index, and message-order branches?",
+      "evidence": [
+        "0x007d8cf0",
+        "0x007d8d40"
+      ],
+      "id": "game_mode_transition_branches",
+      "impact": "The normal mode handoff is modeled from the SDK contract, but failure and no-op behavior is not implementation-ready.",
+      "required_evidence": "Correct native bodies plus mode-transition traces for every branch.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "What consumes EditorRequest.mCallingGameModeID, mConsequenceTraits, mbIsFirstTimeInEditor, mpCollectableItems, and mpNext when the editor returns to gameplay?",
+      "evidence": [
+        "Editors::EditorRequest",
+        "Editors::cEditor::SetActiveMode"
+      ],
+      "id": "editor_gameplay_handoff",
+      "impact": "The editor input and internal modes are mapped, but the full stage-completion and consequence-trait handoff is unresolved.",
+      "required_evidence": "EditorRequest::Submit body, OnExit/OnEnter bodies, and paired gameplay-to-editor-to-gameplay traces.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "What are the BadgeManagerEvent domain, mBadgeMap state encoding, thresholds, and badge unlock transition?",
+      "evidence": [
+        "0x00fe52c0",
+        "Simulator::cBadgeManager"
+      ],
+      "id": "badge_state_domain",
+      "impact": "Badge progress accumulation is documented, but a finite badge lifecycle cannot be reconstructed.",
+      "required_evidence": "AddToBadgeProgress body, event enum, property thresholds, and unlock writers.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "Which timer expiry path invokes GrowUp, and what stage, scale, membership, and ability changes does the concrete callback make?",
+      "evidence": [
+        "cNpcTribeController+0x60",
+        "cCreatureBase+0x78"
+      ],
+      "id": "baby_growth_transition",
+      "impact": "Growth ownership is known, but the growth state machine and callback effects are not.",
+      "required_evidence": "Timer update body, concrete GrowUp override, and NPC maturation trace.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "What sets cHerd.mbShouldEvolve, how is mDNAEvolutionThreshold compared, and which evolved species profile is selected?",
+      "evidence": [
+        "Simulator::cHerd"
+      ],
+      "id": "herd_evolution_transition",
+      "impact": "Herd evolution state fields are mapped, but no executable evolution rule is available.",
+      "required_evidence": "All field writers, species-selection body, and generation trace.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "What gameplay events update cPlayer.mSocialTraitProgress and mCombatTraitProgress, and how do they resolve consequence traits?",
+      "evidence": [
+        "cPlayer+0x1278",
+        "cPlayer+0x127c",
+        "EditorRequest+0x70"
+      ],
+      "id": "consequence_trait_rules",
+      "impact": "Trait persistence is known, but thresholds and stage-to-stage consequences are not.",
+      "required_evidence": "All field writers, trait-selection code, and stage-completion traces.",
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "Can a hash-pinned original runtime trace observe at least one complete evolution, mission completion, part unlock, editor return, badge unlock, and NPC growth sequence?",
+      "evidence": [
+        "No positive runtime evidence exists for this domain."
+      ],
+      "id": "progression_runtime_validation",
+      "impact": "All current conclusions remain static and cannot be promoted above verified static support.",
+      "required_evidence": "Controlled Wine traces with object identity, state pre/post snapshots, and message delivery correlation.",
+      "status": "missing_required_evidence"
+    },
+    {
+      "blocking_question": "Can Ghidra MCP reopen SporeApp.exe in a GUI-capable instance to corroborate function boundaries and the remaining bodies without project mutation?",
+      "evidence": [
+        "Connected Ghidra bridge reported zero open programs.",
+        "Headless open_program returned GUI-mode required."
+      ],
+      "id": "live_ghidra_progression_access",
+      "impact": "This investigation relies on committed decompilation and SDK sources; no new Ghidra evidence was persisted.",
+      "required_evidence": "Open the existing program read-only in a GUI-capable Ghidra MCP bridge and resolve the listed addresses.",
+      "status": "blocked_current_session"
+    }
+  ]
+}

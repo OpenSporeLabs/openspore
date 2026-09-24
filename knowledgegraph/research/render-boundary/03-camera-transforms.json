@@ -1,0 +1,729 @@
+{
+  "track": "camera-transforms",
+  "scope": "Camera state, active-camera/viewer selection, view and projection, pointer-to-camera conversion, camera-mode input, attachment/follow semantics, world/local transform composition, gameplay-to-presentation transform submission, transformed bounds, and gameplay-relevant visibility culling. Renderer backend internals remain behind the render submission boundary.",
+  "boundaries": [
+    {
+      "classification": "GAMEPLAY_FACING_MIXED_PRESENTATION",
+      "boundary": "Active camera, viewer attachment, and camera-manager routing",
+      "gameplay_caller": "App mode setup and App::cCameraManager message dispatch; Cell steering later observes camera mode through the viewer/camera path",
+      "original_callee": "App::cCameraManager::SetActiveCamera, SetActiveCameraByID, SetViewer, HandleMessage, GetActiveCamera, and GetActiveCameraID",
+      "parameters": [
+        "camera-manager service",
+        "active camera object, numeric ID, key, or name",
+        "viewer pointer"
+      ],
+      "outputs": [
+        "selected active camera and ID",
+        "active viewer attachment",
+        "camera-change or selection success"
+      ],
+      "state_changed": [
+        "cCameraManager::mnActiveIndex",
+        "cCameraManager::mpViewer",
+        "camera ID/name maps and active-camera selection"
+      ],
+      "structures": [
+        "App::cCameraManager",
+        "App::ICamera",
+        "App::cViewer"
+      ],
+      "lifetime": "The manager owns registered camera objects and names for application lifetime; the viewer attachment changes with mode setup or camera-service messages.",
+      "failure_semantics": "SetViewer is a trivial guard/forwarding method in the exported body and is not a follow-behavior implementation. SetActiveCameraByID returns a success flag; its named-string path throws after printing \"No such camera\" when the requested name is absent. Exact numeric-ID failure behavior is not fully established.",
+      "timing_order": "Initialize and populate the camera service, attach the stage viewer, select an active camera, handle camera-change messages, then expose active-camera state to stage and viewer updates.",
+      "openspore_concept": "Typed ICameraService and ICameraController with setViewer, setActiveCamera, activeCamera, and activeCameraId; injected into a mode rather than accessed through a global manager.",
+      "modern_abstraction": "ICameraService owns camera identity and selection, while ICameraTarget or ICameraController owns viewer attachment. Do not reproduce cCameraManager layouts, vtables, hash maps, or global service roots.",
+      "evidence": [
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/track-k-engine-boundaries.json",
+          "line": 502,
+          "symbol": "B-K-07 Camera and input semantics at the stage boundary"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCameraManager__SetViewer.c",
+          "line": 8,
+          "symbol": "App::cCameraManager::SetViewer"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCameraManager__SetActiveCameraByID.c",
+          "line": 9,
+          "symbol": "App::cCameraManager::SetActiveCameraByID"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCameraManager__SetActiveCameraByID.c",
+          "line": 96,
+          "symbol": "No such camera failure path"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCameraManager__HandleMessage.c",
+          "line": 8,
+          "symbol": "App::cCameraManager::HandleMessage"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/structs_fields.tsv",
+          "line": 21203,
+          "symbol": "App::cCameraManager fields, including mnActiveIndex and mpViewer"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 11772,
+          "symbol": "App::cCameraManager::SetViewer vtable family"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 11781,
+          "symbol": "App::cCameraManager::SetActiveCameraByID vtable family"
+        }
+      ],
+      "confidence": "high",
+      "notes": "Camera selection is gameplay-facing only because the resulting camera state and mode affect steering; the manager itself is service infrastructure. SetViewer is explicitly a thin wrapper, not evidence of follow or attach semantics."
+    },
+    {
+      "classification": "MIXED_GAMEPLAY_PRESENTATION",
+      "boundary": "Viewer view transform, projection, viewport, and render-update state",
+      "gameplay_caller": "Renderer frame setup, editor/camera setup, and Cell presentation initialization; pointer-to-world conversion later reads this camera state",
+      "original_callee": "App::cViewer::SetViewTransform, GetViewTransform, SetPerspectiveProjection, SetParallelProjection, SetViewOffset, SetViewWindow, SetAspectRatio, SetNearPlane, SetFarPlane, SetViewport, BeginUpdate, and EndUpdate",
+      "parameters": [
+        "viewer or camera transform",
+        "perspective or parallel projection parameters",
+        "view offset and window",
+        "aspect ratio, viewport dimensions, and near/far planes"
+      ],
+      "outputs": [
+        "configured view and projection matrices",
+        "camera-to-screen conversion state",
+        "viewer begin/end update state"
+      ],
+      "state_changed": [
+        "App::cViewer::viewTransform and adjacent 4x4 matrix state",
+        "camera viewport, view offset, view window, aspect, and clip planes",
+        "viewer update and main render-target bindings"
+      ],
+      "structures": [
+        "App::cViewer",
+        "App::cViewer::Camera",
+        "Matrix4",
+        "D3DVIEWPORT9-compatible viewport record"
+      ],
+      "lifetime": "Camera state follows the active viewer and target; render-update state follows a frame or layer, while main color/depth attachments follow renderer lifetime and resize.",
+      "failure_semantics": "SetViewTransform lazily creates the graphics state and returns without applying further camera setup if creation fails. Setter and anchor drift prevent a complete error contract; renderer initialization failure is presentation failure, not a demonstrated gameplay transition.",
+      "timing_order": "Set viewport and projection, update the camera/view transform, begin the viewer/render update, submit layer or model work, then end the update. The same projection/viewport values must be used by pointer-to-world conversion so gameplay rays agree with the rendered view.",
+      "openspore_concept": "ICameraState containing position, orientation, projection, viewport, and clip planes, plus ICameraController and IRenderer frame lifecycle methods.",
+      "modern_abstraction": "Use a backend-neutral CameraState and ProjectionState. Keep gameplay reads of projection/viewport coherent with rendering, but do not expose cViewer matrices, D3D viewport structs, or the 372-byte cViewer layout.",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/sdk_functions.tsv",
+          "line": 502,
+          "symbol": "App::cViewer lifecycle and camera-state surface"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cViewer__SetViewTransform.c",
+          "line": 22,
+          "symbol": "App::cViewer::SetViewTransform viewer/graphics-state initialization"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cViewer__SetViewTransform.c",
+          "line": 64,
+          "symbol": "App::cViewer::SetViewTransform matrix-state copy"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cViewer__SetParallelProjection.c",
+          "line": 6,
+          "symbol": "App::cViewer::SetParallelProjection"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cViewer__SetViewOffset.c",
+          "line": 6,
+          "symbol": "App::cViewer::SetViewOffset"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cViewer__EndUpdate.c",
+          "line": 6,
+          "symbol": "App::cViewer::EndUpdate"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/structs_fields.tsv",
+          "line": 2974,
+          "symbol": "App::cViewer::Camera transform, projection, viewport, and clip-plane fields"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/structs_fields.tsv",
+          "line": 2986,
+          "symbol": "App::cViewer view and auxiliary matrices"
+        },
+        {
+          "file": "knowledgegraph/research/decomp-gap/terrain-world-00.json",
+          "line": 105191,
+          "symbol": "GetCameraToMouse SDK anchor absorbed by live function 0x007c4940"
+        }
+      ],
+      "confidence": "high",
+      "notes": "Projection is not purely presentational because pointer-to-world conversion uses the view and projection state. The matrix implementation and D3D-compatible storage are replaceable; coordinate conventions and frame ordering are semantic."
+    },
+    {
+      "classification": "GAMEPLAY_FACING",
+      "boundary": "Pointer-to-camera and point-to-camera coordinate conversion",
+      "gameplay_caller": "Simulator::Cell::MovePlayerToMousePosition consumes the resulting camera ray; editor and terrain consumers also use the same conversion family",
+      "original_callee": "FUN_007c4900 -> App::cViewer::GetCameraToPoint and App::cViewer::GetCameraToMouse; the live function at 0x007c4900 obtains lighting/viewer state and delegates to the camera-to-point helper",
+      "parameters": [
+        "active viewer/camera and lighting-world origin",
+        "current pointer position or target point",
+        "viewport, projection, and view state"
+      ],
+      "outputs": [
+        "camera origin",
+        "normalized view/ray direction",
+        "camera-to-target or camera-to-mouse geometric result"
+      ],
+      "state_changed": [],
+      "structures": [
+        "App::cViewer",
+        "App::cViewer::Camera",
+        "lighting-world camera state"
+      ],
+      "lifetime": "Read-only query over the current frame's viewer, projection, viewport, and pointer state; it is valid only while that camera frame remains current.",
+      "failure_semantics": "A missing viewer/lighting state has no established typed error in the exported helper. In Cell movement, a zero denominator or negative ray-plane distance is handled by the caller and leaves the target unwritten.",
+      "timing_order": "Route the current mouse position, update or select the camera, query origin/direction, then intersect with the gameplay movement plane and write the player target/orientation.",
+      "openspore_concept": "CameraState::viewRay and an injected ICameraRayProvider returning origin plus normalized direction for NDC input.",
+      "modern_abstraction": "Expose unprojectPointer(pointerNdc) and rayFromPoint(worldPoint) on a read-only camera service. Use one documented coordinate convention and the same projection/viewport values as rendering.",
+      "evidence": [
+        {
+          "file": "tools/re/data/decompiled/MovePlayerToMousePosition.c",
+          "line": 25,
+          "symbol": "camera ray-plane intersection in MovePlayerToMousePosition"
+        },
+        {
+          "file": "docs/analysis/dossiers/cell-movement.md",
+          "line": 46,
+          "symbol": "camera mode, origin/direction, and movement-plane consumption"
+        },
+        {
+          "file": "docs/analysis/dossiers/cell-movement.md",
+          "line": 54,
+          "symbol": "FUN_007c4900 camera/lighting-world origin helper"
+        },
+        {
+          "file": "knowledgegraph/triage/xrefs-2540f2ca.tsv",
+          "line": 157520,
+          "symbol": "MovePlayerToMousePosition -> FUN_007c4900"
+        },
+        {
+          "file": "knowledgegraph/triage/xrefs-2540f2ca.tsv",
+          "line": 55170,
+          "symbol": "FUN_007c4900 -> ILightingManager and GetCameraToPoint"
+        },
+        {
+          "file": "knowledgegraph/research/decomp-gap/terrain-world-00.json",
+          "line": 17593,
+          "symbol": "live function 0x007c4940 -> GetCameraToMouse conversion call"
+        },
+        {
+          "file": "docs/CELL-CONTRACT.md",
+          "line": 75,
+          "symbol": "OpenSpore camera-ray movement contract"
+        },
+        {
+          "file": "src/sim/Sim.hpp",
+          "line": 108,
+          "symbol": "OpenSpore CameraState::viewRay"
+        }
+      ],
+      "confidence": "high",
+      "notes": "The gameplay dependency is high confidence. Exact matrix inversion, handedness, and pointer coordinate conversion are not fully characterized because the SDK anchors for GetCameraToPoint and GetCameraToMouse lie inside larger live functions and no decompiled capture is committed."
+    },
+    {
+      "classification": "MIXED_GAMEPLAY_PRESENTATION",
+      "boundary": "Mouse-camera input, view-transform calculation, and camera-mode consumption",
+      "gameplay_caller": "Stage mouse and wheel callbacks update camera state before gameplay movement reads the camera ray; camera mode gates which movement behavior is active",
+      "original_callee": "App::cMouseCamera::OnKeyDown, OnMouseDown, OnMouseMove, OnMouseWheel, CalculateViewTransform, and Update",
+      "parameters": [
+        "virtual key and modifier state",
+        "mouse position and button state",
+        "wheel delta",
+        "mouse-camera viewer and current camera state"
+      ],
+      "outputs": [
+        "updated mouse-camera view state",
+        "camera-control consumption result",
+        "calculated view transform used by later camera queries"
+      ],
+      "state_changed": [
+        "mouse-camera orientation/distance state",
+        "current mouse-camera view transform",
+        "input-camera interaction state"
+      ],
+      "structures": [
+        "App::cMouseCamera",
+        "App::cViewer",
+        "Transform"
+      ],
+      "lifetime": "Per input event and per camera update; the camera object persists while selected by the camera manager.",
+      "failure_semantics": "The exported OnKeyDown body is only a forwarding wrapper, and no persisted bodies exist for mouse move, wheel, CalculateViewTransform, or Update. Individual key, sensitivity, clamping, and consumption semantics are therefore unresolved.",
+      "timing_order": "Poll and route mouse/key/wheel events, update the selected camera, finalize its view transform, then run gameplay movement and presentation submission using the same camera state.",
+      "openspore_concept": "Input events update a typed CameraController; CameraState supplies the gameplay ray, while the renderer consumes the same view/projection snapshot.",
+      "modern_abstraction": "IInputRouter plus ICameraController with pointerDelta, button, wheel, key, and update operations. Keep event ordering and normalized values, not the original virtual-key ABI or singleton.",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/sdk_functions.tsv",
+          "line": 562,
+          "symbol": "App::cMouseCamera SDK surface"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cMouseCamera__OnKeyDown.c",
+          "line": 8,
+          "symbol": "App::cMouseCamera::OnKeyDown forwarding wrapper"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 12104,
+          "symbol": "App::cMouseCamera::OnKeyDown vtable family"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 12110,
+          "symbol": "App::cMouseCamera::CalculateViewTransform"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 12112,
+          "symbol": "App::cMouseCamera::Update"
+        },
+        {
+          "file": "docs/analysis/dossiers/cell-movement.md",
+          "line": 39,
+          "symbol": "Cell mouse-position callback and later camera-ray consumption"
+        },
+        {
+          "file": "docs/analysis/dossiers/cell-movement.md",
+          "line": 133,
+          "symbol": "unresolved camera-mode and pointer causality"
+        }
+      ],
+      "confidence": "low",
+      "notes": "The interface is potentially gameplay-facing because Cell movement reads camera mode and a camera ray, but only the thin key wrapper has a persisted body. Do not infer original orbit, zoom, sensitivity, or attach behavior from current OpenSpore approximations."
+    },
+    {
+      "classification": "GAMEPLAY_FACING_UNRESOLVED",
+      "boundary": "Camera follow target and viewer attachment semantics",
+      "gameplay_caller": "Cell camera origin/target and presentation follow behavior; gameplay steering uses the same camera state",
+      "original_callee": "The available evidence establishes App::cCameraManager::SetViewer and App::cViewer::SetViewTransform as attachment/render-state operations, but does not establish a distinct original follow-target method",
+      "parameters": [
+        "camera or viewer target identity",
+        "target position and orientation",
+        "camera offset, distance, yaw, and pitch",
+        "follow enablement and any smoothing parameters"
+      ],
+      "outputs": [
+        "targeted camera eye/orientation",
+        "view transform for rendering and pointer conversion"
+      ],
+      "state_changed": [
+        "camera target/attachment state",
+        "derived camera position and view transform"
+      ],
+      "structures": [
+        "App::cCameraManager::mpViewer",
+        "App::cViewer::viewTransform",
+        "Transform"
+      ],
+      "lifetime": "Attachment follows the current mode/viewer; target follow state follows the target entity and is updated per frame when active.",
+      "failure_semantics": "No target, inactive camera mode, or unavailable viewer has no established original gameplay error. Current OpenSpore copies the player position directly into CameraState::target after gameplay integration, but that is a clean-room approximation rather than a recovered original follow contract.",
+      "timing_order": "A Cell steering query intentionally uses the prior frame's target; after movement/interactions, the current OpenSpore model copies the new player position into the camera target for the next render and next steering query.",
+      "openspore_concept": "CameraState::target and the end-of-update follow assignment; current CameraState::eyePos derives a follow-orbit eye.",
+      "modern_abstraction": "An optional ICameraTarget with attach/detach, setTargetTransform, and updateFollow; do not require follow if no gameplay behavior consumes it. Preserve one-frame ordering only where movement causality depends on it.",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/structs_fields.tsv",
+          "line": 21218,
+          "symbol": "App::cCameraManager::mpViewer attachment field"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCameraManager__SetViewer.c",
+          "line": 8,
+          "symbol": "SetViewer exported body does not establish follow behavior"
+        },
+        {
+          "file": "docs/CELL-CONTRACT.md",
+          "line": 47,
+          "symbol": "OpenSpore camera target and inferred orbit state"
+        },
+        {
+          "file": "docs/CELL-CONTRACT.md",
+          "line": 75,
+          "symbol": "prior-frame camera target ordering for steering"
+        },
+        {
+          "file": "docs/CELL-CONTRACT.md",
+          "line": 98,
+          "symbol": "end-of-update camera follow ordering"
+        },
+        {
+          "file": "src/sim/Sim.cpp",
+          "line": 253,
+          "symbol": "current OpenSpore camera target follow assignment"
+        },
+        {
+          "file": "docs/CELLSTAGE-VALIDATION.md",
+          "line": 16,
+          "symbol": "orbit, follow, and wheel zoom remain inferred"
+        }
+      ],
+      "confidence": "low",
+      "notes": "Follow is gameplay-facing only through the camera state it produces. No original attach/follow method or smoothing contract is established, so current direct target assignment must not be promoted as original behavior."
+    },
+    {
+      "classification": "SEMANTIC_VALUE_REPLACEABLE",
+      "boundary": "World/local transform composition and conversion to a render matrix",
+      "gameplay_caller": "Cell/entity creation, model and terrain setup, editor world operations, and presentation effects compose gameplay-owned transforms",
+      "original_callee": "Transform::PreTransformBy and Transform::ToMatrix4; local transform math helpers",
+      "parameters": [
+        "parent and child transform values",
+        "offset, quaternion or rotation matrix, and scale"
+      ],
+      "outputs": [
+        "composed Transform",
+        "4x4 matrix for presentation submission"
+      ],
+      "state_changed": [
+        "destination Transform offset",
+        "destination Transform rotation",
+        "destination Transform scale",
+        "Transform flags and transform count"
+      ],
+      "structures": [
+        "Transform",
+        "Matrix3",
+        "Matrix4"
+      ],
+      "lifetime": "Value lifetime; transforms are embedded in entities, properties, models, camera state, and presentation records and are copied when submitted.",
+      "failure_semantics": "The exported composition method has no typed error path. Decompiler helpers are evidence only, so invalid/denormal transform handling and exact normalization order are not established.",
+      "timing_order": "Compose or assign entity/local transforms during gameplay state construction, snapshot them after movement/animation, convert to a matrix at the presentation boundary, then submit draw state.",
+      "openspore_concept": "Typed local position/orientation/scale state and a renderer-facing affine transform; CellPool currently preserves the original 56-byte Transform slot as opaque bytes.",
+      "modern_abstraction": "Use a backend-neutral AffineTransform value with compose, inverse, transformPoint, and transformDirection operations. Preserve coordinate handedness and composition order, not Matrix3 storage or original flags.",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Transform__PreTransformBy.c",
+          "line": 6,
+          "symbol": "Transform::PreTransformBy"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Transform__PreTransformBy.c",
+          "line": 18,
+          "symbol": "Transform offset, rotation, and scale composition"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Transform__PreTransformBy.c",
+          "line": 28,
+          "symbol": "Transform scale, flags, and transform-count mutation"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/structs_fields.tsv",
+          "line": 2365,
+          "symbol": "Transform flags, count, offset, scale, and rotation layout"
+        },
+        {
+          "file": "knowledgegraph/research/types/14-class-families.json",
+          "line": 120353,
+          "symbol": "Transform::ToMatrix4 SDK anchor absorbed by live function 0x006b92d0"
+        },
+        {
+          "file": "knowledgegraph/triage/xrefs-2540f2ca.tsv",
+          "line": 157876,
+          "symbol": "Cell-region direct caller of Transform::PreTransformBy"
+        },
+        {
+          "file": "src/sim/CellPool.hpp",
+          "line": 34,
+          "symbol": "Cell target position/orientation and Transform field"
+        }
+      ],
+      "confidence": "high",
+      "notes": "Transform values are gameplay-owned semantic data even though their implementation is replaceable. The original 56-byte layout and flags are compatibility evidence; they are not a requirement to expose that ABI to modern gameplay."
+    },
+    {
+      "classification": "RENDERER_SUBMISSION_BOUNDARY",
+      "boundary": "Gameplay entity transform to Cell GFX and renderer submission",
+      "gameplay_caller": "Simulator::Cell::cCellGFX::Initialize and InstanceEffectOnCell; renderer frame setup submits live entity transforms after simulation",
+      "original_callee": "App::cViewer::SetViewTransform, Cell visual-effect virtual attachment using cCellObjectData::mTransform, Graphics::GlobalState::SetTransform, and subsequent RenderWare draw submission",
+      "parameters": [
+        "entity world Transform",
+        "viewer and projection state",
+        "model or effect identity",
+        "world/layer and material state"
+      ],
+      "outputs": [
+        "presentation transform snapshot",
+        "layer/model/effect draw submission",
+        "rendered frame contribution"
+      ],
+      "state_changed": [
+        "viewer and active graphics transform state",
+        "Cell effect instance placement",
+        "renderer or RW stream/draw state"
+      ],
+      "structures": [
+        "Simulator::Cell::cCellObjectData::mTransform",
+        "Simulator::Cell::cCellGFX",
+        "App::cViewer",
+        "Graphics::GlobalState",
+        "Transform"
+      ],
+      "lifetime": "Entity transform state follows the gameplay entity; viewer/camera snapshots follow the frame; layer/material/resource handles follow Cell presentation lifetime.",
+      "failure_semantics": "Missing renderer, lighting, or effect services prevent presentation but do not establish a gameplay state transition. A bad transform can make submission invalid, but original validation/error propagation is not characterized.",
+      "timing_order": "Update gameplay position/orientation, resolve active camera/projection, copy or compose the entity transform, apply per-object/material state, submit indexed geometry/effects, then end the frame.",
+      "openspore_concept": "CellSim and SceneEntity own world state; cell_stage translates it into CPU-baked clip-space vertices and calls IRenderer draw methods because IRenderer currently has no model/view matrix parameters.",
+      "modern_abstraction": "ISceneNode or ITransformable plus IRenderQueue::submit(mesh, worldTransform, material, layer). Keep transform snapshots and draw ordering semantic while replacing RenderWare/D3D state behind the renderer.",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__InstanceEffectOnCell.c",
+          "line": 30,
+          "symbol": "Cell GFX selection and effect instance setup"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__InstanceEffectOnCell.c",
+          "line": 38,
+          "symbol": "cell transform comparison before effect placement"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__InstanceEffectOnCell.c",
+          "line": 67,
+          "symbol": "cell transform passed to the visual-effect virtual"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__Initialize.c",
+          "line": 28,
+          "symbol": "Cell GFX viewer transform initialization"
+        },
+        {
+          "file": "knowledgegraph/triage/xrefs-2540f2ca.tsv",
+          "line": 157660,
+          "symbol": "Cell GFX -> App::cViewer::SetViewTransform"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__GlobalState__SetTransform.c",
+          "line": 8,
+          "symbol": "Graphics::GlobalState::SetTransform"
+        },
+        {
+          "file": "src/apps/cell_stage.cpp",
+          "line": 510,
+          "symbol": "OpenSpore entity world transform baked into clip-space vertices"
+        },
+        {
+          "file": "src/apps/cell_stage.cpp",
+          "line": 539,
+          "symbol": "OpenSpore renderer draw submission"
+        }
+      ],
+      "confidence": "high",
+      "notes": "This is the primary gameplay-to-presentation crossing. The semantic boundary is an entity transform plus ordered submission, not the global transform pointer, RenderWare object, or D3D stream binding."
+    },
+    {
+      "classification": "REPLACEABLE_INFRASTRUCTURE",
+      "boundary": "Transformed bounding boxes for models, terrain, and visibility tests",
+      "gameplay_caller": "Model/editor preparation and graphics visibility paths; no direct Cell gameplay read of the original BoundingBox object is established",
+      "original_callee": "Math::BoundingBox::ApplyTransform and downstream Graphics::cFrustumCull tests",
+      "parameters": [
+        "axis-aligned lower and upper bounds",
+        "Transform"
+      ],
+      "outputs": [
+        "transformed bounding box",
+        "world-space bounds or radius suitable for a cull test"
+      ],
+      "state_changed": [
+        "destination BoundingBox lower and upper corners"
+      ],
+      "structures": [
+        "Math::BoundingBox",
+        "Transform"
+      ],
+      "lifetime": "Bounds follow the model/terrain transform snapshot; cached world bounds are invalidated when the owning transform changes.",
+      "failure_semantics": "The exported method has no explicit failure path. Its decompiler output is too type-noisy to prove exact corner ordering, empty-volume behavior, or rotation-specific optimization semantics.",
+      "timing_order": "Compute local bounds with the asset/model, transform them after the authoritative world transform is final, then use the result for visibility or gameplay queries that explicitly require world bounds.",
+      "openspore_concept": "assets::Mesh carries bboxMin, bboxMax, and radius; gameplay proximity/query state is separate from renderer culling.",
+      "modern_abstraction": "AABB::transform(AffineTransform), sphere bounds, and a cached-local-bounds/world-bounds invalidation contract. Do not use transformed render bounds as a substitute for gameplay collision/query volumes without evidence.",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/structs_fields.tsv",
+          "line": 903,
+          "symbol": "Math::BoundingBox lower and upper Vector3 fields"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Math__BoundingBox__ApplyTransform.c",
+          "line": 6,
+          "symbol": "Math::BoundingBox::ApplyTransform"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Math__BoundingBox__ApplyTransform.c",
+          "line": 32,
+          "symbol": "transformed lower/upper-bound write paths"
+        },
+        {
+          "file": "knowledgegraph/triage/xrefs-2540f2ca.tsv",
+          "line": 22334,
+          "symbol": "editor/model visibility caller of BoundingBox::ApplyTransform"
+        },
+        {
+          "file": "src/assets/Mesh.cpp",
+          "line": 145,
+          "symbol": "current OpenSpore mesh bounds computation"
+        }
+      ],
+      "confidence": "medium",
+      "notes": "Bounds are semantic only where a consumer uses them. The established Cell gameplay spatial system uses gameplay query pools; the generic renderer cull path must not be mistaken for the collision/nearby-cell contract."
+    },
+    {
+      "classification": "PRESENTATION_ONLY",
+      "boundary": "Projection-derived frustum planes and sphere/AABB visibility culling",
+      "gameplay_caller": "Cell per-frame update refreshes cull state, and editor/terrain/model passes test bounds; no reviewed caller uses the cull result to gate a Cell gameplay transition",
+      "original_callee": "Graphics::cFrustumCull::UpdateFromProjectionMatrix, FrustumTestSphere, FrustumTestAABB, and OffsetPlanes",
+      "parameters": [
+        "projection or view-projection matrix",
+        "world bounds center, half extents, or radius"
+      ],
+      "outputs": [
+        "six frustum planes",
+        "inside/outside visibility result"
+      ],
+      "state_changed": [
+        "Graphics::cFrustumCull::mPlanes[6]"
+      ],
+      "structures": [
+        "Graphics::cFrustumCull",
+        "Graphics::cPlane[6]"
+      ],
+      "lifetime": "Planes are a frame/view snapshot; the cull object itself follows renderer or camera-state lifetime.",
+      "failure_semantics": "Exact plane extraction and return-value polarity are not trustworthy in the available FrustumTestSphere decompilation. No gameplay failure path is established if a test reports outside.",
+      "timing_order": "Finalize projection/view state, update the six planes, transform or select world bounds, test visibility, then skip or submit affected presentation work. The Cell update body calls the update routine, but downstream gameplay use of its result is not established.",
+      "openspore_concept": "OpenSpore currently culls dead scene entities before draw and otherwise relies on the rasterizer; it has no shared gameplay visibility state.",
+      "modern_abstraction": "ICamera::frustum plus a presentation VisibilitySet or renderer-level bounds test. If future gameplay uses visibility, expose a separately named semantic query rather than sharing the render cull bit implicitly.",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/structs_fields.tsv",
+          "line": 3732,
+          "symbol": "Graphics::cFrustumCull six-plane state"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__cFrustumCull__FrustumTestSphere.c",
+          "line": 6,
+          "symbol": "Graphics::cFrustumCull::FrustumTestSphere exported but type-noisy body"
+        },
+        {
+          "file": "knowledgegraph/research/types/14-class-families.json",
+          "line": 212887,
+          "symbol": "cFrustumCull SDK address absorption and live function boundaries"
+        },
+        {
+          "file": "knowledgegraph/triage/xrefs-2540f2ca.tsv",
+          "line": 160333,
+          "symbol": "Cell per-frame body -> cFrustumCull update"
+        },
+        {
+          "file": "knowledgegraph/triage/xrefs-2540f2ca.tsv",
+          "line": 22385,
+          "symbol": "editor/model caller of cFrustumCull AABB test"
+        },
+        {
+          "file": "knowledgegraph/research/decomp-gap/terrain-world-00.json",
+          "line": 27474,
+          "symbol": "terrain water render path gated by FrustumTestAABB"
+        },
+        {
+          "file": "src/apps/cell_stage.cpp",
+          "line": 680,
+          "symbol": "current OpenSpore dead-entity render cull"
+        }
+      ],
+      "confidence": "medium",
+      "notes": "Treat frustum culling as presentation-only under current evidence. The Cell update call proves frame coupling, not that visibility controls movement, interaction, spawning, or other gameplay state."
+    },
+    {
+      "classification": "RENDERER_SUBMISSION_BOUNDARY",
+      "boundary": "View/world transform state crossing into RenderWare and draw submission",
+      "gameplay_caller": "Gameplay supplies final camera/entity transforms; terrain, model, and Cell presentation layers submit geometry after gameplay updates",
+      "original_callee": "Graphics::GlobalState::SetTransform, RenderWare::Mesh::SetIndexBuffer/Render, and the renderer layer/frame path",
+      "parameters": [
+        "view-projection or world matrix",
+        "transform matrix type",
+        "vertex/index buffers and counts",
+        "active material and renderer layer"
+      ],
+      "outputs": [
+        "configured renderer transform state",
+        "bound vertex/index streams",
+        "indexed draw submission"
+      ],
+      "state_changed": [
+        "Graphics global transform copy and dirty bit",
+        "active view/world transform type",
+        "RenderWare/D3D stream, index, and material state"
+      ],
+      "structures": [
+        "Graphics::GlobalState",
+        "Matrix4",
+        "RenderWare::Mesh",
+        "RenderWare::IndexBuffer"
+      ],
+      "lifetime": "Transform and draw state are frame-local or changed per draw; streams, index buffers, meshes, and material resources follow asset/renderer lifetime.",
+      "failure_semantics": "Renderer/device failures are presentation failures. No gameplay transition is tied to the original matrix copy, stream rebinding, or draw return path in the reviewed evidence.",
+      "timing_order": "Select target and viewport, set camera/view projection, update culling, bind world/material/stream state, issue the indexed draw, then end or present the frame.",
+      "openspore_concept": "cell_stage currently bakes view-projection into vertices and VulkanRenderer binds pipeline, vertex, and index buffers per draw; submitMeshSource is the generic B3 submission seam.",
+      "modern_abstraction": "IRenderCommandEncoder or IRenderQueue carrying a model matrix, view-projection snapshot, material handle, mesh, and topology. Preserve binding/draw order and observable draw results, not RW or D3D objects.",
+      "evidence": [
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__GlobalState__SetTransform.c",
+          "line": 11,
+          "symbol": "Graphics global transform type and matrix copy"
+        },
+        {
+          "file": ".spore-analysis/ghidra-exports/decompiled_sdk/Graphics__GlobalState__SetTransform.c",
+          "line": 29,
+          "symbol": "graphics soft-state dirty bit"
+        },
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 160,
+          "symbol": "RenderWare stream/index state crossing"
+        },
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 172,
+          "symbol": "semantics to preserve at the draw boundary"
+        },
+        {
+          "file": "docs/RENDERER-DESIGN.md",
+          "line": 19,
+          "symbol": "OpenSpore frame lifecycle and per-draw mapping"
+        },
+        {
+          "file": "src/renderer/VulkanRenderer.cpp",
+          "line": 316,
+          "symbol": "VulkanRenderer::drawMesh submission"
+        },
+        {
+          "file": "src/compat/MeshSource.hpp",
+          "line": 64,
+          "symbol": "submitMeshSource renderer seam"
+        },
+        {
+          "file": "src/apps/cell_stage.cpp",
+          "line": 1137,
+          "symbol": "final camera snapshot before present-frame submission"
+        }
+      ],
+      "confidence": "high",
+      "notes": "The original global matrix and RenderWare binding cache are replaceable. The boundary preserves coordinate-space identity, transform timing, material/mesh identity, and draw order."
+    }
+  ],
+  "unresolved": [
+    "No positive original Cell-mode runtime trace exists, so camera-mode values, pointer causality, movement-plane runtime point, frame ordering, and follow behavior remain static-only conclusions.",
+    "The exact original matrix handedness, projection/depth convention, default FOV, near/far values, aspect handling, and GetCameraToMouse unprojection formula are not runtime-observed.",
+    "GetCameraToPoint, GetCameraToMouse, SetPerspectiveProjection, Transform::ToMatrix4, and two cFrustumCull SDK anchors lie inside larger live Ghidra functions; exact sub-boundaries require a read-only decompiler capture when the project lock is available.",
+    "App::cMouseCamera::OnMouseMove, OnMouseWheel, CalculateViewTransform, and Update have SDK/vtable evidence but no persisted bodies, so sensitivity, clamping, zoom, smoothing, and event-consumption rules are unresolved.",
+    "The camera-mode word at the Cell camera structure offset +0xd4 and its UI-selection gates are not characterized.",
+    "No distinct original follow-target or attach/detach method is established. OpenSpore's end-of-update target copy and orbit formula are inferred/approximated, not recovered semantics.",
+    "The exact transformed-BoundingBox corner algorithm and FrustumTestSphere return polarity are decompiler-noisy; preserve typed world bounds and an explicit cull result rather than original field behavior.",
+    "The Cell per-frame body refreshes cull state, but no reviewed path proves that visibility gates movement, interaction, spawning, or other gameplay state; culling remains presentation-only unless new evidence establishes a gameplay consumer.",
+    "Renderer backend implementation details remain owned by the D3D/RenderWare boundary; this report freezes only the camera/transform values, coordinate conversions, and submission ordering needed by gameplay and presentation."
+  ]
+}

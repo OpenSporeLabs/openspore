@@ -1,0 +1,858 @@
+{
+  "schema_version": "openspore-creature-data-1",
+  "track": {
+    "id": "creature-data-archaeology",
+    "title": "CreatureData and Cell-stage data model recovery",
+    "research_date": "2026-09-24",
+    "scope_root": "/home/juanr/Proyectos/OpenSpore",
+    "status": "partial-static-reconstruction",
+    "method": "read-only source, pinned research, KG, SDK/Ghidra structure, and decompilation queries",
+    "artifact_policy": "Decompilation and SDK names are evidence, not truth. No original-game mutation, patch, injection, save, or historical-artifact modification was performed."
+  },
+  "scope": {
+    "in_scope": [
+      "editor creature definitions and rigblock/part data",
+      "cell definitions and AI/eat/size resources",
+      "cell runtime objects, pool, query, world, populate, structure, loot, and advect records",
+      "creature and cell avatar/player state boundaries",
+      "creation, query, mutation, destruction, preload, and lifecycle functions",
+      "asset identities, state/event transitions, and persistence boundaries",
+      "OpenSpore CellResource, CellPool, CellQuery, and Cell fixture comparison"
+    ],
+    "out_of_scope": [
+      "unrelated empire, space, terrain, editor, and Sporepedia gameplay domains",
+      "claiming SDK method names with no body or symbol prove runtime behavior",
+      "copying decompiled source or SDK source",
+      "claiming a complete original event bus or save-file format",
+      "promoting current OpenSpore approximations to original runtime truth"
+    ],
+    "interpretation_rules": [
+      "Static template means serialized or resource-definition data.",
+      "Resolved runtime entity means a live object with identity, transform, gameplay state, and/or graphics association.",
+      "Progression state means mode-level or durable state such as evolution points, learned abilities, unlocked parts, missions, or cell-stage counters.",
+      "A confirmed Ghidra offset does not by itself verify a field's semantic name.",
+      "A current fixture is evidence of OpenSpore behavior unless explicitly marked original."
+    ]
+  },
+  "evidence_base": [
+    {
+      "id": "E-BINARY",
+      "level": "VERIFIED",
+      "kind": "pinned_binary_identity",
+      "provenance": [
+        "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json:43-49",
+        "docs/analysis/campaigns/cell-stage-campaign.md:3-6"
+      ],
+      "value": "GOG SporeApp.exe 3.1.0.22; SHA-256 25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e; image base 0x00400000"
+    },
+    {
+      "id": "E-GHIDRA",
+      "level": "CONFIRMED",
+      "kind": "read_only_ghidra_queries",
+      "provenance": [
+        "Ghidra MCP read-only get_struct_layout for cCreatureDataResource, RigblockData, CreatureBlock, cCreatureGameData, cCreatureBase, cCreatureAnimal, cCreatureAbility, cCellGame, cCellObjectData, cCellCellResource, cAIData, cEatData, cCellWorldResource, cCellPopulateResource, cCellStructureResource, cCellLootTableResource, cCellGlobalsResource, cCellSerializableData, cCellDataReference_, and query structures",
+        "Ghidra MCP read-only decompile_function, get_function_by_address, get_function_xrefs, get_function_callers, get_xrefs_to, read_memory, and get_enum_values against SporeApp.exe"
+      ],
+      "value": "Ghidra structure offsets and sizes, SDK-associated names, bounded function bodies, xrefs, and static data observations"
+    },
+    {
+      "id": "E-SDK",
+      "level": "CONFIRMED",
+      "kind": "pinned_sdk_export",
+      "provenance": [
+        "Spore-ModAPI/SDKtoGhidra/SporeGhidra_march2017.xml already imported into the pinned Ghidra project",
+        "docs/analysis/campaigns/cell-stage-campaign.md:127-137"
+      ],
+      "value": "SDK-associated structure names, field declarations, resource type declarations, and enum names; no source was copied"
+    },
+    {
+      "id": "E-PACKAGE",
+      "level": "SUPPORTED",
+      "kind": "measured_asset_research",
+      "provenance": [
+        "docs/analysis/campaigns/cell-stage-campaign.md:139-168,296-333",
+        "docs/CELLSTAGE-RECON.md:8-23",
+        "src/assets/CellResource.hpp:124-500",
+        "src/assets/CellResource.cpp:1126-1222"
+      ],
+      "value": "Measured record types, sizes, counts, reference domains, and decoder byte-accounting results"
+    },
+    {
+      "id": "E-KG",
+      "level": "SUPPORTED",
+      "kind": "cross_tool_knowledge_graph",
+      "provenance": [
+        "knowledgegraph/spore.db read-only queries",
+        "knowledgegraph/KNOWLEDGE-GRAPH.md:28-37",
+        "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json:43-480"
+      ],
+      "value": "Pinned structure nodes, field rows, campaign boundaries, and unresolved investigation state"
+    },
+    {
+      "id": "E-SOURCE",
+      "level": "OBSERVED",
+      "kind": "current_openspore_source",
+      "provenance": [
+        "src/assets/CellResource.hpp:55-500",
+        "src/assets/CellResource.cpp:124-153,200-265,727-1124,1126-1222",
+        "src/sim/CellPool.hpp:31-164",
+        "src/sim/CellQuery.hpp:27-82",
+        "src/sim/CellGame.hpp:31-155",
+        "src/sim/Sim.hpp:49-87,132-165,189-260",
+        "src/apps/scene.json:1-74",
+        "src/sim/tests/cellpool_test.cpp:1-110",
+        "src/sim/tests/cellquery_test.cpp:1-94",
+        "src/sim/tests/createcell_test.cpp:1-174",
+        "src/sim/tests/contract_scenarios.hpp:19-112"
+      ],
+      "value": "Current OpenSpore projections, decoders, tests, fixtures, and approximation labels"
+    },
+    {
+      "id": "E-CONTRACT",
+      "level": "SUPPORTED",
+      "kind": "current_contract_and_reconstruction_boundary",
+      "provenance": [
+        "docs/CELL-CONTRACT.md:38-132",
+        "docs/CELLSTAGE.md:40-102",
+        "docs/analysis/reconstruction-packages.md:488-559"
+      ],
+      "value": "Frozen OpenSpore contract surface and replacement boundaries"
+    },
+    {
+      "id": "E-DOSSIERS",
+      "level": "SUPPORTED",
+      "kind": "bounded_archaeological_dossiers",
+      "provenance": [
+        "docs/analysis/dossiers/cell-movement.md:46-59,99-150",
+        "docs/analysis/dossiers/unknown-high/cell-object-pool-lifecycle.md:18-93",
+        "docs/analysis/CELL-RUNTIME-OBSERVATION.md:1-101",
+        "docs/analysis/dossiers/unknown-high/gamemode-state-player-id.md:18-77"
+      ],
+      "value": "Bounded static function contracts, lifecycle evidence, negative runtime evidence, and unresolved player semantics"
+    }
+  ],
+  "asset_types": [
+    {
+      "id": "AT-CELL-CELL",
+      "record_name": "cell",
+      "type_id": "0xDFAD9F51",
+      "role": "static_cell_definition_template",
+      "size_bytes": 796,
+      "counts": "489 records; 266 unique definitions in the measured package set",
+      "links": ["SCHEMA-CELL-DEFINITION", "AT-CELL-GLOBALS", "AT-CELL-POPULATE", "AT-CELL-STRUCTURE", "AT-CELL-LOOT"],
+      "evidence": {"level": "CONFIRMED", "provenance": ["E-PACKAGE", "E-GHIDRA", "E-SDK"]}
+    },
+    {
+      "id": "AT-CELL-GMDL",
+      "record_name": "cell_model_family",
+      "type_id": "0x00E6BCE5",
+      "role": "resolved_model_asset_for_cell_creature",
+      "size_bytes": null,
+      "counts": "88 records across 44 instances; groups 0x40616201/0x40616202",
+      "links": ["SCHEMA-CREATURE-BLOCK", "AT-CELL-CELL", "SCHEMA-CELL-OBJECT"],
+      "evidence": {"level": "CONFIRMED", "provenance": ["E-PACKAGE", "E-SOURCE"]}
+    },
+    {
+      "id": "AT-CELL-GLOBALS",
+      "record_name": "globals",
+      "type_id": "0x2A3CE5B7",
+      "role": "static_cell_stage_tuning_and_world_select",
+      "size_bytes": 276,
+      "counts": "1 record",
+      "links": ["SCHEMA-CELL-GLOBALS", "AT-CELL-WORLD", "AT-CELL-CELL"],
+      "evidence": {"level": "CONFIRMED", "provenance": ["E-PACKAGE", "E-GHIDRA", "E-SOURCE"]}
+    },
+    {
+      "id": "AT-CELL-LOOK",
+      "record_name": "look_table/look_algorithm",
+      "type_id": "0x8C042499/0xDBA35AE2",
+      "role": "static_cell_look_assignment",
+      "size_bytes": "8-byte table header plus 8-byte rows; 20-byte algorithm rows",
+      "counts": "9 unique look tables; 1 unique look algorithm; 10 table instances",
+      "links": ["SCHEMA-CELL-DEFINITION", "SCHEMA-CELL-GLOBALS"],
+      "evidence": {"level": "CONFIRMED", "provenance": ["E-PACKAGE", "E-SOURCE"]}
+    },
+    {
+      "id": "AT-CELL-LOOT",
+      "record_name": "lootTable",
+      "type_id": "0xD92AF091",
+      "role": "static_eat_or_decomposition_reward_template",
+      "size_bytes": "36-byte header plus 28-byte entries",
+      "counts": "45 unique tables; 115 instance IDs",
+      "links": ["SCHEMA-CELL-DEFINITION", "SCHEMA-CELL-LOOT", "AT-CELL-CELL"],
+      "evidence": {"level": "CONFIRMED", "provenance": ["E-PACKAGE", "E-SOURCE"]}
+    },
+    {
+      "id": "AT-CELL-POPULATE",
+      "record_name": "populate",
+      "type_id": "0xDA141C1B",
+      "role": "static_world_spawner_template",
+      "size_bytes": "16-byte header plus 76-byte markers",
+      "counts": "21 unique records; 387 decoded markers",
+      "links": ["SCHEMA-CELL-POPULATE", "SCHEMA-CELL-WORLD", "AT-CELL-CELL"],
+      "evidence": {"level": "CONFIRMED", "provenance": ["E-PACKAGE", "E-GHIDRA", "E-SOURCE"]}
+    },
+    {
+      "id": "AT-CELL-RANDOM",
+      "record_name": "randomCreature/powers",
+      "type_id": "0xF9C3D770/0x754BE343",
+      "role": "static_spawn_and_power_template",
+      "size_bytes": "8-byte header plus 28-byte random entries; fixed 8-byte powers record",
+      "counts": "10 random-creature instances and 1 powers record in the current census",
+      "links": ["SCHEMA-CREATURE-ABILITY", "SCHEMA-CREATURE-ABILITY"],
+      "evidence": {"level": "CONFIRMED", "provenance": ["E-PACKAGE", "E-SOURCE"]}
+    },
+    {
+      "id": "AT-CELL-STRUCTURE",
+      "record_name": "structure",
+      "type_id": "0x4B9EF6DC",
+      "role": "static_cell_structure_attachment_template",
+      "size_bytes": "28-byte header plus 40-byte attachments",
+      "counts": "149 unique records; 170 instance IDs",
+      "links": ["SCHEMA-CELL-STRUCTURE", "AT-CELL-CELL", "AT-CELL-RANDOM"],
+      "evidence": {"level": "CONFIRMED", "provenance": ["E-PACKAGE", "E-SOURCE"]}
+    },
+    {
+      "id": "AT-CELL-WORLD",
+      "record_name": "world",
+      "type_id": "0x9B8E862F",
+      "role": "static_cell_world_and_advect_template",
+      "size_bytes": "16-byte header plus 12-byte level rows and 24-byte advect rows",
+      "counts": "37 records; 13 unique definitions",
+      "links": ["SCHEMA-CELL-WORLD", "SCHEMA-ADVECT", "AT-CELL-POPULATE"],
+      "evidence": {"level": "CONFIRMED", "provenance": ["E-PACKAGE", "E-GHIDRA", "E-SOURCE"]}
+    },
+    {
+      "id": "AT-CREATURE-BLOCK",
+      "record_name": "CreatureBlock",
+      "type_id": null,
+      "role": "resolved_animation_assembly_block",
+      "size_bytes": 1128,
+      "counts": "Ghidra/SDK structure; package record type and loader census not established",
+      "links": ["SCHEMA-CREATURE-BLOCK", "SCHEMA-CREATURE-DATA", "AT-CELL-GMDL"],
+      "evidence": {"level": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK", "E-KG"]}
+    },
+    {
+      "id": "AT-CREATURE-DATA",
+      "record_name": "cCreatureDataResource",
+      "type_id": null,
+      "role": "static_editor_creature_definition_template",
+      "size_bytes": 296,
+      "counts": "Ghidra/SDK structure; package type ID and package census not established",
+      "links": ["SCHEMA-CREATURE-DATA", "SCHEMA-CREATURE-RIGBLOCK", "SCHEMA-CREATURE-BLOCK", "AT-CELL-GMDL"],
+      "evidence": {"level": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK", "E-KG"]}
+    },
+    {
+      "id": "AT-WORLD-OBJECT",
+      "record_name": "world_object_0x0f43029a",
+      "type_id": "0x0F43029A",
+      "role": "static_model_or_part_definition_record; not a cell serializer record",
+      "size_bytes": "20-byte header plus variable body",
+      "counts": "1365 records; 1022 base and 343 EP1 in the measured package set",
+      "links": ["SCHEMA-CREATURE-BLOCK", "SCHEMA-CELL-GLOBALS"],
+      "evidence": {"level": "SUPPORTED", "provenance": ["E-PACKAGE", "E-DOSSIERS"]}
+    }
+  ],
+  "schemas": [
+    {
+      "id": "SCHEMA-ADVECT",
+      "name": "Simulator::Cell::cAdvectEntry",
+      "kind": "static_template",
+      "size_bytes": 24,
+      "fields": [
+        {"offset": "0x00", "name": "field_0", "type": "CellStageScale", "meaning": "authored scale level", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x04", "name": "playerSize", "type": "CellStageScale/int bucket", "meaning": "player-size bucket; -1 wildcard is a current-source convention", "evidence": "SUPPORTED", "provenance": ["E-SOURCE", "E-CONTRACT"]},
+        {"offset": "0x08", "name": "strength", "type": "SDK int; file bytes decode as float", "meaning": "advect strength", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SOURCE"]},
+        {"offset": "0x0C", "name": "variance", "type": "SDK int; file bytes decode as float", "meaning": "advect variance", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SOURCE"]},
+        {"offset": "0x10", "name": "period", "type": "SDK int; file bytes decode as float", "meaning": "advect period", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SOURCE"]},
+        {"offset": "0x14", "name": "advectID", "type": "uint32_t", "meaning": "flow-field resource key", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]}
+      ],
+      "evidence": {"level": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK", "E-SOURCE"]}
+    },
+    {
+      "id": "SCHEMA-CELL-DEFINITION",
+      "name": "Simulator::Cell::cCellCellResource",
+      "kind": "static_template",
+      "type_id": "0xDFAD9F51",
+      "size_bytes": 796,
+      "fields": [
+        {"offset": "0x000", "name": "structure", "type": "structure reference", "meaning": "structure template", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x004", "name": "name", "type": "cLocalizedString,164", "meaning": "localized display name", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK", "E-SOURCE"]},
+        {"offset": "0x0A8", "name": "hp", "type": "int", "meaning": "template hit-point budget", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0AC", "name": "fixedOrientation", "type": "bool", "meaning": "orientation selection flag", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0B0", "name": "flags", "type": "uint32_t", "meaning": "opaque cell flags", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0B4", "name": "cellType", "type": "CellType", "meaning": "material/encounter class", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0B8", "name": "unlockType", "type": "UnlockType", "meaning": "part/unlock classification", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0BC", "name": "density", "type": "Density", "meaning": "material density classification", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0C0", "name": "sound", "type": "Sound", "meaning": "sound/effect reference", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0C4", "name": "break_", "type": "cell reference", "meaning": "break/decomposition result", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0C8", "name": "pieces", "type": "loot reference", "meaning": "piece/loot result", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0CC", "name": "leak", "type": "cell reference", "meaning": "leak result", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0D0", "name": "expel", "type": "cell reference", "meaning": "expel result", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0D4", "name": "explosionTable", "type": "loot reference", "meaning": "explosion/decomposition table", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0D8", "name": "loot", "type": "loot reference", "meaning": "eat/decomposition loot table", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0DC", "name": "poison", "type": "cell reference", "meaning": "poison/effect reference", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0E0", "name": "ai", "type": "cAIData,180", "meaning": "normal AI tuning", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK", "E-SOURCE"]},
+        {"offset": "0x194", "name": "aiHard", "type": "cAIData,180", "meaning": "hard AI tuning", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK", "E-SOURCE"]},
+        {"offset": "0x244", "name": "aiEasy", "type": "cAIData,180", "meaning": "easy AI tuning", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK", "E-SOURCE"]},
+        {"offset": "0x2FC", "name": "friendGroup", "type": "int", "meaning": "friend/territory relation; exact domain unresolved", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK", "E-DOSSIERS"]},
+        {"offset": "0x300", "name": "wontAttackPlayer", "type": "bool", "meaning": "player attack exclusion", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x301", "name": "wontAttackPlayerWhenSmall", "type": "bool", "meaning": "small-player attack exclusion", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x304", "name": "size", "type": "float[2]", "meaning": "minimum/maximum template size", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK", "E-SOURCE"]},
+        {"offset": "0x30C", "name": "eat", "type": "cEatData,12", "meaning": "food/HP/bomb/poison data", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK", "E-SOURCE"]},
+        {"offset": "0x318", "name": "triggersEscapeMission", "type": "bool", "meaning": "mission transition trigger", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]}
+      ],
+      "evidence": {"level": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK", "E-PACKAGE", "E-SOURCE"]}
+    },
+    {
+      "id": "SCHEMA-CELL-EAT",
+      "name": "Simulator::Cell::cEatData",
+      "kind": "static_template",
+      "size_bytes": 12,
+      "fields": [
+        {"offset": "0x00", "name": "foodValue", "type": "int", "meaning": "food gained", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK", "E-SOURCE"]},
+        {"offset": "0x04", "name": "hpValue", "type": "int", "meaning": "HP gained", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK", "E-SOURCE"]},
+        {"offset": "0x08", "name": "bomb", "type": "bool", "meaning": "bomb flag", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x09", "name": "poisonNova", "type": "bool", "meaning": "poison-nova flag", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]}
+      ],
+      "evidence": {"level": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK", "E-SOURCE"]}
+    },
+    {
+      "id": "SCHEMA-CELL-GLOBALS",
+      "name": "Simulator::Cell::cCellGlobalsResource",
+      "kind": "static_template",
+      "type_id": "0x2A3CE5B7",
+      "size_bytes": 276,
+      "field_layout": "69 consecutive 4-byte fields in binary order",
+      "selected_fields": [
+        {"offset": "0x00", "name": "gameMode", "meaning": "cell game mode", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x04", "name": "world_1..world_5", "meaning": "world references", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x18", "name": "worldBackground_1..worldBackground_5", "meaning": "background world references", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x34", "name": "startCell", "meaning": "starting cell reference", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x44", "name": "flowMultiplier", "meaning": "cell flow multiplier", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x48", "name": "npcSpeedMultiplier", "meaning": "NPC speed multiplier", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x4C..0x54", "name": "npcTurnSpeedMultiplier_Jet/Flagella/Cilia", "meaning": "NPC turn multipliers", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x58..0x64", "name": "densityRock/Solid/Liquid/Air", "meaning": "density tuning", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x84", "name": "keyLookAlgorithm", "meaning": "look algorithm reference", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x90", "name": "noPartSpeed", "meaning": "no-part speed setting", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0xC8..0xD8", "name": "controlMethod/editorMethod/tutorialMethod/endingMethod/eyeMethod", "meaning": "mode and tutorial method enums", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0xE8..0x100", "name": "timeToGoldyCinematic/missionTime/missionResetTime/escape distances and timers", "meaning": "mission and escape tuning", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x10C", "name": "mateTriggerDistance", "meaning": "mate trigger distance", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x110", "name": "mateSpawnDistance", "meaning": "mate spawn distance", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]}
+      ],
+      "evidence": {"level": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK", "E-SOURCE"]}
+    },
+    {
+      "id": "SCHEMA-CELL-LOOT",
+      "name": "Simulator::Cell::cCellLootTableResource",
+      "kind": "static_template",
+      "type_id": "0xD92AF091",
+      "size_bytes": "36-byte header plus 28-byte entries",
+      "header_fields": [
+        {"offset": "0x00", "name": "entries", "meaning": "reward rows", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x04", "name": "numEntries", "meaning": "row count", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x08", "name": "minRadius", "meaning": "minimum spawn radius", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0C", "name": "maxRadius", "meaning": "maximum spawn radius", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x10", "name": "initialAlpha", "meaning": "effect alpha", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x14", "name": "expelForce", "meaning": "expulsion force", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x18", "name": "effect", "meaning": "effect reference", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x1C", "name": "mustHavePart", "meaning": "part prerequisite", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x20", "name": "delay", "meaning": "spawn delay", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]}
+      ],
+      "entry_fields": [
+        {"offset": "0x00", "name": "type", "meaning": "nothing/cell/table class", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x04", "name": "cell", "meaning": "cell reward reference", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x08", "name": "table", "meaning": "nested table reference", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0C", "name": "weight", "meaning": "selection weight", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x10", "name": "count", "meaning": "reward count", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x14", "name": "countDelta", "meaning": "count variation", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x18", "name": "levelOffset", "meaning": "level variation", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]}
+      ],
+      "evidence": {"level": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK", "E-SOURCE"]}
+    },
+    {
+      "id": "SCHEMA-CELL-OBJECT",
+      "name": "Simulator::Cell::cCellObjectData",
+      "kind": "resolved_runtime_entity",
+      "size_bytes": 920,
+      "fields": [
+        {"offset": "0x000", "name": "mObjectPoolIndex", "type": "cObjectPoolIndex", "meaning": "self-index while allocated; free-list link while free", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-DOSSIERS", "E-SOURCE"]},
+        {"offset": "0x004", "name": "mIsIdle", "type": "bool", "meaning": "activity flag; CreateCellObject writes true", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-DOSSIERS", "E-SOURCE"]},
+        {"offset": "0x008", "name": "mTargetPosition", "type": "Vector3", "meaning": "movement target", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-DOSSIERS"]},
+        {"offset": "0x014", "name": "mTargetOrientation", "type": "Quaternion", "meaning": "target orientation", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-DOSSIERS"]},
+        {"offset": "0x048", "name": "mTransform", "type": "Transform,56", "meaning": "graphics/world transform", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x080", "name": "mRelativeElevation", "type": "float", "meaning": "cell elevation", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0A0", "name": "mOpacity", "type": "float", "meaning": "current opacity", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0A4", "name": "mTargetOpacity", "type": "float", "meaning": "target opacity", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0B4", "name": "mTargetSize", "type": "float", "meaning": "target size", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0B8", "name": "field_B8", "type": "float", "meaning": "speed-related value; exact role unresolved", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-DOSSIERS"]},
+        {"offset": "0x0BC", "name": "field_BC", "type": "float", "meaning": "computed cell size in CreateCellObject", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-DOSSIERS", "E-SOURCE"]},
+        {"offset": "0x0FC", "name": "mModelKey", "type": "ResourceKey", "meaning": "resolved model identity", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x108", "name": "mCellResource", "type": "cell resource reference", "meaning": "template associated with live object", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x110", "name": "field_110", "type": "bool", "meaning": "opaque gameplay flag", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x111", "name": "mIsInvulnerable", "type": "bool", "meaning": "invulnerability", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x112", "name": "field_112", "type": "bool", "meaning": "attack bypass; exact name unresolved", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-DOSSIERS", "E-SOURCE"]},
+        {"offset": "0x1B0", "name": "mCurrentAnimation", "type": "CellAnimations", "meaning": "current animation", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x1B4", "name": "field_1B4", "type": "CellAnimations", "meaning": "target/previous animation", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-DOSSIERS"]},
+        {"offset": "0x1B8", "name": "field_1B8", "type": "float", "meaning": "animation blend duration", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-DOSSIERS", "E-SOURCE"]},
+        {"offset": "0x21C", "name": "mFleeCellTime", "type": "float", "meaning": "flee timing", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x220", "name": "mFleeCellIndex", "type": "cObjectPoolIndex", "meaning": "flee target", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x22C", "name": "mChaseCellIndex", "type": "cObjectPoolIndex", "meaning": "chase target", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x230", "name": "mChaseCellTime", "type": "float", "meaning": "chase timing", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x244", "name": "mHealthPoints", "type": "float", "meaning": "live health", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x248", "name": "mGFXObjectIndex", "type": "cObjectPoolIndex", "meaning": "associated graphics object", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x358", "name": "mScale", "type": "CellStageScale", "meaning": "stage scale bucket", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x35C", "name": "mpQuery", "type": "cCellQueryLinkedPool*", "meaning": "owning query pool", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]}
+      ],
+      "opaque_regions": "0x24-0x47, 0x84-0x9F, 0xB0-0xB3, 0x108-0x35B, and 0x360-0x397 remain partially or fully opaque",
+      "evidence": {"level": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK", "E-DOSSIERS", "E-SOURCE"]}
+    },
+    {
+      "id": "SCHEMA-CELL-POOL",
+      "name": "Simulator::cObjectPool<cCellObjectData>",
+      "kind": "resolved_runtime_container",
+      "metadata_size_bytes": 28,
+      "element_size_bytes": 920,
+      "capacity": 4096,
+      "fields": [
+        {"offset": "0x00", "name": "mpData", "meaning": "preallocated buffer", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x04", "name": "mNextAvailableIndex", "meaning": "free-list head", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x08", "name": "mObjectPoolIdentifier", "meaning": "pool ID", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0C", "name": "mNumObjects", "meaning": "capacity", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x10", "name": "mNumAllocatedObjects", "meaning": "live count", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x14", "name": "mObjectSize", "meaning": "element size", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x18", "name": "field_18", "meaning": "opaque pool metadata", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]}
+      ],
+      "evidence": {"level": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK", "E-SOURCE"]}
+    },
+    {
+      "id": "SCHEMA-CELL-PROGRESS",
+      "name": "Simulator::Cell::cCellSerializableData",
+      "kind": "progression_and_persistence_state",
+      "size_bytes": 236,
+      "owner": "cCellGame.mpSerializableData at 0x5190; global label Simulator::Cell::sCellSerializableData at 0x016B3DE0",
+      "fields": [
+        {"offset": "0x0C", "name": "mGameMode", "meaning": "serialized game mode", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x10", "name": "mPlayerCreatureKey", "type": "ResourceKey", "meaning": "serialized player-creature identity", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x1C", "name": "mFoodProgression", "meaning": "food progression", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x20", "name": "mPlantFoodProgression", "meaning": "plant-food progression", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x24", "name": "mOverPlantFoodProgression", "meaning": "over-plant-food progression", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x28", "name": "mOverAnimalFoodProgression", "meaning": "over-animal-food progression", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x2C", "name": "mEvolutionPointsSpent", "meaning": "spent evolution points", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x34", "name": "mUnlockedParts", "type": "int[13]", "meaning": "unlocked part progression", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x68", "name": "mPartCinematicPlayed", "meaning": "part cinematic progression", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x69", "name": "mShowMateButton", "meaning": "mate UI progression", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x6C", "name": "mKillCount", "meaning": "kill progression", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x70", "name": "mDeathCount", "meaning": "death progression", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x74", "name": "gameTimeMS", "meaning": "elapsed game time", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x78", "name": "gameID", "meaning": "serialized game identity", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x7C", "name": "difficulty", "meaning": "serialized difficulty", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x80", "name": "missions", "type": "cCellMission[6]", "meaning": "cell mission progression", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0xE0", "name": "playerHasMoved", "meaning": "first-move progression", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0xE1", "name": "playerHasEaten", "meaning": "first-eat progression", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0xE2", "name": "mFirstEditorEntry", "meaning": "editor-entry progression", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0xE4", "name": "mNanites", "meaning": "nanite progression", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0xE8", "name": "mNanivirusActive", "meaning": "nanovirus state", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0xE9", "name": "mAddedStartTelemetry", "meaning": "start telemetry marker", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]}
+      ],
+      "evidence": {"level": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK", "E-DOSSIERS"]}
+    },
+    {
+      "id": "SCHEMA-CELL-POPULATE",
+      "name": "Simulator::Cell::cCellPopulateResource",
+      "kind": "static_template",
+      "type_id": "0xDA141C1B",
+      "size_bytes": "16-byte header plus 76-byte markers",
+      "header_fields": [
+        {"offset": "0x00", "name": "scale", "meaning": "population scale", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x04", "name": "maskTexture", "meaning": "population mask", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x08", "name": "numMarkers", "meaning": "marker count", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0C", "name": "markers", "meaning": "marker array", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]}
+      ],
+      "marker_fields": [
+        {"offset": "0x0C", "name": "zOffset", "meaning": "vertical placement band", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x10", "name": "zOffsetMax", "meaning": "vertical band maximum", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x18", "name": "distributeCell", "meaning": "distributed cell reference", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x1C", "name": "clusterCell", "meaning": "clustered cell reference", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x20", "name": "encounterPopulate", "meaning": "nested population reference", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x24", "name": "plantType", "meaning": "plant class", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x28", "name": "type", "meaning": "marker category", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x2C", "name": "count", "meaning": "base population count", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x30", "name": "count_easy", "meaning": "easy count", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x34", "name": "count_med", "meaning": "medium count", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x38", "name": "count_hard", "meaning": "hard count", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x3C", "name": "size", "meaning": "marker size", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x40", "name": "parts", "meaning": "part count/count class; exact runtime meaning unresolved", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK", "E-SOURCE"]},
+        {"offset": "0x44", "name": "linear", "meaning": "distribution mode", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x48", "name": "encounterScale", "meaning": "encounter scale", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]}
+      ],
+      "evidence": {"level": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK", "E-SOURCE"]}
+    },
+    {
+      "id": "SCHEMA-CELL-QUERY",
+      "name": "Simulator::Cell::cCellQueryLinkedPool family",
+      "kind": "resolved_runtime_query",
+      "sizes": "cCellQueryLinkedPool 16 bytes; cCellQueryLinkedPoolData 24 bytes; cCellQueryEntry 28 bytes",
+      "fields": [
+        {"name": "mObjectPoolIndex", "size": 4, "meaning": "query-pool index", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"name": "mpData", "size": 4, "meaning": "arena/header pointer", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"name": "mpNextNode", "size": 4, "meaning": "active linked node", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"name": "mpToAddNextNode", "size": 4, "meaning": "pending linked node", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"name": "mPosition", "size": 12, "meaning": "candidate position", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"name": "mCellSize", "size": 4, "meaning": "candidate cell size", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"name": "field_10", "size": 4, "meaning": "opaque query state", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"name": "mpNext", "size": 4, "meaning": "linked entry", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"name": "mCellIndex", "size": 4, "meaning": "candidate pool index", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]}
+      ],
+      "evidence": {"level": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK", "E-DOSSIERS"]}
+    },
+    {
+      "id": "SCHEMA-CELL-STRUCTURE",
+      "name": "Simulator::Cell::cCellStructureResource",
+      "kind": "static_template",
+      "type_id": "0x4B9EF6DC",
+      "size_bytes": "28-byte header plus 40-byte attachments",
+      "fields": [
+        {"offset": "0x00", "name": "onDeath", "meaning": "normal death effect", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x04", "name": "onDeathSmall", "meaning": "small death effect", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x08", "name": "onDeathLarge", "meaning": "large death effect", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0C", "name": "onHatch", "meaning": "hatch effect", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x10", "name": "onStartHatch", "meaning": "start-hatch effect", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x14", "name": "attachments", "meaning": "attachment rows", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x18", "name": "numAttachments", "meaning": "attachment count", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]}
+      ],
+      "evidence": {"level": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK", "E-SOURCE"]}
+    },
+    {
+      "id": "SCHEMA-CELL-WORLD",
+      "name": "Simulator::Cell::cCellWorldResource",
+      "kind": "static_template",
+      "type_id": "0x9B8E862F",
+      "size_bytes": "16-byte header plus level and advect arrays",
+      "fields": [
+        {"offset": "0x00", "name": "numPopulate", "meaning": "population row count", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x04", "name": "populate", "meaning": "cLevelEntry array", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x08", "name": "numAdvect", "meaning": "advect row count", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0C", "name": "advect", "meaning": "cAdvectEntry array", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]}
+      ],
+      "level_entry": "12 bytes: populate reference, startTile bool, playerSize bucket",
+      "advect_entry": "24 bytes: authored scale, player-size bucket, strength, variance, period, advectID",
+      "evidence": {"level": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK", "E-SOURCE"]}
+    },
+    {
+      "id": "SCHEMA-CREATURE-ABILITY",
+      "name": "Simulator::cCreatureAbility",
+      "kind": "static_or_resource_template",
+      "size_bytes": 316,
+      "selected_fields": [
+        {"offset": "0x08", "name": "mType", "meaning": "ability type", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0C", "name": "mCategory", "meaning": "ability category", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x10", "name": "mSocialCategory", "meaning": "social category", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x3C", "name": "mDamage", "meaning": "damage", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x60", "name": "mRange", "meaning": "ability range", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x68", "name": "mRecharge", "meaning": "ability recharge", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x6C", "name": "mEnergyCost", "meaning": "ability energy cost", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x110", "name": "mDNAPoints", "meaning": "DNA-point cost; gene-like progression evidence, not a proven genome field", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x48", "name": "mAnimationIDs", "meaning": "ability animation references", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]}
+      ],
+      "evidence": {"level": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]}
+    },
+    {
+      "id": "SCHEMA-CREATURE-ANIMAL",
+      "name": "Simulator::cCreatureAnimal",
+      "kind": "resolved_runtime_entity",
+      "size_bytes": 5792,
+      "inherits": "cCreatureBase",
+      "selected_fields": [
+        {"offset": "0x0FC0", "name": "mNoDamageTimer", "meaning": "no-damage timer", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0FE0", "name": "mLastAvatarDamageTimer", "meaning": "last avatar damage state", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x1004", "name": "mNextSpecies", "type": "ResourceKey", "meaning": "next species/evolution identity", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x1010", "name": "mColor", "type": "ColorRGB", "meaning": "runtime color", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x1674", "name": "mHerd", "meaning": "herd relationship owner", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x1678", "name": "mPregnantEggs", "meaning": "pregnancy/egg progression", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x1684", "name": "mPersonality", "meaning": "creature personality", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x1694", "name": "mCharmDamage", "meaning": "charm damage", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x1698", "name": "mCharmTime", "meaning": "charm timer", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK"]}
+      ],
+      "evidence": {"level": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]}
+    },
+    {
+      "id": "SCHEMA-CREATURE-BASE",
+      "name": "Simulator::cCreatureBase",
+      "kind": "resolved_runtime_entity",
+      "size_bytes": 4032,
+      "selected_fields": [
+        {"offset": "0x0028", "name": "mDefinitionID", "meaning": "resolved definition identity", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0030", "name": "mPoliticalID", "meaning": "political/relationship identity", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x00C4", "name": "mPosition", "meaning": "runtime position", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x00D0", "name": "mOrientation", "meaning": "runtime orientation", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0110", "name": "mFlags", "meaning": "runtime flags", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0124", "name": "mScale", "meaning": "runtime scale", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0150", "name": "mModelKey", "type": "ResourceKey", "meaning": "resolved model asset", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0334", "name": "mNeighbors", "meaning": "neighbor/entity relation set", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0594", "name": "mData", "meaning": "behavior data", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x05DC", "name": "mHealthPoints", "meaning": "current health", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x05F0", "name": "mpTarget", "meaning": "combat target", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0B20", "name": "mpSpeciesProfile", "meaning": "resolved species profile", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0B28", "name": "mSpeciesKey", "type": "ResourceKey", "meaning": "resolved species asset", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0B34", "name": "mAge", "meaning": "creature age", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0B38", "name": "mCreatureName", "meaning": "runtime name", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0B54", "name": "mpAnimatedCreature", "meaning": "presentation/animation owner", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0B5E", "name": "mbDead", "meaning": "dead state", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0B5F", "name": "mbHasBeenEaten", "meaning": "eaten state", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0BBC", "name": "mHunger", "meaning": "hunger state", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0BEC", "name": "mInUseAbilityBits", "meaning": "ability-in-use state", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0BF8", "name": "mRechargingAbilityBits", "meaning": "ability recharge state", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0C28", "name": "mAbilityStates", "meaning": "resolved ability state", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0CC0", "name": "mLastMotiveState", "meaning": "last motive state", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0E40", "name": "mItemInventory", "meaning": "creature inventory", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0E58", "name": "mEnergy", "meaning": "current energy", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0E70", "name": "mDefaultAttackAbilityIndex", "meaning": "default attack ability", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0E74", "name": "mDefaultSocializeAbilityIndex", "meaning": "default socialize ability", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0E8C", "name": "mCurrentAttackIdx", "meaning": "current attack index", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0E90", "name": "mCurrentAttackAnimId", "meaning": "current attack animation", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]}
+      ],
+      "evidence": {"level": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]}
+    },
+    {
+      "id": "SCHEMA-CREATURE-BLOCK",
+      "name": "Anim::CreatureBlock",
+      "kind": "resolved_animation_assembly",
+      "size_bytes": 1128,
+      "selected_fields": [
+        {"offset": "0x000", "name": "name", "type": "char[260]", "meaning": "part/block name", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x104", "name": "instanceID", "meaning": "model resource instance", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x108", "name": "groupID", "meaning": "model resource group", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x10C", "name": "bboxCenter", "meaning": "part bounding center", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x118", "name": "orientation", "meaning": "part orientation", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x144", "name": "position", "meaning": "part position", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x150", "name": "capabilities", "type": "Capabilities,168", "meaning": "part capability flags/levels", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x1F8", "name": "blockIndex", "meaning": "block index", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x1FC", "name": "parentIndex", "meaning": "parent block", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x200", "name": "symmetricIndex", "meaning": "symmetry partner", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x21C", "name": "blockID", "meaning": "block identity", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x220", "name": "cal3DBoneName", "meaning": "animation bone", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x33C", "name": "submeshIndex", "meaning": "submesh selection", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x378", "name": "scale", "meaning": "part scale", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x380", "name": "deforms", "type": "Deforms,164", "meaning": "deformation records", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x424", "name": "soundIDFoot", "meaning": "foot sound", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x428", "name": "soundIDMouth", "meaning": "mouth sound", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]}
+      ],
+      "evidence": {"level": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]}
+    },
+    {
+      "id": "SCHEMA-CREATURE-DATA",
+      "name": "Editors::cCreatureDataResource",
+      "kind": "static_template",
+      "size_bytes": 296,
+      "fields": [
+        {"offset": "0x000", "name": "vtable", "type": "ResourceObject vtable*", "meaning": "resource object", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x004", "name": "mnRefCount", "meaning": "resource reference count", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x008", "name": "mNameKey", "type": "ResourceKey", "meaning": "creature definition identity", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x014", "name": "field_14", "type": "int", "meaning": "opaque resource field", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x018", "name": "mProperties", "type": "cEditorResourceProperties,128", "meaning": "model type, scores, skin effects, colors", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x098", "name": "mRigblocks", "type": "vector<RigblockData>", "meaning": "part/assembly definitions", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0AC", "name": "mCapabilityIDs", "type": "vector<CapabilityTag>", "meaning": "capability tags", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0C0", "name": "mCapabilityLevels", "type": "vector<char>", "meaning": "capability levels", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0D4", "name": "mAnimationIDs", "type": "vector<uint32_t>", "meaning": "animation references", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0E8", "name": "mAnimationValues", "type": "vector<float>", "meaning": "animation values", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0FC", "name": "mAnimationWeights", "type": "vector<float>", "meaning": "animation weights", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x110", "name": "field_110", "type": "int", "meaning": "opaque resource field", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x114", "name": "mEffects", "type": "vector<int>", "meaning": "effect references", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]}
+      ],
+      "gene_conclusion": "No field or record named gene/genome is evidenced. Rigblock morph indexes, capability tags, and ability mDNAPoints are related-looking data, but their mapping to inherited genes is unresolved.",
+      "evidence": {"level": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK", "E-KG"]}
+    },
+    {
+      "id": "SCHEMA-CREATURE-PROGRESSION",
+      "name": "Simulator::cCreatureGameData",
+      "kind": "progression_state",
+      "size_bytes": 76,
+      "global": "Simulator::sCreatureGameData at 0x0169E370",
+      "fields": [
+        {"offset": "0x00", "name": "mCurrentBrainLevel", "meaning": "current brain level", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x04", "name": "mAvatarNormalizingScale", "meaning": "avatar normalization factor", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x08", "name": "mNumFlapsAllowed", "type": "int in export", "meaning": "flap allowance; write type conflicts with AfterGlideFinish", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0C", "name": "field_C", "type": "bool", "meaning": "opaque progression flag", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0D", "name": "field_D", "type": "bool", "meaning": "opaque progression flag", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0E", "name": "field_E", "type": "bool", "meaning": "opaque progression flag", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0F", "name": "field_F", "type": "bool", "meaning": "opaque progression flag", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x10", "name": "field_10", "type": "bool", "meaning": "opaque progression flag", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x11", "name": "field_11", "type": "bool", "meaning": "opaque progression flag", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x14", "name": "field_14", "type": "int", "meaning": "opaque progression field", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x18", "name": "field_18", "type": "Vector3", "meaning": "opaque progression vector", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x24", "name": "mAbilityMode", "type": "AbilityMode", "meaning": "attack/social mode", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x28", "name": "mEvolutionPoints", "type": "float", "meaning": "current evolution points", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x2C", "name": "DEPRECATED_mLearnedAbilities", "type": "uint64_t", "meaning": "deprecated learned-ability bits", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x34", "name": "mLearnedAbilities", "type": "int[3]", "meaning": "learned-ability state", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x40", "name": "mGlideStartPosition", "type": "Vector3", "meaning": "glide-start position", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]}
+      ],
+      "evidence": {"level": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK", "E-KG"]}
+    },
+    {
+      "id": "SCHEMA-CREATURE-RIGBLOCK",
+      "name": "Editors::cCreatureDataResource::RigblockData",
+      "kind": "static_template",
+      "size_bytes": 140,
+      "fields": [
+        {"offset": "0x00", "name": "mIndex", "meaning": "rigblock index", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x02", "name": "field_2", "meaning": "opaque rigblock field", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x04", "name": "mParentIndex", "meaning": "parent rigblock", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x06", "name": "mSymmetricIndex", "meaning": "symmetry partner", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x08", "name": "mFlags", "meaning": "rigblock flags", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0B", "name": "mType", "type": "RigblockDataType", "meaning": "NullBlock, Unk1, Standard, Unk3, PlantRoot, or Vertebra", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0C", "name": "mCapabilityIndex", "meaning": "capability index", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x0E", "name": "mMorphsIndex", "meaning": "morph index; not proven to be a gene index", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x10", "name": "mNumCapabilities", "meaning": "capability count", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x14", "name": "mBoundingBox", "type": "BoundingBox,24", "meaning": "part bounding box", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x2C", "name": "mScale", "meaning": "part scale", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x30", "name": "mTotalOrientation", "type": "Matrix3", "meaning": "accumulated orientation", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x54", "name": "mPosition", "meaning": "part position", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x60", "name": "mEffectOffset", "meaning": "effect offset", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x6C", "name": "mScaleRelative", "meaning": "relative scale", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x70", "name": "mSocketConnectorDistance", "meaning": "socket distance", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x74", "name": "mMuscleScale", "meaning": "muscle scale", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x78", "name": "mBaseMuscleScale", "meaning": "base muscle scale", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x80", "name": "mFootWeaponOrMouthType", "meaning": "part role for foot/weapon/mouth", "evidence": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x84", "name": "mGroupID", "meaning": "resource group", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]},
+        {"offset": "0x88", "name": "mInstanceID", "meaning": "resource instance", "evidence": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]}
+      ],
+      "evidence": {"level": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK", "E-KG"]}
+    }
+  ],
+  "relationships": [
+    {"id": "REL-01", "from": "SCHEMA-CREATURE-DATA", "to": "SCHEMA-CREATURE-RIGBLOCK", "relation": "contains_part_definitions", "evidence": {"level": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]}},
+    {"id": "REL-02", "from": "SCHEMA-CREATURE-RIGBLOCK", "to": "SCHEMA-CREATURE-BLOCK", "relation": "resolves_to_model_part_identity", "evidence": {"level": "SUPPORTED", "provenance": ["E-GHIDRA", "E-PACKAGE", "E-SDK"]}},
+    {"id": "REL-03", "from": "SCHEMA-CREATURE-BLOCK", "to": "AT-CELL-GMDL", "relation": "carries_model_resource_key", "evidence": {"level": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]}},
+    {"id": "REL-04", "from": "SCHEMA-CELL-DEFINITION", "to": "SCHEMA-CELL-EAT", "relation": "embeds_three_ai_blocks_and_one_eat_block", "evidence": {"level": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK", "E-SOURCE"]}},
+    {"id": "REL-05", "from": "SCHEMA-CELL-WORLD", "to": "SCHEMA-CELL-POPULATE", "relation": "selects_population_by_player_size", "evidence": {"level": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]}},
+    {"id": "REL-06", "from": "SCHEMA-CELL-POPULATE", "to": "SCHEMA-CELL-DEFINITION", "relation": "distributes_or_clusters_cell_definition", "evidence": {"level": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK", "E-SOURCE"]}},
+    {"id": "REL-07", "from": "SCHEMA-CELL-DEFINITION", "to": "SCHEMA-CELL-LOOT", "relation": "references_eat_and_decomposition_tables", "evidence": {"level": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK", "E-SOURCE"]}},
+    {"id": "REL-08", "from": "SCHEMA-CELL-OBJECT", "to": "SCHEMA-CELL-DEFINITION", "relation": "resolves_template_reference_at_runtime", "evidence": {"level": "CONFIRMED", "provenance": ["E-GHIDRA", "E-DOSSIERS"]}},
+    {"id": "REL-09", "from": "SCHEMA-CELL-OBJECT", "to": "SCHEMA-CELL-QUERY", "relation": "participates_in_spatial_query", "evidence": {"level": "SUPPORTED", "provenance": ["E-GHIDRA", "E-DOSSIERS", "E-SDK"]}},
+    {"id": "REL-10", "from": "SCHEMA-CELL-OBJECT", "to": "AT-CELL-GMDL", "relation": "uses_model_key_for_graphics", "evidence": {"level": "CONFIRMED", "provenance": ["E-GHIDRA", "E-DOSSIERS", "E-SDK"]}},
+    {"id": "REL-11", "from": "SCHEMA-CELL-PROGRESS", "to": "SCHEMA-CELL-DEFINITION", "relation": "stores_player_creature_and_unlocked_progression", "evidence": {"level": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK"]}},
+    {"id": "REL-12", "from": "SCHEMA-CREATURE-PROGRESSION", "to": "SCHEMA-CREATURE-BASE", "relation": "provides_avatar_scale_normalization", "evidence": {"level": "SUPPORTED", "provenance": ["E-GHIDRA", "E-SDK"]}},
+    {"id": "REL-13", "from": "SCHEMA-CREATURE-BASE", "to": "SCHEMA-CREATURE-ABILITY", "relation": "stores_ability_state_and_default_indices", "evidence": {"level": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK"]}},
+    {"id": "REL-14", "from": "SCHEMA-CELL-DEFINITION", "to": "SCHEMA-CELL-STRUCTURE", "relation": "references_structure_definition", "evidence": {"level": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK", "E-SOURCE"]}},
+    {"id": "REL-15", "from": "SCHEMA-CELL-STRUCTURE", "to": "AT-CELL-RANDOM", "relation": "may_attach_random_creature", "evidence": {"level": "CONFIRMED", "provenance": ["E-GHIDRA", "E-SDK", "E-SOURCE"]}},
+    {"id": "REL-16", "from": "SCHEMA-CELL-PROGRESS", "to": "SCHEMA-CREATURE-DATA", "relation": "direct_resource_ownership_unproven", "evidence": {"level": "UNKNOWN", "provenance": ["E-GHIDRA", "E-KG"]}}
+  ],
+  "functions": [
+    {"id": "FN-CELL-CREATE-OBJECT", "address": "0x00E74A20", "name": "Simulator::Cell::CreateCellObject", "layer": "runtime_creation", "contract": "Allocates from the 4096-cell pool, derives cell size from scale/resource/explicit size, fills transform/target/opacity/elevation fields, resolves model/resource/GFX/query/effect state, inserts query state, and returns a pool index.", "evidence": {"level": "SUPPORTED", "provenance": ["Ghidra MCP read-only decompile_function(0x00E74A20)", "E-DOSSIERS", "E-SOURCE"]}},
+    {"id": "FN-CELL-DAMAGE", "address": "0x00E58980", "name": "Simulator::Cell::GetDamageAmount", "layer": "runtime_rule", "contract": "Returns 0..6 damage from player/non-player attacker-victim scale relationships; non-player versus non-player uses a 5x5 matrix.", "evidence": {"level": "CONFIRMED", "provenance": ["Ghidra MCP read-only decompile_function(0x00E58980)", "E-SOURCE"]}},
+    {"id": "FN-CELL-DATA-REFERENCE-CREATE", "address": "0x00E82420", "name": "Simulator::Cell::cCellDataReference_::Create", "layer": "resource_reference_creation", "contract": "Looks up or creates a 16-byte cCellDataReference_ keyed by instance ID and CellSerializer, returning an intrusive resource reference.", "evidence": {"level": "CONFIRMED", "provenance": ["Ghidra MCP read-only decompile_function(0x00E82420)", "Ghidra MCP read-only get_struct_layout(cCellDataReference_)"]}},
+    {"id": "FN-CELL-GAME-INITIALIZE", "address": "0x00E80BA0", "name": "Simulator::Cell::cCellGame::Initialize", "layer": "runtime_state_creation", "contract": "Resets flags, creates foreground/background query pools, allocates the 4096-cell pool, initializes time scale and serializable state, selects world references, and writes background bounds.", "evidence": {"level": "SUPPORTED", "provenance": ["Ghidra MCP read-only decompile_function(0x00E80BA0)", "E-DOSSIERS", "E-SOURCE"]}},
+    {"id": "FN-CELL-GET-ADIACT-CURRENT", "address": "0x00E58EF0", "name": "Simulator::Cell::GetCurrentAdvectInfo", "layer": "runtime_query", "contract": "Returns the exact player-size advect row or the -1 default row, including scale, strength, variance, period, and advect ID.", "evidence": {"level": "CONFIRMED", "provenance": ["Ghidra MCP read-only decompile_function(0x00E58EF0)", "E-SOURCE"]}},
+    {"id": "FN-CELL-GET-ADIACT-NEXT", "address": "0x00E58E30", "name": "Simulator::Cell::GetNextAdvectID", "layer": "runtime_query", "contract": "Maps current scale to a bucket, searches cAdvectEntry rows for the next bucket, and falls back to the -1 default row or zero.", "evidence": {"level": "CONFIRMED", "provenance": ["Ghidra MCP read-only decompile_function(0x00E58E30)", "E-SOURCE"]}},
+    {"id": "FN-CELL-GET-GLOBALS", "address": "0x00E4CE20", "name": "Simulator::Cell::GetGlobalsData", "layer": "resource_load", "contract": "Loads a CellGame/ globals resource and returns a cCellGlobalsResource through the Cell resource subsystem.", "evidence": {"level": "CONFIRMED", "provenance": ["Ghidra MCP read-only decompile_function(0x00E4CE20)", "E-PACKAGE"]}},
+    {"id": "FN-CELL-GET-MODEL-KEY", "address": "0x00E65640", "name": "Simulator::Cell::GetModelKeyForCellResource", "layer": "resource_resolution", "contract": "Resolves a cell resource reference and chooses a model key using composition/type branches and a default model key.", "evidence": {"level": "CONFIRMED", "provenance": ["Ghidra MCP read-only decompile_function(0x00E65640)", "E-DOSSIERS"]}},
+    {"id": "FN-CELL-GET-SCALE-DIFFERENCE", "address": "0x00E57340", "name": "Simulator::Cell::GetScaleDifferenceWithPlayer", "layer": "runtime_rule", "contract": "Maps another cell's stage scale and the player's scale to a five-value ScaleDifference.", "evidence": {"level": "CONFIRMED", "provenance": ["Ghidra MCP read-only decompile_function(0x00E57340)", "E-SOURCE"]}},
+    {"id": "FN-CELL-MODE-DISPOSE", "address": "0x00E81F30", "name": "App::cCellModeStrategy::Dispose", "layer": "lifecycle_destruction", "contract": "Restores globals, disables cell display/services, releases cCellGame, cCellGFX, and cCellUI, and performs pause/unpause side effects.", "evidence": {"level": "SUPPORTED", "provenance": ["Ghidra MCP read-only decompile_function(0x00E81F30)", "E-DOSSIERS", "E-SOURCE"]}},
+    {"id": "FN-CELL-MODE-ENTER", "address": "0x00E552F0", "name": "App::cCellModeStrategy::OnEnter", "layer": "lifecycle_transition", "contract": "Resets mode/UI flags, starts the cell display, and activates cell world/UI/application services.", "evidence": {"level": "SUPPORTED", "provenance": ["Ghidra MCP read-only decompile_function(0x00E552F0)", "E-DOSSIERS", "E-SOURCE"]}},
+    {"id": "FN-CELL-MODE-EXIT", "address": "0x00E7FC00", "name": "App::cCellModeStrategy::OnExit", "layer": "lifecycle_transition", "contract": "Restores background clear globals, drains/cleans cell state, disables the mode, and releases world/effect state.", "evidence": {"level": "SUPPORTED", "provenance": ["Ghidra MCP read-only decompile_function(0x00E7FC00)", "E-DOSSIERS", "E-SOURCE"]}},
+    {"id": "FN-CELL-MODE-INITIALIZE", "address": "0x00E81CF0", "name": "App::cCellModeStrategy::Initialize", "layer": "lifecycle_creation", "contract": "Allocates or assigns sCellGame, sCellGFX, and sCellUI, resets mode flags, and performs application pre-shutdown/setup work.", "evidence": {"level": "SUPPORTED", "provenance": ["Ghidra MCP read-only decompile_function(0x00E81CF0)", "E-DOSSIERS", "E-SOURCE"]}},
+    {"id": "FN-CELL-MOVE-PLAYER", "address": "0x00E5B790", "name": "Simulator::Cell::MovePlayerToMousePosition", "layer": "runtime_mutation", "contract": "Resolves the avatar through mAvatarCellIndex, applies lock/camera/UI gates, intersects a camera ray with the movement plane, writes target position/orientation, and sets the moving flag.", "evidence": {"level": "SUPPORTED", "provenance": ["Ghidra MCP read-only decompile_function(0x00E5B790)", "E-DOSSIERS", "E-SOURCE"]}},
+    {"id": "FN-CELL-PLAY-ANIMATION", "address": "0x00E6D200", "name": "Simulator::Cell::PlayAnimation", "layer": "runtime_mutation", "contract": "Computes blend-in/out times, scales them by the cell animation-time factor, dispatches the target animation, and stores current/previous animation state.", "evidence": {"level": "CONFIRMED", "provenance": ["Ghidra MCP read-only decompile_function(0x00E6D200)", "E-DOSSIERS", "E-SOURCE"]}},
+    {"id": "FN-CELL-POOL-LIFECYCLE", "address": "0x00E780A0", "name": "FUN_00e780a0", "layer": "runtime_destruction_rebuild", "contract": "Clears a matching avatar index, releases query/GFX/effect associations, deallocates the old pool object, and recreates it when stage scale changes.", "evidence": {"level": "SUPPORTED", "provenance": ["Ghidra MCP read-only decompile_function and get_function_callees(0x00E780A0)", "E-DOSSIERS"]}},
+    {"id": "FN-CELL-SHOULD-NOT-ATTACK", "address": "0x00E57460", "name": "Simulator::Cell::ShouldNotAttack", "layer": "runtime_rule", "contract": "Returns an attack exclusion for identical resources, player-target resource flags, small-player restrictions, and equal non-zero territory values.", "evidence": {"level": "CONFIRMED", "provenance": ["Ghidra MCP read-only decompile_function(0x00E57460)", "E-SOURCE"]}},
+    {"id": "FN-CELL-UI-HEALTH-ROLLOVER", "address": "0x00E62340", "name": "Simulator::Cell::cCellUI::ShowHealthRollover", "layer": "runtime_event_projection", "contract": "Allocates a UI rollover for a live cell GFX object, storing initial-health-derived display data and 0.5f disappearance time.", "evidence": {"level": "CONFIRMED", "provenance": ["Ghidra MCP read-only decompile_function(0x00E62340)", "E-DOSSIERS", "E-SOURCE"]}},
+    {"id": "FN-CREATURE-ADD-EVO", "address": "0x00D2E8A0", "name": "Simulator::cCreatureGameData::AddEvolutionPoints", "layer": "progression_mutation", "contract": "Adds points, clamps at static 10000.0f, updates another player-state counter at +0x10F0, and conditionally dispatches a mode action/event outside tutorial/menu state.", "evidence": {"level": "OBSERVED", "provenance": ["Ghidra MCP read-only decompile_function(0x00D2E8A0)", "Ghidra MCP read-only read_memory(0x01582E54)"]}},
+    {"id": "FN-CREATURE-AFTER-GLIDE", "address": "0x00D2E580", "name": "Simulator::cCreatureGameData::AfterGlideFinish", "layer": "progression_transition", "contract": "Writes one of five static float constants or zero to sCreatureGameData+0x08 and updates hidden glide target state at 0x0169E3B4..0x0169E3BC.", "evidence": {"level": "OBSERVED", "provenance": ["Ghidra MCP read-only decompile_function and disassemble_function(0x00D2E580)", "E-GHIDRA"]}},
+    {"id": "FN-CREATURE-CALC-AVATAR-SCALE", "address": "0x00D2E720", "name": "Simulator::cCreatureGameData::CalculateAvatarNormalizingScale", "layer": "progression_query", "contract": "Resets normalization to 1, reads species/avatar bounds and a property Vector2 array, and computes the fitting scale.", "evidence": {"level": "SUPPORTED", "provenance": ["Ghidra MCP read-only decompile_function(0x00D2E720)", "E-GHIDRA"]}},
+    {"id": "FN-CREATURE-GET", "address": "0x00D2E340", "name": "Simulator::cCreatureGameData::Get", "layer": "progression_accessor", "contract": "Returns the global sCreatureGameData object at 0x0169E370.", "evidence": {"level": "CONFIRMED", "provenance": ["Ghidra MCP read-only decompile_function(0x00D2E340)", "Ghidra MCP read-only list_globals(Simulator::sCreatureGameData)"]}},
+    {"id": "FN-CREATURE-GET-ABILITY", "address": "0x00D2E490", "name": "Simulator::cCreatureGameData::GetAbilityMode", "layer": "progression_query", "contract": "Returns the global AbilityMode at DAT_0169E394, corresponding to cCreatureGameData+0x24.", "evidence": {"level": "CONFIRMED", "provenance": ["Ghidra MCP read-only decompile_function(0x00D2E490)", "E-GHIDRA"]}},
+    {"id": "FN-CREATURE-GET-EVO", "address": "0x00D2E350", "name": "Simulator::cCreatureGameData::GetEvolutionPoints", "layer": "progression_query", "contract": "Returns the global float at DAT_0169E398, corresponding to cCreatureGameData+0x28.", "evidence": {"level": "CONFIRMED", "provenance": ["Ghidra MCP read-only decompile_function(0x00D2E350)", "Ghidra MCP read-only get_xrefs_to(0x0169E398)"]}},
+    {"id": "FN-CREATURE-GET-EVO-THRESHOLD", "address": "0x00D2E380", "name": "Simulator::cCreatureGameData::GetEvoPointsToNextBrainLevel", "layer": "progression_query", "contract": "Returns 1000, 2000, 3000, or 5000 for brain levels 0..3; other levels return 0.", "evidence": {"level": "OBSERVED", "provenance": ["Ghidra MCP read-only decompile_function(0x00D2E380)", "Ghidra MCP read-only read_memory(0x01582E38)"]}},
+    {"id": "FN-CREATURE-SET-ABILITY", "address": "0x00D2E4A0", "name": "Simulator::cCreatureGameData::SetAbilityMode", "layer": "progression_mutation", "contract": "Stores Attack/Social mode at cCreatureGameData+0x24 and updates mode/services/effects and optional sound on change.", "evidence": {"level": "CONFIRMED", "provenance": ["Ghidra MCP read-only decompile_function(0x00D2E4A0)", "E-GHIDRA"]}},
+    {"id": "FN-CREATURE-SET-EVO", "address": "0x00D2E480", "name": "Simulator::cCreatureGameData::SetEvolutionPoints", "layer": "progression_mutation", "contract": "Writes the supplied float to cCreatureGameData+0x28 without an observed clamp in this accessor.", "evidence": {"level": "CONFIRMED", "provenance": ["Ghidra MCP read-only decompile_function(0x00D2E480)", "Ghidra MCP read-only get_xrefs_to(0x0169E398)"]}},
+    {"id": "FN-EDITOR-ADD-CREATURE", "address": "0x00582FE0", "name": "Editors::cEditor::AddCreature", "layer": "editor_creation", "contract": "Accepts creature ID and optional ResourceKey, obtains or creates an editor animation world, resolves an AnimatedCreature, and initializes presentation/model state.", "evidence": {"level": "CONFIRMED", "provenance": ["Ghidra MCP read-only decompile_function(0x00582FE0)", "E-GHIDRA"]}},
+    {"id": "FN-EDITOR-DESTROY-CREATURE", "address": "0x0059C6E0", "name": "Editors::cEditorAnimWorld::DestroyCreature", "layer": "editor_destruction", "contract": "Looks up a creature ID, releases its associated object, and removes the editor map entry.", "evidence": {"level": "CONFIRMED", "provenance": ["Ghidra MCP read-only decompile_function(0x0059C6E0)", "E-GHIDRA"]}}
+  ],
+  "lifecycle": [
+    {"id": "LC-01", "order": 1, "from": "resource_loaded", "to": "resolved_template", "events": ["resource_key_resolved", "reference_cached"], "functions": ["FN-CELL-DATA-REFERENCE-CREATE", "FN-CELL-GET-GLOBALS"], "evidence": {"level": "SUPPORTED", "provenance": ["E-GHIDRA", "E-PACKAGE"]}},
+    {"id": "LC-02", "order": 2, "from": "mode_absent", "to": "cell_mode_initialized", "events": ["sCellGame_allocated_or_assigned", "sCellGFX_allocated_or_assigned", "sCellUI_allocated_or_assigned", "flags_reset"], "functions": ["FN-CELL-MODE-INITIALIZE"], "evidence": {"level": "SUPPORTED", "provenance": ["E-GHIDRA", "E-DOSSIERS"]}},
+    {"id": "LC-03", "order": 3, "from": "cell_game_uninitialized", "to": "runtime_state_ready", "events": ["foreground_query_created", "background_query_created", "main_pool_capacity_4096", "time_scale_1", "serializable_state_attached", "world_refs_selected"], "functions": ["FN-CELL-GAME-INITIALIZE"], "evidence": {"level": "SUPPORTED", "provenance": ["E-GHIDRA", "E-DOSSIERS", "E-SOURCE"]}},
+    {"id": "LC-04", "order": 4, "from": "initialized_inactive", "to": "cell_mode_active", "events": ["display_started", "world_ui_services_activated"], "functions": ["FN-CELL-MODE-ENTER"], "evidence": {"level": "SUPPORTED", "provenance": ["E-GHIDRA", "E-DOSSIERS", "E-SOURCE"]}},
+    {"id": "LC-05", "order": 5, "from": "free_pool_entry", "to": "live_cell_entity", "events": ["pool_allocated", "size_computed", "transform_target_filled", "resource_model_key_resolved", "query_gfx_effect_state_initialized", "pool_index_returned"], "functions": ["FN-CELL-CREATE-OBJECT"], "evidence": {"level": "SUPPORTED", "provenance": ["E-GHIDRA", "E-DOSSIERS", "E-SOURCE"]}},
+    {"id": "LC-06", "order": 6, "from": "cell_template_reference", "to": "preloaded_assets", "events": ["cell_resource_walked", "model_preloaded", "effect_preloaded", "populate_recursively_walked"], "functions": ["FN-CELL-GET-MODEL-KEY"], "evidence": {"level": "SUPPORTED", "provenance": ["E-GHIDRA", "E-DOSSIERS", "E-SOURCE"]}},
+    {"id": "LC-07", "order": 7, "from": "active_mode", "to": "movement_state_mutated", "events": ["avatar_resolved", "ray_plane_hit", "target_position_written", "orientation_written", "moving_flag_set"], "functions": ["FN-CELL-MOVE-PLAYER"], "evidence": {"level": "SUPPORTED", "provenance": ["E-GHIDRA", "E-DOSSIERS", "E-SOURCE"]}},
+    {"id": "LC-08", "order": 8, "from": "animation_or_effect_request", "to": "presentation_state_mutated", "events": ["blend_computed", "animation_dispatched", "health_rollover_allocated"], "functions": ["FN-CELL-PLAY-ANIMATION", "FN-CELL-UI-HEALTH-ROLLOVER"], "evidence": {"level": "SUPPORTED", "provenance": ["E-GHIDRA", "E-DOSSIERS", "E-SOURCE"]}},
+    {"id": "LC-09", "order": 9, "from": "creature_progression", "to": "evolution_state_mutated", "events": ["evolution_points_added", "ceiling_applied", "player_counter_updated", "conditional_mode_action_dispatched", "ability_mode_changed", "avatar_scale_recalculated"], "functions": ["FN-CREATURE-ADD-EVO", "FN-CREATURE-SET-ABILITY", "FN-CREATURE-CALC-AVATAR-SCALE"], "evidence": {"level": "OBSERVED", "provenance": ["E-GHIDRA"]}},
+    {"id": "LC-10", "order": 10, "from": "old_live_object", "to": "rebuilt_or_released_object", "events": ["avatar_index_cleared_if_matching", "gfx_query_effects_released", "old_pool_object_deallocated", "new_object_created_if_scale_changed"], "functions": ["FN-CELL-POOL-LIFECYCLE"], "evidence": {"level": "SUPPORTED", "provenance": ["E-GHIDRA", "E-DOSSIERS"]}},
+    {"id": "LC-11", "order": 11, "from": "active_mode", "to": "exited_and_disposed", "events": ["background_globals_restored", "cell_state_cleaned", "display_disabled", "cell_singletons_released", "pause_state_changed"], "functions": ["FN-CELL-MODE-EXIT", "FN-CELL-MODE-DISPOSE"], "evidence": {"level": "SUPPORTED", "provenance": ["E-GHIDRA", "E-DOSSIERS", "E-SOURCE"]}}
+  ],
+  "persistence": [
+    {"id": "PERSIST-CELL-REFERENCE", "layer": "asset_reference", "schema": "cCellDataReference_", "fields": ["mInstanceID", "mpSerializer", "mpResource", "mCounter"], "boundary": "Reference object is runtime/asset identity; its serializer and resource pointer are not gameplay progression.", "evidence": {"level": "CONFIRMED", "provenance": ["Ghidra MCP read-only get_struct_layout(cCellDataReference_)", "Ghidra MCP read-only decompile_function(0x00E82420)"]}},
+    {"id": "PERSIST-CELL-RESOURCE", "layer": "asset_payload", "schema": "cCellResource", "fields": ["mNameKey", "mpData", "mDataSize", "mDataSerializer"], "boundary": "Base resource object carries bytes and serializer metadata; cCellCellResource and other Cell resources are payload templates.", "evidence": {"level": "CONFIRMED", "provenance": ["Ghidra MCP read-only get_struct_layout(cCellResource)", "E-PACKAGE"]}},
+    {"id": "PERSIST-CELL-PROGRESS", "layer": "gameplay_progression", "schema": "cCellSerializableData", "fields": ["mPlayerCreatureKey", "mFoodProgression", "mPlantFoodProgression", "mEvolutionPointsSpent", "mUnlockedParts", "mKillCount", "mDeathCount", "gameTimeMS", "gameID", "difficulty", "missions", "playerHasMoved", "playerHasEaten", "mNanites", "mNanivirusActive"], "boundary": "cCellGame.mpSerializableData is the explicit Cell persistence/progression holder. Read/write function addresses and file format are unresolved.", "evidence": {"level": "SUPPORTED", "provenance": ["Ghidra MCP read-only get_struct_layout(cCellSerializableData)", "Ghidra MCP read-only list_globals(sCellSerializableData)", "E-GHIDRA", "E-DOSSIERS"]}},
+    {"id": "PERSIST-CREATURE-GAME-DATA", "layer": "mode_progression", "schema": "cCreatureGameData", "fields": ["mCurrentBrainLevel", "mAvatarNormalizingScale", "mAbilityMode", "mEvolutionPoints", "mLearnedAbilities", "mGlideStartPosition"], "boundary": "The global progression object is evidenced, but no disk serialization or ownership relation to cCellSerializableData is established.", "evidence": {"level": "SUPPORTED", "provenance": ["Ghidra MCP read-only get_struct_layout(cCreatureGameData)", "Ghidra MCP read-only decompile_function(0x00D2E340)", "E-GHIDRA"]}},
+    {"id": "PERSIST-CURRENT-SIM", "layer": "current_openspore_contract", "schema": "PlayerState/Entity", "fields": ["PlayerState.pos", "heading", "vel", "growMeter", "Entity.role", "group", "inst", "alive"], "boundary": "Generated fixture state is replay-local and has no demonstrated save/load relation to cCellSerializableData or cCreatureGameData.", "evidence": {"level": "OBSERVED", "provenance": ["src/sim/Sim.hpp:49-87", "src/sim/tests/contract_scenarios.hpp:19-112", "E-CONTRACT"]}},
+    {"id": "PERSIST-RUNTIME-TRANSIENT", "layer": "runtime_transient", "schema": "cCellObjectData/cCreatureBase", "fields": ["pool index", "transform", "health", "animation", "AI/behavior", "GFX associations"], "boundary": "Runtime entity fields are observed, but no original persistence path for individual live objects is established.", "evidence": {"level": "UNKNOWN", "provenance": ["E-GHIDRA", "E-DOSSIERS"]}}
+  ],
+  "openspore_comparison": [
+    {"id": "CMP-CELL-POOL", "component": "CellPool", "current": "Correctly reproduces 28-byte pool metadata, 920-byte element size, 4096 capacity, free-list allocation, exhaustion, and refill tests.", "boundary": "CellPool is a real ABI-oriented projection, but cCellObjectData remains padded and partial; it is not the full logical object schema.", "incorrect_assumption": "Do not treat the padded cCellObjectData as every runtime field or treat pool mIsIdle as the same thing as Entity.alive.", "evidence": {"level": "SUPPORTED", "provenance": ["src/sim/CellPool.hpp:31-164", "src/sim/tests/cellpool_test.cpp:29-102", "E-SOURCE", "E-GHIDRA"]}},
+    {"id": "CMP-CELL-QUERY", "component": "CellQuery", "current": "Struct sizes and cCellQueryEntry fields match the confirmed 16/24/28-byte family; vector arena and LIFO links are a clean-room behavioral projection.", "boundary": "It is not the original linked-pool ABI and the near predicate is a current contract, not a fully traced original query body.", "incorrect_assumption": "Do not treat vector storage, LIFO order, or the radius predicate as original runtime storage/semantics without further body evidence.", "evidence": {"level": "SUPPORTED", "provenance": ["src/sim/CellQuery.hpp:27-82", "src/sim/tests/cellquery_test.cpp:30-79", "E-SOURCE", "E-DOSSIERS"]}},
+    {"id": "CMP-CELL-RESOURCE", "component": "CellResource", "current": "Correctly decodes the 796-byte cCellCellResource, three 180-byte cAIData blocks, 12-byte cEatData, world, populate, structure, loot, look, random-creature, effect-map, background-map, and globals records.", "boundary": "CellResourceSpec deliberately reduces a cell definition to size, model key, and fixed orientation; it is a runtime creation projection, not a full definition schema.", "incorrect_assumption": "Do not use CellResourceSpec as a CreatureData schema or assume current parser output is connected to the original runtime loader.", "evidence": {"level": "SUPPORTED", "provenance": ["src/assets/CellResource.hpp:55-500", "src/assets/CellResource.cpp:200-265,727-1222", "src/sim/CellGame.hpp:31-40", "E-SOURCE", "E-PACKAGE"]}},
+    {"id": "CMP-CREATURE-DATA", "component": "cCreatureDataResource", "current": "No current src/assets implementation or fixture exists for the 296-byte editor resource, 140-byte RigblockData, or capability/animation/effect vectors.", "boundary": "The current CellResource model is separate and cannot stand in for editor creature definitions.", "incorrect_assumption": "Cell records and rigblock records are different schema families; merging them would lose the static-versus-runtime boundary.", "evidence": {"level": "SUPPORTED", "provenance": ["src/assets/CellResource.hpp:124-500", "E-SOURCE", "E-GHIDRA", "E-SDK"]}},
+    {"id": "CMP-CREATURE-PROGRESSION", "component": "cCreatureGameData", "current": "No OpenSpore counterpart models brain level, evolution points, learned abilities, ability mode, avatar normalization, or glide state.", "boundary": "PlayerState.growMeter is a Cell contract field, not a substitute for cCreatureGameData progression.", "incorrect_assumption": "Do not treat growMeter as evolution points, unlocked parts, or persistence.", "evidence": {"level": "SUPPORTED", "provenance": ["src/sim/Sim.hpp:80-87", "E-CONTRACT", "E-GHIDRA"]}},
+    {"id": "CMP-CELL-PERSISTENCE", "component": "cCellSerializableData", "current": "No OpenSpore persistence model records playerCreatureKey, food progression, unlocked parts, missions, kill/death counts, or nanites.", "boundary": "Current fixture state is deterministic and replay-local, not a save file.", "incorrect_assumption": "Do not infer original persistence from generated fixtures or from CellSim stateString output.", "evidence": {"level": "SUPPORTED", "provenance": ["Ghidra MCP read-only get_struct_layout(cCellSerializableData)", "src/sim/Sim.hpp:49-87", "E-CONTRACT"]}},
+    {"id": "CMP-FIXTURES", "component": "Cell fixtures", "current": "The frozen fixture suite deterministically replays movement, eat/flee, advect-like velocity settling, combat-like flee, and world-plane switching.", "boundary": "Speeds, damping, eat/flee radii, event names, and role-based entities are OpenSpore contract choices or inferences; they are not decoded original cCellCellResource semantics.", "incorrect_assumption": "Do not treat fixture food_a/prey_c roles, positions, alive flags, or growMeter as original creature state or persistence.", "evidence": {"level": "OBSERVED", "provenance": ["src/sim/tests/contract_scenarios.hpp:129-320", "tests/fixtures/cell/fixtures.json", "docs/CELL-CONTRACT.md:69-100", "E-SOURCE", "E-CONTRACT"]}},
+    {"id": "CMP-SCENE", "component": "cell_stage scene", "current": "Scene assets are loaded from scene.json; cell-family GMDLs and backdrop assets are real records, while all positions and player identity remain provenance-labeled inferred.", "boundary": "The scene is a presentation fixture, not the original procedural world/populate object graph.", "incorrect_assumption": "Do not infer original entity positions from scene.json or treat the player-cell identity as a verified name-to-instance map.", "evidence": {"level": "SUPPORTED", "provenance": ["src/apps/scene.json:1-74", "docs/CELLSTAGE-RECON.md:64-81", "E-SOURCE", "E-DOSSIERS"]}}
+  ],
+  "gaps": [
+    {"id": "GAP-01", "question": "What package record type and loader body represent cCreatureDataResource?", "status": "UNRESOLVED", "evidence": {"level": "CONFIRMED", "provenance": ["Ghidra MCP read-only search_data_types(cCreatureDataResource)", "Ghidra MCP read-only search_functions(cCreatureDataResource) returned no function symbol", "E-GHIDRA"]}},
+    {"id": "GAP-02", "question": "Are mMorphsIndex, mCapabilityIndex, mDNAPoints, or unlocked parts a gene/genome representation?", "status": "UNRESOLVED", "evidence": {"level": "SUPPORTED", "provenance": ["Ghidra MCP read-only get_struct_layout(RigblockData)", "Ghidra MCP read-only get_struct_layout(cCreatureAbility)", "Ghidra MCP read-only get_struct_layout(cCellSerializableData)"]}},
+    {"id": "GAP-03", "question": "What are the cCreatureDataResource Read/Write addresses and serialized field order?", "status": "UNRESOLVED", "evidence": {"level": "CONFIRMED", "provenance": ["Ghidra MCP read-only search_data_types shows Read/Write names", "Ghidra MCP read-only search_functions returned no cCreatureDataResource function names", "E-GHIDRA"]}},
+    {"id": "GAP-04", "question": "How do cCreatureDataResource rigblocks resolve to CreatureBlock model keys and runtime blocks?", "status": "PARTIAL", "evidence": {"level": "SUPPORTED", "provenance": ["E-GHIDRA", "E-PACKAGE", "E-DOSSIERS"]}},
+    {"id": "GAP-05", "question": "What is the original file format and owner for cCellSerializableData read/write?", "status": "UNRESOLVED", "evidence": {"level": "SUPPORTED", "provenance": ["Ghidra MCP read-only get_struct_layout(cCellSerializableData)", "E-DOSSIERS"]}},
+    {"id": "GAP-06", "question": "Which cCreatureBase/cCreatureAnimal method bodies implement AI, hunger, motive, damage, and destruction?", "status": "NAME_ONLY", "evidence": {"level": "CONFIRMED", "provenance": ["Ghidra MCP read-only search_data_types lists AvatarTickAI, NPCTickAI, UpdateHunger, UpdateMotiveState, and Update method names", "No matching function symbols were returned by read-only search_functions"]}},
+    {"id": "GAP-07", "question": "What is the original Cell query predicate and iteration order in the runtime body?", "status": "PARTIAL", "evidence": {"level": "CONFIRMED", "provenance": ["Ghidra MCP read-only get_struct_layout(cCellQueryEntry)", "E-SOURCE", "E-CONTRACT"]}},
+    {"id": "GAP-08", "question": "What are the exact per-field semantics of 0x0f43029a main entries?", "status": "UNRESOLVED", "evidence": {"level": "SUPPORTED", "provenance": ["E-PACKAGE", "docs/analysis/campaigns/cell-stage-campaign.md:218-247", "E-DOSSIERS"]}},
+    {"id": "GAP-09", "question": "Which original runtime event transport carries damage, eat, death, evolution, and mode changes?", "status": "UNRESOLVED", "evidence": {"level": "SUPPORTED", "provenance": ["Ghidra MCP read-only decompile_function for mutation functions", "E-DOSSIERS"]}},
+    {"id": "GAP-10", "question": "Can the original Cell stage be reached for a live differential?", "status": "BLOCKED_NEGATIVE", "evidence": {"level": "OBSERVED", "provenance": ["docs/analysis/CELL-RUNTIME-OBSERVATION.md:61-101", "E-DOSSIERS"]}},
+    {"id": "GAP-11", "question": "What is the original mapping from player cell resource key to the current scene GMDL?", "status": "PARTIAL", "evidence": {"level": "INFERRED", "provenance": ["src/apps/scene.json:28-36", "docs/analysis/campaigns/cell-stage-campaign.md:334-344", "E-SOURCE", "E-PACKAGE"]}}
+  ],
+  "contradictions": [
+    {"id": "CONTRA-01", "claim": "cCreatureGameData+0x08 is int mNumFlapsAllowed.", "counter_evidence": "AfterGlideFinish writes float-sized MOVSS values to 0x0169E378, which is sCreatureGameData+0x08.", "resolution": "Keep the SDK field name/type as an export label but mark its runtime type/semantic identity unresolved.", "evidence": {"level": "OBSERVED", "provenance": ["Ghidra MCP read-only get_struct_layout(cCreatureGameData)", "Ghidra MCP read-only disassemble_function(0x00D2E580)", "E-GHIDRA"]}},
+    {"id": "CONTRA-02", "claim": "CellPool allocation state is equivalent to Entity.alive.", "counter_evidence": "Generic pool allocation sets mIsIdle false, while CreateCellObject writes mIsIdle true; Entity.alive is a separate role-based contract flag.", "resolution": "Treat pool liveness, mIsIdle, and fixture alive as separate state domains.", "evidence": {"level": "SUPPORTED", "provenance": ["src/sim/CellPool.hpp:108-137", "src/sim/CellGame.cpp:92-97", "src/sim/Sim.hpp:49-77", "E-SOURCE"]}},
+    {"id": "CONTRA-03", "claim": "CellQuery vector/LIFO implementation is the original query ABI.", "counter_evidence": "Original structures are linked-pool/data/node records of 16/24/28 bytes; current implementation is a vector arena.", "resolution": "Classify CellQuery as a behavioral projection, not ABI replacement.", "evidence": {"level": "SUPPORTED", "provenance": ["src/sim/CellQuery.hpp:27-82", "Ghidra MCP read-only get_struct_layout(cCellQueryLinkedPool/cCellQueryLinkedPoolData/cCellQueryEntry)", "E-SOURCE", "E-GHIDRA"]}},
+    {"id": "CONTRA-04", "claim": "CellResourceSpec is the complete cell definition.", "counter_evidence": "CellResourceSpec has only size, modelKey, and fixedOrientation; cCellCellResource is 796 bytes with references, HP, AI, eat, unlock/type, loot, and mission fields.", "resolution": "Use CellResourceSpec only as the CreateCellObject input projection.", "evidence": {"level": "SUPPORTED", "provenance": ["src/sim/CellGame.hpp:31-40", "src/assets/CellResource.hpp:124-163", "E-SOURCE", "E-GHIDRA"]}},
+    {"id": "CONTRA-05", "claim": "The Cell fixture food_a/prey_c roles and positions are original data.", "counter_evidence": "scene.json and contract scenarios mark positions and roles as inferred/approximated; original population is procedural through world/populate/marker records.", "resolution": "Keep fixture roles/positions as test inputs only.", "evidence": {"level": "SUPPORTED", "provenance": ["src/apps/scene.json:3-4,28-72", "src/sim/tests/contract_scenarios.hpp:96-112", "E-SOURCE", "E-CONTRACT"]}},
+    {"id": "CONTRA-06", "claim": "PlayerState.growMeter represents CreatureData progression or persistence.", "counter_evidence": "Original progression has cCreatureGameData evolution/brain/ability fields and cCellSerializableData unlocked-part/food/mission fields; current growMeter is only a contract counter.", "resolution": "Do not use growMeter as a substitute for either progression record.", "evidence": {"level": "SUPPORTED", "provenance": ["src/sim/Sim.hpp:80-87", "Ghidra MCP read-only get_struct_layout(cCreatureGameData)", "Ghidra MCP read-only get_struct_layout(cCellSerializableData)", "E-SOURCE", "E-GHIDRA"]}},
+    {"id": "CONTRA-07", "claim": "A cCellDataReference_ body at 0x00E82340 is the SDK cCellDataReference_::Create function.", "counter_evidence": "The named SDK function is 0x00E82420; 0x00E82340 remains an adjacent/body candidate in campaign history.", "resolution": "Use 0x00E82420 for the SDK-associated function and retain 0x00E82340 only as an unresolved alias candidate.", "evidence": {"level": "CONFIRMED", "provenance": ["Ghidra MCP read-only search_functions(DataReference)", "Ghidra MCP read-only decompile_function(0x00E82420)", "E-KG", "E-DOSSIERS"]}},
+    {"id": "CONTRA-08", "claim": "The advect strength/variance/period record fields are integers.", "counter_evidence": "Ghidra SDK layout says int, while the current byte-decoder and measured records decode these bytes as float32.", "resolution": "Preserve both: SDK declaration and serialized/storage type are not yet reconciled.", "evidence": {"level": "SUPPORTED", "provenance": ["Ghidra MCP read-only get_struct_layout(cAdvectEntry)", "src/assets/CellResource.hpp:172-180", "src/assets/CellResource.cpp:1076-1084", "E-SOURCE", "E-GHIDRA"]}}
+  ],
+  "reconstruction_packages": [
+    {"id": "PKG-03-RESOURCE-IO", "status": "SUPPORTED", "interface": "EXISTING_REPLACEMENT_SEAM", "scope": "DBPF/QFS resource bytes, property substrate, and reference acquisition remain separate from gameplay state.", "required_next": "Property serialization and original multi-package load order.", "evidence": {"level": "SUPPORTED", "provenance": ["docs/analysis/reconstruction-packages.md:271-337", "E-KG"]}},
+    {"id": "PKG-05-CELL-CONTENT", "status": "SUPPORTED", "interface": "PARTIAL_EXISTING_CONTRACT", "scope": "Typed Cell resource decoding, reference validation, and static world/populate/structure/loot records.", "required_next": "Canonical cCreatureDataResource package/loader and original runtime consumer paths.", "evidence": {"level": "SUPPORTED", "provenance": ["docs/analysis/reconstruction-packages.md:409-486", "E-PACKAGE"]}},
+    {"id": "PKG-06-CELL-STATE", "status": "SUPPORTED", "interface": "PARTIAL_EXISTING_CONTRACT", "scope": "cCellGame, 4096-cell pool, query, advect, combat rules, and selected creation/lifecycle functions.", "required_next": "Full cCellObjectData semantics, original query body, damage/eat event transport, and runtime differential.", "evidence": {"level": "SUPPORTED", "provenance": ["docs/analysis/reconstruction-packages.md:488-559", "E-GHIDRA", "E-SOURCE"]}},
+    {"id": "PKG-13-SIM-CREATURE-TRIBECIV", "status": "UNKNOWN", "interface": "UNRESOLVED", "scope": "Creature stage, creature definitions, runtime creature objects, abilities, and evolution progression.", "required_next": "Resolve cCreatureDataResource asset identity/serialization, runtime creation ownership, AI/damage/destruction bodies, and persistence.", "evidence": {"level": "SUPPORTED", "provenance": ["docs/analysis/reconstruction-packages.md:22-27", "E-GHIDRA", "E-SDK"]}},
+    {"id": "PKG-17-ANIMATION-SWARM", "status": "INFERRED", "interface": "PARTIAL_EXISTING_CONTRACT", "scope": "CreatureBlock/AnimatedCreature and Cell animation/effect projection.", "required_next": "Map cCreatureDataResource rigblocks to runtime model/animation blocks and define event-to-effect transitions.", "evidence": {"level": "SUPPORTED", "provenance": ["docs/analysis/reconstruction-packages.md:30,455-509", "E-GHIDRA", "E-SOURCE"]}}
+  ],
+  "provenance": {
+    "binary": "GOG SporeApp.exe 3.1.0.22; SHA-256 25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e; image base 0x00400000",
+    "sources": [
+      "knowledgegraph/spore.db read-only queries",
+      "Ghidra MCP read-only structure, function, xref, global, memory, and enum queries",
+      "docs/analysis/campaigns/cell-stage-campaign.md",
+      "docs/CELL-CONTRACT.md",
+      "docs/CELLSTAGE-RECON.md",
+      "docs/analysis/dossiers/cell-movement.md",
+      "docs/analysis/dossiers/unknown-high/cell-object-pool-lifecycle.md",
+      "docs/analysis/CELL-RUNTIME-OBSERVATION.md",
+      "src/assets/CellResource.hpp",
+      "src/assets/CellResource.cpp",
+      "src/sim/CellPool.hpp",
+      "src/sim/CellQuery.hpp",
+      "src/sim/CellGame.hpp",
+      "src/sim/Sim.hpp",
+      "src/apps/scene.json",
+      "src/sim/tests/cellpool_test.cpp",
+      "src/sim/tests/cellquery_test.cpp",
+      "src/sim/tests/createcell_test.cpp",
+      "src/sim/tests/contract_scenarios.hpp"
+    ],
+    "read_only_boundary": "No Ghidra mutation/save, source injection, patch, or historical-artifact modification was performed."
+  }
+}

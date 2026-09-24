@@ -1,0 +1,722 @@
+{
+  "$schema": "track-03-mode-resolution-1",
+  "artifact": {
+    "name": "track-03-mode",
+    "scope": "CONFLICT-MODE-STATE-AXES",
+    "analysis_only": true,
+    "read_only_ghidra": true,
+    "program": "SporeApp.exe",
+    "binary": "GOG 3.1.0.22, x86:LE:32:windows, image base 0x00400000",
+    "no_implementation": true,
+    "excluded_sources": ["SPORE/", "spore.db"],
+    "runtime": {
+      "performed": false,
+      "result": "No new runtime trace was run; the available runtime corpus cannot separate these architecture-level hypotheses.",
+      "historical_positive": "Bounded main-menu startup/service access only.",
+      "historical_negative": "Cell-stage probes did not fire because the recorded run never entered the Cell stage; no mode transition, editor, or space transition trace exists."
+    }
+  },
+  "method": {
+    "name": "nine-step adversarial static investigation",
+    "steps": [
+      "Enumerate competing state/transport/ABI hypotheses.",
+      "State exact predictions for each hypothesis.",
+      "Collect direct Ghidra body, table, constructor, xref, and call-graph evidence.",
+      "Collect independent historical evidence without treating repeated copies as independent.",
+      "Mark support, contradiction, and neutral evidence.",
+      "Identify whether architecture changes if the hypothesis is selected.",
+      "Perform the smallest distinguishing static observation available.",
+      "Record runtime feasibility and negative evidence without fabrication.",
+      "Adjudicate only the minimum semantics that the evidence safely requires."
+    ]
+  },
+  "allowed_resolution_values": [
+    "unresolved",
+    "preserved_alternatives",
+    "preferred_claim_with_limit",
+    "same_observation_different_scope"
+  ],
+  "taxonomy": {
+    "classification": "preferred_claim_with_limit",
+    "allowed_values": [
+      "unresolved",
+      "preserved_alternatives",
+      "preferred_claim_with_limit",
+      "same_observation_different_scope"
+    ],
+    "meaning": "A preferred bounded architecture claim is adopted, while original transport timing, payload semantics, and ABI details remain open."
+  },
+  "hypotheses": [
+    {
+      "id": "H1",
+      "claim": "A single global mode enum/state machine owns App, Simulator, input, SpaceContext, scenario, and Cell state.",
+      "status": "unresolved",
+      "architecture_dependent": true,
+      "predictions": [
+        "The same field/value or same transition would be read or written by the App manager, input manager, SpacePlayerData, scenario mode, and Cell lifecycle.",
+        "A SpaceContext value would be an alias of the App active mode or scenario mode.",
+        "The 27-slot concrete Cell table could be treated as the universal IGameMode ABI."
+      ],
+      "support": [],
+      "against": [
+        "The App manager active index is at cGameModeManager+0x28 and is guarded by a mode-entry vector.",
+        "Simulator cStrategy has independent last/current/pending fields at +0x0c/+0x10/+0x14/+0x18.",
+        "cGameInputManager has independent last/current mode fields at +0x18/+0x1c and separate input-region state.",
+        "SpaceContext is stored independently at SpacePlayerData+0x10 with values None=-1, Planet=0, SolarSystem=1, Galaxy=2.",
+        "cScenarioMode::mMode is documented at +0xcc with UnkMode/EditMode/PlayMode values; it is not the same owner as SpaceContext."
+      ],
+      "independence": "The direct field-owner and owner-specific writer evidence is independent across App, Simulator, input, SpacePlayerData, and scenario artifacts; repeated summaries are not counted again."
+    },
+    {
+      "id": "H2",
+      "claim": "OpenSpore needs separate explicit state machines/axes, with an App mode registry and a Simulator strategy pending/commit bridge rather than one global mode.",
+      "status": "preferred_claim_with_limit",
+      "architecture_dependent": true,
+      "predictions": [
+        "The App registry performs range validation and ordered old-exit/new-enter callbacks.",
+        "The Simulator strategy retains a first pending request and separate last/current committed IDs.",
+        "A mode announcement can be sent/requested through a message boundary without proving immediate listener execution.",
+        "Input routing, space navigation, scenario mode, and Cell lifecycle remain independently addressable."
+      ],
+      "support": [
+        "Direct App helper disassembly at 0x007d85b0 proves the callback/message order.",
+        "Direct strategy constructor and stable-predicate bodies plus historical disassembly establish pending/commit state.",
+        "Direct 0x00b63510 dispatch reads two announcement words, normalizes them, suppresses equal IDs, and selects exit/enter paths.",
+        "Direct SpaceContext setter/initialization and independent historical scenario/input field maps establish separate owners."
+      ],
+      "against": [
+        "No positive runtime trace proves which listeners execute between the two App sends and the new OnEnter.",
+        "The semantic names of opaque mode IDs and the full scenario/input routing bodies remain incomplete."
+      ],
+      "independence": "App helper, strategy constructor/commit helpers, message listener, SpaceContext body, and field-map evidence are separate evidence surfaces; the same claim repeated in multiple reports is treated as one historical source family."
+    },
+    {
+      "id": "H3",
+      "claim": "The original transition is a single synchronous global state machine: both mode announcements are sent/requested before the new OnEnter can run.",
+      "status": "unresolved",
+      "architecture_dependent": true,
+      "predictions": [
+        "The MessageSend implementation would directly invoke the listener before returning to 0x007d85b0.",
+        "The exit message would synchronously commit last mode before the helper writes/enters the new mode.",
+        "A queue processor would not be needed between the two sends."
+      ],
+      "support": [
+        "The App helper invokes the message-manager vtable slot directly between old OnExit and new OnEnter.",
+        "The old index is written before the exit send and the new OnEnter follows the exit send."
+      ],
+      "against": [
+        "The concrete MessageSend body and listener callback timing were not recovered as a complete chain.",
+        "The message manager has separate MessagePost/MessagePostFunction bodies that insert records through 0x00885710, and queue processing is separate at 0x008841f0/0x00847f0.",
+        "No ProcessQueue call occurs inside the App helper; that proves only helper-local ordering, not listener execution timing."
+      ],
+      "independence": "The helper call order is direct disassembly. The queue implementation is a separate message-manager body, so the unresolved timing result is not merely a repeated wording of the helper evidence."
+    },
+    {
+      "id": "H4",
+      "claim": "The Simulator strategy requires a pending request slot with first-request-wins, then separate last/current commits.",
+      "status": "preferred_claim_with_limit",
+      "architecture_dependent": true,
+      "predictions": [
+        "The constructor initializes last, current, and pending IDs to -1 and pending path to 0.",
+        "A request path writes its path value but overwrites the pending ID only when the pending ID is -1.",
+        "Commit-last and commit-current copy the pending ID, clear it, and reset the path to 0.",
+        "A stable-mode predicate requires both committed IDs to equal the candidate and no pending request."
+      ],
+      "support": [
+        "Direct 0x00b5b960 constructor decompilation writes -1 to +0x0c/+0x10/+0x14 and 0 to +0x18.",
+        "Read-only instruction search finds the first-request guards at 0x00b5b880 and 0x00b5b8a0; historical disassembly pins the commit helpers at 0x00b5b8c0 and 0x00b5b8e0.",
+        "Direct 0x00b5b840 disassembly checks both committed IDs and pending -1."
+      ],
+      "against": [
+        "The request/commit helpers are table targets/interior code in the current Ghidra function map rather than separately named functions; their historical disassembly is retained as static evidence.",
+        "The listener's direct calls are broader transition/effect bodies at 0x00b5f040 and 0x00b5dbb0, so exact ownership of every committed-field write is bounded."
+      ],
+      "independence": "Constructor, stable predicate, table placement, and historical helper disassembly are distinct. The repeated state-machine report is supporting corroboration, not an independent body."
+    },
+    {
+      "id": "H5",
+      "claim": "The SDK IGameMode contract is a semantic lifecycle/input/update reference; the corrected Cell tables are concrete ABI evidence, not a universal interface ABI or a clean-room ABI requirement.",
+      "status": "preferred_claim_with_limit",
+      "architecture_dependent": true,
+      "predictions": [
+        "IGameMode has 16 slots with Initialize at slot 4, Dispose at 5, OnEnter at 6, OnExit at 7, input at 9-14, and Update at 15.",
+        "The Cell primary/secondary table pair contains additional concrete slots and has named lifecycle methods at different offsets.",
+        "The editor candidate has a first 16-slot prefix matching IGameMode but continues with additional editor virtuals."
+      ],
+      "support": [
+        "The editor constructor at 0x0057ce80 writes 0x013f57f8 as the first vptr; the 0x013f57f8 table begins with the 16-slot IGameMode-shaped prefix.",
+        "The Cell construction helper at 0x00e616c0 writes primary vptr 0x01485558 and secondary vptr 0x01485550 into a 0x0c-byte object.",
+        "The Cell table has named Initialize/Dispose/OnEnter/OnExit/input/Update targets at concrete slots and additional entries.",
+        "The committed conflict record explicitly preserves the 16-slot versus 27-slot distinction."
+      ],
+      "against": [
+        "The concrete table owners and all unknown slots are not fully typed, and SporeApp.exe has no MSVC RTTI.",
+        "The 0x01485558/0x01485550 labels must follow the construction evidence rather than historical table-count shorthand."
+      ],
+      "independence": "Constructor stores, raw table bytes, named slot bodies, and SDK interface layout are independent dimensions; a vtable candidate label alone is not treated as proof."
+    },
+    {
+      "id": "H6",
+      "claim": "SpaceContext, scenario mode, input mode, and App mode are orthogonal axes; their numeric overlap is not aliasing.",
+      "status": "preferred_claim_with_limit",
+      "architecture_dependent": true,
+      "predictions": [
+        "SpaceContext Galaxy=2 must not imply scenario PlayMode=2.",
+        "An App active-index change must not overwrite input last/current fields or SpacePlayerData+0x10.",
+        "Same-value suppression in the SpaceContext setter must remain local to that axis."
+      ],
+      "support": [
+        "Direct 0x01021960 only stores at SpacePlayerData+0x10 when the value changes and has a conditional Galaxy follow-up.",
+        "Historical field evidence places cScenarioMode::mMode at +0xcc and cGameInputManager mode fields at +0x18/+0x1c.",
+        "The App helper only reads/writes its own manager entry vector and active index."
+      ],
+      "against": [
+        "The scenario field is SDK/layout evidence rather than a fully recovered native scenario state machine.",
+        "Input routing regions and listener priority remain unresolved."
+      ],
+      "independence": "The Space setter is direct body evidence; scenario/input field owners are independent structural evidence; no numeric coincidence is used as dataflow proof."
+    }
+  ],
+  "predictions": [
+    {
+      "observation": "0x007d8c80 and 0x007d85b0",
+      "prediction": "0x007d8c80 is a validated indexed request; 0x007d85b0 owns the ordered transition.",
+      "result": "Supported. 0x007d8c80 range-checks and calls the helper; 0x007d85b0 performs old OnExit, index write, exit send, new OnEnter, enter send."
+    },
+    {
+      "observation": "0x007d8d40 and 0x01412598",
+      "prediction": "The stale SDK label at 0x007d8d40 is not the concrete activation body.",
+      "result": "Supported. 0x007d8d40 rewrites base vtables/clears entries; 0x01412598 directly references 0x007d8c80 at the activation slot and 0x007d8360 at the name slot."
+    },
+    {
+      "observation": "0x00e616c0",
+      "prediction": "The corrected Cell primary/secondary vptr order is observable at object construction.",
+      "result": "Supported. The body stores 0x01485558 at object+0 and 0x01485550 at object+4."
+    },
+    {
+      "observation": "0x0057ce80 and 0x013f57f8",
+      "prediction": "The editor candidate has a 16-slot IGameMode prefix plus additional editor virtuals.",
+      "result": "Supported. The constructor stores 0x013f57f8 and the table has the SDK-shaped prefix followed by additional slots."
+    },
+    {
+      "observation": "0x00b5b960, 0x00b5b840, and strategy table entries",
+      "prediction": "Pending state is first-request-wins and commits are last/current separate.",
+      "result": "Supported for the mechanics; exact mode-ID semantics remain opaque."
+    },
+    {
+      "observation": "0x00b63510 and 0x007d85b0",
+      "prediction": "The listener is an event bridge rather than the App registry itself.",
+      "result": "Supported. It receives the two mode IDs, normalizes payload words, suppresses equal normalized IDs, and selects exit/enter-specific bodies. Exact listener execution timing remains unresolved."
+    },
+    {
+      "observation": "0x01021960, 0x01021d40, 0x01022580",
+      "prediction": "SpaceContext has its own initialization, conditional setter, and independent writer.",
+      "result": "Supported. Context values and owner are independent of App/Simulator mode fields."
+    }
+  ],
+  "evidence_for": [
+    {
+      "source": "Ghidra read-only disassembly",
+      "address": "0x007d85b0",
+      "claim": "The helper calls old slot +0x1c, writes +0x28, invokes the manager message slot with 0x0212d3e7, calls new slot +0x18, then invokes the slot with 0x022d1adc.",
+      "weight": "direct"
+    },
+    {
+      "source": "Ghidra read-only decompilation/disassembly",
+      "address": "0x007d8c80",
+      "claim": "Negative and upper-bound checks reject invalid indices; valid requests call 0x007d85b0; the same-index path is handled in the helper.",
+      "weight": "direct"
+    },
+    {
+      "source": "Ghidra read-only memory/xref",
+      "address": "0x01412598",
+      "claim": "The concrete manager table has activation and name-request entries and is referenced by the manager construction/transition bodies.",
+      "weight": "direct structural"
+    },
+    {
+      "source": "Ghidra read-only decompilation",
+      "address": "0x00e616c0",
+      "claim": "The Cell object is allocated as 0x0c bytes and receives primary 0x01485558 plus secondary 0x01485550 vptrs before registration as Game_Cell.",
+      "weight": "direct"
+    },
+    {
+      "source": "Ghidra read-only decompilation",
+      "address": "0x0057ce80",
+      "claim": "The editor constructor installs 0x013f57f8 at the first object vptr and several additional editor vptrs.",
+      "weight": "direct"
+    },
+    {
+      "source": "Ghidra read-only decompilation/disassembly",
+      "address": "0x00b63510",
+      "claim": "The listener recognizes 0x0212d3e7/0x022d1adc, reads payload +0x08/+0x10, normalizes via 0x00b5c9d0, suppresses equal IDs, and selects exit/enter paths.",
+      "weight": "direct"
+    },
+    {
+      "source": "Ghidra read-only decompilation",
+      "address": "0x00b5b960 and 0x00b5b840",
+      "claim": "The strategy initializes pending/committed slots and requires equal committed IDs plus no pending request for stability.",
+      "weight": "direct"
+    },
+    {
+      "source": "Ghidra read-only decompilation",
+      "address": "0x00b3d350",
+      "claim": "The input-manager accessor returns DAT_0167eaf8, a distinct global service pointer.",
+      "weight": "direct"
+    },
+    {
+      "source": "Ghidra read-only decompilation",
+      "address": "0x01021960",
+      "claim": "The SpaceContext setter stores only on a changed value and has a separate Galaxy-only follow-up.",
+      "weight": "direct"
+    },
+    {
+      "source": "Committed historical artifacts",
+      "address": "0x00b5b880/0x00b5b8a0/0x00b5b8c0/0x00b5b8e0",
+      "claim": "Request helpers preserve the first pending ID; commit helpers copy to last/current and clear pending state.",
+      "weight": "static corroboration"
+    },
+    {
+      "source": "Committed historical artifacts",
+      "address": "App::IGameMode 16 slots and cGameInputManager 27 slots",
+      "claim": "The SDK interface and concrete input/mode object dimensions are separate contracts.",
+      "weight": "structural corroboration"
+    }
+  ],
+  "evidence_against": [
+    {
+      "source": "Ghidra read-only decompilation",
+      "address": "0x007d8d40",
+      "claim": "The SDK-named SetActiveModeAt address is a teardown/vtable-clearing body, contradicting the stale address label."
+    },
+    {
+      "source": "Ghidra read-only message-manager bodies",
+      "address": "0x00885890, 0x00885930, 0x00885710, 0x008841f0",
+      "claim": "Post-style paths enqueue records and queue processing is separate; the complete MessageSend listener timing is not recovered."
+    },
+    {
+      "source": "Historical artifacts",
+      "address": "runtime corpus",
+      "claim": "No positive mode/editor/space transition trace exists; Cell probes are negative because Cell was not reached."
+    },
+    {
+      "source": "Historical artifacts",
+      "address": "0x013f57f8, 0x01485558, 0x01485550",
+      "claim": "Concrete tables have unknown slots and no RTTI; candidate owner identity must not be expanded into a complete C++ hierarchy."
+    }
+  ],
+  "evidence_vs_requirements": {
+    "recovered_binary_evidence": [
+      "The App helper's local order is old OnExit, active-index write, exit-message send/request, new OnEnter, and enter-message send/request.",
+      "The indexed request guard, same-index no-op, and concrete teardown-versus-activation address conflict are recovered.",
+      "The Simulator strategy's pending, last, and current state mechanics and first-request-wins guard are recovered.",
+      "Cell/editor constructor stores, table contents, slot names, vptr addresses, and table ordering are recovered as binary evidence.",
+      "SpaceContext and scenario/input field ownership are recovered at their original owners."
+    ],
+    "clean_room_requirements": [
+      "Keep App, Simulator strategy, input, SpaceContext, scenario, and Cell state as separate axes.",
+      "Provide a request/command boundary with validated requests and explicit transition phases.",
+      "Preserve the semantic lifecycle/input/update surface without requiring the original concrete dispatch ABI.",
+      "Make first-request-wins explicit for any strategy pending channel retained by OpenSpore.",
+      "Make send/request and listener-execution timing explicit in the clean-room boundary; do not infer it from binary send order."
+    ],
+    "not_required_from_binary": [
+      "Raw Cell vptr addresses or primary/secondary vtable addresses.",
+      "Raw vtable ordering, table size, or original slot numbers.",
+      "The original concrete Cell or editor dispatch ABI.",
+      "The original opaque message payload layout or listener timing.",
+      "The original mode-ID numeric values as OpenSpore public identifiers."
+    ]
+  },
+  "independence_repetition": [
+    {
+      "item": "App transition order",
+      "independent": true,
+      "basis": "Direct Ghidra disassembly at 0x007d85b0 plus separate vtable/xref and decompilation evidence."
+    },
+    {
+      "item": "First-request-wins",
+      "independent": true,
+      "basis": "Constructor, stable predicate, table placement, and historical helper disassembly are separate observations."
+    },
+    {
+      "item": "16-slot versus concrete Cell/editor dimensions",
+      "independent": true,
+      "basis": "SDK interface layout, raw table bytes, constructor stores, and named slot bodies."
+    },
+    {
+      "item": "Space/scenario/input/App separation",
+      "independent": true,
+      "basis": "Distinct field owners and direct Space setter; no shared dataflow is inferred from fan-in."
+    },
+    {
+      "item": "Repeated reports",
+      "independent": false,
+      "basis": "The same state-machine/event-map findings copied across committed reports are corroboration/provenance, not additional independent observations."
+    },
+    {
+      "item": "SDK field names",
+      "independent": false,
+      "basis": "SDK offsets/names corroborate layout but do not independently prove native behavior or runtime reachability."
+    }
+  ],
+  "separating_observation": {
+    "performed": true,
+    "smallest_static_observation": "Read-only construction and table inspection at 0x00e616c0, 0x0057ce80, 0x00b5b960, and the direct helper/listener disassembly.",
+    "result": "The architecture-level axes are separated even though message send/requested and listener-execution timing, payload semantics, and runtime reachability remain unresolved.",
+    "separates": [
+      "single global state machine versus App plus Simulator bridge",
+      "16-slot semantic interface versus concrete Cell/editor ABI",
+      "same request manager versus first-request-wins strategy pending",
+      "SpaceContext/scenario/input/App numeric coincidence versus owner-specific state"
+    ],
+    "runtime_observation": "Not performed; historical runtime cannot separate the hypotheses because it never reaches a mode transition and no synthetic-input path is available."
+  },
+  "ordering_matrix": {
+    "app_mode_activation": [
+      {
+        "step": 1,
+        "event": "SetActiveModeAt request",
+        "address": "0x007d8c80",
+        "action": "Reject negative/out-of-range index; valid request delegates to helper. Same index is a no-op in helper."
+      },
+      {
+        "step": 2,
+        "event": "old mode exit",
+        "address": "0x007d85b0",
+        "action": "If current index is valid, call old mode virtual slot +0x1c (OnExit) and capture old mode ID."
+      },
+      {
+        "step": 3,
+        "event": "App registry commit",
+        "address": "0x007d85b0",
+        "action": "Write requested index to manager +0x28."
+      },
+      {
+        "step": 4,
+        "event": "mode exit announcement",
+        "address": "0x007d85b0",
+        "action": "Invoke message-manager vtable +0x14 with 0x0212d3e7 and a local transition payload."
+      },
+      {
+        "step": 5,
+        "event": "new mode enter",
+        "address": "0x007d85b0",
+        "action": "Call new mode virtual slot +0x18 (OnEnter)."
+      },
+      {
+        "step": 6,
+        "event": "mode enter announcement",
+        "address": "0x007d85b0",
+        "action": "Invoke message-manager vtable +0x14 with 0x022d1adc and the new/old mode words."
+      }
+    ],
+    "app_name_request": [
+      {
+        "step": 1,
+        "event": "SetActiveModeByName",
+        "address": "0x007d8360",
+        "action": "Scan 24-byte ModeEntry records, compare names case-insensitively, and call vtable +0x40 SetActiveModeAt on match."
+      }
+    ],
+    "simulator_strategy": [
+      {
+        "step": 1,
+        "event": "construct",
+        "address": "0x00b5b960",
+        "action": "Set last/current/pending IDs to -1 and pending path to 0."
+      },
+      {
+        "step": 2,
+        "event": "request path 1 or 2",
+        "address": "0x00b5b880 or 0x00b5b8a0",
+        "action": "Set path 1/2; store identifier only if pending ID is -1 (first request wins)."
+      },
+      {
+        "step": 3,
+        "event": "commit-last or commit-current",
+        "address": "0x00b5b8c0 or 0x00b5b8e0",
+        "action": "Copy pending ID to last/current, clear pending ID to -1, and reset path to 0."
+      },
+      {
+        "step": 4,
+        "event": "stability predicate",
+        "address": "0x00b5b840",
+        "action": "Stable only when candidate equals both committed IDs and no pending request exists."
+      }
+    ],
+    "announcement_listener": [
+      {
+        "step": 1,
+        "event": "0x0212d3e7 / 0x022d1adc",
+        "address": "0x00b63510",
+        "action": "Recognize mode exit/enter IDs and read payload words at +0x08/+0x10."
+      },
+      {
+        "step": 2,
+        "event": "normalization",
+        "address": "0x00b63510 -> 0x00b5c9d0",
+        "action": "Normalize both mode words; equal normalized IDs return without commit behavior."
+      },
+      {
+        "step": 3,
+        "event": "commit/effect selection",
+        "address": "0x00b63510 -> 0x00b5f040 or 0x00b5dbb0",
+        "action": "Select exit- or enter-specific transition/commit path. The bodies are broader than the two state-field writes; exact effect ordering remains bounded."
+      }
+    ],
+    "message_transport": [
+      {
+        "step": 1,
+        "event": "App helper send",
+        "address": "0x007d85b0",
+        "action": "Directly call message-manager vtable +0x14; helper-local call order is exact."
+      },
+      {
+        "step": 2,
+        "event": "post-style enqueue",
+        "address": "0x00885890/0x00885930 -> 0x00885710",
+        "action": "Post-style paths package records and insert them into manager storage; this is separate from the App helper's concrete send implementation."
+      },
+      {
+        "step": 3,
+        "event": "queue processing",
+        "address": "0x008841f0/0x00847f0",
+        "action": "Process queue records and release referenced objects. Exact listener priority, tie order, reentrancy, and whether MessageSend invokes immediately remain unresolved."
+      }
+    ],
+    "space_context": [
+      {
+        "step": 1,
+        "event": "init",
+        "address": "0x01021d40",
+        "action": "Initialize SpacePlayerData+0x10 to -1."
+      },
+      {
+        "step": 2,
+        "event": "set",
+        "address": "0x01021960",
+        "action": "If changed, write requested context; Galaxy value 2 may invoke a conditional follow-up."
+      },
+      {
+        "step": 3,
+        "event": "independent writer",
+        "address": "0x01022580",
+        "action": "On one-shot initialization, may force context 0 directly; this is not App mode selection."
+      }
+    ],
+    "input_axis": [
+      {
+        "step": 1,
+        "event": "access",
+        "address": "0x00b3d350",
+        "action": "Return the independent DAT_0167eaf8 cGameInputManager pointer."
+      },
+      {
+        "step": 2,
+        "event": "input state",
+        "address": "cGameInputManager+0x18/+0x1c",
+        "action": "Maintain last/current mode fields plus mouse/input-region state; exact router and listener order remain unresolved."
+      },
+      {
+        "step": 3,
+        "event": "downstream callbacks",
+        "address": "0x00e818f0 and 0x00e51010",
+        "action": "Cell mode consumes key/mouse callbacks and performs mode-specific routing; this is downstream of the input manager, not proof of the manager's complete algorithm."
+      }
+    ],
+    "cell_and_editor": [
+      {
+        "step": 1,
+        "event": "Cell construction",
+        "address": "0x00e616c0",
+        "action": "Install corrected primary 0x01485558 and secondary 0x01485550 vptrs."
+      },
+      {
+        "step": 2,
+        "event": "Cell lifecycle",
+        "address": "0x00e81cf0/0x00e552f0/0x00e7fc00/0x00e81f30/0x00e80980",
+        "action": "Concrete Cell slots cover initialize, enter, exit, dispose, update, and input; they are not a universal IGameMode ABI."
+      },
+      {
+        "step": 3,
+        "event": "Editor construction",
+        "address": "0x0057ce80",
+        "action": "Install 0x013f57f8 as the first editor vptr; first 16 slots match IGameMode and later slots remain editor-specific."
+      }
+    ]
+  },
+  "classification": "preferred_claim_with_limit",
+  "resolution_status": "preferred_claim_with_limit",
+  "resolution": {
+    "preferred_claim": "Keep App mode orchestration, Simulator pending/committed strategy state, input mode, SpaceContext, scenario mode, and Cell lifecycle as distinct axes; model mode requests and transition phases explicitly.",
+    "limit": "The original message send/requested and listener-execution timing, payload mapping, complete input-region routing, scenario native body, and runtime reachability are unresolved.",
+    "preserved_alternatives": [
+      "The concrete Cell tables remain structural/ABI evidence with unknown slots rather than a complete IGameMode interface.",
+      "The 0x01485558/0x01485550 primary/secondary interpretation follows construction stores while exact table ownership/slot names remain bounded.",
+      "The 0x013f57f8 editor candidate is supported as a concrete root, not as proof of a 29-slot IGameMode ABI.",
+      "The direct App send order is exact, but immediate versus queued listener execution is not selected."
+    ]
+  },
+  "minimum_required_semantics": {
+    "explicit_state_machine": {
+      "required": true,
+      "scope": "At least App registry transition state and Simulator strategy pending/committed state; not one global enum."
+    },
+    "command_request_layer": {
+      "required": true,
+      "scope": "Mode requests by index/name with invalid and same-state no-op behavior; the request must be separated from lifecycle effects."
+    },
+    "transition_timing": {
+      "required": "deterministic transition boundary",
+      "scope": "The recovered helper-local order is evidence, not a requirement to reproduce the original ABI or transport. OpenSpore must define deterministic transition phases and make the relationship between lifecycle callbacks and sent/requested notifications explicit; it may use a different internal callback/notification design."
+    },
+    "first_request_wins": {
+      "required": true,
+      "scope": "Required for the Simulator strategy pending slot. The App registry separately has same-index no-op behavior; these are not the same rule."
+    },
+    "orthogonal_axes": {
+      "required": true,
+      "axes": [
+        "App active mode/index and lifecycle",
+        "Simulator last/current/pending mode IDs",
+        "input manager mode and input-region state",
+        "SpaceContext and active star/planet",
+        "scenario mode",
+        "Cell service/lifecycle state"
+      ]
+    },
+    "not_required": [
+      "Raw Cell vptr addresses, primary/secondary table addresses, and vtable ordering",
+      "Original 27-slot Cell ABI as an OpenSpore public interface",
+      "Original concrete slot numbers or raw table size",
+      "Original opaque mode-ID numeric values",
+      "A single global state enum",
+      "A universal event-record ABI"
+    ]
+  },
+  "exact_decisions_dependent": [
+    {
+      "decision": "Mode subsystem decomposition",
+      "depends_on": "Separate App registry and Simulator strategy bridge.",
+      "architectural_consequence_if_wrong": "Input/world/Cell consumers can be routed through the wrong owner or state."
+    },
+    {
+      "decision": "Mode request API",
+      "depends_on": "Validated index/name requests with same-request no-op and explicit transition phases.",
+      "architectural_consequence_if_wrong": "Re-entry, invalid requests, and lifecycle callbacks can be duplicated or skipped."
+    },
+    {
+      "decision": "Notification boundary",
+      "depends_on": "Ordered exit/enter notifications around new OnEnter, with send/requested and listener-execution timing explicit but not overclaimed.",
+      "architectural_consequence_if_wrong": "Listeners may commit or render against the wrong active mode."
+    },
+    {
+      "decision": "Strategy arbitration",
+      "depends_on": "Pending first-request-wins plus separate last/current commits.",
+      "architectural_consequence_if_wrong": "A rapid sequence of mode requests can overwrite the pending transition incorrectly."
+    },
+    {
+      "decision": "Interface ABI",
+      "depends_on": "Use the IGameMode lifecycle/input/update surface as a semantic reference, without requiring the original 16-slot shape, slot numbers, or concrete table addresses in OpenSpore.",
+      "architectural_consequence_if_wrong": "The replacement may conflate semantic lifecycle/input callbacks with raw Cell/editor dispatch and lose the clean-room boundary."
+    },
+    {
+      "decision": "World/input/scenario composition",
+      "depends_on": "Keep SpaceContext, scenario mode, and input mode as independent axes.",
+      "architectural_consequence_if_wrong": "Numeric aliases such as Galaxy=2 and PlayMode=2 can corrupt unrelated transitions."
+    }
+  ],
+  "safe_to_freeze": [
+    "App active-index ownership and validated index/name request boundaries.",
+    "The recovered helper-local order as evidence: old OnExit -> active-index write -> exit send/request -> new OnEnter -> enter send/request; do not freeze the original transport or ABI.",
+    "Separate App mode registry and Simulator strategy pending/committed state.",
+    "First-request-wins semantics for the Simulator strategy pending slot.",
+    "IGameMode lifecycle/input/update semantics: Initialize, Dispose, OnEnter, OnExit, input callbacks, Update, without freezing original slot numbers.",
+    "SpaceContext as an independent navigation axis and scenario/input mode as separate axes.",
+    "Use explicit transition events/commands in the clean-room architecture without requiring the original payload ABI, vptr addresses, table order, or slot numbers."
+  ],
+  "deferral_list": [
+    "Whether the App MessageSend slot invokes listeners synchronously or through a queue.",
+    "Exact mode-announcement payload words and opaque mode-ID normalization semantics.",
+    "Message listener priority direction, tie order, consume-result behavior, reentrancy, cancellation, and release timing.",
+    "Concrete cGameInputManager vtable base and complete input-region routing algorithm.",
+    "Complete cScenarioMode native state machine and all scenario producer/consumer paths.",
+    "All unknown slots and exact inheritance of the corrected Cell primary/secondary tables.",
+    "Duplicate App mode names, active-entry removal, and first-request producer from the main menu.",
+    "Runtime order/reachability for App, Cell, editor, and space transitions.",
+    "Original fixed-step behavior; SDK SetFixedStepping is not connected to observed pacing."
+  ],
+  "blockers": [
+    "No positive runtime trace reaches a gameplay mode transition; the available headless path cannot inject input.",
+    "The concrete MessageSend body and listener callback timing are not fully recovered.",
+    "Scenario and input state owners are field-supported but their complete transition bodies are incomplete.",
+    "No MSVC RTTI exists, so table candidates require constructor/xref corroboration and cannot be promoted solely by names."
+  ],
+  "source_addresses": [
+    {"address": "0x01412598", "role": "concrete App cGameModeManager table", "source": "Ghidra read-only memory/xref and historical ui-gameplay"},
+    {"address": "0x007d8c80", "role": "SetActiveModeAt range guard/delegator", "source": "Ghidra decompile/disassemble"},
+    {"address": "0x007d85b0", "role": "App ordered transition helper", "source": "Ghidra disassemble"},
+    {"address": "0x007d8360", "role": "SetActiveModeByName", "source": "Ghidra decompile/disassemble"},
+    {"address": "0x007d8d40", "role": "stale SDK-labeled teardown body", "source": "Ghidra decompile"},
+    {"address": "0x007d8060", "role": "App manager initialization", "source": "Ghidra decompile and historical artifact"},
+    {"address": "0x007d9120", "role": "App manager disposal", "source": "historical artifact"},
+    {"address": "0x01461580", "role": "base cStrategy table candidate", "source": "Ghidra read-only memory"},
+    {"address": "0x0145d7f0", "role": "derived Simulator mode-strategy table", "source": "Ghidra read-only memory/xref"},
+    {"address": "0x00b5b840", "role": "stable pending/committed predicate", "source": "Ghidra decompile/disassemble"},
+    {"address": "0x00b5b880", "role": "request path 1 / first-request-wins guard", "source": "Ghidra instruction search and historical disassembly"},
+    {"address": "0x00b5b8a0", "role": "request path 2 / first-request-wins guard", "source": "Ghidra instruction search and historical disassembly"},
+    {"address": "0x00b5b8c0", "role": "commit-last table target", "source": "historical disassembly and table placement"},
+    {"address": "0x00b5b8e0", "role": "commit-current table target", "source": "historical disassembly and table placement"},
+    {"address": "0x00b5b960", "role": "strategy constructor state initialization", "source": "Ghidra decompile"},
+    {"address": "0x00b63510", "role": "mode-announcement listener", "source": "Ghidra decompile/disassemble"},
+    {"address": "0x00b3d350", "role": "cGameInputManager accessor", "source": "Ghidra decompile"},
+    {"address": "0x0167eaf8", "role": "cGameInputManager global service pointer", "source": "Ghidra xref/decompile and field-map artifact"},
+    {"address": "0x01485558", "role": "corrected Cell primary vtable", "source": "Ghidra construction decompile and memory"},
+    {"address": "0x01485550", "role": "corrected Cell secondary vtable", "source": "Ghidra construction decompile and memory"},
+    {"address": "0x00e616c0", "role": "Cell mode object construction/registration", "source": "Ghidra decompile"},
+    {"address": "0x013f57f8", "role": "editor candidate first vtable", "source": "Ghidra memory and constructor xref"},
+    {"address": "0x0057ce80", "role": "editor constructor and vptr installation", "source": "Ghidra decompile/disassemble"},
+    {"address": "0x01021960", "role": "SpaceContext conditional setter", "source": "Ghidra decompile"},
+    {"address": "0x01021d40", "role": "SpacePlayerData initializer", "source": "Ghidra decompile"},
+    {"address": "0x01022580", "role": "independent SpaceContext writer", "source": "Ghidra decompile"},
+    {"address": "0x00885890", "role": "MessagePost-style queue wrapper", "source": "Ghidra decompile"},
+    {"address": "0x00885930", "role": "MessagePostFunction-style queue wrapper", "source": "Ghidra decompile"},
+    {"address": "0x00885710", "role": "message record insertion", "source": "Ghidra decompile/disassemble"},
+    {"address": "0x008841f0", "role": "message queue processing/release", "source": "Ghidra decompile/disassemble"},
+    {"address": "0x0212d3e7", "role": "mode-exit announcement ID", "source": "Ghidra helper/listener and historical artifact"},
+    {"address": "0x022d1adc", "role": "mode-enter announcement ID", "source": "Ghidra helper/listener and historical artifact"},
+    {"address": "cScenarioMode+0xcc", "role": "scenario mode field", "source": "historical SDK/layout artifact"},
+    {"address": "cGameInputManager+0x18/+0x1c", "role": "input last/current mode fields", "source": "historical field-map artifact"}
+  ],
+  "source_paths": [
+    "knowledgegraph/research/conflict-adjudication.json",
+    "knowledgegraph/research/conflicts/00-corpus-inventory.json",
+    "knowledgegraph/research/conflicts/track-b-vtable-fields.json",
+    "knowledgegraph/research/state-machines/simulator-core.json",
+    "knowledgegraph/research/state-machines/ui-gameplay.json",
+    "knowledgegraph/research/state-machines/global-events.json",
+    "knowledgegraph/research/state-machines/temporal-semantics.json",
+    "knowledgegraph/research/types/01-simulator-core.md",
+    "knowledgegraph/research/types/02-gameplay-entity.md",
+    "knowledgegraph/research/types/04-world-planet.md",
+    "knowledgegraph/research/types/06-editor-ui.md",
+    "knowledgegraph/research/types/10-managers-registries.md",
+    "knowledgegraph/research/types/11-vtable-archaeology.md",
+    "knowledgegraph/research/types/19-audit-conflicts.json",
+    "knowledgegraph/research/root-closure/followup-space-lifecycle.md",
+    "knowledgegraph/research/root-closure/followup-space-lifecycle.json",
+    "docs/analysis/gameplay-transition-map.md",
+    "docs/analysis/gameplay-state-machines.md",
+    "docs/analysis/event-message-map.md",
+    "docs/analysis/conflict-adjudication.md",
+    "docs/analysis/simulator-root-closure.md",
+    "docs/analysis/CELL-RUNTIME-OBSERVATION.md"
+  ],
+  "limitations": [
+    "SporeApp.exe has no MSVC RTTI; named vtable candidates are structural evidence, not complete language-level inheritance proofs.",
+    "The original ABI is intentionally not treated as a required clean-room interface.",
+    "The concrete IGameMode 16-slot contract is an SDK/layout contract; the Cell and editor tables are separate concrete dispatch evidence.",
+    "No implementation or source changes are authorized by this report.",
+    "No new runtime trace was collected; all positive runtime claims are historical and bounded."
+  ]
+}

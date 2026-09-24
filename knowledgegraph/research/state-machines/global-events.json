@@ -1,0 +1,3341 @@
+{
+  "$schema": "state-machine-research-1",
+  "callbacks": [
+    {
+      "confidence": 0.97,
+      "consumers": [
+        "App::cMessageManager listener map",
+        "App::IMessageListener::HandleMessage",
+        "App::MessageHandler_t"
+      ],
+      "evidence": [
+        {
+          "claim": "IMessageManager exposes AddListener, AddUnmanagedListener, AddHandler, AddEntry, RemoveListener, RemoveHandler, and RemoveEntry.",
+          "level": "CONFIRMED",
+          "source": "knowledgegraph/research/types/07-event-message.json:2181-2414"
+        },
+        {
+          "claim": "MessageListenerData stores manager, listener, ID array, count, and registration field in a 20-byte helper.",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv:4509-4513"
+        }
+      ],
+      "invocation_trigger": "MessageSend/MessagePost selects entries for the message ID; ProcessQueue or ProcessQueue2 consumes queued records and invokes listener/callback entries.",
+      "name": "App::IMessageManager registration and listener dispatch",
+      "registration_site": [
+        "0x00883a90 AddUnmanagedListener",
+        "0x00883ad0 AddListener",
+        "0x00883b20 AddHandler",
+        "0x00884d70 AddEntry",
+        "0x00883b90 RemoveHandler",
+        "0x008846c0 RemoveEntry"
+      ],
+      "update_contract": "Entry carries listener, priority, refcount flag, MessageHandler_t, and object. It is distinct from unresolved 0x18-byte queue records; priority direction, tie order, consume result, and lock rules are unresolved."
+    },
+    {
+      "confidence": 0.84,
+      "consumers": [
+        "App::cMessageManager queue owner",
+        "registered callback object"
+      ],
+      "evidence": [
+        {
+          "claim": "ProcessQueue walks 0x18-byte records, follows a 0xc0-sized range, and invokes a release-like helper on referenced objects.",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cMessageManager__ProcessQueue.c:6-38"
+        },
+        {
+          "claim": "cMessageManager stores a message-ID listener map, two mutex regions, and six state/option flags in a 200-byte object.",
+          "level": "CONFIRMED",
+          "source": "knowledgegraph/research/types/07-event-message.json:2425-2496"
+        }
+      ],
+      "invocation_trigger": "Frame or service code calls ProcessQueue/ProcessQueue2 after registration and production; exact caller order is unrecovered.",
+      "name": "App::cMessageManager queue processor",
+      "registration_site": [
+        "0x008841f0 ProcessQueue",
+        "0x00847f0 ProcessQueue2"
+      ],
+      "update_contract": "ProcessQueue walks unresolved entries and releases referenced objects. Queue layout, release timing, and whether a handled result stops later entries remain unresolved."
+    },
+    {
+      "confidence": 0.9,
+      "consumers": [
+        "LambdaMessageListener",
+        "UpdateMessageListener",
+        "ScheduledTaskListener"
+      ],
+      "evidence": [
+        {
+          "claim": "Adapters store callback/context and timing fields at documented offsets.",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv:1271-1301"
+        },
+        {
+          "claim": "UpdateMessageListener adapts a selected message to IUpdatable::Update; ScheduledTaskListener adapts timing to a callback.",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/types/07-event-message.md:169-178"
+        }
+      ],
+      "invocation_trigger": "The message manager selects the adapter by message ID; scheduled callbacks repeat according to timing fields and the update adapter forwards to IUpdatable::Update.",
+      "name": "App message listener adapters",
+      "registration_site": [
+        "AddListener/AddHandler adapter registration",
+        "MessageListenerData helpers"
+      ],
+      "update_contract": "Adapters translate function/context and timing; they do not replace or reinterpret the selected payload. Cancellation and removal timing are unresolved."
+    },
+    {
+      "confidence": 0.9,
+      "consumers": [
+        "UTFWin::Window mWinProcs",
+        "IWinProc::GetPriority",
+        "IWinProc::GetEventFlags",
+        "IWinProc::HandleUIMessage"
+      ],
+      "evidence": [
+        {
+          "claim": "IWinProc exposes GetPriority at +0x10, GetEventFlags at +0x14, and HandleUIMessage at +0x18.",
+          "level": "CONFIRMED",
+          "source": "knowledgegraph/research/types/07-event-message.json:2984-3058"
+        },
+        {
+          "claim": "Window owns a 16-byte WinProc list at +0x64 and exposes Add/Remove/GetNextWinProc/SendMsg through IWindow.",
+          "level": "CONFIRMED",
+          "source": "knowledgegraph/research/types/07-event-message.json:2783-2981"
+        }
+      ],
+      "invocation_trigger": "UTFWin::Window::SendMsg forwards a UTFWin::Message to registered procedures; priority/event flags filter before HandleUIMessage.",
+      "name": "UTFWin::Window WinProc dispatcher",
+      "registration_site": [
+        "IWindow::AddWinProc +0x104",
+        "IWindow::RemoveWinProc +0x108",
+        "IWindow::GetNextWinProc +0x10c"
+      ],
+      "update_contract": "The callback receives source, event type, and type-specific union payload. Return-value consumption, bubbling, tie order, and thread affinity are unresolved."
+    },
+    {
+      "confidence": 0.92,
+      "consumers": [
+        "UTFWin::InteractiveWinProc event-specific callbacks",
+        "UTFWin widget state/layout"
+      ],
+      "evidence": [
+        {
+          "claim": "InteractiveWinProc exposes 32 key, mouse, refresh, update, collision, element, layout, transform, WinProc, button, and enter/leave callbacks.",
+          "level": "CONFIRMED",
+          "source": "knowledgegraph/research/types/07-event-message.json:2992-3058"
+        },
+        {
+          "claim": "SDK maps MessageType and EventFlags used for callback selection/filtering.",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/spore_sdk.xml:8003-8041"
+        }
+      ],
+      "invocation_trigger": "A Window message reaches a matching proc after filtering; event type selects the specific callback.",
+      "name": "UTFWin::InteractiveWinProc event callbacks",
+      "registration_site": [
+        "Window mWinProcs through IWindow::AddWinProc",
+        "InteractiveWinProc-derived widget/proc objects"
+      ],
+      "update_contract": "Callbacks receive event-specific payloads and may mutate widget state or consume the event; exact return semantics are unresolved."
+    },
+    {
+      "confidence": 0.93,
+      "consumers": [
+        "active App::IGameMode",
+        "Simulator::cGameInputManager",
+        "camera/editor consumers"
+      ],
+      "evidence": [
+        {
+          "claim": "IGameMode exports Initialize, Dispose, OnEnter, OnExit, six input callbacks, and Update.",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/spore_sdk.xml:8581-8687"
+        },
+        {
+          "claim": "cGameInputManager stores mode IDs, input maps, mouse state, and six input callback slots at +0x4c through +0x60.",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv:4656-4707"
+        }
+      ],
+      "invocation_trigger": "The input manager receives normalized key/mouse/wheel state and routes callbacks to current mode, camera, and input-region consumers; exact region algorithm is unresolved.",
+      "name": "Simulator::cGameInputManager input callback surface",
+      "registration_site": [
+        "cGameInputManager global DAT_0167eaf8",
+        "0x00b3d350 cGameInputManager::Get"
+      ],
+      "update_contract": "Callbacks carry key/modifier, mouse coordinate/state, or wheel values and update downstream mode/camera/editor state; exact ordering is unresolved."
+    },
+    {
+      "confidence": 0.96,
+      "consumers": [
+        "App::cGameModeManager active-mode list",
+        "SetActiveModeAt",
+        "SetActiveModeByName"
+      ],
+      "evidence": [
+        {
+          "claim": "Concrete IGameModeManager vtable exposes SetActiveMode, SetActiveModeAt, and SetActiveModeByName; transition helper is 0x007d85b0.",
+          "level": "CONFIRMED",
+          "source": "knowledgegraph/research/state-machines/ui-gameplay.json:763-815"
+        },
+        {
+          "claim": "27-slot cCellModeStrategy candidate at 0x01485550 identifies lifecycle, HandleMessage, input, and Update slots.",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/types/07-event-message.json:3060-3160"
+        }
+      ],
+      "invocation_trigger": "SetActiveModeAt or SetActiveModeByName requests a valid mode; helper runs old OnExit, updates index, sends exit, runs new OnEnter, sends enter.",
+      "name": "App game-mode lifecycle callback dispatcher",
+      "registration_site": [
+        "0x007d8060 manager initialization",
+        "0x01412598 manager vtable",
+        "0x01485550 Cell mode vtable"
+      ],
+      "update_contract": "This is virtual lifecycle/input dispatch, not a message-object ABI. Static ordering is supported; runtime verification is absent."
+    },
+    {
+      "confidence": 0.86,
+      "consumers": [
+        "Editors::cEditor active mode/tool state",
+        "cEditorAnimWorld",
+        "AnimatedCreature/IAnimWorld route"
+      ],
+      "evidence": [
+        {
+          "claim": "cEditor::SetActiveMode tears down the prior mode, updates anim-world state, and emits cEditorAnimEvent::MessageSend.",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__SetActiveMode.c:8-363"
+        },
+        {
+          "claim": "cEditorAnimEvent is a 48-byte refcounted record with editor model, event ID, and scalar fields; cEditorAnimWorld stores intrusive event values.",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/types/07-event-message.json:3289-3409"
+        }
+      ],
+      "invocation_trigger": "Editor mode/neutral-pose/animation operations construct cEditorAnimEvent and call MessageSend or MessagePost.",
+      "name": "Editors::cEditor animation event producer",
+      "registration_site": [
+        "0x0059d8b0 MessageSend",
+        "0x0059d840 MessagePost",
+        "0x00587270 SetActiveMode producer"
+      ],
+      "update_contract": "Event carries editor model/event ID/scalars. Send calls recovered IAppSystem Init; Post calls InitPlugins. Final animation consumer and queue timing are unresolved."
+    },
+    {
+      "confidence": 0.9,
+      "consumers": [
+        "App cMessageManager listeners",
+        "cUIEventLog",
+        "cSimulatorSystem",
+        "cStarManager",
+        "cRelationshipManager",
+        "cGameBehaviorManager"
+      ],
+      "evidence": [
+        {
+          "claim": "cSimulatorSystem, cStarManager, cRelationshipManager, cGameBehaviorManager, cScenarioData, cScenarioTerraformMode, cScenarioPlayMode, cScenarioMode, cSimulatorSpaceGame, and SpaceGameUI expose listener interfaces or MessageListenerData.",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv:3028-3030,4561-4565,4583-4629,11465-11478,14031-14059,15266-15389,16823-16882,23507-23550"
+        },
+        {
+          "claim": "cUIEventLog owns a keyed cFeedbackEvent map and mode state.",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/types/07-event-message.json:3477-3670"
+        }
+      ],
+      "invocation_trigger": "The global App manager selects each listener by message ID; listeners update domain state or event registries.",
+      "name": "Simulator/UI message-listener implementations",
+      "registration_site": [
+        "MessageListenerData fields in simulator/UI owners",
+        "IUnmanagedMessageListener::HandleMessage vtable slots"
+      ],
+      "update_contract": "HandleMessage receives uint32 messageID and void* payload. Payload interpretation is family-specific; complete ID arrays and registration bodies are unresolved."
+    }
+  ],
+  "domain": "Global Event Infrastructure",
+  "events": [
+    {
+      "conditions": [
+        "message manager initialized",
+        "valid message ID and registration target"
+      ],
+      "confidence": 0.97,
+      "consumed_by": [
+        "cMessageManager mListeners",
+        "IMessageManager::Entry records"
+      ],
+      "evidence": [
+        {
+          "claim": "IMessageManager exposes Add/Remove listener, handler, and entry operations.",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv:3967-3985"
+        },
+        {
+          "claim": "Entry is 20 bytes with listener, priority, refcount flag, function, and object.",
+          "level": "CONFIRMED",
+          "source": "knowledgegraph/research/types/07-event-message.json:2181-2233"
+        }
+      ],
+      "id": "app_message_registration",
+      "kind": "registration_lifecycle",
+      "name": "App message registration",
+      "payload": "IMessageManager::Entry or MessageListenerData: listener, priority, refcount flag, MessageHandler_t, object, and optional ID array/count.",
+      "produced_by": [
+        "0x00883a90 AddUnmanagedListener",
+        "0x00883ad0 AddListener",
+        "0x00883b20 AddHandler",
+        "0x00884d70 AddEntry"
+      ],
+      "resulting_state_changes": [
+        "message-ID listener map gains/loses Entry",
+        "callback/listener becomes eligible",
+        "priority/refcount metadata affects routing"
+      ],
+      "status": "api_layout_confirmed_bodies_partial"
+    },
+    {
+      "conditions": [
+        "message ID selected from registry",
+        "unmanaged MessageSend ownership path"
+      ],
+      "confidence": 0.9,
+      "consumed_by": [
+        "IUnmanagedMessageListener",
+        "MessageHandler_t"
+      ],
+      "evidence": [
+        {
+          "claim": "MessageSend slot +0x14 accepts messageID, void* message, and IUnmanagedMessageListener*.",
+          "level": "CONFIRMED",
+          "source": "knowledgegraph/research/types/07-event-message.json:2244-2287"
+        },
+        {
+          "claim": "Mode transition code uses MessageSend; exact timing is unrecovered.",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/state-machines/ui-gameplay.json:92-120"
+        }
+      ],
+      "id": "app_message_send",
+      "kind": "app_message",
+      "name": "App MessageSend",
+      "payload": "uint32 messageID plus unmanaged void* payload; concrete payload may be StandardMessage, transition record, or subsystem pointer.",
+      "produced_by": [
+        "App services",
+        "cGameModeManager transition helper",
+        "simulator/UI systems"
+      ],
+      "resulting_state_changes": [
+        "matching entries selected",
+        "listener/callback receives ID/payload",
+        "queue/refcount effects remain unresolved"
+      ],
+      "status": "interface_confirmed_timing_unresolved"
+    },
+    {
+      "conditions": [
+        "refcounted IMessageRC payload available",
+        "message ID has registered listener/handler"
+      ],
+      "confidence": 0.9,
+      "consumed_by": [
+        "App::IMessageListener",
+        "registered callback object"
+      ],
+      "evidence": [
+        {
+          "claim": "MessagePost slot +0x18 accepts messageID, IMessageRC*, and IMessageListener*.",
+          "level": "CONFIRMED",
+          "source": "knowledgegraph/research/types/07-event-message.json:2287-2295"
+        },
+        {
+          "claim": "App messages are refcounted runtime records and manager owns the release boundary.",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/types/07-event-message.json:289-323,1371-1383"
+        }
+      ],
+      "id": "app_message_post",
+      "kind": "app_message",
+      "name": "App MessagePost",
+      "payload": "uint32 messageID plus IMessageRC* payload and IMessageListener* target; refcount ownership differs from MessageSend.",
+      "produced_by": [
+        "App services",
+        "mode managers",
+        "refcounted subsystem messages"
+      ],
+      "resulting_state_changes": [
+        "payload retained for dispatch",
+        "refcounted listener receives message",
+        "release timing unresolved"
+      ],
+      "status": "interface_ownership_split_confirmed"
+    },
+    {
+      "conditions": [
+        "callback/object and priority registered",
+        "manager-supported refcounted function-post payload"
+      ],
+      "confidence": 0.86,
+      "consumed_by": [
+        "MessageHandler_t",
+        "callback object"
+      ],
+      "evidence": [
+        {
+          "claim": "MessagePostFunction slot +0x1c exposes messageID, IMessageRC*, int, handler, and object.",
+          "level": "CONFIRMED",
+          "source": "knowledgegraph/research/types/07-event-message.json:2297-2307"
+        },
+        {
+          "claim": "MessageHandler_t is function-plus-context registration metadata distinct from listener objects.",
+          "level": "CONFIRMED",
+          "source": "knowledgegraph/research/types/07-event-message.json:2180-2233"
+        }
+      ],
+      "id": "app_message_post_function",
+      "kind": "app_message",
+      "name": "App MessagePostFunction",
+      "payload": "messageID, IMessageRC* message, integer routing/option value, MessageHandler_t function, and void* object.",
+      "produced_by": [
+        "App services requiring callback-target delivery"
+      ],
+      "resulting_state_changes": [
+        "function/object associated with ID",
+        "function selected during processing",
+        "priority/queue/release behavior unresolved"
+      ],
+      "status": "interface_confirmed_body_unrecovered"
+    },
+    {
+      "conditions": [
+        "active mode index valid",
+        "requested mode differs",
+        "old OnExit completes"
+      ],
+      "confidence": 0.97,
+      "consumed_by": [
+        "cGameModeManager listener",
+        "cStrategy mode-commit listener",
+        "OnModeExited transition callback"
+      ],
+      "evidence": [
+        {
+          "claim": "Transition helper calls old OnExit, writes active index, sends 0x0212d3e7, then new OnEnter.",
+          "level": "CONFIRMED",
+          "source": "knowledgegraph/research/state-machines/ui-gameplay.json:790-794,922-935"
+        },
+        {
+          "claim": "SDK names 0x0212d3e7 kMsgOnModeExit and exports OnModeExitMessage.",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/spore_sdk.xml:9908-9920"
+        }
+      ],
+      "id": "mode_exit_announcement",
+      "kind": "app_message",
+      "name": "OnModeExitMessage",
+      "payload": "StandardMessage-sized 64-byte OnModeExitMessage: refcount, five MessageParameter slots, ID 0x0212d3e7, field_34, objectFlags, field_3C; parameter mapping unresolved.",
+      "produced_by": [
+        "App::cGameModeManager::FUN_007d85b0"
+      ],
+      "resulting_state_changes": [
+        "old mode logically exits",
+        "active index already changed",
+        "cStrategy last-mode commit may run",
+        "transition effect may run"
+      ],
+      "status": "id_and_send_order_confirmed_runtime_unverified"
+    },
+    {
+      "conditions": [
+        "new mode OnEnter completed",
+        "mode transition requested a different valid mode"
+      ],
+      "confidence": 0.97,
+      "consumed_by": [
+        "cGameModeManager listener",
+        "cStrategy mode-commit listener",
+        "OnModeEntered transition callback"
+      ],
+      "evidence": [
+        {
+          "claim": "Transition helper sends 0x022d1adc after new OnEnter.",
+          "level": "CONFIRMED",
+          "source": "knowledgegraph/research/state-machines/ui-gameplay.json:790-794,922-935"
+        },
+        {
+          "claim": "SDK names 0x022d1adc kMsgOnModeEnter and exports OnModeEnterMessage.",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/spore_sdk.xml:9908-9920"
+        }
+      ],
+      "id": "mode_enter_announcement",
+      "kind": "app_message",
+      "name": "OnModeEnterMessage",
+      "payload": "StandardMessage-sized 64-byte OnModeEnterMessage: refcount, five MessageParameter slots, ID 0x022d1adc, field_34, objectFlags, field_3C; parameter mapping unresolved.",
+      "produced_by": [
+        "App::cGameModeManager::FUN_007d85b0"
+      ],
+      "resulting_state_changes": [
+        "new mode entry completes",
+        "cStrategy current-mode commit may run",
+        "transition effect may run"
+      ],
+      "status": "id_and_send_order_confirmed_runtime_unverified"
+    },
+    {
+      "conditions": [
+        "registered mode name supplied",
+        "case-insensitive name comparison succeeds"
+      ],
+      "confidence": 0.94,
+      "consumed_by": [
+        "cGameModeManager::SetActiveModeByName",
+        "cGameModeManager::SetActiveModeAt"
+      ],
+      "evidence": [
+        {
+          "claim": "SDK names 0x00e11333 kMsgSetGameModeByName and exports SetGameModeMessage.",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/spore_sdk.xml:9908-9939"
+        },
+        {
+          "claim": "SetActiveModeByName scans 24-byte ModeEntry records and calls SetActiveModeAt.",
+          "level": "CONFIRMED",
+          "source": "knowledgegraph/research/state-machines/ui-gameplay.json:790-815"
+        }
+      ],
+      "id": "mode_set_by_name",
+      "kind": "app_message",
+      "name": "SetGameModeMessage",
+      "payload": "StandardMessage-sized SetGameModeMessage ID 0x00e11333; exact mode-name parameter placement is unresolved.",
+      "produced_by": [
+        "UI/menu/command producers remain unresolved"
+      ],
+      "resulting_state_changes": [
+        "matching mode selected",
+        "normal exit/enter transition may run",
+        "mode lifecycle changes"
+      ],
+      "status": "consumer_activation_static_producer_unresolved"
+    },
+    {
+      "event_catalog": [
+        {
+          "conditions": [
+            "domain state produces notification"
+          ],
+          "confidence": 0.75,
+          "consumed_by": [
+            "domain listeners"
+          ],
+          "evidence": [
+            {
+              "claim": "SDK exports same 0x40 StandardMessage layout.",
+              "level": "CONFIRMED",
+              "source": ".spore-analysis/ghidra-exports/spore_sdk.xml:31844-31915"
+            }
+          ],
+          "id": "mission_update_message",
+          "kind": "app_message_record",
+          "name": "MissionUpdateMessage",
+          "payload": "StandardMessage-sized 64-byte record; ID and parameter meanings unresolved.",
+          "produced_by": [
+            "Simulator mission services"
+          ],
+          "resulting_state_changes": [
+            "mission/UI/listener state may update"
+          ],
+          "status": "type_only_id_unresolved"
+        },
+        {
+          "conditions": [
+            "combatant killed"
+          ],
+          "confidence": 0.75,
+          "consumed_by": [
+            "combat/mission/UI listeners"
+          ],
+          "evidence": [
+            {
+              "claim": "SDK exports CombatantKilledMessage with 0x40 StandardMessage layout.",
+              "level": "CONFIRMED",
+              "source": ".spore-analysis/ghidra-exports/spore_sdk.xml:31853-31861"
+            }
+          ],
+          "id": "combatant_killed_message",
+          "kind": "app_message_record",
+          "name": "CombatantKilledMessage",
+          "payload": "StandardMessage-sized 64-byte record; killer/victim semantics unresolved.",
+          "produced_by": [
+            "Simulator combat services"
+          ],
+          "resulting_state_changes": [
+            "combat/mission state may update"
+          ],
+          "status": "type_only_id_unresolved"
+        },
+        {
+          "conditions": [
+            "empire becomes allied"
+          ],
+          "confidence": 0.75,
+          "consumed_by": [
+            "relationship/diplomacy/UI listeners"
+          ],
+          "evidence": [
+            {
+              "claim": "SDK exports PlayerEmpireAlliedMessage with 0x40 StandardMessage layout.",
+              "level": "CONFIRMED",
+              "source": ".spore-analysis/ghidra-exports/spore_sdk.xml:31862-31870"
+            }
+          ],
+          "id": "player_empire_allied_message",
+          "kind": "app_message_record",
+          "name": "PlayerEmpireAlliedMessage",
+          "payload": "StandardMessage-sized 64-byte record; political identities unresolved.",
+          "produced_by": [
+            "Simulator relationship services"
+          ],
+          "resulting_state_changes": [
+            "alliance/diplomacy state may update"
+          ],
+          "status": "type_only_id_unresolved"
+        },
+        {
+          "conditions": [
+            "empire loses alliance"
+          ],
+          "confidence": 0.75,
+          "consumed_by": [
+            "relationship/diplomacy/UI listeners"
+          ],
+          "evidence": [
+            {
+              "claim": "SDK exports PlayerEmpireLostAllianceMessage with 0x40 StandardMessage layout.",
+              "level": "CONFIRMED",
+              "source": ".spore-analysis/ghidra-exports/spore_sdk.xml:31871-31879"
+            }
+          ],
+          "id": "player_empire_lost_alliance_message",
+          "kind": "app_message_record",
+          "name": "PlayerEmpireLostAllianceMessage",
+          "payload": "StandardMessage-sized 64-byte record; political identities unresolved.",
+          "produced_by": [
+            "Simulator relationship services"
+          ],
+          "resulting_state_changes": [
+            "alliance/diplomacy state may update"
+          ],
+          "status": "type_only_id_unresolved"
+        },
+        {
+          "conditions": [
+            "tool reports hit"
+          ],
+          "confidence": 0.8,
+          "consumed_by": [
+            "tool/combat/UI listeners"
+          ],
+          "evidence": [
+            {
+              "claim": "SDK exports ToolOnHitMessage with 0x40 StandardMessage layout.",
+              "level": "CONFIRMED",
+              "source": ".spore-analysis/ghidra-exports/spore_sdk.xml:31880-31888"
+            },
+            {
+              "claim": "cToolStrategy exposes OnHit/WhileFiring callbacks.",
+              "level": "SUPPORTED",
+              "source": ".spore-analysis/ghidra-exports/structs_fields.tsv:11557-11574"
+            }
+          ],
+          "id": "tool_on_hit_message",
+          "kind": "app_message_record",
+          "name": "ToolOnHitMessage",
+          "payload": "StandardMessage-sized 64-byte record; tool/target/damage meanings unresolved.",
+          "produced_by": [
+            "Simulator tool/combat paths"
+          ],
+          "resulting_state_changes": [
+            "hit/combat/UI state may update"
+          ],
+          "status": "type_vtable_confirmed_bridge_unresolved"
+        },
+        {
+          "conditions": [
+            "game noun status changes"
+          ],
+          "confidence": 0.75,
+          "consumed_by": [
+            "noun/UI/mission listeners"
+          ],
+          "evidence": [
+            {
+              "claim": "SDK exports GameNounStatusChangedMessage with 0x40 StandardMessage layout.",
+              "level": "CONFIRMED",
+              "source": ".spore-analysis/ghidra-exports/spore_sdk.xml:31889-31897"
+            }
+          ],
+          "id": "game_noun_status_changed_message",
+          "kind": "app_message_record",
+          "name": "GameNounStatusChangedMessage",
+          "payload": "StandardMessage-sized 64-byte record; noun/status meanings unresolved.",
+          "produced_by": [
+            "Simulator noun services"
+          ],
+          "resulting_state_changes": [
+            "noun/UI state may update"
+          ],
+          "status": "type_only_id_unresolved"
+        },
+        {
+          "conditions": [
+            "scenario creature healed"
+          ],
+          "confidence": 0.75,
+          "consumed_by": [
+            "scenario/creature/HUD listeners"
+          ],
+          "evidence": [
+            {
+              "claim": "SDK exports ScenarioCreatureHealedMessage with 0x40 StandardMessage layout.",
+              "level": "CONFIRMED",
+              "source": ".spore-analysis/ghidra-exports/spore_sdk.xml:31898-31906"
+            }
+          ],
+          "id": "scenario_creature_healed_message",
+          "kind": "app_message_record",
+          "name": "ScenarioCreatureHealedMessage",
+          "payload": "StandardMessage-sized 64-byte record; creature/amount semantics unresolved.",
+          "produced_by": [
+            "Simulator scenario services"
+          ],
+          "resulting_state_changes": [
+            "health/scenario/HUD state may update"
+          ],
+          "status": "type_only_id_unresolved"
+        },
+        {
+          "conditions": [
+            "space rare found"
+          ],
+          "confidence": 0.75,
+          "consumed_by": [
+            "space/galaxy/UI/progression listeners"
+          ],
+          "evidence": [
+            {
+              "claim": "SDK exports SpaceRareFoundMessage with 0x40 StandardMessage layout.",
+              "level": "CONFIRMED",
+              "source": ".spore-analysis/ghidra-exports/spore_sdk.xml:31907-31915"
+            }
+          ],
+          "id": "space_rare_found_message",
+          "kind": "app_message_record",
+          "name": "SpaceRareFoundMessage",
+          "payload": "StandardMessage-sized 64-byte record; rare/location semantics unresolved.",
+          "produced_by": [
+            "Simulator space/galaxy services"
+          ],
+          "resulting_state_changes": [
+            "rare discovery/UI/progression state may update"
+          ],
+          "status": "type_only_id_unresolved"
+        }
+      ],
+      "id": "app_standard_message_record_family",
+      "kind": "app_message_family",
+      "name": "Simulator StandardMessage-derived records",
+      "payload": "All catalog records share 64-byte refcounted StandardMessage layout; IDs and parameter-to-domain mappings remain unresolved.",
+      "produced_by": [
+        "Simulator mission, combat, relationship, tool, noun, scenario, and space services"
+      ],
+      "resulting_state_changes": [
+        "domain listeners may update mission, combat, diplomacy, tool, noun, scenario, or space state"
+      ],
+      "status": "type_family_confirmed_message_ids_unresolved"
+    },
+    {
+      "conditions": [
+        "message manager routes to cEditor listener",
+        "decompiler comparisons treated as hash candidates"
+      ],
+      "confidence": 0.62,
+      "consumed_by": [
+        "Editors::cEditor::HandleMessage",
+        "editor UI/mode/property/resource/history/animation helpers"
+      ],
+      "evidence": [
+        {
+          "claim": "The 809-line body has many hashed branch values and fans out into editor subsystems.",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__HandleMessage.c:8-809"
+        },
+        {
+          "claim": "Unknown calling convention and unsettled type propagation prevent typed message-ID promotion.",
+          "level": "UNKNOWN",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__HandleMessage.c:4-8"
+        }
+      ],
+      "id": "editor_handle_message_dispatch",
+      "kind": "app_message_dispatch",
+      "name": "Editors::cEditor::HandleMessage",
+      "payload": "uint32 messageID plus void* msg. Candidate literals include 0x7aa519dc, 0xb2e18705, 0xd1511790, 0xf058b0f2, 0xf1ff568b, 0x90e08f60, 0xb03bc30c, 0x7f18f481, 0x90a03fdf, 0x14418c3f, 0x33a87f7e, 0x685309be, 0x24ce123, 0x29d57f4, 0x3fc3f13, 0x48e5911, 0x47d7cc6, 0x4aca143, 0x5132389, 0x51cc0b8; several may be context/payload constants.",
+      "produced_by": [
+        "cMessageManager listener dispatch",
+        "UI/menu/resource/editor services"
+      ],
+      "resulting_state_changes": [
+        "editor mode/selection/tool/UI/resource/history state may change",
+        "secondary messages/animation events may be emitted",
+        "complete branch catalog unresolved"
+      ],
+      "status": "dispatcher_body_confirmed_id_semantics_partial"
+    },
+    {
+      "conditions": [
+        "animation code constructs AnimationMessage"
+      ],
+      "confidence": 0.84,
+      "consumed_by": [
+        "Anim::IAnimManager",
+        "IAnimWorld",
+        "AnimatedCreature"
+      ],
+      "evidence": [
+        {
+          "claim": "SDK exports 24-byte AnimationMessage with messageID, pName, pCreature, blockIndex, parameter0, parameter1.",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv:6096-6101"
+        },
+        {
+          "claim": "It is not StandardMessage; dispatch table, IDs, and pName lifetime are unresolved.",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/types/07-event-message.md:430-443"
+        }
+      ],
+      "id": "animation_message",
+      "kind": "animation_event_record",
+      "name": "Anim::AnimationMessage",
+      "payload": "24-byte record: uint32 messageID, char* pName, AnimatedCreature* pCreature, int blockIndex, int parameter0, float parameter1.",
+      "produced_by": [
+        "cEditorAnimWorld animation path",
+        "Anim manager"
+      ],
+      "resulting_state_changes": [
+        "creature animation/pose state may change",
+        "controller/world state may update",
+        "dispatch table unresolved"
+      ],
+      "status": "layout_confirmed_dispatch_unresolved"
+    },
+    {
+      "conditions": [
+        "cEditorAnimEvent populated",
+        "IAppSystem non-null"
+      ],
+      "confidence": 0.86,
+      "consumed_by": [
+        "recovered IAppSystem Init slot",
+        "unresolved animation consumer"
+      ],
+      "evidence": [
+        {
+          "claim": "MessageSend packs editor model/event/scalars and calls recovered IAppSystem Init.",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditorAnimEvent__MessageSend.c:8-31"
+        },
+        {
+          "claim": "Decompiler CommandLine local is not used as exact event layout.",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/types/07-event-message.json:3278-3403"
+        }
+      ],
+      "id": "editor_animation_message_send",
+      "kind": "editor_animation_event",
+      "name": "Editors::cEditorAnimEvent::MessageSend",
+      "payload": "48-byte refcounted cEditorAnimEvent with editor model, event ID, scalar fields, IMessageRC/refcount metadata; packed local layout unresolved.",
+      "produced_by": [
+        "cEditor::SetActiveMode",
+        "cEditor::SetCreatureToNeutralPose",
+        "editor animation callers"
+      ],
+      "resulting_state_changes": [
+        "editor animation intent routed through Init slot",
+        "final animation state unresolved"
+      ],
+      "status": "send_call_shape_confirmed_consumer_unresolved"
+    },
+    {
+      "conditions": [
+        "cEditorAnimEvent populated",
+        "IAppSystem non-null"
+      ],
+      "confidence": 0.86,
+      "consumed_by": [
+        "recovered IAppSystem InitPlugins slot",
+        "unresolved animation consumer"
+      ],
+      "evidence": [
+        {
+          "claim": "MessagePost packs editor model/event/scalars and calls recovered IAppSystem InitPlugins.",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditorAnimEvent__MessagePost.c:8-31"
+        },
+        {
+          "claim": "Send/Post differ at the recovered slot boundary; timing is unresolved.",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/types/07-event-message.json:424-451"
+        }
+      ],
+      "id": "editor_animation_message_post",
+      "kind": "editor_animation_event",
+      "name": "Editors::cEditorAnimEvent::MessagePost",
+      "payload": "48-byte refcounted cEditorAnimEvent with editor model, event ID, scalar fields, IMessageRC/refcount metadata; packed local layout unresolved.",
+      "produced_by": [
+        "cEditor::SetCreatureToNeutralPose",
+        "editor animation callers"
+      ],
+      "resulting_state_changes": [
+        "editor animation intent routed through InitPlugins slot",
+        "final animation state unresolved"
+      ],
+      "status": "post_call_shape_confirmed_consumer_unresolved"
+    },
+    {
+      "conditions": [
+        "subsystem inserts tDeferredEvent",
+        "scheduler time reaches trigger time"
+      ],
+      "confidence": 0.88,
+      "consumed_by": [
+        "unknown Simulator deferred scheduler",
+        "GUID-selected callback"
+      ],
+      "evidence": [
+        {
+          "claim": "SDK exports 28-byte tDeferredEvent with GUID, trigger time, two floats, and two uints.",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv:8901-8906"
+        },
+        {
+          "claim": "Vector/scheduler owner, epoch, ordering, duplicate policy, and callback are unresolved.",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/types/07-event-message.json:3411-3474"
+        }
+      ],
+      "id": "deferred_gameplay_event",
+      "kind": "scheduler_event",
+      "name": "Simulator::tDeferredEvent",
+      "payload": "28-byte value: uint32 mEventGuid, uint64 mTriggerTime at +0x04, float mUserFloat1, float mUserFloat2, uint32 mUserUint1, uint32 mUserUint2.",
+      "produced_by": [
+        "unknown Simulator gameplay services"
+      ],
+      "resulting_state_changes": [
+        "record retained until trigger processing",
+        "GUID callback may mutate simulator",
+        "ordering/expiry unresolved"
+      ],
+      "status": "layout_confirmed_scheduler_unresolved"
+    },
+    {
+      "conditions": [
+        "feedback system creates cFeedbackEvent",
+        "event key inserted into cUIEventLog map"
+      ],
+      "confidence": 0.89,
+      "consumed_by": [
+        "cUIEventLog",
+        "UTFWin layout/presentation"
+      ],
+      "evidence": [
+        {
+          "claim": "cFeedbackEvent is 148 bytes with category, timing, context, command, description, and layout fields.",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/types/07-event-message.json:3477-3670"
+        },
+        {
+          "claim": "cUIEventLog owns map<uint32,intrusive_ptr<cFeedbackEvent>> and mode state.",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/types/07-event-message.json:3477-3521"
+        }
+      ],
+      "id": "ui_feedback_event",
+      "kind": "ui_feedback_record",
+      "name": "Simulator::cFeedbackEvent",
+      "payload": "148-byte refcounted record: category/subcategory, Vector3, fade/remove times, context removal, current context, command ID, description, layout pointer, opaque fields.",
+      "produced_by": [
+        "gameplay feedback systems"
+      ],
+      "resulting_state_changes": [
+        "keyed map insertion",
+        "display/fade/remove timers activate",
+        "context change may remove",
+        "ShowEvent/HideEvent order unresolved"
+      ],
+      "status": "record_map_confirmed_lifecycle_partial"
+    },
+    {
+      "conditions": [
+        "communication manager creates space or civ event"
+      ],
+      "confidence": 0.9,
+      "consumed_by": [
+        "cCommManager",
+        "mission/galaxy state",
+        "communication presentation"
+      ],
+      "evidence": [
+        {
+          "claim": "cCommEvent is 160-byte ISimulatorSerializable record with political/city/civilization, mission/dialog, timing, priority, and four vectors.",
+          "level": "CONFIRMED",
+          "source": "knowledgegraph/research/types/07-event-message.json:3673-3843"
+        },
+        {
+          "claim": "CreateSpaceCommEvent/CreateCivCommEvent are producers and ShowCommEvent is a consumer; codec/defaulting unresolved.",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/types/07-event-message.md:495-518"
+        }
+      ],
+      "id": "communication_domain_event",
+      "kind": "serializable_domain_event",
+      "name": "Simulator::cCommEvent",
+      "payload": "160-byte serializable event: event type, source/target IDs, city/civilization pointers, visibility, planet/file/dialog IDs, mission, priority, duration, elapsed time, four vector<int> fields.",
+      "produced_by": [
+        "0x00aeb0e0 CreateSpaceCommEvent",
+        "0x00aeb1c0 CreateCivCommEvent"
+      ],
+      "resulting_state_changes": [
+        "current communication/list state may change",
+        "mission/galaxy references retained",
+        "codec timing unresolved"
+      ],
+      "status": "serializable_layout_confirmed_codec_unresolved"
+    },
+    {
+      "conditions": [
+        "space state handler builds one of two anonymous records"
+      ],
+      "confidence": 0.72,
+      "consumed_by": [
+        "unresolved 14-node space state-handler SCC"
+      ],
+      "evidence": [
+        {
+          "claim": "FUN_00e39ab0 builds 27-field and 24-field records with object/cell refs, timestamp, slot -10, IDs, float3 positions, and trailing fields.",
+          "level": "INFERRED",
+          "source": "knowledgegraph/research/types/07-event-message.json:3845-3944"
+        },
+        {
+          "claim": "Known callers include space trading and beam-tool paths; exact consumers/layout unresolved.",
+          "level": "SUPPORTED",
+          "source": "docs/analysis/dossiers/unknown-high/space-event-record-pair.json:18-83"
+        }
+      ],
+      "id": "space_event_record_pair",
+      "kind": "mode_specific_event_record",
+      "name": "FUN_00e39ab0 anonymous space event-record pair",
+      "payload": "Two mode-specific allocated records with unknown size/offset layout; observed object reference, cell IDs, millisecond-like timestamp, slot sentinel -10, IDs, float3 positions, trailing fields.",
+      "produced_by": [
+        "space trading/tool/state-handler cluster"
+      ],
+      "resulting_state_changes": [
+        "space-mode state may update",
+        "queue/lifetime unresolved",
+        "not StandardMessage/UTFWin Message/current SimEvent"
+      ],
+      "status": "contents_observed_exact_contract_unresolved"
+    },
+    {
+      "conditions": [
+        "UTFWin text widget executes pdtk mode 0, 1, or 2"
+      ],
+      "confidence": 0.81,
+      "consumed_by": [
+        "runtime pdtk toolkit"
+      ],
+      "evidence": [
+        {
+          "claim": "FUN_00a4e9c0 formats pdtk_text_new/select/focus/icursor/resize and updates size/cursor.",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/types/07-event-message.json:3947-4011"
+        }
+      ],
+      "id": "pdtk_text_command",
+      "kind": "text_command_protocol",
+      "name": "pdtk text-widget command",
+      "payload": "Formatted pdtk_text_new/select/focus/icursor/resize with dimensions, cursor, selection, clear flag, and blue/black colors.",
+      "produced_by": [
+        "UTFWin text widget @ 0x00a4e9c0"
+      ],
+      "resulting_state_changes": [
+        "widget size/cursor update",
+        "toolkit may execute command",
+        "grammar/response unresolved"
+      ],
+      "status": "forms_confirmed_grammar_unresolved"
+    },
+    {
+      "event_catalog": [
+        {
+          "conditions": [
+            "UTFWin input/window path creates message"
+          ],
+          "confidence": 0.98,
+          "consumed_by": [
+            "UTFWin::Window",
+            "IWinProc::HandleUIMessage",
+            "InteractiveWinProc matching callback"
+          ],
+          "evidence": [
+            {
+              "claim": "SDK maps named MessageType values and recovered payload forms.",
+              "level": "CONFIRMED",
+              "source": "knowledgegraph/research/types/07-event-message.md:259-324"
+            }
+          ],
+          "id": "ui_key_down",
+          "kind": "utfwin_message",
+          "name": "UTFWin kMsgKeyDown",
+          "payload": "eventType 0x01; inferred key payload with field_0C, vkey, modifiers.",
+          "produced_by": [
+            "UTFWin input conversion"
+          ],
+          "resulting_state_changes": [
+            "key-down proc filtering/callback"
+          ],
+          "status": "interface_confirmed_order_unresolved"
+        },
+        {
+          "conditions": [
+            "UTFWin input/window path creates message"
+          ],
+          "confidence": 0.98,
+          "consumed_by": [
+            "Window",
+            "IWinProc",
+            "OnKeyUp"
+          ],
+          "evidence": [
+            {
+              "claim": "SDK maps kMsgKeyUp to 0x02.",
+              "level": "CONFIRMED",
+              "source": "knowledgegraph/research/types/07-event-message.md:259-324"
+            }
+          ],
+          "id": "ui_key_up",
+          "kind": "utfwin_message",
+          "name": "UTFWin kMsgKeyUp",
+          "payload": "eventType 0x02; inferred field_0C, vkey int16, padding.",
+          "produced_by": [
+            "UTFWin input conversion"
+          ],
+          "resulting_state_changes": [
+            "key-up proc filtering/callback"
+          ],
+          "status": "interface_confirmed_order_unresolved"
+        },
+        {
+          "conditions": [
+            "UTFWin input/window path creates message"
+          ],
+          "confidence": 0.97,
+          "consumed_by": [
+            "Window",
+            "IWinProc",
+            "OnKeyDown2"
+          ],
+          "evidence": [
+            {
+              "claim": "SDK maps kMsgKeyDown2 to 0x03; payload variant incomplete.",
+              "level": "CONFIRMED",
+              "source": ".spore-analysis/ghidra-exports/spore_sdk.xml:8015-8020"
+            }
+          ],
+          "id": "ui_key_down_2",
+          "kind": "utfwin_message",
+          "name": "UTFWin kMsgKeyDown2",
+          "payload": "eventType 0x03; exact union payload unresolved.",
+          "produced_by": [
+            "UTFWin input conversion"
+          ],
+          "resulting_state_changes": [
+            "key-down2 proc routing"
+          ],
+          "status": "enum_confirmed_payload_unresolved"
+        },
+        {
+          "conditions": [
+            "UTFWin input/window path creates message"
+          ],
+          "confidence": 0.97,
+          "consumed_by": [
+            "Window",
+            "IWinProc",
+            "OnKeyUp2"
+          ],
+          "evidence": [
+            {
+              "claim": "SDK maps kMsgKeyUp2 to 0x04; payload variant incomplete.",
+              "level": "CONFIRMED",
+              "source": ".spore-analysis/ghidra-exports/spore_sdk.xml:8015-8020"
+            }
+          ],
+          "id": "ui_key_up_2",
+          "kind": "utfwin_message",
+          "name": "UTFWin kMsgKeyUp2",
+          "payload": "eventType 0x04; exact union payload unresolved.",
+          "produced_by": [
+            "UTFWin input conversion"
+          ],
+          "resulting_state_changes": [
+            "key-up2 proc routing"
+          ],
+          "status": "enum_confirmed_payload_unresolved"
+        },
+        {
+          "conditions": [
+            "UTFWin input/window path creates message"
+          ],
+          "confidence": 0.97,
+          "consumed_by": [
+            "Window",
+            "IWinProc",
+            "OnKeyPress"
+          ],
+          "evidence": [
+            {
+              "claim": "SDK maps kMsgKeyPress to 0x05.",
+              "level": "CONFIRMED",
+              "source": ".spore-analysis/ghidra-exports/spore_sdk.xml:8015-8020"
+            }
+          ],
+          "id": "ui_key_press",
+          "kind": "utfwin_message",
+          "name": "UTFWin kMsgKeyPress",
+          "payload": "eventType 0x05; press/repeat payload unresolved.",
+          "produced_by": [
+            "UTFWin input conversion"
+          ],
+          "resulting_state_changes": [
+            "key-press proc routing"
+          ],
+          "status": "enum_confirmed_payload_unresolved"
+        },
+        {
+          "conditions": [
+            "UTFWin input/window path creates message"
+          ],
+          "confidence": 0.98,
+          "consumed_by": [
+            "Window",
+            "IWinProc",
+            "OnMouseDown"
+          ],
+          "evidence": [
+            {
+              "claim": "SDK maps kMsgMouseDown to 0x06; payload has x/y, state, button.",
+              "level": "CONFIRMED",
+              "source": "knowledgegraph/research/types/07-event-message.md:259-324"
+            }
+          ],
+          "id": "ui_mouse_down",
+          "kind": "utfwin_message",
+          "name": "UTFWin kMsgMouseDown",
+          "payload": "eventType 0x06; float x, float y, mouseState, MouseButton.",
+          "produced_by": [
+            "UTFWin input conversion"
+          ],
+          "resulting_state_changes": [
+            "mouse-down proc/callback routing"
+          ],
+          "status": "interface_confirmed_order_unresolved"
+        },
+        {
+          "conditions": [
+            "UTFWin input/window path creates message"
+          ],
+          "confidence": 0.98,
+          "consumed_by": [
+            "Window",
+            "IWinProc",
+            "OnMouseUp"
+          ],
+          "evidence": [
+            {
+              "claim": "SDK maps kMsgMouseUp to 0x07; payload has x/y, state, button.",
+              "level": "CONFIRMED",
+              "source": "knowledgegraph/research/types/07-event-message.md:259-324"
+            }
+          ],
+          "id": "ui_mouse_up",
+          "kind": "utfwin_message",
+          "name": "UTFWin kMsgMouseUp",
+          "payload": "eventType 0x07; float x, float y, mouseState, MouseButton.",
+          "produced_by": [
+            "UTFWin input conversion"
+          ],
+          "resulting_state_changes": [
+            "mouse-up proc/callback routing"
+          ],
+          "status": "interface_confirmed_order_unresolved"
+        },
+        {
+          "conditions": [
+            "UTFWin input/window path creates message"
+          ],
+          "confidence": 0.98,
+          "consumed_by": [
+            "Window",
+            "IWinProc",
+            "OnMouseMove"
+          ],
+          "evidence": [
+            {
+              "claim": "SDK maps kMsgMouseMove to 0x08; payload has x/y, state, button.",
+              "level": "CONFIRMED",
+              "source": "knowledgegraph/research/types/07-event-message.md:259-324"
+            }
+          ],
+          "id": "ui_mouse_move",
+          "kind": "utfwin_message",
+          "name": "UTFWin kMsgMouseMove",
+          "payload": "eventType 0x08; float x, float y, mouseState, MouseButton.",
+          "produced_by": [
+            "UTFWin input conversion"
+          ],
+          "resulting_state_changes": [
+            "hover/selection/editor state may update"
+          ],
+          "status": "interface_confirmed_order_unresolved"
+        },
+        {
+          "conditions": [
+            "UTFWin input/window path creates message"
+          ],
+          "confidence": 0.98,
+          "consumed_by": [
+            "Window",
+            "IWinProc",
+            "OnMouseWheel"
+          ],
+          "evidence": [
+            {
+              "claim": "SDK maps kMsgMouseWheel to 0x09; payload has x/y, state, wheel delta.",
+              "level": "CONFIRMED",
+              "source": "knowledgegraph/research/types/07-event-message.md:259-324"
+            }
+          ],
+          "id": "ui_mouse_wheel",
+          "kind": "utfwin_message",
+          "name": "UTFWin kMsgMouseWheel",
+          "payload": "eventType 0x09; float x, float y, mouseState, int wheelDelta.",
+          "produced_by": [
+            "UTFWin input conversion"
+          ],
+          "resulting_state_changes": [
+            "scroll/zoom state may update"
+          ],
+          "status": "interface_confirmed_order_unresolved"
+        },
+        {
+          "conditions": [
+            "widget requests redraw"
+          ],
+          "confidence": 0.96,
+          "consumed_by": [
+            "Window",
+            "IWinProc",
+            "OnRefresh"
+          ],
+          "evidence": [
+            {
+              "claim": "SDK maps kMsgRefresh to 0x0a; payload is RefreshType plus window.",
+              "level": "CONFIRMED",
+              "source": "knowledgegraph/research/types/07-event-message.md:259-324"
+            }
+          ],
+          "id": "ui_refresh",
+          "kind": "utfwin_message",
+          "name": "UTFWin kMsgRefresh",
+          "payload": "eventType 0x0a; RefreshType, fields, window pointer.",
+          "produced_by": [
+            "UTFWin widget/layout paths"
+          ],
+          "resulting_state_changes": [
+            "refresh/paint/invalidation"
+          ],
+          "status": "interface_confirmed_order_unresolved"
+        },
+        {
+          "conditions": [
+            "window requests update"
+          ],
+          "confidence": 0.96,
+          "consumed_by": [
+            "Window",
+            "IWinProc",
+            "OnUpdate"
+          ],
+          "evidence": [
+            {
+              "claim": "SDK maps kMsgUpdate to 0x0c; payload has fields plus Rectangle*.",
+              "level": "CONFIRMED",
+              "source": "knowledgegraph/research/types/07-event-message.md:259-324"
+            }
+          ],
+          "id": "ui_update",
+          "kind": "utfwin_message",
+          "name": "UTFWin kMsgUpdate",
+          "payload": "eventType 0x0c; three fields, Rectangle* area.",
+          "produced_by": [
+            "UTFWin widget/window paths"
+          ],
+          "resulting_state_changes": [
+            "update/layout/paint may run"
+          ],
+          "status": "interface_confirmed_order_unresolved"
+        },
+        {
+          "conditions": [
+            "widget requests paint"
+          ],
+          "confidence": 0.96,
+          "consumed_by": [
+            "Window",
+            "IWinProc",
+            "paint proc"
+          ],
+          "evidence": [
+            {
+              "claim": "SDK maps kMsgPaint to 0x0d and paint EventFlag=0x04.",
+              "level": "CONFIRMED",
+              "source": ".spore-analysis/ghidra-exports/spore_sdk.xml:8003-8041"
+            }
+          ],
+          "id": "ui_paint",
+          "kind": "utfwin_message",
+          "name": "UTFWin kMsgPaint",
+          "payload": "eventType 0x0d; exact payload variant unresolved.",
+          "produced_by": [
+            "UTFWin widget/render path"
+          ],
+          "resulting_state_changes": [
+            "paint/invalidation"
+          ],
+          "status": "enum_confirmed_payload_unresolved"
+        },
+        {
+          "conditions": [
+            "window geometry changes"
+          ],
+          "confidence": 0.96,
+          "consumed_by": [
+            "Window",
+            "IWinProc",
+            "window observers"
+          ],
+          "evidence": [
+            {
+              "claim": "SDK maps kMsgWindowChanged to 0x0e and window EventFlag=0x08.",
+              "level": "CONFIRMED",
+              "source": ".spore-analysis/ghidra-exports/spore_sdk.xml:8003-8041"
+            }
+          ],
+          "id": "ui_window_changed",
+          "kind": "utfwin_message",
+          "name": "UTFWin kMsgWindowChanged",
+          "payload": "eventType 0x0e; exact payload variant unresolved.",
+          "produced_by": [
+            "UTFWin window/layout paths"
+          ],
+          "resulting_state_changes": [
+            "window/layout observer state"
+          ],
+          "status": "enum_confirmed_payload_unresolved"
+        },
+        {
+          "conditions": [
+            "layout rebuilt/invalidated"
+          ],
+          "confidence": 0.96,
+          "consumed_by": [
+            "Window",
+            "IWinProc",
+            "OnLayout"
+          ],
+          "evidence": [
+            {
+              "claim": "SDK maps kMsgLayout to 0x10 and layout EventFlag=0x0108.",
+              "level": "CONFIRMED",
+              "source": ".spore-analysis/ghidra-exports/spore_sdk.xml:8003-8041"
+            }
+          ],
+          "id": "ui_layout",
+          "kind": "utfwin_message",
+          "name": "UTFWin kMsgLayout",
+          "payload": "eventType 0x10; exact layout payload unresolved.",
+          "produced_by": [
+            "UTFWin layout paths"
+          ],
+          "resulting_state_changes": [
+            "layout/paint/update"
+          ],
+          "status": "enum_confirmed_payload_unresolved"
+        },
+        {
+          "conditions": [
+            "UTFWin element added"
+          ],
+          "confidence": 0.95,
+          "consumed_by": [
+            "Window",
+            "IWinProc",
+            "OnElementAdd"
+          ],
+          "evidence": [
+            {
+              "claim": "SDK maps kMsgElementAdded to 0x11 and element EventFlag=0x0400.",
+              "level": "CONFIRMED",
+              "source": ".spore-analysis/ghidra-exports/spore_sdk.xml:8003-8041"
+            }
+          ],
+          "id": "ui_element_added",
+          "kind": "utfwin_message",
+          "name": "UTFWin kMsgElementAdded",
+          "payload": "eventType 0x11; element identity/payload unresolved.",
+          "produced_by": [
+            "UTFWin element/layout mutation"
+          ],
+          "resulting_state_changes": [
+            "element membership/layout"
+          ],
+          "status": "enum_confirmed_payload_unresolved"
+        },
+        {
+          "conditions": [
+            "UTFWin element removed"
+          ],
+          "confidence": 0.95,
+          "consumed_by": [
+            "Window",
+            "IWinProc",
+            "OnElementRemove"
+          ],
+          "evidence": [
+            {
+              "claim": "SDK maps kMsgElementRemoved to 0x12 and element EventFlag=0x0400.",
+              "level": "CONFIRMED",
+              "source": ".spore-analysis/ghidra-exports/spore_sdk.xml:8003-8041"
+            }
+          ],
+          "id": "ui_element_removed",
+          "kind": "utfwin_message",
+          "name": "UTFWin kMsgElementRemoved",
+          "payload": "eventType 0x12; element identity/payload unresolved.",
+          "produced_by": [
+            "UTFWin element/layout mutation"
+          ],
+          "resulting_state_changes": [
+            "element membership/layout"
+          ],
+          "status": "enum_confirmed_payload_unresolved"
+        },
+        {
+          "conditions": [
+            "Window/child state changes"
+          ],
+          "confidence": 0.97,
+          "consumed_by": [
+            "Window state observers",
+            "IWinProc",
+            "InteractiveWindow"
+          ],
+          "evidence": [
+            {
+              "claim": "SDK maps kMsgStateChanged to 0x13; payload oldState/newState.",
+              "level": "CONFIRMED",
+              "source": "knowledgegraph/research/types/07-event-message.md:259-324"
+            },
+            {
+              "claim": "Window::SetState recursively compares child state values.",
+              "level": "SUPPORTED",
+              "source": ".spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__Window__SetState.c:7-37"
+            }
+          ],
+          "id": "ui_state_changed",
+          "kind": "utfwin_message",
+          "name": "UTFWin kMsgStateChanged",
+          "payload": "eventType 0x13; oldState int, newState int.",
+          "produced_by": [
+            "Window and child state paths"
+          ],
+          "resulting_state_changes": [
+            "window/child state/layout/focus observers"
+          ],
+          "status": "payload_and_recursive_producer_supported"
+        },
+        {
+          "conditions": [
+            "collision detection runs"
+          ],
+          "confidence": 0.95,
+          "consumed_by": [
+            "Window",
+            "IWinProc",
+            "OnCollisionDetect"
+          ],
+          "evidence": [
+            {
+              "claim": "SDK maps kMsgCollisionDetect to 0x14; payload x/y, mouseState, bool*.",
+              "level": "CONFIRMED",
+              "source": "knowledgegraph/research/types/07-event-message.md:259-324"
+            }
+          ],
+          "id": "ui_collision_detect",
+          "kind": "utfwin_message",
+          "name": "UTFWin kMsgCollisionDetect",
+          "payload": "eventType 0x14; float x, float y, mouseState, bool* isColliding.",
+          "produced_by": [
+            "UTFWin input/collision path"
+          ],
+          "resulting_state_changes": [
+            "collision/selection/UI state"
+          ],
+          "status": "interface_confirmed_order_unresolved"
+        },
+        {
+          "conditions": [
+            "transform changes"
+          ],
+          "confidence": 0.95,
+          "consumed_by": [
+            "Window",
+            "IWinProc",
+            "OnTransform"
+          ],
+          "evidence": [
+            {
+              "claim": "SDK maps kMsgTransformed to 0x15; payload fields plus Matrix4*.",
+              "level": "CONFIRMED",
+              "source": "knowledgegraph/research/types/07-event-message.md:259-324"
+            }
+          ],
+          "id": "ui_transformed",
+          "kind": "utfwin_message",
+          "name": "UTFWin kMsgTransformed",
+          "payload": "eventType 0x15; three fields, Matrix4* transformation.",
+          "produced_by": [
+            "UTFWin transform/layout paths"
+          ],
+          "resulting_state_changes": [
+            "transform/layout/paint"
+          ],
+          "status": "interface_confirmed_order_unresolved"
+        },
+        {
+          "conditions": [
+            "button clicked"
+          ],
+          "confidence": 0.98,
+          "consumed_by": [
+            "Window",
+            "IWinProc",
+            "OnButtonClick"
+          ],
+          "evidence": [
+            {
+              "claim": "SDK maps kMsgButtonClick to 0x17; payload commandID uint32.",
+              "level": "CONFIRMED",
+              "source": "knowledgegraph/research/types/07-event-message.md:259-324"
+            }
+          ],
+          "id": "ui_button_click",
+          "kind": "utfwin_message",
+          "name": "UTFWin kMsgButtonClick",
+          "payload": "eventType 0x17; uint32 commandID.",
+          "produced_by": [
+            "UTFWin button controls"
+          ],
+          "resulting_state_changes": [
+            "command/mode handler may run"
+          ],
+          "status": "interface_confirmed_order_unresolved"
+        },
+        {
+          "conditions": [
+            "selectable control changes"
+          ],
+          "confidence": 0.98,
+          "consumed_by": [
+            "Window",
+            "IWinProc",
+            "EditorNamePanel"
+          ],
+          "evidence": [
+            {
+              "claim": "SDK maps kMsgButtonSelect to 0x18; payload commandID, field_10, isSelected.",
+              "level": "CONFIRMED",
+              "source": "knowledgegraph/research/types/07-event-message.md:259-324"
+            }
+          ],
+          "id": "ui_button_select",
+          "kind": "utfwin_message",
+          "name": "UTFWin kMsgButtonSelect",
+          "payload": "eventType 0x18; commandID, field_10, isSelected bool, padding.",
+          "produced_by": [
+            "UTFWin button/select controls"
+          ],
+          "resulting_state_changes": [
+            "selection/UI command state"
+          ],
+          "status": "interface_consumer_supported"
+        },
+        {
+          "conditions": [
+            "mouse enters window/proc"
+          ],
+          "confidence": 0.95,
+          "consumed_by": [
+            "Window",
+            "IWinProc",
+            "OnMouseEnter"
+          ],
+          "evidence": [
+            {
+              "claim": "SDK maps kMsgMouseEnter to 0x1b.",
+              "level": "CONFIRMED",
+              "source": ".spore-analysis/ghidra-exports/spore_sdk.xml:8030-8041"
+            }
+          ],
+          "id": "ui_mouse_enter",
+          "kind": "utfwin_message",
+          "name": "UTFWin kMsgMouseEnter",
+          "payload": "eventType 0x1b; exact payload unresolved.",
+          "produced_by": [
+            "UTFWin hover path"
+          ],
+          "resulting_state_changes": [
+            "hover/focus state"
+          ],
+          "status": "enum_confirmed_payload_unresolved"
+        },
+        {
+          "conditions": [
+            "mouse leaves window/proc"
+          ],
+          "confidence": 0.95,
+          "consumed_by": [
+            "Window",
+            "IWinProc",
+            "OnMouseLeave"
+          ],
+          "evidence": [
+            {
+              "claim": "SDK maps kMsgMouseLeave to 0x1c.",
+              "level": "CONFIRMED",
+              "source": ".spore-analysis/ghidra-exports/spore_sdk.xml:8030-8041"
+            }
+          ],
+          "id": "ui_mouse_leave",
+          "kind": "utfwin_message",
+          "name": "UTFWin kMsgMouseLeave",
+          "payload": "eventType 0x1c; exact payload unresolved.",
+          "produced_by": [
+            "UTFWin hover path"
+          ],
+          "resulting_state_changes": [
+            "hover/focus state"
+          ],
+          "status": "enum_confirmed_payload_unresolved"
+        },
+        {
+          "conditions": [
+            "WinProc added"
+          ],
+          "confidence": 0.96,
+          "consumed_by": [
+            "Window mWinProcs",
+            "IWinProc observers"
+          ],
+          "evidence": [
+            {
+              "claim": "SDK maps kMsgWinProcAdded to 0x1000; payload has fields and pointer.",
+              "level": "CONFIRMED",
+              "source": "knowledgegraph/research/types/07-event-message.md:259-324"
+            }
+          ],
+          "id": "ui_winproc_added",
+          "kind": "utfwin_message",
+          "name": "UTFWin kMsgWinProcAdded",
+          "payload": "eventType 0x1000; three fields and window/proc pointer-like payload.",
+          "produced_by": [
+            "Window::AddWinProc"
+          ],
+          "resulting_state_changes": [
+            "proc list gains callback"
+          ],
+          "status": "interface_confirmed_order_unresolved"
+        },
+        {
+          "conditions": [
+            "WinProc removed"
+          ],
+          "confidence": 0.96,
+          "consumed_by": [
+            "Window mWinProcs",
+            "IWinProc observers"
+          ],
+          "evidence": [
+            {
+              "claim": "SDK maps kMsgWinProcRemoved to 0x1001; payload has fields and pointer.",
+              "level": "CONFIRMED",
+              "source": "knowledgegraph/research/types/07-event-message.md:259-324"
+            }
+          ],
+          "id": "ui_winproc_removed",
+          "kind": "utfwin_message",
+          "name": "UTFWin kMsgWinProcRemoved",
+          "payload": "eventType 0x1001; three fields and window/proc pointer-like payload.",
+          "produced_by": [
+            "Window::RemoveWinProc"
+          ],
+          "resulting_state_changes": [
+            "proc list loses callback"
+          ],
+          "status": "interface_confirmed_order_unresolved"
+        },
+        {
+          "conditions": [
+            "component activated"
+          ],
+          "confidence": 0.97,
+          "consumed_by": [
+            "Window",
+            "IWinProc",
+            "EditorNamePanel"
+          ],
+          "evidence": [
+            {
+              "claim": "SDK maps kMsgComponentActivated to 0x287259f6; EditorNamePanel handles the branch.",
+              "level": "CONFIRMED",
+              "source": ".spore-analysis/ghidra-exports/spore_sdk.xml:8038-8041 and knowledgegraph/research/state-machines/ui-gameplay.json:579-604"
+            }
+          ],
+          "id": "ui_component_activated",
+          "kind": "utfwin_message",
+          "name": "UTFWin kMsgComponentActivated",
+          "payload": "eventType 0x287259f6; exact component payload unresolved.",
+          "produced_by": [
+            "UTFWin components"
+          ],
+          "resulting_state_changes": [
+            "component/UI command state"
+          ],
+          "status": "interface_consumer_supported"
+        },
+        {
+          "conditions": [
+            "text changes"
+          ],
+          "confidence": 0.97,
+          "consumed_by": [
+            "UTFWin text controls",
+            "IWinProc",
+            "editor text handlers"
+          ],
+          "evidence": [
+            {
+              "claim": "SDK maps kMsgTextChanged to 0x9b1552da; payload fields plus TextChange*.",
+              "level": "CONFIRMED",
+              "source": "knowledgegraph/research/types/07-event-message.md:259-324"
+            }
+          ],
+          "id": "ui_text_changed",
+          "kind": "utfwin_message",
+          "name": "UTFWin kMsgTextChanged",
+          "payload": "eventType 0x9b1552da; three fields, TextChange* change.",
+          "produced_by": [
+            "UTFWin text controls"
+          ],
+          "resulting_state_changes": [
+            "text/validation/editor-name state"
+          ],
+          "status": "interface_confirmed_order_unresolved"
+        }
+      ],
+      "id": "utfwin_message_family",
+      "kind": "utfwin_message_family",
+      "name": "UTFWin MessageType catalog",
+      "payload": "UTFWin::Message: source IWindow*, eventType, and anonymous type-specific union payload. Named MessageType values and EventFlags are preserved in the nested catalog.",
+      "produced_by": [
+        "UTFWin input conversion",
+        "UTFWin widgets",
+        "Window state/layout paths",
+        "Window Add/RemoveWinProc"
+      ],
+      "resulting_state_changes": [
+        "Window proc priority/event-flag filtering",
+        "event-specific widget/editor/camera/UI callbacks",
+        "layout/paint/focus/selection changes"
+      ],
+      "status": "enum_payloads_and_interfaces_confirmed_traversal_unresolved"
+    },
+    {
+      "conditions": [
+        "SpacePlayerData context set to a new value"
+      ],
+      "confidence": 0.9,
+      "consumed_by": [
+        "space navigation consumers",
+        "mode/context followers"
+      ],
+      "evidence": [
+        {
+          "claim": "Setter writes SpaceContext and invokes Galaxy-only follow-up when new value is 2 and pointers are non-null.",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/state-machines/simulator-core.json:1417-1503"
+        },
+        {
+          "claim": "SDK defines None=-1, Planet=0, SolarSystem=1, Galaxy=2.",
+          "level": "CONFIRMED",
+          "source": "knowledgegraph/research/state-machines/simulator-core.json:1475-1479"
+        }
+      ],
+      "id": "space_context_change",
+      "kind": "analytical_cross_subsystem_event",
+      "name": "SpaceContext change",
+      "payload": "SpaceContext enum written to sSpacePlayerData+0x10: None=-1, Planet=0, SolarSystem=1, Galaxy=2.",
+      "produced_by": [
+        "space navigation setters and mode/context callers"
+      ],
+      "resulting_state_changes": [
+        "current context changes",
+        "Galaxy follow-up may run",
+        "downstream notifications unresolved"
+      ],
+      "status": "static_mechanics_galaxy_followup_conditional"
+    },
+    {
+      "conditions": [
+        "OS message pump enters frame/message loop"
+      ],
+      "confidence": 0.76,
+      "consumed_by": [
+        "native Win32 dispatch",
+        "frame/render dispatch"
+      ],
+      "evidence": [
+        {
+          "claim": "FUN_00848210 is a Canvas/message-pump candidate associated with PeekMessageW, TranslateMessage, DispatchMessageW, and frame dispatch.",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/types/07-event-message.md:402-404"
+        },
+        {
+          "claim": "KG records zero events for the menu-transition message-pump probe.",
+          "level": "OBSERVED",
+          "source": "knowledgegraph/seed-literals.json:121-146"
+        }
+      ],
+      "id": "win32_message_pump_tick",
+      "kind": "engine_boundary_event",
+      "name": "Win32 message pump tick",
+      "payload": "Native Win32 MSG records and frame timing passed through PeekMessageW, TranslateMessage, and DispatchMessageW; exact catalog unresolved.",
+      "produced_by": [
+        "App::Canvas/message pump boundary"
+      ],
+      "resulting_state_changes": [
+        "native window messages may dispatch",
+        "frame/render callback may run",
+        "relationship to App/UTFWin buses unresolved"
+      ],
+      "status": "static_boundary_no_positive_gameplay_trace"
+    }
+  ],
+  "scope": {
+    "binary": "SPORE/SporeBin/SporeApp.exe",
+    "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+    "boundaries": [
+      "No proprietary source/assets/models/textures/sounds/scripts or SPORE/ content used as output targets.",
+      "No implementation, Ghidra mutation, SPORE access, KG write, or historical artifact rewrite performed.",
+      "SDK names/enums/layouts/vtables are interface evidence; behavior is promoted only with static body, structure, disassembly, or multi-source support.",
+      "No positive original gameplay/message trace added; committed KG/observatory evidence is startup/main-menu or negative for message-pump/gameplay probes.",
+      "SporeApp.exe has no recovered MSVC RTTI; vtable candidates are structural evidence, not complete class identity."
+    ],
+    "central_dispatchers": [
+      {
+        "address": "0x00883970-0x00885a20",
+        "name": "App::cMessageManager",
+        "role": "App message-ID registry, registration, send/post, queue processing, locking, payload release"
+      },
+      {
+        "address": "0x00960250",
+        "name": "UTFWin::Window::SendMsg",
+        "role": "UTFWin window-local message forwarding into WinProc list"
+      },
+      {
+        "address": "0x00591fa0",
+        "name": "Editors::cEditor::HandleMessage",
+        "role": "editor-specific message fan-out"
+      },
+      {
+        "address": "0x007d85b0",
+        "name": "App::cGameModeManager transition helper",
+        "role": "mode lifecycle and enter/exit message order"
+      },
+      {
+        "address": "0x00b3d350",
+        "name": "Simulator::cGameInputManager::Get",
+        "role": "input manager feeding mode/camera/editor callbacks"
+      },
+      {
+        "address": "0x00848210",
+        "name": "Win32 message-pump candidate",
+        "role": "native OS pump and frame dispatch"
+      }
+    ],
+    "coverage": [
+      "App StandardMessage and derived records",
+      "message IDs and known message-ID families",
+      "listener/handler interfaces, adapters, MessageListenerData",
+      "message-ID maps, registration, priority, queues, release mechanics",
+      "UTFWin Message/MessageType/EventFlags/Window/IWinProc/InteractiveWinProc",
+      "game-mode lifecycle/input/mode routing",
+      "editor HandleMessage/input/animation Send/Post",
+      "AnimationMessage/tDeferredEvent/cFeedbackEvent/cCommEvent/space records/pdtk",
+      "SDK field/vtable layouts, vtable candidates, KG nodes/edges, dossiers"
+    ],
+    "evidence": {
+      "confidence_scale": {
+        "0.00-0.39": "unknown or unusable decompiler context",
+        "0.40-0.69": "explicit semantic inference",
+        "0.70-0.84": "single static body plus structural support",
+        "0.85-0.94": "multiple static sources agree",
+        "0.95-1.00": "direct structural or multi-source evidence"
+      },
+      "ghidra": "Bridge was queried read-only and reported zero open programs; GUI-only open operation was unavailable. Findings use committed exports, disassembly, SDK XML/TSV, vtable artifacts, dossiers, and KG.",
+      "kg": "Read-only KG sidecar was queried for class candidates and seed/observation relationships. It lacks several typed message-class nodes, so SDK/vtable/decomp evidence is retained where sparse.",
+      "runtime": "No positive original gameplay/message trace added; startup/main-menu observations and negative message-pump/gameplay probes are retained."
+    },
+    "sources": [
+      ".spore-analysis/ghidra-exports/spore_sdk.xml",
+      ".spore-analysis/ghidra-exports/structs_fields.tsv",
+      ".spore-analysis/ghidra-exports/structs.tsv",
+      ".spore-analysis/ghidra-exports/sdk_functions.tsv",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/App__cMessageManager__ProcessQueue.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/App__cMessageManager__GetMessageQueue.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__Window__SendMsg.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__Window__SetState.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__Window__GetNextWinProc.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__HandleMessage.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__Initialize.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnEnter.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnExit.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnKeyDown.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnMouseMove.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnMouseDown.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__SetActiveMode.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditorAnimEvent__MessageSend.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditorAnimEvent__MessagePost.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cGameInputManager__Get.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/App__cCameraManager__HandleMessage.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cMissionManager__GetMissionByID.c",
+      "docs/analysis/dossiers/unknown-high/message-handler-registration.json",
+      "docs/analysis/dossiers/unknown-high/message-handler-registration.md",
+      "docs/analysis/dossiers/unknown-high/space-event-record-pair.json",
+      "docs/analysis/dossiers/unknown-high/space-event-record-pair.md",
+      "docs/analysis/vtables.json",
+      "knowledgegraph/research/types/07-event-message.json",
+      "knowledgegraph/research/types/07-event-message.md",
+      "knowledgegraph/research/types/11-vtable-archaeology.json",
+      "knowledgegraph/research/state-machines/ui-gameplay.json",
+      "knowledgegraph/research/state-machines/simulator-core.json",
+      "knowledgegraph/research/global-campaign-2026/track-g-editor-ui-input.json",
+      "knowledgegraph/research/global-campaign-2026/track-k-engine-boundaries.json",
+      "knowledgegraph/seed-literals.json",
+      "knowledgegraph/spore.db"
+    ]
+  },
+  "state_machines": [
+    {
+      "confidence": {
+        "level": "high",
+        "reason": "SDK vtable, concrete manager vtable, transition helper, and named message IDs agree; static order is not runtime-verified."
+      },
+      "entry_actions": [
+        {
+          "action": "Initialize manager and register observed mode-related IDs 0x00d3c602, 0x00e11332, and 0x00e11333; only 0x00e11333 has an SDK name in this corpus.",
+          "conditions": [
+            "field_10 initially false"
+          ],
+          "evidence": "0x007d8060"
+        }
+      ],
+      "entry_conditions": [
+        "manager constructed",
+        "Initialize called before mode activation"
+      ],
+      "events": [
+        "mode_set_by_name",
+        "mode_exit_announcement",
+        "mode_enter_announcement"
+      ],
+      "evidence": [
+        {
+          "claim": "Concrete manager vtable exposes SetActiveMode/SetActiveModeAt/SetActiveModeByName.",
+          "level": "CONFIRMED",
+          "source": "knowledgegraph/research/state-machines/ui-gameplay.json:781-815"
+        },
+        {
+          "claim": "Helper calls old OnExit, writes active index, sends exit, calls new OnEnter, sends enter.",
+          "level": "CONFIRMED",
+          "source": "knowledgegraph/research/state-machines/ui-gameplay.json:790-794"
+        }
+      ],
+      "guards": [
+        "requested index is valid",
+        "same index is no-op",
+        "old OnExit only for valid current index"
+      ],
+      "name": "app_game_mode_activation",
+      "possible_states": [
+        {
+          "actions": [
+            "No active mode; index -1."
+          ],
+          "guards": [
+            "mnActiveIndex == -1"
+          ],
+          "name": "no_active_mode",
+          "raw_value": -1
+        },
+        {
+          "actions": [
+            "Selected mode receives lifecycle/input/update callbacks."
+          ],
+          "guards": [
+            "0 <= index < mode_count"
+          ],
+          "name": "active_mode_index",
+          "raw_value": "0..mode_count-1"
+        },
+        {
+          "actions": [
+            "Manager uninitialized or disposed."
+          ],
+          "guards": [
+            "field_10 false"
+          ],
+          "name": "manager_uninitialized_or_disposed",
+          "raw_value": null
+        }
+      ],
+      "relevant_functions": [
+        "0x007d8060",
+        "0x007d8360",
+        "0x007d8c30",
+        "0x007d8c80",
+        "0x007d85b0",
+        "0x007d8d40",
+        "0x007d8ff0",
+        "0x007d9120"
+      ],
+      "resulting_state_changes": [
+        "active index changes after old OnExit and before new OnEnter",
+        "exit message precedes new OnEnter",
+        "enter message follows new OnEnter"
+      ],
+      "side_effects": [
+        "old cleanup/new initialization",
+        "camera/transition/per-mode property updates",
+        "dispose clears entries/index"
+      ],
+      "state_variable": {
+        "expression": "App::cGameModeManager+0x28",
+        "owner": "App::cGameModeManager",
+        "type": "int32 active mode index"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "initialize manager and register messages"
+          ],
+          "cause": "initialization",
+          "event": "constructor_and_initialize",
+          "from_state": "manager_uninitialized_or_disposed",
+          "guard": "field_10 false",
+          "to_state": "no_active_mode"
+        },
+        {
+          "actions": [
+            "remain active"
+          ],
+          "cause": "same mode requested",
+          "event": "mode_set_by_name or SetActiveModeAt",
+          "from_state": "active_mode_index",
+          "guard": "requested equals active",
+          "to_state": "active_mode_index"
+        },
+        {
+          "actions": [
+            "old OnExit",
+            "write index",
+            "send exit",
+            "new OnEnter",
+            "send enter"
+          ],
+          "cause": "different mode requested",
+          "event": "mode_set_by_name or SetActiveModeAt",
+          "from_state": "no_active_mode or active_mode_index",
+          "guard": "valid and differs",
+          "to_state": "active_mode_index"
+        },
+        {
+          "actions": [
+            "exit active mode",
+            "dispose modes",
+            "clear entries",
+            "set index -1"
+          ],
+          "cause": "disposal",
+          "event": "Dispose",
+          "from_state": "active_mode_index",
+          "guard": "field_10 true",
+          "to_state": "manager_uninitialized_or_disposed"
+        }
+      ]
+    },
+    {
+      "confidence": {
+        "level": "high",
+        "reason": "Listener map, Entry layout, queue stride, two mutex regions, and ProcessQueue release path are structural evidence; exact order is not."
+      },
+      "entry_actions": [
+        {
+          "action": "Initialize manager and create registry.",
+          "conditions": [
+            "manager valid"
+          ],
+          "evidence": "0x00883a00-0x00884d70"
+        }
+      ],
+      "entry_conditions": [
+        "cMessageManager alive",
+        "registration/queue objects valid"
+      ],
+      "events": [
+        "app_message_registration",
+        "app_message_send",
+        "app_message_post",
+        "app_message_post_function"
+      ],
+      "evidence": [
+        {
+          "claim": "cMessageManager has message-ID map, two mutex regions, six flags/options.",
+          "level": "CONFIRMED",
+          "source": "knowledgegraph/research/types/07-event-message.json:2425-2496"
+        },
+        {
+          "claim": "ProcessQueue walks 0x18-byte records, follows 0xc0 range, releases referenced objects.",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/App__cMessageManager__ProcessQueue.c:6-38"
+        }
+      ],
+      "guards": [
+        "message ID must map to listener entry",
+        "priority/refcount affect selection/ownership",
+        "lock rules unresolved"
+      ],
+      "name": "app_message_bus",
+      "possible_states": [
+        {
+          "actions": [
+            "Registry empty."
+          ],
+          "guards": [
+            "mListeners empty"
+          ],
+          "name": "unregistered",
+          "raw_value": "empty map"
+        },
+        {
+          "actions": [
+            "Select and dispatch matching entries."
+          ],
+          "guards": [
+            "matching entry"
+          ],
+          "name": "registered",
+          "raw_value": "message-ID entry"
+        },
+        {
+          "actions": [
+            "Walk/release queued records."
+          ],
+          "guards": [
+            "0x18 record exists"
+          ],
+          "name": "queued",
+          "raw_value": "queue record"
+        },
+        {
+          "actions": [
+            "Clear maps/queues/locks."
+          ],
+          "guards": [
+            "Dispose called"
+          ],
+          "name": "disposed",
+          "raw_value": "disposed"
+        }
+      ],
+      "relevant_functions": [
+        "0x0067dc80",
+        "0x00883970",
+        "0x00883a00",
+        "0x00883a90",
+        "0x00883ad0",
+        "0x00883b20",
+        "0x00883b90",
+        "0x008841f0",
+        "0x00847f0",
+        "0x0084bd70",
+        "0x008854a0",
+        "0x00885980",
+        "0x00885a20",
+        "0x0098f4d0"
+      ],
+      "resulting_state_changes": [
+        "registration changes eligibility",
+        "send/post invokes callbacks",
+        "queue releases references",
+        "removal/disposal invalidates routing"
+      ],
+      "side_effects": [
+        "two mutex regions",
+        "0x14 Entry distinct from 0x18 queue record",
+        "send/post ownership differs"
+      ],
+      "state_variable": {
+        "expression": "App::cMessageManager.mListeners plus queue records",
+        "owner": "App::cMessageManager",
+        "type": "hash_map<uint32,list<IMessageListener*>> plus queue"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "create empty registry"
+          ],
+          "cause": "Initialize",
+          "event": "Initialize",
+          "from_state": "unregistered",
+          "guard": "manager valid",
+          "to_state": "unregistered"
+        },
+        {
+          "actions": [
+            "add Entry/listener/callback"
+          ],
+          "cause": "registration",
+          "event": "app_message_registration",
+          "from_state": "unregistered",
+          "guard": "valid ID/target",
+          "to_state": "registered"
+        },
+        {
+          "actions": [
+            "select and invoke entries"
+          ],
+          "cause": "send/post",
+          "event": "app_message_send or app_message_post",
+          "from_state": "registered",
+          "guard": "matching ID",
+          "to_state": "registered"
+        },
+        {
+          "actions": [
+            "walk/release queue records"
+          ],
+          "cause": "queue processor",
+          "event": "ProcessQueue or ProcessQueue2",
+          "from_state": "queued",
+          "guard": "traversal enabled",
+          "to_state": "registered or unregistered"
+        },
+        {
+          "actions": [
+            "remove entry/listener/handler"
+          ],
+          "cause": "unregistration",
+          "event": "RemoveListener/RemoveHandler/RemoveEntry",
+          "from_state": "registered",
+          "guard": "matching target",
+          "to_state": "unregistered"
+        },
+        {
+          "actions": [
+            "clear manager state"
+          ],
+          "cause": "disposal",
+          "event": "Dispose",
+          "from_state": "unregistered or registered or queued",
+          "guard": "manager valid",
+          "to_state": "disposed"
+        }
+      ]
+    },
+    {
+      "confidence": {
+        "level": "medium",
+        "reason": "Window hierarchy, WinProc list, Message layout, and callback surface are strong; traversal/bubbling/handled semantics are unresolved."
+      },
+      "entry_actions": [
+        {
+          "action": "Construct Window with parent/child links, manager, allocator, WinProc list, IDs, areas, state, drawable.",
+          "conditions": [
+            "allocation succeeds"
+          ],
+          "evidence": "knowledgegraph/research/types/07-event-message.json:2783-2981"
+        }
+      ],
+      "entry_conditions": [
+        "Window/IWindow valid",
+        "message source/event type valid"
+      ],
+      "events": [
+        "utfwin_message_family",
+        "ui_winproc_added",
+        "ui_winproc_removed",
+        "ui_state_changed",
+        "ui_layout",
+        "ui_button_click",
+        "ui_button_select",
+        "ui_text_changed"
+      ],
+      "evidence": [
+        {
+          "claim": "Window owns parent/children and WinProc list; IWindow has 71 slots and SendMsg at +0x114.",
+          "level": "CONFIRMED",
+          "source": "knowledgegraph/research/types/07-event-message.json:2783-2981"
+        },
+        {
+          "claim": "Message carries source/eventType/union; IWinProc supplies priority/flags/handler.",
+          "level": "CONFIRMED",
+          "source": "knowledgegraph/research/types/07-event-message.md:257-376"
+        }
+      ],
+      "guards": [
+        "proc registered",
+        "priority/event flags filter",
+        "bubble/consume unresolved"
+      ],
+      "name": "utfwin_window_proc_dispatch",
+      "possible_states": [
+        {
+          "actions": [
+            "No proc registered."
+          ],
+          "guards": [
+            "mWinProcs empty"
+          ],
+          "name": "window_without_procs",
+          "raw_value": "empty list"
+        },
+        {
+          "actions": [
+            "Message forwarded to proc list."
+          ],
+          "guards": [
+            "proc registered"
+          ],
+          "name": "proc_registered",
+          "raw_value": "intrusive list"
+        },
+        {
+          "actions": [
+            "Filter/handle/forward according to proc."
+          ],
+          "guards": [
+            "proc accepts event"
+          ],
+          "name": "message_dispatch",
+          "raw_value": "UTFWin::Message"
+        },
+        {
+          "actions": [
+            "Remove proc or teardown."
+          ],
+          "guards": [
+            "RemoveWinProc/Dispose"
+          ],
+          "name": "window_disposed",
+          "raw_value": "disposed"
+        }
+      ],
+      "relevant_functions": [
+        "0x00960250",
+        "0x00960370",
+        "0x0095fcc0",
+        "0x00961300",
+        "0x00980470"
+      ],
+      "resulting_state_changes": [
+        "proc membership changes",
+        "widget/editor/layout/paint/focus/selection state may update"
+      ],
+      "side_effects": [
+        "parent/child hierarchy",
+        "intrusive proc list",
+        "SendMsg decompilation is type-unsafe"
+      ],
+      "state_variable": {
+        "expression": "UTFWin::Window.mWinProcs",
+        "owner": "UTFWin::Window",
+        "type": "intrusive list of IWinProc entries"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "construct window hierarchy"
+          ],
+          "cause": "window creation",
+          "event": "Window_Initialize",
+          "from_state": "uninitialized",
+          "guard": "allocation succeeds",
+          "to_state": "window_without_procs"
+        },
+        {
+          "actions": [
+            "insert proc and notify observers"
+          ],
+          "cause": "AddWinProc",
+          "event": "ui_winproc_added",
+          "from_state": "window_without_procs or proc_registered",
+          "guard": "proc valid",
+          "to_state": "proc_registered"
+        },
+        {
+          "actions": [
+            "construct Message and SendMsg"
+          ],
+          "cause": "widget/input/state change",
+          "event": "UTFWin message family",
+          "from_state": "proc_registered",
+          "guard": "source/event valid",
+          "to_state": "message_dispatch"
+        },
+        {
+          "actions": [
+            "priority/flag filter and HandleUIMessage"
+          ],
+          "cause": "proc iteration",
+          "event": "IWinProc::HandleUIMessage",
+          "from_state": "message_dispatch",
+          "guard": "proc accepts event",
+          "to_state": "message_dispatch"
+        },
+        {
+          "actions": [
+            "remove proc"
+          ],
+          "cause": "RemoveWinProc",
+          "event": "ui_winproc_removed",
+          "from_state": "proc_registered or message_dispatch",
+          "guard": "proc registered",
+          "to_state": "window_without_procs"
+        },
+        {
+          "actions": [
+            "dispose family/children"
+          ],
+          "cause": "window teardown",
+          "event": "Window_Dispose",
+          "from_state": "any",
+          "guard": "window valid",
+          "to_state": "window_disposed"
+        }
+      ]
+    },
+    {
+      "confidence": {
+        "level": "high",
+        "reason": "Pending-state writes, first-request-wins guard, mode-exit/enter commits, and stable predicate are direct static mechanics."
+      },
+      "entry_actions": [
+        {
+          "action": "Initialize last/current/pending mode fields to -1/-1/0/-1.",
+          "conditions": [
+            "cStrategy construction"
+          ],
+          "evidence": "0x00b5b960"
+        }
+      ],
+      "entry_conditions": [
+        "Simulator cStrategy-derived manager constructed"
+      ],
+      "events": [
+        "mode_exit_announcement",
+        "mode_enter_announcement"
+      ],
+      "evidence": [
+        {
+          "claim": "Request helpers write pending path 1/2 and preserve first identifier.",
+          "level": "CONFIRMED",
+          "source": "knowledgegraph/research/state-machines/simulator-core.json:1182-1258"
+        },
+        {
+          "claim": "Commit helpers copy pending ID to last/current and clear pending.",
+          "level": "CONFIRMED",
+          "source": "knowledgegraph/research/state-machines/simulator-core.json:1225-1258"
+        }
+      ],
+      "guards": [
+        "-1 means no request",
+        "first request wins",
+        "equal normalized IDs ignored"
+      ],
+      "name": "simulator_strategy_mode_commit",
+      "possible_states": [
+        {
+          "actions": [
+            "No pending request."
+          ],
+          "guards": [
+            "field_18 == 0"
+          ],
+          "name": "no_pending_request",
+          "raw_value": 0
+        },
+        {
+          "actions": [
+            "Pending path 1."
+          ],
+          "guards": [
+            "field_18 == 1"
+          ],
+          "name": "pending_path_1",
+          "raw_value": 1
+        },
+        {
+          "actions": [
+            "Pending path 2."
+          ],
+          "guards": [
+            "field_18 == 2"
+          ],
+          "name": "pending_path_2",
+          "raw_value": 2
+        }
+      ],
+      "relevant_functions": [
+        "0x00b1d870",
+        "0x00b1db60",
+        "0x00b1dbd0",
+        "0x00b5b840",
+        "0x00b5b880",
+        "0x00b5b8a0",
+        "0x00b5b8c0",
+        "0x00b5b8e0",
+        "0x00b5b960",
+        "0x00b63510"
+      ],
+      "resulting_state_changes": [
+        "mLastGameMode changes on exit commit",
+        "mCurrentGameMode changes on enter commit",
+        "pending clears after commit"
+      ],
+      "side_effects": [
+        "first pending request wins",
+        "transition callbacks react to committed mode changes"
+      ],
+      "state_variable": {
+        "expression": "cStrategy+0x18 and +0x14",
+        "owner": "Simulator cStrategy-derived manager",
+        "type": "request path plus pending mode ID"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "set state 0/init slots"
+          ],
+          "cause": "construction",
+          "event": "constructor",
+          "from_state": "uninitialized",
+          "guard": "always",
+          "to_state": "no_pending_request"
+        },
+        {
+          "actions": [
+            "set path 1/store first ID"
+          ],
+          "cause": "request path 1",
+          "event": "strategy_mode_request",
+          "from_state": "any",
+          "guard": "always",
+          "to_state": "pending_path_1"
+        },
+        {
+          "actions": [
+            "set path 2/store first ID"
+          ],
+          "cause": "request path 2",
+          "event": "strategy_mode_request",
+          "from_state": "any",
+          "guard": "always",
+          "to_state": "pending_path_2"
+        },
+        {
+          "actions": [
+            "copy ID to last/clear"
+          ],
+          "cause": "exit commit",
+          "event": "mode_exit_announcement",
+          "from_state": "pending_path_1 or pending_path_2",
+          "guard": "IDs differ",
+          "to_state": "no_pending_request"
+        },
+        {
+          "actions": [
+            "copy ID to current/clear"
+          ],
+          "cause": "enter commit",
+          "event": "mode_enter_announcement",
+          "from_state": "pending_path_1 or pending_path_2",
+          "guard": "IDs differ",
+          "to_state": "no_pending_request"
+        }
+      ]
+    },
+    {
+      "confidence": {
+        "level": "medium",
+        "reason": "Send/Post call shapes and slot distinction are static, but final consumer, packed local, and queue timing are unresolved."
+      },
+      "entry_actions": [
+        {
+          "action": "Populate 48-byte cEditorAnimEvent and select Send or Post.",
+          "conditions": [
+            "editor target exists"
+          ],
+          "evidence": "0x0059d8b0/0x0059d840"
+        }
+      ],
+      "entry_conditions": [
+        "IAppSystem non-null",
+        "payload fields valid"
+      ],
+      "events": [
+        "editor_animation_message_send",
+        "editor_animation_message_post"
+      ],
+      "evidence": [
+        {
+          "claim": "cEditorAnimEvent is refcounted and cEditorAnimWorld stores intrusive values.",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/types/07-event-message.json:3289-3409"
+        },
+        {
+          "claim": "Send calls Init; Post calls InitPlugins.",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditorAnimEvent__MessageSend.c:18-30 and MessagePost.c:18-30"
+        }
+      ],
+      "guards": [
+        "IAppSystem non-null",
+        "route selected by caller",
+        "consumer/timing unresolved"
+      ],
+      "name": "editor_animation_event_routing",
+      "possible_states": [
+        {
+          "actions": [
+            "No event being sent."
+          ],
+          "guards": [
+            "no cEditorAnimEvent"
+          ],
+          "name": "idle",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "Route through Send."
+          ],
+          "guards": [
+            "MessageSend called"
+          ],
+          "name": "send_in_progress",
+          "raw_value": "Init slot"
+        },
+        {
+          "actions": [
+            "Route through Post."
+          ],
+          "guards": [
+            "MessagePost called"
+          ],
+          "name": "post_in_progress",
+          "raw_value": "InitPlugins slot"
+        },
+        {
+          "actions": [
+            "Final animation consumer unknown."
+          ],
+          "guards": [
+            "routing completes"
+          ],
+          "name": "consumer_unknown",
+          "raw_value": "unresolved"
+        }
+      ],
+      "relevant_functions": [
+        "0x0059d8b0",
+        "0x0059d840",
+        "0x00587270",
+        "0x00573970",
+        "0x00586410"
+      ],
+      "resulting_state_changes": [
+        "editor animation intent routed",
+        "mode/pose state may change",
+        "final state unresolved"
+      ],
+      "side_effects": [
+        "temporary event may release",
+        "CommandLine decompiler type rejected"
+      ],
+      "state_variable": {
+        "expression": "cEditorAnimEvent route plus cEditor active mode",
+        "owner": "Editors animation/edit subsystem",
+        "type": "send/post route and refcounted event"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "populate event/select route"
+          ],
+          "cause": "editor animation operation",
+          "event": "animation_event_request",
+          "from_state": "idle",
+          "guard": "target exists",
+          "to_state": "send_in_progress or post_in_progress"
+        },
+        {
+          "actions": [
+            "call IAppSystem Init"
+          ],
+          "cause": "MessageSend",
+          "event": "editor_animation_message_send",
+          "from_state": "send_in_progress",
+          "guard": "IAppSystem non-null",
+          "to_state": "consumer_unknown"
+        },
+        {
+          "actions": [
+            "call IAppSystem InitPlugins"
+          ],
+          "cause": "MessagePost",
+          "event": "editor_animation_message_post",
+          "from_state": "post_in_progress",
+          "guard": "IAppSystem non-null",
+          "to_state": "consumer_unknown"
+        }
+      ]
+    },
+    {
+      "confidence": {
+        "level": "medium",
+        "reason": "Record layout, vector/map ownership, and timer/context fields are supported; scheduler ordering and ShowEvent/HideEvent mechanics remain unresolved."
+      },
+      "entry_actions": [
+        {
+          "action": "Create feedback record with category/timing/context/command/description/layout and insert by key.",
+          "conditions": [
+            "allocation succeeds"
+          ],
+          "evidence": "knowledgegraph/research/types/07-event-message.json:3477-3670"
+        }
+      ],
+      "entry_conditions": [
+        "cUIEventLog and UTFWin layout services alive"
+      ],
+      "events": [
+        "ui_feedback_event"
+      ],
+      "evidence": [
+        {
+          "claim": "cUIEventLog owns map<uint32,intrusive_ptr<cFeedbackEvent>> and mode state.",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/types/07-event-message.json:3477-3521"
+        },
+        {
+          "claim": "cFeedbackEvent is 148 bytes with start fade/remove/context fields.",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/types/07-event-message.json:3525-3665"
+        }
+      ],
+      "guards": [
+        "event key controls identity",
+        "context flag controls removal",
+        "timer ordering unresolved"
+      ],
+      "name": "ui_feedback_event_log",
+      "possible_states": [
+        {
+          "actions": [
+            "No active event for key."
+          ],
+          "guards": [
+            "key absent"
+          ],
+          "name": "absent",
+          "raw_value": null
+        },
+        {
+          "actions": [
+            "Event present/visible."
+          ],
+          "guards": [
+            "key present"
+          ],
+          "name": "active",
+          "raw_value": "map entry"
+        },
+        {
+          "actions": [
+            "Fade toward removal."
+          ],
+          "guards": [
+            "fade timer active"
+          ],
+          "name": "fading",
+          "raw_value": "timer"
+        },
+        {
+          "actions": [
+            "Remove or context change."
+          ],
+          "guards": [
+            "remove timer/context flag"
+          ],
+          "name": "removing",
+          "raw_value": "removal"
+        }
+      ],
+      "relevant_functions": [
+        "0x00aebe10",
+        "0x00aeb0e0",
+        "0x00aeb1c0",
+        "0x00e62340"
+      ],
+      "resulting_state_changes": [
+        "map insertion activates feedback",
+        "timers change visibility",
+        "context change may remove"
+      ],
+      "side_effects": [
+        "layout pointer retained",
+        "description/command displayed",
+        "expiry mechanics unresolved"
+      ],
+      "state_variable": {
+        "expression": "cUIEventLog.mEvents membership plus cFeedbackEvent timing/context",
+        "owner": "Simulator::cUIEventLog",
+        "type": "map<uint32,intrusive_ptr<cFeedbackEvent>>"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "create/insert event"
+          ],
+          "cause": "feedback producer",
+          "event": "ui_feedback_event",
+          "from_state": "absent",
+          "guard": "key valid",
+          "to_state": "active"
+        },
+        {
+          "actions": [
+            "advance display timing"
+          ],
+          "cause": "UI update",
+          "event": "feedback_update",
+          "from_state": "active",
+          "guard": "update service runs",
+          "to_state": "fading"
+        },
+        {
+          "actions": [
+            "remove map entry/release"
+          ],
+          "cause": "timer/context",
+          "event": "feedback_remove",
+          "from_state": "active or fading",
+          "guard": "removal condition",
+          "to_state": "absent"
+        }
+      ]
+    }
+  ],
+  "temporal_semantics": {
+    "app_message_manager": {
+      "confidence": 0.9,
+      "evidence": "knowledgegraph/research/types/07-event-message.md:546-576",
+      "known": [
+        "message ID selects listener map",
+        "Entry carries priority/refcount/function/object",
+        "ProcessQueue walks 0x18 records/releases",
+        "Lock is exposed"
+      ],
+      "unknown": [
+        "priority/tie order",
+        "send/post timing",
+        "consume behavior",
+        "queue record layout",
+        "thread/lock rules"
+      ]
+    },
+    "app_mode_order": {
+      "confidence": 0.97,
+      "evidence": "knowledgegraph/research/state-machines/ui-gameplay.json:790-794,922-935",
+      "order": [
+        "old mode OnExit",
+        "active index write",
+        "mode_exit_announcement 0x0212d3e7",
+        "new mode OnEnter",
+        "mode_enter_announcement 0x022d1adc"
+      ],
+      "status": "static order confirmed; runtime validation absent"
+    },
+    "callbacks_and_adapters": {
+      "confidence": 0.9,
+      "evidence": ".spore-analysis/ghidra-exports/structs_fields.tsv:1271-1301,2186-2233",
+      "known": [
+        "Lambda adapts function",
+        "Update adapts message to IUpdatable",
+        "ScheduledTask adapts timing/repeat"
+      ],
+      "unknown": [
+        "scheduler tick/first-time",
+        "cancellation/removal timing"
+      ]
+    },
+    "editor_animation": {
+      "confidence": 0.86,
+      "evidence": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditorAnimEvent__MessageSend.c:18-30 and MessagePost.c:18-30",
+      "known": [
+        "Send calls Init",
+        "Post calls InitPlugins",
+        "cEditorAnimWorld retains refcounted values"
+      ],
+      "unknown": [
+        "synchronous/deferred semantics",
+        "final consumer/dispatch table"
+      ]
+    },
+    "feedback_log": {
+      "confidence": 0.88,
+      "evidence": "knowledgegraph/research/types/07-event-message.json:3477-3670",
+      "known": [
+        "keyed map",
+        "fade/remove timers",
+        "context removal",
+        "layout/command identity"
+      ],
+      "unknown": [
+        "Show/Hide bodies",
+        "expiry order",
+        "update phase binding"
+      ]
+    },
+    "input_and_ui": {
+      "confidence": 0.9,
+      "evidence": "knowledgegraph/research/types/07-event-message.md:257-400",
+      "known": [
+        "OS/GameInput -> cGameInputManager",
+        "six input callback slots",
+        "UTFWin MessageType/EventFlags/WinProc filtering",
+        "parent/child and proc lists"
+      ],
+      "unknown": [
+        "input-region routing",
+        "UTFWin bubbling/handled semantics",
+        "edge/held semantics"
+      ]
+    },
+    "runtime_observations": {
+      "confidence": 0.98,
+      "evidence": "knowledgegraph/seed-literals.json:121-146,1904-1910",
+      "known": [
+        "startup/main-menu InitPlugins/Init/Startup observations",
+        "zero event menu-transition probes for editor/message pump",
+        "no positive original gameplay/message trace"
+      ],
+      "status": "static characterization only"
+    },
+    "space_and_communication": {
+      "confidence": 0.88,
+      "evidence": "knowledgegraph/research/types/07-event-message.json:3411-3944",
+      "known": [
+        "deferred trigger/user values",
+        "serializable cCommEvent timing/vectors",
+        "space records separate from StandardMessage"
+      ],
+      "unknown": [
+        "deferred owner/epoch",
+        "cCommEvent codec",
+        "space layout/queue/consumers"
+      ]
+    },
+    "temporal_domains": [
+      "lifecycle/event-loop",
+      "frame/update",
+      "message queue",
+      "window/proc dispatch",
+      "deferred scheduler",
+      "feedback display timer",
+      "communication duration/elapsed time",
+      "scheduled listener timer/repeat"
+    ]
+  },
+  "unresolved": [
+    {
+      "confidence": 0.12,
+      "evidence": [
+        {
+          "claim": "Only three App message IDs are exported by name; many StandardMessage-derived records lack IDs/parameter mappings.",
+          "level": "CONFIRMED",
+          "source": "knowledgegraph/research/types/07-event-message.md:109-131,863-893"
+        }
+      ],
+      "id": "Q-APP-ID-CATALOG",
+      "impact": "Cannot reconstruct complete App message grammar or producer/consumer mapping.",
+      "needed_evidence": "Typed message headers, AddListener/AddHandler bodies with constants, send/receive trace.",
+      "question": "What is the complete App message-ID catalog and payload schema used by camera, editor, mode, property, scenario, and gameplay listeners?"
+    },
+    {
+      "confidence": 0.1,
+      "evidence": [
+        {
+          "claim": "Registration Entry is 0x14 bytes while ProcessQueue walks 0x18-byte records.",
+          "level": "CONFIRMED",
+          "source": "knowledgegraph/research/types/07-event-message.md:180-245"
+        }
+      ],
+      "id": "Q-QUEUE-LAYOUT",
+      "impact": "Send/post, queue processing, and release cannot be reproduced faithfully.",
+      "needed_evidence": "Typed bodies for MessageSend, MessagePost, MessagePostFunction, AddEntry, ProcessQueue, GetMessageQueue.",
+      "question": "What is the 0x18-byte queued-message record layout and how does it reference 0x14-byte registration entries?"
+    },
+    {
+      "confidence": 0.08,
+      "evidence": [
+        {
+          "claim": "Entry exposes priority and handlers return bool-like values, but order/consume is absent.",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/types/07-event-message.json:2181-2233,289-323"
+        }
+      ],
+      "id": "Q-DISPATCH-ORDER",
+      "impact": "Cannot guarantee ordering or stop semantics.",
+      "needed_evidence": "AddHandler/ProcessQueue decompilation and trace of callback order/returns.",
+      "question": "Are priorities ascending or descending, how are ties ordered, and does handled stop later listeners?"
+    },
+    {
+      "confidence": 0.1,
+      "evidence": [
+        {
+          "claim": "MessageSend differs from refcounted MessagePost/MessagePostFunction, but bodies are not persisted.",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/types/07-event-message.md:201-245"
+        }
+      ],
+      "id": "Q-SEND-POST-OWNERSHIP",
+      "impact": "Queue timing and refcount lifetime are uncertain.",
+      "needed_evidence": "Typed manager method bodies and payload/queue lifetime trace.",
+      "question": "What exact timing, queueing, lock, and ownership differences are implemented by the three message surfaces?"
+    },
+    {
+      "confidence": 0.12,
+      "evidence": [
+        {
+          "claim": "Window SendMsg/GetMessageQueue decompilation is type-unsafe.",
+          "level": "UNKNOWN",
+          "source": "knowledgegraph/research/types/07-event-message.md:578-592"
+        }
+      ],
+      "id": "Q-UTFWIN-ORDER",
+      "impact": "Cannot guarantee UI callback order or consumption.",
+      "needed_evidence": "Typed Window::DoMessage/SendMsg/GetNextWinProc and IWinProc dispatch bodies plus trace.",
+      "question": "What are UTFWin WinProc ordering, bubbling, filtering, and handled-result rules?"
+    },
+    {
+      "confidence": 0.16,
+      "evidence": [
+        {
+          "claim": "UTFWin::Message SDK base is 0x0c while anonymous payload forms imply at least 0x1c.",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/types/07-event-message.md:295-324"
+        }
+      ],
+      "id": "Q-UTFWIN-UNION",
+      "impact": "Some UI event payload boundaries remain ambiguous.",
+      "needed_evidence": "Typed construction/deconstruction trace for each MessageType.",
+      "question": "Which anonymous Message union variant maps exactly to each MessageType, including controlID and gaps?"
+    },
+    {
+      "confidence": 0.1,
+      "evidence": [
+        {
+          "claim": "cEditor::HandleMessage has many hash comparisons but decompiler type propagation is unsettled.",
+          "level": "UNKNOWN",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__HandleMessage.c:4-8,75-809"
+        }
+      ],
+      "id": "Q-EDITOR-MESSAGE-CATALOG",
+      "impact": "Cannot map editor branch constants to message identities or payloads.",
+      "needed_evidence": "Typed cEditor fields/vtable and trace with message ID plus payload snapshots.",
+      "question": "What exact message IDs and payload schemas are handled by cEditor::HandleMessage?"
+    },
+    {
+      "confidence": 0.12,
+      "evidence": [
+        {
+          "claim": "FUN_00b21340 dossier label conflicts with held characterization as generic map/list bridge.",
+          "level": "SUPPORTED",
+          "source": "docs/analysis/dossiers/unknown-high/message-handler-registration.json:25-44,51-70"
+        }
+      ],
+      "id": "Q-HANDLER-BRIDGE",
+      "impact": "Cannot assign callback roles or prove App-message relationship.",
+      "needed_evidence": "Typed body, context owner, representative caller pairs, and map/list field types.",
+      "question": "What are the five callback roles, context owner, list invariants, and message identity of FUN_00b21340?"
+    },
+    {
+      "confidence": 0.1,
+      "evidence": [
+        {
+          "claim": "AnimationMessage layout and Send/Post slots are known but final consumer/dispatch table is not.",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/types/07-event-message.md:607-617"
+        }
+      ],
+      "id": "Q-ANIMATION-DISPATCH",
+      "impact": "Animation event IDs and pose effects cannot be mapped.",
+      "needed_evidence": "Animation manager/IAnimWorld decompilation, event-ID table, and editor animation trace.",
+      "question": "How do cEditorAnimEvent Send/Post and AnimationMessage reach AnimatedCreature or IAnimWorld?"
+    },
+    {
+      "confidence": 0.12,
+      "evidence": [
+        {
+          "claim": "tDeferredEvent has trigger time/user values but no recovered scheduler owner.",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/types/07-event-message.md:468-481"
+        }
+      ],
+      "id": "Q-DEFERRED-OWNER",
+      "impact": "Cannot implement or validate deferred ordering.",
+      "needed_evidence": "xref/type-use recovery around vector<tDeferredEvent>, GUID use, and clock writes.",
+      "question": "Which subsystem owns and processes vector<tDeferredEvent>, and what are trigger-time epoch/ordering rules?"
+    },
+    {
+      "confidence": 0.12,
+      "evidence": [
+        {
+          "claim": "cFeedbackEvent map/timer/context fields are known, but ShowEvent/HideEvent/update bodies are not.",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/types/07-event-message.md:483-493"
+        }
+      ],
+      "id": "Q-FEEDBACK-LIFECYCLE",
+      "impact": "Cannot reproduce feedback expiry/context visibility.",
+      "needed_evidence": "cUIEventLog ShowEvent/HideEvent/update bodies and UI trace.",
+      "question": "What exact cUIEventLog insertion, fade, remove, and context-change ordering governs feedback events?"
+    },
+    {
+      "confidence": 0.1,
+      "evidence": [
+        {
+          "claim": "cCommEvent is serializable but codec/defaulting/vector behavior is unresolved.",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/types/07-event-message.md:495-518"
+        }
+      ],
+      "id": "Q-COMM-CODEC",
+      "impact": "Persistence equivalence is unknown.",
+      "needed_evidence": "ISimulatorSerializable implementation and property/stream round trip.",
+      "question": "What versioned codec serializes cCommEvent and which fields/vectors are omitted or defaulted?"
+    },
+    {
+      "confidence": 0.15,
+      "evidence": [
+        {
+          "claim": "Space records have observed contents but no exact SDK layout or consumers.",
+          "level": "INFERRED",
+          "source": "knowledgegraph/research/types/07-event-message.md:520-534"
+        }
+      ],
+      "id": "Q-SPACE-RECORDS",
+      "impact": "Space state/tool/trading event semantics remain opaque.",
+      "needed_evidence": "Typed allocation/decompilation, SCC consumer bodies, and queue/lifetime trace.",
+      "question": "What are the exact sizes, offsets, types, consumers, and lifetime of the two FUN_00e39ab0 records?"
+    },
+    {
+      "confidence": 0.15,
+      "evidence": [
+        {
+          "claim": "pdtk command forms and widget outputs are observed but grammar/response is unknown.",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/types/07-event-message.md:536-544"
+        }
+      ],
+      "id": "Q-PDTK",
+      "impact": "UI command protocol cannot be reconstructed.",
+      "needed_evidence": "All command-string callers, toolkit trace, and response/error behavior.",
+      "question": "What is the complete pdtk command grammar and response/lifecycle protocol?"
+    },
+    {
+      "confidence": 0.1,
+      "evidence": [
+        {
+          "claim": "cGameInputManager structure/accessor/vtable known, but routing body and input-region semantics unresolved.",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/types/07-event-message.json:4630-4707"
+        }
+      ],
+      "id": "Q-INPUT-ROUTING",
+      "impact": "Cannot map normalized input to active mode/camera/editor consumers.",
+      "needed_evidence": "Input-manager dispatch callers and correlated menu/editor/cell trace.",
+      "question": "How does cGameInputManager route key/mouse/wheel state to active mode, camera, and input regions?"
+    },
+    {
+      "confidence": 0.98,
+      "evidence": [
+        {
+          "claim": "KG records startup observations and zero events for menu-transition editor/message-pump probes.",
+          "level": "OBSERVED",
+          "source": "knowledgegraph/seed-literals.json:121-146,1904-1910"
+        }
+      ],
+      "id": "Q-RUNTIME-COVERAGE",
+      "impact": "No original runtime ordering, queue, or event semantics are positively verified.",
+      "needed_evidence": "Hash-pinned original trace recording message IDs, payloads, listener order, queue timing, and state snapshots.",
+      "question": "What positive original runtime trace can validate App/UTFWin dispatch order, queue timing, and cross-subsystem notifications?"
+    },
+    {
+      "confidence": 0.15,
+      "evidence": [
+        {
+          "claim": "No MSVC RTTI and vtable scan is candidate-based.",
+          "level": "CONFIRMED",
+          "source": "knowledgegraph/research/types/11-vtable-archaeology.json:1276-1307"
+        }
+      ],
+      "id": "Q-RTTI-VTABLE-IDENTITY",
+      "impact": "Vtable slot ownership and complete class hierarchy cannot be proven from RTTI.",
+      "needed_evidence": "Typed SDK/vtable correspondence and reliable function-boundary refresh.",
+      "question": "Which vtable candidates correspond uniquely to event/listener owners rather than shared prefix families?"
+    }
+  ]
+}

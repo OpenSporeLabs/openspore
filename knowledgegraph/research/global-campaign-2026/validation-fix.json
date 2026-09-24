@@ -1,0 +1,42 @@
+{
+  "status": "fixed",
+  "test": "tests.test_kg_seed.SeedSpineTest.test_two_fresh_dbs_identical",
+  "diagnosis": {
+    "root_cause": "logical_dump excluded the other wall-clock columns but retained trace_run.captured_at; the schema default uses datetime('now'), so sequential fresh seeds differ whenever their inserts cross a SQLite second boundary.",
+    "differing_table": "trace_run",
+    "differing_rows": [
+      {
+        "jsonl_path": "obs_m32_example.jsonl",
+        "differing_field": "captured_at"
+      },
+      {
+        "jsonl_path": "obs_main_menu_example.jsonl",
+        "differing_field": "captured_at"
+      }
+    ],
+    "order_effect": "No order-dependent seed state was found. The isolated and initial full-suite runs completed within one SQLite second and passed; the full-suite run changes the timing window and exposed the latent race. A 1.05-second delay between fresh seed writes deterministically reproduced the two-row mismatch.",
+    "reproduction": "Seed one fresh build-agnostic database, wait 1.05 seconds, seed a second fresh database, then compare logical_dump results."
+  },
+  "fix": {
+    "file": "tests/test_kg_seed.py",
+    "change": "Exclude trace_run.captured_at from logical_dump and add a regression test that changes only captured_at in one fresh database and requires equal logical dumps.",
+    "scope": "Test infrastructure only; seed, schema, gameplay, renderer, assets, triage, xrefs, and campaign data were not changed."
+  },
+  "tests": [
+    {
+      "command": "python3 -m unittest tests.test_kg_seed.SeedSpineTest.test_logical_dump_ignores_trace_capture_time -v",
+      "result": "pass",
+      "tests_run": 1
+    },
+    {
+      "command": "python3 -m unittest tests.test_kg_seed.SeedSpineTest.test_two_fresh_dbs_identical -v",
+      "result": "pass",
+      "tests_run": 1
+    },
+    {
+      "command": "python3 -m unittest discover -s tests -t . -v",
+      "result": "pass",
+      "tests_run": 409
+    }
+  ]
+}

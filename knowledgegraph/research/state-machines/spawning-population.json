@@ -1,0 +1,3052 @@
+{
+  "$schema": "state-machine-research-1",
+  "callbacks": [
+    {
+      "address": "0x00e80ba0",
+      "consumers": [
+        "App::cCellModeStrategy::Initialize",
+        "CellGame initialization and stage setup"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e80ba0",
+          "claim": "cCellGame::Initialize resets Cell state, initializes the main 4096-entry pool, sets the time scale, loads world references, and calls the stage rebuild path",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGame__Initialize.c:8-155"
+        },
+        {
+          "address": "0x00e80ba0",
+          "claim": "KG records cCellGame as a 20,964-byte structure and associates this function with cCellGame",
+          "kind": "kg_structure_association",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/spore.db; knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json:103-123"
+        }
+      ],
+      "name": "Simulator::Cell::cCellGame::Initialize",
+      "parameters": [],
+      "returns": "void",
+      "semantics": "initializes the Cell state spine and its preallocated main population storage",
+      "status": "resolved_static_mechanics"
+    },
+    {
+      "address": "0x00e74a20",
+      "consumers": [
+        "Cell population and stage setup helpers",
+        "cell resource/model/GFX/query initialization"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e74a20",
+          "claim": "CreateCellObject obtains a pooled object, computes cell size, initializes position/orientation/elevation/opacity/transform/model/resource/scale/query/effect state, and returns an object-pool index",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__CreateCellObject.c:8-248"
+        },
+        {
+          "address": "0x00e74a20",
+          "claim": "The SDK exports CreateCellObject and cCellGame identifies this as the main Cell object creation surface",
+          "kind": "sdk_name_and_structure",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore/Simulator/Cell/cCellGame.h:94-102; KG node fun:00e74a20"
+        }
+      ],
+      "name": "Simulator::Cell::CreateCellObject",
+      "parameters": [
+        "query",
+        "position",
+        "elevation",
+        "cell resource",
+        "stage scale",
+        "size factor",
+        "cell size",
+        "apply-size flag",
+        "target orientation",
+        "additional integer flag"
+      ],
+      "returns": "cObjectPoolIndex",
+      "semantics": "allocates and initializes a live Cell entity from content and placement inputs",
+      "status": "resolved_static_mechanics"
+    },
+    {
+      "address": "0x00e780a0",
+      "consumers": [
+        "Cell despawn, death, replacement, and scale-transition callers",
+        "Cell object pool release path"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e780a0",
+          "claim": "Given a pool index, the function clears a matching avatar reference, releases old GFX/association state, conditionally rebuilds on stage-scale change, recreates the pooled object, and returns the old object to the pool",
+          "kind": "dossier_decompilation",
+          "level": "SUPPORTED",
+          "source": "docs/analysis/dossiers/unknown-high/cell-object-pool-lifecycle.md:18-85; knowledgegraph/research/state-machines/cell-stage.json:778-943"
+        },
+        {
+          "address": "0x00e780a0",
+          "claim": "KG xrefs show Cell-region callers including death, replacement, stage rebuild, and interaction paths; the exact caller-specific reason is not uniformly named",
+          "kind": "kg_xref",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/spore.db xref rows; KG investigation fun:00e780a0"
+        }
+      ],
+      "name": "FUN_00e780a0 / Cell object despawn-rebuild",
+      "parameters": [
+        "cell pool index",
+        "respawn/replace flag",
+        "delta time or transition context",
+        "effect flags"
+      ],
+      "returns": "void",
+      "semantics": "Cell entity teardown boundary with an optional scale-aware replacement",
+      "status": "resolved_sequence_partial_policy"
+    },
+    {
+      "address": "0x00b72160 / 0x00b72260 / 0x00b72270 / 0x00b72370",
+      "consumers": [
+        "Cell pool allocation and release",
+        "other generic pool users"
+      ],
+      "evidence": [
+        {
+          "address": "0x00b72160",
+          "claim": "The recovered body is a high-fan-in pool allocation/reset boundary and is used by CreateCellObject and lifecycle callers",
+          "kind": "decompilation_xref",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/spore.db xref rows; knowledgegraph/research/state-machines/cell-stage.json:847-868"
+        },
+        {
+          "address": "0x00b72270",
+          "claim": "SDK exports cObjectPool_::CreateObject at this address, while committed repair evidence maps the live SDK address into the nearby 0x00b72260 containing function",
+          "kind": "sdk_boundary_repair",
+          "level": "SUPPORTED",
+          "source": "Spore-ModAPI/Spore/Simulator/cObjectPool.h:43-90; knowledgegraph/triage/sdk-boundary-repairs-2540f2ca.json:887; KG node fun:00b72270"
+        },
+        {
+          "address": "0x00b72370",
+          "claim": "SDK exports DeleteObject; the committed decompile is damaged and does not prove a universal object destructor or exact free-list write contract",
+          "kind": "decompilation_with_limitation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cObjectPool___DeleteObject.c:6-29; Spore-ModAPI/Spore/Simulator/cObjectPool.h:60-64"
+        }
+      ],
+      "name": "cObjectPool_ allocation, lookup, and deletion family",
+      "parameters": [
+        "pool receiver",
+        "object-pool index"
+      ],
+      "returns": "pooled object or index; deletion returns void",
+      "semantics": "free-list object storage interface; exact generic entry boundaries and sentinel behavior remain contested",
+      "status": "partially_resolved"
+    },
+    {
+      "address": "0x00bb4af0",
+      "consumers": [
+        "star discovery/regeneration callers",
+        "cStarManager pending-star state"
+      ],
+      "evidence": [
+        {
+          "address": "0x00bb4af0",
+          "claim": "When mPlanetCount is zero and the timing check passes, the routine writes mLastObservedTime, removes the star from pending manager state, resets manager state, and calls the planet-generation body",
+          "kind": "dossier_decompilation",
+          "level": "SUPPORTED",
+          "source": "docs/analysis/dossiers/unknown-high/star-system-regen.md:18-73; docs/analysis/dossiers/unknown-high/star-system-regen.json:25-37"
+        },
+        {
+          "address": "0x00bb4af0",
+          "claim": "KG xrefs show six committed callers and direct callees including the timing check 0x00c8b520 and generation body 0x00bb4100",
+          "kind": "kg_xref",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/spore.db xref rows; KG node fun:00bb4af0"
+        }
+      ],
+      "name": "FUN_00bb4af0 / star-system regeneration",
+      "parameters": [
+        "cStarManager",
+        "cStarRecord",
+        "generation filter or flags"
+      ],
+      "returns": "void",
+      "semantics": "lazy no-planet regeneration gate",
+      "status": "resolved_static_mechanics"
+    },
+    {
+      "address": "0x00bb4100 / SDK 0x00bb42a0",
+      "consumers": [
+        "star-system regeneration",
+        "planet-record generation and persistence"
+      ],
+      "evidence": [
+        {
+          "address": "0x00bb4100",
+          "claim": "The current Ghidra body loops requested planet slots, creates cPlanetRecord objects, initializes type/score/orbit-related state, and increments cStarRecord.mPlanetCount",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/state-machines/world-planet.json:134-162; knowledgegraph/research/data-model/06-empire-space-data.json:627-630"
+        },
+        {
+          "address": "0x00bb42a0",
+          "claim": "SDK exports cStarManager::GeneratePlanetsForStar at 0x00bb42a0, but committed boundary repair maps it into the 0x00bb4100 containing function",
+          "kind": "sdk_boundary_repair",
+          "level": "SUPPORTED",
+          "source": "Spore-ModAPI/Spore/Simulator/SubSystem/StarManager.h:251-259,333-350; knowledgegraph/triage/sdk-boundary-repairs-2540f2ca.json:905"
+        }
+      ],
+      "name": "cStarManager planet-record generation",
+      "parameters": [
+        "cStarRecord",
+        "StarRequestFilter",
+        "useMaxPlanets flag"
+      ],
+      "returns": "void",
+      "semantics": "creates persistent planet records and updates the star count; exact random/property formulas are unresolved",
+      "status": "partially_resolved"
+    },
+    {
+      "address": "0x00bb4ba0 / SDK 0x00bb4c90",
+      "consumers": [
+        "RequirePlanetsForStar callers",
+        "star and planet database persistence"
+      ],
+      "evidence": [
+        {
+          "address": "0x00bb4ba0",
+          "claim": "The current Ghidra body exposes RequirePlanetsForStar/persistence behavior, including temporary planet database writes and replacement of the persistent star database",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/data-model/06-empire-space-data.json:629-630,771; knowledgegraph/research/root-closure/track-f-space-context.md:248"
+        },
+        {
+          "address": "0x00bb4c90",
+          "claim": "SDK exports RequirePlanetsForStar at 0x00bb4c90, mapped by committed repair into the 0x00bb4ba0 containing function",
+          "kind": "sdk_boundary_repair",
+          "level": "SUPPORTED",
+          "source": "Spore-ModAPI/Spore/Simulator/SubSystem/StarManager.h:245-249,348; knowledgegraph/triage/sdk-boundary-repairs-2540f2ca.json:906"
+        }
+      ],
+      "name": "cStarManager RequirePlanetsForStar / persistence path",
+      "parameters": [
+        "cStarManager",
+        "cStarRecord",
+        "optional StarRequestFilter"
+      ],
+      "returns": "void",
+      "semantics": "ensures planet availability and serializes the resulting star/planet records through temporary databases",
+      "status": "partially_resolved"
+    },
+    {
+      "address": "0x00e665c0 / 0x00e666f0",
+      "consumers": [
+        "Cell GFX resource preload",
+        "world and populate resource setup"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e665c0",
+          "claim": "PreloadPopulateResource iterates populate markers and preloads their referenced Cell resources, plant variants, and nested populate resources",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__PreloadPopulateResource.c:42-173"
+        },
+        {
+          "address": "0x00e666f0",
+          "claim": "PreloadResources iterates world/populate references and invokes the populate preload path before registering additional Cell resources",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__PreloadResources.c:50-129"
+        }
+      ],
+      "name": "cCellGFX::PreloadPopulateResource / PreloadResources",
+      "parameters": [
+        "preloaded map or resource collection",
+        "Cell populate resource"
+      ],
+      "returns": "void",
+      "semantics": "prepares content identities for later runtime population; does not prove marker-to-cell placement execution",
+      "status": "resolved_static_mechanics"
+    },
+    {
+      "address": "0x00ca6630",
+      "consumers": [
+        "cCity::SpawnVehicle",
+        "vehicle model, behavior, and resource setup"
+      ],
+      "evidence": [
+        {
+          "address": "0x00ca6630",
+          "claim": "The containing vehicle load body writes locomotion and purpose, resets state, selects resources/models, and updates owner/tool/player-state references",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/state-machines/empire-space.json:2467-2477; .spore-analysis/ghidra-exports/structs_fields.tsv"
+        },
+        {
+          "address": "0x00bdde70",
+          "claim": "KG xrefs identify cCity::SpawnVehicle at the current containing body and many vehicle/resource consumers; exact spawn cap and failure behavior are not recovered",
+          "kind": "kg_xref",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/spore.db xref rows; KG node fun:00bdde70"
+        }
+      ],
+      "name": "cVehicle::Load / cCity::SpawnVehicle surface",
+      "parameters": [
+        "vehicle purpose",
+        "vehicle locomotion",
+        "ResourceKey",
+        "space-stage flag"
+      ],
+      "returns": "configured vehicle pointer or spawned vehicle result",
+      "semantics": "city vehicle creation/configuration surface; vehicle lifecycle beyond load is unresolved",
+      "status": "partially_resolved"
+    },
+    {
+      "address": "SDK cTribe::SpawnMember 0x00c983c0 / SpawnNpcTribe 0x00c932f0",
+      "consumers": [
+        "NPC tribe population and planner",
+        "tribe-stage member management"
+      ],
+      "evidence": [
+        {
+          "address": "cTribe+0x340",
+          "claim": "SDK layout exposes mTribeMembers, mPopulationTimer, mChieftainRespawnTimer, and the planner pointer, but no corresponding runtime transition body was recovered",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore/Simulator/cTribe.h:70-84,113-152,200-212; KG field rows"
+        },
+        {
+          "address": "cTribePlan+0x04",
+          "claim": "SDK exposes plan state and target population fields, but their integer semantics and scheduler writers are unresolved",
+          "kind": "sdk_interface",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore/Simulator/cTribePlanner.h:16-86; knowledgegraph/research/state-machines/creature-civilization.json:3073-3089"
+        }
+      ],
+      "name": "cTribe population and planner surface",
+      "parameters": [
+        "tribe or planner receiver",
+        "member age or target-population configuration"
+      ],
+      "returns": "member/tribe pointer or planner state result",
+      "semantics": "SDK-only population/spawn surface; no binary transition order is asserted",
+      "status": "layout_only"
+    },
+    {
+      "address": "SDK cHerd::Create 0x00b237c0",
+      "consumers": [
+        "creature-stage herd population",
+        "herd respawn and evolution systems"
+      ],
+      "evidence": [
+        {
+          "address": "cHerd+0xf4",
+          "claim": "SDK layout exposes mTargetHerdSize and mInitialShortfall",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore/Simulator/cHerd.h:39-93; KG field rows"
+        },
+        {
+          "address": "cHerd+0x11c",
+          "claim": "SDK layout exposes mRespawnRate, mpNest, mpEggLayer, mbEggsInNest, and extinction/transient-herd flags; no targeted runtime respawn body is committed",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore/Simulator/cHerd.h:84-92; knowledgegraph/research/state-machines/progression.json:2449-2579"
+        }
+      ],
+      "name": "cHerd population/respawn surface",
+      "parameters": [
+        "herd configuration or spawn request"
+      ],
+      "returns": "herd/creation result",
+      "semantics": "SDK layout identifies population, egg, nest, respawn, and evolution state; transition rules are unresolved",
+      "status": "layout_only"
+    }
+  ],
+  "domain": "Spawning and population",
+  "events": [
+    {
+      "consumers": [
+        "CellGame initialization",
+        "Cell mode initialization"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e80ba0",
+          "claim": "Initialize resets state and constructs the 4096-cell pool before stage setup continues",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGame__Initialize.c:33-155"
+        }
+      ],
+      "id": "cell_stage_initialized",
+      "kind": "lifecycle",
+      "producers": [
+        "Simulator::Cell::cCellGame::Initialize",
+        "App::cCellModeStrategy::Initialize"
+      ],
+      "status": "static_supported"
+    },
+    {
+      "consumers": [
+        "CreateCellObject",
+        "Cell per-cell update",
+        "Cell query and GFX consumers"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e74a20",
+          "claim": "CreateCellObject returns an initialized pool index after filling runtime object fields",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__CreateCellObject.c:41-248"
+        }
+      ],
+      "id": "cell_object_allocated",
+      "kind": "pool_transition",
+      "producers": [
+        "Cell population helpers",
+        "stage rebuild/setup helpers"
+      ],
+      "status": "static_supported"
+    },
+    {
+      "consumers": [
+        "generic damage resolver",
+        "collision/ingestion damage paths",
+        "death path"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e7a7c0",
+          "claim": "The generic damage resolver subtracts health, clamps at zero, and invokes the death path",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/state-machines/cell-stage.json:1275-1345"
+        }
+      ],
+      "id": "cell_damage_resolved",
+      "kind": "lifecycle_trigger",
+      "producers": [
+        "GetDamageAmount consumers",
+        "collision and attack paths"
+      ],
+      "status": "static_supported"
+    },
+    {
+      "consumers": [
+        "non-player death animation/effect path",
+        "player death/cinematic path",
+        "queued interaction dispatcher"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e7a4a0",
+          "claim": "Non-player death marks the cell terminal and queues duration-bearing effects; player death is diverted to FUN_00e72060",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/state-machines/cell-stage.json:165-220; docs/analysis/dossiers/unknown-high/cell-object-pool-lifecycle.md:20-43"
+        }
+      ],
+      "id": "cell_death_started",
+      "kind": "lifecycle_transition",
+      "producers": [
+        "FUN_00e7a7c0",
+        "FUN_00e72060",
+        "FUN_00e72200"
+      ],
+      "status": "static_supported"
+    },
+    {
+      "consumers": [
+        "Cell query removal",
+        "GFX/association release",
+        "pool release",
+        "optional replacement creation"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e780a0",
+          "claim": "The lifecycle dossier records query/GFX/association cleanup, avatar detach, optional rebuild, and pool release",
+          "kind": "dossier_decompilation",
+          "level": "SUPPORTED",
+          "source": "docs/analysis/dossiers/unknown-high/cell-object-pool-lifecycle.md:18-43"
+        }
+      ],
+      "id": "cell_object_despawned",
+      "kind": "pool_transition",
+      "producers": [
+        "death/eat/interaction callers",
+        "scale replacement callers",
+        "stage rebuild helpers"
+      ],
+      "status": "static_supported"
+    },
+    {
+      "consumers": [
+        "Cell stage frame orchestrator",
+        "FUN_00e7fd00 stage rebuild"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e806b0",
+          "claim": "The active Cell frame observes sCellGame+0x51d8 and calls FUN_00e7fd00 before continuing",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/state-machines/cell-stage.json:1016-1029,1218-1243"
+        }
+      ],
+      "id": "cell_stage_reload_requested",
+      "kind": "lifecycle_transition",
+      "producers": [
+        "player death/rebuild callbacks",
+        "FUN_00e50940",
+        "FUN_00e72200"
+      ],
+      "status": "static_supported"
+    },
+    {
+      "consumers": [
+        "Cell GFX preload map",
+        "world/populate resource setup"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e665c0",
+          "claim": "PreloadPopulateResource traverses each marker and preloads referenced resources",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__PreloadPopulateResource.c:42-173"
+        }
+      ],
+      "id": "cell_populate_resource_preloaded",
+      "kind": "content_transition",
+      "producers": [
+        "cCellGFX::PreloadResources",
+        "cCellGFX::PreloadPopulateResource"
+      ],
+      "status": "static_supported"
+    },
+    {
+      "consumers": [
+        "unresolved Cell population/setup path",
+        "CreateCellObject"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e665c0",
+          "claim": "The committed preloader proves marker/resource traversal but not the later runtime marker-to-entity placement call",
+          "kind": "evidence_limit",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json:840-850,930-947"
+        }
+      ],
+      "id": "cell_world_population_requested",
+      "kind": "population_transition",
+      "producers": [
+        "Cell stage rebuild/setup helpers"
+      ],
+      "status": "static_boundary_unresolved"
+    },
+    {
+      "consumers": [
+        "Cell AI/resource selection",
+        "spawn/loot action paths"
+      ],
+      "evidence": [
+        {
+          "address": "cAIData+0x48",
+          "claim": "SDK exposes spawnTime, spawnRestTime, and spawnOutput in Cell AI data; no committed runtime dispatch body proves the timer-to-spawn transition",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore/Simulator/Cell/cCellResource.h:294-388"
+        }
+      ],
+      "id": "cell_respawn_due",
+      "kind": "population_transition",
+      "producers": [
+        "unresolved Cell AI timer/update path"
+      ],
+      "status": "layout_only_unresolved"
+    },
+    {
+      "consumers": [
+        "cStarManager",
+        "galaxy generation message handler"
+      ],
+      "evidence": [
+        {
+          "address": "0x00bb5d80",
+          "claim": "The star-generation message handler materializes cStarRecord objects and inserts them into the star grid; planets are not generated by galaxy generation",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/state-machines/world-planet.json:188-215; Spore-ModAPI/Spore/Simulator/SubSystem/StarManager.h:113-128"
+        }
+      ],
+      "id": "star_generation_message",
+      "kind": "record_creation",
+      "producers": [
+        "galaxy distribute-effect message dispatch"
+      ],
+      "status": "static_supported"
+    },
+    {
+      "consumers": [
+        "FUN_00bb4af0",
+        "star regeneration path"
+      ],
+      "evidence": [
+        {
+          "address": "0x00bb4af0",
+          "claim": "The no-planet and timing guards gate observation-time update, pending-state removal, manager reset, and planet generation",
+          "kind": "dossier_decompilation",
+          "level": "SUPPORTED",
+          "source": "docs/analysis/dossiers/unknown-high/star-system-regen.md:18-42"
+        }
+      ],
+      "id": "star_system_regeneration_checked",
+      "kind": "population_guard",
+      "producers": [
+        "star discovery/visit paths",
+        "cStarManager pending-state paths"
+      ],
+      "status": "static_supported"
+    },
+    {
+      "consumers": [
+        "cStarRecord",
+        "cPlanetRecord",
+        "planet-record database"
+      ],
+      "evidence": [
+        {
+          "address": "0x00bb4100",
+          "claim": "The generation body creates cPlanetRecord objects and increments cStarRecord.mPlanetCount",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/data-model/06-empire-space-data.json:627-630; knowledgegraph/research/state-machines/world-planet.json:134-162"
+        }
+      ],
+      "id": "star_planets_generated",
+      "kind": "record_creation",
+      "producers": [
+        "FUN_00bb4af0",
+        "RequirePlanetsForStar-associated path"
+      ],
+      "status": "static_supported"
+    },
+    {
+      "consumers": [
+        "planet-record persistence",
+        "future RequirePlanetsForStar/load paths"
+      ],
+      "evidence": [
+        {
+          "address": "0x00bb4ba0",
+          "claim": "The current persistence path writes temporary planet/star database state and replaces the persistent database after manager updates",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/data-model/06-empire-space-data.json:629-630,771"
+        }
+      ],
+      "id": "star_planet_records_persisted",
+      "kind": "persistence_transition",
+      "producers": [
+        "RequirePlanetsForStar-associated path"
+      ],
+      "status": "static_supported_partial"
+    },
+    {
+      "consumers": [
+        "cPlanet runtime and presentation"
+      ],
+      "evidence": [
+        {
+          "address": "0x00bb5b50",
+          "claim": "RecordToPlanet is the SDK-confirmed conversion surface from cPlanetRecord to cPlanet; the committed body is a thin wrapper and does not expose complete materialization internals",
+          "kind": "sdk_and_decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cStarManager__RecordToPlanet.c:8-17; Spore-ModAPI/Spore/Simulator/SubSystem/StarManager.h:172-175"
+        }
+      ],
+      "id": "star_planet_materialized",
+      "kind": "runtime_materialization",
+      "producers": [
+        "cStarManager::RecordToPlanet"
+      ],
+      "status": "static_boundary"
+    },
+    {
+      "consumers": [
+        "tribe population planner",
+        "tribe member spawn/removal"
+      ],
+      "evidence": [
+        {
+          "address": "cTribe+0x510",
+          "claim": "SDK exposes a population timer, member vector, and planner, but committed state-machine research explicitly withholds the scheduler transition rules",
+          "kind": "sdk_layout_and_unresolved_research",
+          "level": "SUPPORTED",
+          "source": "Spore-ModAPI/Spore/Simulator/cTribe.h:140-152; knowledgegraph/research/state-machines/creature-civilization.json:3073-3089"
+        }
+      ],
+      "id": "tribe_population_timer_due",
+      "kind": "population_transition",
+      "producers": [
+        "unresolved cTribePlanner update path"
+      ],
+      "status": "layout_only_unresolved"
+    },
+    {
+      "consumers": [
+        "cTribe member vector",
+        "NPC tribe simulation"
+      ],
+      "evidence": [
+        {
+          "address": "SDK cTribe::SpawnMember 0x00c983c0",
+          "claim": "SDK declares SpawnMember and the member vector exists, but no binary body was persisted for the population update",
+          "kind": "sdk_interface",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore/Simulator/cTribe.h:70-80,200-204; KG field rows"
+        }
+      ],
+      "id": "tribe_member_spawn_requested",
+      "kind": "population_transition",
+      "producers": [
+        "unresolved tribe planner/population timer"
+      ],
+      "status": "layout_only_unresolved"
+    },
+    {
+      "consumers": [
+        "herd target-size and respawn logic",
+        "egg/nest lifecycle"
+      ],
+      "evidence": [
+        {
+          "address": "cHerd+0xf4/+0x11c",
+          "claim": "SDK exposes mTargetHerdSize and mRespawnRate, but no committed runtime herd respawn body was found",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore/Simulator/cHerd.h:84-92; knowledgegraph/research/state-machines/progression.json:2415-2579"
+        }
+      ],
+      "id": "herd_respawn_checked",
+      "kind": "population_transition",
+      "producers": [
+        "unresolved herd update path"
+      ],
+      "status": "layout_only_unresolved"
+    },
+    {
+      "consumers": [
+        "herd evolution and species selection"
+      ],
+      "evidence": [
+        {
+          "address": "cHerd+0x85/+0x94",
+          "claim": "SDK exposes mbShouldEvolve and mDNAEvolutionThreshold; the committed progression research states the exact timer/DNA transition body is unresolved",
+          "kind": "sdk_layout_and_unresolved_research",
+          "level": "SUPPORTED",
+          "source": "Spore-ModAPI/Spore/Simulator/cHerd.h:39-60; knowledgegraph/research/state-machines/progression.json:2449-2579"
+        }
+      ],
+      "id": "herd_evolution_checked",
+      "kind": "population_transition",
+      "producers": [
+        "unresolved herd update/progression path"
+      ],
+      "status": "layout_only_unresolved"
+    },
+    {
+      "consumers": [
+        "cCity vehicle/actor state"
+      ],
+      "evidence": [
+        {
+          "address": "0x00bdde70",
+          "claim": "KG xrefs identify cCity::SpawnVehicle as a large current function with vehicle/resource consumers; no committed body proves its population-cap guard or result ownership",
+          "kind": "kg_xref",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/spore.db xref rows; KG node fun:00bdde70"
+        }
+      ],
+      "id": "city_vehicle_spawn_requested",
+      "kind": "population_transition",
+      "producers": [
+        "city actor/civilization paths"
+      ],
+      "status": "static_boundary_unresolved"
+    },
+    {
+      "consumers": [
+        "vehicle model, behavior, and owner state"
+      ],
+      "evidence": [
+        {
+          "address": "0x00ca6630",
+          "claim": "The vehicle load body writes locomotion and purpose and commits resource/model/owner configuration",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/state-machines/empire-space.json:2467-2507"
+        }
+      ],
+      "id": "vehicle_configuration_committed",
+      "kind": "population_transition",
+      "producers": [
+        "cVehicle::Load",
+        "cCity::SpawnVehicle-associated path"
+      ],
+      "status": "static_supported"
+    },
+    {
+      "consumers": [
+        "scenario object map",
+        "cGameData instance",
+        "powerup/respawner paths"
+      ],
+      "evidence": [
+        {
+          "address": "SDK cScenarioData::CreateObjectInstance 0x00eedd40",
+          "claim": "SDK documents marker-driven object instance creation and a separate powerup/respawner-related factory; no binary transition body is committed here",
+          "kind": "sdk_interface",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore/Simulator/cScenarioData.h:62-81,145-156"
+        }
+      ],
+      "id": "scenario_object_instance_requested",
+      "kind": "population_transition",
+      "producers": [
+        "scenario marker/respawner paths"
+      ],
+      "status": "layout_only_unresolved"
+    }
+  ],
+  "scope": {
+    "binary": "SPORE/SporeBin/SporeApp.exe",
+    "binary_version": "GOG 3.1.0.22",
+    "ghidra": {
+      "bridge_status": "connected read-only bridge; no open program available in this session",
+      "committed_exports": ".spore-analysis/ghidra-exports/decompiled_sdk and .spore-analysis/ghidra-exports/functions.tsv were used as committed static evidence",
+      "live_program": false
+    },
+    "runtime_evidence": "No positive Cell, city, tribe, herd, or planet lifecycle runtime trace is committed; startup traces are not used as gameplay evidence",
+    "scope_rule": "SDK names and KG associations establish types, fields, and topology only; binary transition claims require a direct body, committed dossier, or explicitly labeled inference",
+    "sdk": "Spore-ModAPI SDK commit cbf9206b9a823f0911cd9be0217104a49d72380b",
+    "snapshot": {
+      "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+      "canonical_snapshot": "f0e310e0",
+      "image_base": "0x00400000",
+      "triage_snapshot": "f0e310e0c83fc960ed38d490ff6d2a78d53925969206b4c4db7a012ddbf8b54b",
+      "xref_snapshot": "2540f2ca"
+    },
+    "sources": [
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGame__Initialize.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__CreateCellObject.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__PreloadPopulateResource.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__PreloadResources.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cObjectPool___Get.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cObjectPool___DeleteObject.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cStarRecord__GetPlanetRecords.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cStarManager__RecordToPlanet.c",
+      "docs/analysis/dossiers/unknown-high/cell-object-pool-lifecycle.json",
+      "docs/analysis/dossiers/unknown-high/star-system-regen.json",
+      "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json",
+      "knowledgegraph/research/data-model/06-empire-space-data.json",
+      "knowledgegraph/research/state-machines/cell-stage.json",
+      "knowledgegraph/research/state-machines/creature-civilization.json",
+      "knowledgegraph/research/state-machines/empire-space.json",
+      "knowledgegraph/research/state-machines/progression.json",
+      "knowledgegraph/research/state-machines/world-planet.json",
+      "knowledgegraph/spore.db",
+      "Spore-ModAPI/Spore/Simulator/Cell/cCellGame.h",
+      "Spore-ModAPI/Spore/Simulator/Cell/cCellObjectData.h",
+      "Spore-ModAPI/Spore/Simulator/Cell/cCellResource.h",
+      "Spore-ModAPI/Spore/Simulator/cCity.h",
+      "Spore-ModAPI/Spore/Simulator/cHerd.h",
+      "Spore-ModAPI/Spore/Simulator/cObjectPool.h",
+      "Spore-ModAPI/Spore/Simulator/cPlanetRecord.h",
+      "Spore-ModAPI/Spore/Simulator/cScenarioData.h",
+      "Spore-ModAPI/Spore/Simulator/cStarRecord.h",
+      "Spore-ModAPI/Spore/Simulator/cTribe.h",
+      "Spore-ModAPI/Spore/Simulator/cTribeArchetype.h",
+      "Spore-ModAPI/Spore/Simulator/cTribePlanner.h",
+      "Spore-ModAPI/Spore/Simulator/SubSystem/StarManager.h"
+    ]
+  },
+  "state_machines": [
+    {
+      "actions": [
+        "initialize or reset Cell state",
+        "allocate the main pool metadata and contiguous cell storage",
+        "return live cells to reusable pool entries"
+      ],
+      "confidence": {
+        "level": "high",
+        "reason": "Pool structure, 4096 capacity, cell object creation, death/despawn, and cleanup are supported by SDK layout, committed Ghidra exports/dossiers, KG xrefs, and current pool tests; generic pool address identity and sentinel remain unresolved"
+      },
+      "consumers": [
+        "CreateCellObject 0x00e74a20",
+        "Cell query and GFX consumers",
+        "Cell death/eat/replacement callers",
+        "Cell stage rebuild 0x00e7fd00"
+      ],
+      "entry_actions": [
+        {
+          "action": "initialize the main pool with capacity 4096 and zero live allocations",
+          "conditions": [
+            "CellGame initialization"
+          ],
+          "evidence": "0x00e80ba0 and SDK cObjectPool layout"
+        }
+      ],
+      "events": [
+        "cell_stage_initialized",
+        "cell_object_allocated",
+        "cell_damage_resolved",
+        "cell_death_started",
+        "cell_object_despawned",
+        "cell_stage_reload_requested"
+      ],
+      "evidence": [
+        {
+          "address": "cCellGame+0x1c",
+          "claim": "mCells is the main cObjectPool<cCellObjectData>",
+          "kind": "sdk_structure",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore/Simulator/Cell/cCellGame.h:54-55; KG field row struct:/Spore/Simulator/Cell/cCellGame+0x1c"
+        },
+        {
+          "address": "cObjectPool_+0x04/+0x0c/+0x10",
+          "claim": "mNextAvailableIndex, mNumObjects, and mNumAllocatedObjects are the pool state/count fields",
+          "kind": "sdk_structure_and_kg",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore/Simulator/cObjectPool.h:71-79; KG field rows"
+        },
+        {
+          "address": "cCellObjectData+0x00",
+          "claim": "mObjectPoolIndex is the first word and is used as the free-list link or own index",
+          "kind": "sdk_structure_and_static_observation",
+          "level": "SUPPORTED",
+          "source": "Spore-ModAPI/Spore/Simulator/Cell/cCellObjectData.h:15-17; knowledgegraph/research/state-machines/cell-stage.json:821-875"
+        },
+        {
+          "address": "0x00e74a20",
+          "claim": "Creation fills idle, transform, size, model, resource, scale, query, effect, health, and identity state before returning the index",
+          "kind": "decompilation",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__CreateCellObject.c:57-248"
+        },
+        {
+          "address": "0x00e780a0",
+          "claim": "Despawn clears matching avatar state, releases GFX/association state, optionally recreates on scale change, and releases the old pooled object",
+          "kind": "dossier_decompilation",
+          "level": "SUPPORTED",
+          "source": "docs/analysis/dossiers/unknown-high/cell-object-pool-lifecycle.md:18-43"
+        },
+        {
+          "address": "0x00e7a4a0 / 0x00e72060",
+          "claim": "Lethal damage branches into non-player terminal/effect processing or player death/cinematic state",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/state-machines/cell-stage.json:165-220,1177-1198"
+        }
+      ],
+      "generated_events": [
+        "cell_object_allocated",
+        "cell_object_despawned"
+      ],
+      "guards": [
+        "allocation requires an available free-list entry",
+        "despawn requires a resolvable valid pool index",
+        "avatar reference is cleared only when it matches the despawned cell",
+        "replacement is conditional on caller-provided respawn behavior and changed stage scale",
+        "pool exhaustion behavior and original invalid-index sentinel are not fully recovered"
+      ],
+      "name": "cell_object_pool_lifecycle",
+      "possible_states": [
+        {
+          "actions": [
+            "slot is available for allocation"
+          ],
+          "guards": [
+            "pool free-list contains the slot"
+          ],
+          "name": "free",
+          "raw_value": "mObjectPoolIndex stores next-free link or sentinel"
+        },
+        {
+          "actions": [
+            "slot participates in Cell query, AI, GFX, animation, and render state"
+          ],
+          "guards": [
+            "pool reports slot allocated"
+          ],
+          "name": "allocated_live",
+          "raw_value": "mObjectPoolIndex stores own index"
+        },
+        {
+          "actions": [
+            "terminal/death processing is selected"
+          ],
+          "guards": [
+            "health reaches zero or death path marks the cell"
+          ],
+          "name": "dying",
+          "raw_value": "mHealthPoints == 0 and/or cCellObjectData+0x113 terminal flag"
+        },
+        {
+          "actions": [
+            "avatar, query, GFX, association, and pool cleanup are performed"
+          ],
+          "guards": [
+            "despawn or replacement function receives a valid index"
+          ],
+          "name": "despawning",
+          "raw_value": "lifecycle boundary in FUN_00e780a0"
+        },
+        {
+          "actions": [
+            "new object may be initialized before the old slot is returned to the free list"
+          ],
+          "guards": [
+            "respawn/replace flag is enabled and old stage scale differs"
+          ],
+          "name": "rebuild_releasing",
+          "raw_value": "scale-aware replacement branch"
+        }
+      ],
+      "relevant_functions": [
+        "Simulator::Cell::cCellGame::Initialize 0x00e80ba0",
+        "Simulator::Cell::CreateCellObject 0x00e74a20",
+        "FUN_00e780a0",
+        "FUN_00b72160",
+        "FUN_00b72260",
+        "cObjectPool_::Get SDK 0x00b72320",
+        "cObjectPool_::DeleteObject SDK 0x00b72370",
+        "FUN_00e7fd00"
+      ],
+      "relevant_structures": [
+        "cObjectPool<cCellObjectData>",
+        "cCellObjectData",
+        "cCellGame",
+        "cCellQueryLinkedPool",
+        "cCellGFX",
+        "cCellUI"
+      ],
+      "side_effects": [
+        "updates pool free-list and allocated count",
+        "mutates pooled Cell identity and initialization state",
+        "removes Cell query and GFX associations",
+        "clears sCellGame+0x411c when the despawned object is the avatar",
+        "may allocate a replacement before releasing the old slot"
+      ],
+      "state_variable": {
+        "address": "cCellGame+0x1c; cObjectPool_+0x04/+0x0c/+0x10; cCellObjectData+0x00",
+        "expression": "pool free head/capacity/live count plus each cell object's first-word pool index",
+        "owner": "cCellGame and its main cObjectPool<cCellObjectData>",
+        "support": "SDK/KG fields and committed Cell decompilation/dossier support the composite; generic pool address and sentinel contracts are unresolved",
+        "type": "cObjectPoolIndex/int32 plus cCellObjectData"
+      },
+      "status": "supported_static_with_open_pool_contract",
+      "transitions": [
+        {
+          "actions": [
+            "pop a free slot",
+            "set the slot's first word to its own index",
+            "initialize Cell object state"
+          ],
+          "cause": "Cell creation or population request",
+          "entry_actions": [
+            "resolve resource, query, position, scale, and size inputs"
+          ],
+          "event": "cell_object_allocated",
+          "exit_actions": [
+            "return the live pool index"
+          ],
+          "from_state": "free",
+          "guard": "free slot exists",
+          "id": "cell-pool-spawn",
+          "side_effects": [
+            "query, GFX, AI, animation, and resource state become live"
+          ],
+          "source": "0x00e74a20",
+          "to_state": "allocated_live"
+        },
+        {
+          "actions": [
+            "mark terminal/death state",
+            "start death effects or player cinematic path"
+          ],
+          "cause": "lethal damage",
+          "entry_actions": [
+            "resolve victim and apply damage"
+          ],
+          "event": "cell_damage_resolved",
+          "exit_actions": [
+            "stop ordinary live processing"
+          ],
+          "from_state": "allocated_live",
+          "guard": "health is clamped to zero",
+          "id": "cell-pool-death",
+          "side_effects": [
+            "death animation/effect and UI/pending-action state may be written"
+          ],
+          "source": "0x00e7a7c0 -> 0x00e7a4a0 or 0x00e72060",
+          "to_state": "dying"
+        },
+        {
+          "actions": [
+            "clear matching avatar reference",
+            "remove query/GFX/association state",
+            "return old slot to the pool"
+          ],
+          "cause": "despawn, death completion, eat, or replacement request",
+          "entry_actions": [
+            "lookup the cell pool index"
+          ],
+          "event": "cell_object_despawned",
+          "exit_actions": [
+            "old entity is no longer live"
+          ],
+          "from_state": "dying or allocated_live",
+          "guard": "valid index resolves",
+          "id": "cell-pool-despawn",
+          "side_effects": [
+            "pool count and free-list state update"
+          ],
+          "source": "0x00e780a0",
+          "to_state": "free"
+        },
+        {
+          "actions": [
+            "retain old object long enough to create a scale replacement",
+            "release old object after replacement creation"
+          ],
+          "cause": "stage-scale transition with replacement enabled",
+          "entry_actions": [
+            "compare old mScale with current stage scale"
+          ],
+          "event": "cell_object_despawned",
+          "exit_actions": [
+            "return old slot to free list"
+          ],
+          "from_state": "allocated_live or dying",
+          "guard": "respawn flag enabled and old scale differs",
+          "id": "cell-pool-rebuild",
+          "side_effects": [
+            "brief old/new overlap is possible"
+          ],
+          "source": "0x00e780a0",
+          "to_state": "free"
+        }
+      ],
+      "validation_strategy": [
+        "Byte-verify the original pool initializer, allocator pop/push helpers, lookup domain, and free-list sentinel.",
+        "Trace every CreateCellObject caller and record first-word values before/after allocation.",
+        "For every 0x00e780a0 caller, record mNumAllocatedObjects, mNextAvailableIndex, avatar index, query link, GFX index, and replacement ordering.",
+        "Force pool exhaustion and verify the original failure result without substituting the current OpenSpore sentinel.",
+        "Correlate lethal damage, death effects, and despawn completion in a hash-pinned Cell-stage trace."
+      ]
+    },
+    {
+      "actions": [
+        "assign or clear the player pool index",
+        "keep the player available to movement, combat, UI, and query consumers",
+        "rebuild the stage after a deferred reload request"
+      ],
+      "confidence": {
+        "level": "high",
+        "reason": "Avatar index reads/writes, player-specific death state, reload flag, frame observation, and stage rebuild are supported by multiple committed static bodies; exact player construction assignment remains unresolved"
+      },
+      "consumers": [
+        "MovePlayerToMousePosition",
+        "FUN_00e5b2e0",
+        "FUN_00e73f60",
+        "FUN_00e7c8c0",
+        "FUN_00e806b0"
+      ],
+      "entry_actions": [
+        {
+          "action": "resolve sCellGame+0x411c through the Cell pool and validate the player object",
+          "conditions": [
+            "CellGame initialized"
+          ],
+          "evidence": "0x00e5b790 and 0x00e5b2e0"
+        }
+      ],
+      "events": [
+        "cell_stage_initialized",
+        "cell_object_allocated",
+        "cell_death_started",
+        "cell_stage_reload_requested",
+        "cell_object_despawned"
+      ],
+      "evidence": [
+        {
+          "address": "sCellGame+0x411c",
+          "claim": "mAvatarCellIndex is the player Cell pool index",
+          "kind": "sdk_structure",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore/Simulator/Cell/cCellGame.h:64-70; KG field row struct:/Spore/Simulator/Cell/cCellGame+0x411c"
+        },
+        {
+          "address": "0x00e72060",
+          "claim": "Player death marks field_113, queues an action, sets UI state, stores a pending interaction, and selects a death action",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/state-machines/cell-stage.json:992-1005"
+        },
+        {
+          "address": "0x00e50940 / 0x00e806b0 / 0x00e7fd00",
+          "claim": "A reload request is stored, observed on a later active frame, and serviced by the stage rebuild path",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/state-machines/cell-stage.json:1007-1029,1218-1243"
+        },
+        {
+          "address": "0x00e780a0",
+          "claim": "Despawn clears sCellGame+0x411c when the index matches the avatar",
+          "kind": "dossier_decompilation",
+          "level": "SUPPORTED",
+          "source": "docs/analysis/dossiers/unknown-high/cell-object-pool-lifecycle.md:27-43; knowledgegraph/research/state-machines/cell-stage.json:990-998"
+        }
+      ],
+      "generated_events": [
+        "cell_stage_reload_requested"
+      ],
+      "guards": [
+        "avatar index must resolve through the pool",
+        "player death is diverted from ordinary non-player death when the relevant player/cinematic branch is selected",
+        "rebuild is deferred until an active frame observes sCellGame+0x51d8"
+      ],
+      "name": "cell_player_lifecycle",
+      "possible_states": [
+        {
+          "actions": [
+            "no player is resolvable through mAvatarCellIndex"
+          ],
+          "guards": [
+            "avatar index is absent/cleared"
+          ],
+          "name": "absent",
+          "raw_value": "mAvatarCellIndex is clear"
+        },
+        {
+          "actions": [
+            "player can receive movement, AI, combat, query, and UI updates"
+          ],
+          "guards": [
+            "avatar index resolves and death flags do not block active update"
+          ],
+          "name": "active",
+          "raw_value": "mAvatarCellIndex resolves"
+        },
+        {
+          "actions": [
+            "player death animation/effect and UI/pending state are active"
+          ],
+          "guards": [
+            "player death branch selected"
+          ],
+          "name": "dying_or_cinematic",
+          "raw_value": "cCellObjectData+0x113 and sCellUI death state"
+        },
+        {
+          "actions": [
+            "next active frame invokes FUN_00e7fd00"
+          ],
+          "guards": [
+            "sCellGame+0x51d8 is set"
+          ],
+          "name": "stage_rebuild_pending",
+          "raw_value": "sCellGame+0x51d8 == 1"
+        }
+      ],
+      "relevant_functions": [
+        "Simulator::Cell::MovePlayerToMousePosition 0x00e5b790",
+        "FUN_00e5b2e0",
+        "FUN_00e72060",
+        "FUN_00e72200",
+        "FUN_00e50940",
+        "FUN_00e7fd00",
+        "FUN_00e806b0",
+        "FUN_00e780a0"
+      ],
+      "relevant_structures": [
+        "cCellGame",
+        "cCellObjectData",
+        "cCellSerializableData",
+        "cCellUI",
+        "cCellUIRollover"
+      ],
+      "side_effects": [
+        "writes player target/orientation/moving state",
+        "queues death animation/effect/UI state",
+        "clears avatar index on despawn",
+        "drains/reloads Cell query, GFX, world, UI, and scale/advect state"
+      ],
+      "state_variable": {
+        "address": "sCellGame+0x411c; cCellObjectData+0x113; sCellGame+0x51d8",
+        "expression": "avatar pool index plus terminal-player flag plus stage reload request",
+        "owner": "cCellGame and the current player cCellObjectData",
+        "support": "Composite state is supported by SDK fields and multiple decompilation paths; the exact player construction assignment is unresolved",
+        "type": "cObjectPoolIndex plus bool/int32 state fields"
+      },
+      "status": "supported_static_with_unresolved_assignment",
+      "transitions": [
+        {
+          "actions": [
+            "initialize or clear the avatar index",
+            "leave no resolvable player"
+          ],
+          "cause": "Cell stage initialization, reset, or teardown",
+          "entry_actions": [
+            "initialize CellGame and pool"
+          ],
+          "event": "cell_stage_initialized",
+          "exit_actions": [
+            "player-dependent consumers become no-ops"
+          ],
+          "from_state": "uninitialized",
+          "guard": "always during initialization/reset",
+          "id": "player-absent",
+          "side_effects": [
+            "player-dependent movement and UI consumers cannot resolve the avatar"
+          ],
+          "source": "0x00e80ba0 and 0x00e7fd00",
+          "to_state": "absent"
+        },
+        {
+          "actions": [
+            "construct or select a player Cell",
+            "store its pool index at sCellGame+0x411c",
+            "initialize player resource, transform, scale, query, and GFX state"
+          ],
+          "cause": "world population or stage rebuild",
+          "entry_actions": [
+            "resolve world/populate/start resources"
+          ],
+          "event": "cell_object_allocated",
+          "exit_actions": [
+            "player becomes available to update consumers"
+          ],
+          "from_state": "absent",
+          "guard": "population/rebuild path supplies a valid player object",
+          "id": "player-spawn",
+          "side_effects": [
+            "player becomes query-visible and updateable"
+          ],
+          "source": "0x00e7fd00, 0x00e79720, 0x00e7d880",
+          "to_state": "active"
+        },
+        {
+          "actions": [
+            "clamp health to zero",
+            "mark player terminal",
+            "queue death animation/effect/UI state"
+          ],
+          "cause": "lethal avatar damage",
+          "entry_actions": [
+            "resolve attacker/victim and damage"
+          ],
+          "event": "cell_death_started",
+          "exit_actions": [
+            "leave ordinary active-player processing"
+          ],
+          "from_state": "active",
+          "guard": "avatar and player death branch are selected",
+          "id": "player-death",
+          "side_effects": [
+            "cCellObjectData+0x113 and sCellUI state are written"
+          ],
+          "source": "0x00e7a7c0 -> 0x00e72060",
+          "to_state": "dying_or_cinematic"
+        },
+        {
+          "actions": [
+            "set sCellGame+0x51d8 to a reload request",
+            "store the optional companion flag at +0x51d9"
+          ],
+          "cause": "death/rebuild callback requests a new stage",
+          "entry_actions": [
+            "queue or complete player death interaction"
+          ],
+          "event": "cell_stage_reload_requested",
+          "exit_actions": [
+            "defer stage rebuild to a later active frame"
+          ],
+          "from_state": "dying_or_cinematic",
+          "guard": "callback selects a rebuild state",
+          "id": "player-reload-request",
+          "side_effects": [
+            "Cell mode frame observes the request"
+          ],
+          "source": "0x00e50940, 0x00e72200, 0x00e7b410",
+          "to_state": "stage_rebuild_pending"
+        },
+        {
+          "actions": [
+            "drain Cell objects and associated query/GFX state",
+            "clear avatar index",
+            "reload world/UI/scale/advect state",
+            "invoke population/setup helpers"
+          ],
+          "cause": "active frame observes the reload request",
+          "entry_actions": [
+            "read sCellGame+0x51d8 and related progression fields"
+          ],
+          "event": "cell_stage_reload_requested",
+          "exit_actions": [
+            "return to Cell gameplay frame"
+          ],
+          "from_state": "stage_rebuild_pending",
+          "guard": "sCellGame+0x51d8 is set",
+          "id": "player-rebuild",
+          "side_effects": [
+            "old population is transiently removed and new setup is invoked"
+          ],
+          "source": "0x00e806b0 and 0x00e7fd00",
+          "to_state": "active"
+        },
+        {
+          "actions": [
+            "clear avatar index",
+            "release player GFX/query/association state",
+            "optionally create a replacement"
+          ],
+          "cause": "player despawn outside normal stage reload",
+          "entry_actions": [
+            "resolve player index"
+          ],
+          "event": "cell_object_despawned",
+          "exit_actions": [
+            "player is no longer resolvable"
+          ],
+          "from_state": "active",
+          "guard": "FUN_00e780a0 receives the player index",
+          "id": "player-despawn",
+          "side_effects": [
+            "mAvatarCellIndex is cleared"
+          ],
+          "source": "0x00e780a0",
+          "to_state": "absent"
+        }
+      ],
+      "validation_strategy": [
+        "Trace every write and read of sCellGame+0x411c through initial population, normal play, death, despawn, and stage rebuild.",
+        "Record player index, cCellObjectData+0x113, sCellGame+0x51d8, and UI death state around FUN_00e72060, FUN_00e50940, FUN_00e7fd00, and FUN_00e780a0.",
+        "Identify the exact function that assigns the avatar index during FUN_00e7fd00 and distinguish player creation from generic population creation.",
+        "Run an approved Cell-stage trace reaching lethal damage and a scale transition; the committed S5 evidence is negative."
+      ]
+    },
+    {
+      "actions": [
+        "decode population markers and count fields",
+        "preload referenced Cell resources",
+        "map content records to runtime population only where the direct body is recovered"
+      ],
+      "confidence": {
+        "level": "medium",
+        "reason": "SDK record layouts and Ghidra preload bodies strongly establish the content surface, but the runtime marker-to-entity population path and per-marker cap interpretation remain unresolved"
+      },
+      "consumers": [
+        "cCellGFX::PreloadResources",
+        "cCellGFX::PreloadPopulateResource",
+        "CreateCellObject",
+        "Cell per-frame population/setup helpers"
+      ],
+      "entry_actions": [
+        {
+          "action": "resolve the current Cell world and populate references",
+          "conditions": [
+            "Cell world/populate resources are available"
+          ],
+          "evidence": "Spore-ModAPI cCellGame.h:64-70 and cCellResource.h:200-284"
+        }
+      ],
+      "events": [
+        "cell_populate_resource_preloaded",
+        "cell_world_population_requested",
+        "cell_respawn_due",
+        "cell_object_allocated"
+      ],
+      "evidence": [
+        {
+          "address": "cCellPopulateResource+0x00/+0x04/+0x08/+0x0c",
+          "claim": "The populate record contains scale, mask texture, marker count, and marker pointer",
+          "kind": "sdk_structure",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore/Simulator/Cell/cCellResource.h:200-252; KG structure field rows"
+        },
+        {
+          "address": "cMarker+0x2c/+0x30/+0x34/+0x38",
+          "claim": "Markers contain count fields for normal/easy/medium/hard population and size/parts/linear/encounter fields",
+          "kind": "sdk_structure",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore/Simulator/Cell/cCellResource.h:206-245"
+        },
+        {
+          "address": "cAIData+0x48/+0x4c/+0x50",
+          "claim": "Cell AI data exposes spawnTime, spawnRestTime, and spawnOutput, providing a likely respawn schedule/output surface",
+          "kind": "sdk_structure",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore/Simulator/Cell/cCellResource.h:337-388"
+        },
+        {
+          "address": "0x00e665c0",
+          "claim": "PreloadPopulateResource iterates markers and preloads distribute/cluster/plant/encounter references",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__PreloadPopulateResource.c:42-173"
+        },
+        {
+          "address": "0x00e666f0",
+          "claim": "PreloadResources traverses world populate references and invokes populate preload paths",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__PreloadResources.c:50-129"
+        },
+        {
+          "address": "cCellObjectData+0x234",
+          "claim": "The live Cell object stores mSpawnTime, but the writer and timer semantics are not recovered",
+          "kind": "sdk_structure",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore/Simulator/Cell/cCellObjectData.h:131-149; KG field row"
+        }
+      ],
+      "generated_events": [
+        "cell_world_population_requested",
+        "cell_respawn_due"
+      ],
+      "guards": [
+        "marker count and difficulty-specific count are present in the content record",
+        "resource preloading does not prove runtime placement or cap enforcement",
+        "spawnTime/spawnRestTime fields are not sufficient to assert a respawn transition without a timer body"
+      ],
+      "name": "cell_world_population_surface",
+      "possible_states": [
+        {
+          "actions": [
+            "record bytes exist but no runtime population is proven"
+          ],
+          "guards": [
+            "resource is decoded but not yet bound to the active stage"
+          ],
+          "name": "records_present_unbound",
+          "raw_value": "cCellPopulateResource exists"
+        },
+        {
+          "actions": [
+            "referenced Cell/populate resources are registered for use"
+          ],
+          "guards": [
+            "PreloadPopulateResource/PreloadResources complete"
+          ],
+          "name": "records_preloaded",
+          "raw_value": "GFX preload map contains referenced identities"
+        },
+        {
+          "actions": [
+            "the active world/populate reference is selected"
+          ],
+          "guards": [
+            "Cell world setup supplies a current world"
+          ],
+          "name": "world_selected",
+          "raw_value": "sCellGame+0x4114/+0x4118"
+        },
+        {
+          "actions": [
+            "CreateCellObject may produce a live entity, but marker-to-call mapping is unresolved"
+          ],
+          "guards": [
+            "runtime population path and placement inputs are recovered"
+          ],
+          "name": "runtime_cell_created",
+          "raw_value": "pool index returned by CreateCellObject"
+        },
+        {
+          "actions": [
+            "respawn schedule/output is evaluated, but the transition body is unresolved"
+          ],
+          "guards": [
+            "mSpawnTime/rest/output and timer consumers are identified"
+          ],
+          "name": "respawn_candidate",
+          "raw_value": "cAIData spawn fields and cCellObjectData+0x234"
+        }
+      ],
+      "relevant_functions": [
+        "Simulator::Cell::GetGlobalsData 0x00e4ce20",
+        "Simulator::Cell::cCellGFX::PreloadPopulateResource 0x00e665c0",
+        "Simulator::Cell::cCellGFX::PreloadResources 0x00e666f0",
+        "Simulator::Cell::CreateCellObject 0x00e74a20",
+        "Cell stage rebuild/population helpers"
+      ],
+      "relevant_structures": [
+        "cCellPopulateResource",
+        "cMarker",
+        "cCellWorldResource",
+        "cLevelEntry",
+        "cCellCellResource",
+        "cAIData",
+        "cCellObjectData",
+        "cCellGame"
+      ],
+      "side_effects": [
+        "registers resource identities for later use",
+        "does not by itself establish entity count, placement, or pool consumption",
+        "does not by itself establish a numeric population cap"
+      ],
+      "state_variable": {
+        "address": "cCellPopulateResource+0x00..+0x0c; cMarker+0x2c..+0x48; cAIData+0x48..+0x50; cCellObjectData+0x234",
+        "expression": "populate marker counts/resources plus AI spawn timing/output plus live object spawn time",
+        "owner": "Cell resource records, CellGame, and cCellObjectData",
+        "support": "SDK/KG record layouts and preload bodies support the surface; runtime interpretation is deliberately bounded",
+        "type": "Cell resource records, floats, references, and cObjectPoolIndex-backed entities"
+      },
+      "status": "content_surface_supported_runtime_population_unresolved",
+      "transitions": [
+        {
+          "actions": [
+            "traverse populate records and preload referenced resources"
+          ],
+          "cause": "Cell world/populate resource setup",
+          "entry_actions": [
+            "resolve populate resource pointer and marker count"
+          ],
+          "event": "cell_populate_resource_preloaded",
+          "exit_actions": [
+            "leave resources registered for later population"
+          ],
+          "from_state": "records_present_unbound",
+          "guard": "resource is valid",
+          "id": "cell-content-preload",
+          "side_effects": [
+            "GFX preload map and resource references are updated"
+          ],
+          "source": "0x00e665c0 and 0x00e666f0",
+          "to_state": "records_preloaded"
+        },
+        {
+          "actions": [
+            "bind the current world reference and invoke population/setup helpers"
+          ],
+          "cause": "Cell world selection or stage rebuild",
+          "entry_actions": [
+            "read sCellGame current/background world references"
+          ],
+          "event": "cell_world_population_requested",
+          "exit_actions": [
+            "enter runtime population path"
+          ],
+          "from_state": "records_preloaded",
+          "guard": "world selection succeeds",
+          "id": "cell-world-select",
+          "side_effects": [
+            "current/background world references and setup state may change"
+          ],
+          "source": "0x00e4ce20 and 0x00e7fd00",
+          "to_state": "world_selected"
+        },
+        {
+          "actions": [
+            "create a live Cell object and return its pool index"
+          ],
+          "cause": "runtime population setup requests a Cell",
+          "entry_actions": [
+            "resolve marker-selected resource and placement inputs"
+          ],
+          "event": "cell_object_allocated",
+          "exit_actions": [
+            "entity becomes live in the pool/query system"
+          ],
+          "from_state": "world_selected",
+          "guard": "the missing marker-to-CreateCellObject dispatch is satisfied",
+          "id": "cell-runtime-spawn-inferred",
+          "side_effects": [
+            "entity state is initialized; pool count changes"
+          ],
+          "source": "0x00e74a20; caller mapping unresolved",
+          "to_state": "runtime_cell_created"
+        },
+        {
+          "actions": [
+            "evaluate spawn timer/rest/output and potentially schedule a replacement"
+          ],
+          "cause": "cell spawn timing reaches a candidate point",
+          "entry_actions": [
+            "read cAIData spawn fields and cCellObjectData+0x234"
+          ],
+          "event": "cell_respawn_due",
+          "exit_actions": [
+            "schedule, create, or skip replacement"
+          ],
+          "from_state": "runtime_cell_created",
+          "guard": "timer/output semantics and caller are recovered",
+          "id": "cell-respawn-inferred",
+          "side_effects": [
+            "potential new pool allocation or resource output"
+          ],
+          "source": "SDK cCellResource.h:337-388; Ghidra export/dossier; runtime transition unresolved",
+          "to_state": "respawn_candidate"
+        }
+      ],
+      "validation_strategy": [
+        "Enumerate every cCellPopulateResource marker and cAIData spawn field writer/reader in Ghidra and type the resource pointers.",
+        "Trace the direct calls from world/populate setup into CreateCellObject and record resource, position, scale, query, and index for each spawn.",
+        "Measure actual population against marker count/count_easy/count_med/count_hard and determine whether any cap is a hard limit or procedural target.",
+        "Trace mSpawnTime/spawnRestTime/spawnOutput through a death/despawn trace and correlate any replacement with pool allocation and loot/effect events.",
+        "Record current/background world references before and after PreloadResources and stage rebuild."
+      ]
+    },
+    {
+      "actions": [
+        "create star records without planet records during galaxy generation",
+        "ensure planet records when a star is first required or discovered",
+        "regenerate an empty star system after the timing guard",
+        "serialize temporary and persistent star/planet databases"
+      ],
+      "confidence": {
+        "level": "high",
+        "reason": "No-planet guard, timing gate, observation-time write, pending-state removal, manager reset, planet count update, generation entry, and persistence path are supported by dossier, SDK contract, Ghidra export, KG xrefs, and committed research; vector append and formulas remain partial"
+      },
+      "consumers": [
+        "cStarManager::RequirePlanetsForStar",
+        "cStarManager::GeneratePlanetsForStar",
+        "cStarRecord::GetPlanetRecords",
+        "cStarManager::RecordToPlanet",
+        "galaxy generation message handler"
+      ],
+      "entry_actions": [
+        {
+          "action": "resolve a cStarRecord and read mPlanetCount",
+          "conditions": [
+            "star record exists"
+          ],
+          "evidence": "docs/analysis/dossiers/unknown-high/star-system-regen.md:27-42"
+        }
+      ],
+      "events": [
+        "star_generation_message",
+        "star_system_regeneration_checked",
+        "star_planets_generated",
+        "star_planet_records_persisted",
+        "star_planet_materialized"
+      ],
+      "evidence": [
+        {
+          "address": "cStarRecord+0xac",
+          "claim": "mPlanetCount is the no-planet/population-count guard",
+          "kind": "sdk_structure_and_decompilation",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore/Simulator/cStarRecord.h:95-116; docs/analysis/dossiers/unknown-high/star-system-regen.md:27-42"
+        },
+        {
+          "address": "cStarRecord+0x0c",
+          "claim": "mLastObservedTime is updated by the regeneration routine",
+          "kind": "sdk_structure_and_decompilation",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore/Simulator/cStarRecord.h:95; docs/analysis/dossiers/unknown-high/star-system-regen.md:27-42"
+        },
+        {
+          "address": "0x00bb4af0",
+          "claim": "The routine checks mPlanetCount and a timing check, then erases pending state, resets manager state, and calls planet generation",
+          "kind": "dossier_decompilation",
+          "level": "SUPPORTED",
+          "source": "docs/analysis/dossiers/unknown-high/star-system-regen.md:39-42"
+        },
+        {
+          "address": "0x00bb4100 / SDK 0x00bb42a0",
+          "claim": "The generation body allocates/initializes cPlanetRecord values and increments mPlanetCount",
+          "kind": "decompilation_and_sdk_boundary",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/state-machines/world-planet.json:134-162; knowledgegraph/triage/sdk-boundary-repairs-2540f2ca.json:905"
+        },
+        {
+          "address": "cStarRecord+0x84",
+          "claim": "mPlanets is an intrusive_ptr<cPlanetRecord> vector and may be unloaded even when mPlanetCount is nonzero",
+          "kind": "sdk_structure",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore/Simulator/cStarRecord.h:62-64,111-115; KG field row"
+        },
+        {
+          "address": "0x00bba900",
+          "claim": "GetPlanetRecords is a lazy/conditional planet-record access surface; the committed body is not a complete vector-load contract",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cStarRecord__GetPlanetRecords.c:8-50"
+        },
+        {
+          "address": "0x00bb4ba0 / SDK 0x00bb4c90",
+          "claim": "The current body exposes persistence to temporary and persistent planet-record databases after availability/update work",
+          "kind": "decompilation_and_sdk_boundary",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/data-model/06-empire-space-data.json:629-630,771; knowledgegraph/triage/sdk-boundary-repairs-2540f2ca.json:906"
+        }
+      ],
+      "generated_events": [
+        "star_planets_generated",
+        "star_planet_records_persisted"
+      ],
+      "guards": [
+        "regeneration requires mPlanetCount == 0",
+        "regeneration additionally requires the timing check to pass",
+        "planet generation count is selected by properties/filter/useMaxPlanets inputs",
+        "mPlanets may remain unloaded while mPlanetCount is nonzero",
+        "RecordToPlanet materialization requires a valid planet record"
+      ],
+      "name": "star_system_regeneration_and_planet_records",
+      "possible_states": [
+        {
+          "actions": [
+            "star exists in the manager grid but no planet records are counted"
+          ],
+          "guards": [
+            "cStarRecord.mPlanetCount == 0"
+          ],
+          "name": "star_without_planets",
+          "raw_value": "mPlanetCount == 0"
+        },
+        {
+          "actions": [
+            "wait for discovery/require/regeneration trigger and timing gate"
+          ],
+          "guards": [
+            "no-planet state and timing check not yet passed"
+          ],
+          "name": "regeneration_wait",
+          "raw_value": "empty star record"
+        },
+        {
+          "actions": [
+            "update mLastObservedTime, remove pending entry, reset manager state"
+          ],
+          "guards": [
+            "mPlanetCount == 0 and timing check passes"
+          ],
+          "name": "regeneration_committed",
+          "raw_value": "FUN_00bb4af0 mutation path"
+        },
+        {
+          "actions": [
+            "allocate and initialize planet records and increment count"
+          ],
+          "guards": [
+            "generation inputs/properties are available"
+          ],
+          "name": "planet_records_counted",
+          "raw_value": "mPlanetCount > 0"
+        },
+        {
+          "actions": [
+            "planet vector may remain lazily unloaded"
+          ],
+          "guards": [
+            "mPlanetCount > 0 but mPlanets is not loaded"
+          ],
+          "name": "planet_records_unloaded",
+          "raw_value": "count present, vector empty"
+        },
+        {
+          "actions": [
+            "serialize temporary state and replace persistent database"
+          ],
+          "guards": [
+            "persistence path completes"
+          ],
+          "name": "records_persisted",
+          "raw_value": "planetRecords.pkt/database fields updated"
+        },
+        {
+          "actions": [
+            "convert a cPlanetRecord into a runtime cPlanet"
+          ],
+          "guards": [
+            "RecordToPlanet receives a valid record"
+          ],
+          "name": "runtime_planet_materialized",
+          "raw_value": "cPlanet intrusive output"
+        }
+      ],
+      "relevant_functions": [
+        "FUN_00bb4af0",
+        "FUN_00bb4ba0 / SDK RequirePlanetsForStar 0x00bb4c90",
+        "FUN_00bb4100 / SDK GeneratePlanetsForStar 0x00bb42a0",
+        "Simulator::cStarRecord::GetPlanetRecords 0x00bba900",
+        "Simulator::cStarManager::RecordToPlanet 0x00bb5b50",
+        "FUN_00bb5d80 star generation message handler"
+      ],
+      "relevant_structures": [
+        "cStarManager",
+        "cStarRecord",
+        "cPlanetRecord",
+        "cEllipticalOrbit",
+        "PropertyList",
+        "Resource::Database"
+      ],
+      "side_effects": [
+        "writes cStarRecord.mLastObservedTime",
+        "mutates manager pending/grid state",
+        "increments cStarRecord.mPlanetCount",
+        "creates/initializes cPlanetRecord values and may update generation terrain/type/score fields",
+        "writes temporary and persistent planet-record database state",
+        "materializes runtime cPlanet through RecordToPlanet"
+      ],
+      "state_variable": {
+        "address": "cStarRecord+0xac; cStarRecord+0x0c; cStarRecord+0x84; cStarManager+0x94/+0x224/+0x228",
+        "expression": "mPlanetCount plus mLastObservedTime plus lazy mPlanets vector plus manager star grid and planet-record databases",
+        "owner": "cStarManager and cStarRecord/cPlanetRecord persistence",
+        "support": "SDK, KG, dossier, committed state-machine/data-model research, and targeted Ghidra evidence support the sequence; exact vector append and generation formulas are not promoted",
+        "type": "char count, int observation time, intrusive vectors, manager maps/vectors/databases"
+      },
+      "status": "supported_static_partial_generation_and_persistence",
+      "transitions": [
+        {
+          "actions": [
+            "create cStarRecord objects and place them in manager grid/vector state",
+            "do not generate planets at galaxy-generation time"
+          ],
+          "cause": "galaxy distribute-effect message",
+          "entry_actions": [
+            "resolve message distribution data and StarType"
+          ],
+          "event": "star_generation_message",
+          "exit_actions": [
+            "leave star record available for later discovery"
+          ],
+          "from_state": "absent",
+          "guard": "generation message and valid distribution data",
+          "id": "star-record-create",
+          "side_effects": [
+            "star grid and generation-specific lists are mutated"
+          ],
+          "source": "0x00bb5d80",
+          "to_state": "star_without_planets"
+        },
+        {
+          "actions": [
+            "write mLastObservedTime",
+            "erase pending manager entry",
+            "reset manager state",
+            "call planet generation"
+          ],
+          "cause": "empty star system regeneration check",
+          "entry_actions": [
+            "read mPlanetCount and evaluate timing check"
+          ],
+          "event": "star_system_regeneration_checked",
+          "exit_actions": [
+            "enter generation body"
+          ],
+          "from_state": "regeneration_wait",
+          "guard": "mPlanetCount == 0 and timing check passes",
+          "id": "star-regeneration",
+          "side_effects": [
+            "observation time and pending state mutate"
+          ],
+          "source": "0x00bb4af0",
+          "to_state": "regeneration_committed"
+        },
+        {
+          "actions": [
+            "create cPlanetRecord objects",
+            "initialize type/orbit/score/terrain-related state",
+            "increment mPlanetCount"
+          ],
+          "cause": "GeneratePlanetsForStar",
+          "entry_actions": [
+            "resolve filter, useMaxPlanets, and property/random inputs"
+          ],
+          "event": "star_planets_generated",
+          "exit_actions": [
+            "leave planet count nonzero"
+          ],
+          "from_state": "regeneration_committed or RequirePlanets path",
+          "guard": "generation inputs and allocation are valid",
+          "id": "star-planet-generate",
+          "side_effects": [
+            "planet records and mPlanetCount are updated"
+          ],
+          "source": "0x00bb4100 / SDK 0x00bb42a0",
+          "to_state": "planet_records_counted"
+        },
+        {
+          "actions": [
+            "load or retain the mPlanets vector as needed"
+          ],
+          "cause": "planet record request",
+          "entry_actions": [
+            "call GetPlanetRecords"
+          ],
+          "event": "star_planet_records_persisted",
+          "exit_actions": [
+            "return read-only planet-record vector"
+          ],
+          "from_state": "planet_records_counted",
+          "guard": "record database and lazy-load path are valid",
+          "id": "star-planet-load",
+          "side_effects": [
+            "mPlanets may be populated; mPlanetCount is not necessarily the vector size"
+          ],
+          "source": "0x00bba900 and SDK cStarRecord.h:89-93",
+          "to_state": "planet_records_unloaded"
+        },
+        {
+          "actions": [
+            "write temporary star/planet database state",
+            "replace persistent star database after updates"
+          ],
+          "cause": "RequirePlanetsForStar/persistence path completes",
+          "entry_actions": [
+            "serialize generated or loaded planet records"
+          ],
+          "event": "star_planet_records_persisted",
+          "exit_actions": [
+            "leave persistent database at updated version"
+          ],
+          "from_state": "planet_records_counted",
+          "guard": "database writes complete",
+          "id": "star-record-persist",
+          "side_effects": [
+            "planetRecords temp/database and manager state are updated"
+          ],
+          "source": "0x00bb4ba0 / SDK 0x00bb4c90",
+          "to_state": "records_persisted"
+        },
+        {
+          "actions": [
+            "create/resolve runtime cPlanet output"
+          ],
+          "cause": "space/planet materialization request",
+          "entry_actions": [
+            "provide cPlanetRecord and output pointer"
+          ],
+          "event": "star_planet_materialized",
+          "exit_actions": [
+            "planet becomes usable by runtime space/presentation code"
+          ],
+          "from_state": "planet_records_counted or records_persisted",
+          "guard": "record is valid",
+          "id": "star-record-to-planet",
+          "side_effects": [
+            "runtime cPlanet intrusive state is updated"
+          ],
+          "source": "0x00bb5b50",
+          "to_state": "runtime_planet_materialized"
+        }
+      ],
+      "validation_strategy": [
+        "Record mPlanetCount, mLastObservedTime, mPlanets.size(), manager list membership, generated terrain key, type, and scores before/after every generation and regeneration call.",
+        "Exercise no-planet, timing-fail, timing-pass, useMaxPlanets true/false, allocation failure, and lazy-vector-loaded states.",
+        "Decompile or type the exact 0x00bb4ba0/0x00bb4af0/0x00bb4100 boundaries and prove whether mPlanets is appended or remains lazy.",
+        "Trace the full 0x00bb4ba0 persistence order including temp database failure, replacement, and rollback behavior.",
+        "Correlate RecordToPlanet with actual space/planet presentation entry points; the current body is only a thin wrapper."
+      ]
+    },
+    {
+      "actions": [
+        "expose tribe member and population-timer state",
+        "apply archetype and planner population targets",
+        "spawn or remove members through SDK surface"
+      ],
+      "confidence": {
+        "level": "low",
+        "reason": "SDK layouts and committed unresolved research establish the fields and API names, but no recovered plan scheduler or population transition body exists"
+      },
+      "consumers": [
+        "cTribePlanner",
+        "cTribe member vectors",
+        "NPC tribe simulation",
+        "tribe-stage UI/gameplay"
+      ],
+      "entry_actions": [
+        {
+          "action": "read current members, archetype max, planner target range, and population timer",
+          "conditions": [
+            "cTribe and planner state are initialized"
+          ],
+          "evidence": "Spore-ModAPI cTribe.h and cTribePlanner.h"
+        }
+      ],
+      "events": [
+        "tribe_population_timer_due",
+        "tribe_member_spawn_requested",
+        "tribe_member_removed"
+      ],
+      "evidence": [
+        {
+          "address": "cTribe+0x340",
+          "claim": "mTribeMembers is the intrusive citizen vector",
+          "kind": "sdk_structure",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore/Simulator/cTribe.h:134-152; KG field row"
+        },
+        {
+          "address": "cTribe+0x510/+0x530",
+          "claim": "mPopulationTimer and mTimer are timer fields",
+          "kind": "sdk_structure",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore/Simulator/cTribe.h:149-154; KG field rows"
+        },
+        {
+          "address": "cTribeArchetype+0x00/+0x04/+0x08",
+          "claim": "Archetype exposes initial population, initial food, and max population",
+          "kind": "sdk_structure",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore/Simulator/cTribeArchetype.h:19-25; KG field rows"
+        },
+        {
+          "address": "cTribePlan+0x04/+0x20/+0x24",
+          "claim": "Plan state and min/max target population fields exist",
+          "kind": "sdk_structure",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore/Simulator/cTribePlanner.h:16-50; knowledgegraph/research/state-machines/creature-civilization.json:3073-3089"
+        },
+        {
+          "address": "cTribeData+0x10/+0x14",
+          "claim": "Serialized tribe record carries population and food integers",
+          "kind": "sdk_structure",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore/Simulator/cPlanetRecord.h:123-130; KG field/track evidence"
+        }
+      ],
+      "generated_events": [],
+      "guards": [
+        "mMaxPopulation and planner target values exist but exact comparison code is unresolved",
+        "mTribeMembers and mSelectableMembers are distinct vectors",
+        "no cap transition is asserted from field names alone"
+      ],
+      "name": "tribe_population_cap_and_planner_surface",
+      "possible_states": [
+        {
+          "actions": [
+            "member and planner state exists but transition rules are not recovered"
+          ],
+          "guards": [
+            "SDK layout only"
+          ],
+          "name": "surface_present",
+          "raw_value": "cTribe/cTribePlanner fields"
+        },
+        {
+          "actions": [
+            "hypothesized below-cap population; no direct guard claimed"
+          ],
+          "guards": [
+            "member count below archetype/planner target"
+          ],
+          "name": "below_target_layout_hypothesis",
+          "raw_value": "not directly observed"
+        },
+        {
+          "actions": [
+            "hypothesized at/above-cap population; no direct guard claimed"
+          ],
+          "guards": [
+            "member count at or above archetype/planner target"
+          ],
+          "name": "at_or_above_target_layout_hypothesis",
+          "raw_value": "not directly observed"
+        },
+        {
+          "actions": [
+            "timer is eligible for a planner/population update"
+          ],
+          "guards": [
+            "mPopulationTimer or planner timer expires"
+          ],
+          "name": "population_timer_due_unresolved",
+          "raw_value": "not directly observed"
+        }
+      ],
+      "relevant_functions": [
+        "SDK cTribe::SpawnTribe",
+        "SDK cTribe::SpawnMember 0x00c983c0",
+        "SDK Simulator::SpawnNpcTribe 0x00c932f0",
+        "cTribePlanner update surface",
+        "cTribePlan selection/execution surface"
+      ],
+      "relevant_structures": [
+        "cTribe",
+        "cTribeArchetype",
+        "cTribePlanner",
+        "cTribePlan",
+        "cTribePlanProperties",
+        "cTribeData",
+        "cCreatureCitizen"
+      ],
+      "side_effects": [
+        "potential member-vector insertion/removal",
+        "potential population/food update in cTribeData",
+        "potential planner action selection",
+        "no binary side effect is claimed without a recovered body"
+      ],
+      "state_variable": {
+        "address": "cTribe+0x340; cTribe+0x510; cTribeArchetype+0x08; cTribePlan+0x04; cTribePlan+0x20/+0x24",
+        "expression": "member count/target population/population timer plus planner state and target range",
+        "owner": "cTribe and cTribePlanner",
+        "support": "SDK and KG layouts are confirmed; comparison and transition semantics are unresolved",
+        "type": "intrusive vectors, cGonzagoTimer, integer target/cap fields"
+      },
+      "status": "layout_only_unresolved",
+      "transitions": [
+        {
+          "actions": [
+            "populate or update member vector according to a plan"
+          ],
+          "cause": "population timer or planner request",
+          "entry_actions": [
+            "read member count, archetype cap, and plan targets"
+          ],
+          "event": "tribe_population_timer_due",
+          "exit_actions": [
+            "spawn or schedule members"
+          ],
+          "from_state": "surface_present",
+          "guard": "timer and plan guards are unresolved",
+          "id": "tribe-population-update-unresolved",
+          "side_effects": [
+            "member vector and possibly cTribeData population/food may change"
+          ],
+          "source": "SDK layout plus committed unresolved research",
+          "to_state": "below_target_layout_hypothesis or at_or_above_target_layout_hypothesis"
+        },
+        {
+          "actions": [
+            "create a cCreatureCitizen member"
+          ],
+          "cause": "tribe population request",
+          "entry_actions": [
+            "resolve age/member inputs and available population capacity"
+          ],
+          "event": "tribe_member_spawn_requested",
+          "exit_actions": [
+            "member enters tribe member vector"
+          ],
+          "from_state": "below_target_layout_hypothesis",
+          "guard": "cap/food/plan conditions are unresolved",
+          "id": "tribe-member-spawn-unresolved",
+          "side_effects": [
+            "mTribeMembers changes; food/population accounting is unknown"
+          ],
+          "source": "SDK cTribe.h:70-80,200-212",
+          "to_state": "at_or_above_target_layout_hypothesis"
+        },
+        {
+          "actions": [
+            "remove a member from the tribe"
+          ],
+          "cause": "member death, selection, or planner action",
+          "entry_actions": [
+            "resolve member index and owner vectors"
+          ],
+          "event": "tribe_member_removed",
+          "exit_actions": [
+            "member and selectable-member vectors reconcile"
+          ],
+          "from_state": "at_or_above_target_layout_hypothesis",
+          "guard": "member index and owner semantics are unresolved",
+          "id": "tribe-member-remove-unresolved",
+          "side_effects": [
+            "mTribeMembers/mSelectableMembers may change"
+          ],
+          "source": "SDK cTribe.h:73-80",
+          "to_state": "below_target_layout_hypothesis"
+        }
+      ],
+      "validation_strategy": [
+        "Resolve cTribePlanner vtable/update body and all writers/readers of cTribePlan+0x04, +0x0c, +0x10, +0x14, and +0x18.",
+        "Trace mPopulationTimer expiry, cTribe::SpawnMember, member removal, and cTribeData population/food writes in one trace.",
+        "Exercise initial population below, equal to, and above mMaxPopulation and planner min/max targets.",
+        "Do not label the plan-state integer or infer a hard cap until the comparison and branch bodies are recovered."
+      ]
+    },
+    {
+      "actions": [
+        "track herd target size and shortfall",
+        "track respawn rate, egg, nest, extinction, and transient state",
+        "track evolution thresholds and generation"
+      ],
+      "confidence": {
+        "level": "low",
+        "reason": "SDK fields and existing progression research establish the intended state surfaces, but no targeted respawn/evolution runtime body is committed"
+      },
+      "consumers": [
+        "cHerd",
+        "cNpcTribeController",
+        "cCreatureAnimal",
+        "creature-stage evolution and herd systems"
+      ],
+      "entry_actions": [
+        {
+          "action": "read target herd size, initial shortfall, respawn rate, egg/nest pointers, and evolution fields",
+          "conditions": [
+            "herd state exists"
+          ],
+          "evidence": "Spore-ModAPI cHerd.h:39-93"
+        }
+      ],
+      "events": [
+        "herd_respawn_checked",
+        "herd_evolution_checked"
+      ],
+      "evidence": [
+        {
+          "address": "cHerd+0xf0/+0xf4/+0xf8",
+          "claim": "Herd stores generation, target herd size, and initial shortfall",
+          "kind": "sdk_structure",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore/Simulator/cHerd.h:84-92; knowledgegraph/research/state-machines/progression.json:2456-2460"
+        },
+        {
+          "address": "cHerd+0x11c",
+          "claim": "mRespawnRate is a named int field",
+          "kind": "sdk_structure",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore/Simulator/cHerd.h:84-92; KG field row"
+        },
+        {
+          "address": "cHerd+0x160/+0x194/+0x198",
+          "claim": "Herd stores nest, egg-layer, and eggs-in-nest state",
+          "kind": "sdk_structure",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore/Simulator/cHerd.h:84-92"
+        },
+        {
+          "address": "cHerd+0x85/+0x94",
+          "claim": "Herd stores mbShouldEvolve and mDNAEvolutionThreshold",
+          "kind": "sdk_structure",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore/Simulator/cHerd.h:39-60; knowledgegraph/research/state-machines/progression.json:2449-2454"
+        },
+        {
+          "address": "cHerd+0x190/+0x192",
+          "claim": "Herd stores mbExtinction and mbTransientHerd flags",
+          "kind": "sdk_structure",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore/Simulator/cHerd.h:84-92"
+        }
+      ],
+      "generated_events": [],
+      "guards": [
+        "mRespawnRate semantics and timer domain are unresolved",
+        "mTargetHerdSize comparison and spawn action are unresolved",
+        "mbShouldEvolve and mDNAEvolutionThreshold guard only an inferred evolution transition",
+        "egg/nest hatching and extinction transitions are unresolved"
+      ],
+      "name": "herd_respawn_and_evolution_surface",
+      "possible_states": [
+        {
+          "actions": [
+            "herd state and evolution fields exist"
+          ],
+          "guards": [
+            "cHerd initialized"
+          ],
+          "name": "surface_present",
+          "raw_value": "cHerd field set"
+        },
+        {
+          "actions": [
+            "hypothesized herd below target size"
+          ],
+          "guards": [
+            "current herd count below mTargetHerdSize"
+          ],
+          "name": "below_target_layout_hypothesis",
+          "raw_value": "not directly observed"
+        },
+        {
+          "actions": [
+            "hypothesized respawn/egg path"
+          ],
+          "guards": [
+            "respawn rate/timer or egg/nest condition is due"
+          ],
+          "name": "respawn_due_unresolved",
+          "raw_value": "not directly observed"
+        },
+        {
+          "actions": [
+            "hypothesized herd evolution check"
+          ],
+          "guards": [
+            "mbShouldEvolve true and DNA threshold met"
+          ],
+          "name": "evolution_due_layout_hypothesis",
+          "raw_value": "not directly observed"
+        },
+        {
+          "actions": [
+            "hypothesized extinction state"
+          ],
+          "guards": [
+            "mbExtinction is set"
+          ],
+          "name": "extinct_layout_hypothesis",
+          "raw_value": "not directly observed"
+        }
+      ],
+      "relevant_functions": [
+        "SDK cHerd::Create 0x00b237c0",
+        "cNpcTribeController growth-timer surface",
+        "cCreatureBase::GrowUp",
+        "unresolved herd update/respawn/evolution body"
+      ],
+      "relevant_structures": [
+        "cHerd",
+        "cCreatureAnimal",
+        "cEgg",
+        "cNest",
+        "cNpcTribeController",
+        "cCreatureBase"
+      ],
+      "side_effects": [
+        "possible herd member/egg creation",
+        "possible generation and species-profile update",
+        "possible extinction/transient flags",
+        "no runtime side effect is claimed from layout alone"
+      ],
+      "state_variable": {
+        "address": "cHerd+0x85/+0x94/+0xf0/+0xf4/+0xf8/+0x11c/+0x160/+0x190/+0x192/+0x194/+0x198",
+        "expression": "evolution tuple plus target/shortfall/respawn/egg/nest/extinction/transient herd state",
+        "owner": "cHerd with related creature/nest/egg owners",
+        "support": "SDK/KG layout is confirmed; transition guards and actions are intentionally unresolved",
+        "type": "bool, int, float threshold, timers, intrusive pointers, vectors"
+      },
+      "status": "layout_only_unresolved",
+      "transitions": [
+        {
+          "actions": [
+            "evaluate whether herd population needs replenishment"
+          ],
+          "cause": "herd update or respawn timer",
+          "entry_actions": [
+            "read mTargetHerdSize, mInitialShortfall, and mRespawnRate"
+          ],
+          "event": "herd_respawn_checked",
+          "exit_actions": [
+            "schedule, spawn, or skip replenishment"
+          ],
+          "from_state": "surface_present",
+          "guard": "timer and comparison rules are unresolved",
+          "id": "herd-respawn-unresolved",
+          "side_effects": [
+            "mHerd/mEggs/mHerd membership may change"
+          ],
+          "source": "SDK cHerd.h:39-93; committed progression research",
+          "to_state": "respawn_due_unresolved or below_target_layout_hypothesis"
+        },
+        {
+          "actions": [
+            "evaluate evolution request and DNA threshold"
+          ],
+          "cause": "herd progression/evolution check",
+          "entry_actions": [
+            "read mbShouldEvolve and mDNAEvolutionThreshold"
+          ],
+          "event": "herd_evolution_checked",
+          "exit_actions": [
+            "select evolved species and advance generation or retain herd"
+          ],
+          "from_state": "surface_present",
+          "guard": "exact threshold/domain and writer are unresolved",
+          "id": "herd-evolution-unresolved",
+          "side_effects": [
+            "generation/species state may change"
+          ],
+          "source": "knowledgegraph/research/state-machines/progression.json:2415-2579",
+          "to_state": "evolution_due_layout_hypothesis or surface_present"
+        },
+        {
+          "actions": [
+            "set or clear extinction state"
+          ],
+          "cause": "herd population reaches zero or external event",
+          "entry_actions": [
+            "resolve herd member/egg state"
+          ],
+          "event": "herd_respawn_checked",
+          "exit_actions": [
+            "stop or change herd behavior"
+          ],
+          "from_state": "below_target_layout_hypothesis",
+          "guard": "extinction rule is unresolved",
+          "id": "herd-extinction-unresolved",
+          "side_effects": [
+            "mbExtinction and downstream behavior may change"
+          ],
+          "source": "SDK layout only",
+          "to_state": "extinct_layout_hypothesis"
+        }
+      ],
+      "validation_strategy": [
+        "Resolve cHerd update/vtable bodies and every writer/reader of target size, shortfall, respawn rate, egg/nest pointers, and extinction flags.",
+        "Trace a herd from egg/nest state through population replenishment and record herd, egg, and member vectors before/after each timer.",
+        "Resolve mDNAEvolutionThreshold, mbShouldEvolve, generation, and evolved species selection; do not rely on the SDK field names alone.",
+        "Correlate herd respawn with creature ownership, egg hatching, nest state, and any runtime event/message consumers."
+      ]
+    },
+    {
+      "actions": [
+        "track city community and robotic population fields",
+        "spawn/configure vehicles for a city",
+        "track culture-target maximum/current bucket populations"
+      ],
+      "confidence": {
+        "level": "low",
+        "reason": "SDK layouts and the vehicle load body support the configuration surface, but city population cap, SpawnVehicle lifecycle, and removal/cleanup behavior are not recovered"
+      },
+      "consumers": [
+        "cCity::SpawnVehicle",
+        "cVehicle::Load",
+        "city culture/behavior systems",
+        "vehicle combat and economy"
+      ],
+      "entry_actions": [
+        {
+          "action": "resolve city owner/civilization, vehicle purpose, locomotion, and resource key",
+          "conditions": [
+            "city and vehicle services are available"
+          ],
+          "evidence": "Spore-ModAPI cCity.h:101-112 and cVehicle load research"
+        }
+      ],
+      "events": [
+        "city_vehicle_spawn_requested",
+        "vehicle_configuration_committed"
+      ],
+      "evidence": [
+        {
+          "address": "tCultureTargetInfo+0x00/+0x08",
+          "claim": "Culture target info stores max population and current population buckets",
+          "kind": "sdk_structure",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore/Simulator/cCity.h:50-71"
+        },
+        {
+          "address": "cCity+0x64c",
+          "claim": "mRoboPopulation is a city field",
+          "kind": "sdk_structure",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore/Simulator/cCity.h:184-190; KG field row"
+        },
+        {
+          "address": "cCommunity+0xe4",
+          "claim": "mCommunityMembers is a vector of intrusive members",
+          "kind": "sdk_structure",
+          "level": "CONFIRMED",
+          "source": "Spore-ModAPI/Spore/Simulator/cCommunity.h:67-110; KG field row"
+        },
+        {
+          "address": "cVehicle+0xb1c/+0xb20",
+          "claim": "Vehicle locomotion and purpose are persisted in cVehicle state",
+          "kind": "sdk_structure_and_decompilation",
+          "level": "SUPPORTED",
+          "source": "knowledgegraph/research/state-machines/empire-space.json:2452-2507"
+        },
+        {
+          "address": "0x00bdde70 / SDK 0x00bddef0",
+          "claim": "cCity::SpawnVehicle is the city vehicle creation surface, but its full body and cap guards are not committed",
+          "kind": "sdk_boundary_and_kg_xref",
+          "level": "SUPPORTED",
+          "source": "Spore-ModAPI/Spore/Simulator/cCity.h:107,233-237; knowledgegraph/triage/sdk-boundary-repairs-2540f2ca.json:919"
+        }
+      ],
+      "generated_events": [
+        "vehicle_configuration_committed"
+      ],
+      "guards": [
+        "culture target max/current buckets are not proven to be a global city population cap",
+        "vehicle spawn purpose/locomotion are supported configuration values, not lifecycle states",
+        "cCity::SpawnVehicle result ownership and failure path are unresolved"
+      ],
+      "name": "city_population_and_vehicle_surface",
+      "possible_states": [
+        {
+          "actions": [
+            "city population and vehicle fields exist but no cap transition is proven"
+          ],
+          "guards": [
+            "SDK layout only"
+          ],
+          "name": "surface_present",
+          "raw_value": "cCity/cCommunity fields"
+        },
+        {
+          "actions": [
+            "hypothesized vehicle request before configuration"
+          ],
+          "guards": [
+            "city spawn request is valid"
+          ],
+          "name": "vehicle_spawn_requested_unresolved",
+          "raw_value": "not directly observed"
+        },
+        {
+          "actions": [
+            "store vehicle locomotion/purpose and load resources/models"
+          ],
+          "guards": [
+            "vehicle load body completes"
+          ],
+          "name": "vehicle_configuration_committed",
+          "raw_value": "cVehicle configuration fields written"
+        },
+        {
+          "actions": [
+            "hypothesized current population below culture target maximum"
+          ],
+          "guards": [
+            "bucket current < bucket max"
+          ],
+          "name": "below_culture_target_layout_hypothesis",
+          "raw_value": "not directly observed"
+        }
+      ],
+      "relevant_functions": [
+        "Simulator::cCity::SpawnVehicle SDK 0x00bddef0 / current body 0x00bdde70",
+        "Simulator::cVehicle::Load 0x00ca6630",
+        "Simulator::cCity::RemoveBuilding SDK 0x00be34a0",
+        "cCommunity population accessors"
+      ],
+      "relevant_structures": [
+        "cCity",
+        "cCommunity",
+        "tCultureTargetInfo",
+        "cVehicle",
+        "cCivilization",
+        "cBuilding"
+      ],
+      "side_effects": [
+        "potential vehicle creation/configuration",
+        "potential city/culture population bucket changes",
+        "potential building removal container mutation",
+        "no city population cap transition is claimed"
+      ],
+      "state_variable": {
+        "address": "tCultureTargetInfo+0x00/+0x08; cCity+0x64c; cCommunity+0xe4; cVehicle+0xb1c/+0xb20",
+        "expression": "culture max/current population buckets plus community/robo population and vehicle configuration",
+        "owner": "cCity/cCommunity/cVehicle and culture-target records",
+        "support": "SDK layouts and vehicle load decompilation support the surface; city cap semantics and spawn/despawn body are unresolved",
+        "type": "integer buckets/vectors and VehicleLocomotion/VehiclePurpose"
+      },
+      "status": "vehicle_configuration_supported_city_cap_unresolved",
+      "transitions": [
+        {
+          "actions": [
+            "request vehicle creation for a city"
+          ],
+          "cause": "city/civilization spawn path",
+          "entry_actions": [
+            "resolve purpose, locomotion, resource key, and space-stage flag"
+          ],
+          "event": "city_vehicle_spawn_requested",
+          "exit_actions": [
+            "vehicle enters load/configuration path or fails"
+          ],
+          "from_state": "surface_present",
+          "guard": "city owner/service validity is unresolved",
+          "id": "city-vehicle-request-unresolved",
+          "side_effects": [
+            "city/vehicle actor state may change"
+          ],
+          "source": "SDK cCity.h:101-112; KG xrefs at 0x00bdde70",
+          "to_state": "vehicle_spawn_requested_unresolved"
+        },
+        {
+          "actions": [
+            "write locomotion and purpose",
+            "load model/resource/tool/owner state",
+            "release temporary references"
+          ],
+          "cause": "vehicle load",
+          "entry_actions": [
+            "resolve cVehicle owner and configuration"
+          ],
+          "event": "vehicle_configuration_committed",
+          "exit_actions": [
+            "vehicle configuration is committed"
+          ],
+          "from_state": "vehicle_spawn_requested_unresolved",
+          "guard": "load body completes successfully",
+          "id": "city-vehicle-configure",
+          "side_effects": [
+            "cVehicle fields and dependent resource references mutate"
+          ],
+          "source": "0x00ca6630",
+          "to_state": "vehicle_configuration_committed"
+        },
+        {
+          "actions": [
+            "update culture target current/max bucket population"
+          ],
+          "cause": "culture/city population update",
+          "entry_actions": [
+            "read current and maximum culture target buckets"
+          ],
+          "event": "city_vehicle_spawn_requested",
+          "exit_actions": [
+            "retain or adjust city population state"
+          ],
+          "from_state": "surface_present",
+          "guard": "population comparison and update body are unresolved",
+          "id": "city-population-update-unresolved",
+          "side_effects": [
+            "culture target bucket values may change"
+          ],
+          "source": "SDK cCity.h:50-71; committed unresolved city research",
+          "to_state": "below_culture_target_layout_hypothesis or surface_present"
+        }
+      ],
+      "validation_strategy": [
+        "Decompile and type the complete cCity::SpawnVehicle body, including all null, owner, resource, and capacity guards.",
+        "Trace city community members, mRoboPopulation, culture target buckets, and vehicle vectors before/after spawn and destruction.",
+        "Determine whether culture max/current buckets are a hard cap, target, or unrelated behavior threshold.",
+        "Trace cCity::RemoveBuilding and every vehicle release/destruction path to establish despawn and population reconciliation."
+      ]
+    }
+  ],
+  "temporal_semantics": {
+    "call_order": [
+      {
+        "claim": "Cell initialization resets state, initializes pool support, loads world/UI/serializable references, and invokes stage rebuild/setup before returning",
+        "evidence": [
+          "0x00e80ba0",
+          "0x00e7fd00"
+        ],
+        "order": [
+          "reset Cell state",
+          "initialize pool/query support",
+          "load world and serializable references",
+          "invoke rebuild/setup helpers",
+          "return to mode lifecycle"
+        ]
+      },
+      {
+        "claim": "Cell object creation computes content/size state, obtains a pool slot, initializes object fields, creates query/effect/GFX associations, and returns the index",
+        "evidence": [
+          "0x00e74a20"
+        ],
+        "order": [
+          "resolve resource and size inputs",
+          "allocate pool object",
+          "initialize transform/resource/scale state",
+          "create query/effect/GFX associations",
+          "return pool index"
+        ]
+      },
+      {
+        "claim": "Cell despawn detaches avatar/query/GFX/association state, may create a replacement, and releases the old object",
+        "evidence": [
+          "0x00e780a0"
+        ],
+        "order": [
+          "lookup index",
+          "clear matching avatar reference",
+          "release GFX/association/query state",
+          "optional replacement creation",
+          "release old pool object"
+        ]
+      },
+      {
+        "claim": "Star regeneration writes observation time and pending/manager state before calling the planet-generation body",
+        "evidence": [
+          "0x00bb4af0"
+        ],
+        "order": [
+          "read mPlanetCount",
+          "evaluate timing guard",
+          "write mLastObservedTime",
+          "erase pending star and reset manager state",
+          "call planet generation"
+        ]
+      },
+      {
+        "claim": "Star persistence follows generation/availability work and uses temporary database state before persistent replacement",
+        "evidence": [
+          "0x00bb4ba0",
+          "knowledgegraph/research/data-model/06-empire-space-data.json:771"
+        ],
+        "order": [
+          "ensure/generate planet records",
+          "update manager/record state",
+          "write temporary database",
+          "replace persistent database"
+        ]
+      }
+    ],
+    "lifecycle_limits": [
+      "No positive runtime trace is available for Cell spawn, death, despawn, stage rebuild, city vehicle spawn, tribe population, herd respawn, or star regeneration.",
+      "The original generic cObjectPool_ address mapping is contradictory near 0x00b72160/0x00b72260/0x00b72270, so generic pool behavior is not treated as universally interchangeable with the Cell-specific pool.",
+      "The current OpenSpore CellPool is a clean-room projection; it is evidence for tests and structure preservation, not proof of original runtime population semantics.",
+      "All population-cap names from SDK fields are treated as state surfaces until their comparison and mutation bodies are recovered."
+    ],
+    "ownership": [
+      {
+        "fact": "cCellGame owns the main cell pool, current/background query handles, current/background world references, and mAvatarCellIndex",
+        "level": "SUPPORTED",
+        "source": "Spore-ModAPI cCellGame.h:39-91; KG field rows"
+      },
+      {
+        "fact": "Each cCellObjectData first word carries pool identity/free-list linkage; object-specific GFX/query/association cleanup precedes pool reuse for the recovered despawn path",
+        "level": "SUPPORTED",
+        "source": "Spore-ModAPI cCellObjectData.h:15-17; docs/analysis/dossiers/unknown-high/cell-object-pool-lifecycle.md"
+      },
+      {
+        "fact": "cStarManager owns the star grid and temporary/persistent planet-record database handles; cStarRecord carries the count and lazy planet vector",
+        "level": "SUPPORTED",
+        "source": "Spore-ModAPI StarManager.h:281-325; cStarRecord.h:62-116"
+      },
+      {
+        "fact": "SDK intrusive vectors indicate member/plan/city population ownership surfaces, but exact runtime add/remove and release ordering are not recovered",
+        "level": "INFERRED",
+        "source": "Spore-ModAPI cTribe.h, cCommunity.h, cCity.h; committed unresolved research"
+      }
+    ],
+    "runtime": {
+      "cell_stage_reached": false,
+      "committed_trace_status": "negative",
+      "runtime_claims_promoted": false
+    },
+    "timing": [
+      {
+        "claim": "Cell stage updates are frame-driven and scale delta time before active population/query/GFX callbacks",
+        "evidence": [
+          "0x00e806b0",
+          "0x00e7c8c0"
+        ],
+        "status": "static_supported"
+      },
+      {
+        "claim": "Cell scale-aware replacement is conditional on the caller's respawn flag and a changed stage scale; exact replacement interval is not recovered",
+        "evidence": [
+          "0x00e780a0",
+          "docs/analysis/dossiers/unknown-high/cell-object-pool-lifecycle.md:18-43"
+        ],
+        "status": "static_supported_partial"
+      },
+      {
+        "claim": "Star regeneration has an explicit timing check and writes mLastObservedTime; the duration/units are not fully characterized beyond the dossier's minutes note",
+        "evidence": [
+          "0x00bb4af0",
+          "docs/analysis/dossiers/unknown-high/star-system-regen.md:39-42"
+        ],
+        "status": "static_supported_partial"
+      },
+      {
+        "claim": "Tribe population, herd respawn, and city culture buckets expose timer fields, but timer expiry and cadence bodies are not committed",
+        "evidence": [
+          "Spore-ModAPI cTribe.h:106-154",
+          "Spore-ModAPI cHerd.h:84-92",
+          "Spore-ModAPI cCity.h:50-71"
+        ],
+        "status": "layout_only_unresolved"
+      }
+    ]
+  },
+  "unresolved": [
+    {
+      "blocking_question": "What is the exact original cObjectPool_ free-list sentinel, index-zero validity rule, and address-to-SDK entry mapping?",
+      "confidence": {
+        "level": "high",
+        "reason": "SDK layout and Cell-specific usage are strong, but committed repair explicitly records nearby entry conflicts"
+      },
+      "evidence": [
+        "Spore-ModAPI/Spore/Simulator/cObjectPool.h:43-90",
+        "knowledgegraph/triage/sdk-boundary-repairs-2540f2ca.json:887-889",
+        "knowledgegraph/research/state-machines/cell-stage.json:724-950"
+      ],
+      "id": "U-001-pool-contract",
+      "impact": "Current pool tests and any generic pool reuse cannot be called original-ABI compatible until the sentinel and lookup domain are proven",
+      "required_evidence": "Byte-verify 0x00b72160/0x00b72260/0x00b72270, disassemble allocator push/pop, and trace index zero plus exhaustion in the original",
+      "state_surface": {
+        "address": "cObjectPool_+0x04; cCellObjectData+0x00",
+        "field": "mNextAvailableIndex and mObjectPoolIndex",
+        "supported_names": [],
+        "type": "cObjectPoolIndex/int32"
+      },
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "Which concrete function maps cCellWorldResource/cMarker records and marker counts to CreateCellObject calls, and what numeric cap, if any, is enforced?",
+      "confidence": {
+        "level": "high",
+        "reason": "SDK records and preload traversal are strong, but runtime placement and population execution are explicitly absent from committed research"
+      },
+      "evidence": [
+        "Spore-ModAPI/Spore/Simulator/Cell/cCellResource.h:200-284",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__PreloadPopulateResource.c:42-173",
+        "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json:840-850,930-947"
+      ],
+      "id": "U-002-cell-population-placement",
+      "impact": "Cell content can be decoded and preloaded, but actual population count, placement, player identity, and marker count semantics remain unknown",
+      "required_evidence": "Trace all CreateCellObject callers and current/background world population helpers, including direct marker count and scale-bucket comparisons",
+      "state_surface": {
+        "address": "cCellPopulateResource+0x08; cMarker+0x2c..+0x48; sCellGame+0x4114/+0x4118",
+        "field": "numMarkers, marker count fields, current/background world references",
+        "supported_names": [
+          "count",
+          "count_easy",
+          "count_med",
+          "count_hard"
+        ],
+        "type": "int/float marker records and Cell world references"
+      },
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "What are the exact respawn and regeneration policies for Cell entities after death, eating, invalid scale, and stage transition?",
+      "confidence": {
+        "level": "high",
+        "reason": "The cleanup/rebuild sequence is supported, but the caller-specific respawn flag and replacement policy are only partially named"
+      },
+      "evidence": [
+        "docs/analysis/dossiers/unknown-high/cell-object-pool-lifecycle.md:18-85",
+        "Spore-ModAPI/Spore/Simulator/Cell/cCellResource.h:337-388",
+        "Spore-ModAPI/Spore/Simulator/Cell/cCellObjectData.h:131-149"
+      ],
+      "id": "U-003-cell-respawn-policy",
+      "impact": "Do not infer universal automatic respawn from the presence of spawnTime or from a single despawn caller",
+      "required_evidence": "Trace all 0x00e780a0 callers, spawnTime/rest/output readers, and death/eat interaction records in one Cell-stage trace",
+      "state_surface": {
+        "address": "cCellObjectData+0x234; cAIData+0x48..+0x50",
+        "field": "mSpawnTime, spawnTime, spawnRestTime, spawnOutput",
+        "supported_names": [],
+        "type": "float plus resource reference"
+      },
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "What are the exact current-Ghidra and SDK entry boundaries for RequirePlanetsForStar and GeneratePlanetsForStar, and do they append to mPlanets or only count records?",
+      "confidence": {
+        "level": "high",
+        "reason": "SDK names, repaired containing functions, dossier sequence, and KG xrefs establish the lifecycle seam but not the complete body contract"
+      },
+      "evidence": [
+        "docs/analysis/dossiers/unknown-high/star-system-regen.md:39-73",
+        "knowledgegraph/triage/sdk-boundary-repairs-2540f2ca.json:905-906",
+        "Spore-ModAPI/Spore/Simulator/SubSystem/StarManager.h:245-259"
+      ],
+      "id": "U-004-star-generation-boundary",
+      "impact": "The regeneration order is reliable, but exact record-vector ownership, lazy-load, and generated-count semantics remain partial",
+      "required_evidence": "Decompile/type the complete containing bodies and record mPlanetCount, mPlanets, terrain key, type, scores, and database writes before/after",
+      "state_surface": {
+        "address": "cStarRecord+0x84/+0xac; cStarManager+0x224/+0x228",
+        "field": "mPlanets, mPlanetCount, temporary and persistent planet databases",
+        "supported_names": [],
+        "type": "intrusive vector, char, database pointers"
+      },
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "What exact writers and guards implement tribe population, food, member removal, plan execution, and archetype max-population enforcement?",
+      "confidence": {
+        "level": "high",
+        "reason": "Committed creature-civilization research explicitly records no recovered scheduler or population state machine"
+      },
+      "evidence": [
+        "Spore-ModAPI/Spore/Simulator/cTribe.h:70-84,140-152",
+        "Spore-ModAPI/Spore/Simulator/cTribePlanner.h:16-86",
+        "knowledgegraph/research/state-machines/creature-civilization.json:3073-3089"
+      ],
+      "id": "U-005-tribe-population",
+      "impact": "Tribe population fields and target names are known, but no cap, spawn, removal, or food transition can be reconstructed",
+      "required_evidence": "Resolve cTribePlanner update/vtable and all cTribePlan state/target/food writers; trace SpawnMember and member removal with cTribeData writes",
+      "state_surface": {
+        "address": "cTribe+0x340/+0x510; cTribePlan+0x04/+0x20/+0x24",
+        "field": "mTribeMembers, mPopulationTimer, plan state and target population",
+        "supported_names": [],
+        "type": "intrusive vector, cGonzagoTimer, int"
+      },
+      "status": "unresolved_no_integer_semantics"
+    },
+    {
+      "blocking_question": "What exact timer, egg, nest, target-size, and extinction rules govern herd respawn and evolution?",
+      "confidence": {
+        "level": "high",
+        "reason": "SDK state fields and committed progression research establish the surface, while explicitly withholding the transition body"
+      },
+      "evidence": [
+        "Spore-ModAPI/Spore/Simulator/cHerd.h:39-93",
+        "knowledgegraph/research/state-machines/progression.json:2415-2579"
+      ],
+      "id": "U-006-herd-respawn-evolution",
+      "impact": "Herd respawn rate, target size, egg/nest state, and DNA evolution cannot be converted into a reliable state machine",
+      "required_evidence": "Resolve cHerd update/vtable and cNpcTribeController growth timers; trace all target/shortfall/respawn/egg/nest/evolution fields and cCreatureBase::GrowUp",
+      "state_surface": {
+        "address": "cHerd+0x85/+0x94/+0xf4/+0xf8/+0x11c/+0x160/+0x194/+0x198",
+        "field": "evolution, target, shortfall, respawn, nest, egg, and extinction state",
+        "supported_names": [],
+        "type": "bool/int/float/timer/intrusive pointers/vectors"
+      },
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "Do city culture buckets represent a hard population cap, and what are the exact cCity::SpawnVehicle, vehicle destruction, and population update bodies?",
+      "confidence": {
+        "level": "high",
+        "reason": "SDK fields and vehicle load decompilation are available, but committed city research explicitly withholds a city/building lifecycle"
+      },
+      "evidence": [
+        "Spore-ModAPI/Spore/Simulator/cCity.h:50-71,101-112,184-190",
+        "knowledgegraph/research/state-machines/creature-civilization.json:3115-3129",
+        "knowledgegraph/research/state-machines/empire-space.json:2467-2507"
+      ],
+      "id": "U-007-city-population-vehicle",
+      "impact": "Vehicle configuration is supported, but city population caps, spawn failure, and despawn/destruction reconciliation are unknown",
+      "required_evidence": "Decompile/type cCity::SpawnVehicle, vehicle release paths, city population updates, and all writers of culture max/current buckets",
+      "state_surface": {
+        "address": "tCultureTargetInfo+0x00/+0x08; cCity+0x64c; cVehicle+0xb1c/+0xb20",
+        "field": "culture max/current buckets, robo population, vehicle locomotion/purpose",
+        "supported_names": [],
+        "type": "integer buckets and vehicle enums"
+      },
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "What are the scenario marker/respawner event consumers and exact lifecycle of scenario powerup objects?",
+      "confidence": {
+        "level": "high",
+        "reason": "SDK documents marker-driven creation and a respawner-related powerup factory, but no binary transition body is committed"
+      },
+      "evidence": [
+        "Spore-ModAPI/Spore/Simulator/cScenarioData.h:62-81",
+        "knowledgegraph/research/state-machines/creature-civilization.json:3115-3129"
+      ],
+      "id": "U-008-scenario-respawner",
+      "impact": "Scenario population/object instantiation is a named SDK surface, not a recovered original state machine",
+      "required_evidence": "Resolve CreateObjectInstance/CreatePowerupObjectInstance bodies, marker maps, destruction, and respawner callbacks",
+      "state_surface": {
+        "address": "cScenarioData+0x90/+0xb0",
+        "field": "mObjectsToMarkersMap and mMarkersToObjectsMap",
+        "supported_names": [],
+        "type": "marker/object maps"
+      },
+      "status": "unresolved"
+    },
+    {
+      "blocking_question": "Can a hash-pinned original runtime trace validate any spawning, despawn, regeneration, cap, or record-update transition in this domain?",
+      "confidence": {
+        "level": "high",
+        "reason": "Committed Cell runtime evidence is negative and no positive city/tribe/herd/planet lifecycle trace is present"
+      },
+      "evidence": [
+        "docs/devlog/018-s5-cell-runtime-evidence.md",
+        "knowledgegraph/research/state-machines/cell-stage.json:685-690",
+        "knowledgegraph/research/state-machines/creature-civilization.json:1127-1140"
+      ],
+      "id": "U-009-runtime-validation",
+      "impact": "All claims in this artifact are static; no lifecycle relation is runtime-verified",
+      "required_evidence": "Approved Wine/display traces with state probes and event correlation for Cell, city, tribe, herd, scenario, and star regeneration paths",
+      "state_surface": {
+        "address": null,
+        "field": null,
+        "supported_names": [],
+        "type": "runtime"
+      },
+      "status": "unresolved_runtime_absence"
+    }
+  ]
+}

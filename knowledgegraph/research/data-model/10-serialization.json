@@ -1,0 +1,2048 @@
+{
+  "schema_version": "openspore-serialization-1",
+  "track": {
+    "id": "serialization-and-persistence",
+    "title": "Original Spore asset schemas, serialization boundaries, ownership, and persistence archaeology",
+    "status": "RESEARCH_ONLY",
+    "array_policy": "All arrays are in authored deterministic order. No unordered-set output, random values, timestamps, wall-clock values, or runtime-generated identifiers are included.",
+    "original_binary_read": false,
+    "ghidra_mutated": false,
+    "implementation_modified": false,
+    "historical_artifacts_modified": false
+  },
+  "scope": {
+    "repository": "/home/juanr/Proyectos/OpenSpore",
+    "program": "SporeApp.exe",
+    "version": "3.1.0.22",
+    "architecture": "x86:LE:32:default",
+    "image_base": "0x00400000",
+    "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+    "included": [
+      "DBPF record identity and record-byte extraction boundary",
+      "Property, PropertyList, DirectPropertyList, and typed value codec helpers",
+      "ClassSerializer, Attribute, and simulator serialization interfaces",
+      "CellSerializer metadata and cCellDataReference runtime resolution",
+      "Direct Cell resource records and their fixed/variable schemas",
+      "Runtime ownership, lazy loading, release, teardown, and transient-versus-persistent fields",
+      "Saved-game header, GameLoadParameters, cGamePersistenceManager, and unknown save/load framing",
+      "Current OpenSpore source and test correspondence"
+    ],
+    "excluded": [
+      "SPORE/ filesystem access or modification",
+      "proprietary asset bytes, models, textures, sounds, scripts, and source copying",
+      "original-process save/load execution or runtime tracing",
+      "Ghidra mutation, re-analysis, saves, renames, and type changes",
+      "historical artifact rewrites",
+      "claims requiring a payload, checksum, encryption, or slot/profile trace not present in the evidence"
+    ],
+    "interpretation_rule": "A direct Cell record layout is a content-record schema; it is not evidence that the record uses a CellSerializer envelope or that it is a player/profile save record."
+  },
+  "evidence_base": [
+    {
+      "id": "binary-baseline",
+      "kind": "pinned_binary_identity",
+      "status": "VERIFIED",
+      "path": "docs/RECON-3.1.0.22.md:1-24",
+      "claim": "The research target is SporeApp.exe 3.1.0.22, x86:LE:32, image base 0x00400000, with the recorded SHA-256."
+    },
+    {
+      "id": "ghidra-read-only",
+      "kind": "static_ghidra_query",
+      "status": "VERIFIED",
+      "query": "Read-only SporeApp.exe function, decompilation, structure, and xref queries",
+      "claim": "Static bodies and layouts were used to establish bounded call shape and ownership behavior; no Ghidra write or save was performed."
+    },
+    {
+      "id": "sdk-reference",
+      "kind": "sdk_layout_and_names",
+      "status": "VERIFIED",
+      "path": ".spore-analysis/ghidra-exports/spore_sdk.xml",
+      "claim": "SDK names, sizes, field offsets, enum values, and interface declarations are static evidence, not proof of undocumented behavior."
+    },
+    {
+      "id": "propertylist-bodies",
+      "kind": "ghidra_decompilation",
+      "status": "VERIFIED",
+      "paths": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/App__PropertyList__Read.c",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/App__PropertyList__Write.c"
+      ],
+      "claim": "The PropertyList read/write bodies expose count/property dispatch and stream boundaries; exact value bytes remain unresolved."
+    },
+    {
+      "id": "cell-direct-records",
+      "kind": "current_clean_room_decoders_and_tests",
+      "status": "VERIFIED",
+      "paths": [
+        "src/assets/CellResource.hpp:1-502",
+        "src/assets/CellResource.cpp:14-1124",
+        "tools/spore/cellres/cell.py:1-100",
+        "tools/spore/cellres/cellres.py:1-100",
+        "tools/spore/cellres/cellworld.py:1-100",
+        "tools/spore/cellres/cellpop.py:1-100",
+        "tools/spore/cellres/cellstruct.py:1-100",
+        "tools/spore/cellres/cellloot.py:1-100",
+        "tools/spore/cellres/celllook.py:1-100"
+      ],
+      "claim": "The current clean-room decoders and committed tests recover direct Cell record layouts, fixed sizes, count spans, references, and domain constraints."
+    },
+    {
+      "id": "cell-dataref-runtime",
+      "kind": "ghidra_decompilation",
+      "status": "VERIFIED",
+      "paths": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellDataReference___Create.c"
+      ],
+      "claim": "The original Cell data-reference path caches by instance and serializer, increments ownership, loads resources lazily, and releases/clears the cache."
+    },
+    {
+      "id": "persistence-layout",
+      "kind": "sdk_and_static_layout",
+      "status": "VERIFIED",
+      "paths": [
+        ".spore-analysis/ghidra-exports/spore_sdk.xml:24956-25015",
+        "knowledgegraph/research/data-model/09-save-load-persistence.json:245-304"
+      ],
+      "claim": "The saved-game header, load parameters, persistence manager, ClassSerializer, and Cell serializable-data layouts are statically known at bounded field-level only."
+    },
+    {
+      "id": "historical-envelope-claim",
+      "kind": "research_history",
+      "status": "VERIFIED",
+      "path": "docs/analysis/campaigns/cell-stage-campaign.md:250-268",
+      "claim": "An earlier campaign described a CellSerializer name/ID envelope, but the later direct-layout decoders and tests reject that model for the recovered Cell records."
+    },
+    {
+      "id": "openspore-resource-boundary",
+      "kind": "current_source",
+      "status": "VERIFIED",
+      "path": "src/compat/ResourceProvider.hpp:21-90",
+      "claim": "OpenSpore provides identity-to-record-byte access over one borrowed DBPF package or a memory stub; it does not claim original multi-package persistence."
+    },
+    {
+      "id": "openspore-cell-gfx",
+      "kind": "current_source",
+      "status": "VERIFIED",
+      "paths": [
+        "src/apps/CellGfx.hpp:1-76",
+        "src/apps/CellGfx.cpp:5-46"
+      ],
+      "claim": "OpenSpore models Cell GFX world tokens, named layers, preloaded record keys, and display state as current clean-room runtime state, not original serialized bytes."
+    },
+    {
+      "id": "runtime-negative",
+      "kind": "committed_runtime_artifact",
+      "status": "VERIFIED",
+      "path": "docs/STATE.md:3-4,94-98",
+      "claim": "The committed runtime campaign is negative for reaching Cell Stage under the tested conditions; no original save/load trace is available."
+    }
+  ],
+  "asset_types": [
+    {
+      "id": "0x00B1B104",
+      "name": "PROP",
+      "kind": "property_record",
+      "status": "VERIFIED",
+      "serialization_status": "UNKNOWN",
+      "size_bytes": null,
+      "layout_status": "UNKNOWN",
+      "identity": "DBPF type/group/instance record containing PropertyList data.",
+      "claim": "The PROP TypeID is known, but the exact PROP record envelope, property ordering, parent encoding, and round-trip framing are not fully recovered.",
+      "provenance": [
+        "src/assets/Dbpf.cpp:62",
+        "knowledgegraph/research/data-model/09-save-load-persistence.json:140-157",
+        "knowledgegraph/research/types/08-persistence-serialization.json:252-263"
+      ]
+    },
+    {
+      "id": "0x0F43029A",
+      "name": "world_object_or_model_part",
+      "kind": "render_world_content",
+      "status": "VERIFIED",
+      "serialization_status": "VERIFIED",
+      "size_bytes": null,
+      "layout_status": "PARTIAL",
+      "layout": "Lowercase part-name identity strings plus structural vector data; not a CellSerializer name/ID envelope.",
+      "claim": "The record is a distinct model/scene-part family, not a recovered CellSerializer envelope and not a Cell scene-placement record.",
+      "provenance": [
+        "docs/analysis/campaigns/cell-stage-campaign.md:218-248",
+        "knowledgegraph/research/data-model/14-openspore-cross-map.json:137-146"
+      ]
+    },
+    {
+      "id": "0x2A3CE5B7",
+      "name": "cCellGlobalsResource",
+      "kind": "cell_content_record",
+      "status": "VERIFIED",
+      "serialization_status": "VERIFIED",
+      "size_bytes": 276,
+      "field_count": 69,
+      "layout": "Direct field-by-field fixed record; every byte is accounted for by the current decoder.",
+      "persistence_class": "content_asset",
+      "claim": "This is stage-wide Cell tuning/content data, not cCellSerializableData and not player/profile save state.",
+      "provenance": [
+        "src/assets/CellResource.hpp:1-53",
+        "src/assets/CellResource.cpp:14-152",
+        "src/assets/tests/cellres_test.cpp:1-143",
+        "docs/analysis/campaigns/cell-stage-campaign.md:250-268"
+      ]
+    },
+    {
+      "id": "0x433FB70C",
+      "name": "cCellEffectMapResource",
+      "kind": "cell_content_record",
+      "status": "VERIFIED",
+      "serialization_status": "VERIFIED",
+      "size_bytes": null,
+      "layout": "8-byte header plus numEntries * 28-byte effect rows.",
+      "fields": [
+        "numEntries",
+        "entriesPtr",
+        "effectID",
+        "type",
+        "field_8",
+        "field_C",
+        "field_10",
+        "field_14",
+        "field_18"
+      ],
+      "persistence_class": "content_asset",
+      "claim": "The pointer slot is a serialized dead/preserved value and is not dereferenced by the current decoder.",
+      "provenance": [
+        "src/assets/CellResource.hpp:199-220",
+        "src/assets/CellResource.cpp:395-427",
+        "src/assets/tests/effectmap_test.cpp:1-157"
+      ]
+    },
+    {
+      "id": "0x4B9EF6DC",
+      "name": "cCellStructureResource",
+      "kind": "cell_content_record",
+      "status": "VERIFIED",
+      "serialization_status": "VERIFIED",
+      "size_bytes": null,
+      "layout": "28-byte header plus numAttachments * 40-byte attachment rows.",
+      "fields": [
+        "onDeath",
+        "onDeathSmall",
+        "onDeathLarge",
+        "onHatch",
+        "onStartHatch",
+        "attachmentsPtr",
+        "numAttachments",
+        "bone",
+        "type",
+        "structure",
+        "randomCreature",
+        "effectID",
+        "levelMin",
+        "levelMax",
+        "color[3]"
+      ],
+      "persistence_class": "content_asset",
+      "claim": "The record is direct structure/effect content and carries references to other Cell resources by instance-like values.",
+      "provenance": [
+        "src/assets/CellResource.hpp:406-440",
+        "src/assets/CellResource.cpp:815-905",
+        "src/assets/tests/cell_structure_test.cpp:1-176"
+      ]
+    },
+    {
+      "id": "0x612B3191",
+      "name": "cCellBackgroundMapResource",
+      "kind": "cell_content_record",
+      "status": "VERIFIED",
+      "serialization_status": "VERIFIED",
+      "size_bytes": null,
+      "layout": "8-byte header plus numEntries * 16-byte RGB/scale rows.",
+      "fields": [
+        "numEntries",
+        "entriesPtr",
+        "r",
+        "g",
+        "b",
+        "field_C"
+      ],
+      "persistence_class": "content_asset",
+      "claim": "The record supplies a background-color ramp keyed by a geometric scale ladder; the current sampler is a host-side interpretation.",
+      "provenance": [
+        "src/assets/CellResource.hpp:222-267",
+        "src/assets/CellResource.cpp:429-505,1234-1295",
+        "src/assets/tests/effectmap_test.cpp:60-157"
+      ]
+    },
+    {
+      "id": "0x754BE343",
+      "name": "cCellPowersResource",
+      "kind": "cell_content_record",
+      "status": "VERIFIED",
+      "serialization_status": "VERIFIED",
+      "size_bytes": 8,
+      "layout": "int32 teleportCost followed by float32 teleportRange.",
+      "persistence_class": "content_asset",
+      "claim": "This is a fixed-size content record, not a serializer envelope or save-state object.",
+      "provenance": [
+        "src/assets/CellResource.hpp:292-312",
+        "src/assets/CellResource.cpp:556-603",
+        "src/assets/tests/randcreature_test.cpp:1-156"
+      ]
+    },
+    {
+      "id": "0x8C042499",
+      "name": "cCellLookTableResource",
+      "kind": "cell_content_record",
+      "status": "VERIFIED",
+      "serialization_status": "VERIFIED",
+      "size_bytes": null,
+      "layout": "8-byte header plus numEntries * 8-byte type/value rows.",
+      "fields": [
+        "entriesPtr",
+        "numEntries",
+        "type",
+        "value"
+      ],
+      "persistence_class": "content_asset",
+      "claim": "Look-table rows are direct type/value records; the pointer slot is retained as a dead serialized value.",
+      "provenance": [
+        "src/assets/CellResource.hpp:314-364",
+        "src/assets/CellResource.cpp:606-710",
+        "tools/spore/cellres/celllook.py:1-23,70-85",
+        "src/assets/tests/cell_look_test.cpp:1-157"
+      ]
+    },
+    {
+      "id": "0x9B8E862F",
+      "name": "cCellWorldResource",
+      "kind": "cell_content_record",
+      "status": "VERIFIED",
+      "serialization_status": "VERIFIED",
+      "size_bytes": null,
+      "layout": "16-byte header plus numPopulate * 12-byte level entries plus numAdvect * 24-byte advect entries.",
+      "fields": [
+        "numPopulate",
+        "populatePtr",
+        "numAdvect",
+        "advectPtr",
+        "populate[].populate",
+        "populate[].startTile",
+        "populate[].playerSize",
+        "advect[].stageScale",
+        "advect[].playerSize",
+        "advect[].strength",
+        "advect[].variance",
+        "advect[].period",
+        "advect[].advectID"
+      ],
+      "persistence_class": "content_asset",
+      "claim": "The world record is direct count-and-array content; it is not a saved live cCellGame state object.",
+      "provenance": [
+        "src/assets/CellResource.hpp:165-197",
+        "src/assets/CellResource.cpp:1032-1124",
+        "src/assets/tests/cell_world_test.cpp:1-142",
+        "tools/spore/cellres/cellworld.py:1-100"
+      ]
+    },
+    {
+      "id": "0xD92AF091",
+      "name": "cCellLootTableResource",
+      "kind": "cell_content_record",
+      "status": "VERIFIED",
+      "serialization_status": "VERIFIED",
+      "size_bytes": null,
+      "layout": "36-byte header plus numEntries * 28-byte loot rows.",
+      "fields": [
+        "entriesPtr",
+        "numEntries",
+        "minRadius",
+        "maxRadius",
+        "initialAlpha",
+        "expelForce",
+        "effect",
+        "mustHavePart",
+        "delay",
+        "entries[].type",
+        "entries[].cell",
+        "entries[].table",
+        "entries[].weight",
+        "entries[].count",
+        "entries[].countDelta",
+        "entries[].levelOffset"
+      ],
+      "persistence_class": "content_asset",
+      "claim": "Loot rows contain Cell/table references and reward tuning; the current decoder validates reference domains but does not execute loot.",
+      "provenance": [
+        "src/assets/CellResource.hpp:366-404",
+        "src/assets/CellResource.cpp:712-813",
+        "src/assets/tests/cell_loot_test.cpp:1-147",
+        "tools/spore/cellres/cellloot.py:1-100"
+      ]
+    },
+    {
+      "id": "0xDA141C1B",
+      "name": "cCellPopulateResource",
+      "kind": "cell_content_record",
+      "status": "VERIFIED",
+      "serialization_status": "VERIFIED",
+      "size_bytes": null,
+      "layout": "16-byte header plus numMarkers * 76-byte marker/spawner rows.",
+      "fields": [
+        "scale",
+        "maskTexture",
+        "numMarkers",
+        "markersPtr",
+        "markers[].zOffset",
+        "markers[].zOffsetMax",
+        "markers[].distributeCell",
+        "markers[].clusterCell",
+        "markers[].plantType",
+        "markers[].type",
+        "markers[].count",
+        "markers[].size",
+        "markers[].parts"
+      ],
+      "persistence_class": "content_asset",
+      "claim": "Populate records carry spawn/distribution content and references to Cell records; they do not store per-entity x/y placement in the recovered layout.",
+      "provenance": [
+        "src/assets/CellResource.hpp:442-484",
+        "src/assets/CellResource.cpp:907-1030",
+        "src/assets/tests/cell_populate_test.cpp:1-155",
+        "tools/spore/cellres/cellpop.py:1-100"
+      ]
+    },
+    {
+      "id": "0xDBA35AE2",
+      "name": "cCellLookAlgorithmResource",
+      "kind": "cell_content_record",
+      "status": "VERIFIED",
+      "serialization_status": "VERIFIED",
+      "size_bytes": null,
+      "layout": "8-byte header plus numEntries * 20-byte algorithm rows.",
+      "fields": [
+        "entriesPtr",
+        "numEntries",
+        "type",
+        "action",
+        "player",
+        "npc",
+        "epic"
+      ],
+      "persistence_class": "content_asset",
+      "claim": "Algorithm rows reference look-table records by instance-like values; the current decoder validates those references.",
+      "provenance": [
+        "src/assets/CellResource.hpp:332-364",
+        "src/assets/CellResource.cpp:606-710",
+        "tools/spore/cellres/celllook.py:1-23,88-128"
+      ]
+    },
+    {
+      "id": "0xDFAD9F51",
+      "name": "cCellCellResource",
+      "kind": "cell_content_record",
+      "status": "VERIFIED",
+      "serialization_status": "VERIFIED",
+      "size_bytes": 796,
+      "layout": "Direct fixed field-by-field record containing a wide name, identity, AI blocks, behavior, and references.",
+      "fields": [
+        "structure",
+        "name[wchar16]",
+        "localeInstanceID",
+        "hp",
+        "flags",
+        "cellType",
+        "unlockType",
+        "density",
+        "sound",
+        "pieces",
+        "leak",
+        "expel",
+        "explosionTable",
+        "loot",
+        "poison",
+        "ai",
+        "aiHard",
+        "aiEasy",
+        "friendGroup",
+        "sizeMin",
+        "sizeMax",
+        "eat",
+        "triggersEscapeMission"
+      ],
+      "persistence_class": "content_asset",
+      "claim": "The record is direct fixed-layout Cell content, not a CellSerializer name/ID envelope and not live cell state.",
+      "provenance": [
+        "src/assets/CellResource.hpp:124-163",
+        "src/assets/CellResource.cpp:14-152",
+        "src/assets/tests/cell_cell_test.cpp:1-160",
+        "tools/spore/cellres/cell.py:1-100"
+      ]
+    },
+    {
+      "id": "0xF9C3D770",
+      "name": "cCellRandomCreatureResource",
+      "kind": "cell_content_record",
+      "status": "VERIFIED",
+      "serialization_status": "VERIFIED",
+      "size_bytes": null,
+      "layout": "8-byte header plus numEntries * 28-byte spawnable-creature rows.",
+      "fields": [
+        "numEntries",
+        "entriesPtr",
+        "type",
+        "creatureID",
+        "weight",
+        "speedMin",
+        "speedMax",
+        "dangerMin",
+        "dangerMax"
+      ],
+      "persistence_class": "content_asset",
+      "claim": "The record is direct spawnable-creature tuning/content and is not a runtime entity pool serialization.",
+      "provenance": [
+        "src/assets/CellResource.hpp:269-289",
+        "src/assets/CellResource.cpp:505-555",
+        "src/assets/tests/randcreature_test.cpp:1-156"
+      ]
+    }
+  ],
+  "schemas": [
+    {
+      "id": "ResourceKey",
+      "status": "VERIFIED",
+      "size_bytes": 12,
+      "fields": [
+        {"offset": "0x00", "name": "typeID", "type": "uint32_t"},
+        {"offset": "0x04", "name": "groupID", "type": "uint32_t"},
+        {"offset": "0x08", "name": "instanceID", "type": "uint32_t"}
+      ],
+      "claim": "ResourceKey is the stable record identity used across Cell, empire, planet, mission, and property references.",
+      "provenance": [
+        ".spore-analysis/ghidra-exports/structs_fields.tsv",
+        "docs/RECON-3.1.0.22.md:113-119"
+      ]
+    },
+    {
+      "id": "Property",
+      "status": "VERIFIED_WITH_CONTRADICTION",
+      "size_bytes": null,
+      "authoritative_size_status": "UNKNOWN",
+      "sdk_layout": {
+        "size_bytes": 20,
+        "fields": [
+          {"offset": "0x00", "name": "value", "type": "union"},
+          {"offset": "0x10", "name": "flags", "type": "uint16"},
+          {"offset": "0x12", "name": "type", "type": "uint16"}
+        ]
+      },
+      "ghidra_layout": {
+        "size_bytes": 4,
+        "fields": [
+          {"offset": "0x00", "name": "flags", "type": "uint16"},
+          {"offset": "0x02", "name": "type", "type": "uint16"}
+        ]
+      },
+      "type_ids": {
+        "None": 0,
+        "Bool": 1,
+        "Int32": 9,
+        "UInt32": 10,
+        "Float": 13,
+        "String8": 18,
+        "String16": 19,
+        "Key": 32,
+        "Text": 34
+      },
+      "claim": "The SDK supplies the union-plus-flags/type shape, but the imported Ghidra structure is only 4 bytes; the authoritative runtime layout and value encoding are not resolved.",
+      "provenance": [
+        ".spore-analysis/ghidra-exports/structs_fields.tsv",
+        ".spore-analysis/ghidra-exports/spore_sdk.xml",
+        "knowledgegraph/research/data-model/09-save-load-persistence.json:397-418"
+      ]
+    },
+    {
+      "id": "PropertyList",
+      "status": "VERIFIED",
+      "size_bytes": 56,
+      "fields": [
+        {"offset": "0x18", "name": "mProperties", "type": "vector_map<uint32_t,Property>"},
+        {"offset": "0x30", "name": "mpParent", "type": "PropertyListPtr"},
+        {"offset": "0x34", "name": "mnOperationsDone", "type": "int"}
+      ],
+      "wire_shape": {
+        "status": "INFERRED",
+        "normal_path": "A count followed by property entries, each containing a uint32 property ID and a typed Property value.",
+        "entry_size_claim": "24 bytes per entry is a decompilation-derived layout clue, not a complete value encoding proof.",
+        "negative_count_branch": "A negative-count branch reads additional words and resolves a parent; the exact branch semantics are unresolved."
+      },
+      "claim": "PropertyList has an explicit local map, parent lookup chain, operation counter, and stream Read/Write boundary; only the ID/value dispatch shape is known.",
+      "provenance": [
+        "ghidra:App::PropertyList::GetProperty @ 0x006a2530",
+        "ghidra:App::PropertyList::SetProperty @ 0x006a2e20",
+        "ghidra:App::PropertyList::Read @ 0x006a2f60",
+        "ghidra:App::PropertyList::Write @ 0x006a1540",
+        "knowledgegraph/research/data-model/09-save-load-persistence.json:385-395"
+      ]
+    },
+    {
+      "id": "DirectPropertyList",
+      "status": "VERIFIED",
+      "size_bytes": 84,
+      "fields": [
+        {"offset": "0x30", "name": "mpParent", "type": "PropertyListPtr"},
+        {"offset": "0x34", "name": "mnOperationsDone", "type": "int"},
+        {"offset": "0x38", "name": "mNumFastAccess", "type": "int"},
+        {"offset": "0x3C", "name": "mFastAccessValues", "type": "runtime array"},
+        {"offset": "0x40", "name": "mTemporaryProperty", "type": "Property"}
+      ],
+      "claim": "DirectPropertyList adds fast-access runtime state and a temporary Property; these fields are not evidence of a separate file format.",
+      "provenance": [
+        ".spore-analysis/ghidra-exports/structs_fields.tsv",
+        "ghidra:App::DirectPropertyList::Read @ 0x006a3170",
+        "ghidra:App::DirectPropertyList::Write @ 0x006a1640"
+      ]
+    },
+    {
+      "id": "ClassSerializer",
+      "status": "VERIFIED",
+      "size_bytes": 2580,
+      "fields": [
+        {"offset": "0x00", "name": "attributes", "type": "AttributePointer[128]"},
+        {"offset": "0xA00", "name": "count", "type": "int"},
+        {"offset": "0xA04", "name": "countSerialized", "type": "int"},
+        {"offset": "0xA08", "name": "id", "type": "uint32_t"},
+        {"offset": "0xA0C", "name": "pObject", "type": "void*"},
+        {"offset": "0xA10", "name": "pAttributes", "type": "Attribute*"}
+      ],
+      "wire_status": "UNKNOWN",
+      "claim": "ClassSerializer is an object/attribute dispatch surface with binary and text callback slots, but the concrete wire format and pointer-table encoding are unknown.",
+      "provenance": [
+        ".spore-analysis/ghidra-exports/spore_sdk.xml",
+        "knowledgegraph/research/data-model/09-save-load-persistence.json:420-449",
+        "knowledgegraph/research/types/08-persistence-serialization.json:325-327"
+      ]
+    },
+    {
+      "id": "Attribute",
+      "status": "VERIFIED",
+      "size_bytes": 60,
+      "fields": [
+        {"offset": "0x00", "name": "name", "type": "const char*"},
+        {"offset": "0x04", "name": "id", "type": "uint32_t"},
+        {"offset": "0x08", "name": "offset", "type": "size_t"},
+        {"offset": "0x18", "name": "pCurrentObject", "type": "void*"},
+        {"offset": "0x20", "name": "offsetFunction", "type": "callback"},
+        {"offset": "0x24", "name": "readFunction", "type": "binary read callback"},
+        {"offset": "0x28", "name": "writeFunction", "type": "binary write callback"},
+        {"offset": "0x2C", "name": "readTextFunction", "type": "text read callback"},
+        {"offset": "0x30", "name": "writeTextFunction", "type": "text write callback"}
+      ],
+      "claim": "Attribute exposes offset, binary read/write, and text read/write callbacks, but concrete class IDs and callback behavior are unresolved.",
+      "provenance": [
+        ".spore-analysis/ghidra-exports/spore_sdk.xml",
+        "knowledgegraph/research/data-model/09-save-load-persistence.json:434-449"
+      ]
+    },
+    {
+      "id": "CellSerializerField",
+      "status": "VERIFIED",
+      "size_bytes": 40,
+      "fields": [
+        {"offset": "0x00", "name": "mpName", "type": "const char*"},
+        {"offset": "0x04", "name": "mID", "type": "uint32_t"},
+        {"offset": "0x08", "name": "mType", "type": "serializer type"},
+        {"offset": "0x0C", "name": "mSize", "type": "uint32_t"},
+        {"offset": "0x10", "name": "mOffset", "type": "uint32_t"},
+        {"offset": "0x14", "name": "mReadCallback", "type": "callback"},
+        {"offset": "0x18", "name": "mWriteCallback", "type": "callback"},
+        {"offset": "0x1C", "name": "mTextReadCallback", "type": "callback"},
+        {"offset": "0x20", "name": "mTextWriteCallback", "type": "callback"},
+        {"offset": "0x24", "name": "mFlags", "type": "uint32_t"}
+      ],
+      "wire_status": "UNKNOWN",
+      "claim": "CellSerializerField is a metadata descriptor with name, ID, offsets, and callbacks; its field IDs and generic field envelope are not recovered.",
+      "provenance": [
+        ".spore-analysis/ghidra-exports/spore_sdk.xml",
+        "knowledgegraph/research/types/08-persistence-serialization.json:173-182"
+      ]
+    },
+    {
+      "id": "CellSerializer",
+      "status": "VERIFIED",
+      "size_bytes": 40,
+      "fields": [
+        {"offset": "0x00", "name": "mpName", "type": "const char*"},
+        {"offset": "0x04", "name": "mpFields", "type": "CellSerializerField*"},
+        {"offset": "0x08", "name": "mNumFields", "type": "uint32_t"},
+        {"offset": "0x0C", "name": "mVersion", "type": "uint32_t"},
+        {"offset": "0x10", "name": "mFlags", "type": "uint32_t"},
+        {"offset": "0x14", "name": "mReadCallback", "type": "callback"},
+        {"offset": "0x18", "name": "mWriteCallback", "type": "callback"},
+        {"offset": "0x1C", "name": "mTextReadCallback", "type": "callback"},
+        {"offset": "0x20", "name": "mTextWriteCallback", "type": "callback"},
+        {"offset": "0x24", "name": "mUnknown", "type": "uint32_t"}
+      ],
+      "wire_status": "UNKNOWN",
+      "claim": "CellSerializer metadata exists, but the recovered direct Cell records do not demonstrate a name/ID envelope around their fields.",
+      "provenance": [
+        ".spore-analysis/ghidra-exports/spore_sdk.xml",
+        "docs/analysis/campaigns/cell-stage-campaign.md:250-268",
+        "knowledgegraph/research/types/08-persistence-serialization.json:173-182"
+      ]
+    },
+    {
+      "id": "cCellResource",
+      "status": "VERIFIED",
+      "size_bytes": 32,
+      "fields": [
+        {"offset": "0x00", "name": "mpData", "type": "void*"},
+        {"offset": "0x04", "name": "mDataSize", "type": "uint32_t"},
+        {"offset": "0x08", "name": "mDataSerializer", "type": "CellSerializer*"},
+        {"offset": "0x0C", "name": "mNameKey", "type": "ResourceKey"}
+      ],
+      "claim": "cCellResource couples a resource byte buffer and serializer descriptor with an identity key; the direct Cell record decoders consume the buffer according to each record's own layout.",
+      "provenance": [
+        ".spore-analysis/ghidra-exports/spore_sdk.xml",
+        ".spore-analysis/ghidra-exports/structs_fields.tsv",
+        "src/assets/CellResource.hpp:1-502"
+      ]
+    },
+    {
+      "id": "cCellDataReference_",
+      "status": "VERIFIED",
+      "size_bytes": 16,
+      "fields": [
+        {"offset": "0x00", "name": "mInstanceID", "type": "uint32_t"},
+        {"offset": "0x04", "name": "mpSerializer", "type": "CellSerializer*"},
+        {"offset": "0x08", "name": "mpResource", "type": "cCellResource*"},
+        {"offset": "0x0C", "name": "mCounter", "type": "int"}
+      ],
+      "claim": "The reference object is a lazy runtime handle keyed by instance and serializer; its resource pointer and counter are ownership/runtime fields, not necessarily file fields.",
+      "provenance": [
+        ".spore-analysis/ghidra-exports/structs_fields.tsv",
+        "ghidra:Simulator::Cell::cCellDataReference_::Create @ 0x00e82420",
+        "ghidra:Simulator::Cell::cCellDataReference_ runtime callers"
+      ]
+    },
+    {
+      "id": "cCellSerializableData",
+      "status": "VERIFIED",
+      "size_bytes": 236,
+      "fields": [
+        {"offset": "0x0C", "name": "mGameMode", "type": "int"},
+        {"offset": "0x10", "name": "mPlayerCreatureKey", "type": "ResourceKey"},
+        {"offset": "0x1C", "name": "mFoodProgression", "type": "int"},
+        {"offset": "0x20", "name": "mPlantFoodProgression", "type": "int"},
+        {"offset": "0x24", "name": "mOverPlantFoodProgression", "type": "int"},
+        {"offset": "0x28", "name": "mOverAnimalFoodProgression", "type": "int"},
+        {"offset": "0x2C", "name": "mEvolutionPointsSpent", "type": "int"},
+        {"offset": "0x34", "name": "mUnlockedParts", "type": "int[13]"},
+        {"offset": "0x6C", "name": "mKillCount", "type": "int"},
+        {"offset": "0x70", "name": "mDeathCount", "type": "int"},
+        {"offset": "0x74", "name": "gameTimeMS", "type": "int"},
+        {"offset": "0x78", "name": "gameID", "type": "uint32_t"},
+        {"offset": "0x7C", "name": "difficulty", "type": "int"},
+        {"offset": "0x80", "name": "missions", "type": "cCellMission[6]"},
+        {"offset": "0xE0", "name": "playerHasMoved", "type": "bool"},
+        {"offset": "0xE1", "name": "playerHasEaten", "type": "bool"},
+        {"offset": "0xE2", "name": "mFirstEditorEntry", "type": "bool"},
+        {"offset": "0xE4", "name": "mNanites", "type": "int"},
+        {"offset": "0xE8", "name": "mNanovirusActive", "type": "bool"},
+        {"offset": "0xE9", "name": "mAddedStartTelemetry", "type": "bool"}
+      ],
+      "wire_status": "UNKNOWN",
+      "claim": "This is a Cell runtime serializable-data layout candidate held by cCellGame at offset 0x5190; exact fields written on save, reset semantics, and cross-stage handoff are unknown.",
+      "provenance": [
+        "knowledgegraph/research/data-model/09-save-load-persistence.json:339-383",
+        "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json:340-347",
+        ".spore-analysis/ghidra-exports/structs_fields.tsv"
+      ]
+    },
+    {
+      "id": "cSavedGameHeader",
+      "status": "VERIFIED",
+      "size_bytes": 104,
+      "fields": [
+        {"offset": "0x0C", "name": "mFileVersionMajor", "type": "uint32_t"},
+        {"offset": "0x10", "name": "mFileVersionMinor", "type": "uint32_t"},
+        {"offset": "0x14", "name": "mObjectCountMap", "type": "map<uint32_t,int>"},
+        {"offset": "0x30", "name": "mTimeStamp", "type": "int[9]"},
+        {"offset": "0x54", "name": "mGameMode", "type": "uint32_t"},
+        {"offset": "0x58", "name": "mbSnapshot", "type": "bool"},
+        {"offset": "0x5C", "name": "mCurrentPlanetKey", "type": "ResourceKey"}
+      ],
+      "wire_status": "UNKNOWN",
+      "claim": "The header declares major/minor versions, object counts, timestamp, mode, snapshot state, and current planet key, but its serialized placement and migration behavior are unknown.",
+      "provenance": [
+        "knowledgegraph/research/data-model/09-save-load-persistence.json:245-259",
+        "knowledgegraph/research/types/08-persistence-serialization.json:147-160"
+      ]
+    },
+    {
+      "id": "GameLoadParameters",
+      "status": "VERIFIED",
+      "size_bytes": 180,
+      "size_confidence": "MEDIUM; SDK size is marked uncertain",
+      "fields": [
+        {"offset": "0x00", "name": "mGameName", "type": "string16"},
+        {"offset": "0x10", "name": "mStarName", "type": "string16"},
+        {"offset": "0x48", "name": "mpCreatureSpecies", "type": "cSpeciesProfile*"},
+        {"offset": "0x4C", "name": "mCreatureKey", "type": "ResourceKey"},
+        {"offset": "0x58", "name": "field_58", "type": "ResourceKey"},
+        {"offset": "0x7C", "name": "mStarID", "type": "StarID"},
+        {"offset": "0xA0", "name": "mDifficulty", "type": "Difficulty"},
+        {"offset": "0xA4", "name": "mGameMode", "type": "TechLevel"},
+        {"offset": "0xB0", "name": "field_B0", "type": "int"}
+      ],
+      "wire_status": "UNKNOWN",
+      "claim": "GameLoadParameters is a declared load context containing game/star names, creature and planet references, difficulty, and mode; field consumption is unresolved.",
+      "provenance": [
+        "knowledgegraph/research/data-model/09-save-load-persistence.json:260-277",
+        "knowledgegraph/research/types/08-persistence-serialization.json:161-171"
+      ]
+    },
+    {
+      "id": "cGamePersistenceManager",
+      "status": "VERIFIED",
+      "size_bytes": 76,
+      "fields": [
+        {"offset": "0x00", "name": "vftable0", "type": "cGamePersistenceManager__vftable*"},
+        {"offset": "0x04", "name": "vftable1", "type": "ISimulatorStrategy__vftable*"},
+        {"offset": "0x08", "name": "vftable2", "type": "IVirtual__vftable*"},
+        {"offset": "0x0C", "name": "mnRefCount", "type": "int"},
+        {"offset": "0x10", "name": "mLastGameMode", "type": "uint32_t"},
+        {"offset": "0x14", "name": "mCurrentGameMode", "type": "uint32_t"},
+        {"offset": "0x18", "name": "field_18", "type": "int"},
+        {"offset": "0x1C", "name": "field_1C", "type": "int"},
+        {"offset": "0x20", "name": "field_20", "type": "int"},
+        {"offset": "0x24", "name": "field_24", "type": "int"},
+        {"offset": "0x28", "name": "field_28", "type": "int"},
+        {"offset": "0x2C", "name": "field_2C", "type": "int"},
+        {"offset": "0x30", "name": "field_30", "type": "int"},
+        {"offset": "0x34", "name": "field_34", "type": "string16"},
+        {"offset": "0x44", "name": "field_44", "type": "bool"},
+        {"offset": "0x45", "name": "field_45", "type": "bool"},
+        {"offset": "0x46", "name": "field_46", "type": "bool"},
+        {"offset": "0x47", "name": "field_47", "type": "bool"},
+        {"offset": "0x48", "name": "field_48", "type": "int"}
+      ],
+      "wire_status": "UNKNOWN",
+      "claim": "The manager is a singleton/service with a LoadGame vtable entry, mode fields, and unresolved state; no concrete save/load body is recovered.",
+      "provenance": [
+        ".spore-analysis/ghidra-exports/spore_sdk.xml:24956-25015",
+        "ghidra:Simulator::cGamePersistenceManager::Get @ 0x00b3d440",
+        "knowledgegraph/research/data-model/09-save-load-persistence.json:278-304"
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "R-001",
+      "from": "DBPF record index",
+      "to": "record payload",
+      "kind": "identity_to_bytes",
+      "status": "VERIFIED",
+      "statement": "A DBPF record is identified by type, group, and instance and yields a payload byte range; the current OpenSpore seam stops at bytes.",
+      "provenance": [
+        "src/assets/Dbpf.cpp:37-235",
+        "src/compat/ResourceProvider.hpp:24-53",
+        "docs/RECON-3.1.0.22.md:113-119"
+      ]
+    },
+    {
+      "id": "R-002",
+      "from": "PropertyList local map",
+      "to": "parent PropertyList",
+      "kind": "lookup_overlay",
+      "status": "VERIFIED",
+      "statement": "GetProperty searches the local sorted property map and falls back to the parent PropertyList; SetProperty mutates the local map and increments the operation counter.",
+      "provenance": [
+        "ghidra:App::PropertyList::GetProperty @ 0x006a2530",
+        "ghidra:App::PropertyList::SetProperty @ 0x006a2e20"
+      ]
+    },
+    {
+      "id": "R-003",
+      "from": "PropertyList Write",
+      "to": "stream and typed Property values",
+      "kind": "serialization_boundary",
+      "status": "INFERRED",
+      "statement": "PropertyList Write emits a count and then property ID/value entries through stream and value-dispatch helpers; the exact byte representation remains unresolved.",
+      "provenance": [
+        "ghidra:App::PropertyList::Write @ 0x006a1540",
+        "ghidra:FUN_00694440",
+        "ghidra:FUN_00693aa70"
+      ]
+    },
+    {
+      "id": "R-004",
+      "from": "ClassSerializer",
+      "to": "Attribute callbacks",
+      "kind": "callback_dispatch",
+      "status": "VERIFIED",
+      "statement": "ClassSerializer owns 128 attribute slots and Attribute exposes binary/text read and write callbacks plus offset metadata.",
+      "provenance": [
+        ".spore-analysis/ghidra-exports/spore_sdk.xml",
+        "knowledgegraph/research/data-model/09-save-load-persistence.json:420-449"
+      ]
+    },
+    {
+      "id": "R-005",
+      "from": "CellSerializerField",
+      "to": "CellSerializer",
+      "kind": "metadata_descriptor",
+      "status": "VERIFIED",
+      "statement": "CellSerializer points to field descriptors carrying names, IDs, sizes, offsets, and read/write callbacks.",
+      "provenance": [
+        ".spore-analysis/ghidra-exports/spore_sdk.xml",
+        "knowledgegraph/research/types/08-persistence-serialization.json:173-182"
+      ]
+    },
+    {
+      "id": "R-006",
+      "from": "cCellDataReference_",
+      "to": "cCellResource",
+      "kind": "lazy_runtime_resolution",
+      "status": "VERIFIED",
+      "statement": "The reference cache is keyed by instance and serializer, increments a counter, resolves a resource on demand, and releases it when the counter reaches zero or during teardown.",
+      "provenance": [
+        "ghidra:Simulator::Cell::cCellDataReference_::Create @ 0x00e82420",
+        "ghidra:FUN_00e823a0",
+        "ghidra:FUN_00e822c0",
+        "ghidra:FUN_00e82130",
+        "ghidra:FUN_00e82280",
+        "ghidra:FUN_00e824d0"
+      ]
+    },
+    {
+      "id": "R-007",
+      "from": "direct Cell content records",
+      "to": "Cell runtime selection",
+      "kind": "content_to_runtime",
+      "status": "INFERRED",
+      "statement": "Direct Cell records provide content and references that can feed runtime construction, but exact selection, placement, AI activation, and spawn execution are not fully recovered.",
+      "provenance": [
+        "src/assets/CellResource.hpp:165-484",
+        "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json:227-337"
+      ]
+    },
+    {
+      "id": "R-008",
+      "from": "cGamePersistenceManager",
+      "to": "GameLoadParameters",
+      "kind": "load_context",
+      "status": "INFERRED",
+      "statement": "The SDK places game/star/creature/difficulty/mode context in GameLoadParameters, and the persistence manager exposes LoadGame, but the field-consumption call path is not observed.",
+      "provenance": [
+        ".spore-analysis/ghidra-exports/spore_sdk.xml:24956-25015",
+        "ghidra:Simulator::cGamePersistenceManager::Get @ 0x00b3d440"
+      ]
+    },
+    {
+      "id": "R-009",
+      "from": "cSavedGameHeader",
+      "to": "serialized simulator objects",
+      "kind": "header_to_state",
+      "status": "INFERRED",
+      "statement": "The header's object-count map, mode, snapshot flag, and current planet key plausibly describe saved simulator state and restoration context; no body confirms order.",
+      "provenance": [
+        "knowledgegraph/research/data-model/09-save-load-persistence.json:245-259",
+        "knowledgegraph/research/types/08-persistence-serialization.json:522-536"
+      ]
+    },
+    {
+      "id": "R-010",
+      "from": "cCellGame",
+      "to": "cCellSerializableData",
+      "kind": "runtime_state_ownership",
+      "status": "VERIFIED",
+      "statement": "cCellGame holds an intrusive pointer to cCellSerializableData at offset 0x5190; this establishes ownership, not a complete save schema.",
+      "provenance": [
+        "knowledgegraph/research/data-model/09-save-load-persistence.json:367-383",
+        "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json:340-347"
+      ]
+    },
+    {
+      "id": "R-011",
+      "from": "OpenSpore IResourceProvider",
+      "to": "typed Cell decoders",
+      "kind": "modern_substitution_boundary",
+      "status": "VERIFIED",
+      "statement": "The current provider fetches record bytes by identity; current typed Cell decoders then interpret those bytes. This is a modern content seam, not an original serializer.",
+      "provenance": [
+        "src/compat/ResourceProvider.hpp:21-90",
+        "src/assets/CellResource.hpp:49-502"
+      ]
+    }
+  ],
+  "functions": [
+    {
+      "id": "F-001",
+      "address": "0x006928C0",
+      "name": "Simulator::ClassSerializer::Write",
+      "domain": "simulator_serialization",
+      "status": "VERIFIED_AS_SDK_DECLARATION",
+      "body_status": "UNRESOLVED",
+      "role": "Declared class/object attribute serializer write boundary.",
+      "survival_boundary": "The SDK address is an architectural anchor; current live Ghidra naming does not expose a trustworthy body at the expected semantic address.",
+      "provenance": [
+        ".spore-analysis/ghidra-exports/sdk_functions.tsv",
+        "knowledgegraph/research/data-model/09-save-load-persistence.json:750-758"
+      ]
+    },
+    {
+      "id": "F-002",
+      "address": "0x00693DE0",
+      "name": "Simulator::ClassSerializer::Read",
+      "domain": "simulator_serialization",
+      "status": "VERIFIED_AS_SDK_DECLARATION",
+      "body_status": "UNRESOLVED",
+      "role": "Declared class/object attribute serializer read boundary.",
+      "survival_boundary": "The SDK address is an architectural anchor; current live Ghidra naming does not expose a trustworthy body at the expected semantic address.",
+      "provenance": [
+        ".spore-analysis/ghidra-exports/sdk_functions.tsv",
+        "knowledgegraph/research/data-model/09-save-load-persistence.json:760-768"
+      ]
+    },
+    {
+      "id": "F-003",
+      "address": "0x006A1540",
+      "name": "App::PropertyList::Write",
+      "domain": "property_serialization",
+      "status": "VERIFIED",
+      "role": "Writes the property-list count and typed property entries through stream/value helpers.",
+      "survival_boundary": "Exact Property value bytes, ordering, compression, and outer record framing remain unknown.",
+      "provenance": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/App__PropertyList__Write.c",
+        "ghidra:App::PropertyList::Write @ 0x006a1540"
+      ]
+    },
+    {
+      "id": "F-004",
+      "address": "0x006A1640",
+      "name": "App::DirectPropertyList::Write",
+      "domain": "property_serialization",
+      "status": "VERIFIED",
+      "role": "Direct property-list write path.",
+      "survival_boundary": "A separate direct implementation is observed, but its exact divergence from the base implementation is not fully characterized.",
+      "provenance": [
+        "ghidra:App::DirectPropertyList::Write @ 0x006a1640",
+        "knowledgegraph/research/data-model/09-save-load-persistence.json:710-718"
+      ]
+    },
+    {
+      "id": "F-005",
+      "address": "0x006A2530",
+      "name": "App::PropertyList::GetProperty",
+      "domain": "property_lookup",
+      "status": "VERIFIED",
+      "role": "Looks up a property in the local map, then the parent PropertyList.",
+      "survival_boundary": "This establishes lookup, not whether a parent is serialized.",
+      "provenance": [
+        "ghidra:App::PropertyList::GetProperty @ 0x006a2530"
+      ]
+    },
+    {
+      "id": "F-006",
+      "address": "0x006A2E20",
+      "name": "App::PropertyList::SetProperty",
+      "domain": "property_mutation",
+      "status": "VERIFIED",
+      "role": "Inserts or updates a property by uint32 ID and increments the operation counter.",
+      "survival_boundary": "Mutation is not automatically a save operation.",
+      "provenance": [
+        "ghidra:App::PropertyList::SetProperty @ 0x006a2e20"
+      ]
+    },
+    {
+      "id": "F-007",
+      "address": "0x006A2F60",
+      "name": "App::PropertyList::Read",
+      "domain": "property_serialization",
+      "status": "VERIFIED",
+      "role": "Reads property-list framing and dispatches entries to typed property readers.",
+      "survival_boundary": "Parent handling, version negotiation, failure atomicity, and exact value bytes remain unknown.",
+      "provenance": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/App__PropertyList__Read.c",
+        "ghidra:App::PropertyList::Read @ 0x006a2f60"
+      ]
+    },
+    {
+      "id": "F-008",
+      "address": "0x006A3170",
+      "name": "App::DirectPropertyList::Read",
+      "domain": "property_serialization",
+      "status": "VERIFIED",
+      "role": "Direct property-list read path.",
+      "survival_boundary": "Inheritance/forwarding is observed; a separate format is not established.",
+      "provenance": [
+        "ghidra:App::DirectPropertyList::Read @ 0x006a3170"
+      ]
+    },
+    {
+      "id": "F-009",
+      "address": "0x00693390",
+      "name": "FUN_00693390",
+      "domain": "property_value_codec",
+      "status": "VERIFIED",
+      "role": "Property value dispatch/read helper selected by type and flags.",
+      "survival_boundary": "Concrete value coverage is incomplete because some Property type/layout details are contradictory.",
+      "provenance": [
+        "ghidra:FUN_00693390",
+        ".spore-analysis/ghidra-exports/decompiled_sdk/App__PropertyList__Read.c"
+      ]
+    },
+    {
+      "id": "F-010",
+      "address": "0x00693890",
+      "name": "FUN_00693890",
+      "domain": "property_value_codec",
+      "status": "VERIFIED",
+      "role": "Length-prefixed string-like Property value reader.",
+      "survival_boundary": "Width, terminator, maximum, and failure behavior are not fully specified.",
+      "provenance": [
+        "ghidra:FUN_00693890",
+        "ghidra:FUN_00693c70"
+      ]
+    },
+    {
+      "id": "F-011",
+      "address": "0x0093AA70",
+      "name": "FUN_0093aa70",
+      "domain": "primitive_stream_codec",
+      "status": "VERIFIED",
+      "role": "Writes 32-bit values; byte-swapped by default and raw when the mode argument is 1.",
+      "survival_boundary": "The mode's higher-level owner and endian contract are not fully mapped.",
+      "provenance": [
+        "ghidra:FUN_0093a780",
+        "ghidra:FUN_0093aa70"
+      ]
+    },
+    {
+      "id": "F-012",
+      "address": "0x0093A9D0",
+      "name": "FUN_0093a9d0",
+      "domain": "primitive_stream_codec",
+      "status": "VERIFIED",
+      "role": "Writes 16-bit values.",
+      "survival_boundary": "The higher-level stream and property-type callers are not fully mapped.",
+      "provenance": [
+        "ghidra:FUN_0093a700",
+        "ghidra:FUN_0093a9d0"
+      ]
+    },
+    {
+      "id": "F-013",
+      "address": "0x0093AB10",
+      "name": "FUN_0093ab10",
+      "domain": "primitive_stream_codec",
+      "status": "VERIFIED",
+      "role": "Writes 64-bit values.",
+      "survival_boundary": "The higher-level stream and property-type callers are not fully mapped.",
+      "provenance": [
+        "ghidra:FUN_0093a800",
+        "ghidra:FUN_0093ab10"
+      ]
+    },
+    {
+      "id": "F-014",
+      "address": "0x0093A6C0",
+      "name": "FUN_0093a6c0",
+      "domain": "primitive_stream_codec",
+      "status": "VERIFIED",
+      "role": "Reads a raw byte block.",
+      "survival_boundary": "Length source, bounds behavior, and ownership are not fully mapped.",
+      "provenance": [
+        "ghidra:FUN_0093a6c0"
+      ]
+    },
+    {
+      "id": "F-015",
+      "address": "0x00B0C190",
+      "name": "FUN_00b0c190",
+      "domain": "game_mode_persistence_handoff",
+      "status": "VERIFIED",
+      "role": "Persistence/mode lifecycle helper called after obtaining cGamePersistenceManager.",
+      "survival_boundary": "Its exact vtable slot and save/load responsibility are unresolved.",
+      "provenance": [
+        "ghidra:FUN_00b0c190",
+        "ghidra:Simulator::cGamePersistenceManager::Get @ 0x00b3d440"
+      ]
+    },
+    {
+      "id": "F-016",
+      "address": "0x00B0C520",
+      "name": "FUN_00b0c520",
+      "domain": "game_mode_persistence_handoff",
+      "status": "VERIFIED",
+      "role": "Persistence/mode lifecycle helper called in the manager-adjacent path.",
+      "survival_boundary": "Its exact vtable slot and save/load responsibility are unresolved.",
+      "provenance": [
+        "ghidra:FUN_00b0c520",
+        "ghidra:Simulator::cGamePersistenceManager::Get @ 0x00b3d440"
+      ]
+    },
+    {
+      "id": "F-017",
+      "address": "0x00B3D440",
+      "name": "Simulator::cGamePersistenceManager::Get",
+      "domain": "save_load_entry_point",
+      "status": "VERIFIED",
+      "role": "Returns the global cGamePersistenceManager singleton.",
+      "survival_boundary": "Get does not establish the concrete save/load wire sequence.",
+      "provenance": [
+        ".spore-analysis/ghidra-exports/spore_sdk.xml:24956-24958",
+        "ghidra:Simulator::cGamePersistenceManager::Get @ 0x00b3d440"
+      ]
+    },
+    {
+      "id": "F-018",
+      "address": "0x00E82130",
+      "name": "FUN_00e82130",
+      "domain": "cell_data_reference_lifecycle",
+      "status": "VERIFIED",
+      "role": "Decrements a cCellDataReference cache counter.",
+      "survival_boundary": "The exact release/unload condition is not fully named in the static evidence.",
+      "provenance": [
+        "ghidra:FUN_00e82130"
+      ]
+    },
+    {
+      "id": "F-019",
+      "address": "0x00E82280",
+      "name": "FUN_00e82280",
+      "domain": "cell_data_reference_lifecycle",
+      "status": "VERIFIED",
+      "role": "Clears loaded Cell resources from the data-reference cache.",
+      "survival_boundary": "The caller and mode-transition condition are unresolved.",
+      "provenance": [
+        "ghidra:FUN_00e82280"
+      ]
+    },
+    {
+      "id": "F-020",
+      "address": "0x00E823A0",
+      "name": "FUN_00e823a0",
+      "domain": "cell_data_reference_lifecycle",
+      "status": "VERIFIED",
+      "role": "Increments a data-reference counter and lazily resolves the resource.",
+      "survival_boundary": "The exact record selection and failure path are not fully recovered.",
+      "provenance": [
+        "ghidra:FUN_00e823a0"
+      ]
+    },
+    {
+      "id": "F-021",
+      "address": "0x00E82420",
+      "name": "Simulator::Cell::cCellDataReference_::Create",
+      "domain": "cell_data_reference_lifecycle",
+      "status": "VERIFIED",
+      "role": "Creates or retrieves a cCellDataReference cached by instance ID and CellSerializer.",
+      "survival_boundary": "The resource manager and serializer registry behind the lookup are not fully exposed.",
+      "provenance": [
+        ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellDataReference___Create.c",
+        "ghidra:Simulator::Cell::cCellDataReference_::Create @ 0x00e82420"
+      ]
+    },
+    {
+      "id": "F-022",
+      "address": "0x00E824D0",
+      "name": "FUN_00e824d0",
+      "domain": "cell_data_reference_lifecycle",
+      "status": "VERIFIED",
+      "role": "Tears down the cCellDataReference cache and releases owned resources.",
+      "survival_boundary": "The exact mode-exit caller is not recovered.",
+      "provenance": [
+        "ghidra:FUN_00e824d0"
+      ]
+    }
+  ],
+  "lifecycle": [
+    {
+      "id": "L-001",
+      "phase": 1,
+      "system": "DBPF resource access",
+      "status": "VERIFIED",
+      "steps": [
+        "Select a record by ResourceKey {typeID, groupID, instanceID}.",
+        "Resolve the package index and record extent.",
+        "Expose the record bytes to a consumer.",
+        "For QFS-compressed records, decompress only when the outer container indicates QFS."
+      ],
+      "transient_persistent": "Package index and provider lifetime are runtime state; the returned record bytes are content input and are not automatically save-state data.",
+      "provenance": [
+        "src/assets/Dbpf.cpp:37-235",
+        "src/compat/ResourceProvider.hpp:24-53"
+      ]
+    },
+    {
+      "id": "L-002",
+      "phase": 2,
+      "system": "direct Cell content decode",
+      "status": "VERIFIED",
+      "steps": [
+        "Match the record TypeID to a direct Cell schema.",
+        "Read fixed fields or count-prefixed rows in little-endian order.",
+        "Validate exact size, count span, pointer-slot preservation, field domains, and resource references.",
+        "Expose a typed current-source value object."
+      ],
+      "transient_persistent": "Parsed values and vectors are host runtime projections; the original record bytes are the persisted content artifact.",
+      "provenance": [
+        "src/assets/CellResource.hpp:49-502",
+        "src/assets/CellResource.cpp:395-1124",
+        "src/assets/tests/cellres_test.cpp:1-143",
+        "src/assets/tests/cell_cell_test.cpp:1-160",
+        "src/assets/tests/cell_world_test.cpp:1-142"
+      ]
+    },
+    {
+      "id": "L-003",
+      "phase": 3,
+      "system": "PropertyList mutation and resolution",
+      "status": "VERIFIED",
+      "steps": [
+        "SetProperty inserts or updates a local property by uint32 ID.",
+        "GetProperty searches local storage and then the parent list.",
+        "DirectPropertyList uses fast-access runtime slots and a temporary Property.",
+        "The operation counter records mutations but does not imply persistence."
+      ],
+      "transient_persistent": "Parent, fast-access values, temporary Property, and operation counter are runtime fields; only the actual stream entries are candidates for persistence.",
+      "provenance": [
+        "ghidra:App::PropertyList::GetProperty @ 0x006a2530",
+        "ghidra:App::PropertyList::SetProperty @ 0x006a2e20",
+        ".spore-analysis/ghidra-exports/structs_fields.tsv"
+      ]
+    },
+    {
+      "id": "L-004",
+      "phase": 4,
+      "system": "Cell data-reference acquisition",
+      "status": "VERIFIED",
+      "steps": [
+        "Create or retrieve a cCellDataReference by instance ID and CellSerializer pointer.",
+        "Increment the reference counter.",
+        "Resolve the cCellResource and load its bytes when absent.",
+        "Dispatch the resource serializer/record resolver on demand."
+      ],
+      "transient_persistent": "mInstanceID is a record identity; mpSerializer, mpResource, and mCounter are runtime linkage/ownership state and are not proven serialized fields.",
+      "provenance": [
+        "ghidra:Simulator::Cell::cCellDataReference_::Create @ 0x00e82420",
+        "ghidra:FUN_00e823a0",
+        "ghidra:FUN_00e822c0"
+      ]
+    },
+    {
+      "id": "L-005",
+      "phase": 5,
+      "system": "Cell runtime construction",
+      "status": "INFERRED",
+      "steps": [
+        "Cell mode initializes a cCellGame singleton.",
+        "The stage holds content/runtime pools, world references, and cCellSerializableData.",
+        "The exact order of content reference resolution, pool creation, and display activation is not fully recovered."
+      ],
+      "transient_persistent": "Live pools, render worlds, query pools, and display state are transient; cCellSerializableData is a persistence candidate only, not a proven file schema.",
+      "provenance": [
+        "knowledgegraph/research/data-model/09-save-load-persistence.json:367-383",
+        "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json:77-121"
+      ]
+    },
+    {
+      "id": "L-006",
+      "phase": 6,
+      "system": "Cell runtime update",
+      "status": "INFERRED",
+      "steps": [
+        "CellGame updates the live stage and gameplay state.",
+        "Current OpenSpore has an in-process CellSim update loop, but this is not an original serialization event."
+      ],
+      "transient_persistent": "Runtime entity, camera, frame, and query state is transient unless a separate original save path proves otherwise.",
+      "provenance": [
+        "src/sim/CellGame.cpp:22-152",
+        "src/sim/Sim.cpp:99-356",
+        "knowledgegraph/research/data-model/09-save-load-persistence.json:1254-1263"
+      ]
+    },
+    {
+      "id": "L-007",
+      "phase": 7,
+      "system": "Cell resource release and mode teardown",
+      "status": "VERIFIED",
+      "steps": [
+        "Release the cCellDataReference counter.",
+        "Clear loaded resources and tear down the cache when ownership ends.",
+        "The original cCellGame OnExit/Dispose path restores display/global side effects and releases stage state."
+      ],
+      "transient_persistent": "Resource cache pointers, pools, worlds, and display handles are transient; no automatic save is established by teardown.",
+      "provenance": [
+        "ghidra:FUN_00e82130",
+        "ghidra:FUN_00e82280",
+        "ghidra:FUN_00e824d0",
+        "knowledgegraph/research/data-model/09-save-load-persistence.json:1254-1263"
+      ]
+    },
+    {
+      "id": "L-008",
+      "phase": 8,
+      "system": "saved-game write",
+      "status": "UNKNOWN",
+      "steps": [
+        "A persistence manager singleton is available.",
+        "A saved-game header and serializable object contracts are declared.",
+        "The actual writer, record ordering, transaction, checksum/encryption, and mode trigger are not recovered."
+      ],
+      "transient_persistent": "Only fields actually emitted by the missing writer can be classified as persistent; candidate object layouts must not be treated as wire format.",
+      "provenance": [
+        ".spore-analysis/ghidra-exports/spore_sdk.xml:24956-25015",
+        "knowledgegraph/research/data-model/09-save-load-persistence.json:1230-1251"
+      ]
+    },
+    {
+      "id": "L-009",
+      "phase": 9,
+      "system": "saved-game load",
+      "status": "INFERRED",
+      "steps": [
+        "LoadGame is present in the persistence-manager vtable.",
+        "GameLoadParameters supplies game/star/creature/difficulty/mode context.",
+        "The concrete deserialization and pointer remapping path is not recovered."
+      ],
+      "transient_persistent": "Load context and reconstructed object references are runtime state after loading; exact archive framing is unknown.",
+      "provenance": [
+        ".spore-analysis/ghidra-exports/spore_sdk.xml:24956-25015",
+        "knowledgegraph/research/data-model/09-save-load-persistence.json:260-304"
+      ]
+    }
+  ],
+  "persistence": [
+    {
+      "id": "P-001",
+      "name": "PROP PropertyList record",
+      "format_status": "INFERRED",
+      "status": "INFERRED",
+      "known_shape": [
+        "count or a negative-count branch",
+        "property entries containing a uint32 property ID and a typed Property value"
+      ],
+      "unknowns": [
+        "outer PROP record envelope",
+        "entry ordering and count semantics",
+        "parent-list encoding",
+        "Property value bytes and all type tags",
+        "stream endian/compression/version handling"
+      ],
+      "claim": "The static PropertyList Read/Write boundary is real, but an exact .prop or PROP round trip is not available.",
+      "provenance": [
+        "ghidra:App::PropertyList::Read @ 0x006a2f60",
+        "ghidra:App::PropertyList::Write @ 0x006a1540",
+        "knowledgegraph/research/data-model/09-save-load-persistence.json:140-157"
+      ]
+    },
+    {
+      "id": "P-002",
+      "name": "ClassSerializer binary/text object stream",
+      "format_status": "UNKNOWN",
+      "status": "UNKNOWN",
+      "known_shape": [
+        "ClassSerializer owns up to 128 attribute slots",
+        "Attribute has binary and text read/write callbacks",
+        "ClassSerializer has countSerialized, object ID, current object, and attribute storage"
+      ],
+      "unknowns": [
+        "stream type",
+        "attribute count framing",
+        "field order",
+        "object pointer table",
+        "version gates",
+        "failure and rollback behavior"
+      ],
+      "claim": "The architecture indicates object-level attribute serialization, but no concrete wire format is recovered.",
+      "provenance": [
+        ".spore-analysis/ghidra-exports/spore_sdk.xml",
+        "knowledgegraph/research/data-model/09-save-load-persistence.json:420-449",
+        "knowledgegraph/research/data-model/09-save-load-persistence.json:1344-1348"
+      ]
+    },
+    {
+      "id": "P-003",
+      "name": "CellSerializer descriptor stream",
+      "format_status": "UNKNOWN",
+      "status": "UNKNOWN",
+      "known_shape": [
+        "CellSerializerField has name, ID, size, offset, and callbacks",
+        "CellSerializer has a name, field pointer, field count, version/flags, and callbacks"
+      ],
+      "unknowns": [
+        "field ID values",
+        "generic name/ID envelope if any",
+        "descriptor stream framing",
+        "relationship to direct Cell record TypeIDs"
+      ],
+      "claim": "The descriptor structures do not establish that the recovered direct Cell records use a CellSerializer envelope.",
+      "provenance": [
+        ".spore-analysis/ghidra-exports/spore_sdk.xml",
+        "docs/analysis/campaigns/cell-stage-campaign.md:250-268"
+      ]
+    },
+    {
+      "id": "P-004",
+      "name": "direct Cell content records",
+      "format_status": "VERIFIED",
+      "status": "VERIFIED",
+      "known_shape": [
+        "fixed-size records or count-prefixed direct layouts",
+        "little-endian primitive fields",
+        "serialized dead pointer slots preserved by current decoders",
+        "resource references represented by instance-like values"
+      ],
+      "unknowns": [
+        "original record writers",
+        "any higher-level container framing",
+        "exact runtime selection and mutation behavior"
+      ],
+      "claim": "These are content serialization schemas with strong clean-room decode evidence; they are not profile/save-game persistence.",
+      "provenance": [
+        "src/assets/CellResource.hpp:1-502",
+        "src/assets/CellResource.cpp:395-1124",
+        "src/assets/tests/cellres_test.cpp:1-143",
+        "src/assets/tests/cell_cell_test.cpp:1-160",
+        "src/assets/tests/cell_world_test.cpp:1-142"
+      ]
+    },
+    {
+      "id": "P-005",
+      "name": "cCellSerializableData",
+      "format_status": "UNKNOWN",
+      "status": "VERIFIED_LAYOUT",
+      "known_shape": [
+        "236-byte runtime layout",
+        "progression, kills/deaths, game ID, difficulty, mission slots, and telemetry fields",
+        "held by cCellGame at offset 0x5190"
+      ],
+      "unknowns": [
+        "actual write/read order",
+        "whether every field persists",
+        "relationship to cStarRecord, empire, and global progression",
+        "reset versus save behavior"
+      ],
+      "claim": "The object is a strong runtime persistence candidate, not a verified saved-game wire schema.",
+      "provenance": [
+        "knowledgegraph/research/data-model/09-save-load-persistence.json:339-383",
+        "knowledgegraph/research/global-campaign-2026/track-d-sim-cell.json:340-347"
+      ]
+    },
+    {
+      "id": "P-006",
+      "name": "saved-game header and load parameters",
+      "format_status": "UNKNOWN",
+      "status": "VERIFIED_LAYOUT",
+      "known_shape": [
+        "cSavedGameHeader has major/minor version, object count map, timestamp, mode, snapshot, and current planet key",
+        "GameLoadParameters has game/star names, creature/species references, star ID, difficulty, and mode"
+      ],
+      "unknowns": [
+        "outer .spo framing",
+        "header placement",
+        "checksum/encryption",
+        "slot/profile storage",
+        "atomicity and migration"
+      ],
+      "claim": "The header and load context are architectural/static evidence only; exact archive persistence remains unknown.",
+      "provenance": [
+        "knowledgegraph/research/data-model/09-save-load-persistence.json:245-304",
+        "knowledgegraph/research/data-model/09-save-load-persistence.json:1230-1251"
+      ]
+    },
+    {
+      "id": "P-007",
+      "name": "DBPF/QFS resource container",
+      "format_status": "VERIFIED_CURRENT_SOURCE",
+      "status": "VERIFIED",
+      "known_shape": [
+        "DBPF v3 header and index",
+        "record type/group/instance identity",
+        "record extents",
+        "optional QFS compression in current OpenSpore"
+      ],
+      "unknowns": [
+        "original multi-package priority",
+        "original cache/database ownership",
+        "original record write and save-state integration"
+      ],
+      "claim": "Current OpenSpore covers the record-byte boundary; it is not evidence of the original persistence manager's full behavior.",
+      "provenance": [
+        "src/assets/Dbpf.cpp:37-235",
+        "src/compat/ResourceProvider.hpp:21-90",
+        "docs/analysis/reconstruction-packages.md:271-279"
+      ]
+    },
+    {
+      "id": "P-008",
+      "name": "scenario/resource property persistence",
+      "format_status": "INFERRED",
+      "status": "INFERRED",
+      "known_shape": [
+        "cScenarioResource contains an embedded PropertyList",
+        "scenario/version fields exist",
+        "resource record save metadata and persistence interfaces are declared"
+      ],
+      "unknowns": [
+        "exact scenario writer/reader",
+        "property-list placement",
+        "version migration and defaulting"
+      ],
+      "claim": "Scenario property persistence is architecturally plausible but not recovered as a complete format.",
+      "provenance": [
+        "knowledgegraph/research/data-model/09-save-load-persistence.json:226-242",
+        "knowledgegraph/research/data-model/09-save-load-persistence.json:1200-1213"
+      ]
+    }
+  ],
+  "openspore_comparison": [
+    {
+      "id": "O-001",
+      "area": "Cell content records",
+      "assessment": "CONTENT_SCHEMA_SUPPORTED",
+      "status": "VERIFIED",
+      "original_evidence": [
+        "direct fixed/count-prefixed Cell records",
+        "Cell TypeIDs and resource references",
+        "dead serialized pointer slots"
+      ],
+      "openspore_evidence": [
+        "src/assets/CellResource.hpp:1-502",
+        "src/assets/CellResource.cpp:14-1124",
+        "src/assets/tests/cellres_test.cpp:1-143",
+        "src/assets/tests/cell_cell_test.cpp:1-160",
+        "src/assets/tests/cell_world_test.cpp:1-142"
+      ],
+      "claim": "OpenSpore has deterministic typed decoders and tests for the recovered Cell content layouts.",
+      "unsupported_assumption": "Do not treat these content records as cCellSerializableData or save-game state."
+    },
+    {
+      "id": "O-002",
+      "area": "Resource identity and package access",
+      "assessment": "BOUNDARY_MATCH",
+      "status": "VERIFIED",
+      "original_evidence": [
+        "ResourceKey identity",
+        "DBPF record and database/record stream architecture"
+      ],
+      "openspore_evidence": [
+        "src/assets/Dbpf.cpp:37-235",
+        "src/compat/ResourceProvider.hpp:21-90"
+      ],
+      "claim": "OpenSpore's B1 seam returns record bytes by type/group/instance from one package or a memory stub.",
+      "unsupported_assumption": "Do not infer original multi-package precedence, cache behavior, directory ownership, or save writes."
+    },
+    {
+      "id": "O-003",
+      "area": "Property system",
+      "assessment": "NOT_IMPLEMENTED",
+      "status": "VERIFIED",
+      "original_evidence": [
+        "PropertyList local/parent lookup",
+        "typed Property values",
+        "PropertyList Read/Write"
+      ],
+      "openspore_evidence": [
+        "No current PropertyList implementation",
+        "docs/BOUNDARIES.md:137-146"
+      ],
+      "claim": "No current OpenSpore JSON or generic map is labeled PROP-compatible.",
+      "unsupported_assumption": "Do not map current configuration or scene JSON to original PropertyList bytes."
+    },
+    {
+      "id": "O-004",
+      "area": "ClassSerializer and saved-game serialization",
+      "assessment": "NOT_EQUIVALENT",
+      "status": "VERIFIED",
+      "original_evidence": [
+        "ClassSerializer and Attribute callback surface",
+        "cSavedGameHeader",
+        "GameLoadParameters",
+        "cGamePersistenceManager"
+      ],
+      "openspore_evidence": [
+        "No current ClassSerializer implementation",
+        "No current .spo reader/writer",
+        "No current PropertyList codec"
+      ],
+      "claim": "OpenSpore has no equivalent generic simulator serialization or saved-game implementation.",
+      "unsupported_assumption": "Do not promote current runtime structs, generated fixtures, or local JSON to original .spo behavior."
+    },
+    {
+      "id": "O-005",
+      "area": "Cell runtime state",
+      "assessment": "PARTIAL_PROJECTION",
+      "status": "VERIFIED",
+      "original_evidence": [
+        "cCellGame owns pools, world references, avatar index, and cCellSerializableData pointer"
+      ],
+      "openspore_evidence": [
+        "src/sim/CellGame.cpp:22-152",
+        "src/sim/Sim.hpp:49-260",
+        "src/sim/Sim.cpp:99-356"
+      ],
+      "claim": "OpenSpore has an in-process Cell runtime projection, but it is not an original cCellSerializableData save schema.",
+      "unsupported_assumption": "Do not treat CellSim growMeter, frame counter, or current entity vectors as persisted original fields."
+    },
+    {
+      "id": "O-006",
+      "area": "Cell mode and GFX lifecycle",
+      "assessment": "PARTIAL_LIFECYCLE_MATCH",
+      "status": "VERIFIED",
+      "original_evidence": [
+        "cCellGame Initialize/OnEnter/OnExit/Dispose",
+        "cCellGFX preload and display roots"
+      ],
+      "openspore_evidence": [
+        "src/apps/CellGfx.hpp:1-76",
+        "src/apps/CellGfx.cpp:5-46",
+        "src/apps/CellModeStrategy.hpp:45-97"
+      ],
+      "claim": "OpenSpore models world tokens, preloaded record keys, display state, and mode handoff as clean-room state.",
+      "unsupported_assumption": "Do not infer original mode IDs, serialized display state, or cross-stage persistence from the current lifecycle."
+    },
+    {
+      "id": "O-007",
+      "area": "Scene placement and populate records",
+      "assessment": "PARTIAL_SCHEMA_SUPPORT",
+      "status": "VERIFIED",
+      "original_evidence": [
+        "world record carries populate references and scale",
+        "populate record carries spawn/distribution data",
+        "no recovered per-entity x/y source"
+      ],
+      "openspore_evidence": [
+        "src/apps/SceneConfig.hpp:1-47",
+        "src/apps/scene.json:1-75"
+      ],
+      "claim": "OpenSpore's declarative scene config intentionally separates record-confirmed identity from inferred positions.",
+      "unsupported_assumption": "Do not label current scene transforms as original record data."
+    },
+    {
+      "id": "O-008",
+      "area": "Versioning and migration",
+      "assessment": "PARTIAL_STATIC_COVERAGE",
+      "status": "VERIFIED",
+      "original_evidence": [
+        "cSavedGameHeader major/minor version",
+        "cStarRecord saved-game version fields",
+        "scenario mVersion/mMarkerPositioningVersion",
+        "direct Cell schemas keyed by TypeID and size/count span"
+      ],
+      "openspore_evidence": [
+        "src/assets/Dbpf.cpp:37-235",
+        "src/assets/CellResource.hpp:49-502",
+        "tests/fixtures/cell/README.md:1-81"
+      ],
+      "claim": "OpenSpore preserves current format versions where implemented, but no original migration matrix or saved-game version handling exists.",
+      "unsupported_assumption": "Do not infer backward compatibility, downgrade behavior, or automatic migration from a version field alone."
+    },
+    {
+      "id": "O-009",
+      "area": "Tests and oracle status",
+      "assessment": "CURRENT_SOURCE_REGRESSION_ONLY",
+      "status": "VERIFIED",
+      "original_evidence": [
+        "original-process runtime evidence is negative for Cell Stage"
+      ],
+      "openspore_evidence": [
+        "src/assets/tests/cellres_test.cpp:1-143",
+        "src/assets/tests/cell_cell_test.cpp:1-160",
+        "src/assets/tests/cell_world_test.cpp:1-142",
+        "tests/fixtures/cell/fixtures.json:1-89"
+      ],
+      "claim": "The tests validate current decoder determinism and domain constraints, not original runtime serialization or save/load behavior.",
+      "unsupported_assumption": "Do not call generated fixtures an original-game oracle."
+    }
+  ],
+  "gaps": [
+    {
+      "id": "G-001",
+      "topic": "PROP wire format",
+      "status": "UNKNOWN",
+      "impact": "Exact property encoding, parent handling, ordering, and round-trip validation remain unavailable.",
+      "needed_evidence": "Property/PropertyList/stream decompilation plus a bounded original PROP record or trace."
+    },
+    {
+      "id": "G-002",
+      "topic": "ClassSerializer binary and text stream",
+      "status": "UNKNOWN",
+      "impact": "Class/object ID remapping, attribute order, pointer tables, and restoration behavior cannot be reconstructed.",
+      "needed_evidence": "Concrete ClassSerializer Read/Write bodies, stream implementation, and correlated object traces."
+    },
+    {
+      "id": "G-003",
+      "topic": "CellSerializer generic envelope",
+      "status": "UNKNOWN",
+      "impact": "It is unclear whether any unexamined records use a CellSerializer name/ID envelope distinct from the recovered direct layouts.",
+      "needed_evidence": "Concrete CellSerializer callers and a record family whose bytes do not match the direct schemas."
+    },
+    {
+      "id": "G-004",
+      "topic": "Saved-game .spo framing and migration",
+      "status": "UNKNOWN",
+      "impact": "Header placement, compression/checksum/encryption, slot/profile storage, atomicity, and version migration cannot be specified.",
+      "needed_evidence": "Concrete persistence vtable methods, a bounded original save/load trace, and header consumer bodies."
+    },
+    {
+      "id": "G-005",
+      "topic": "cCellDataReference exact loader contract",
+      "status": "INFERRED",
+      "impact": "The cache/lazy-load behavior is known, but exact record selection, serializer dispatch, failure, and ownership rules remain bounded only.",
+      "needed_evidence": "Data-reference callers, resource database/IRecord methods, and correlated Cell load paths."
+    },
+    {
+      "id": "G-006",
+      "topic": "Cross-stage persistence handoff",
+      "status": "UNKNOWN",
+      "impact": "What survives Cell to creature to planet to space transitions is not established beyond static candidate fields.",
+      "needed_evidence": "Correlated mode-manager, persistence-manager, cCellSerializableData, and stage object call sequence."
+    },
+    {
+      "id": "G-007",
+      "topic": "Authoritative Property runtime layout",
+      "status": "UNKNOWN",
+      "impact": "The 4-byte Ghidra structure and 20-byte SDK structure produce different decompilation/type views.",
+      "needed_evidence": "Authoritative runtime type query, constructor/allocation-size analysis, and typed value helper bodies."
+    },
+    {
+      "id": "G-008",
+      "topic": "Original runtime oracle",
+      "status": "UNKNOWN",
+      "impact": "No original-process save/load, runtime trace, or successful Cell Stage capture is available.",
+      "needed_evidence": "A controlled non-mutating original runtime trace and save/load capture."
+    }
+  ],
+  "contradictions": [
+    {
+      "id": "C-001",
+      "topic": "Property layout",
+      "status": "VERIFIED",
+      "statement": "The SDK describes a 20-byte Property with a value union and flags/type, while the imported Ghidra structure is 4 bytes with flags/type only.",
+      "resolution_status": "UNKNOWN",
+      "resolution": "Do not choose either layout as authoritative without a runtime allocation/size proof.",
+      "provenance": [
+        ".spore-analysis/ghidra-exports/structs_fields.tsv",
+        ".spore-analysis/ghidra-exports/spore_sdk.xml",
+        "knowledgegraph/research/data-model/09-save-load-persistence.json:397-418"
+      ]
+    },
+    {
+      "id": "C-002",
+      "topic": "CellSerializer envelope",
+      "status": "VERIFIED",
+      "statement": "Historical documentation described recovered Cell records as a CellSerializer name/ID envelope; later direct decoders and tests show fixed/count-prefixed records without that envelope.",
+      "resolution_status": "VERIFIED",
+      "resolution": "Use direct TypeID-specific Cell schemas for the recovered records and keep generic CellSerializer wire behavior UNKNOWN.",
+      "provenance": [
+        "docs/analysis/campaigns/cell-stage-campaign.md:250-268",
+        "src/assets/CellResource.hpp:1-7,124-127,183-185",
+        "src/assets/tests/cell_cell_test.cpp:1-13"
+      ]
+    },
+    {
+      "id": "C-003",
+      "topic": "ClassSerializer SDK address labels",
+      "status": "VERIFIED",
+      "statement": "The SDK maps ClassSerializer Write/Read to semantic names at 0x006928C0 and 0x00693DE0, while the current live Ghidra function inventory resolves nearby addresses to unnamed bodies whose behavior does not establish the serializer implementation.",
+      "resolution_status": "UNKNOWN",
+      "resolution": "Keep the SDK declarations as architecture evidence and do not use the nearby live bodies as semantic proof.",
+      "provenance": [
+        ".spore-analysis/ghidra-exports/sdk_functions.tsv",
+        "knowledgegraph/research/data-model/09-save-load-persistence.json:750-768",
+        "ghidra:SporeApp.exe current function inventory"
+      ]
+    },
+    {
+      "id": "C-004",
+      "topic": "Dead pointer slots versus runtime pointers",
+      "status": "VERIFIED",
+      "statement": "Direct Cell records preserve pointer-shaped serialized values without dereferencing them, while cCellDataReference and cCellResource have real runtime pointer fields used for lazy resolution.",
+      "resolution_status": "VERIFIED",
+      "resolution": "Classify record pointer slots as preserved content bytes and runtime pointer fields as ownership/linkage state; do not serialize host addresses.",
+      "provenance": [
+        "src/assets/CellResource.hpp:183-185,210-218,320-328,377-391,418-432,463-474",
+        "ghidra:FUN_00e823a0",
+        "ghidra:Simulator::Cell::cCellDataReference_::Create @ 0x00e82420"
+      ]
+    },
+    {
+      "id": "C-005",
+      "topic": "Cell content versus live state",
+      "status": "VERIFIED",
+      "statement": "The recovered direct Cell TypeIDs describe content assets, while cCellGame owns live pools and a cCellSerializableData candidate for runtime state.",
+      "resolution_status": "VERIFIED",
+      "resolution": "Keep content decoding, live state, and save-state reconstruction as separate reconstruction packages.",
+      "provenance": [
+        "src/assets/CellResource.hpp:124-163,183-197",
+        "knowledgegraph/research/data-model/09-save-load-persistence.json:339-383",
+        "docs/analysis/reconstruction-packages.md:409-496"
+      ]
+    }
+  ],
+  "reconstruction_packages": [
+    {
+      "id": "PKG-03-RESOURCE-IO",
+      "status": "SUPPORTED",
+      "replacement_status": "EXISTING_REPLACEMENT_SEAM",
+      "scope": "Resource manager, DBPF/QFS I/O, and property substrate.",
+      "serialization_boundary": "Identity-to-record-bytes is covered; PropertyList and original persistence behavior are not replaced.",
+      "provenance": [
+        "docs/analysis/reconstruction-packages.md:16,271-279",
+        "src/compat/ResourceProvider.hpp:21-90"
+      ]
+    },
+    {
+      "id": "PKG-05-CELL-CONTENT",
+      "status": "SUPPORTED",
+      "replacement_status": "PARTIAL_EXISTING_CONTRACT",
+      "scope": "Cell content and resource record semantics.",
+      "serialization_boundary": "Direct record decoders and domain tests are implemented; runtime selection, placement, and original record writers remain outside the contract.",
+      "provenance": [
+        "docs/analysis/reconstruction-packages.md:18,409-417",
+        "src/assets/CellResource.hpp:1-502",
+        "src/assets/tests/cellres_test.cpp:1-143"
+      ]
+    },
+    {
+      "id": "PKG-06-CELL-STATE",
+      "status": "SUPPORTED",
+      "replacement_status": "PARTIAL_EXISTING_CONTRACT",
+      "scope": "Cell game state, pool, query, advect, and combat rules.",
+      "serialization_boundary": "Live Cell state is kept separate from direct content records; cCellSerializableData ownership is known but its save wire is unknown.",
+      "provenance": [
+        "docs/analysis/reconstruction-packages.md:19,488-496",
+        "knowledgegraph/research/data-model/09-save-load-persistence.json:367-383"
+      ]
+    },
+    {
+      "id": "PKG-11-SIM-CORE",
+      "status": "INFERRED",
+      "replacement_status": "UNRESOLVED",
+      "scope": "Simulator core managers, tools, and missions.",
+      "serialization_boundary": "Empire/economy serialization ownership, money/mission persistence, and version/default behavior are not implemented or fully characterized.",
+      "provenance": [
+        "docs/analysis/reconstruction-packages.md:24,54,846-854"
+      ]
+    },
+    {
+      "id": "PKG-12-SIM-SPACE",
+      "status": "INFERRED",
+      "replacement_status": "UNRESOLVED",
+      "scope": "Simulator Space stage.",
+      "serialization_boundary": "Space trade, planet, star, and cross-stage persistence handoffs remain unresolved.",
+      "provenance": [
+        "docs/analysis/reconstruction-packages.md:25,55,914-922"
+      ]
+    },
+    {
+      "id": "PKG-13-SIM-CREATURE-TRIBECIV",
+      "status": "UNKNOWN",
+      "replacement_status": "UNRESOLVED",
+      "scope": "Simulator creature, tribe, and civilization stage.",
+      "serialization_boundary": "Creature/tribe/civilization ownership and persistence are outside the recovered Cell serialization evidence.",
+      "provenance": [
+        "docs/analysis/reconstruction-packages.md:26,57,973-981"
+      ]
+    }
+  ],
+  "provenance": [
+    {
+      "id": "P-BINARY",
+      "source": "docs/RECON-3.1.0.22.md",
+      "status": "VERIFIED",
+      "supports": ["binary identity", "architecture", "image base", "hash"]
+    },
+    {
+      "id": "P-MANIFEST",
+      "source": ".spore-analysis/ghidra-exports/manifest.json",
+      "status": "VERIFIED",
+      "supports": ["pinned export inventory", "snapshot identity", "analysis scope"]
+    },
+    {
+      "id": "P-SDK-FUNCTIONS",
+      "source": ".spore-analysis/ghidra-exports/sdk_functions.tsv",
+      "status": "VERIFIED",
+      "supports": ["SDK function names and addresses", "ClassSerializer declarations", "PropertyList anchors"]
+    },
+    {
+      "id": "P-SDK-XML",
+      "source": ".spore-analysis/ghidra-exports/spore_sdk.xml",
+      "status": "VERIFIED",
+      "supports": ["structures", "field offsets", "enum values", "vtables", "serialization interfaces"]
+    },
+    {
+      "id": "P-STRUCT-FIELDS",
+      "source": ".spore-analysis/ghidra-exports/structs_fields.tsv",
+      "status": "VERIFIED",
+      "supports": ["PropertyList", "DirectPropertyList", "CellSerializer", "cCellResource", "cCellDataReference_"]
+    },
+    {
+      "id": "P-PROPERTY-READ",
+      "source": ".spore-analysis/ghidra-exports/decompiled_sdk/App__PropertyList__Read.c",
+      "status": "VERIFIED",
+      "supports": ["PropertyList read branch", "count/property dispatch", "stream boundary"]
+    },
+    {
+      "id": "P-PROPERTY-WRITE",
+      "source": ".spore-analysis/ghidra-exports/decompiled_sdk/App__PropertyList__Write.c",
+      "status": "VERIFIED",
+      "supports": ["PropertyList write branch", "count/entry dispatch", "stream boundary"]
+    },
+    {
+      "id": "P-CELL-DATAREF",
+      "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellDataReference___Create.c",
+      "status": "VERIFIED",
+      "supports": ["cell reference cache", "lazy loading", "counter ownership", "resource resolution"]
+    },
+    {
+      "id": "P-CELL-SOURCE",
+      "source": "src/assets/CellResource.hpp and src/assets/CellResource.cpp",
+      "status": "VERIFIED",
+      "supports": ["direct Cell schemas", "fixed/count-prefixed layouts", "pointer-slot preservation", "reference validation"]
+    },
+    {
+      "id": "P-CELL-TESTS",
+      "source": "src/assets/tests/cellres_test.cpp, src/assets/tests/cell_cell_test.cpp, src/assets/tests/cell_world_test.cpp",
+      "status": "VERIFIED",
+      "supports": ["exact sizes", "full-span checks", "domain checks", "double-decode determinism"]
+    },
+    {
+      "id": "P-RESOURCE-SEAM",
+      "source": "src/compat/ResourceProvider.hpp and src/assets/Dbpf.cpp",
+      "status": "VERIFIED",
+      "supports": ["identity-to-bytes seam", "DBPF record extraction", "QFS behavior in current source"]
+    },
+    {
+      "id": "P-CURRENT-GFX",
+      "source": "src/apps/CellGfx.hpp and src/apps/CellGfx.cpp",
+      "status": "VERIFIED",
+      "supports": ["current clean-room world tokens", "preloaded record keys", "display state", "mode lifecycle projection"]
+    },
+    {
+      "id": "P-HISTORICAL-ENVELOPE",
+      "source": "docs/analysis/campaigns/cell-stage-campaign.md:250-268",
+      "status": "VERIFIED",
+      "supports": ["historical CellSerializer envelope claim", "later direct-layout correction"]
+    },
+    {
+      "id": "P-PACKAGES",
+      "source": "docs/analysis/reconstruction-packages.md:271-496,846-981",
+      "status": "VERIFIED",
+      "supports": ["reconstruction package boundaries", "supported/inferred package status", "content/state separation"]
+    },
+    {
+      "id": "P-PERSISTENCE",
+      "source": "knowledgegraph/research/data-model/09-save-load-persistence.json",
+      "status": "VERIFIED",
+      "supports": ["saved-game header", "GameLoadParameters", "persistence manager", "PropertyList", "ClassSerializer", "OpenSpore gaps"]
+    },
+    {
+      "id": "P-RUNTIME-NEGATIVE",
+      "source": "docs/STATE.md:3-4,94-98",
+      "status": "VERIFIED",
+      "supports": ["absence of successful original Cell runtime capture", "no save/load oracle"]
+    }
+  ]
+}

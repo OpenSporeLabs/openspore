@@ -1,0 +1,3277 @@
+{
+  "$schema": "state-machine-research-1",
+  "callbacks": [
+    {
+      "actions": [
+        "resolve the noun/game-data map",
+        "materialize or insert a record",
+        "clear needsUpdate after lookup work"
+      ],
+      "address": "0x00b21340",
+      "confidence": {
+        "level": "medium",
+        "reason": "Map/vector/list mechanics are supported, but exact SDK function identity and callback meanings remain unresolved."
+      },
+      "consumers": [
+        "00acd9a0",
+        "00ace2c0",
+        "00b25f40",
+        "00ba0080",
+        "00bf9820",
+        "map_int_whatever_find 0x00e5c780"
+      ],
+      "evidence": [
+        {
+          "address": "0x00b21340",
+          "claim": "The root uses map lookup, materialization/insertion helpers, callback-shaped arguments, and clears the returned record's needsUpdate flag.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "docs/analysis/simulator-shared-state-interface.md"
+        }
+      ],
+      "generated_events": [
+        "shared_registry_record_materialized",
+        "shared_registry_record_marked_clean"
+      ],
+      "guards": [
+        "The map result is lower-bound and is not an unconditional exact-find assertion."
+      ],
+      "name": "FUN_00b21340 noun registry bridge",
+      "parameters": [
+        "ECX context",
+        "five callback-shaped stack arguments"
+      ],
+      "returns": "tGameDataVectorT<cGameData>* or null-equivalent record",
+      "semantics": "Noun-map lookup, materialization, mutation, and update-state clearing boundary.",
+      "validation": [
+        "Recover the exact function boundary and five callback contracts.",
+        "Instrument owner+0x98 and returned vector fields +0x00..+0x0c."
+      ]
+    },
+    {
+      "actions": [
+        "update pause map/type state",
+        "change effective pause count"
+      ],
+      "address": "0x00b32330",
+      "confidence": {
+        "level": "medium",
+        "reason": "SDK export and cGameTimeManager layout are confirmed; the native pause body is not in the committed decompile set."
+      },
+      "consumers": [
+        "Simulator::cGameTimeManager::Toggle",
+        "Simulator::cGameTimeManager::GetPauseCount",
+        "Simulator::cGameTimeManager::ConvertDeltaTime"
+      ],
+      "evidence": [
+        {
+          "address": "struct:/Spore/Simulator/cGameTimeManager",
+          "claim": "mFlags+0x48, mPauseMaps+0x4c, and mPauseTypes+0x68 are declared.",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv"
+        }
+      ],
+      "generated_events": [
+        "game_time_pause_changed"
+      ],
+      "guards": [
+        "Pause key and reference-count rules are unresolved."
+      ],
+      "name": "Simulator::cGameTimeManager::Pause",
+      "parameters": [
+        "pause type or pause key"
+      ],
+      "returns": "void or pause count; signature unresolved",
+      "semantics": "Pause lifecycle entry; exact mutation requires the missing native body.",
+      "validation": [
+        "Recover Pause, Toggle, GetPauseCount, and ConvertDeltaTime together."
+      ]
+    },
+    {
+      "actions": [
+        "select speed factor and speed index",
+        "change effective game-time scaling"
+      ],
+      "address": "0x00b32560",
+      "confidence": {
+        "level": "medium",
+        "reason": "SetSpeed is an SDK export and speed fields are declared; exact write ordering is unresolved."
+      },
+      "consumers": [
+        "Simulator::cGameTimeManager::ConvertDeltaTime",
+        "game-speed UI"
+      ],
+      "evidence": [
+        {
+          "address": "struct:/Spore/Simulator/cGameTimeManager",
+          "claim": "mSpeedFactors+0x1c, mCurrentSpeed+0x40, and mCurrentSpeedIndex+0x44 are declared.",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv"
+        }
+      ],
+      "generated_events": [
+        "game_time_speed_changed"
+      ],
+      "guards": [
+        "Valid speed index/factor pairing is unresolved."
+      ],
+      "name": "Simulator::cGameTimeManager::SetSpeed",
+      "parameters": [
+        "speed index"
+      ],
+      "returns": "void; SDK-only signature",
+      "semantics": "Speed selection entry; relationship between current speed and index requires native evidence.",
+      "validation": [
+        "Record all four speed factors and observed conversion results for each selection."
+      ]
+    },
+    {
+      "actions": [
+        "resolve creature ID in editor animation world map",
+        "dispatch controller teardown",
+        "remove the creature entry"
+      ],
+      "address": "0x0059c6e0",
+      "confidence": {
+        "level": "high",
+        "reason": "The body directly performs map lookup, controller virtual dispatch, and cleanup calls."
+      },
+      "consumers": [
+        "Editors::cEditorAnimWorld",
+        "EditorCreatureController",
+        "Anim::IAnimWorld::DestroyCreature"
+      ],
+      "evidence": [
+        {
+          "address": "0x0059c6e0",
+          "claim": "DestroyCreature checks world+0x38 and the sentinel, dispatches controller+0x3c, then calls FUN_0059ae60 and FUN_0059c460.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditorAnimWorld__DestroyCreature.c"
+        }
+      ],
+      "generated_events": [
+        "editor_anim_creature_destroyed"
+      ],
+      "guards": [
+        "The map must exist and the result must not be the world+0xc sentinel."
+      ],
+      "name": "Editors::cEditorAnimWorld::DestroyCreature",
+      "parameters": [
+        "editor animation world",
+        "creature ID"
+      ],
+      "returns": "void",
+      "semantics": "Removes one editor animation subject and releases its controller association.",
+      "validation": [
+        "Trace map value and controller before/after teardown.",
+        "Pair destruction with load and undo paths."
+      ]
+    },
+    {
+      "actions": [
+        "create or reuse a Cell effect slot",
+        "start the effect",
+        "apply transform and parameters",
+        "stop and release invalid effects"
+      ],
+      "address": "0x00e63560",
+      "confidence": {
+        "level": "high",
+        "reason": "The body contains direct IsRunning, Stop, Release, Create, Start, and parameter virtual calls."
+      },
+      "consumers": [
+        "Simulator::Cell::cCellGFX",
+        "Swarm::IEffectsManager",
+        "Swarm::IVisualEffect"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e63560",
+          "claim": "LoadEffectMap branches between Stop/Release and Create/Start and updates effect parameters.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__LoadEffectMap.c"
+        },
+        {
+          "address": "0x00e66840",
+          "claim": "InstanceEffectOnCell creates a visual effect, stores it in a Cell GFX slot, and applies the Cell transform.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__InstanceEffectOnCell.c"
+        }
+      ],
+      "generated_events": [
+        "swarm_effect_created",
+        "swarm_effect_started",
+        "swarm_effect_stopped"
+      ],
+      "guards": [
+        "Creation must return non-null; Cell GFX slot capacity is checked."
+      ],
+      "name": "Simulator::Cell::cCellGFX effect synchronization",
+      "parameters": [
+        "Cell GFX state",
+        "effect map entries"
+      ],
+      "returns": "void or IVisualEffect pointer",
+      "semantics": "Synchronizes Cell visual effects with the Swarm effect lifecycle.",
+      "validation": [
+        "Trace one effect from creation through map change, stop, re-create, start, and release."
+      ]
+    },
+    {
+      "actions": [
+        "resolve achievement definition",
+        "add achievement ID to definition progress",
+        "conditionally notify the achievement UI"
+      ],
+      "address": "0x00676e90",
+      "confidence": {
+        "level": "high",
+        "reason": "The body directly checks mIsCheater, mutates definition+0x04, and conditionally calls the notifier helper."
+      },
+      "consumers": [
+        "Pollinator::cAchievementsManager",
+        "Pollinator::cAchievementDefinition",
+        "achievement UI"
+      ],
+      "evidence": [
+        {
+          "address": "0x00676e90",
+          "claim": "SetProgressFlags suppresses mutation when manager+0x24 is nonzero and otherwise updates definition progress.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Pollinator__cAchievementsManager__SetProgressFlags.c"
+        }
+      ],
+      "generated_events": [
+        "pollinator_progress_updated"
+      ],
+      "guards": [
+        "mIsCheater must be false; progressFlags and value are not visibly used by the recovered body."
+      ],
+      "name": "Pollinator::cAchievementsManager::SetProgressFlags",
+      "parameters": [
+        "manager",
+        "achievement ID",
+        "progress flags",
+        "value"
+      ],
+      "returns": "void",
+      "semantics": "Mutates achievement progress and conditionally refreshes/notifies it.",
+      "validation": [
+        "Recover AddProgress, EvaluateTriggerOp, EarnAchievement, and Init bodies."
+      ]
+    },
+    {
+      "actions": [
+        "initialize resource identity",
+        "copy asset/parent keys",
+        "populate name, description, and tags",
+        "return true"
+      ],
+      "address": "0x00551240",
+      "confidence": {
+        "level": "high",
+        "reason": "The body directly writes metadata fields, branches on parent key, copies strings, and returns true; some raw offset aliases remain uncertain."
+      },
+      "consumers": [
+        "Pollinator asset publication",
+        "parent-asset lookup",
+        "community asset metadata"
+      ],
+      "evidence": [
+        {
+          "address": "0x00551240",
+          "claim": "cAssetMetadata::Set initializes identity, resolves optional parent metadata, copies description data, and returns true.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Pollinator__cAssetMetadata__Set.c"
+        },
+        {
+          "address": "struct:/Spore/Pollinator/cAssetMetadata",
+          "claim": "mNameKey, mAssetID, mAssetKey, mParentAssetKey, timestamps, name, description, tags, and authors are declared.",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv"
+        }
+      ],
+      "generated_events": [
+        "pollinator_asset_metadata_published"
+      ],
+      "guards": [
+        "Parent metadata is optional; downstream publication is not proven by Set alone."
+      ],
+      "name": "Pollinator::cAssetMetadata::Set",
+      "parameters": [
+        "metadata",
+        "asset key",
+        "name",
+        "description",
+        "tags",
+        "parent key",
+        "is pollinated"
+      ],
+      "returns": "bool",
+      "semantics": "Materializes an asset metadata record and parent relationship.",
+      "validation": [
+        "Map raw writes to declared fields.",
+        "Trace child and parented assets through publication, save, and reload."
+      ]
+    },
+    {
+      "actions": [
+        "advance category/subcategory/page/item cursors",
+        "normalize exhausted inner collections",
+        "return the next PaletteItem"
+      ],
+      "address": "0x005c7d00",
+      "confidence": {
+        "level": "high",
+        "reason": "HasNext directly mutates all four cursor fields and Next returns the current PaletteItem."
+      },
+      "consumers": [
+        "PaletteMain",
+        "PaletteUI",
+        "paint selection",
+        "editor palette UI"
+      ],
+      "evidence": [
+        {
+          "address": "0x005c7d00",
+          "claim": "HasNext increments the four cursor fields and walks nested category/page/item vectors.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Palettes__PaletteIterator__HasNext.c"
+        },
+        {
+          "address": "0x005c7f10",
+          "claim": "Next returns the current PaletteItem pointer.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Palettes__PaletteIterator__Next.c"
+        }
+      ],
+      "generated_events": [
+        "palette_cursor_advanced"
+      ],
+      "guards": [
+        "All four indices are bounded by their owning collections."
+      ],
+      "name": "Palettes::PaletteIterator cursor traversal",
+      "parameters": [
+        "palette iterator"
+      ],
+      "returns": "bool for HasNext; PaletteItem pointer for Next",
+      "semantics": "Finite nested palette traversal cursor.",
+      "validation": [
+        "Recover Init, HasNext, Next, and Start bodies."
+      ]
+    },
+    {
+      "actions": [
+        "return the current scope",
+        "enter or leave scope",
+        "store or remove parser definitions and variables"
+      ],
+      "address": "0x00845310",
+      "confidence": {
+        "level": "high",
+        "reason": "The SDK exposes scope/definition/variable lifecycle methods and GetCurrentScope directly reads mCurrentScope+0x130."
+      },
+      "consumers": [
+        "ArgScript::IParser",
+        "ArgScript::IBlock",
+        "game-data and configuration loaders"
+      ],
+      "evidence": [
+        {
+          "address": "0x00d1dcd0",
+          "claim": "GetCurrentScope returns the string stored at FormatParser+0x130.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/ArgScript__FormatParser__GetCurrentScope.c"
+        },
+        {
+          "address": "struct:/Spore/ArgScript/FormatParser",
+          "claim": "mDefinitions+0x6c, mVariables+0x8c, mGlobalVariables+0xac, mBlocks+0x108, mSpecialBlocks+0x11c, mCurrentScope+0x130, and mScopeLengths+0x140 are declared.",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv"
+        }
+      ],
+      "generated_events": [
+        "argscript_scope_entered",
+        "argscript_scope_left",
+        "argscript_definition_created"
+      ],
+      "guards": [
+        "Scope nesting must balance before Close or Dispose."
+      ],
+      "name": "ArgScript::FormatParser scope and definition lifecycle",
+      "parameters": [
+        "FormatParser",
+        "scope name",
+        "definition name",
+        "line arguments"
+      ],
+      "returns": "bool for safe definition creation; other signatures vary",
+      "semantics": "Maintains parser scope, definitions, variables, blocks, and special blocks while script data is processed.",
+      "validation": [
+        "Recover Initialize, StartScope, EndScope, Close, Dispose, and processing bodies."
+      ]
+    },
+    {
+      "actions": [
+        "acquire global audio system",
+        "dispatch play/stop/property virtual operations",
+        "return when system is null"
+      ],
+      "address": "0x00571f80",
+      "confidence": {
+        "level": "low",
+        "reason": "Null guards and virtual dispatch are direct, but AudioTrack ownership and concrete state are unresolved."
+      },
+      "consumers": [
+        "Audio::AudioSystem",
+        "AudioTrack callers",
+        "UI and gameplay sound effects"
+      ],
+      "evidence": [
+        {
+          "address": "0x00571f80",
+          "claim": "PlayProceduralAudio obtains the system through FUN_00a206f0 and dispatches multiple virtual slots.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Audio__PlayProceduralAudio.c"
+        }
+      ],
+      "generated_events": [
+        "audio_play_requested"
+      ],
+      "guards": [
+        "Audio system pointer must be non-null."
+      ],
+      "name": "Audio::PlayProceduralAudio",
+      "parameters": [
+        "audio ID",
+        "AudioTrack",
+        "position"
+      ],
+      "returns": "void",
+      "semantics": "Audio command boundary; concrete track state is owned by the audio implementation.",
+      "validation": [
+        "Recover AudioTrack type and all play/stop/property callers."
+      ]
+    }
+  ],
+  "domain": "Additional high-impact gameplay state-machine domains: shared routing, time control, animation/effects, tribe planning, Pollinator progression, palettes, ArgScript execution, and audio",
+  "events": [
+    {
+      "boundary": "original_static",
+      "consumers": [
+        "00acd9a0",
+        "00ace2c0",
+        "00ba0080"
+      ],
+      "evidence": [
+        {
+          "address": "0x00b21340",
+          "claim": "Map lookup and materialization path is observed.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "docs/analysis/simulator-shared-state-interface.md"
+        }
+      ],
+      "id": "shared_registry_record_materialized",
+      "kind": "registry_transition",
+      "producers": [
+        "0x00b21340"
+      ],
+      "status": "static_mechanics_exact_sdk_identity_unresolved"
+    },
+    {
+      "boundary": "original_static",
+      "consumers": [
+        "0x00e5c780",
+        "0x00ba8420"
+      ],
+      "evidence": [
+        {
+          "address": "returned tGameDataVectorT<cGameData>+0x00",
+          "claim": "needsUpdate is cleared after materialization work.",
+          "kind": "sdk_layout_and_decompilation",
+          "level": "SUPPORTED",
+          "source": "docs/analysis/simulator-shared-state-interface.md"
+        }
+      ],
+      "id": "shared_registry_record_marked_clean",
+      "kind": "state_write",
+      "producers": [
+        "0x00b21340"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "boundary": "original_static",
+      "consumers": [
+        "cGameTimeManager::GetPauseCount",
+        "cGameTimeManager::ConvertDeltaTime"
+      ],
+      "evidence": [
+        {
+          "address": "0x00b32330",
+          "claim": "SDK export identifies Pause.",
+          "kind": "sdk_function_export",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/sdk_functions.tsv"
+        }
+      ],
+      "id": "game_time_pause_changed",
+      "kind": "temporal_transition",
+      "producers": [
+        "0x00b32330",
+        "0x00b32390"
+      ],
+      "status": "sdk_interface_static_body_unresolved"
+    },
+    {
+      "boundary": "original_static",
+      "consumers": [
+        "cGameTimeManager::ConvertDeltaTime",
+        "game-speed UI"
+      ],
+      "evidence": [
+        {
+          "address": "0x00b32560",
+          "claim": "SDK export identifies SetSpeed.",
+          "kind": "sdk_function_export",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/sdk_functions.tsv"
+        }
+      ],
+      "id": "game_time_speed_changed",
+      "kind": "temporal_transition",
+      "producers": [
+        "0x00b32560"
+      ],
+      "status": "sdk_interface_static_body_unresolved"
+    },
+    {
+      "boundary": "original_static",
+      "consumers": [
+        "editor animation consumers",
+        "Anim::IAnimWorld"
+      ],
+      "evidence": [
+        {
+          "address": "struct:/Spore/Anim/IAnimWorld",
+          "claim": "The SDK exposes LoadCreature, DestroyCreature, Update, and UpdateCreatures lifecycle slots.",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv"
+        }
+      ],
+      "id": "editor_anim_creature_loaded",
+      "kind": "lifecycle_transition",
+      "producers": [
+        "Anim::IAnimWorld::LoadCreature vtable"
+      ],
+      "status": "sdk_lifecycle_body_unresolved"
+    },
+    {
+      "boundary": "original_static",
+      "consumers": [
+        "editor animation consumers",
+        "Anim::IAnimWorld"
+      ],
+      "evidence": [
+        {
+          "address": "0x0059c6e0",
+          "claim": "DestroyCreature performs map lookup, controller teardown, and cleanup.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditorAnimWorld__DestroyCreature.c"
+        }
+      ],
+      "id": "editor_anim_creature_destroyed",
+      "kind": "lifecycle_transition",
+      "producers": [
+        "0x0059c6e0"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "boundary": "original_static",
+      "consumers": [
+        "EditorCreatureController",
+        "editor animation update"
+      ],
+      "evidence": [
+        {
+          "address": "0x0059cf00",
+          "claim": "SetTargetPosition resolves a controller and dispatches target update.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditorAnimWorld__SetTargetPosition.c"
+        }
+      ],
+      "id": "editor_anim_target_updated",
+      "kind": "animation_state_mutation",
+      "producers": [
+        "0x0059cea0",
+        "0x0059cf00"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "boundary": "original_static",
+      "consumers": [
+        "Cell GFX",
+        "Swarm effect manager"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e66840",
+          "claim": "InstanceEffectOnCell creates and stores a visual effect and applies the Cell transform.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__InstanceEffectOnCell.c"
+        }
+      ],
+      "id": "swarm_effect_created",
+      "kind": "lifecycle_transition",
+      "producers": [
+        "0x00e66840",
+        "0x00e63560"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "boundary": "original_static",
+      "consumers": [
+        "Cell GFX",
+        "Swarm effect manager"
+      ],
+      "evidence": [
+        {
+          "address": "0x00e63560",
+          "claim": "LoadEffectMap invokes Create, Start, Stop, Release, and parameter updates.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__LoadEffectMap.c"
+        }
+      ],
+      "id": "swarm_effect_started_or_stopped",
+      "kind": "lifecycle_transition",
+      "producers": [
+        "0x00e63560"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "boundary": "original_static",
+      "consumers": [
+        "Simulator::cTribePlanner",
+        "tribe behavior execution"
+      ],
+      "evidence": [
+        {
+          "address": "struct:/Spore/Simulator/cTribePlan",
+          "claim": "cTribePlan declares mState+0x04, mCheckTime+0x0c, mFoodAccumulated+0x14, and mbCheck+0x18.",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv"
+        }
+      ],
+      "id": "tribe_plan_check_due",
+      "kind": "temporal_transition",
+      "producers": [
+        "cTribePlanner update; exact address unresolved"
+      ],
+      "status": "sdk_state_surface_native_body_unresolved"
+    },
+    {
+      "boundary": "original_static",
+      "consumers": [
+        "achievement UI",
+        "persistent progression"
+      ],
+      "evidence": [
+        {
+          "address": "0x00676e90",
+          "claim": "SetProgressFlags updates definition progress conditionally.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Pollinator__cAchievementsManager__SetProgressFlags.c"
+        }
+      ],
+      "id": "pollinator_progress_updated",
+      "kind": "progression_transition",
+      "producers": [
+        "0x00676e90"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "boundary": "original_static",
+      "consumers": [
+        "asset publication",
+        "parent-asset lookup"
+      ],
+      "evidence": [
+        {
+          "address": "0x00551240",
+          "claim": "cAssetMetadata::Set initializes identity, parent, and metadata state.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Pollinator__cAssetMetadata__Set.c"
+        }
+      ],
+      "id": "pollinator_asset_metadata_published",
+      "kind": "lifecycle_transition",
+      "producers": [
+        "0x00551240"
+      ],
+      "status": "static_mechanics_field_aliases_partial"
+    },
+    {
+      "boundary": "original_static",
+      "consumers": [
+        "palette selection"
+      ],
+      "evidence": [
+        {
+          "address": "0x005c7d00",
+          "claim": "HasNext advances and normalizes the four-level palette cursor.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Palettes__PaletteIterator__HasNext.c"
+        }
+      ],
+      "id": "palette_cursor_advanced",
+      "kind": "cursor_transition",
+      "producers": [
+        "0x005c7d00",
+        "0x005c7f10"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "boundary": "original_static",
+      "consumers": [
+        "ArgScript parser",
+        "ArgScript blocks"
+      ],
+      "evidence": [
+        {
+          "address": "0x00845310",
+          "claim": "SDK export is FormatParser::StartScope; related exports include EndScope, Close, ProcessFile, ProcessStream, and ProcessLine.",
+          "kind": "sdk_function_export",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/sdk_functions.tsv"
+        }
+      ],
+      "id": "argscript_scope_entered",
+      "kind": "lifecycle_transition",
+      "producers": [
+        "0x00845310"
+      ],
+      "status": "sdk_lifecycle_body_unresolved"
+    },
+    {
+      "boundary": "original_static",
+      "consumers": [
+        "ArgScript parser"
+      ],
+      "evidence": [
+        {
+          "address": "0x00841440",
+          "claim": "CreateDefinitionSafe stores the supplied name or null and delegates to the shared helper.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/ArgScript__FormatParser__CreateDefinitionSafe.c"
+        }
+      ],
+      "id": "argscript_definition_created",
+      "kind": "state_mutation",
+      "producers": [
+        "0x00841440"
+      ],
+      "status": "static_mechanics"
+    },
+    {
+      "boundary": "original_static",
+      "consumers": [
+        "AudioSystem virtual interface"
+      ],
+      "evidence": [
+        {
+          "address": "0x00571f80",
+          "claim": "PlayProceduralAudio null-checks the system and dispatches virtual operations.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Audio__PlayProceduralAudio.c"
+        }
+      ],
+      "id": "audio_play_requested",
+      "kind": "command_transition",
+      "producers": [
+        "0x00571f80"
+      ],
+      "status": "static_interface_dispatch"
+    },
+    {
+      "boundary": "original_static",
+      "consumers": [
+        "AudioSystem virtual interface"
+      ],
+      "evidence": [
+        {
+          "address": "0x00572020",
+          "claim": "StopAudio null-checks the system and dispatches stop-related virtual operations.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Audio__StopAudio.c"
+        }
+      ],
+      "id": "audio_stop_requested",
+      "kind": "command_transition",
+      "producers": [
+        "0x00572020"
+      ],
+      "status": "static_interface_dispatch"
+    },
+    {
+      "boundary": "original_static",
+      "consumers": [
+        "AudioSystem virtual interface"
+      ],
+      "evidence": [
+        {
+          "address": "0x00572070",
+          "claim": "SetPropertyString requires non-null system/value and dispatches a string-property operation.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Audio__SetPropertyString.c"
+        }
+      ],
+      "id": "audio_property_changed",
+      "kind": "state_mutation_request",
+      "producers": [
+        "0x00572070"
+      ],
+      "status": "static_interface_dispatch"
+    }
+  ],
+  "scope": {
+    "binary": "SPORE/SporeBin/SporeApp.exe",
+    "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+    "boundaries": [
+      "Read-only research; no OpenSpore source, original binary, SPORE asset, Ghidra project, historical triage artifact, or other knowledgegraph artifact is modified.",
+      "Only additional-domains.json is created by this deliverable.",
+      "SDK names, offsets, enums, and vtable slots establish structure or lifecycle shape, not behavior without a body or corroborated call path.",
+      "No positive runtime trace or differential oracle result is available for these domains."
+    ],
+    "build": "SporeApp.exe 3.1.0.22",
+    "evidence_policy": {
+      "decompilation": "Direct memory operations, call order, guards, and virtual slots are static evidence; decompiler parameter names and enum casts are not authoritative.",
+      "levels": [
+        "APPROXIMATION",
+        "CONFIRMED",
+        "INFERRED",
+        "OBSERVED",
+        "SUPPORTED",
+        "UNKNOWN",
+        "UNRESOLVED",
+        "VERIFIED"
+      ],
+      "runtime": "No positive runtime evidence is claimed.",
+      "sdk_name_only": "SDK exports, fields, enums, and vtable slots are structural or lifecycle evidence unless corroborated by a body or call path."
+    },
+    "image_base": "0x00400000",
+    "method": [
+      "Queried CodeGraph before direct artifact inspection.",
+      "Compared existing state-machine dossiers for overlap and gaps.",
+      "Read SDK exports, function boundaries, structure fields, and selected decompiled bodies.",
+      "Read shared-state, dependency-graph, and unknown-high dossier artifacts to preserve ownership boundaries and contradictions."
+    ],
+    "ranked_domains": [
+      {
+        "name": "shared_registry_materialization",
+        "rank": 1,
+        "reason": "FUN_00b21340 has 254 total callers and 50 gameplay callers and blocks noun/game-data materialization."
+      },
+      {
+        "name": "game_time_pause_and_speed",
+        "rank": 2,
+        "reason": "cGameTimeManager owns pause collections, speed factors, frame timestamps, and delta conversion."
+      },
+      {
+        "name": "editor_animation_world",
+        "rank": 3,
+        "reason": "Editor animation subjects bridge editor undo, creature animation, and PlayMode."
+      },
+      {
+        "name": "swarm_effect_lifecycle",
+        "rank": 4,
+        "reason": "Swarm effect state controls gameplay visual effects, with direct Cell create/start/stop/release paths."
+      },
+      {
+        "name": "tribe_plan_execution",
+        "rank": 5,
+        "reason": "cTribePlanner owns plan collections, timers, food, tools, and workers driving civilization behavior."
+      },
+      {
+        "name": "pollinator_achievement_progress",
+        "rank": 6,
+        "reason": "Achievement definitions and manager progress feed persistent progression and UI notification."
+      },
+      {
+        "name": "pollinator_asset_metadata",
+        "rank": 7,
+        "reason": "Metadata initialization and parent binding are direct lifecycle boundaries for community assets."
+      },
+      {
+        "name": "palette_cursor_and_swatch",
+        "rank": 8,
+        "reason": "Nested palette traversal and swatch interaction state extend editor paint selection coverage."
+      },
+      {
+        "name": "argscript_parser_execution",
+        "rank": 9,
+        "reason": "Scope, definition, variable, and block state govern configuration and game-data loading."
+      },
+      {
+        "name": "audio_track_commands",
+        "rank": 10,
+        "reason": "Audio commands are cross-cutting but remain lower-confidence because track ownership and virtual semantics are unresolved."
+      }
+    ],
+    "research_only": true,
+    "sources": [
+      ".spore-analysis/ghidra-exports/sdk_functions.tsv",
+      ".spore-analysis/ghidra-exports/functions.tsv",
+      ".spore-analysis/ghidra-exports/structs.tsv",
+      ".spore-analysis/ghidra-exports/structs_fields.tsv",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditorAnimWorld__DestroyCreature.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditorAnimWorld__SetTargetPosition.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__InstanceEffectOnCell.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__LoadEffectMap.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Pollinator__cAchievementsManager__SetProgressFlags.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Pollinator__cAssetMetadata__Set.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Palettes__PaletteIterator__HasNext.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Palettes__PaletteIterator__Next.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/ArgScript__FormatParser__GetCurrentScope.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/ArgScript__FormatParser__CreateDefinitionSafe.c",
+      ".spore-analysis/ghidra-exports/decompiled_sdk/Audio__PlayProceduralAudio.c",
+      "docs/analysis/simulator-shared-state-interface.md",
+      "docs/analysis/dossiers/unknown-high/message-handler-registration.md",
+      "knowledgegraph/research/state-machines/creature-civilization.json",
+      "knowledgegraph/research/state-machines/editor-workflows.json",
+      "knowledgegraph/research/state-machines/simulator-core.json",
+      "knowledgegraph/research/global-campaign-2026/track-j-dependency-graph.json"
+    ]
+  },
+  "state_machines": [
+    {
+      "confidence": {
+        "level": "medium",
+        "reason": "Map/vector/list mechanics, needsUpdate clearing, and high fan-in are supported; exact SDK identity and callback meanings remain unresolved."
+      },
+      "consumers": [
+        "00acd9a0",
+        "00ace2c0",
+        "00b25f40",
+        "00ba0080",
+        "00bf9820",
+        "map_int_whatever_find 0x00e5c780"
+      ],
+      "entry_actions": [
+        {
+          "action": "resolve a noun/game-data key through owner+0x98",
+          "conditions": [
+            "context map is present"
+          ],
+          "evidence": "0x00b21340 and docs/analysis/simulator-shared-state-interface.md"
+        }
+      ],
+      "evidence": [
+        {
+          "address": "0x00b21340",
+          "claim": "The root performs map lookup, materialization/insertion, linked-list callback traversal, and clears needsUpdate.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": "docs/analysis/simulator-shared-state-interface.md"
+        },
+        {
+          "address": "struct:/Spore/Simulator/cGameNounManager",
+          "claim": "mNouns+0x78 and mNounMap+0x98 are declared.",
+          "kind": "sdk_layout",
+          "level": "SUPPORTED",
+          "source": "docs/analysis/simulator-shared-state-interface.md"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "return materialized game-data vector record",
+          "conditions": [
+            "map or callback path resolves a record"
+          ],
+          "evidence": "0x00b21340"
+        }
+      ],
+      "generated_events": [
+        "shared_registry_record_materialized",
+        "shared_registry_record_marked_clean"
+      ],
+      "guards": [
+        "The map helper is unsigned lower-bound, not an unconditional exact-find assertion."
+      ],
+      "impact_rank": 1,
+      "name": "shared_noun_registry_materialization",
+      "possible_states": [
+        {
+          "actions": [
+            "no record for requested key"
+          ],
+          "guards": [
+            "map result is end sentinel"
+          ],
+          "name": "absent",
+          "raw_value": "map_lookup_absent"
+        },
+        {
+          "actions": [
+            "helper materializes or inserts a record"
+          ],
+          "guards": [
+            "record is pending"
+          ],
+          "name": "materializing",
+          "raw_value": "record_pending_materialization"
+        },
+        {
+          "actions": [
+            "record is available to consumers",
+            "needsUpdate is cleared"
+          ],
+          "guards": [
+            "record exists",
+            "needsUpdate == 0"
+          ],
+          "name": "materialized_clean",
+          "raw_value": "needsUpdate_cleared"
+        },
+        {
+          "actions": [
+            "record is marked for update"
+          ],
+          "guards": [
+            "needsUpdate != 0"
+          ],
+          "name": "materialized_dirty",
+          "raw_value": "needsUpdate_nonzero"
+        }
+      ],
+      "relevant_functions": [
+        "FUN_00b21340",
+        "map_int_whatever_find 0x00e5c780",
+        "FUN_00ba8420"
+      ],
+      "relevant_structures": [
+        "cGameNounManager",
+        "tGameDataVectorT<cGameData>",
+        "EASTL map"
+      ],
+      "side_effects": [
+        "may mutate/insert map records",
+        "materializes linked-list records into a vector",
+        "clears needsUpdate",
+        "invokes callback-shaped create/clear/add/filter operations"
+      ],
+      "state_variable": {
+        "address": "cGameNounManager+0x98 and returned tGameDataVectorT<cGameData>+0x00",
+        "expression": "noun-map presence plus returned-record.needsUpdate",
+        "owner": "cGameNounManager and game-data records",
+        "support": "Map/vector offsets and clearing are supported; exact function identity is unresolved.",
+        "type": "map presence plus update flag"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "create or update the returned vector record"
+          ],
+          "cause": "map lookup fails or noun data is requested",
+          "entry_actions": [
+            "resolve key and callbacks"
+          ],
+          "event": "shared_registry_record_materialized",
+          "exit_actions": [
+            "return record"
+          ],
+          "from_state": "absent",
+          "guard": "map result is not usable",
+          "side_effects": [
+            "map/vector state changes"
+          ],
+          "source": "0x00b21340",
+          "to_state": "materializing"
+        },
+        {
+          "actions": [
+            "clear needsUpdate"
+          ],
+          "cause": "materialization completes",
+          "entry_actions": [
+            "helper returns a record"
+          ],
+          "event": "shared_registry_record_marked_clean",
+          "exit_actions": [
+            "return clean record"
+          ],
+          "from_state": "materializing",
+          "guard": "helper path completes",
+          "side_effects": [
+            "record becomes consumer-ready"
+          ],
+          "source": "0x00b21340",
+          "to_state": "materialized_clean"
+        },
+        {
+          "actions": [
+            "set or retain needsUpdate"
+          ],
+          "cause": "game-data mutation or callback update",
+          "entry_actions": [
+            "record is already materialized"
+          ],
+          "event": "shared_registry_record_materialized",
+          "exit_actions": [
+            "leave record available"
+          ],
+          "from_state": "materialized_clean",
+          "guard": "mutation request",
+          "side_effects": [
+            "next request must reconcile"
+          ],
+          "source": "0x00b21340; mutation helper unresolved",
+          "to_state": "materialized_dirty"
+        }
+      ],
+      "validation_strategy": [
+        "Recover 0x00b21340 and all five callback arguments.",
+        "Instrument owner+0x98 and returned vector fields for absent, materializing, dirty, and clean records.",
+        "Do not promote the function to cGameNounManager::GetData without corroborating structure/call evidence."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "medium",
+        "reason": "Pause/speed surfaces and exported lifecycle functions are confirmed, but native pause/speed bodies and conversion semantics are unavailable."
+      },
+      "consumers": [
+        "cGameTimeManager::ConvertDeltaTime",
+        "cGameTimeManager::GetPauseCount",
+        "cGameTimeManager::Toggle",
+        "game-speed UI"
+      ],
+      "entry_actions": [
+        {
+          "action": "obtain cGameTimeManager through cGameTimeManager::Get",
+          "conditions": [
+            "DAT_0167eb3c is non-null"
+          ],
+          "evidence": "0x00b3d480"
+        }
+      ],
+      "evidence": [
+        {
+          "address": "0x00b3d480",
+          "claim": "cGameTimeManager::Get returns DAT_0167eb3c.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cGameTimeManager__Get.c"
+        },
+        {
+          "address": "struct:/Spore/Simulator/cGameTimeManager",
+          "claim": "mBaseTimeElapsed+0x30, mTimeAtStartOfFrame+0x38, mCurrentSpeed+0x40, mCurrentSpeedIndex+0x44, mFlags+0x48, mPauseMaps+0x4c, and mPauseTypes+0x68 are declared.",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "ConvertDeltaTime returns scaled game time",
+          "conditions": [
+            "exact conversion body is unresolved"
+          ],
+          "evidence": "0x00b31da0 SDK export"
+        }
+      ],
+      "generated_events": [
+        "game_time_pause_changed",
+        "game_time_speed_changed"
+      ],
+      "guards": [
+        "Pause count depends on pause maps/types, not one boolean.",
+        "mCurrentSpeed and mCurrentSpeedIndex must be interpreted as a pair."
+      ],
+      "impact_rank": 2,
+      "name": "game_time_pause_and_speed",
+      "possible_states": [
+        {
+          "actions": [
+            "time advances using current speed"
+          ],
+          "guards": [
+            "pause count is zero"
+          ],
+          "name": "unpaused",
+          "raw_value": "pause_count_zero"
+        },
+        {
+          "actions": [
+            "game-time conversion is gated or reduced"
+          ],
+          "guards": [
+            "one or more pause entries active"
+          ],
+          "name": "paused",
+          "raw_value": "pause_count_nonzero"
+        },
+        {
+          "actions": [
+            "time advances at selected factor"
+          ],
+          "guards": [
+            "mCurrentSpeed differs from default"
+          ],
+          "name": "speed_scaled",
+          "raw_value": "mCurrentSpeed_selected"
+        },
+        {
+          "actions": [
+            "new frame timestamp is sampled"
+          ],
+          "guards": [
+            "frame boundary processed"
+          ],
+          "name": "frame_sample",
+          "raw_value": "mTimeAtStartOfFrame_updated"
+        }
+      ],
+      "relevant_functions": [
+        "Simulator::cGameTimeManager::Get",
+        "Pause 0x00b32330",
+        "Toggle 0x00b32390",
+        "GetPauseCount 0x00b321e0",
+        "SetSpeed 0x00b32560",
+        "ConvertDeltaTime 0x00b31da0",
+        "TimeAtStartOfFrame 0x00b63980"
+      ],
+      "relevant_structures": [
+        "Simulator::cGameTimeManager",
+        "PauseType",
+        "TimeManagerPause"
+      ],
+      "side_effects": [
+        "changes pause maps/types/counters",
+        "changes current speed/index",
+        "updates frame timestamps",
+        "gates or scales delta time"
+      ],
+      "state_variable": {
+        "address": "cGameTimeManager+0x30..+0x7b",
+        "expression": "pause collections plus speed/index and frame timestamps",
+        "owner": "Simulator::cGameTimeManager",
+        "support": "SDK layout is confirmed; transition order and units require native bodies.",
+        "type": "pause collection, float speed, integer index, 64-bit timestamps, flags"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "add/remove/update pause entry",
+            "recompute pause count"
+          ],
+          "cause": "Pause or Toggle",
+          "entry_actions": [
+            "identify pause key"
+          ],
+          "event": "game_time_pause_changed",
+          "exit_actions": [
+            "publish pause count"
+          ],
+          "from_state": "unpaused",
+          "guard": "request accepted",
+          "side_effects": [
+            "delta conversion changes"
+          ],
+          "source": "0x00b32330 or 0x00b32390; body unresolved",
+          "to_state": "paused"
+        },
+        {
+          "actions": [
+            "remove/decrement pause entry",
+            "recompute pause count"
+          ],
+          "cause": "unpause or Toggle",
+          "entry_actions": [
+            "identify active pause key"
+          ],
+          "event": "game_time_pause_changed",
+          "exit_actions": [
+            "publish pause count"
+          ],
+          "from_state": "paused",
+          "guard": "entry removable",
+          "side_effects": [
+            "time resumes or changes speed"
+          ],
+          "source": "0x00b32330 or 0x00b32390; body unresolved",
+          "to_state": "unpaused"
+        },
+        {
+          "actions": [
+            "write speed factor and index"
+          ],
+          "cause": "SetSpeed",
+          "entry_actions": [
+            "resolve speed index"
+          ],
+          "event": "game_time_speed_changed",
+          "exit_actions": [
+            "publish effective speed"
+          ],
+          "from_state": "unpaused",
+          "guard": "valid selection",
+          "side_effects": [
+            "future delta conversion changes"
+          ],
+          "source": "0x00b32560; body unresolved",
+          "to_state": "speed_scaled"
+        },
+        {
+          "actions": [
+            "sample frame timestamp",
+            "retain prior timestamp"
+          ],
+          "cause": "frame boundary",
+          "entry_actions": [
+            "call TimeAtStartOfFrame"
+          ],
+          "event": "game_time_speed_changed",
+          "exit_actions": [
+            "provide frame-time inputs"
+          ],
+          "from_state": "speed_scaled",
+          "guard": "frame update runs",
+          "side_effects": [
+            "temporal state advances"
+          ],
+          "source": "0x00b63980 and 0x00b31da0",
+          "to_state": "frame_sample"
+        }
+      ],
+      "validation_strategy": [
+        "Recover Pause, Toggle, GetPauseCount, SetSpeed, ConvertDeltaTime, and constructor.",
+        "Trace all fields +0x30..+0x7b for unpaused, paused, and scaled frames."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "medium",
+        "reason": "Editor animation map lookup, target dispatch, destroy teardown, and SDK lifecycle slots are supported; load/update bodies are incomplete."
+      },
+      "consumers": [
+        "Anim::IAnimWorld",
+        "EditorCreatureController",
+        "Anim::IAnimManager",
+        "editor undo and PlayMode"
+      ],
+      "entry_actions": [
+        {
+          "action": "resolve world+0x38 map and creature ID",
+          "conditions": [
+            "animation world has a populated map"
+          ],
+          "evidence": "0x0059c6e0, 0x0059ca70, 0x0059cac0, 0x0059cea0, 0x0059cf00"
+        }
+      ],
+      "evidence": [
+        {
+          "address": "0x0059c6e0",
+          "claim": "DestroyCreature checks map/sentinel, dispatches controller teardown, and invokes cleanup.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditorAnimWorld__DestroyCreature.c"
+        },
+        {
+          "address": "0x0059cf00",
+          "claim": "SetTargetPosition resolves a controller and dispatches target update.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditorAnimWorld__SetTargetPosition.c"
+        },
+        {
+          "address": "struct:/Spore/Anim/IAnimWorld",
+          "claim": "LoadCreature, DestroyCreature, Update, and UpdateCreatures lifecycle slots are declared.",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "remove creature from world and release controller association",
+          "conditions": [
+            "map resolves a real entry"
+          ],
+          "evidence": "0x0059c6e0"
+        }
+      ],
+      "generated_events": [
+        "editor_anim_creature_destroyed",
+        "editor_anim_target_updated"
+      ],
+      "guards": [
+        "world+0x38 must be non-null; lookup must not return world+0xc sentinel; controller must be non-null for target updates."
+      ],
+      "impact_rank": 3,
+      "name": "editor_animation_creature_lifecycle",
+      "possible_states": [
+        {
+          "actions": [
+            "no controller or creature for ID"
+          ],
+          "guards": [
+            "lookup absent or sentinel"
+          ],
+          "name": "absent",
+          "raw_value": "map_entry_absent"
+        },
+        {
+          "actions": [
+            "controller and creature available for update"
+          ],
+          "guards": [
+            "map entry exists"
+          ],
+          "name": "loaded",
+          "raw_value": "map_entry_present"
+        },
+        {
+          "actions": [
+            "controller has target position or angle"
+          ],
+          "guards": [
+            "target setter accepted"
+          ],
+          "name": "targeted",
+          "raw_value": "target_fields_updated"
+        },
+        {
+          "actions": [
+            "controller teardown in progress"
+          ],
+          "guards": [
+            "Destroy resolved entry"
+          ],
+          "name": "destroying",
+          "raw_value": "teardown_dispatched"
+        },
+        {
+          "actions": [
+            "map no longer contains creature"
+          ],
+          "guards": [
+            "cleanup completes"
+          ],
+          "name": "destroyed",
+          "raw_value": "map_entry_removed"
+        }
+      ],
+      "relevant_functions": [
+        "cEditorAnimWorld::DestroyCreature 0x0059c6e0",
+        "GetAnimatedCreature 0x0059ca70",
+        "GetCreatureController 0x0059cac0",
+        "SetTargetAngle 0x0059cea0",
+        "SetTargetPosition 0x0059cf00",
+        "Anim::IAnimManager::Get 0x0067cae0"
+      ],
+      "relevant_structures": [
+        "Editors::cEditorAnimWorld",
+        "EditorCreatureController",
+        "Anim::AnimatedCreature",
+        "Anim::IAnimWorld"
+      ],
+      "side_effects": [
+        "creates/removes editor subjects",
+        "updates controller targets",
+        "dispatches teardown",
+        "couples editor animation to undo/PlayMode"
+      ],
+      "state_variable": {
+        "address": "cEditorAnimWorld+0x38 map and controller target fields",
+        "expression": "creatureID -> controller/AnimatedCreature membership plus current target state",
+        "owner": "cEditorAnimWorld and EditorCreatureController",
+        "support": "Map guards, lookup, target dispatch, and destroy are supported; load/update aliases are partly inferred.",
+        "type": "map membership and controller animation/target state"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "load creature/controller",
+            "insert ID in world map"
+          ],
+          "cause": "LoadCreature or editor creation",
+          "entry_actions": [
+            "resolve resource/world"
+          ],
+          "event": "editor_anim_creature_loaded",
+          "exit_actions": [
+            "return loaded subject"
+          ],
+          "from_state": "absent",
+          "guard": "load slot valid",
+          "side_effects": [
+            "subject becomes targetable"
+          ],
+          "source": "Anim::IAnimWorld::LoadCreature vtable +0x30",
+          "to_state": "loaded"
+        },
+        {
+          "actions": [
+            "update target position/angle"
+          ],
+          "cause": "editor target request",
+          "entry_actions": [
+            "resolve controller"
+          ],
+          "event": "editor_anim_target_updated",
+          "exit_actions": [
+            "controller update consumes target"
+          ],
+          "from_state": "loaded",
+          "guard": "controller non-null",
+          "side_effects": [
+            "target state changes"
+          ],
+          "source": "0x0059cea0 or 0x0059cf00",
+          "to_state": "targeted"
+        },
+        {
+          "actions": [
+            "dispatch teardown",
+            "invoke cleanup helpers"
+          ],
+          "cause": "DestroyCreature",
+          "entry_actions": [
+            "resolve real map entry"
+          ],
+          "event": "editor_anim_creature_destroyed",
+          "exit_actions": [
+            "remove map entry"
+          ],
+          "from_state": "loaded or targeted",
+          "guard": "entry not sentinel",
+          "side_effects": [
+            "subject stops participating"
+          ],
+          "source": "0x0059c6e0",
+          "to_state": "destroying"
+        },
+        {
+          "actions": [
+            "complete cleanup",
+            "make ID absent"
+          ],
+          "cause": "destroy cleanup completes",
+          "entry_actions": [
+            "helpers return"
+          ],
+          "event": "editor_anim_creature_destroyed",
+          "exit_actions": [
+            "future lookup returns null"
+          ],
+          "from_state": "destroying",
+          "guard": "cleanup complete",
+          "side_effects": [
+            "world map entry removed"
+          ],
+          "source": "0x0059c6e0",
+          "to_state": "destroyed"
+        }
+      ],
+      "validation_strategy": [
+        "Recover cEditorAnimWorld construction and LoadCreature/UpdateCreatures bodies.",
+        "Trace map membership and controller fields through create, target, update, undo, and destroy."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "medium",
+        "reason": "Swarm vtables and Cell GFX bodies directly show create/start/parameter/stop/release operations; world completion and enum meanings remain unresolved."
+      },
+      "consumers": [
+        "Simulator::Cell::cCellGFX",
+        "Swarm::IEffectsManager",
+        "Swarm::IEffectsWorld",
+        "Swarm::IVisualEffect",
+        "Cell damage/death presentation"
+      ],
+      "entry_actions": [
+        {
+          "action": "obtain global effects manager",
+          "conditions": [
+            "DAT_015fd8d0 non-null"
+          ],
+          "evidence": "0x0067dd90"
+        },
+        {
+          "action": "create or reuse Cell effect slot",
+          "conditions": [
+            "effect ID and slot valid"
+          ],
+          "evidence": "0x00e66840 and 0x00e63560"
+        }
+      ],
+      "evidence": [
+        {
+          "address": "0x00e63560",
+          "claim": "LoadEffectMap checks IsRunning, stops/releases invalid effects, creates/starts valid effects, and updates parameters.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__LoadEffectMap.c"
+        },
+        {
+          "address": "0x00e66840",
+          "claim": "InstanceEffectOnCell creates an effect, stores it in a Cell GFX slot, and applies the Cell transform.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__cCellGFX__InstanceEffectOnCell.c"
+        },
+        {
+          "address": "struct:/Spore/Swarm/cEffectsWorld",
+          "claim": "mState+0x20 and active-effect vector+0x30 are declared; vtables expose state, reset, kill, initialize, dispose, and update.",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "stop and release invalid or zero-valued effect",
+          "conditions": [
+            "Cell effect map invalidates effect"
+          ],
+          "evidence": "0x00e63560"
+        },
+        {
+          "action": "kill/remove effect world",
+          "conditions": [
+            "world removed or reset"
+          ],
+          "evidence": "IEffectsManager/IEffectsWorld vtable; body unresolved"
+        }
+      ],
+      "generated_events": [
+        "swarm_effect_created",
+        "swarm_effect_started_or_stopped"
+      ],
+      "guards": [
+        "Creation must return non-null; Cell GFX slot capacity is checked."
+      ],
+      "impact_rank": 4,
+      "name": "swarm_visual_effect_lifecycle",
+      "possible_states": [
+        {
+          "actions": [
+            "no requested effect instantiated"
+          ],
+          "guards": [
+            "slot empty"
+          ],
+          "name": "uninstantiated",
+          "raw_value": "no_effect_instance"
+        },
+        {
+          "actions": [
+            "visual effect object exists in a slot/world vector"
+          ],
+          "guards": [
+            "creation returns non-null"
+          ],
+          "name": "created",
+          "raw_value": "effect_instance_exists"
+        },
+        {
+          "actions": [
+            "effect active and updateable"
+          ],
+          "guards": [
+            "IsRunning true"
+          ],
+          "name": "running",
+          "raw_value": "IsRunning_true"
+        },
+        {
+          "actions": [
+            "effect allocated but paused/hidden"
+          ],
+          "guards": [
+            "SetIsPaused or SetIsHidden active"
+          ],
+          "name": "paused_or_hidden",
+          "raw_value": "paused_or_hidden"
+        },
+        {
+          "actions": [
+            "effect stopped and awaiting release"
+          ],
+          "guards": [
+            "Stop dispatched"
+          ],
+          "name": "stopped",
+          "raw_value": "Stop_dispatched"
+        },
+        {
+          "actions": [
+            "effect reference released"
+          ],
+          "guards": [
+            "Release or cleanup completes"
+          ],
+          "name": "released",
+          "raw_value": "reference_released"
+        }
+      ],
+      "relevant_functions": [
+        "cCellGFX::InstanceEffectOnCell 0x00e66840",
+        "cCellGFX::LoadEffectMap 0x00e63560",
+        "cCellGFX::AddPreloadedEffect 0x00e66280",
+        "Swarm::IEffectsManager::Get 0x0067dd90",
+        "IVisualEffect::Start vtable +0x08",
+        "IVisualEffect::Stop vtable +0x0c"
+      ],
+      "relevant_structures": [
+        "Swarm::cEffectsManager",
+        "Swarm::cEffectsWorld",
+        "Swarm::cVisualEffect",
+        "Simulator::Cell::cCellGFX"
+      ],
+      "side_effects": [
+        "allocates/reuses effect slots",
+        "changes running/paused/hidden state",
+        "updates transforms/parameters",
+        "releases effect references"
+      ],
+      "state_variable": {
+        "address": "cEffectsWorld+0x20 and IVisualEffect virtual state",
+        "expression": "world.mState plus per-effect IsRunning/SetIsPaused/SetIsHidden state",
+        "owner": "Swarm manager/world and each cVisualEffect",
+        "support": "World state and vtable slots are confirmed; Cell start/stop calls are direct.",
+        "type": "SwarmState plus effect flags"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "create effect",
+            "store in Cell slot/world"
+          ],
+          "cause": "effect instantiation",
+          "entry_actions": [
+            "resolve effect ID/transform"
+          ],
+          "event": "swarm_effect_created",
+          "exit_actions": [
+            "retain effect pointer"
+          ],
+          "from_state": "uninstantiated",
+          "guard": "creation non-null",
+          "side_effects": [
+            "identity initialized"
+          ],
+          "source": "0x00e66840",
+          "to_state": "created"
+        },
+        {
+          "actions": [
+            "dispatch Start"
+          ],
+          "cause": "valid new effect",
+          "entry_actions": [
+            "ensure slot populated"
+          ],
+          "event": "swarm_effect_started_or_stopped",
+          "exit_actions": [
+            "allow updates"
+          ],
+          "from_state": "created",
+          "guard": "creation succeeded",
+          "side_effects": [
+            "IsRunning may become true"
+          ],
+          "source": "0x00e63560; vtable +0x08",
+          "to_state": "running"
+        },
+        {
+          "actions": [
+            "dispatch SetIsPaused/SetIsHidden"
+          ],
+          "cause": "pause, visibility, or policy",
+          "entry_actions": [
+            "effect running"
+          ],
+          "event": "swarm_effect_started_or_stopped",
+          "exit_actions": [
+            "retain allocation"
+          ],
+          "from_state": "running",
+          "guard": "request accepted",
+          "side_effects": [
+            "update/visibility suppressed"
+          ],
+          "source": "IVisualEffect vtable +0x2c/+0x30; caller unresolved",
+          "to_state": "paused_or_hidden"
+        },
+        {
+          "actions": [
+            "dispatch Stop and Release"
+          ],
+          "cause": "invalid map entry, zero value, teardown, or orphan cleanup",
+          "entry_actions": [
+            "resolve effect pointer"
+          ],
+          "event": "swarm_effect_started_or_stopped",
+          "exit_actions": [
+            "clear slot/world record"
+          ],
+          "from_state": "running or paused_or_hidden",
+          "guard": "stop policy accepts",
+          "side_effects": [
+            "visual presentation ends"
+          ],
+          "source": "0x00e63560; vtable +0x0c",
+          "to_state": "stopped"
+        }
+      ],
+      "validation_strategy": [
+        "Recover cVisualEffect Start, Stop, IsRunning, SetIsPaused, SetIsHidden, and Release bodies.",
+        "Recover cEffectsWorld state enum values and reset/kill behavior.",
+        "Trace one Cell effect through creation, map changes, teardown, and release."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "low",
+        "reason": "cTribePlan and cTribePlanner fields explicitly expose state, timers, food, workers, plans, and intervals, but no matching native planner body was recovered."
+      },
+      "consumers": [
+        "Simulator::cTribePlanner",
+        "Simulator::cTribe",
+        "Simulator::cTribePlan",
+        "cCreatureCitizen workers",
+        "tribe behavior tree"
+      ],
+      "entry_actions": [
+        {
+          "action": "accumulate planner delta time and select plans by type",
+          "conditions": [
+            "planner has associated tribe and accumulated time"
+          ],
+          "evidence": "cTribePlanner mPlans+0x14, mTimeBetweenPlanExecutionByType+0x2c, mpTribe+0x74, mAccumulatedDeltaTime+0x78"
+        }
+      ],
+      "evidence": [
+        {
+          "address": "struct:/Spore/Simulator/cTribePlan",
+          "claim": "mID+0x00, mState+0x04, mFrequency+0x08, mCheckTime+0x0c, mFoodRequired+0x10, mFoodAccumulated+0x14, mbCheck+0x18, workers+0x1c, and mpProperties+0x54 are declared.",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv"
+        },
+        {
+          "address": "struct:/Spore/Simulator/cTribePlanner",
+          "claim": "mPlans+0x14, per-type intervals+0x2c, mpTribe+0x74, and accumulated delta time+0x78 are declared.",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "remove or replace a plan after completion/cancellation",
+          "conditions": [
+            "terminal mState is reached"
+          ],
+          "evidence": "No native body recovered; terminal values unresolved"
+        }
+      ],
+      "generated_events": [],
+      "guards": [
+        "Plan type is a planner map key, not proven equal to cTribePlan.mState.",
+        "Food/tool/worker/timing requirements come from cTribePlanProperties.",
+        "Terminal mState values are unknown."
+      ],
+      "impact_rank": 5,
+      "name": "tribe_plan_execution",
+      "possible_states": [
+        {
+          "actions": [
+            "plan waits in planner type vector"
+          ],
+          "guards": [
+            "mState non-terminal and mbCheck false"
+          ],
+          "name": "waiting",
+          "raw_value": "plan_waiting"
+        },
+        {
+          "actions": [
+            "elapsed time reaches check threshold"
+          ],
+          "guards": [
+            "mCheckTime and accumulated time satisfy condition"
+          ],
+          "name": "check_due",
+          "raw_value": "timer_pending"
+        },
+        {
+          "actions": [
+            "food accumulates toward requirement"
+          ],
+          "guards": [
+            "mFoodAccumulated below threshold"
+          ],
+          "name": "food_accumulating",
+          "raw_value": "food_below_requirement"
+        },
+        {
+          "actions": [
+            "workers/tools/food/timing evaluated"
+          ],
+          "guards": [
+            "property thresholds satisfied"
+          ],
+          "name": "execution_ready",
+          "raw_value": "requirements_satisfied"
+        },
+        {
+          "actions": [
+            "plan behavior executes then resets or terminates"
+          ],
+          "guards": [
+            "mState reaches execution/terminal value"
+          ],
+          "name": "executing_or_terminal",
+          "raw_value": "mState_unknown"
+        }
+      ],
+      "relevant_functions": [
+        "Simulator::cTribePlanner native update/vtable body unresolved",
+        "cTribeArchetype::GetTribeArchetype 0x00c8ec00 is related evidence only"
+      ],
+      "relevant_structures": [
+        "Simulator::cTribePlanner",
+        "Simulator::cTribePlan",
+        "Simulator::cTribePlanProperties",
+        "Simulator::cTribe"
+      ],
+      "side_effects": [
+        "accumulates planner time",
+        "selects/updates plans",
+        "accumulates food and checks tools/workers",
+        "executes tribe behavior and may reset frequency"
+      ],
+      "state_variable": {
+        "address": "cTribePlan+0x04, +0x0c, +0x14, +0x18; cTribePlanner+0x14..+0x7b",
+        "expression": "plan.mState plus timers, food accumulator, check flag, planner delta time, and per-type interval",
+        "owner": "Simulator::cTribePlanner and each cTribePlan",
+        "support": "SDK layout confirmed; mState meanings and transition order unresolved.",
+        "type": "integer plan state, timer fields, food accumulator, worker vector, schedule"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "insert plan into per-type vector"
+          ],
+          "cause": "planner initialization/new plan",
+          "entry_actions": [
+            "resolve type/properties"
+          ],
+          "event": "tribe_plan_check_due",
+          "exit_actions": [
+            "plan eligible for timing"
+          ],
+          "from_state": "waiting",
+          "guard": "valid type/properties",
+          "side_effects": [
+            "planner collection changes"
+          ],
+          "source": "cTribePlanner structure; body unresolved",
+          "to_state": "waiting"
+        },
+        {
+          "actions": [
+            "mark check pending"
+          ],
+          "cause": "mCheckTime/initial delay expires",
+          "entry_actions": [
+            "read accumulated time"
+          ],
+          "event": "tribe_plan_check_due",
+          "exit_actions": [
+            "evaluate requirements"
+          ],
+          "from_state": "waiting",
+          "guard": "timing threshold reached",
+          "side_effects": [
+            "check/accumulation phase begins"
+          ],
+          "source": "cTribePlan+0x0c/+0x18; body unresolved",
+          "to_state": "check_due"
+        },
+        {
+          "actions": [
+            "increase mFoodAccumulated"
+          ],
+          "cause": "food resources accumulate",
+          "entry_actions": [
+            "read accumulator/properties"
+          ],
+          "event": "tribe_plan_check_due",
+          "exit_actions": [
+            "re-evaluate readiness"
+          ],
+          "from_state": "check_due",
+          "guard": "food below requirement",
+          "side_effects": [
+            "resource demand changes"
+          ],
+          "source": "cTribePlan+0x10..+0x18; body unresolved",
+          "to_state": "food_accumulating"
+        },
+        {
+          "actions": [
+            "check tools/workers/food"
+          ],
+          "cause": "requirements become satisfiable",
+          "entry_actions": [
+            "read cTribePlanProperties"
+          ],
+          "event": "tribe_plan_check_due",
+          "exit_actions": [
+            "permit execution"
+          ],
+          "from_state": "food_accumulating",
+          "guard": "required properties met",
+          "side_effects": [
+            "workers/tools may be assigned"
+          ],
+          "source": "cTribePlanProperties; body unresolved",
+          "to_state": "execution_ready"
+        },
+        {
+          "actions": [
+            "execute behavior",
+            "reset/advance timers"
+          ],
+          "cause": "execution-ready plan update",
+          "entry_actions": [
+            "read per-type interval"
+          ],
+          "event": "tribe_plan_check_due",
+          "exit_actions": [
+            "enter terminal/waiting value"
+          ],
+          "from_state": "execution_ready",
+          "guard": "planner accepts plan",
+          "side_effects": [
+            "tribe behavior/resources change"
+          ],
+          "source": "cTribePlanner intervals; body unresolved",
+          "to_state": "executing_or_terminal"
+        }
+      ],
+      "validation_strategy": [
+        "Recover every cTribePlanner vtable body and enumerate readers/writers of cTribePlan+0x04,+0x0c,+0x10,+0x14,+0x18.",
+        "Map raw mState values to behavior execution and serialization before naming states."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "high",
+        "reason": "Manager flag, definition layout, direct progress mutation, notifier call, and exported Init/AddProgress/EarnAchievement/EvaluateTriggerOp interfaces are supported."
+      },
+      "consumers": [
+        "Pollinator::cAchievementsManager",
+        "Pollinator::cSPAchievementSerializer",
+        "achievement UI",
+        "persistent cross-game progress"
+      ],
+      "entry_actions": [
+        {
+          "action": "load definitions and cross-game data",
+          "conditions": [
+            "Init has populated manager/serializer"
+          ],
+          "evidence": "Init export 0x00676c40 and manager fields"
+        }
+      ],
+      "evidence": [
+        {
+          "address": "0x00676e90",
+          "claim": "SetProgressFlags suppresses mutation when mIsCheater is nonzero and otherwise updates definition+0x04 before conditional notifier call.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Pollinator__cAchievementsManager__SetProgressFlags.c"
+        },
+        {
+          "address": "struct:/Spore/Pollinator/cAchievementDefinition",
+          "claim": "mFlags+0x00, mProgress+0x04, and mTriggerValue+0x08 are declared.",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "serialize or notify earned achievement state",
+          "conditions": [
+            "progress/trigger condition reached"
+          ],
+          "evidence": "0x006766d0 and 0x00676710 entry points; full bodies unresolved"
+        }
+      ],
+      "generated_events": [
+        "pollinator_progress_updated"
+      ],
+      "guards": [
+        "mIsCheater suppresses SetProgressFlags mutation.",
+        "Threshold transition requires AddProgress/EvaluateTriggerOp/EarnAchievement bodies."
+      ],
+      "impact_rank": 6,
+      "name": "pollinator_achievement_progress",
+      "possible_states": [
+        {
+          "actions": [
+            "definitions not loaded"
+          ],
+          "guards": [
+            "Init incomplete"
+          ],
+          "name": "uninitialized",
+          "raw_value": "manager_not_initialized"
+        },
+        {
+          "actions": [
+            "definitions/cross-game records available"
+          ],
+          "guards": [
+            "Init complete"
+          ],
+          "name": "loaded",
+          "raw_value": "definitions_loaded"
+        },
+        {
+          "actions": [
+            "progress below trigger"
+          ],
+          "guards": [
+            "mProgress < mTriggerValue"
+          ],
+          "name": "in_progress",
+          "raw_value": "progress_below_trigger"
+        },
+        {
+          "actions": [
+            "achievement earned and notified/serialized"
+          ],
+          "guards": [
+            "mProgress >= mTriggerValue"
+          ],
+          "name": "earned",
+          "raw_value": "progress_at_trigger"
+        },
+        {
+          "actions": [
+            "progress mutation suppressed"
+          ],
+          "guards": [
+            "mIsCheater != 0"
+          ],
+          "name": "cheater_suppressed",
+          "raw_value": "cheater_nonzero"
+        }
+      ],
+      "relevant_functions": [
+        "Init 0x00676c40",
+        "GetAchievementDefinition 0x00676620",
+        "EvaluateTriggerOp 0x006766b0",
+        "EarnAchievement 0x006766d0",
+        "AddProgress 0x00676e50",
+        "SetProgressFlags 0x00676e90"
+      ],
+      "relevant_structures": [
+        "Pollinator::cAchievementsManager",
+        "Pollinator::cSPAchievementSerializer",
+        "Pollinator::cAchievementDefinition",
+        "CrossGameData"
+      ],
+      "side_effects": [
+        "mutates progress",
+        "suppresses cheater progress",
+        "updates cross-game sets",
+        "notifies/persists earned state"
+      ],
+      "state_variable": {
+        "address": "cAchievementDefinition+0x04 and cAchievementsManager+0x24",
+        "expression": "per-achievement mProgress/mTriggerValue with mIsCheater and cross-game data",
+        "owner": "Pollinator manager and definitions",
+        "support": "Definition fields and direct write supported; trigger transition unresolved.",
+        "type": "integer progress/trigger plus cheater/cross-game state"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "load definitions/serializer state"
+          ],
+          "cause": "manager initialization",
+          "entry_actions": [
+            "resolve definitions"
+          ],
+          "event": "pollinator_progress_updated",
+          "exit_actions": [
+            "manager queryable"
+          ],
+          "from_state": "uninitialized",
+          "guard": "Init completes",
+          "side_effects": [
+            "mAchievements populated"
+          ],
+          "source": "0x00676c40; body unresolved",
+          "to_state": "loaded"
+        },
+        {
+          "actions": [
+            "increase mProgress"
+          ],
+          "cause": "gameplay/scripted progress",
+          "entry_actions": [
+            "resolve definition"
+          ],
+          "event": "pollinator_progress_updated",
+          "exit_actions": [
+            "evaluate trigger"
+          ],
+          "from_state": "loaded or in_progress",
+          "guard": "mIsCheater == 0",
+          "side_effects": [
+            "progress persists"
+          ],
+          "source": "0x00676e50/0x00676e90",
+          "to_state": "in_progress"
+        },
+        {
+          "actions": [
+            "evaluate trigger and earn achievement"
+          ],
+          "cause": "progress reaches threshold",
+          "entry_actions": [
+            "read progress/trigger"
+          ],
+          "event": "pollinator_progress_updated",
+          "exit_actions": [
+            "notify/persist"
+          ],
+          "from_state": "in_progress",
+          "guard": "trigger predicate true",
+          "side_effects": [
+            "earned state"
+          ],
+          "source": "0x006766b0/0x006766d0; bodies unresolved",
+          "to_state": "earned"
+        },
+        {
+          "actions": [
+            "suppress mutation"
+          ],
+          "cause": "cheater mode",
+          "entry_actions": [
+            "read mIsCheater"
+          ],
+          "event": "pollinator_progress_updated",
+          "exit_actions": [
+            "leave progress unchanged"
+          ],
+          "from_state": "loaded or in_progress",
+          "guard": "mIsCheater != 0",
+          "side_effects": [
+            "normal progress blocked"
+          ],
+          "source": "0x00676e90",
+          "to_state": "cheater_suppressed"
+        }
+      ],
+      "validation_strategy": [
+        "Recover Init, AddProgress, EvaluateTriggerOp, EarnAchievement, and serializer write bodies.",
+        "Trace one achievement through progress, threshold, notification, save, and reload."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "high",
+        "reason": "cAssetMetadata::Set directly initializes resource identity, copies metadata, branches on parent key, and returns true; some raw offset aliases remain uncertain."
+      },
+      "consumers": [
+        "Pollinator asset publication",
+        "parent-asset lookup",
+        "community asset metadata"
+      ],
+      "entry_actions": [
+        {
+          "action": "initialize resource identity and asset key",
+          "conditions": [
+            "metadata and asset key supplied"
+          ],
+          "evidence": "0x00551240"
+        }
+      ],
+      "evidence": [
+        {
+          "address": "0x00551240",
+          "claim": "Set initializes identity, optional parent metadata, name/description/tags, and returns true.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Pollinator__cAssetMetadata__Set.c"
+        },
+        {
+          "address": "struct:/Spore/Pollinator/cAssetMetadata",
+          "claim": "mNameKey, mAssetID, mAssetKey, mParentAssetKey, timestamps, name, description, tags, and authors are declared.",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "return fully populated metadata object",
+          "conditions": [
+            "identity and parent resolution complete"
+          ],
+          "evidence": "0x00551240"
+        }
+      ],
+      "generated_events": [
+        "pollinator_asset_metadata_published"
+      ],
+      "guards": [
+        "Parent is optional; Set alone does not prove downstream publication."
+      ],
+      "impact_rank": 7,
+      "name": "pollinator_asset_metadata_materialization",
+      "possible_states": [
+        {
+          "actions": [
+            "resource/key fields not initialized"
+          ],
+          "guards": [
+            "Set not run"
+          ],
+          "name": "uninitialized",
+          "raw_value": "metadata_not_materialized"
+        },
+        {
+          "actions": [
+            "resource identity and asset key written"
+          ],
+          "guards": [
+            "initial writes complete"
+          ],
+          "name": "identity_initialized",
+          "raw_value": "identity_written"
+        },
+        {
+          "actions": [
+            "parent sentinel set or parent key resolved"
+          ],
+          "guards": [
+            "parent branch complete"
+          ],
+          "name": "parent_resolved",
+          "raw_value": "parent_key_resolved"
+        },
+        {
+          "actions": [
+            "name/description/tags populated"
+          ],
+          "guards": [
+            "Set returns true"
+          ],
+          "name": "metadata_populated",
+          "raw_value": "metadata_set_complete"
+        }
+      ],
+      "relevant_functions": [
+        "Pollinator::cAssetMetadata::Set 0x00551240",
+        "parent/resource lookup helpers; public names unresolved"
+      ],
+      "relevant_structures": [
+        "Pollinator::cAssetMetadata",
+        "ResourceKey",
+        "App::PropertyList"
+      ],
+      "side_effects": [
+        "initializes resource identity",
+        "stores asset/parent relationships",
+        "copies metadata strings/tags",
+        "returns materialized object"
+      ],
+      "state_variable": {
+        "address": "cAssetMetadata+0x08..+0xbc",
+        "expression": "resource keys, parent key, identity, strings, tags, and authors",
+        "owner": "Pollinator::cAssetMetadata",
+        "support": "SDK layout and direct Set writes supported; raw aliases uncertain.",
+        "type": "resource identity and publication metadata"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "write resource identity/key"
+          ],
+          "cause": "metadata construction",
+          "entry_actions": [
+            "accept key/name"
+          ],
+          "event": "pollinator_asset_metadata_published",
+          "exit_actions": [
+            "continue population"
+          ],
+          "from_state": "uninitialized",
+          "guard": "key supplied",
+          "side_effects": [
+            "identity exists"
+          ],
+          "source": "0x00551240",
+          "to_state": "identity_initialized"
+        },
+        {
+          "actions": [
+            "set parent sentinel or copy resolved key"
+          ],
+          "cause": "parentAssetKey branch",
+          "entry_actions": [
+            "test parent key"
+          ],
+          "event": "pollinator_asset_metadata_published",
+          "exit_actions": [
+            "copy metadata"
+          ],
+          "from_state": "identity_initialized",
+          "guard": "parent branch completes",
+          "side_effects": [
+            "relationship established"
+          ],
+          "source": "0x00551240",
+          "to_state": "parent_resolved"
+        },
+        {
+          "actions": [
+            "copy strings/tags",
+            "return true"
+          ],
+          "cause": "identity/parent initialized",
+          "entry_actions": [
+            "copy bounded strings"
+          ],
+          "event": "pollinator_asset_metadata_published",
+          "exit_actions": [
+            "metadata available"
+          ],
+          "from_state": "parent_resolved",
+          "guard": "copy completes",
+          "side_effects": [
+            "asset queryable by identity"
+          ],
+          "source": "0x00551240",
+          "to_state": "metadata_populated"
+        }
+      ],
+      "validation_strategy": [
+        "Map raw writes to declared cAssetMetadata fields.",
+        "Trace child and parented assets through Set, publication, save, reload, and sharing checks."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "high",
+        "reason": "HasNext and Next directly mutate/read the four iterator cursor fields and traverse nested vectors."
+      },
+      "consumers": [
+        "PaletteMain",
+        "PaletteUI",
+        "paint selection",
+        "editor palette UI"
+      ],
+      "entry_actions": [
+        {
+          "action": "initialize/rewind cursor",
+          "conditions": [
+            "PaletteMain and categories available"
+          ],
+          "evidence": "PaletteIterator::Init 0x005c7cb0 and Start 0x005c7f70 SDK exports"
+        }
+      ],
+      "evidence": [
+        {
+          "address": "0x005c7d00",
+          "claim": "HasNext increments mCategoryIndex+0x10, mSubCategoryIndex+0x14, mPageIndex+0x18, and mItemIndex+0x1c.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Palettes__PaletteIterator__HasNext.c"
+        },
+        {
+          "address": "0x005c7f10",
+          "claim": "Next returns the current PaletteItem pointer.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Palettes__PaletteIterator__Next.c"
+        },
+        {
+          "address": "struct:/Spore/Palettes/PaletteIterator",
+          "claim": "mpPalette+0x0c and four cursor fields +0x10..+0x1c are declared.",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "return false when all nested collections are exhausted",
+          "conditions": [
+            "no valid item remains"
+          ],
+          "evidence": "0x005c7d00"
+        }
+      ],
+      "generated_events": [
+        "palette_cursor_advanced"
+      ],
+      "guards": [
+        "All four indices are bounded by their owning collections."
+      ],
+      "impact_rank": 8,
+      "name": "palette_nested_item_cursor",
+      "possible_states": [
+        {
+          "actions": [
+            "no current item"
+          ],
+          "guards": [
+            "Init/Start not positioned"
+          ],
+          "name": "unpositioned",
+          "raw_value": "cursor_not_started"
+        },
+        {
+          "actions": [
+            "current category/subcategory selected"
+          ],
+          "guards": [
+            "indices in range"
+          ],
+          "name": "category_selected",
+          "raw_value": "category_valid"
+        },
+        {
+          "actions": [
+            "current page selected"
+          ],
+          "guards": [
+            "page index in range"
+          ],
+          "name": "page_selected",
+          "raw_value": "page_valid"
+        },
+        {
+          "actions": [
+            "current PaletteItem available"
+          ],
+          "guards": [
+            "item index in range"
+          ],
+          "name": "item_available",
+          "raw_value": "item_valid"
+        },
+        {
+          "actions": [
+            "all nested collections consumed"
+          ],
+          "guards": [
+            "HasNext false"
+          ],
+          "name": "exhausted",
+          "raw_value": "cursor_exhausted"
+        }
+      ],
+      "relevant_functions": [
+        "PaletteIterator::Init 0x005c7cb0",
+        "PaletteIterator::HasNext 0x005c7d00",
+        "PaletteIterator::Next 0x005c7f10",
+        "PaletteIterator::Start 0x005c7f70"
+      ],
+      "relevant_structures": [
+        "PaletteIterator",
+        "PaletteMain",
+        "PaletteCategory",
+        "PalettePage",
+        "PaletteItem"
+      ],
+      "side_effects": [
+        "mutates four cursor indices",
+        "normalizes exhausted parents",
+        "selects next PaletteItem"
+      ],
+      "state_variable": {
+        "address": "PaletteIterator+0x10..+0x1c",
+        "expression": "mCategoryIndex, mSubCategoryIndex, mPageIndex, mItemIndex",
+        "owner": "Palettes::PaletteIterator",
+        "support": "Fields and mutations directly supported.",
+        "type": "four nested integer cursor positions"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "initialize cursor positions"
+          ],
+          "cause": "Init/Start",
+          "entry_actions": [
+            "resolve PaletteMain"
+          ],
+          "event": "palette_cursor_advanced",
+          "exit_actions": [
+            "allow HasNext"
+          ],
+          "from_state": "unpositioned",
+          "guard": "hierarchy available",
+          "side_effects": [
+            "cursor fields initialized"
+          ],
+          "source": "0x005c7cb0/0x005c7f70; bodies unresolved",
+          "to_state": "category_selected"
+        },
+        {
+          "actions": [
+            "increment item cursor and test bounds"
+          ],
+          "cause": "HasNext",
+          "entry_actions": [
+            "read current collection"
+          ],
+          "event": "palette_cursor_advanced",
+          "exit_actions": [
+            "return true/normalize"
+          ],
+          "from_state": "page_selected",
+          "guard": "items remain",
+          "side_effects": [
+            "next item current"
+          ],
+          "source": "0x005c7d00",
+          "to_state": "item_available"
+        },
+        {
+          "actions": [
+            "advance parent cursor and reset inner indices"
+          ],
+          "cause": "inner collection exhausted",
+          "entry_actions": [
+            "check parent bounds"
+          ],
+          "event": "palette_cursor_advanced",
+          "exit_actions": [
+            "position next child"
+          ],
+          "from_state": "item_available",
+          "guard": "another child exists",
+          "side_effects": [
+            "cursor normalizes"
+          ],
+          "source": "0x005c7d00",
+          "to_state": "page_selected or category_selected"
+        },
+        {
+          "actions": [
+            "return false"
+          ],
+          "cause": "all ranges exhausted",
+          "entry_actions": [
+            "check all categories"
+          ],
+          "event": "palette_cursor_advanced",
+          "exit_actions": [
+            "terminate iteration"
+          ],
+          "from_state": "category_selected",
+          "guard": "no item remains",
+          "side_effects": [
+            "iteration complete"
+          ],
+          "source": "0x005c7d00",
+          "to_state": "exhausted"
+        }
+      ],
+      "validation_strategy": [
+        "Recover Init, Start, HasNext, and Next bodies.",
+        "Trace empty, single-category, multi-page, and nested-subcategory palettes."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "high",
+        "reason": "SDK exposes scope/definition/variable lifecycle methods and GetCurrentScope directly reads mCurrentScope."
+      },
+      "consumers": [
+        "ArgScript::IParser",
+        "ArgScript::IBlock",
+        "game-data and configuration loaders"
+      ],
+      "entry_actions": [
+        {
+          "action": "initialize parser containers",
+          "conditions": [
+            "FormatParser is constructed"
+          ],
+          "evidence": "Init/AddParser/ProcessFile SDK exports"
+        }
+      ],
+      "evidence": [
+        {
+          "address": "0x00d1dcd0",
+          "claim": "GetCurrentScope returns FormatParser+0x130.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/ArgScript__FormatParser__GetCurrentScope.c"
+        },
+        {
+          "address": "struct:/Spore/ArgScript/FormatParser",
+          "claim": "mDefinitions+0x6c, mVariables+0x8c, mGlobalVariables+0xac, mBlocks+0x108, mSpecialBlocks+0x11c, mCurrentScope+0x130, and mScopeLengths+0x140 are declared.",
+          "kind": "sdk_layout",
+          "level": "CONFIRMED",
+          "source": ".spore-analysis/ghidra-exports/structs_fields.tsv"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "Close/Dispose parser and release parser/block references",
+          "conditions": [
+            "scope and processing complete"
+          ],
+          "evidence": "Close 0x00844f70 and Dispose 0x00846e60 SDK exports; bodies unresolved"
+        }
+      ],
+      "generated_events": [
+        "argscript_scope_entered",
+        "argscript_definition_created"
+      ],
+      "guards": [
+        "Scope nesting must balance before Close or Dispose."
+      ],
+      "impact_rank": 9,
+      "name": "argscript_parser_scope_lifecycle",
+      "possible_states": [
+        {
+          "actions": [
+            "parser containers uninitialized"
+          ],
+          "guards": [
+            "Initialize not run"
+          ],
+          "name": "uninitialized",
+          "raw_value": "parser_not_initialized"
+        },
+        {
+          "actions": [
+            "parsers/definitions/variables available"
+          ],
+          "guards": [
+            "Initialize completes"
+          ],
+          "name": "initialized",
+          "raw_value": "containers_populated"
+        },
+        {
+          "actions": [
+            "current scope active"
+          ],
+          "guards": [
+            "mScopeLengths contains scope"
+          ],
+          "name": "scope_open",
+          "raw_value": "mCurrentScope_set"
+        },
+        {
+          "actions": [
+            "file/stream/line processing active"
+          ],
+          "guards": [
+            "processing entry accepts input"
+          ],
+          "name": "processing",
+          "raw_value": "process_entry_active"
+        },
+        {
+          "actions": [
+            "parser closed or disposed"
+          ],
+          "guards": [
+            "Close/Dispose completes"
+          ],
+          "name": "closed",
+          "raw_value": "parser_closed"
+        }
+      ],
+      "relevant_functions": [
+        "Initialize 0x00845790",
+        "StartScope 0x00845310",
+        "EndScope 0x00841d40",
+        "Close 0x00844f70",
+        "Dispose 0x00846e60",
+        "ProcessFile 0x00842d10",
+        "ProcessStream 0x00843000",
+        "ProcessLine 0x00844180",
+        "CreateDefinitionSafe 0x00841440"
+      ],
+      "relevant_structures": [
+        "ArgScript::FormatParser",
+        "ArgScript::IParser",
+        "ArgScript::IBlock",
+        "ArgScript::ISpecialBlock"
+      ],
+      "side_effects": [
+        "maintains parser/definition/variable maps",
+        "pushes/pops scope lengths",
+        "manages blocks and special blocks",
+        "processes script lines/files/streams"
+      ],
+      "state_variable": {
+        "address": "FormatParser+0x6c..+0x154",
+        "expression": "mDefinitions/mVariables/mGlobalVariables plus mCurrentScope and mScopeLengths",
+        "owner": "ArgScript::FormatParser",
+        "support": "Fields and current-scope read are supported; processing order requires native bodies.",
+        "type": "hash maps, vectors, current scope string, and scope-length vector"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "initialize parser maps/vectors"
+          ],
+          "cause": "Initialize",
+          "entry_actions": [
+            "create parser state"
+          ],
+          "event": "argscript_scope_entered",
+          "exit_actions": [
+            "accept definitions"
+          ],
+          "from_state": "uninitialized",
+          "guard": "Init completes",
+          "side_effects": [
+            "containers available"
+          ],
+          "source": "0x00845790; body unresolved",
+          "to_state": "initialized"
+        },
+        {
+          "actions": [
+            "set mCurrentScope",
+            "push scope length"
+          ],
+          "cause": "StartScope",
+          "entry_actions": [
+            "resolve scope name"
+          ],
+          "event": "argscript_scope_entered",
+          "exit_actions": [
+            "process nested definitions"
+          ],
+          "from_state": "initialized",
+          "guard": "scope accepted",
+          "side_effects": [
+            "scope state active"
+          ],
+          "source": "0x00845310; body unresolved",
+          "to_state": "scope_open"
+        },
+        {
+          "actions": [
+            "create/store definition"
+          ],
+          "cause": "CreateDefinitionSafe",
+          "entry_actions": [
+            "resolve name/line"
+          ],
+          "event": "argscript_definition_created",
+          "exit_actions": [
+            "return helper result"
+          ],
+          "from_state": "scope_open",
+          "guard": "name/line accepted",
+          "side_effects": [
+            "mDefinitions may change"
+          ],
+          "source": "0x00841440",
+          "to_state": "scope_open"
+        },
+        {
+          "actions": [
+            "process file/stream/line"
+          ],
+          "cause": "processing request",
+          "entry_actions": [
+            "consume input"
+          ],
+          "event": "argscript_scope_entered",
+          "exit_actions": [
+            "update parser state"
+          ],
+          "from_state": "scope_open",
+          "guard": "input accepted",
+          "side_effects": [
+            "definitions/variables/blocks may change"
+          ],
+          "source": "0x00842d10/0x00843000/0x00844180; bodies unresolved",
+          "to_state": "processing"
+        },
+        {
+          "actions": [
+            "close/dispose parser"
+          ],
+          "cause": "Close or Dispose",
+          "entry_actions": [
+            "finish processing"
+          ],
+          "event": "argscript_scope_entered",
+          "exit_actions": [
+            "release parser references"
+          ],
+          "from_state": "processing",
+          "guard": "cleanup accepted",
+          "side_effects": [
+            "parser no longer accepts input"
+          ],
+          "source": "0x00844f70/0x00846e60; bodies unresolved",
+          "to_state": "closed"
+        }
+      ],
+      "validation_strategy": [
+        "Recover Initialize, StartScope, EndScope, Close, Dispose, and processing bodies.",
+        "Trace nested scopes and verify mScopeLengths unwind with mCurrentScope."
+      ]
+    },
+    {
+      "confidence": {
+        "level": "low",
+        "reason": "Audio commands have direct null guards and virtual dispatch, but AudioTrack ownership and concrete state transitions are unresolved."
+      },
+      "consumers": [
+        "Audio::AudioSystem",
+        "AudioTrack callers",
+        "UI and gameplay sound effects"
+      ],
+      "entry_actions": [
+        {
+          "action": "acquire global audio system",
+          "conditions": [
+            "AudioSystem pointer is non-null"
+          ],
+          "evidence": "0x00571f80, 0x00572020, 0x00572070"
+        }
+      ],
+      "evidence": [
+        {
+          "address": "0x00571f80",
+          "claim": "PlayProceduralAudio obtains the system through FUN_00a206f0 and dispatches multiple virtual slots.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Audio__PlayProceduralAudio.c"
+        },
+        {
+          "address": "0x00572020",
+          "claim": "StopAudio obtains the system and dispatches stop-related virtual operations.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Audio__StopAudio.c"
+        },
+        {
+          "address": "0x00572070",
+          "claim": "SetPropertyString requires non-null system/value and dispatches a string-property operation.",
+          "kind": "decompilation",
+          "level": "SUPPORTED",
+          "source": ".spore-analysis/ghidra-exports/decompiled_sdk/Audio__SetPropertyString.c"
+        }
+      ],
+      "exit_actions": [
+        {
+          "action": "audio system handles or ignores the request",
+          "conditions": [
+            "system is available"
+          ],
+          "evidence": "0x00571f80/0x00572020/0x00572070"
+        }
+      ],
+      "generated_events": [
+        "audio_play_requested",
+        "audio_stop_requested",
+        "audio_property_changed"
+      ],
+      "guards": [
+        "System pointer must be non-null; property value must be non-null.",
+        "Track validity and virtual operation identities are unresolved."
+      ],
+      "impact_rank": 10,
+      "name": "audio_track_command_interface",
+      "possible_states": [
+        {
+          "actions": [
+            "no active audio command"
+          ],
+          "guards": [
+            "system unavailable or no request"
+          ],
+          "name": "idle_or_unavailable",
+          "raw_value": "system_null_or_idle"
+        },
+        {
+          "actions": [
+            "play request dispatched"
+          ],
+          "guards": [
+            "AudioSystem non-null"
+          ],
+          "name": "play_requested",
+          "raw_value": "play_virtual_dispatch"
+        },
+        {
+          "actions": [
+            "stop request dispatched"
+          ],
+          "guards": [
+            "AudioSystem non-null"
+          ],
+          "name": "stop_requested",
+          "raw_value": "stop_virtual_dispatch"
+        },
+        {
+          "actions": [
+            "property mutation dispatched"
+          ],
+          "guards": [
+            "system/value non-null"
+          ],
+          "name": "property_requested",
+          "raw_value": "property_virtual_dispatch"
+        },
+        {
+          "actions": [
+            "track reaches engine-owned terminal state"
+          ],
+          "guards": [
+            "concrete AudioSystem implementation confirms"
+          ],
+          "name": "engine_terminal_state_unknown",
+          "raw_value": "implementation_unresolved"
+        }
+      ],
+      "relevant_functions": [
+        "Audio::PlayProceduralAudio 0x00571f80",
+        "Audio::StopAudio 0x00572020",
+        "Audio::SetPropertyString 0x00572070",
+        "Audio::AudioSystem::Get 0x00a20670"
+      ],
+      "relevant_structures": [
+        "Audio::AudioSystem",
+        "AudioTrack"
+      ],
+      "side_effects": [
+        "dispatches virtual audio operations",
+        "mutates engine-owned track state",
+        "returns without mutation when system is null"
+      ],
+      "state_variable": {
+        "address": "AudioTrack handle; concrete storage unresolved",
+        "expression": "external AudioTrack state plus AudioSystem command availability",
+        "owner": "audio implementation",
+        "support": "Only command/lifecycle interface evidence is available; no track field layout is recovered.",
+        "type": "external engine state"
+      },
+      "transitions": [
+        {
+          "actions": [
+            "dispatch play operation"
+          ],
+          "cause": "PlayProceduralAudio",
+          "entry_actions": [
+            "acquire system"
+          ],
+          "event": "audio_play_requested",
+          "exit_actions": [
+            "engine decides track result"
+          ],
+          "from_state": "idle_or_unavailable",
+          "guard": "system non-null",
+          "side_effects": [
+            "track state may change"
+          ],
+          "source": "0x00571f80",
+          "to_state": "play_requested"
+        },
+        {
+          "actions": [
+            "dispatch stop operation"
+          ],
+          "cause": "StopAudio",
+          "entry_actions": [
+            "acquire system"
+          ],
+          "event": "audio_stop_requested",
+          "exit_actions": [
+            "engine decides track result"
+          ],
+          "from_state": "play_requested",
+          "guard": "system non-null",
+          "side_effects": [
+            "track state may change"
+          ],
+          "source": "0x00572020",
+          "to_state": "stop_requested"
+        },
+        {
+          "actions": [
+            "dispatch property operation"
+          ],
+          "cause": "SetPropertyString",
+          "entry_actions": [
+            "acquire system",
+            "validate value"
+          ],
+          "event": "audio_property_changed",
+          "exit_actions": [
+            "engine applies property"
+          ],
+          "from_state": "play_requested or stop_requested",
+          "guard": "system/value non-null",
+          "side_effects": [
+            "track property may change"
+          ],
+          "source": "0x00572070",
+          "to_state": "property_requested"
+        }
+      ],
+      "validation_strategy": [
+        "Recover AudioTrack type and AudioSystem concrete implementation.",
+        "Pair every play/stop/property request with engine-side track state and completion callbacks."
+      ]
+    }
+  ],
+  "temporal_semantics": {
+    "cross_domain": {
+      "evidence": "No runtime trace is available. Static timestamps, timers, and queues are reported as state surfaces, not observed timing."
+    },
+    "editor_temporal": {
+      "evidence": "Animation lifecycle and Cell animation writes are direct static mechanics; editor load/update completion is not recovered.",
+      "state_variable": "IAnimWorld/controller state and Cell mCurrentAnimation+0x1b0"
+    },
+    "frame_clock": {
+      "address": "Simulator::TimeAtStartOfFrame 0x00b63980",
+      "evidence": "The recovered function returns a 64-bit frame timestamp; exact units and writer are unresolved.",
+      "state_variable": "cGameTimeManager.mTimeAtStartOfFrame+0x38"
+    },
+    "pause_and_speed": {
+      "evidence": "Pause maps/types and speed/index are SDK layout fields, but native bodies are missing.",
+      "state_variable": "cGameTimeManager+0x48..+0x7b",
+      "validation": "Trace pause/speed changes across a full frame."
+    },
+    "tribe_schedule": {
+      "evidence": "Planner accumulated time and per-type execution intervals are declared; update ordering is unresolved.",
+      "state_variable": "cTribePlanner+0x2c/+0x78 and cTribePlan+0x0c/+0x14/+0x18"
+    }
+  },
+  "unresolved": [
+    {
+      "evidence": "0x00b21340 has 254 total/50 gameplay callers and explicit map/vector mechanics.",
+      "impact": "Blocks noun/game-data materialization across simulator domains.",
+      "needed_evidence": "Exact function boundary, callback contracts, map key/value type, and mutation helper identity.",
+      "question": "Is 0x00b21340 the canonical cGameNounManager::GetData path?",
+      "status": "unresolved"
+    },
+    {
+      "evidence": "0x00b1fdb0 reads owner+0x54 and is consumed as both scalar-like and pointer-like values.",
+      "impact": "303 total/68 gameplay callers make this a high-fan-in shared-state boundary.",
+      "needed_evidence": "Calling convention, owner type, return type, and consumer use matrix.",
+      "question": "What concrete state does FUN_00b1fdb0 expose?",
+      "status": "unresolved"
+    },
+    {
+      "evidence": "cGameTimeManager fields and SDK method addresses are available, but native pause/speed bodies are not.",
+      "impact": "Pause and time scaling gate all delta-time-sensitive gameplay.",
+      "needed_evidence": "Pause, Toggle, GetPauseCount, SetSpeed, ConvertDeltaTime, constructor, and frame update bodies.",
+      "question": "How are nested pause entries and speed indices combined?",
+      "status": "unresolved"
+    },
+    {
+      "evidence": "IAnimWorld exposes load/destroy/update slots and cEditorAnimWorld has direct target/destroy bodies.",
+      "impact": "Editor undo, animation presentation, and PlayMode depend on creature controller lifecycle.",
+      "needed_evidence": "LoadCreature, UpdateCreatures, controller update, and cEditorAnimWorld constructor bodies.",
+      "question": "Which controller fields define the active animation state?",
+      "status": "unresolved"
+    },
+    {
+      "evidence": "Swarm vtables and Cell GFX start/stop/release calls are direct; cEffectsWorld.mState values are not.",
+      "impact": "Gameplay effects and their pause/hidden/teardown behavior are not fully reconstructable.",
+      "needed_evidence": "SwarmState enum values and cVisualEffect implementation bodies.",
+      "question": "When are effects fully released versus retained while stopped?",
+      "status": "unresolved"
+    },
+    {
+      "evidence": "cTribePlan.mState and timer/food/worker fields are declared, but no planner body is recovered.",
+      "impact": "Tribe plans drive civilization resource and behavior scheduling.",
+      "needed_evidence": "cTribePlanner vtable bodies and all mState readers/writers.",
+      "question": "What are the terminal and intermediate cTribePlan.mState values?",
+      "status": "unresolved"
+    },
+    {
+      "evidence": "SetProgressFlags and asset metadata Set are directly decompiled, but trigger/earned and raw field aliases remain incomplete.",
+      "impact": "Persistent progression and community asset publication depend on these records.",
+      "needed_evidence": "Achievement Init/AddProgress/EvaluateTriggerOp/EarnAchievement and full metadata field mapping.",
+      "question": "Does isPollinated change a field, and how are trigger flags encoded?",
+      "status": "unresolved"
+    },
+    {
+      "evidence": "Palette cursor traversal is direct, while swatch Load/Update/Destroy are SDK-only and PaletteUI::Unload is decompiler-corrupted.",
+      "impact": "Editor palette selection and color interaction are only partially modeled.",
+      "needed_evidence": "PaletteIterator Init/Start, ColorSwatch lifecycle, and correct PalettePage/PaletteUI load/unload bodies.",
+      "question": "Which nested cursor fields are reset by Start and consumed by Next?",
+      "status": "unresolved"
+    },
+    {
+      "evidence": "ArgScript scope fields and safe-definition behavior are direct, but most processing bodies are missing.",
+      "impact": "Script definitions and variables control game-data/configuration loading.",
+      "needed_evidence": "Initialize, scope, process, Close, and Dispose bodies with corrected signatures.",
+      "question": "How are scope errors rolled back and definitions committed?",
+      "status": "unresolved"
+    },
+    {
+      "evidence": "Audio commands only expose null-guarded virtual dispatch and no AudioTrack layout.",
+      "impact": "Cross-cutting audio state cannot yet be reconstructed or validated.",
+      "needed_evidence": "AudioTrack type, concrete AudioSystem implementation, and track completion callbacks.",
+      "question": "Which virtual slots correspond to play, stop, pause, and property updates?",
+      "status": "unresolved"
+    }
+  ]
+}

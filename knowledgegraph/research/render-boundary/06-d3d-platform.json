@@ -1,0 +1,658 @@
+{
+  "track": "d3d-platform",
+  "scope": "D3D9/RenderWare device and platform boundaries: device and context creation, backbuffer and render targets, presentation, render and material state, texture and mesh upload, viewport and transform state, lighting, and Win32 frame/runtime calls. Gameplay-facing Cell presentation callers are named only where they configure or submit these seams; no third-party implementation reconstruction.",
+  "boundaries": [
+    {
+      "classification": "RENDERER_INFRASTRUCTURE",
+      "boundary": "D3D9 device wrapper creation and presentation-parameter configuration",
+      "gameplay_caller": "Application renderer initialization and resize paths; no direct gameplay caller was found for the D3D wrapper itself",
+      "original_callee": "Graphics::RenderUtils::CreateDevice and SetPresentationParameters; inside the statically linked RenderWare D3D9 target they invoke IDirect3D9::CheckAdapterFormat and IDirect3D9::CreateDevice",
+      "parameters": [
+        "window width and height",
+        "windowed/fullscreen mode",
+        "vertical-sync and secondary presentation flags",
+        "adapter format and selected output configuration"
+      ],
+      "outputs": [
+        "wrapped graphics device handle",
+        "presentation parameter block",
+        "initialization success or failure"
+      ],
+      "state_changed": [
+        "sD3D, sDevice, and presentation parameters",
+        "device-owned state and main color/depth render targets",
+        "device-ready flag set to 2 after successful subsystem initialization",
+        "QueryPerformanceCounter initialization stamp"
+      ],
+      "structures": [
+        "Graphics::RenderUtils::sD3D",
+        "Graphics::RenderUtils::sDevice",
+        "Graphics::RenderUtils::sPresentParams",
+        "D3DPRESENT_PARAMETERS"
+      ],
+      "lifetime": "Process/application lifetime; rebuilt on renderer resize and lost-device recovery paths.",
+      "failure_semantics": "Adapter-format checking, device creation, render-target creation, and the subsequent graphics subsystem chain must succeed; failure aborts initialization and reaches the existing Direct X unavailable failure path.",
+      "timing_order": "Resolve resolution and presentation mode, create/check the D3D device, create color/depth targets, bind the main color target, initialize render-state/sampler/shader subsystems, then publish the ready flag and timing stamp.",
+      "openspore_concept": "IRenderer lifecycle and resize, with a host-owned surface/swapchain and explicit main color/depth attachments.",
+      "modern_abstraction": "IGpuDevice::createDevice, configurePresentation, resize, and destroy; return typed backend errors instead of exposing D3D interfaces or wrapper globals.",
+      "evidence": [
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 113,
+          "symbol": "RenderUtils::CreateDevice device-init path"
+        },
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 123,
+          "symbol": "main color and depth render-target creation"
+        },
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 129,
+          "symbol": "ready flag and QueryPerformanceCounter stamp"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 43617,
+          "symbol": "Graphics::RenderUtils::SetPresentationParameters"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 43637,
+          "symbol": "Graphics::RenderUtils::CreateDevice"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 10711,
+          "symbol": "FUN_0075e900 renderer initialization slot"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 10720,
+          "symbol": "FUN_0075f030 renderer resize slot"
+        },
+        {
+          "file": "docs/RECON-3.1.0.22.md",
+          "line": 43,
+          "symbol": "Direct X unavailable startup failure string"
+        }
+      ],
+      "confidence": "high",
+      "notes": "The D3D device is reached through a Maxis/RenderWare wrapper; do not reproduce sD3D, sDevice, or the original D3D9 vtable layout. The ready flag and initialization stamp are the only explicitly reported externally observable initialization state."
+    },
+    {
+      "classification": "RENDERER_INFRASTRUCTURE",
+      "boundary": "Backbuffer, main render targets, and presentation attachment",
+      "gameplay_caller": "RenderWare terrain and model frame passes; gameplay code observes the resulting image but does not own the D3D surface or swapchain",
+      "original_callee": "RenderWare device-target calls corresponding to IDirect3DDevice9::GetBackBuffer, SetRenderTarget, and the later Present operation; the exact static RW function is not SDK-named",
+      "parameters": [
+        "main color render target and depth target handles",
+        "target dimensions",
+        "clear and render-pass state",
+        "present synchronization and swap interval"
+      ],
+      "outputs": [
+        "bound render target",
+        "completed frame submission",
+        "presented image or presentation failure"
+      ],
+      "state_changed": [
+        "active color and depth attachments",
+        "backbuffer selection and viewport dimensions",
+        "present synchronization state"
+      ],
+      "structures": [
+        "IDirect3DDevice9-compatible surface state behind the RenderWare wrapper",
+        "main color RTT",
+        "main depth RTT"
+      ],
+      "lifetime": "Attachments follow the device; swapchain or backbuffer state follows the window size and presentation mode.",
+      "failure_semantics": "A missing or invalid target prevents the render pass; present/device-lost failures require the same recreate/resize path as device creation. Exact HRESULT-to-gameplay error propagation is not runtime-observed.",
+      "timing_order": "Acquire or select the backbuffer, bind color and depth targets, record the frame, finish/submit rendering, then present; resize waits for prior work before replacing targets.",
+      "openspore_concept": "Swapchain render pass and main color/depth attachments, separate from gameplay scene and world handles.",
+      "modern_abstraction": "IGpuDevice::beginPresentFrame, setRenderTargets, endPresentFrame, present, and resizePresent; expose a presentable surface contract rather than D3D pointers.",
+      "evidence": [
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 123,
+          "symbol": "main color and depth render targets"
+        },
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 125,
+          "symbol": "backbuffer query and SetRenderTarget"
+        },
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 137,
+          "symbol": "swapchain and main render-pass replacement"
+        },
+        {
+          "file": "docs/RENDERER-DESIGN.md",
+          "line": 48,
+          "symbol": "window, swapchain, and presentation as renderer seam"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 7544,
+          "symbol": "Graphics::IRenderTargetManager::Get"
+        }
+      ],
+      "confidence": "medium",
+      "notes": "The main attachment creation and target binding are statically supported. The exact raw Present wrapper call and runtime backbuffer behavior were not separately exported, so this boundary preserves only target/present ordering and observable dimensions."
+    },
+    {
+      "classification": "PLATFORM_RUNTIME",
+      "boundary": "Statically linked RenderWare D3D9 runtime and dead D3DX import boundary",
+      "gameplay_caller": "No direct gameplay caller; the static RenderWare D3D9 target is called by renderer and draw infrastructure",
+      "original_callee": "Raw IDirect3D9 and IDirect3DDevice9 vtable methods inside RenderWare; d3dx9_27.dll is imported but has no observed call sites",
+      "parameters": [
+        "D3D device, context, and resource pointers",
+        "D3D9 state, texture, buffer, render-target, and presentation arguments"
+      ],
+      "outputs": [
+        "D3D HRESULT results",
+        "backend resource and state changes",
+        "draw or presentation completion"
+      ],
+      "state_changed": [
+        "raw D3D device state and resources behind the RenderWare wrapper",
+        "D3D texture, stream, index, render-target, and lighting state"
+      ],
+      "structures": [
+        "IDirect3D9",
+        "IDirect3DDevice9",
+        "RenderWare dx9 device target"
+      ],
+      "lifetime": "Static RenderWare code and device resources live for the application/device lifetime; D3DX import lifetime is irrelevant because no call site is observed.",
+      "failure_semantics": "D3D HRESULT failures propagate through RenderWare subsystem initialization or draw/present paths; the original implementation does not define gameplay-level failure semantics.",
+      "timing_order": "D3D calls are issued only when RenderWare initializes device resources, binds draw state, submits a frame, or presents it; gameplay does not call raw D3D interfaces.",
+      "openspore_concept": "Backend-specific GPU implementation hidden behind the renderer and platform adapters.",
+      "modern_abstraction": "Replace D3D9 and dead D3DX imports with a Vulkan/SDL/GL adapter; keep only draw-state order, resource lifetime, and error categories at the compatibility seam.",
+      "evidence": [
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 15,
+          "symbol": "statically linked RenderWare 3 and D3D9 conclusion"
+        },
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 19,
+          "symbol": "dead d3dx9_27.dll import and precompiled shaders"
+        },
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 62,
+          "symbol": "d3d9 and d3dx9_27 import surface"
+        },
+        {
+          "file": "docs/devlog/003-renderware-research.md",
+          "line": 36,
+          "symbol": "D3D9 driven inside RenderWare"
+        },
+        {
+          "file": "docs/devlog/003-renderware-research.md",
+          "line": 60,
+          "symbol": "zero D3DX call sites in the full instruction scan"
+        },
+        {
+          "file": "knowledgegraph/triage/summary-f0e310e0.triage-v6.json",
+          "line": 233,
+          "symbol": "middleware directx absent and static RenderWare identification"
+        }
+      ],
+      "confidence": "high",
+      "notes": "This is the hard non-reconstruction boundary: retain the observable rendering contract, not D3D9 object identities, vtables, unmanaged raster lists, or D3DX compatibility code."
+    },
+    {
+      "classification": "RENDERER_INFRASTRUCTURE",
+      "boundary": "Active shader, material, texture-slot, and render-state cache",
+      "gameplay_caller": "Cell presentation configuration and RenderWare terrain/model draw submission",
+      "original_callee": "Graphics::ActiveState::SetTexture and SetShaderData; RenderWare::CompiledState::SetRaster/GetRaster; MaterialShader lookup and the RenderWare device-target state calls",
+      "parameters": [
+        "shader or material identifier",
+        "texture raster and texture slot",
+        "shader constants and per-draw state",
+        "vertex declaration and primitive state"
+      ],
+      "outputs": [
+        "active material/shader state",
+        "bound texture slots",
+        "backend draw state ready for mesh submission"
+      ],
+      "state_changed": [
+        "current-frame shader and material cache",
+        "texture slot bindings",
+        "vertex declaration and D3D9 sampler/render state behind the wrapper"
+      ],
+      "structures": [
+        "Graphics::ActiveState",
+        "Graphics::MaterialShader",
+        "RenderWare::CompiledState",
+        "RenderWare::Raster"
+      ],
+      "lifetime": "Material/shader identities are cacheable for renderer lifetime; texture bindings and shader constants are frame or draw state and may be rebound when changed.",
+      "failure_semantics": "A missing shader/material or texture binding leaves the draw invalid or uses a prior/default state according to the RenderWare implementation; exact error presentation is not gameplay-observed.",
+      "timing_order": "Select/preload material and raster, update shader constants and texture slots, set the vertex declaration, then bind streams and issue the indexed draw.",
+      "openspore_concept": "Material and texture bindings are presentation state, not gameplay object identity; keep stable material IDs and slot semantics while changing the backend representation.",
+      "modern_abstraction": "IMaterialBindings plus an on-change render-state cache, with descriptor/pipeline bindings and typed material constants.",
+      "evidence": [
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 160,
+          "symbol": "active shader and vertex declaration draw path"
+        },
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 172,
+          "symbol": "per-material shader state and stream rebind semantics"
+        },
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 285,
+          "symbol": "MaterialShader and precompiled shader state"
+        },
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 299,
+          "symbol": "ActiveState, MaterialShader, and CompiledState replacement plan"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 43466,
+          "symbol": "RenderWare::CompiledState::SetRaster"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 43495,
+          "symbol": "Graphics::ActiveState::SetTexture"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 7540,
+          "symbol": "Graphics::ITextureManager::Get"
+        },
+        {
+          "file": "knowledgegraph/research/global-campaign-2026/track-k-engine-boundaries.json",
+          "line": 447,
+          "symbol": "RenderWare mesh and compiled-state draw boundary"
+        }
+      ],
+      "confidence": "high",
+      "notes": "The cache and binding order are compatibility-relevant. D3D9 sampler modes, shader bytecode containers, and RenderWare object graphs are replaceable implementation details."
+    },
+    {
+      "classification": "RENDERER_INFRASTRUCTURE",
+      "boundary": "Vertex-stream, index-buffer, and indexed mesh submission",
+      "gameplay_caller": "RenderWare mesh, terrain-quad, and model-world draw passes",
+      "original_callee": "RenderWare::Mesh::SetIndexBuffer, SetVertexBuffer, SetIndicesCount, and Render; underlying D3D9 SetStreamSource, SetIndices, and DrawIndexedPrimitive calls occur inside the static RenderWare device target",
+      "parameters": [
+        "vertex declaration and stream count",
+        "vertex buffer, offset, and stride per stream",
+        "index buffer and index count",
+        "primitive topology and draw offset"
+      ],
+      "outputs": [
+        "bound vertex and index streams",
+        "indexed primitive draw",
+        "updated RenderWare device state cache"
+      ],
+      "state_changed": [
+        "vertex stream bindings",
+        "surplus stream unbinding",
+        "index-buffer binding and index-scope cache",
+        "active vertex/index count"
+      ],
+      "structures": [
+        "RenderWare::Mesh",
+        "RenderWare::IndexBuffer",
+        "RenderWare::VertexDescriptionBase",
+        "IDirect3DDevice9 draw state behind the wrapper"
+      ],
+      "lifetime": "Vertex/index buffers are asset/device resources; the cached bindings are frame or draw state.",
+      "failure_semantics": "The index-scope check can suppress a stale index binding; a missing declaration, buffer, or unsupported draw state prevents or invalidates the draw. The original caller does not convert this into a gameplay-level error.",
+      "timing_order": "Read the active shader declaration, rebind only changed streams, unbind surplus streams, bind indices when changed and in scope, then issue DrawIndexedPrimitive.",
+      "openspore_concept": "Mesh topology, index count, vertex layout, and draw ordering are the minimum gameplay-facing rendering contract.",
+      "modern_abstraction": "IMeshDraw with bindVertexStream, bindIndexBuffer, setPrimitive, drawIndexed, and explicit unbinding; map to Vulkan vertex/index buffers and pipeline state.",
+      "evidence": [
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 151,
+          "symbol": "mesh draw helper sequence"
+        },
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 163,
+          "symbol": "active shader vertex declaration"
+        },
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 166,
+          "symbol": "SetStreamSource on changed stream bindings"
+        },
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 170,
+          "symbol": "DrawIndexedPrimitive issued by Mesh::Render"
+        },
+        {
+          "file": "docs/devlog/003-renderware-research.md",
+          "line": 68,
+          "symbol": "RenderWare Mesh draw path"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 43513,
+          "symbol": "RenderWare::VertexDescriptionBase::LoadDeclaration"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 43656,
+          "symbol": "RenderWare::Mesh::SetIndexBuffer"
+        }
+      ],
+      "confidence": "high",
+      "notes": "This is intentionally limited to stream/index state and draw ordering. It does not reconstruct the full RenderWare mesh, skeleton, blend-shape, or model implementation."
+    },
+    {
+      "classification": "RENDERER_INFRASTRUCTURE",
+      "boundary": "Texture and raster upload into GPU state",
+      "gameplay_caller": "Cell GFX preload/display and terrain/model texture selection; gameplay selects texture identity, not the D3D texture object",
+      "original_callee": "Graphics::ITextureManager and ActiveState texture binding; RenderWare raster creation/extraction/fill paths feeding the static D3D9 device target",
+      "parameters": [
+        "raster or decoded pixel bytes",
+        "width, height, format, and mip chain",
+        "texture slot and sampler/filter state"
+      ],
+      "outputs": [
+        "backend texture handle",
+        "uploaded mip data",
+        "texture bound to a material slot"
+      ],
+      "state_changed": [
+        "GPU texture resource and mip chain",
+        "sampler state",
+        "active texture-slot binding"
+      ],
+      "structures": [
+        "Graphics::ITextureManager",
+        "RenderWare::Raster",
+        "RW4 TEXTURE/Raster record",
+        "D3D9 texture/sampler state behind the wrapper"
+      ],
+      "lifetime": "Raster and texture resources follow asset/device lifetime; slot bindings are frame or draw state.",
+      "failure_semantics": "Invalid or unsupported raster data, allocation failure, or upload failure prevents texture availability; no gameplay semantic is assigned to the backend error beyond content not being drawable.",
+      "timing_order": "Decode or load the raster, allocate and upload mip data, register the texture, select the material raster, and bind the slot before draw submission.",
+      "openspore_concept": "Keep on-disk raster/DXT5 semantics and stable texture identity while replacing upload with a backend texture adapter.",
+      "modern_abstraction": "ITextureUpload and ITextureManager with createTexture, uploadMip, bindTexture, and clearTexture operations.",
+      "evidence": [
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 271,
+          "symbol": "raster and texture resource inventory"
+        },
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 275,
+          "symbol": "DXT5 raster and mip-chain contract"
+        },
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 279,
+          "symbol": "OpenSpore decode and BC3 upload mapping"
+        },
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 295,
+          "symbol": "CompiledState raster-to-texture-slot binding"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 7540,
+          "symbol": "Graphics::ITextureManager::Get"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 43495,
+          "symbol": "Graphics::ActiveState::SetTexture"
+        },
+        {
+          "file": "src/assets/Texture.cpp",
+          "line": 1,
+          "symbol": "current raster and texture decoding seam"
+        }
+      ],
+      "confidence": "medium",
+      "notes": "The asset-level raster contract is stronger than the D3D upload implementation. The report does not assign D3D texture memory layout or unmanaged-list behavior to OpenSpore."
+    },
+    {
+      "classification": "RENDERER_INFRASTRUCTURE",
+      "boundary": "Viewport, projection, and transform state",
+      "gameplay_caller": "Renderer frame setup and terrain/model draw passes",
+      "original_callee": "Graphics::GlobalState::SetTransform and RenderWare device-target viewport/transform operations; the exact SDK anchor for a distinct viewport setter is not established",
+      "parameters": [
+        "viewport rectangle or backbuffer dimensions",
+        "projection and view transforms",
+        "world/model transform",
+        "target dimensions and aspect correction"
+      ],
+      "outputs": [
+        "configured coordinate transform for subsequent draws",
+        "viewport/projection state"
+      ],
+      "state_changed": [
+        "active viewport and transform matrices",
+        "aspect/frame dimensions used by rendering"
+      ],
+      "structures": [
+        "Graphics::GlobalState",
+        "RenderWare transform state",
+        "camera/view and projection state"
+      ],
+      "lifetime": "Viewport follows the current render target and resize; transforms are per-camera, per-world, or per-draw state.",
+      "failure_semantics": "Invalid dimensions or unavailable camera/view state can invalidate the frame; the original implementation does not expose a gameplay-level error for this infrastructure state.",
+      "timing_order": "Select render target and dimensions, set viewport and projection, update camera/world transforms, then submit meshes.",
+      "openspore_concept": "Camera and view values are gameplay inputs; D3D transform and viewport state is renderer state behind them.",
+      "modern_abstraction": "setViewport, setViewProjection, setWorldTransform, and setRenderTarget on IGpuDevice or a render-pass state object.",
+      "evidence": [
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 132,
+          "symbol": "Renderer resolution and aspect handling"
+        },
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 137,
+          "symbol": "render targets and renderer lifecycle mapping"
+        },
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 145,
+          "symbol": "terrain and model frame pass ordering"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 2938,
+          "symbol": "Graphics::GlobalState::SetTransform"
+        },
+        {
+          "file": "src/renderer/Renderer.hpp",
+          "line": 1,
+          "symbol": "current renderer lifecycle and frame seam"
+        }
+      ],
+      "confidence": "medium",
+      "notes": "Preserve coordinate-space, resize, and transform ordering, not an assumed D3D SetViewport call site. The static evidence establishes renderer dimensions and transform infrastructure but does not provide a separately named viewport boundary."
+    },
+    {
+      "classification": "RENDERER_INFRASTRUCTURE",
+      "boundary": "Lighting and presentation-world activation",
+      "gameplay_caller": "Simulator::Cell::cCellGFX::Initialize and StartDisplay; these gameplay functions create and activate Cell worlds and then call graphics/lighting services",
+      "original_callee": "Graphics::ILightingManager and IShadowWorld accessors plus the RenderWare render-state initialization chain and D3D9 fixed-function lighting state",
+      "parameters": [
+        "world and shadow-layer handles",
+        "lighting manager and light state",
+        "layer visibility/display state",
+        "shadow/effect enable flags"
+      ],
+      "outputs": [
+        "active Cell world/layer presentation state",
+        "light and shadow backend state",
+        "display-enabled or disabled state"
+      ],
+      "state_changed": [
+        "Cell world/layer visibility",
+        "lighting and shadow state",
+        "shadow/effects initialization state"
+      ],
+      "structures": [
+        "Simulator::Cell::cCellGFX",
+        "Graphics::ILightingManager",
+        "Graphics::IShadowWorld",
+        "D3D9 fixed-function lighting state"
+      ],
+      "lifetime": "World and layer handles follow the Cell presentation lifecycle; lighting and shadow resources follow renderer/device and world lifetime.",
+      "failure_semantics": "Missing lighting or world services prevent a complete presentation state; the original failure is presentation/infrastructure failure and is not a demonstrated gameplay transition.",
+      "timing_order": "Create or bind Cell worlds, preload resources, initialize lighting/shadow/effects state, start display, then render the active worlds.",
+      "openspore_concept": "Cell world/layer identity and display ordering are gameplay-facing presentation data; D3D light records and RenderWare world objects remain backend details.",
+      "modern_abstraction": "IPresentationWorld and ILightingState with createWorld, setLayerVisibility, startDisplay, setLights, and shadow/effect toggles.",
+      "evidence": [
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 126,
+          "symbol": "render-state, sampler, default shader, and material initialization chain"
+        },
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 300,
+          "symbol": "D3D9 fixed-function lighting replacement"
+        },
+        {
+          "file": "docs/analysis/function-triage.md",
+          "line": 85,
+          "symbol": "graphics-render cluster readiness"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 7543,
+          "symbol": "Graphics::ILightingManager::Get"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 7546,
+          "symbol": "Graphics::IShadowWorld::Get"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 33313,
+          "symbol": "Simulator::Cell::cCellGFX::StartDisplay"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 33463,
+          "symbol": "Simulator::Cell::cCellGFX::Initialize"
+        }
+      ],
+      "confidence": "medium",
+      "notes": "The Cell world and display sequencing is gameplay-adjacent and named; the D3D lighting implementation is not. Keep the world/layer handles and visibility contract, not D3D9 light or RenderWare world layouts."
+    },
+    {
+      "classification": "PLATFORM_RUNTIME",
+      "boundary": "Win32 window, event pump, and frame timing runtime",
+      "gameplay_caller": "Application/Canvas frame loop and simulator update; the gameplay layer consumes ordered events and frame deltas but does not call Win32 directly",
+      "original_callee": "PeekMessageW, TranslateMessage, DispatchMessageW, InvalidateRect, GetDC, CreateWindowExA/W, QueryPerformanceCounter, QueryPerformanceFrequency, and related USER32/KERNEL32 imports",
+      "parameters": [
+        "message queue and window handle",
+        "window client dimensions or device context",
+        "QPC counter and frequency values",
+        "frame/message timeout and quit condition"
+      ],
+      "outputs": [
+        "ordered window/input events",
+        "frame clock and delta",
+        "window invalidation and frame dispatch"
+      ],
+      "state_changed": [
+        "Win32 message queue and window invalidation state",
+        "frame-start timing",
+        "host window/client dimensions"
+      ],
+      "structures": [
+        "MSG",
+        "HWND",
+        "HDC",
+        "LARGE_INTEGER/QPC values"
+      ],
+      "lifetime": "Window and message pump live for the process; timing samples and frame state are per frame; the QPC device stamp is recorded during renderer initialization.",
+      "failure_semantics": "WM_QUIT terminates the pump; failed window/device-context creation follows the platform failure path. Timing calls are expected to provide monotonic samples, but exact error handling is not gameplay-observed.",
+      "timing_order": "Poll and dispatch platform events, update host/window state, obtain frame timing, execute the application/mode update, render, and then invalidate or present according to the host loop.",
+      "openspore_concept": "Gameplay needs normalized event ordering, monotonic time, frame identity, and window dimensions; it does not need Win32 message IDs or QPC implementation details.",
+      "modern_abstraction": "IPlatformHost::pollEvents, monotonicNow, frameDelta, windowSize, and requestQuit, backed by SDL or another host runtime.",
+      "evidence": [
+        {
+          "file": "docs/RECON-3.1.0.22.md",
+          "line": 41,
+          "symbol": "PeekMessageW, TranslateMessage, DispatchMessageW, and WM_QUIT loop"
+        },
+        {
+          "file": "docs/RECON-3.1.0.22.md",
+          "line": 43,
+          "symbol": "window and Direct X failure strings"
+        },
+        {
+          "file": "docs/RECON-3.1.0.22.md",
+          "line": 72,
+          "symbol": "D3D, USER32, and KERNEL32 DLL dependencies"
+        },
+        {
+          "file": "docs/RECON-3.1.0.22.md",
+          "line": 103,
+          "symbol": "Simulator::TimeAtStartOfFrame"
+        },
+        {
+          "file": "docs/RENDERWARE-RESEARCH.md",
+          "line": 129,
+          "symbol": "QueryPerformanceCounter initialization stamp"
+        },
+        {
+          "file": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+          "line": 13957,
+          "symbol": "FUN_00848210 App::Canvas message-pump alias"
+        },
+        {
+          "file": "knowledgegraph/triage/xrefs-2540f2ca.externals.tsv",
+          "line": 117,
+          "symbol": "KERNEL32.DLL::QueryPerformanceCounter"
+        },
+        {
+          "file": "knowledgegraph/triage/xrefs-2540f2ca.externals.tsv",
+          "line": 118,
+          "symbol": "KERNEL32.DLL::QueryPerformanceFrequency"
+        },
+        {
+          "file": "knowledgegraph/triage/xrefs-2540f2ca.externals.tsv",
+          "line": 285,
+          "symbol": "USER32.DLL::DispatchMessageW"
+        },
+        {
+          "file": "knowledgegraph/triage/xrefs-2540f2ca.externals.tsv",
+          "line": 321,
+          "symbol": "USER32.DLL::PeekMessageW"
+        },
+        {
+          "file": "knowledgegraph/triage/xrefs-2540f2ca.externals.tsv",
+          "line": 341,
+          "symbol": "USER32.DLL::TranslateMessage"
+        }
+      ],
+      "confidence": "high",
+      "notes": "This boundary is platform compatibility, not a reconstruction of Win32 or CRT. The message pump is explicitly identified in the recon report, but no positive Cell-mode runtime trace is available."
+    }
+  ],
+  "unresolved": [
+    "The frozen triage export contains no direct D3D or IDirect3D9 SDK-named function; raw D3D9 vtable dispatch remains inside statically linked RenderWare and is not independently enumerated.",
+    "No separately named SDK anchor was established for SetViewport or Present; preserve only target dimensions, transform ordering, and presentation ordering.",
+    "D3D9 fixed-function lighting, sampler modes, texture memory layout, and shader bytecode remain visual-semantic compatibility targets rather than reconstructed platform code.",
+    "No positive runtime trace or pixel oracle currently verifies device init, resize/lost-device recovery, swapchain presentation, lighting, or the final frame ordering in the original binary."
+  ]
+}
