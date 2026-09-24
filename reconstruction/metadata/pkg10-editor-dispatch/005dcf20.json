@@ -1,0 +1,89 @@
+{
+  "schema": "pkg10-editor-dispatch.function-handoff.v1",
+  "package": "pkg10-editor-dispatch",
+  "address": "0x005dcf20",
+  "symbol": "FUN_005dcf20",
+  "role": "mode-target state dependency",
+  "declaration": "void __thiscall editor_mode_manager_apply_target_state(OpaqueEditorModeManager*, std::uint32_t, std::uint32_t, std::uint32_t);",
+  "body_implementation": false,
+  "abi": {
+    "return_type": "void",
+    "calling_convention": "__thiscall",
+    "hidden_this_register": "ECX",
+    "stack_arguments": [
+      {
+        "name": "key",
+        "type": "uint32_t",
+        "entry_offset": "ESP+4",
+        "width_bytes": 4
+      },
+      {
+        "name": "flag_a",
+        "type": "uint32_t",
+        "entry_offset": "ESP+8",
+        "width_bytes": 4,
+        "observed_values": [0, 1]
+      },
+      {
+        "name": "flag_b",
+        "type": "uint32_t",
+        "entry_offset": "ESP+12",
+        "width_bytes": 4,
+        "observed_values": [0, 1]
+      }
+    ],
+    "stack_cleanup_bytes": 12,
+    "ret_evidence": "RET 0xc"
+  },
+  "type_dependencies": [
+    "OpaqueEditorModeManager for ECX",
+    "uint32_t for the key and two observed 0/1 flags",
+    "Opaque void* lookup results reached by this helper; no concrete owner type is asserted"
+  ],
+  "evidence": [
+    {
+      "source": "ghidra.disassemble_function",
+      "address": "0x005dcf21",
+      "fact": "MOV ESI,[ESP+8] reads the first stack argument after the initial register save."
+    },
+    {
+      "source": "ghidra.disassemble_function",
+      "address": "0x005dcf26",
+      "fact": "MOV EDI,ECX establishes the manager as this."
+    },
+    {
+      "source": "ghidra.disassemble_function",
+      "address": "0x005dcf8b",
+      "fact": "RET 0xc proves three four-byte stack arguments."
+    },
+    {
+      "source": "ghidra.disassemble_function",
+      "address": "0x005dcfc",
+      "fact": "The target pushes flag_b=1, flag_a=1, and key=0xf019c2e7 before calling with ECX=ESI."
+    },
+    {
+      "source": "ghidra.disassemble_function",
+      "address": "0x005dd6d6,0x005dd6eb",
+      "fact": "The lighting helper calls the same function with key 0x47bc8d8 and flag pairs (1,0) and (0,0)."
+    },
+    {
+      "source": "ghidra.disassemble_function",
+      "address": "0x005dcf48,0x005dcf5d,0x005dcf7c",
+      "fact": "The function dispatches vtable offsets 0xc, 0x28, and 0x94 on an opaque looked-up result without establishing its concrete owner."
+    }
+  ],
+  "direct_callers": [
+    "0x005dda30",
+    "0x005dd610",
+    "0x0057c2f0"
+  ],
+  "unresolved_questions": [
+    "What do flag_a and flag_b mean operationally?",
+    "Which opaque target interface owns the 0xc, 0x28, and 0x94 slots?",
+    "Is the third stack value always a boolean-like flag, or can other values occur?"
+  ],
+  "blockers": [
+    "The helper has no RTTI and the flag semantics cannot be recovered from these call sites alone.",
+    "The declaration uses uint32_t slots to preserve observed x86 stack width rather than assigning semantic names."
+  ]
+}

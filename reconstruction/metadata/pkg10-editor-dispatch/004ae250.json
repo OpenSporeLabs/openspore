@@ -1,0 +1,211 @@
+{
+  "schema": "pkg10-editor-dispatch.function-handoff.v1",
+  "package": "pkg10-editor-dispatch",
+  "address": "0x004ae250",
+  "symbol": "Editors::EditorModel::SetColor",
+  "role": "target",
+  "declaration": "void __thiscall editor_model_set_color(OpaqueEditorModel*, int, EditorModelColor);",
+  "body_implementation": true,
+  "abi": {
+    "return_type": "void",
+    "calling_convention": "__thiscall",
+    "hidden_this_register": "ECX",
+    "formal_stack_arguments": [
+      {
+        "name": "index",
+        "type": "int",
+        "entry_offset_if_supplied": "ESP+4",
+        "width_bytes": 4,
+        "signed": true,
+        "observed_body_access": false
+      },
+      {
+        "name": "color",
+        "type": "EditorModelColor / ColorRGB",
+        "entry_offset_if_supplied": "ESP+8",
+        "width_bytes": 12,
+        "fields": [
+          {"offset": 0, "name": "red", "type": "float", "width_bytes": 4},
+          {"offset": 4, "name": "green", "type": "float", "width_bytes": 4},
+          {"offset": 8, "name": "blue", "type": "float", "width_bytes": 4}
+        ],
+        "observed_body_access": false
+      }
+    ],
+    "stack_cleanup_bytes": 0,
+    "ret_evidence": "The sole return is RET without an immediate cleanup at 0x004ae25a.",
+    "effective_direct_call_shape": "All 20 direct call sites load ECX and call the target without an argument-setup sequence for this call. The body also never reads ESP, so the observed executable entry tolerates the ECX-only shape even though the SDK/Ghidra formal signature names a signed index and a 12-byte ColorRGB value."
+  },
+  "observed_body": {
+    "size_bytes": 11,
+    "instruction_count": 7,
+    "bytes": "558bec51894dfc8be55dc3",
+    "decoded_operations": [
+      {"address": "0x004ae250", "instruction": "PUSH EBP"},
+      {"address": "0x004ae251", "instruction": "MOV EBP,ESP"},
+      {"address": "0x004ae253", "instruction": "PUSH ECX"},
+      {"address": "0x004ae254", "instruction": "MOV dword ptr [EBP-4],ECX"},
+      {"address": "0x004ae257", "instruction": "MOV ESP,EBP"},
+      {"address": "0x004ae259", "instruction": "POP EBP"},
+      {"address": "0x004ae25a", "instruction": "RET"}
+    ],
+    "memory_reads": 0,
+    "memory_writes": 0,
+    "stack_reads": 0,
+    "branch_count": 0,
+    "callee_count": 0,
+    "global_xref_count": 0,
+    "jump_target_count": 0,
+    "eax_write": false
+  },
+  "behavior": {
+    "body": "No-op",
+    "null_this": "Safe: ECX is copied to a local slot but is never dereferenced.",
+    "index": "Ignored. Negative, in-range, boundary, and out-of-range values have identical behavior because there is no comparison or address calculation.",
+    "color": "Ignored. No component is read or copied.",
+    "model_fields": "No EditorModel field is read or written, including mColors at +0xa4.",
+    "return": "Void; no status, sentinel, error, or EAX assignment is produced by the target instructions."
+  },
+  "type_dependencies": [
+    {
+      "type": "OpaqueEditorModel",
+      "role": "ECX this object",
+      "layout_evidence": [
+        "The target stores ECX at [EBP-4] and never dereferences it.",
+        "EditorModel is 0xe0 bytes in live Ghidra; its mColors[3] field is at +0xa4, but the target does not access that offset."
+      ]
+    },
+    {
+      "type": "int",
+      "role": "formal signed 32-bit index",
+      "layout_evidence": [
+        "The SDK declaration names int index.",
+        "The target has no index comparison, sign extension, shift, or multiply instruction."
+      ]
+    },
+    {
+      "type": "EditorModelColor / ColorRGB",
+      "role": "formal 12-byte by-value RGB value",
+      "layout_evidence": [
+        "The SDK declaration names ColorRGB color by value.",
+        "Live Ghidra resolves ColorRGB to three floats at offsets 0, 4, and 8.",
+        "The target has no stack read or float instruction."
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "source": "ghidra.decompile_function",
+      "address": "0x004ae250",
+      "fact": "Decompilation is an immediate empty void body."
+    },
+    {
+      "source": "ghidra.disassemble_function",
+      "address": "0x004ae250,0x004ae25a",
+      "fact": "The seven-instruction body only establishes and restores a frame, spills ECX, and returns; it has no loads from this or the stack, no branches, no calls, and no field access."
+    },
+    {
+      "source": "ghidra.read_memory",
+      "address": "0x004ae250",
+      "fact": "The first 11 bytes are 55 8b ec 51 89 4d fc 8b e5 5d c3, followed by CC padding."
+    },
+    {
+      "source": "ghidra.get_function_callees",
+      "address": "0x004ae250",
+      "fact": "No direct callee is present."
+    },
+    {
+      "source": "ghidra.get_function_jump_targets",
+      "address": "0x004ae250",
+      "fact": "No jump target is present."
+    },
+    {
+      "source": "ghidra.audit_globals_in_function",
+      "address": "0x004ae250",
+      "fact": "The target has zero referenced globals."
+    },
+    {
+      "source": "ghidra.get_struct_layout",
+      "address": "EditorModel",
+      "fact": "Live Ghidra reports size 0xe0 and ColorRGB mColors[3] at offset 0xa4; the target never loads this+0xa4 or another model field."
+    },
+    {
+      "source": "ghidra.get_struct_layout",
+      "address": "ColorRGB",
+      "fact": "Live Ghidra reports size 12 with float r/g/b at offsets 0/4/8."
+    },
+    {
+      "source": "ghidra.get_function_callers",
+      "address": "0x004ae250",
+      "fact": "Sixteen direct caller functions contain twenty unconditional calls. Representative disassembly at 0x0044d951, 0x0047fcd5, 0x004b7669, and 0x00588791 loads ECX immediately before CALL and does not push the formal index or color."
+    },
+    {
+      "source": "ghidra.get_xrefs_to",
+      "address": "0x004ae250",
+      "fact": "Besides the twenty code calls, ten undefined 32-bit data slots contain the target pointer; no callee, string, immediate-value, or function-global dependency was found."
+    },
+    {
+      "source": "Spore-ModAPI/Spore/Editors/EditorModel.h",
+      "address": "60",
+      "fact": "The open SDK declares void SetColor(int index, ColorRGB color), supplies the formal signed 32-bit index and 12-byte by-value color, and places ColorRGB mColors[3] at +0xa4."
+    },
+    {
+      "source": "src/editor/EditorSupport.cpp",
+      "address": "130-137",
+      "fact": "Nearby canonical source performs a bounded write, but it is not used to override the direct target's observed empty body and is outside the assigned writable scope."
+    }
+  ],
+  "reconstructed_mechanics": {
+    "body": "reconstruction/staging/pkg10-editor-dispatch/editor_model_set_color.cpp",
+    "header": "reconstruction/staging/pkg10-editor-dispatch/editor_model_set_color.hpp",
+    "model_test": "reconstruction/staging/pkg10-editor-dispatch/editor_model_set_color_test.cpp",
+    "steps": [
+      "Accept the formal EditorModel this pointer in ECX, signed int index, and 12-byte ColorRGB value without reading any of them.",
+      "Perform no null check, index validation, color conversion, model-field load, model-field store, call, or branch.",
+      "Return void with RET and no stack cleanup or EAX assignment."
+    ],
+    "test_scope": "The focused model test calls with null this, indices -1, 0, 2, 3, INT_MIN, and INT_MAX, verifies all 0xe0 model bytes are unchanged, and preserves the ColorRGB 0/4/8 field offsets."
+  },
+  "direct_callers": [
+    {"address": "0x00441440", "call_sites": ["0x004414f4"]},
+    {"address": "0x0044d8f0", "call_sites": ["0x0044d951"]},
+    {"address": "0x0044e720", "call_sites": ["0x0044e7a7"]},
+    {"address": "0x00451400", "call_sites": ["0x00451d31"]},
+    {"address": "0x00453dc0", "call_sites": ["0x00453df0"]},
+    {"address": "0x00453e20", "call_sites": ["0x00453e7d"]},
+    {"address": "0x00454dc0", "call_sites": ["0x00454e42"]},
+    {"address": "0x00455fa0", "call_sites": ["0x004561b3"]},
+    {"address": "0x00456cb0", "call_sites": ["0x00456d3d"]},
+    {"address": "0x0047fcb0", "call_sites": ["0x0047fcd5"]},
+    {"address": "0x004928d0", "call_sites": ["0x00492dd2"]},
+    {"address": "0x004942b0", "call_sites": ["0x00494668"]},
+    {"address": "0x0049b460", "call_sites": ["0x0049b87f"]},
+    {"address": "0x004b2f80", "call_sites": ["0x004b3119", "0x004b3167"]},
+    {"address": "0x004b7660", "call_sites": ["0x004b7669", "0x004b76b5"]},
+    {"address": "0x00588570", "symbol": "Editors::cEditor::OnMouseDown", "call_sites": ["0x00588791", "0x005887d5"]}
+  ],
+  "data_pointer_xrefs": [
+    "0x013ef124",
+    "0x013f219c",
+    "0x013f21d8",
+    "0x013f2770",
+    "0x013f2d70",
+    "0x01453258",
+    "0x0145399c",
+    "0x01458028",
+    "0x0145878c",
+    "0x01459a8c"
+  ],
+  "direct_callees": [],
+  "unresolved_questions": [
+    "Why do all observed direct calls and ten pointer-table entries use an ECX-only shape when the SDK/Ghidra formal signature has a 16-byte explicit argument area?",
+    "Is 0x004ae250 an intentionally empty callback/base implementation despite the SDK SetColor address association, or is the imported symbol mapping incomplete?",
+    "What concrete owners correspond to the ten undefined pointer-table entries?",
+    "Do any callers depend on EAX retaining its incoming value, even though the target itself does not write EAX?"
+  ],
+  "blockers": [
+    "The executable body supports only a no-op contract; it contains no evidence for color assignment, bounds checks, sentinels, or errors.",
+    "The SDK formal signature and ECX-only direct call sites disagree on explicit argument presence, so the package preserves both facts without inventing a reconciliation.",
+    "The ten data pointer slots are unnamed and untyped in live Ghidra, so concrete owner and interface semantics remain unresolved."
+  ]
+}

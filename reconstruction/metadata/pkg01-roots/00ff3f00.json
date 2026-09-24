@@ -1,0 +1,147 @@
+{
+  "va": "0x00ff3f00",
+  "normalized_symbol": "FUN_00ff3f00",
+  "package": "PKG-01-SHARED-STATE-ROOTS",
+  "body": {
+    "status": "reconstructed",
+    "source": "staging/pkg01-roots/pkg01_roots.cpp",
+    "mechanics": "Reads the 32-bit value at receiver+0x8c and returns it unchanged. The fastcall receiver is passed in ECX; the accessor performs no writes, calls, allocation, or ownership transfer. The value is not assumed to be a pointer.",
+    "opaque_boundary": "OpaqueTimelineEventData remains incomplete; the +0x8c value is modeled conservatively as a raw std::uint32_t because constructor evidence includes 0x7fffffff, a non-pointer sentinel. No owner identity, exact subtype, vtable, or universal pointer contract is asserted.",
+    "evidence": [
+      "Live Ghidra decompilation returns *(undefined4 *)(param_1 + 0x8c) from a one-receiver __fastcall function.",
+      "Live Ghidra disassembly is MOV EAX,dword ptr [ECX + 0x8c]; RET at 0x00ff3f00.",
+      "Constructor FUN_00dd0b50, called by FUN_00dd0ca0, writes the sentinel 0x7fffffff to receiver+0x8c, so the field is not universally a pointer.",
+      "Live Ghidra reports no direct callees; 40 call xrefs and 2 DATA xrefs are present, with 27 unique direct-caller functions. These xrefs are not all return consumers; for example, call site 0x00e87f34 overwrites EAX immediately.",
+      "Live Ghidra data references at 0x014439f4 and 0x0147cbe8 are DATA references in function-pointer tables, not call xrefs.",
+      "Phase 1 handoff identifies the timeline-event data family, the +0x8c accessor, and the unresolved field semantics."
+    ],
+    "remaining_questions": [
+      "What exact values, if any, at receiver+0x8c are pointer values rather than sentinels, and what local subtype do they represent?",
+      "What is the exact semantic role of receiver+0x8c: request, animation/event parameter, or presentation state?",
+      "When the field contains a pointer, which code first writes it and who owns the pointee before the first accessor read?",
+      "What is the relationship between receiver+0x8c and receiver+0x90?",
+      "Are the 0x9c and 0xb0 object variants semantically distinct?",
+      "What lifetime and null-window guarantees apply to the returned value when it is pointer-like?"
+    ]
+  },
+  "signature": {
+    "prototype": "std::uint32_t __fastcall FUN_00ff3f00(OpaqueTimelineEventData* receiver)",
+    "calling_convention": "__fastcall; receiver in ECX; no stack arguments",
+    "target_width": "PKG-01 staging is x86-32 only and rejects 64-bit targets, so the PKG01_FASTCALL body cannot silently compile without the ECX fastcall receiver convention.",
+    "return": "raw 32-bit value; pointer identity is not asserted",
+    "implementation_contract": "The staging accessor copies the four bytes at receiver+0x8c into a raw std::uint32_t; it does not reinterpret the field as a typed pointer, preserving the observed 0x7fffffff sentinel.",
+    "ownership": "raw field value; the target performs only a load and has no ownership or pointer-transfer operation"
+  },
+  "signature_evidence": {
+    "decompiler": "undefined4 __fastcall FUN_00ff3f00(int param_1) { return *(undefined4 *)(param_1 + 0x8c); }",
+    "assembly": [
+      "00ff3f00: MOV EAX,dword ptr [ECX + 0x8c]",
+      "00ff3f06: RET"
+    ],
+    "function_info": "The high-level function listing is untyped and omits the implicit parameter, but the decompiler and ECX-relative assembly establish one fastcall receiver.",
+    "callee_evidence": "No direct callees are attached; the body has no CALL instruction.",
+    "caller_evidence": {
+      "direct_caller_count": 27,
+      "direct_caller_count_scope": "unique direct caller functions; call sites may repeat",
+      "function_xref_count": 42,
+      "call_xref_count": 40,
+      "data_xref_count": 2,
+      "data_reference_addresses": [
+        "0x014439f4",
+        "0x0147cbe8"
+      ],
+      "overwrite_after_call_examples": [
+        {
+          "call_site": "0x00e87f34",
+          "caller": "FUN_00e87db0",
+          "observation": "The next instruction writes EAX from [ESP+0x10], so this call xref does not establish use of the accessor return."
+        }
+      ],
+      "representative_scope": "direct callers only",
+      "representative": [
+        "FUN_0106aa10",
+        "FUN_0106c930"
+      ]
+    },
+    "related_field_observations": [
+      {
+        "va": "0x00ff3e80",
+        "use": "Direct +0x8c cleanup and field access; not a direct caller of FUN_00ff3f00."
+      },
+      {
+        "va": "0x00ff4540",
+        "use": "Direct +0x8c comparison and selection path; not a direct caller of FUN_00ff3f00."
+      }
+    ]
+  },
+  "type_dependencies": [
+    {
+      "type": "OpaqueTimelineEventData",
+      "role": "ECX receiver for the field accessor",
+      "status": "opaque; vtable family and allocation evidence support only a timeline-event-data-like object"
+    },
+    {
+      "type": "std::uint32_t",
+      "role": "raw 32-bit value loaded from receiver+0x8c",
+      "status": "conservative ABI type; constructor evidence includes 0x7fffffff, so a pointer interpretation is not universal"
+    }
+  ],
+  "layout_evidence": [
+    {
+      "offset": "+0x10",
+      "meaning": "vtable pointer for the inspected local event-data family",
+      "support": "FUN_00dd0ca0 and FUN_00dd0cf0 live decompilation"
+    },
+    {
+      "offset": "+0x8c",
+      "meaning": "raw 32-bit field; constructor sentinel 0x7fffffff is observed",
+      "support": "FUN_00dd0b50 live disassembly; target assembly and FUN_00ff3e80 live assembly"
+    },
+    {
+      "offset": "+0x90",
+      "meaning": "adjacent pointer field with a separate accessor and teardown path",
+      "support": "FUN_00ff3f10 and FUN_00ff3e80 live decompilation and assembly"
+    }
+  ],
+  "unresolved_questions": [
+    "What exact values, if any, at receiver+0x8c are pointer values rather than sentinels, and what local subtype do they represent?",
+    "What is the exact semantic role of receiver+0x8c: request, animation/event parameter, or presentation state?",
+    "When the field contains a pointer, which code first writes it and who owns the pointee before the first accessor read?",
+    "What is the relationship between receiver+0x8c and receiver+0x90?",
+    "Are the 0x9c and 0xb0 object variants semantically distinct?",
+    "What lifetime and null-window guarantees apply to the returned value when it is pointer-like?"
+  ],
+  "provenance": [
+    {
+      "kind": "live_ghidra",
+      "program": "SporeApp.exe",
+      "operations": [
+        "decompile_function(0x00ff3f00)",
+        "disassemble_function(0x00ff3f00)",
+        "get_function_by_address(0x00ff3f00)",
+        "get_function_callers(0x00ff3f00)",
+        "get_function_callees(0x00ff3f00)",
+        "get_function_xrefs(0x00ff3f00)"
+      ]
+    },
+    {
+      "kind": "live_ghidra_consumer",
+      "program": "SporeApp.exe",
+      "operations": [
+        "decompile_function(0x00ff3e80)",
+        "disassemble_function(0x00ff3e80)",
+        "decompile_function(0x00ff4540)",
+        "decompile_function(0x00ff3f10)",
+        "disassemble_function(0x00ff3f10)",
+         "decompile_function(0x00dd0ca0)",
+         "decompile_function(0x00dd0b50)",
+         "decompile_function(0x00dd0cf0)"
+      ]
+    },
+    {
+      "kind": "repository_handoff",
+      "source": "knowledgegraph/research/semantic-decomp/worker-07-sporepedia-events.json",
+      "supports": "timeline-event local data family, field offsets, field boundary, and rejection of cSPAssetDataOTDB identity"
+    }
+  ]
+}

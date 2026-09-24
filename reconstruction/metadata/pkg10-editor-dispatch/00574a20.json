@@ -1,0 +1,76 @@
+{
+  "schema": "pkg10-editor-dispatch.function-handoff.v1",
+  "package": "pkg10-editor-dispatch",
+  "address": "0x00574a20",
+  "symbol": "FUN_00574a20",
+  "role": "pointer-like guard dependency",
+  "declaration": "void* __thiscall mode2_guard(OpaqueEditor*, std::uint32_t);",
+  "body_implementation": false,
+  "abi": {
+    "return_type": "opaque pointer-like value",
+    "calling_convention": "__thiscall-like",
+    "hidden_this_register": "ECX",
+    "hidden_this_type": "OpaqueEditor *",
+    "stack_arguments": [
+      {
+        "name": "receiver_candidate_word",
+        "type": "unclassified 32-bit value",
+        "abi_type": "unclassified 32-bit value",
+        "entry_offset": "ESP+4",
+        "width_bytes": 4,
+        "zero_behavior": "load [ECX+0x150] and use that value as the tail-call ECX receiver candidate",
+        "nonzero_behavior": "use the incoming value directly as the tail-call ECX receiver candidate; no uint32 selector semantics are established"
+      }
+    ],
+    "stack_cleanup_bytes": 4,
+    "ret_evidence": "RET 0x4"
+  },
+  "type_dependencies": [
+    "OpaqueEditor for ECX; the mode-manager caller passes this+0x5c, while Editor_Save passes its own this",
+    "A nonzero incoming stack word becomes the tail-call ECX receiver candidate directly; no uint32 selector semantics are established",
+    "A zero incoming stack word instead loads [ECX+0x150], whose opaque value becomes the tail-call ECX receiver candidate",
+    "The result retains pointer-like status and is used only through a null/nonzero guard by 0x005dda30; no boolean return is inferred"
+  ],
+  "evidence": [
+    {
+      "source": "ghidra.disassemble_function",
+      "address": "0x00574a20",
+      "fact": "The function receives OpaqueEditor in ECX and reads one unclassified 32-bit stack word. A zero word causes [ECX+0x150] to be loaded as the receiver candidate and returns zero only when that load is null; a nonzero word skips the +0x150 load."
+    },
+    {
+      "source": "ghidra.disassemble_function",
+      "address": "0x00574a32",
+      "fact": "For the nonzero path, the incoming stack word itself is moved to ECX as the tail-call receiver candidate; for the zero path, [ECX+0x150] is moved there instead. Both paths rewrite the outgoing stack word to 1 and tail-jump to 0x004c49e0. The incoming nonzero value is not established as a uint32 selector."
+    },
+    {
+      "source": "ghidra.get_function_callers",
+      "address": "0x005dda30,0x00577650",
+      "fact": "The mode-manager call at 0x005dda42 loads manager+0x5c into ECX and passes stack value 0. Editor_Save calls 0x00574a20 at 0x0057775a with ECX=Editor_Save this and [Editor_Save this+0x154] on the stack, exercising the direct nonzero receiver-candidate path when nonzero."
+    },
+    {
+      "source": "ghidra.disassemble_function",
+      "address": "0x004c49e0",
+      "fact": "0x00574a20 normalizes the outgoing stack word to 1 before the tail call, so the helper takes its 0x1c branch and returns the receiver candidate's +0x1c word."
+    }
+  ],
+  "direct_callers": [
+    {
+      "address": "0x005dda30",
+      "call_sites": ["0x005dda42"]
+    },
+    {
+      "address": "0x00577650",
+      "symbol": "Editor_Save",
+      "call_sites": ["0x0057775a"]
+    }
+  ],
+  "unresolved_questions": [
+    "What concrete pointer-like owner or return semantics, if any, can be recovered for the mode2_guard result?",
+    "What concrete type is established for the direct and +0x150-derived tail-call ECX receiver candidates?",
+    "Can the receiver candidate at [ECX+0x150] be classified without RTTI?"
+  ],
+  "blockers": [
+    "The pointer-like return is not dereferenced and is not used beyond a null/nonzero check at the target call site.",
+    "The package declaration intentionally uses void* for the pointer-like result; concrete owner and selector semantics remain unresolved."
+  ]
+}

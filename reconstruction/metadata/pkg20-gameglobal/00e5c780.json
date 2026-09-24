@@ -1,0 +1,222 @@
+{
+  "schema": "pkg20-gameglobal-function-handoff-v1",
+  "package": "PKG-20-GAMEGLOBAL",
+  "function_address": "0x00e5c780",
+  "ghidra_name": "map_int_whatever_find",
+  "source_files": [
+    "reconstruction/staging/pkg20-gameglobal/map_search.hpp",
+    "reconstruction/staging/pkg20-gameglobal/map_search.cpp",
+    "reconstruction/staging/pkg20-gameglobal/map_search_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "void __thiscall pkg20_gameglobal_00e5c780(OrderedMap *map, OrderedMapNode **result, const std::uint32_t *key);",
+  "abi": {
+    "return_type": "void",
+    "calling_convention": "__thiscall observed",
+    "stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "ESP+0x04",
+        "type": "OrderedMapNode **",
+        "width_bytes": 4,
+        "observed_use": "Receives the node pointer selected by the search."
+      },
+      {
+        "position": 2,
+        "entry_offset": "ESP+0x08",
+        "type": "const std::uint32_t *",
+        "width_bytes": 4,
+        "observed_use": "The first stack word is dereferenced as the unsigned comparison key."
+      }
+    ],
+    "this_parameter": true,
+    "return_observation": "The live function ends through void RET paths after writing the result pointer and cleans two stack words with RET 8."
+  },
+  "target_layout": {
+    "node": {
+      "size_bytes": 20,
+      "fields": [
+        {"name": "left", "offset": "0x00", "type": "OrderedMapNode *"},
+        {"name": "right", "offset": "0x04", "type": "OrderedMapNode *"},
+        {"name": "parent", "offset": "0x08", "type": "OrderedMapNode *"},
+        {"name": "color", "offset": "0x0c", "type": "std::uint32_t"},
+        {"name": "key", "offset": "0x10", "type": "std::uint32_t"}
+      ],
+      "evidence": "The live search reads left at +0x00, right at +0x04, and key at +0x10. The rbtree_node_base prefix is independently reported by Ghidra with left, right, parent, and color through +0x0c."
+    },
+    "map": {
+      "size_bytes": 28,
+      "fields": [
+        {"name": "compare", "offset": "0x00", "type": "void *"},
+        {"name": "anchor", "offset": "0x04", "type": "OrderedMapNode"},
+        {"name": "size", "offset": "0x14", "type": "std::uint32_t"},
+        {"name": "allocator", "offset": "0x18", "type": "void *"}
+      ],
+      "root_offset": "0x0c",
+      "root_expression": "anchor.parent",
+      "anchor_offset": "0x04",
+      "anchor_expression": "&map->anchor"
+    }
+  },
+  "mechanics": {
+    "entry": [
+      "The map pointer is received in ECX.",
+      "The root is read from map+0x0c and the sentinel anchor address is map+0x04.",
+      "The key pointer is the second stack argument and its first unsigned word is loaded into ESI."
+    ],
+    "search": [
+      "While node is non-null, node->key < query follows the left child.",
+      "Otherwise the current node becomes the candidate and the right child is followed.",
+      "The candidate starts as the sentinel anchor and therefore represents no exact hit when the traversal ends without a qualifying node."
+    ],
+    "selection": [
+      "A non-sentinel candidate is returned only when query is greater than or equal to candidate->key.",
+      "All other outcomes write &map->anchor to the result pointer.",
+      "The function performs no node, map, size, allocator, or color writes."
+    ],
+    "comparison": "The CMP/JC and CMP/JC sequence is unsigned 32-bit comparison through the target's branch flags."
+  },
+  "semantic_uncertainty": {
+    "status": "unresolved",
+    "observed_result": "The branch sequence returns a node only for an exact key or an equivalent key ordering that satisfies the final non-greater candidate check; an in-between value returns the sentinel.",
+    "contradiction": "The live Ghidra symbol is map_int_whatever_find, while adjacent map_int_EditorCreatureControllerPtr__get at 0x0059c740 uses the same search shape and falls through to 0x0059c520 on a non-anchor result. Those callers and the helper do not prove whether the intended abstraction is exact lookup or successor lookup.",
+    "preservation": "The staging source implements the observed exact-hit and sentinel-rejection behavior and does not claim lower_bound or successor semantics."
+  },
+  "direct_callers": {
+    "ghidra_count": 239,
+    "sample_callers": [
+      {
+        "address": "0x0059cac0",
+        "name": "Editors::cEditorAnimWorld::GetCreatureController",
+        "call_site": "0x0059cada",
+        "observation": "The caller passes a map subobject, a result local, and a key pointer, then compares the result with the map anchor at this+0x0c."
+      },
+      {
+        "address": "0x0059ca70",
+        "name": "Editors::cEditorAnimWorld::GetAnimatedCreature",
+        "call_site": "0x0059ca8a",
+        "observation": "The caller uses the same two-pointer stack ABI and rejects the anchor before reading the mapped object."
+      },
+      {
+        "address": "0x006b1f90",
+        "name": "FUN_006b1f90",
+        "call_site": "0x006b1fa0",
+        "observation": "The caller supplies a global map at 0x0152fdc4 and treats 0x0152fdc8 as the sentinel."
+      },
+      {
+        "address": "0x006b2000",
+        "name": "FUN_006b2000",
+        "call_site": "0x006b201b",
+        "observation": "The caller supplies the key 0x11ac19c and rejects 0x0152fdc8 before reading the mapped mode object."
+      },
+      {
+        "address": "0x00810620",
+        "name": "FUN_00810620",
+        "call_site": "0x00810639",
+        "observation": "The caller places the map at this+0x0c and compares the result with this+0x10, which is the map anchor at +0x04."
+      },
+      {
+        "address": "0x00b21340",
+        "name": "FUN_00b21340",
+        "call_site": "0x00b2135a",
+        "observation": "The caller uses a map subobject at +0x98 and compares the result with the subobject's anchor at +0x9c."
+      }
+    ]
+  },
+  "direct_callees": {
+    "ghidra_count": 0,
+    "observation": "The target contains no direct calls; all behavior is local tree traversal and result-pointer selection."
+  },
+  "structure_evidence": [
+    {
+      "tool": "ghidra_get_struct_layout",
+      "type": "rbtree_node_base",
+      "observation": "Size 16 with left +0x00, right +0x04, parent +0x08, and color +0x0c."
+    },
+    {
+      "tool": "ghidra_get_struct_layout",
+      "type": "map<unsigned int, int>",
+      "observation": "Size 28 with mCompare +0x00, mAnchor +0x04, mnSize +0x14, and mAllocator +0x18."
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x0059c740",
+      "observation": "The adjacent typed getter uses the same map anchor/root offsets, returns node+0x14 for a qualifying non-anchor result, and calls 0x0059c520 otherwise."
+    }
+  ],
+  "evidence": [
+    {
+      "tool": "ghidra_get_function_by_address",
+      "address": "0x00e5c780",
+      "observation": "Ghidra reports map_int_whatever_find at 0x00e5c780 with body end 0x00e5c7c5 and 31 instructions."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x00e5c780",
+      "observation": "The 31-instruction body reads root at ECX+0x0c, computes the sentinel at ECX+0x04, follows left on JC, records the current node and follows right otherwise, and stores either the candidate or sentinel through the first stack argument."
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x00e5c780",
+      "observation": "The live pseudocode uses a sentinel-initialized candidate, compares node keys against the dereferenced key pointer, and applies a final candidate-versus-sentinel check before selecting the output."
+    },
+    {
+      "tool": "ghidra_get_function_callers",
+      "address": "0x00e5c780",
+      "observation": "Ghidra reports 239 direct callers."
+    },
+    {
+      "tool": "ghidra_get_function_xrefs",
+      "address": "0x00e5c780",
+      "observation": "Ghidra reports 308 unconditional call xrefs."
+    },
+    {
+      "tool": "ghidra_get_function_callees",
+      "address": "0x00e5c780",
+      "observation": "Ghidra reports no direct callees."
+    },
+    {
+      "tool": "ghidra_audit_globals_in_function",
+      "address": "0x00e5c780",
+      "observation": "The target has no direct global references; all map state is reached through ECX and the two stack pointers."
+    },
+    {
+      "tool": "ghidra_get_assembly_context",
+      "addresses": ["0x0059cada", "0x0059ca8a", "0x006b1fa0", "0x006b201b", "0x00810639", "0x00b2135a"],
+      "observation": "Representative callers visibly pass a result pointer and a key pointer before CALL and use the returned pointer or map-relative sentinel immediately afterward."
+    }
+  ],
+  "confidence": {
+    "overall": "high for instruction-level control flow, layout use, and result selection; medium for generic map naming",
+    "high": [
+      "x86-32 thiscall and two-stack-word ABI",
+      "map anchor at +0x04 and root at +0x0c",
+      "unsigned node-key comparisons",
+      "left/right traversal and candidate retention",
+      "sentinel result for in-between, below, and above queries",
+      "map immutability"
+    ],
+    "medium": [
+      "the node key is an unsigned 32-bit field shared by the observed map instantiations",
+      "the exact intended source-level operation name"
+    ],
+    "low": [
+      "whether the surrounding EASTL helper contract is exact lookup, successor lookup, or an insertion-assisted access path"
+    ]
+  },
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -fsyntax-only -I reconstruction/staging/pkg20-gameglobal reconstruction/staging/pkg20-gameglobal/map_search.cpp",
+    "syntax_result": "pending",
+    "model_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -I reconstruction/staging/pkg20-gameglobal reconstruction/staging/pkg20-gameglobal/map_search.cpp reconstruction/staging/pkg20-gameglobal/map_search_model_test.cpp -o /tmp/opencode/pkg20-gameglobal-map-search-model && /tmp/opencode/pkg20-gameglobal-map-search-model",
+    "model_result": "pending",
+    "format_command": "clang-format --dry-run --Werror -style=Google reconstruction/staging/pkg20-gameglobal/map_search.hpp reconstruction/staging/pkg20-gameglobal/map_search.cpp reconstruction/staging/pkg20-gameglobal/map_search_model_test.cpp",
+    "format_result": "pending",
+    "json_command": "python3 -m json.tool reconstruction/metadata/pkg20-gameglobal/00e5c780.json >/dev/null",
+    "json_result": "pending"
+  },
+  "blockers": [
+    "The live Ghidra prototype is undefined and does not name the generic map value type.",
+    "The exact-versus-successor intent is not settled by the available callers and adjacent helper.",
+    "No differential runtime corpus is available for the 239 caller sites."
+  ]
+}

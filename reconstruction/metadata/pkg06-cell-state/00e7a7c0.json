@@ -1,0 +1,116 @@
+{
+  "package": "PKG-06-CELL-STATE",
+  "address": "0x00e7a7c0",
+  "declaration": "std::uint8_t cell_state_apply_damage_00e7a7c0(CellObjectData*, CellObjectData*, const CellDirectionVector*, std::uint32_t, std::uint32_t, float)",
+  "calling_convention": {
+    "kind": "cdecl",
+    "stack_argument_slots": 6,
+    "stack_cleanup_bytes": 24,
+    "this_ownership": "none observed; target and source are explicit stack pointer arguments",
+    "argument_1": {"type": "CellObjectData*", "width": "32-bit pointer", "stack_offset": 4, "role": "target"},
+    "argument_2": {"type": "CellObjectData*", "width": "32-bit pointer", "stack_offset": 8, "role": "source"},
+    "argument_3": {"type": "const CellDirectionVector*", "width": "32-bit pointer", "stack_offset": 12, "role": "unresolved direction/data pointer", "evidence": ["0x00e7b138: LEA ECX,[ESP+0x14]", "0x00e7b13c: PUSH ECX", "0x00e7b148: writes three consecutive float values"]},
+    "argument_4": {"type": "std::uint32_t", "width": "4 bytes", "stack_offset": 16, "role": "damage selector forwarded to 0x00e51ee0 and 0x00e59010", "evidence": ["0x00e7a906-0x00e7a91d: selector is copied into EBX", "0x00e7a9b1-0x00e7a9bf: PUSH EBX before CALL 0x00e51ee0", "0x00e7a9d3-0x00e7a9d8: PUSH EBX before CALL 0x00e59010"]},
+    "argument_5": {"type": "std::uint32_t", "width": "4 bytes", "stack_offset": 20, "role": "effect/cause value forwarded to 0x00e7a4a0 on the lethal path; not forwarded to the damage-selector pair", "evidence": ["0x00e7a8c5-0x00e7a8d8: live value is loaded and pushed immediately before CALL 0x00e7a4a0", "0x00e7b135: direct caller materializes this argument", "0x00e7a7c0 does not pass this value to 0x00e51ee0 or 0x00e59010"]},
+    "argument_6": {"type": "float", "width": "4 bytes", "stack_offset": 24, "role": "scale/effect value", "evidence": ["0x00e7b131: PUSH ECX; 0x00e7b132: FSTP float ptr [ESP]", "0x00e7f04f: PUSH ECX; 0x00e7f050: FSTP float ptr [ESP]"]}
+  },
+  "return": {
+    "type": "std::uint8_t",
+    "behavior": "byte-like AL result; blocked and early-disabled paths produce zero, the nonlethal path writes one, and the lethal path forwards the observed AL-width result of 0x00e7a4a0 without evidence for a full EAX contract",
+    "evidence": ["0x00e7a801: XOR AL,AL", "0x00e7aa04: MOV AL,0x1", "0x00e7a8d8: CALL 0x00e7a4a0 followed by direct return", "0x00e7a4a0-0x00e7a761: terminal writes are AL-only"]
+  },
+  "callers": [
+    {"address": "0x00e7f096", "stack_cleanup": "0x18"},
+    {"address": "0x00e7b15a", "stack_cleanup": "0x18"},
+    {"address": "0x00e7b20a", "stack_cleanup": "0x18"},
+    {"address": "0x00e7b335", "stack_cleanup": "0x18"},
+    {"address": "0x00e7b3d7", "stack_cleanup": "0x18"}
+  ],
+  "callees": [
+    {"address": "0x00e52960"},
+    {"address": "0x00e57460"},
+    {"address": "0x00e71ce0"},
+    {"address": "0x00e58980"},
+    {"address": "0x00e62340"},
+    {"address": "0x00e57910"},
+    {"address": "0x00e576f0", "note": "ESI is the clamped-health target receiver; the source cell-pool index is pushed as a separate stack slot"},
+    {"address": "0x00e7a4a0"},
+    {"address": "0x00b72210"},
+    {"address": "0x00e6d200"},
+    {"address": "0x00e7a770"},
+    {"address": "0x00e51ee0"},
+    {"address": "0x00e59010"},
+    {"address": "0x00e82130"},
+    {"address": "0x00e4cc40", "note": "thunk shown by Ghidra"}
+  ],
+  "layout_evidence": [
+    {"structure": "Ghidra cCellObjectData, observed only", "offset": "0x000", "access": "dword source/target pool index", "instruction": "0x00e7a830: CMP EAX,dword ptr [EBP]"},
+    {"structure": "Ghidra cCellObjectData, observed only", "offset": "0x108", "access": "32-bit cell-resource pointer/reference", "instruction": "0x00e7a8cf: MOV EAX,dword ptr [EBP+0x108]"},
+    {"structure": "Ghidra cCellObjectData, observed only", "offset": "0x110", "access": "byte state flag", "instruction": "0x00e7a835: CMP byte ptr [EBP+0x110],0x0"},
+    {"structure": "Ghidra cCellObjectData, observed only", "offset": "0x111", "access": "byte invulnerability/state flag", "instruction": "0x00e7a7f5: CMP byte ptr [EDI+0x111],AL"},
+    {"structure": "Ghidra cCellObjectData, observed only", "offset": "0x17c", "access": "byte state flag", "instruction": "0x00e7a7ed: CMP byte ptr [EDI+0x17c],AL"},
+    {"structure": "Ghidra cCellObjectData, observed only", "offset": "0x244", "access": "32-bit health value", "instruction": "0x00e7a84e: SUB dword ptr [EDI+0x244],ESI"}
+  ],
+  "vtable_evidence": [
+    "No direct pointer to 0x00e7a7c0 was found in initialized memory by the live pointer scan.",
+    "The routine obtains cell records through the object-pool accessor at 0x00b72210; the object-pool type is Ghidra cObjectPool<Simulator::Cell::cCellObjectData>, size 28, with mData at 0x00 and index fields at 0x04-0x18.",
+    "No method slot or vtable ownership is asserted for CellObjectData."
+  ],
+  "unresolved_abi_questions": [
+    "The third argument is pointer-sized and callers materialize three adjacent float values, but its pointee is not dereferenced in this body.",
+    "The fourth and fifth argument values are not promoted to a named enum; observed values include 1, 3, 4, and 5.",
+    "The fifth argument is forwarded only to 0x00e7a4a0 on the lethal path; 0x00e51ee0 and 0x00e59010 continue to receive the fourth argument as the damage selector.",
+    "The Ghidra cCellObjectData layout is evidence for offsets, not a canonical class declaration."
+  ],
+  "unresolved_helper_contracts": [
+    {"address": "0x00e57910", "contract": "ESI is the source receiver; no ordinary stack source argument is consumed"},
+    {"address": "0x00e576f0", "contract": "ESI is the target pointer whose health was clamped and written back immediately before the call; the incoming 32-bit source cell-pool index occupies the native stack slot and is forwarded unchanged to 0x00e575f0 on the 0x1001 branch"},
+    {"address": "0x00e51ee0", "contract": "seventh argument is the live damage selector, not effect_kind"},
+    {"address": "0x00e59010", "contract": "third argument is the live damage selector; return is byte-like AL"},
+    {"address": "0x00e7a4a0", "contract": "return is byte-like AL; its player path uses a four-slot stack adapter; its fifth argument is the effect/cause selector forwarded by the lethal path"},
+    {"address": "0x00e82130", "contract": "scope pointer is read through ECX; no ordinary stack argument is consumed"}
+  ],
+  "body_reconstruction": {
+    "source": "reconstruction/staging/pkg06-cell-state/cell_state.cpp",
+    "status": "implemented",
+    "confidence": {
+      "branch_order_and_field_offsets": 0.97,
+      "opaque_call_shapes": 0.72,
+      "semantic_names": 0.58
+    },
+    "evidence": [
+      "0x00e7a7c0-0x00e7aa0a live disassembly fixes the early-disable, positive-damage, zero-health, animation, effect, and return ordering.",
+      "0x00e7a873-0x00e7a887 clamps and writes health through its field pointer, sets ESI to that target receiver, and pushes source+0x000 for 0x00e576f0; 0x00e57765-0x00e5776b reloads and forwards that stack slot with ESI unchanged when calling 0x00e575f0.",
+      "0x00e7a8d8 passes target, source index, source resource, player-related byte, effect kind, and effect scale in that order to 0x00e7a4a0.",
+      "0x00e7a916-0x00e7a92b and jump table 0x00e7aa0c fix damage animations 0x0e for kind 1, 0x0f for kind 3, 0x10 for kind 4/default, and 0x11 for kind 5.",
+      "0x00e7a9b1-0x00e7a9d8 shows the live damage selector in EBX being forwarded to both 0x00e51ee0 and 0x00e59010.",
+      "Direct callers at 0x00e7f096, 0x00e7b15a, 0x00e7b20a, 0x00e7b335, and 0x00e7b3d7 all use six 4-byte stack slots."
+    ],
+    "preserved_semantics": [
+      "health is an integer dword at +0x244 and is reduced only for positive damage before the zero test",
+      "positive damage clamps and writes health through the target field pointer before the ESI target and source-index stack slot are forwarded to 0x00e576f0",
+      "the zero-health test is performed even when damage is nonpositive",
+      "the lethal path forwards argument five as effect kind to 0x00e7a4a0",
+      "the nonlethal damage-event pair continues to receive argument four as the damage selector",
+      "damage animation selection occurs before the animation/effect split",
+      "COMISS/JBE is represented as !(time > 0.0f) so NaN follows the remove-or-kill path",
+      "the nonlethal path returns a byte-like 1 and releases the resource scope once"
+    ],
+    "opaque_boundaries": [
+      "0x00e51ee0",
+      "0x00e59010",
+      "0x00e6d200",
+      "0x00e7a4a0",
+      "0x00e7a770",
+      "0x00e57910",
+      "0x00e576f0"
+    ],
+    "questions": [
+      "What stable semantic names, if any, belong to damage_kind and effect_kind beyond their observed forwarding behavior?",
+      "Does direction have a concrete SDK type in another package, or should it remain the local three-float opaque contract?",
+      "What are the concrete FPU return contracts of 0x00e6d200 and the scoped resource loader in the eventual integration layer?",
+      "Which host adapter should preserve 0x00e576f0's clamped-health target receiver in ESI and forward its separate source-index stack slot through 0x00e575f0 on the 0x1001 branch?"
+    ],
+    "model_tests": "none; unresolved helper and runtime-value behavior is intentionally not modeled as original behavior"
+  }
+}

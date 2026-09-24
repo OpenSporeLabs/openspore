@@ -1,0 +1,230 @@
+{
+  "schema": "pkg10-editor-dispatch.function-handoff.v1",
+  "package": "pkg10-editor-dispatch",
+  "address": "0x005dda30",
+  "symbol": "FUN_005dda30",
+  "role": "target",
+  "declaration": "void __thiscall editor_mode_manager_set_active_mode(OpaqueEditorModeManager*, std::uint32_t);",
+  "body_implementation": true,
+  "abi": {
+    "return_type": "void",
+    "calling_convention": "__thiscall",
+    "hidden_this_register": "ECX",
+    "stack_arguments": [
+      {
+        "name": "mode",
+        "type": "std::uint32_t",
+        "abi_type": "std::uint32_t",
+        "entry_offset": "ESP+4",
+        "width_bytes": 4
+      }
+    ],
+    "stack_cleanup_bytes": 4,
+    "ret_evidence": "RET 0x4"
+  },
+  "mode_constants": {
+    "switch_cases": [0, 1, 2],
+    "semantic_names": "unresolved; 0, 1, and 2 are retained only as switch labels, not as an ABI enum"
+  },
+  "type_dependencies": [
+    {
+      "type": "OpaqueEditorModeManager",
+      "role": "ECX this object",
+      "layout_evidence": [
+        "this+0x44 passed as an embedded manager subobject",
+        "this+0x5c passed to another editor helper",
+        "this+0x60 stores the current mode"
+      ]
+    },
+    {
+      "type": "OpaqueEditor",
+      "role": "object loaded from this+0x5c",
+      "layout_evidence": [
+        "this+0x5c is moved to ECX for mode2_guard",
+        "this+0x5c is moved to ECX for FUN_00587270"
+      ]
+    },
+    {
+      "type": "OpaqueEditorModeTarget / opaque void*",
+      "role": "raw vtable targets at 0x7c, with registry results kept unowned and untyped",
+      "layout_evidence": [
+        "direct targets are loaded from this+0x64, this+0x68, this+0x6c, this+0x80, and this+0x84",
+        "lookup results remain void* and are passed to the same raw vtable slot without asserting a concrete owner"
+      ]
+    },
+    {
+      "type": "std::uint32_t",
+      "role": "one 32-bit stack argument and state value at this+0x60"
+    }
+  ],
+  "evidence": [
+    {
+      "source": "ghidra.disassemble_function",
+      "address": "0x005dda30",
+      "fact": "PUSH EBP; MOV EBP,[ESP+8]; PUSH ESI; MOV ESI,ECX establishes one 32-bit stack argument plus ECX this."
+    },
+    {
+      "source": "ghidra.disassemble_function",
+      "address": "0x005ddc26",
+      "fact": "RET 0x4 proves callee cleanup of the four-byte mode argument."
+    },
+    {
+      "source": "ghidra.disassemble_function",
+      "address": "0x005dda4f",
+      "fact": "CMP dword ptr [ESI+0x60],EBP compares the manager mode field with the incoming mode."
+    },
+    {
+      "source": "ghidra.disassemble_function",
+      "address": "0x005dda58",
+      "fact": "MOV ECX,[ESI+0x5c]; PUSH 0; PUSH EBP; CALL 0x00587270 forwards this+0x5c as ECX and the mode plus zero as two stack arguments."
+    },
+    {
+      "source": "ghidra.disassemble_function",
+      "address": "0x005dda83",
+      "fact": "The previous mode is read from [ESI+0x60] and dispatched with comparisons against 0, 1, and 2."
+    },
+    {
+      "source": "ghidra.get_function_callers",
+      "address": "0x005e013d,0x005e015c,0x005e028b,0x005ded08,0x005de9e5,0x0057c326",
+      "fact": "Direct callers pass numeric modes 0, 1, or 2 on the stack; the call sites set ECX to the mode-manager object."
+    },
+    {
+      "source": "ghidra.disassemble_function",
+      "address": "0x005dda3d,0x005dda42,0x005dda47",
+      "fact": "The requested mode-2 guard passes this+0x5c in ECX and zero on the stack, then returns immediately when the numeric result is zero."
+    },
+    {
+      "source": "ghidra.disassemble_function",
+      "address": "0x005dda4f,0x005dda5e,0x005dda63",
+      "fact": "The target compares this+0x60 with the incoming mode, forwards this+0x5c plus mode and zero to the editor transition helper, and stops on a false result."
+    },
+    {
+      "source": "ghidra.disassemble_function",
+      "address": "0x005dda72,0x005dda7e,0x005dda83",
+      "fact": "After a successful transition the target calls the 0x8c35f293 notification helper, calls the lighting helper with zero, and switches on the old this+0x60 value."
+    },
+    {
+      "source": "ghidra.disassemble_function",
+      "address": "0x005ddb36,0x005ddb31,0x005ddaa1,0x005ddb72",
+      "fact": "The old-mode switch orders mode-0 targets at this+0x68, this+0x80, this+0x84, mode-1 target at this+0x6c, and mode-2 target/lookup sequence ending at the 0x7c selector call."
+    },
+    {
+      "source": "ghidra.disassemble_function",
+      "address": "0x005ddc51,0x005ddc29,0x005ddb8f,0x005ddc15",
+      "fact": "The requested-mode switch orders mode-0 lookup/target calls, mode-1 target/state calls, and mode-2 target/lookup calls before the common state-zero path."
+    }
+  ],
+  "reconstructed_mechanics": {
+    "body": "reconstruction/staging/pkg10-editor-dispatch/editor_dispatch.cpp",
+    "model_test": "reconstruction/staging/pkg10-editor-dispatch/editor_dispatch_model_test.cpp",
+    "steps": [
+      "Load the editor from this+0x5c and the requested numeric mode from the sole stack argument.",
+      "For requested mode 2, call the unresolved guard with ECX=this+0x5c and stack value 0 before any other work; return on a zero numeric result.",
+      "Return without side effects when this+0x60 already equals the requested numeric mode.",
+      "Call editor_set_active_mode(this+0x5c, requested_mode, 0); return when the boolean-style result is false.",
+      "Call the notification helper with 0x8c35f293, then call editor_mode_manager_set_lighting(this, 0).",
+      "Dispatch the old this+0x60 mode through the 0/1/2 target paths, preserving the observed lookup keys and +0x7c argument pairs.",
+      "Dispatch the requested mode through the 0/1/2 target paths and the out-of-domain zero-state path; pass the address this+0x14 to the registry helper and the address this+0x44 to state helpers without loading the first words at those offsets.",
+      "Keep registry results as opaque void* values, null-check them without asserting ownership, and preserve the state helper calls and zero-state fallback.",
+      "Store the requested numeric mode at this+0x60 only after the dispatch and state paths complete."
+    ],
+    "boundary_contracts": [
+      {
+        "name": "mode2_guard",
+        "address": "0x00574a20",
+        "declaration": "void* __thiscall mode2_guard(OpaqueEditor*, std::uint32_t);",
+        "call_shape": "ECX=this+0x5c, one stack value 0, pointer-like result tested only as zero/nonzero",
+        "status": "pointer-like opaque result; the package declaration uses void* without assigning a semantic boolean"
+      },
+      {
+        "name": "raw_manager_lookup",
+        "address": "0x008105b0",
+        "call_shape": "ECX=address(this+0x14), two stack values; the word stored at this+0x14 is not loaded as the receiver",
+        "status": "opaque void* registry result; only null/non-null is used, and no owner, lifetime, or semantic key names are assigned"
+      },
+      {
+        "name": "raw_manager_state",
+        "addresses": ["0x00810590", "0x008121b0"],
+        "call_shape": "ECX=address(this+0x44) with raw numeric state arguments; the word stored at this+0x44 is not loaded as the receiver",
+        "status": "opaque helper contracts; no lighting or state semantics assigned"
+      },
+      {
+        "name": "target_selector",
+        "address": "0x00b1e4d0",
+        "call_shape": "original call site supplies ECX=this+0x5c; helper consumes no explicit stack arguments",
+        "status": "opaque result; only the returned low byte is forwarded to the final +0x7c call"
+      }
+    ],
+    "test_scope": "The model test checks guard ordering and OpaqueEditor ECX, same-mode early return, the editor_set_active_mode false-return early exit, old modes 0/1/2, requested modes 1/2/default plus UINT32_MAX out-of-domain mode preservation and the non-null mode-0 state path, notification/lighting order, selector dispatch, raw +0x7c dispatch, lookup ordering, address(this+0x14) and address(this+0x44) receiver contracts, opaque void* registry results, non-null and null state helper ordering, final state flag, and final mode storage without asserting original mode semantics."
+  },
+  "vtable_slot_evidence": {
+    "offset": "0x7c",
+    "slot_index": 31,
+    "observed_call_shape": "a 32-bit function pointer is loaded from vtable byte offset 0x7c and called with the target in ECX plus two 32-bit stack arguments",
+    "raw_abi_type": "void (__thiscall *)(OpaqueEditorModeTarget*, uint32_t, uint32_t)",
+    "pointer_width_bytes": 4,
+    "owner": "unresolved; no RTTI, member declaration, or pointer-to-member type is asserted",
+    "call_site_list_scope": "representative: 7 direct CALL sites and 1 PUSH/shared-CALL path are listed from 19 physical +0x7c CALL instructions in the target",
+    "physical_call_site_count": 19,
+    "listed_call_site_count": 8,
+    "listed_shared_call_path_count": 1,
+    "representative_call_sites": [
+      "0x005ddab1 CALL object=this+0x64 args=(1,1)",
+      "0x005ddac9 MOV EAX,[EDX+0x7c]; 0x005ddace CALL object=lookup_result args=(1,1)",
+      "0x005ddb6e PUSH 0x1; 0x005ddb70 shared CALL object=this+0x84 args=(1,0)",
+      "0x005ddb9f CALL object=this+0x64 args=(1,0)",
+      "0x005ddc13 CALL object=lookup_result args=(1,0)",
+      "0x005ddc7e CALL object=lookup_result args=(1,1)",
+      "0x005ddccd CALL object=this+0x80 args=(1,1)",
+      "0x005ddce2 CALL object=this+0x84 args=(1,1)"
+    ],
+    "confidence": "high for offset, 32-bit raw function-pointer width, ECX target, two stack arguments, and 19 physical CALL instructions; 0x005ddb6e is PUSH 0x1 and the shared physical CALL is 0x005ddb70, while 0x005ddac9 is MOV EAX,[EDX+0x7c] and the physical CALL is 0x005ddace; low for the slot owner and numeric argument meanings"
+  },
+  "direct_callers": [
+    {
+      "address": "0x0057c2f0",
+      "call_sites": ["0x0057c326"]
+    },
+    {
+      "address": "0x005de9e0",
+      "call_sites": ["0x005de9e5"]
+    },
+    {
+      "address": "0x005dec10",
+      "call_sites": ["0x005ded08"]
+    },
+    {
+      "address": "0x005e0000",
+      "call_sites": ["0x005e013d", "0x005e015c", "0x005e028b"]
+    }
+  ],
+  "direct_callees": [
+    "0x00574a20",
+    "0x00587270",
+    "0x004a88d0",
+    "0x005dd610",
+    "0x005dc310",
+    "0x005dcf20",
+    "0x008105b0",
+    "0x00810590",
+    "0x008121b0",
+    "0x00b1e4d0"
+  ],
+  "unresolved_questions": [
+    "What semantic names, if any, belong to mode values 0, 1, and 2?",
+    "What concrete type owns the 0x7c vtable slot?",
+    "What are the two 0x7c arguments semantically beyond their observed numeric widths?",
+    "What concrete pointer-like owner or return semantics, if any, can be recovered for 0x00574a20 without asserting a boolean?"
+  ],
+  "blockers": [
+    "The binary has no usable RTTI for assigning an original class name.",
+    "Mode semantics and vtable ownership must remain numeric/opaque.",
+    "The package declaration intentionally uses void* for the pointer-like 0x00574a20 result; concrete owner and selector semantics remain unresolved."
+  ],
+  "reconstruction_questions": [
+    "Can the pointer-like 0x00574a20 return's lifetime and null/nonzero semantics be recovered without assigning a concrete owner?",
+    "Can the raw manager registry and state helpers at 0x008105b0, 0x00810590, and 0x008121b0 be bound to the Phase 1 declarations without adding owner names?",
+    "Can the ECX-only selector boundary at 0x00b1e4d0 be represented by a later ABI adapter without inferring its object type?",
+    "Should the model test remain a standalone mechanical fixture or be integrated by a package-local build target?"
+  ]
+}

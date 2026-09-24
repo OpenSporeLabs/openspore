@@ -1,0 +1,78 @@
+{
+  "schema": "pkg10-editor-dispatch.function-handoff.v1",
+  "package": "pkg10-editor-dispatch",
+  "address": "0x00587270",
+  "symbol": "Editors::cEditor::SetActiveMode",
+  "role": "direct editor transition dependency",
+  "declaration": "bool __thiscall editor_set_active_mode(OpaqueEditor*, std::uint32_t, std::uint32_t);",
+  "body_implementation": false,
+  "abi": {
+    "return_type": "bool",
+    "calling_convention": "__thiscall",
+    "hidden_this_register": "ECX",
+    "stack_arguments": [
+      {
+        "name": "mode",
+        "type": "std::uint32_t",
+        "abi_type": "std::uint32_t",
+        "entry_offset": "ESP+4",
+        "width_bytes": 4
+      },
+      {
+        "name": "flag",
+        "type": "uint32_t",
+        "entry_offset": "ESP+8",
+        "width_bytes": 4,
+        "observed_values": [0, 1]
+      }
+    ],
+    "stack_cleanup_bytes": 8,
+    "ret_evidence": "RET 0x8"
+  },
+  "type_dependencies": [
+    "OpaqueEditor for ECX",
+    "std::uint32_t for the first stack argument",
+    "OpaqueEditorModeManager for the caller-owned this+0x5c relationship"
+  ],
+  "evidence": [
+    {
+      "source": "ghidra.get_function_by_address",
+      "address": "0x00587270",
+      "fact": "Current Ghidra metadata names the function Editors::cEditor::SetActiveMode and records a three-argument form, but reports an unreliable void return."
+    },
+    {
+      "source": "ghidra.disassemble_function",
+      "address": "0x00587275",
+      "fact": "MOV EBP,ECX establishes ECX as this."
+    },
+    {
+      "source": "ghidra.disassemble_function",
+      "address": "0x00587297,0x00587a0a",
+      "fact": "The early exit writes XOR AL,AL and the normal exit writes MOV AL,1, proving a one-byte boolean-style return."
+    },
+    {
+      "source": "ghidra.disassemble_function",
+      "address": "0x005872a0,0x00587a10",
+      "fact": "RET 0x8 proves two four-byte stack arguments."
+    },
+    {
+      "source": "ghidra.get_function_callers",
+      "address": "0x005dda30",
+      "fact": "The target forwards this+0x5c in ECX and pushes mode plus zero before calling."
+    }
+  ],
+  "direct_callers": [
+    "0x005dda30",
+    "0x0058a350",
+    "0x00591fa0",
+    "0x00587a20"
+  ],
+  "unresolved_questions": [
+    "The second argument is a 0/1 flag, but its semantic role is not established.",
+    "The original owner type and any derived RTTI identity must not be inferred from the current SDK name."
+  ],
+  "blockers": [
+    "Ghidra's current return type is void even though both assembly exits set AL to 0 or 1.",
+    "The package declaration uses the neutral OpaqueEditor type and the raw ABI width."
+  ]
+}
