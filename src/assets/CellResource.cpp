@@ -15,16 +15,21 @@ namespace {
 // 'u' = u32 (enum / int / reference key), 'f' = float. Offsets are implicit:
 // field i starts at 4*i. This mirrors the runtime struct (Ghidra 61843 family).
 struct FieldSpec {
-  const char *name;
+  const char* name;
   char kind;
 };
 
 constexpr FieldSpec kFields[] = {
     {"gameMode", 'u'},
-    {"world_1", 'u'}, {"world_2", 'u'}, {"world_3", 'u'}, {"world_4", 'u'},
+    {"world_1", 'u'},
+    {"world_2", 'u'},
+    {"world_3", 'u'},
+    {"world_4", 'u'},
     {"world_5", 'u'},
-    {"worldBackground_1", 'u'}, {"worldBackground_2", 'u'},
-    {"worldBackground_3", 'u'}, {"worldBackground_4", 'u'},
+    {"worldBackground_1", 'u'},
+    {"worldBackground_2", 'u'},
+    {"worldBackground_3", 'u'},
+    {"worldBackground_4", 'u'},
     {"worldBackground_5", 'u'},
     {"worldRandom", 'u'},
     {"worldRandomBg", 'u'},
@@ -89,10 +94,10 @@ constexpr FieldSpec kFields[] = {
 static_assert(std::size(kFields) == CellGlobals::kFieldCount,
               "field table must match kFieldCount");
 
-} // namespace
+}  // namespace
 
 uint32_t CellGlobals::gameMode() const {
-  for (const CellField &field : fields) {
+  for (const CellField& field : fields) {
     if (field.name == "gameMode") {
       return field.u;
     }
@@ -101,7 +106,7 @@ uint32_t CellGlobals::gameMode() const {
 }
 
 float CellGlobals::flowMultiplier() const {
-  for (const CellField &field : fields) {
+  for (const CellField& field : fields) {
     if (field.name == "flowMultiplier") {
       return field.f;
     }
@@ -115,17 +120,21 @@ bool CellGlobals::complete() const {
 
 size_t CellGlobals::accounted() const {
   size_t end = 0;
-  for (const CellField &field : fields) {
+  for (const CellField& field : fields) {
     end = std::max(end, field.offset + 4);
   }
   return end;
 }
 
-bool parseCellGlobals(const uint8_t *data, size_t size, CellGlobals &out,
-                      std::string &error) {
+bool parseCellGlobals(const uint8_t* data, size_t size, CellGlobals& out,
+                      std::string& error) {
   if (size != CellGlobals::kSize) {
-    error = "record size " + std::to_string(size) + " != " +
-            std::to_string(CellGlobals::kSize);
+    error = "record size " + std::to_string(size) +
+            " != " + std::to_string(CellGlobals::kSize);
+    return false;
+  }
+  if (data == nullptr) {
+    error = "globals record: null input";
     return false;
   }
   out = CellGlobals{};
@@ -154,6 +163,19 @@ bool parseCellGlobals(const uint8_t *data, size_t size, CellGlobals &out,
 
 namespace {
 
+bool spanMatches(size_t offset, size_t size, uint64_t count, size_t itemSize) {
+  if (offset > size || itemSize == 0) {
+    return false;
+  }
+  const size_t available = size - offset;
+  return count <= available / itemSize &&
+         count * static_cast<uint64_t>(itemSize) == available;
+}
+
+bool countFits(size_t offset, size_t size, uint64_t count, size_t itemSize) {
+  return offset <= size && itemSize != 0 && count <= (size - offset) / itemSize;
+}
+
 // Canonical, byte-stable scalars for dump(): floats as raw bits so two
 // decodes of the same record always produce identical strings.
 std::string u32hex(uint32_t v) {
@@ -179,7 +201,7 @@ std::string i32d(int v) {
 std::string b8(bool v) { return v ? "1" : "0"; }
 
 // wchar16[80] (zero-padded, NUL-terminated) -> UTF-8; BMP chars only.
-std::string wideToUtf8(const uint16_t *w, size_t n) {
+std::string wideToUtf8(const uint16_t* w, size_t n) {
   std::string s;
   for (size_t i = 0; i < n && w[i] != 0; ++i) {
     const uint16_t c = w[i];
@@ -197,7 +219,7 @@ std::string wideToUtf8(const uint16_t *w, size_t n) {
   return s;
 }
 
-CellAI readCellAI(Reader &r) {
+CellAI readCellAI(Reader& r) {
   CellAI a;
   a.type = r.readU32();
   a.awarenessRadius = r.readF32();
@@ -255,7 +277,7 @@ CellAI readCellAI(Reader &r) {
   return a;
 }
 
-CellEat readCellEat(Reader &r) {
+CellEat readCellEat(Reader& r) {
   CellEat e;
   e.foodValue = static_cast<int>(r.readU32());
   e.hpValue = static_cast<int>(r.readU32());
@@ -265,14 +287,15 @@ CellEat readCellEat(Reader &r) {
   return e;
 }
 
-void checkAi(const CellAI &a, const char *which, std::vector<std::string> &out) {
+void checkAi(const CellAI& a, const char* which,
+             std::vector<std::string>& out) {
   if (a.type != 0 && a.type != CellAI::kEmpty &&
       (a.type < 0x1000 || a.type > 0x10FF)) {
     out.push_back(std::string(which) + ".type=" + u32hex(a.type));
   }
   if (a.movementStyle & ~0xFu) {
-    out.push_back(std::string(which) + ".movementStyle=" +
-                  u32hex(a.movementStyle));
+    out.push_back(std::string(which) +
+                  ".movementStyle=" + u32hex(a.movementStyle));
   }
   if (a.food != 0 && a.food != 3) {
     out.push_back(std::string(which) + ".food=" + u32hex(a.food));
@@ -280,22 +303,36 @@ void checkAi(const CellAI &a, const char *which, std::vector<std::string> &out) 
   if (a.numArcs < 0 || a.numArcs >= 64) {
     out.push_back(std::string(which) + ".numArcs=" + i32d(a.numArcs));
   }
-  const float fs[] = {
-      a.awarenessRadius,     a.awarenessRadiusFood,
-      a.awarenessRadiusPredator, a.speed,
-      a.chaseSpeed,          a.wanderSpeed,
-      a.fleeSpeed,           a.fearsNearbyDamageRadius,
-      a.fearsNearbyDeathRadius, a.fearsNearbyDamageTime,
-      a.fearsNearbyDeathTime,   a.protectRadius,
-      a.protectTime,         a.turnFactor,
-      a.spawnTime,           a.spawnRestTime,
-      a.arcLength,           a.arcLengthSecondary,
-      a.digestionTime,       a.fleeTime,
-      a.fleeRestTime,        a.chaseTime,
-      a.chaseRestTime,       a.awakeTime,
-      a.sleepTime,           a.hatchDuration,
-      a.poisonRecharge,      a.electricRecharge,
-      a.electricRechargeVsSmall, a.electricDischarge};
+  const float fs[] = {a.awarenessRadius,
+                      a.awarenessRadiusFood,
+                      a.awarenessRadiusPredator,
+                      a.speed,
+                      a.chaseSpeed,
+                      a.wanderSpeed,
+                      a.fleeSpeed,
+                      a.fearsNearbyDamageRadius,
+                      a.fearsNearbyDeathRadius,
+                      a.fearsNearbyDamageTime,
+                      a.fearsNearbyDeathTime,
+                      a.protectRadius,
+                      a.protectTime,
+                      a.turnFactor,
+                      a.spawnTime,
+                      a.spawnRestTime,
+                      a.arcLength,
+                      a.arcLengthSecondary,
+                      a.digestionTime,
+                      a.fleeTime,
+                      a.fleeRestTime,
+                      a.chaseTime,
+                      a.chaseRestTime,
+                      a.awakeTime,
+                      a.sleepTime,
+                      a.hatchDuration,
+                      a.poisonRecharge,
+                      a.electricRecharge,
+                      a.electricRechargeVsSmall,
+                      a.electricDischarge};
   for (float v : fs) {
     if (!std::isfinite(v) || std::abs(v) > 1e4F) {
       out.push_back(std::string(which) + ".float=" + f32hex(v));
@@ -303,109 +340,117 @@ void checkAi(const CellAI &a, const char *which, std::vector<std::string> &out) 
   }
 }
 
-} // namespace
+}  // namespace
 
 std::string CellAI::dump() const {
   std::string s;
-  s += "type=" + u32hex(type) +
-       " awarenessRadius=" + f32hex(awarenessRadius) +
+  s += "type=" + u32hex(type) + " awarenessRadius=" + f32hex(awarenessRadius) +
        " awarenessRadiusFood=" + f32hex(awarenessRadiusFood) +
        " awarenessRadiusPredator=" + f32hex(awarenessRadiusPredator) +
-       " movementStyle=" + u32hex(movementStyle) + " flocking=" +
-       b8(flocking) + " speed=" + f32hex(speed) + " chaseSpeed=" +
-       f32hex(chaseSpeed) + " wanderSpeed=" + f32hex(wanderSpeed) +
+       " movementStyle=" + u32hex(movementStyle) + " flocking=" + b8(flocking) +
+       " speed=" + f32hex(speed) + " chaseSpeed=" + f32hex(chaseSpeed) +
+       " wanderSpeed=" + f32hex(wanderSpeed) +
        " fleeSpeed=" + f32hex(fleeSpeed) +
        " fearsNearbyDamageRadius=" + f32hex(fearsNearbyDamageRadius) +
        " fearsNearbyDeathRadius=" + f32hex(fearsNearbyDeathRadius) +
        " fearsNearbyDamageTime=" + f32hex(fearsNearbyDamageTime) +
        " fearsNearbyDeathTime=" + f32hex(fearsNearbyDeathTime) +
-       " protectRadius=" + f32hex(protectRadius) + " protectTime=" +
-       f32hex(protectTime) + " turnFactor=" + f32hex(turnFactor) +
-       " axialMovement=" + b8(axialMovement) + " spawnTime=" +
-       f32hex(spawnTime) + " spawnRestTime=" + f32hex(spawnRestTime) +
-       " spawnOutput=" + u32hex(spawnOutput) + " arcLength=" +
-       f32hex(arcLength) + " arcLengthSecondary=" +
-       f32hex(arcLengthSecondary) + " numArcs=" + i32d(numArcs) +
+       " protectRadius=" + f32hex(protectRadius) +
+       " protectTime=" + f32hex(protectTime) +
+       " turnFactor=" + f32hex(turnFactor) +
+       " axialMovement=" + b8(axialMovement) +
+       " spawnTime=" + f32hex(spawnTime) +
+       " spawnRestTime=" + f32hex(spawnRestTime) +
+       " spawnOutput=" + u32hex(spawnOutput) +
+       " arcLength=" + f32hex(arcLength) +
+       " arcLengthSecondary=" + f32hex(arcLengthSecondary) +
+       " numArcs=" + i32d(numArcs) +
        " keyTransformation=" + u32hex(keyTransformation) +
-       " keyProjectile=" + u32hex(keyProjectile) + " food=" +
-       u32hex(food) + " growCount=" + i32d(growCount) +
-       " digestionCount=" + i32d(digestionCount) + " digestionTime=" +
-       f32hex(digestionTime) + " digestionOutput=" +
-       u32hex(digestionOutput) + " fleeTime=" + f32hex(fleeTime) +
-       " fleeRestTime=" + f32hex(fleeRestTime) + " chaseTime=" +
-       f32hex(chaseTime) + " chaseRestTime=" + f32hex(chaseRestTime) +
-       " chasesDamage=" + b8(chasesDamage) + " fearsMouths=" +
-       b8(fearsMouths) + " fearsWeapons=" + b8(fearsWeapons) +
-       " fearsElectric=" + b8(fearsElectric) + " fearsPoison=" +
-       b8(fearsPoison) + " fearsDamage=" + b8(fearsDamage) +
-       " ignoresFood=" + b8(ignoresFood) + " awakeTime=" +
-       f32hex(awakeTime) + " sleepTime=" + f32hex(sleepTime) +
-       " growAmount=" + i32d(growAmount) + " hatchDuration=" +
-       f32hex(hatchDuration) + " poisonRecharge=" +
-       f32hex(poisonRecharge) + " electricRecharge=" +
-       f32hex(electricRecharge) + " electricRechargeVsSmall=" +
-       f32hex(electricRechargeVsSmall) + " electricDischarge=" +
-       f32hex(electricDischarge);
+       " keyProjectile=" + u32hex(keyProjectile) + " food=" + u32hex(food) +
+       " growCount=" + i32d(growCount) +
+       " digestionCount=" + i32d(digestionCount) +
+       " digestionTime=" + f32hex(digestionTime) +
+       " digestionOutput=" + u32hex(digestionOutput) +
+       " fleeTime=" + f32hex(fleeTime) +
+       " fleeRestTime=" + f32hex(fleeRestTime) +
+       " chaseTime=" + f32hex(chaseTime) +
+       " chaseRestTime=" + f32hex(chaseRestTime) +
+       " chasesDamage=" + b8(chasesDamage) + " fearsMouths=" + b8(fearsMouths) +
+       " fearsWeapons=" + b8(fearsWeapons) +
+       " fearsElectric=" + b8(fearsElectric) +
+       " fearsPoison=" + b8(fearsPoison) + " fearsDamage=" + b8(fearsDamage) +
+       " ignoresFood=" + b8(ignoresFood) + " awakeTime=" + f32hex(awakeTime) +
+       " sleepTime=" + f32hex(sleepTime) + " growAmount=" + i32d(growAmount) +
+       " hatchDuration=" + f32hex(hatchDuration) +
+       " poisonRecharge=" + f32hex(poisonRecharge) +
+       " electricRecharge=" + f32hex(electricRecharge) +
+       " electricRechargeVsSmall=" + f32hex(electricRechargeVsSmall) +
+       " electricDischarge=" + f32hex(electricDischarge);
   return s;
 }
 
 std::string CellCell::dump() const {
   std::string s;
   s += "structure=" + u32hex(structure) + " name='" + name + "'" +
-       " localeInstanceID=" + u32hex(localeInstanceID) + " hp=" +
-       i32d(hp) + " fixedOrientation=" + b8(fixedOrientation) + " flags=" +
-       u32hex(flags) + " cellType=" + u32hex(cellType) + " unlockType=" +
-       u32hex(unlockType) + " density=" + u32hex(density) + " sound=" +
-       u32hex(sound) + " break=" + u32hex(break_) + " pieces=" +
-       u32hex(pieces) + " leak=" + u32hex(leak) + " expel=" +
-       u32hex(expel) + " explosionTable=" + u32hex(explosionTable) +
-       " loot=" + u32hex(loot) + " poison=" + u32hex(poison) + " ai={" +
-       ai.dump() + "} aiHard={" + aiHard.dump() + "} aiEasy={" +
-       aiEasy.dump() + "} friendGroup=" + i32d(friendGroup) +
+       " localeInstanceID=" + u32hex(localeInstanceID) + " hp=" + i32d(hp) +
+       " fixedOrientation=" + b8(fixedOrientation) + " flags=" + u32hex(flags) +
+       " cellType=" + u32hex(cellType) + " unlockType=" + u32hex(unlockType) +
+       " density=" + u32hex(density) + " sound=" + u32hex(sound) +
+       " break=" + u32hex(break_) + " pieces=" + u32hex(pieces) +
+       " leak=" + u32hex(leak) + " expel=" + u32hex(expel) +
+       " explosionTable=" + u32hex(explosionTable) + " loot=" + u32hex(loot) +
+       " poison=" + u32hex(poison) + " ai={" + ai.dump() + "} aiHard={" +
+       aiHard.dump() + "} aiEasy={" + aiEasy.dump() +
+       "} friendGroup=" + i32d(friendGroup) +
        " wontAttackPlayer=" + b8(wontAttackPlayer) +
        " wontAttackPlayerWhenSmall=" + b8(wontAttackPlayerWhenSmall) +
        " sizeMin=" + f32hex(sizeMin) + " sizeMax=" + f32hex(sizeMax) +
-       " eat{foodValue=" + i32d(eat.foodValue) + " hpValue=" +
-       i32d(eat.hpValue) + " bomb=" + b8(eat.bomb) + " poisonNova=" +
-       b8(eat.poisonNova) + "} triggersEscapeMission=" +
-       b8(triggersEscapeMission);
+       " eat{foodValue=" + i32d(eat.foodValue) +
+       " hpValue=" + i32d(eat.hpValue) + " bomb=" + b8(eat.bomb) +
+       " poisonNova=" + b8(eat.poisonNova) +
+       "} triggersEscapeMission=" + b8(triggersEscapeMission);
   return s;
 }
 
 std::string CellEffectMap::dump() const {
   std::string s = "nE=" + i32d(numEntries);
-  for (const CellEffectMapEntry &e : entries) {
+  for (const CellEffectMapEntry& e : entries) {
     s += " entry{id=0x" + u32hex(e.effectID) + " type=" + u32hex(e.type) +
-         " f8=" + f32hex(e.field_8) + " fC=" + f32hex(e.field_C) + " f10=" +
-         f32hex(e.field_10) + " f14=" + f32hex(e.field_14) + " i18=" +
-         i32d(e.field_18) + "}";
+         " f8=" + f32hex(e.field_8) + " fC=" + f32hex(e.field_C) +
+         " f10=" + f32hex(e.field_10) + " f14=" + f32hex(e.field_14) +
+         " i18=" + i32d(e.field_18) + "}";
   }
   return s;
 }
 
 std::string CellBackgroundMap::dump() const {
   std::string s = "nE=" + i32d(numEntries);
-  for (const CellBackgroundMapEntry &e : entries) {
-    s += " entry{rgb=(" + f32hex(e.r) + "," + f32hex(e.g) + "," +
-         f32hex(e.b) + ") fC=" + f32hex(e.field_C) + "}";
+  for (const CellBackgroundMapEntry& e : entries) {
+    s += " entry{rgb=(" + f32hex(e.r) + "," + f32hex(e.g) + "," + f32hex(e.b) +
+         ") fC=" + f32hex(e.field_C) + "}";
   }
   return s;
 }
 
-bool parseCellEffectMap(const uint8_t *data, size_t size, CellEffectMap &out,
-                        std::string &error) {
+bool parseCellEffectMap(const uint8_t* data, size_t size, CellEffectMap& out,
+                        std::string& error) {
   if (size < 8) {
     error = "record size " + std::to_string(size) + " < 8";
+    return false;
+  }
+  if (data == nullptr) {
+    error = "effect-map record: null input";
     return false;
   }
   out = CellEffectMap{};
   Reader r(data, size);
   out.numEntries = static_cast<int>(r.readU32());
   out.entriesPtr = r.readU32();
-  if (r.offset() + 28 * out.numEntries != size) {
+  if (!spanMatches(r.offset(), size, static_cast<uint64_t>(out.numEntries),
+                   28)) {
     error = "header count span " +
-            std::to_string(8 + 28 * out.numEntries) + " != size " +
-            std::to_string(size);
+            std::to_string(8 + 28 * static_cast<uint64_t>(out.numEntries)) +
+            " != size " + std::to_string(size);
     return false;
   }
   for (int i = 0; i < out.numEntries; ++i) {
@@ -426,20 +471,25 @@ bool parseCellEffectMap(const uint8_t *data, size_t size, CellEffectMap &out,
   return true;
 }
 
-bool parseCellBackgroundMap(const uint8_t *data, size_t size,
-                            CellBackgroundMap &out, std::string &error) {
+bool parseCellBackgroundMap(const uint8_t* data, size_t size,
+                            CellBackgroundMap& out, std::string& error) {
   if (size < 8) {
     error = "record size " + std::to_string(size) + " < 8";
+    return false;
+  }
+  if (data == nullptr) {
+    error = "background-map record: null input";
     return false;
   }
   out = CellBackgroundMap{};
   Reader r(data, size);
   out.numEntries = static_cast<int>(r.readU32());
   out.entriesPtr = r.readU32();
-  if (r.offset() + 16 * out.numEntries != size) {
+  if (!spanMatches(r.offset(), size, static_cast<uint64_t>(out.numEntries),
+                   16)) {
     error = "header count span " +
-            std::to_string(8 + 16 * out.numEntries) + " != size " +
-            std::to_string(size);
+            std::to_string(8 + 16 * static_cast<uint64_t>(out.numEntries)) +
+            " != size " + std::to_string(size);
     return false;
   }
   for (int i = 0; i < out.numEntries; ++i) {
@@ -457,10 +507,10 @@ bool parseCellBackgroundMap(const uint8_t *data, size_t size,
   return true;
 }
 
-std::vector<std::string> cellEffectMapIssues(const CellEffectMap &em,
-                                            const CellBackgroundMap &bm) {
+std::vector<std::string> cellEffectMapIssues(const CellEffectMap& em,
+                                             const CellBackgroundMap& bm) {
   std::vector<std::string> out;
-  for (const CellEffectMapEntry &e : em.entries) {
+  for (const CellEffectMapEntry& e : em.entries) {
     if (e.type > 31) {
       out.push_back("type=" + u32hex(e.type));
     }
@@ -489,7 +539,7 @@ std::vector<std::string> cellEffectMapIssues(const CellEffectMap &em,
       out.push_back("i18=" + i32d(e.field_18));
     }
   }
-  for (const CellBackgroundMapEntry &e : bm.entries) {
+  for (const CellBackgroundMapEntry& e : bm.entries) {
     const float rgb[] = {e.r, e.g, e.b};
     for (float v : rgb) {
       if (!std::isfinite(v) || v < 0.0F || v > 1.0F) {
@@ -506,11 +556,11 @@ std::vector<std::string> cellEffectMapIssues(const CellEffectMap &em,
 
 std::string CellRandomCreature::dump() const {
   std::string s = "nE=" + i32d(numEntries);
-  for (const CellRandomCreatureEntry &e : entries) {
+  for (const CellRandomCreatureEntry& e : entries) {
     s += " entry{type=" + u32hex(e.type) + " cid=0x" + u32hex(e.creatureID) +
-         " w=" + f32hex(e.weight) + " sMin=" + i32d(e.speedMin) + " sMax=" +
-         i32d(e.speedMax) + " dMin=" + i32d(e.dangerMin) + " dMax=" +
-         i32d(e.dangerMax) + "}";
+         " w=" + f32hex(e.weight) + " sMin=" + i32d(e.speedMin) +
+         " sMax=" + i32d(e.speedMax) + " dMin=" + i32d(e.dangerMin) +
+         " dMax=" + i32d(e.dangerMax) + "}";
   }
   return s;
 }
@@ -519,20 +569,25 @@ std::string CellPowers::dump() const {
   return "cost=" + i32d(teleportCost) + " range=" + f32hex(teleportRange);
 }
 
-bool parseCellRandomCreature(const uint8_t *data, size_t size,
-                             CellRandomCreature &out, std::string &error) {
+bool parseCellRandomCreature(const uint8_t* data, size_t size,
+                             CellRandomCreature& out, std::string& error) {
   if (size < 8) {
     error = "record size " + std::to_string(size) + " < 8";
+    return false;
+  }
+  if (data == nullptr) {
+    error = "random-creature record: null input";
     return false;
   }
   out = CellRandomCreature{};
   Reader r(data, size);
   out.numEntries = static_cast<int>(r.readU32());
   out.entriesPtr = r.readU32();
-  if (r.offset() + 28 * out.numEntries != size) {
+  if (!spanMatches(r.offset(), size, static_cast<uint64_t>(out.numEntries),
+                   28)) {
     error = "header count span " +
-            std::to_string(8 + 28 * out.numEntries) + " != size " +
-            std::to_string(size);
+            std::to_string(8 + 28 * static_cast<uint64_t>(out.numEntries)) +
+            " != size " + std::to_string(size);
     return false;
   }
   for (int i = 0; i < out.numEntries; ++i) {
@@ -553,10 +608,14 @@ bool parseCellRandomCreature(const uint8_t *data, size_t size,
   return true;
 }
 
-bool parseCellPowers(const uint8_t *data, size_t size, CellPowers &out,
-                     std::string &error) {
+bool parseCellPowers(const uint8_t* data, size_t size, CellPowers& out,
+                     std::string& error) {
   if (size != 8) {
     error = "powers record size " + std::to_string(size) + " != 8";
+    return false;
+  }
+  if (data == nullptr) {
+    error = "powers record: null input";
     return false;
   }
   out = CellPowers{};
@@ -570,10 +629,10 @@ bool parseCellPowers(const uint8_t *data, size_t size, CellPowers &out,
   return true;
 }
 
-std::vector<std::string> cellRandomCreatureIssues(const CellRandomCreature &rc,
-                                                 const CellPowers &pw) {
+std::vector<std::string> cellRandomCreatureIssues(const CellRandomCreature& rc,
+                                                  const CellPowers& pw) {
   std::vector<std::string> out;
-  for (const CellRandomCreatureEntry &e : rc.entries) {
+  for (const CellRandomCreatureEntry& e : rc.entries) {
     if (e.type != 0 && e.type != 1) {
       out.push_back("type=" + u32hex(e.type));
     }
@@ -605,7 +664,7 @@ std::vector<std::string> cellRandomCreatureIssues(const CellRandomCreature &rc,
 
 std::string CellLookTable::dump() const {
   std::string s = "nE=" + i32d(numEntries);
-  for (const CellLookEntry &e : entries) {
+  for (const CellLookEntry& e : entries) {
     s += " entry{type=" + i32d(e.type) + " value=" + f32hex(e.value) + "}";
   }
   return s;
@@ -613,26 +672,32 @@ std::string CellLookTable::dump() const {
 
 std::string CellLookAlgorithm::dump() const {
   std::string s = "nE=" + i32d(numEntries);
-  for (const CellLookAlgoEntry &e : entries) {
+  for (const CellLookAlgoEntry& e : entries) {
     s += " entry{type=" + u32hex(e.type) + " action=" + u32hex(e.action) +
-         " p=" + u32hex(e.player) + " n=" + u32hex(e.npc) + " e=" +
-         u32hex(e.epic) + "}";
+         " p=" + u32hex(e.player) + " n=" + u32hex(e.npc) +
+         " e=" + u32hex(e.epic) + "}";
   }
   return s;
 }
 
-bool parseCellLookTable(const uint8_t *data, size_t size, CellLookTable &out,
-                        std::string &error) {
+bool parseCellLookTable(const uint8_t* data, size_t size, CellLookTable& out,
+                        std::string& error) {
   if (size < 8) {
     error = "record size " + std::to_string(size) + " < 8";
+    return false;
+  }
+  if (data == nullptr) {
+    error = "look-table record: null input";
     return false;
   }
   out = CellLookTable{};
   Reader r(data, size);
   out.entriesPtr = r.readU32();
   out.numEntries = static_cast<int>(r.readU32());
-  if (r.offset() + 8 * out.numEntries != size) {
-    error = "header count span " + std::to_string(8 + 8 * out.numEntries) +
+  if (!spanMatches(r.offset(), size, static_cast<uint64_t>(out.numEntries),
+                   8)) {
+    error = "header count span " +
+            std::to_string(8 + 8 * static_cast<uint64_t>(out.numEntries)) +
             " != size " + std::to_string(size);
     return false;
   }
@@ -649,18 +714,24 @@ bool parseCellLookTable(const uint8_t *data, size_t size, CellLookTable &out,
   return true;
 }
 
-bool parseCellLookAlgorithm(const uint8_t *data, size_t size,
-                            CellLookAlgorithm &out, std::string &error) {
+bool parseCellLookAlgorithm(const uint8_t* data, size_t size,
+                            CellLookAlgorithm& out, std::string& error) {
   if (size < 8) {
     error = "record size " + std::to_string(size) + " < 8";
+    return false;
+  }
+  if (data == nullptr) {
+    error = "look-algorithm record: null input";
     return false;
   }
   out = CellLookAlgorithm{};
   Reader r(data, size);
   out.entriesPtr = r.readU32();
   out.numEntries = static_cast<int>(r.readU32());
-  if (r.offset() + 20 * out.numEntries != size) {
-    error = "header count span " + std::to_string(8 + 20 * out.numEntries) +
+  if (!spanMatches(r.offset(), size, static_cast<uint64_t>(out.numEntries),
+                   20)) {
+    error = "header count span " +
+            std::to_string(8 + 20 * static_cast<uint64_t>(out.numEntries)) +
             " != size " + std::to_string(size);
     return false;
   }
@@ -681,10 +752,10 @@ bool parseCellLookAlgorithm(const uint8_t *data, size_t size,
 }
 
 std::vector<std::string> cellLookIssues(
-    const CellLookTable &t, const CellLookAlgorithm &a,
-    const std::unordered_set<uint32_t> &lookTableInsts) {
+    const CellLookTable& t, const CellLookAlgorithm& a,
+    const std::unordered_set<uint32_t>& lookTableInsts) {
   std::vector<std::string> out;
-  for (const CellLookEntry &e : t.entries) {
+  for (const CellLookEntry& e : t.entries) {
     if (e.type < 0 || e.type > 31) {
       out.push_back("look.type=" + i32d(e.type));
     }
@@ -692,7 +763,7 @@ std::vector<std::string> cellLookIssues(
       out.push_back("look.value=" + f32hex(e.value));
     }
   }
-  for (const CellLookAlgoEntry &e : a.entries) {
+  for (const CellLookAlgoEntry& e : a.entries) {
     if (e.type > 5) {
       out.push_back("algo.type=" + u32hex(e.type));
     }
@@ -715,25 +786,35 @@ std::string CellLootTable::dump() const {
        " initA=" + f32hex(initialAlpha) + " expelF=" + f32hex(expelForce) +
        " effect=" + i32d(effect) + " mhp=" + u32hex(mustHavePart) +
        " delay=" + f32hex(delay) + " nE=" + i32d(numEntries);
-  for (const CellLootEntry &e : entries) {
+  for (const CellLootEntry& e : entries) {
     s += " entry{type=" + u32hex(e.type) + " cell=" + u32hex(e.cell) +
-         " table=" + u32hex(e.table) + " w=" + f32hex(e.weight) + " n=" +
-         i32d(e.count) + " dn=" + i32d(e.countDelta) + " lo=" +
-         i32d(e.levelOffset) + "}";
+         " table=" + u32hex(e.table) + " w=" + f32hex(e.weight) +
+         " n=" + i32d(e.count) + " dn=" + i32d(e.countDelta) +
+         " lo=" + i32d(e.levelOffset) + "}";
   }
   return s;
 }
 
-bool parseCellLootTable(const uint8_t *data, size_t size, CellLootTable &out,
-                        std::string &error) {
+bool parseCellLootTable(const uint8_t* data, size_t size, CellLootTable& out,
+                        std::string& error) {
   if (size < 36) {
     error = "record size " + std::to_string(size) + " < 36";
+    return false;
+  }
+  if (data == nullptr) {
+    error = "loot-table record: null input";
     return false;
   }
   out = CellLootTable{};
   Reader r(data, size);
   out.entriesPtr = r.readU32();
   out.numEntries = static_cast<int>(r.readU32());
+  if (!countFits(r.offset(), size, static_cast<uint64_t>(out.numEntries), 28)) {
+    error = "header count span " +
+            std::to_string(36 + 28 * static_cast<uint64_t>(out.numEntries)) +
+            " != size " + std::to_string(size);
+    return false;
+  }
   out.minRadius = r.readF32();
   out.maxRadius = r.readF32();
   out.initialAlpha = r.readF32();
@@ -742,10 +823,11 @@ bool parseCellLootTable(const uint8_t *data, size_t size, CellLootTable &out,
   out.mustHavePart = r.readU8();
   r.skip(3);
   out.delay = r.readF32();
-  if (r.offset() + 28 * out.numEntries != size) {
+  if (!spanMatches(r.offset(), size, static_cast<uint64_t>(out.numEntries),
+                   28)) {
     error = "header count span " +
-            std::to_string(36 + 28 * out.numEntries) + " != size " +
-            std::to_string(size);
+            std::to_string(36 + 28 * static_cast<uint64_t>(out.numEntries)) +
+            " != size " + std::to_string(size);
     return false;
   }
   for (int i = 0; i < out.numEntries; ++i) {
@@ -767,8 +849,8 @@ bool parseCellLootTable(const uint8_t *data, size_t size, CellLootTable &out,
 }
 
 std::vector<std::string> cellLootTableIssues(
-    const CellLootTable &t, const std::unordered_set<uint32_t> &cellInsts,
-    const std::unordered_set<uint32_t> &lootInsts) {
+    const CellLootTable& t, const std::unordered_set<uint32_t>& cellInsts,
+    const std::unordered_set<uint32_t>& lootInsts) {
   std::vector<std::string> out;
   if (t.effect != 0) {
     out.push_back("effect=" + i32d(t.effect));
@@ -786,7 +868,7 @@ std::vector<std::string> cellLootTableIssues(
       out.push_back("header float=" + f32hex(v));
     }
   }
-  for (const CellLootEntry &e : t.entries) {
+  for (const CellLootEntry& e : t.entries) {
     if (e.type > 5) {
       out.push_back("entry.type=" + u32hex(e.type));
     }
@@ -815,23 +897,28 @@ std::vector<std::string> cellLootTableIssues(
 std::string CellStructure::dump() const {
   std::string s;
   s += "onDeath=" + u32hex(onDeath) + " onDeathSmall=" + u32hex(onDeathSmall) +
-       " onDeathLarge=" + u32hex(onDeathLarge) + " onHatch=" +
-       u32hex(onHatch) + " onStartHatch=" + u32hex(onStartHatch) +
+       " onDeathLarge=" + u32hex(onDeathLarge) + " onHatch=" + u32hex(onHatch) +
+       " onStartHatch=" + u32hex(onStartHatch) +
        " nAtt=" + i32d(numAttachments);
-  for (const CellStructureAtt &a : atts) {
+  for (const CellStructureAtt& a : atts) {
     s += " att{bone=" + i32d(a.bone) + " type=" + u32hex(a.type) +
-         " struct=" + u32hex(a.structure) + " rand=" + u32hex(a.randomCreature) +
-         " effect=" + i32d(a.effectID) + " lmin=" + i32d(a.levelMin) +
-         " lmax=" + i32d(a.levelMax) + " color=(" + f32hex(a.color[0]) + "," +
-         f32hex(a.color[1]) + "," + f32hex(a.color[2]) + ")}";
+         " struct=" + u32hex(a.structure) +
+         " rand=" + u32hex(a.randomCreature) + " effect=" + i32d(a.effectID) +
+         " lmin=" + i32d(a.levelMin) + " lmax=" + i32d(a.levelMax) +
+         " color=(" + f32hex(a.color[0]) + "," + f32hex(a.color[1]) + "," +
+         f32hex(a.color[2]) + ")}";
   }
   return s;
 }
 
-bool parseCellStructure(const uint8_t *data, size_t size, CellStructure &out,
-                        std::string &error) {
+bool parseCellStructure(const uint8_t* data, size_t size, CellStructure& out,
+                        std::string& error) {
   if (size < 28) {
     error = "record size " + std::to_string(size) + " < 28";
+    return false;
+  }
+  if (data == nullptr) {
+    error = "structure record: null input";
     return false;
   }
   out = CellStructure{};
@@ -843,10 +930,12 @@ bool parseCellStructure(const uint8_t *data, size_t size, CellStructure &out,
   out.onStartHatch = r.readU32();
   out.attachmentsPtr = r.readU32();
   out.numAttachments = static_cast<int>(r.readU32());
-  if (r.offset() + 40 * out.numAttachments != size) {
-    error = "header count span " +
-            std::to_string(28 + 40 * out.numAttachments) + " != size " +
-            std::to_string(size);
+  if (!spanMatches(r.offset(), size, static_cast<uint64_t>(out.numAttachments),
+                   40)) {
+    error =
+        "header count span " +
+        std::to_string(28 + 40 * static_cast<uint64_t>(out.numAttachments)) +
+        " != size " + std::to_string(size);
     return false;
   }
   for (int i = 0; i < out.numAttachments; ++i) {
@@ -870,7 +959,7 @@ bool parseCellStructure(const uint8_t *data, size_t size, CellStructure &out,
   return true;
 }
 
-std::vector<std::string> cellStructureIssues(const CellStructure &s) {
+std::vector<std::string> cellStructureIssues(const CellStructure& s) {
   std::vector<std::string> out;
   if (s.onStartHatch != 0) {
     out.push_back("onStartHatch=" + u32hex(s.onStartHatch));
@@ -878,7 +967,7 @@ std::vector<std::string> cellStructureIssues(const CellStructure &s) {
   if (s.numAttachments < 0 || s.numAttachments > 16) {
     out.push_back("numAttachments=" + i32d(s.numAttachments));
   }
-  for (const CellStructureAtt &a : s.atts) {
+  for (const CellStructureAtt& a : s.atts) {
     if (a.bone != 0 && a.bone != 3 && a.bone != -1) {
       out.push_back("bone=" + i32d(a.bone));
     }
@@ -907,25 +996,31 @@ std::vector<std::string> cellStructureIssues(const CellStructure &s) {
 std::string CellPopulate::dump() const {
   std::string s;
   s += "scale=" + u32hex(scale) + " maskTexture=" + u32hex(maskTexture) +
-       " numMarkers=" + i32d(static_cast<int>(numMarkers)) + " markersPtr=" +
-       u32hex(markersPtr);
-  for (const CellMarker &m : markers) {
-    s += " marker{dist=" + u32hex(m.distributeCell) + " clust=" +
-         u32hex(m.clusterCell) + " enc=" + u32hex(m.encounterPopulate) +
+       " numMarkers=" + i32d(static_cast<int>(numMarkers)) +
+       " markersPtr=" + u32hex(markersPtr);
+  for (const CellMarker& m : markers) {
+    s += " marker{dist=" + u32hex(m.distributeCell) +
+         " clust=" + u32hex(m.clusterCell) +
+         " enc=" + u32hex(m.encounterPopulate) +
          " plant=" + u32hex(m.plantType) + " type=" + u32hex(m.type) +
          " count=" + f32hex(m.count) + " cE=" + f32hex(m.countEasy) +
          " cM=" + f32hex(m.countMed) + " cH=" + f32hex(m.countHard) +
-         " size=" + i32d(m.size) + " parts=" + i32d(m.parts) + " lin=" +
-         i32d(m.linear) + " zOff=" + f32hex(m.zOffset) + " zOffMax=" +
-         f32hex(m.zOffsetMax) + " encScale=" + i32d(m.encounterScale) + "}";
+         " size=" + i32d(m.size) + " parts=" + i32d(m.parts) +
+         " lin=" + i32d(m.linear) + " zOff=" + f32hex(m.zOffset) +
+         " zOffMax=" + f32hex(m.zOffsetMax) +
+         " encScale=" + i32d(m.encounterScale) + "}";
   }
   return s;
 }
 
-bool parseCellPopulate(const uint8_t *data, size_t size, CellPopulate &out,
-                       std::string &error) {
+bool parseCellPopulate(const uint8_t* data, size_t size, CellPopulate& out,
+                       std::string& error) {
   if (size < 16) {
     error = "record size " + std::to_string(size) + " < 16";
+    return false;
+  }
+  if (data == nullptr) {
+    error = "populate record: null input";
     return false;
   }
   out = CellPopulate{};
@@ -934,10 +1029,10 @@ bool parseCellPopulate(const uint8_t *data, size_t size, CellPopulate &out,
   out.maskTexture = r.readU32();
   out.numMarkers = r.readU32();
   out.markersPtr = r.readU32();
-  if (r.offset() + 76 * out.numMarkers != size) {
+  if (!spanMatches(r.offset(), size, out.numMarkers, 76)) {
     error = "header count span " +
-            std::to_string(16 + 76 * out.numMarkers) + " != size " +
-            std::to_string(size);
+            std::to_string(16 + 76 * static_cast<uint64_t>(out.numMarkers)) +
+            " != size " + std::to_string(size);
     return false;
   }
   for (uint32_t i = 0; i < out.numMarkers; ++i) {
@@ -971,7 +1066,7 @@ bool parseCellPopulate(const uint8_t *data, size_t size, CellPopulate &out,
 }
 
 std::vector<std::string> cellPopulateIssues(
-    const CellPopulate &p, const std::unordered_set<uint32_t> &cellInsts) {
+    const CellPopulate& p, const std::unordered_set<uint32_t>& cellInsts) {
   std::vector<std::string> out;
   if (p.scale > 10) {
     out.push_back("scale=" + u32hex(p.scale));
@@ -982,7 +1077,7 @@ std::vector<std::string> cellPopulateIssues(
   if (p.numMarkers > 64) {
     out.push_back("numMarkers=" + i32d(static_cast<int>(p.numMarkers)));
   }
-  for (const CellMarker &m : p.markers) {
+  for (const CellMarker& m : p.markers) {
     if (m.field_0 || m.field_4 || m.field_8 || m.field_14) {
       out.push_back("dead field nonzero");
     }
@@ -1017,8 +1112,7 @@ std::vector<std::string> cellPopulateIssues(
     if (m.linear != 0 && m.linear != 1) {
       out.push_back("linear=" + i32d(m.linear));
     }
-    if (!std::isfinite(m.zOffset) || m.zOffset < 0.0F ||
-        m.zOffset > 100.0F) {
+    if (!std::isfinite(m.zOffset) || m.zOffset < 0.0F || m.zOffset > 100.0F) {
       out.push_back("zOffset=" + f32hex(m.zOffset));
     }
     if (!std::isfinite(m.zOffsetMax) || m.zOffsetMax < 0.0F ||
@@ -1032,25 +1126,32 @@ std::vector<std::string> cellPopulateIssues(
 std::string CellWorld::dump() const {
   std::string s;
   s += "numPopulate=" + i32d(static_cast<int>(numPopulate)) +
-       " populatePtr=" + u32hex(populatePtr) + " numAdvect=" +
-       i32d(static_cast<int>(numAdvect)) + " advectPtr=" + u32hex(advectPtr);
-  for (const CellLevelEntry &e : populate) {
-    s += " level{populate=" + u32hex(e.populate) + " startTile=" +
-         b8(e.startTile != 0) + " playerSize=" + u32hex(e.playerSize) + "}";
+       " populatePtr=" + u32hex(populatePtr) +
+       " numAdvect=" + i32d(static_cast<int>(numAdvect)) +
+       " advectPtr=" + u32hex(advectPtr);
+  for (const CellLevelEntry& e : populate) {
+    s += " level{populate=" + u32hex(e.populate) +
+         " startTile=" + b8(e.startTile != 0) +
+         " playerSize=" + u32hex(e.playerSize) + "}";
   }
-  for (const CellAdvectEntry &e : advect) {
-    s += " advect{stageScale=" + u32hex(e.stageScale) + " playerSize=" +
-         i32d(e.playerSize) + " strength=" + f32hex(e.strength) +
-         " variance=" + f32hex(e.variance) + " period=" + f32hex(e.period) +
-         " advectID=" + u32hex(e.advectID) + "}";
+  for (const CellAdvectEntry& e : advect) {
+    s += " advect{stageScale=" + u32hex(e.stageScale) +
+         " playerSize=" + i32d(e.playerSize) +
+         " strength=" + f32hex(e.strength) + " variance=" + f32hex(e.variance) +
+         " period=" + f32hex(e.period) + " advectID=" + u32hex(e.advectID) +
+         "}";
   }
   return s;
 }
 
-bool parseCellWorld(const uint8_t *data, size_t size, CellWorld &out,
-                    std::string &error) {
+bool parseCellWorld(const uint8_t* data, size_t size, CellWorld& out,
+                    std::string& error) {
   if (size < 16) {
     error = "record size " + std::to_string(size) + " < 16";
+    return false;
+  }
+  if (data == nullptr) {
+    error = "cell-world record: null input";
     return false;
   }
   out = CellWorld{};
@@ -1059,9 +1160,17 @@ bool parseCellWorld(const uint8_t *data, size_t size, CellWorld &out,
   out.populatePtr = r.readU32();
   out.numAdvect = r.readU32();
   out.advectPtr = r.readU32();
-  if (r.offset() + 12 * out.numPopulate + 24 * out.numAdvect != size) {
+  if (!countFits(r.offset(), size, out.numPopulate, 12)) {
+    error = "header counts span does not fit populate entries";
+    return false;
+  }
+  const size_t populateSpan = 12 * static_cast<size_t>(out.numPopulate);
+  if (!countFits(r.offset() + populateSpan, size, out.numAdvect, 24) ||
+      r.offset() + populateSpan + 24 * static_cast<size_t>(out.numAdvect) !=
+          size) {
     error = "header counts span " +
-            std::to_string(16 + 12 * out.numPopulate + 24 * out.numAdvect) +
+            std::to_string(16 + populateSpan +
+                           24 * static_cast<size_t>(out.numAdvect)) +
             " != size " + std::to_string(size);
     return false;
   }
@@ -1090,7 +1199,7 @@ bool parseCellWorld(const uint8_t *data, size_t size, CellWorld &out,
   return true;
 }
 
-std::vector<std::string> cellWorldIssues(const CellWorld &w) {
+std::vector<std::string> cellWorldIssues(const CellWorld& w) {
   std::vector<std::string> out;
   if (w.numPopulate > 64) {
     out.push_back("numPopulate=" + i32d(static_cast<int>(w.numPopulate)));
@@ -1098,15 +1207,16 @@ std::vector<std::string> cellWorldIssues(const CellWorld &w) {
   if (w.numAdvect > 64) {
     out.push_back("numAdvect=" + i32d(static_cast<int>(w.numAdvect)));
   }
-  for (const CellLevelEntry &e : w.populate) {
+  for (const CellLevelEntry& e : w.populate) {
     if (e.startTile > 1) {
       out.push_back("level.startTile=" + i32d(e.startTile));
     }
-    if (e.playerSize != 0xFFFFFFFFu && (e.playerSize == 0 || e.playerSize > 10)) {
+    if (e.playerSize != 0xFFFFFFFFu &&
+        (e.playerSize == 0 || e.playerSize > 10)) {
       out.push_back("level.playerSize=" + u32hex(e.playerSize));
     }
   }
-  for (const CellAdvectEntry &e : w.advect) {
+  for (const CellAdvectEntry& e : w.advect) {
     if (e.stageScale > 30) {
       out.push_back("advect.stageScale=" + u32hex(e.stageScale));
     }
@@ -1123,11 +1233,15 @@ std::vector<std::string> cellWorldIssues(const CellWorld &w) {
   return out;
 }
 
-bool parseCellCell(const uint8_t *data, size_t size, CellCell &out,
-                   std::string &error) {
+bool parseCellCell(const uint8_t* data, size_t size, CellCell& out,
+                   std::string& error) {
   if (size != CellCell::kSize) {
-    error = "record size " + std::to_string(size) + " != " +
-            std::to_string(CellCell::kSize);
+    error = "record size " + std::to_string(size) +
+            " != " + std::to_string(CellCell::kSize);
+    return false;
+  }
+  if (data == nullptr) {
+    error = "cell record: null input";
     return false;
   }
   out = CellCell{};
@@ -1171,14 +1285,14 @@ bool parseCellCell(const uint8_t *data, size_t size, CellCell &out,
     return false;
   }
   if (r.offset() != CellCell::kSize) {
-    error = "field span " + std::to_string(r.offset()) + " != " +
-            std::to_string(CellCell::kSize);
+    error = "field span " + std::to_string(r.offset()) +
+            " != " + std::to_string(CellCell::kSize);
     return false;
   }
   return true;
 }
 
-std::vector<std::string> cellCellIssues(const CellCell &c) {
+std::vector<std::string> cellCellIssues(const CellCell& c) {
   std::vector<std::string> out;
   if (c.cellType > 7) {
     out.push_back("cellType=" + u32hex(c.cellType));
@@ -1208,8 +1322,7 @@ std::vector<std::string> cellCellIssues(const CellCell &c) {
   }
   if (c.sizeMin < 0.0F || c.sizeMin > 10.0F || c.sizeMin > c.sizeMax ||
       c.sizeMax > 10.0F) {
-    out.push_back("size=[" + f32hex(c.sizeMin) + " " + f32hex(c.sizeMax) +
-                  "]");
+    out.push_back("size=[" + f32hex(c.sizeMin) + " " + f32hex(c.sizeMax) + "]");
   }
   if (c.eat.foodValue < 0 || c.eat.hpValue < 0) {
     out.push_back("eat.foodValue=" + i32d(c.eat.foodValue));
@@ -1223,21 +1336,21 @@ std::vector<std::string> cellCellIssues(const CellCell &c) {
 
 namespace {
 // Linear blend of two ramp entries by a 0..1 t.
-void lerpEntry(const CellBackgroundMapEntry &a, const CellBackgroundMapEntry &b,
+void lerpEntry(const CellBackgroundMapEntry& a, const CellBackgroundMapEntry& b,
                float t, float out[3]) {
   out[0] = a.r + (b.r - a.r) * t;
   out[1] = a.g + (b.g - a.g) * t;
   out[2] = a.b + (b.b - a.b) * t;
 }
-} // namespace
+}  // namespace
 
-bool sampleBackgroundMapColor(const CellBackgroundMap &bm, float ladder,
+bool sampleBackgroundMapColor(const CellBackgroundMap& bm, float ladder,
                               float out[3]) {
   if (bm.entries.empty()) {
     return false;
   }
-  const auto &first = bm.entries.front();
-  const auto &last = bm.entries.back();
+  const auto& first = bm.entries.front();
+  const auto& last = bm.entries.back();
   if (ladder <= first.field_C) {
     lerpEntry(first, first, 0.0F, out);
     return true;
@@ -1247,16 +1360,15 @@ bool sampleBackgroundMapColor(const CellBackgroundMap &bm, float ladder,
     return true;
   }
   for (size_t i = 0; i + 1 < bm.entries.size(); ++i) {
-    const CellBackgroundMapEntry &a = bm.entries[i];
-    const CellBackgroundMapEntry &b = bm.entries[i + 1];
+    const CellBackgroundMapEntry& a = bm.entries[i];
+    const CellBackgroundMapEntry& b = bm.entries[i + 1];
     if (ladder < a.field_C || ladder > b.field_C) {
       continue;
     }
     float t;
     if (a.field_C <= 0.0F) {
-      t = b.field_C > a.field_C
-              ? (ladder - a.field_C) / (b.field_C - a.field_C)
-              : 0.0F;
+      t = b.field_C > a.field_C ? (ladder - a.field_C) / (b.field_C - a.field_C)
+                                : 0.0F;
     } else {
       const float la = std::log2(a.field_C);
       const float lb = std::log2(b.field_C);
@@ -1271,13 +1383,13 @@ bool sampleBackgroundMapColor(const CellBackgroundMap &bm, float ladder,
   return true;
 }
 
-bool backgroundMapColorEnvelope(const CellBackgroundMap &bm, float out[6]) {
+bool backgroundMapColorEnvelope(const CellBackgroundMap& bm, float out[6]) {
   if (bm.entries.empty()) {
     return false;
   }
   float min[3] = {bm.entries[0].r, bm.entries[0].g, bm.entries[0].b};
   float max[3] = {bm.entries[0].r, bm.entries[0].g, bm.entries[0].b};
-  for (const CellBackgroundMapEntry &e : bm.entries) {
+  for (const CellBackgroundMapEntry& e : bm.entries) {
     min[0] = std::min(min[0], e.r);
     min[1] = std::min(min[1], e.g);
     min[2] = std::min(min[2], e.b);
@@ -1294,4 +1406,4 @@ bool backgroundMapColorEnvelope(const CellBackgroundMap &bm, float out[6]) {
   return true;
 }
 
-} // namespace openspore::assets
+}  // namespace openspore::assets

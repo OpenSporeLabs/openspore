@@ -20,6 +20,7 @@
 
 #include <cmath>
 #include <cstdint>
+#include <utility>
 #include <vector>
 
 namespace openspore::sim {
@@ -33,18 +34,31 @@ struct CellQueryEntry {
 };
 static_assert(sizeof(CellQueryEntry) == 0x1c, "cCellQueryEntry is 28 B");
 
+enum class CellQueryStatus { success, unsupported, failure };
+
+struct CellQueryResult {
+  CellQueryStatus status = CellQueryStatus::success;
+  std::vector<uint32_t> indices;
+
+  explicit operator bool() const { return status == CellQueryStatus::success; }
+};
+
 class CellQuery {
-public:
+ public:
   CellQuery() = default;
   ~CellQuery() = default;
-  CellQuery(const CellQuery &) = delete;
-  CellQuery &operator=(const CellQuery &) = delete;
+  CellQuery(const CellQuery&) = delete;
+  CellQuery& operator=(const CellQuery&) = delete;
 
   void reserve(uint32_t maxObjects) { mEntries.reserve(maxObjects); }
 
-  // Insert a pool cell into the query (LIFO list, mpNext links to the head).
-  // Returns the cell's pool index.
-  uint32_t addCell(uint32_t index, const float position[3], float cellSize) {
+  CellQueryResult addCellResult(uint32_t index, const float position[3],
+                                float cellSize) {
+    if (position == nullptr || !std::isfinite(position[0]) ||
+        !std::isfinite(position[1]) || !std::isfinite(position[2]) ||
+        cellSize < 0.0F || !std::isfinite(cellSize) || index == 0xFFFFFFFFu) {
+      return {CellQueryStatus::failure, {}};
+    }
     CellQueryEntry e;
     e.mPosition[0] = position[0];
     e.mPosition[1] = position[1];
@@ -54,17 +68,30 @@ public:
     e.mpNext = mHead;
     mHead = static_cast<int32_t>(mEntries.size());
     mEntries.push_back(e);
-    return index;
+    return {CellQueryStatus::success, {index}};
+  }
+
+  uint32_t addCell(uint32_t index, const float position[3], float cellSize) {
+    return addCellResult(index, position, cellSize).status ==
+                   CellQueryStatus::success
+               ? index
+               : 0xFFFFFFFFu;
   }
 
   uint32_t count() const { return static_cast<uint32_t>(mEntries.size()); }
 
-  // Indices of cells whose surface reaches within `radius` of `position`
-  // (|C-P| <= C.size + radius). Order follows the linked list (LIFO).
-  std::vector<uint32_t> queryNear(const float position[3], float radius) const {
+  void clear() {
+    mHead = -1;
+    mEntries.clear();
+  }
+
+  CellQueryResult queryNearResult(const float position[3], float radius) const {
+    if (position == nullptr || radius < 0.0F || !std::isfinite(radius)) {
+      return {CellQueryStatus::failure, {}};
+    }
     std::vector<uint32_t> out;
     for (int32_t i = mHead; i >= 0; i = mEntries[i].mpNext) {
-      const CellQueryEntry &e = mEntries[i];
+      const CellQueryEntry& e = mEntries[i];
       float dx = e.mPosition[0] - position[0];
       float dy = e.mPosition[1] - position[1];
       float dz = e.mPosition[2] - position[2];
@@ -73,12 +100,16 @@ public:
         out.push_back(e.mCellIndex);
       }
     }
-    return out;
+    return {CellQueryStatus::success, std::move(out)};
   }
 
-private:
+  std::vector<uint32_t> queryNear(const float position[3], float radius) const {
+    return queryNearResult(position, radius).indices;
+  }
+
+ private:
   int32_t mHead = -1;
-  std::vector<CellQueryEntry> mEntries;  // stable arena
+  std::vector<CellQueryEntry> mEntries;
 };
 
-} // namespace openspore::sim
+}  // namespace openspore::sim

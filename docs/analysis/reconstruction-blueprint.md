@@ -1169,6 +1169,23 @@ This document is the package-level implementation specification. It is intention
 
 **Implementation status:** `INFRASTRUCTURE_REPLACEMENT`. This is a replacement boundary or evidence tool, not a gameplay semantic package.
 
+## OpenSpore Implementation Swarm v1 status
+
+The following eight packages are implemented as bounded clean-room host contracts. This status does not promote any package to original-runtime compatibility or byte-level equivalence.
+
+| Package | Derived status | Evidence boundary |
+|---|---|---|
+| PKG-03-RESOURCE-IO | `IMPLEMENTED_WITH_LOCAL_UNKNOWN` | BLUEPRINT_BACKED resource/property seam; host wire behavior remains bounded |
+| PKG-04-ASSET-GEOMETRY-TEXTURE | `IMPLEMENTED_WITH_LOCAL_UNKNOWN` | BLUEPRINT_BACKED bounded GMDL/RW4/raster decode; host rendering is not original pixels |
+| PKG-05-CELL-CONTENT | `IMPLEMENTED_WITH_LOCAL_UNKNOWN` | BLUEPRINT_BACKED direct Cell records; runtime use and placement remain bounded |
+| PKG-08-CELL-MODE | `IMPLEMENTED_WITH_LOCAL_UNKNOWN` | BLUEPRINT_BACKED clean-room lifecycle/input seam; original timing remains bounded |
+| PKG-06-CELL-STATE | `IMPLEMENTED_WITH_LOCAL_UNKNOWN` | BLUEPRINT_BACKED pure Cell rules; live singleton/runtime equivalence remains unpromoted |
+| PKG-09-CELL-PRESENTATION | `IMPLEMENTED_WITH_LOCAL_UNKNOWN` | BLUEPRINT_BACKED host presentation stage; original placement/pixel/GPU behavior remains unpromoted |
+| PKG-17-ANIMATION-SWARM | `IMPLEMENTED_WITH_LOCAL_UNKNOWN` | BLUEPRINT_BACKED animation-intent seam; pose/Swarm runtime behavior remains unpromoted |
+| PKG-15-EDITOR-SUPPORT | `IMPLEMENTED_WITH_LOCAL_UNKNOWN` | BLUEPRINT_BACKED support seam; original editor runtime behavior remains unpromoted |
+
+Remaining bounded assumptions are recorded in `docs/analysis/future-research/implementation-unknowns.md` and package-specific research briefs. No speculative semantic claim or evidence-level promotion is made by this status update.
+
 ## Package acceptance boundary
 
 A future implementation agent may use this document for bounded clean-room interfaces, but must return to the JSON evidence register for exact function records, evidence citations, unknowns, and validation gates. No package brief authorizes a raw original ABI implementation or claims original behavior without the listed oracle.

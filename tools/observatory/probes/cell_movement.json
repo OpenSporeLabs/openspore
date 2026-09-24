@@ -1,5 +1,5 @@
 {
-  "description": "Obj 32/32A: cell-stage movement runtime observation (dossier docs/analysis/dossiers/cell-movement.md; runtime NOT OBTAINED until this runs). ALL rvas are PE-linked VAs at ImageBase 0x400000 (objdump -h: PE ImageBase=400000; vtable @ linked 0x1485550 entries == SDK XML addresses == Ghidra VAs; decompiled headers '@ 0x00e806b0'/'@ 0x006ffe00' confirm Ghidra project base = 0x400000, NOT the 0x01100000 the snapshot note claims -- its 'rva' column is address-0x100000, arithmetically inconsistent with that base). Probe rva = snapshot 'address' field = dossier RVA + 0x100000. Every entry below was byte-verified at file offset (linked - 0x400C00) in SPORE/SporeBin/SporeApp.exe (GOG 3.1.0.22): instruction-aligned clean prologue, and 3 bodies match decompiled dossier semantics (0x5158 lock flag, 0x411c player ref, sCellGame global 0x116b3c04, callee FUN_007c4730). Cell stage is UNREACHABLE headless (no Xvfb/xdotool; main menu only) -- these probes are expected to record 0 cell events; menu/bootstrap probes are the control.",
+  "description": "Obj 32/32A: cell-stage movement runtime observation (dossier docs/analysis/dossiers/cell-movement.md). All rva fields are linked VAs at PE ImageBase 0x400000; the tracer plants at loadBase + (rva - image_base), not at a raw PE RVA. Current static Ghidra evidence identifies the active global operand as 0x016b3c04; the earlier snapshot address text is historical provenance, not an alternate operand. Probe addresses were byte-verified in the GOG 3.1.0.22 executable: instruction-aligned clean prologues, and three bodies match decompiled dossier semantics (0x5158 lock flag, 0x411c player ref, sCellGame global 0x016b3c04, callee FUN_007c4730). Cell-stage reachability is not established: prior zero-event runs are historical, environment-bound negatives, not a current gate expectation. A current human-watched, focused-window run is required to establish Cell reachability; menu/bootstrap probes are controls.",
   "image_base": "0x400000",
   "probes": [
     {
@@ -30,12 +30,12 @@
     {
       "rva": "0xe5b790",
       "name": "Simulator::Cell::MovePlayerToMousePosition",
-      "note": "SDK name; 625B; RAY-PLANE INTERSECTION mover: mov eax,[0x116b3c04] (sCellGame); sub esp,0x38; cmp [eax+0x5158],0 (lock flag +20824) -- byte-matches decompilation; player pos <- camOrigin + camDir*t; sets moving flag"
+      "note": "SDK name; 625B; RAY-PLANE INTERSECTION mover: mov eax,[0x016b3c04] (sCellGame); sub esp,0x38; cmp [eax+0x5158],0 (lock flag +20824) -- byte-matches decompilation; player pos <- camOrigin + camDir*t; sets moving flag"
     },
     {
       "rva": "0xe5b2e0",
       "name": "cell_per_frame_FUN_00e5b2e0",
-      "note": "Ghidra autogen; per-frame update callee of MovePlayerToMousePosition: mov eax,[0x116b3c04]; mov edx,[eax+0x411C] (+16668 player ref) -- byte-matches decompiled global offsets"
+      "note": "Ghidra autogen; per-frame update callee of MovePlayerToMousePosition: mov eax,[0x016b3c04]; mov edx,[eax+0x411C] (+16668 player ref) -- byte-matches decompiled global offsets"
     },
     {
       "rva": "0x7c4900",
@@ -50,17 +50,17 @@
     {
       "rva": "0xe4ce40",
       "name": "cam_mode_getter_FUN_00e4ce40",
-      "note": "Ghidra autogen; camera-mode getter (+212) used by MovePlayerToMousePosition; mov eax,[esp+4]; mov ecx,[0x115a758C]"
+      "note": "Ghidra autogen; camera-mode getter (+212) used by MovePlayerToMousePosition; mov eax,[esp+4]; mov ecx,[0x015a758c]"
     },
     {
       "rva": "0x69b600",
       "name": "face_travel_orient_FUN_0069b600",
-      "note": "Ghidra autogen; computes orientation (rotation) to face travel direction; clean thiscall prologue; result stored player+20..32"
+      "note": "Ghidra autogen; generic menu/frame helper, not Cell-specific and not a valid Cell-stage marker; computes orientation (rotation) to face travel direction; clean thiscall prologue; result stored player+20..32"
     },
     {
       "rva": "0x11e11a0",
       "name": "entry (bootstrap control)",
-      "note": "CONTROL probe, identical to main_menu.json 'entry' (instruction-aligned call target; bytes 'e8 a3 03 00 00' CALL; fired Obj 6.1d at ~503-543ms alongside Init/Startup/InitPlugins). Expected to fire headless at main menu; cell-stage probes expected NOT to (cell stage unreachable without input injection)."
+      "note": "CONTROL probe, identical to main_menu.json 'entry' (instruction-aligned call target; bytes 'e8 a3 03 00 00' CALL). Historical observation (Obj 6.1d, ~503-543ms): it fired alongside Init/Startup/InitPlugins; this is historical evidence, not current M0 evidence or a Cell marker. A current run must establish Cell-stage reachability independently."
     }
   ]
 }

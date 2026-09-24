@@ -2,6 +2,7 @@
 
 const API = Object.freeze({
   summary: "/api/summary",
+  statistics: "/api/statistics",
   evidence: "/api/evidence",
   readiness: "/api/readiness",
   nodes: "/api/nodes",
@@ -19,6 +20,7 @@ const API = Object.freeze({
   functions: "/api/functions",
   states: "/api/states",
   events: "/api/events",
+  hotspots: "/api/hotspots",
   simulator: "/api/simulator"
 });
 
@@ -66,6 +68,32 @@ const VIEW_DEFINITIONS = Object.freeze({
     expandMode: "neighbors",
     sort: "evidence",
     description: "State transitions, messages, and event-bearing owners."
+  },
+  evidence: {
+    title: "Evidence",
+    endpoint: API.evidence,
+    fallbackLabels: [],
+    expandMode: "distribution",
+    distribution: "evidence",
+    sort: "evidence",
+    description: "Corpus evidence strata with bounded node expansion."
+  },
+  readiness: {
+    title: "Readiness",
+    endpoint: API.readiness,
+    fallbackLabels: ["Function"],
+    expandMode: "distribution",
+    distribution: "readiness",
+    sort: "name",
+    description: "Artifact-derived reconstruction states and bounded function slices."
+  },
+  hotspots: {
+    title: "Hotspots / progress",
+    endpoint: API.hotspots,
+    fallbackLabels: [],
+    expandMode: "neighbors",
+    sort: "hotspots",
+    description: "Centrality and triage pressure, ranked from the latest bounded snapshot."
   }
 });
 
@@ -99,11 +127,15 @@ const state = {
   details: new Map(),
   investigation: null,
   summary: null,
+  statistics: null,
   evidence: {},
+  evidencePayload: null,
   evidenceLevels: [...CANONICAL_EVIDENCE_LEVELS],
   readiness: [],
+  readinessPayload: null,
   readinessLevels: [],
   readinessAvailable: false,
+  expansionSnapshots: new Map(),
   filter: { evidence: "all", readiness: "all", sort: "hotspots" },
   searchResults: [],
   searchCompatibility: false,
@@ -132,7 +164,9 @@ function cacheDom() {
     "global-search", "global-query", "view-state", "evidence-filter",
     "readiness-filter", "sort-filter", "search-results", "close-search-results",
     "search-meta", "search-result-list", "breadcrumbs", "scope-description",
-    "node-list", "node-list-count", "graph-scope", "simulator-toggle",
+    "scope-title", "node-list", "node-list-count", "graph-scope", "dashboard",
+    "dashboard-source", "headline-metrics", "evidence-total", "evidence-distribution",
+    "readiness-total", "readiness-distribution", "readiness-source", "simulator-toggle",
     "zoom-out", "zoom-in", "fit-view", "focus-selection", "collapse-view",
     "metrics", "graph-shell", "graph-canvas", "graph-viewport", "edge-layer",
     "node-layer", "graph-feedback", "zoom-readout", "simulator-panel",
@@ -217,6 +251,18 @@ function evidenceClass(level) {
   return `ev-${canonicalEvidence(level).toLowerCase()}`;
 }
 
+function evidenceGlyph(level) {
+  return {
+    UNKNOWN: "?",
+    APPROXIMATION: "≈",
+    INFERRED: "I",
+    SUPPORTED: "=",
+    OBSERVED: "O",
+    CONFIRMED: "C",
+    VERIFIED: "V"
+  }[canonicalEvidence(level)];
+}
+
 function readinessKey(value) {
   if (value && typeof value === "object") value = value.status || value.level || value.name;
   const text = String(value ?? "").trim();
@@ -225,6 +271,17 @@ function readinessKey(value) {
 
 function readinessClass(value) {
   return `readiness-${readinessKey(value).toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+}
+
+function readinessGlyph(value) {
+  return {
+    READY: "R",
+    READY_WITH_LOCAL_CONTEXT: "R+",
+    DEPENDENCY_FIRST: "D",
+    ENGINE_BOUNDARY: "E",
+    NEEDS_RE: "!",
+    LIKELY_INFRASTRUCTURE: "I"
+  }[readinessKey(value).toUpperCase()] || "—";
 }
 
 function nodeReadiness(node) {
@@ -239,9 +296,12 @@ function categoryFor(node) {
   if (/event|state|transition|message/.test(label) || /event|transition/.test(name) ||
       Array.isArray(attrs.events) || attrs.event_value !== undefined ||
       attrs.state_event || attrs.state_machine) return "event";
+  if (/readiness/.test(label)) return "readiness";
+  if (/evidence/.test(label)) return "evidence";
   if (/package|subsystem/.test(label)) return label.includes("package") ? "package" : "architecture";
   if (/class|struct|type|vtable|implement/.test(label)) return "type";
-  if (/function|method|thunk/.test(label)) return "function";
+  if (/field|member|offset/.test(label)) return "field";
+  if (/function|method|thunk|consumer/.test(label)) return "function";
   if (/asset|format/.test(label)) return "asset";
   if (/test|contract|assert/.test(label)) return "test";
   if (/event|state|transition/.test(name)) return "event";
@@ -253,8 +313,11 @@ function categoryLabel(category) {
     architecture: "Architecture",
     package: "Package",
     type: "Type",
+    field: "Field",
     function: "Function",
     event: "State / event",
+    evidence: "Evidence tier",
+    readiness: "Readiness state",
     asset: "Asset",
     test: "Validation",
     other: "Node"
@@ -466,9 +529,12 @@ function belongsToView(node) {
   const category = categoryFor(node);
   if (state.view === "architecture") return ["architecture", "package", "type", "function", "event"].includes(category);
   if (state.view === "packages") return category === "package";
-  if (state.view === "types") return category === "type";
+  if (state.view === "types") return true;
   if (state.view === "functions") return category === "function";
   if (state.view === "events") return category === "event";
+  if (state.view === "evidence") return node.aggregate || node.attrs?.distribution === "evidence" || category !== "evidence";
+  if (state.view === "readiness") return category === "readiness" || category === "function";
+  if (state.view === "hotspots") return true;
   return true;
 }
 
@@ -626,8 +692,52 @@ async function loadStateEventPayload(limit, offset = 0) {
   };
 }
 
+function distributionPayload(kind) {
+  if (kind === "evidence") {
+    const total = numberOr(state.evidencePayload?.total, Object.values(state.evidence).reduce((sum, value) => sum + numberOr(value, 0), 0));
+    const nodes = state.evidenceLevels.slice(0, CANONICAL_EVIDENCE_LEVELS.length).map((level) => ({
+      id: `evidence:${level}`,
+      label: "Evidence tier",
+      name: `${level} evidence`,
+      aggregate: true,
+      has_children: true,
+      count: numberOr(state.evidence[level], 0),
+      type_value: level,
+      evidence_level: level,
+      attrs: { distribution: "evidence", total }
+    }));
+    return { status: "ok", total, nodes, source: "sqlite:node.evidence_level" };
+  }
+  const items = state.readiness.slice(0, Math.max(1, ROOT_LIMIT));
+  const nodes = items.map((item) => {
+    const status = readinessKey(typeof item === "object" ? item.status ?? item.value : item);
+    return {
+      id: `readiness:${status.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+      label: "Readiness state",
+      name: status,
+      aggregate: true,
+      has_children: true,
+      count: numberOr(typeof item === "object" ? item.count : null, 0),
+      readiness: status,
+      evidence_level: "UNKNOWN",
+      attrs: {
+        distribution: "readiness",
+        source: state.readinessPayload?.source,
+        source_refs: state.readinessPayload?.source_refs || []
+      }
+    };
+  });
+  return {
+    status: "ok",
+    total: numberOr(state.readinessPayload?.function_total, nodes.reduce((sum, node) => sum + node.count, 0)),
+    nodes,
+    source: state.readinessPayload?.source || "artifact-derived"
+  };
+}
+
 async function requestViewPayload(definition, limit, offset = 0) {
   if (definition.stateEndpoint) return loadStateEventPayload(limit, offset);
+  if (definition.distribution) return distributionPayload(definition.distribution);
   return requestJSON(`${definition.endpoint}?${buildQuery(viewParams(definition, null, limit, offset))}`);
 }
 

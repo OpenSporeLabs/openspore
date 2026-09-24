@@ -7,6 +7,7 @@
 // so they are testable table-driven from the decompiled constants.
 #pragma once
 
+#include <algorithm>
 #include <cstdint>
 
 namespace openspore::sim {
@@ -54,7 +55,7 @@ struct AttackInputs {
 };
 
 // GetDamageAmount: damage dealt by `attacker` to `victim` (0..6).
-inline int32_t getDamageAmount(const AttackInputs &in) {
+inline int32_t getDamageAmount(const AttackInputs& in) {
   if (in.attackerIsPlayer) {
     switch (getScaleDifferenceWithPlayer(in.victimScale, in.playerScale)) {
       case ScaleDifference::MuchSmaller:
@@ -89,20 +90,149 @@ inline int32_t getDamageAmount(const AttackInputs &in) {
 }
 
 struct AttackGate {
-  bool sameResource = false;     // cell1->mCellResource == cell2->mCellResource
-  bool cell1Bypass = false;      // cell1 field_112 (bool, after mIsInvulnerable)
-  bool cell2Bypass = false;      // cell2 field_112
-  bool targetIsPlayer = false;   // cell2 is the player
-  bool resFlag301 = false;       // attacker resource byte 0x301
-  bool resFlag300 = false;       // attacker resource byte 0x300
-  int32_t cell1Territory = 0;    // attacker resource int 0x2fc
-  int32_t cell2Territory = 0;    // target resource int 0x2fc
-  int32_t cell1Scale = 0;        // attacker bucket key
-  int32_t playerScale = 0;       // player bucket key
+  bool sameResource = false;    // cell1->mCellResource == cell2->mCellResource
+  bool cell1Bypass = false;     // cell1 field_112 (bool, after mIsInvulnerable)
+  bool cell2Bypass = false;     // cell2 field_112
+  bool targetIsPlayer = false;  // cell2 is the player
+  bool resFlag301 = false;      // attacker resource byte 0x301
+  bool resFlag300 = false;      // attacker resource byte 0x300
+  int32_t cell1Territory = 0;   // attacker resource int 0x2fc
+  int32_t cell2Territory = 0;   // target resource int 0x2fc
+  int32_t cell1Scale = 0;       // attacker bucket key
+  int32_t playerScale = 0;      // player bucket key
+  bool attackerAlive = true;
+  bool victimAlive = true;
+  int32_t attackerHealth = 1;
+  int32_t attackerMaxHealth = 1;
+  int32_t victimHealth = 1;
+  int32_t victimMaxHealth = 1;
 };
 
+enum class CombatStatus { success, unsupported, failure };
+
+struct HealthState {
+  int32_t current = 0;
+  int32_t maximum = 0;
+};
+
+struct HealthResult {
+  CombatStatus status = CombatStatus::success;
+  int32_t health = 0;
+
+  explicit operator bool() const { return status == CombatStatus::success; }
+};
+
+struct DamageResult {
+  CombatStatus status = CombatStatus::success;
+  int32_t damage = 0;
+  int32_t health = 0;
+  bool lethal = false;
+
+  explicit operator bool() const { return status == CombatStatus::success; }
+};
+
+struct AttackResult {
+  CombatStatus status = CombatStatus::success;
+  bool allowed = false;
+  int32_t damage = 0;
+
+  explicit operator bool() const { return status == CombatStatus::success; }
+};
+
+struct FleeInputs {
+  bool threatPresent = false;
+  int32_t distance = 0;
+  int32_t radius = 0;
+  int32_t health = 1;
+  int32_t maximumHealth = 1;
+};
+
+struct FleeResult {
+  CombatStatus status = CombatStatus::success;
+  bool flee = false;
+
+  explicit operator bool() const { return status == CombatStatus::success; }
+};
+
+struct EatInputs {
+  bool actorAlive = true;
+  bool targetAlive = true;
+  int32_t health = 0;
+  int32_t maximumHealth = 1;
+  int32_t nutrition = 0;
+};
+
+struct EatResult {
+  CombatStatus status = CombatStatus::success;
+  int32_t health = 0;
+  bool consumed = false;
+
+  explicit operator bool() const { return status == CombatStatus::success; }
+};
+
+inline HealthResult clampHealth(int32_t health, int32_t maximumHealth) {
+  if (maximumHealth < 0) {
+    return {CombatStatus::failure, 0};
+  }
+  return {CombatStatus::success, std::clamp(health, 0, maximumHealth)};
+}
+
+inline HealthResult applyDamage(const HealthState& state, int32_t amount) {
+  if (amount < 0) {
+    return {CombatStatus::failure, 0};
+  }
+  HealthResult clamped = clampHealth(state.current, state.maximum);
+  if (!clamped) {
+    return clamped;
+  }
+  return {CombatStatus::success, std::max(0, clamped.health - amount)};
+}
+
+inline DamageResult dealDamage(const HealthState& state, int32_t amount) {
+  if (amount < 0) {
+    return {CombatStatus::failure, 0, 0, false};
+  }
+  HealthResult health = applyDamage(state, amount);
+  if (!health) {
+    return {health.status, 0, 0, false};
+  }
+  return {CombatStatus::success, std::min(amount, std::max(0, state.current)),
+          health.health, health.health == 0};
+}
+
+inline FleeResult shouldFlee(const FleeInputs& input) {
+  if (input.distance < 0 || input.radius < 0 || input.maximumHealth < 0) {
+    return {CombatStatus::failure, false};
+  }
+  HealthResult health = clampHealth(input.health, input.maximumHealth);
+  if (!health) {
+    return {health.status, false};
+  }
+  const bool alive = input.maximumHealth == 0 || health.health > 0;
+  return {CombatStatus::success,
+          input.threatPresent && alive && input.distance <= input.radius};
+}
+
+inline EatResult eat(const EatInputs& input) {
+  if (input.maximumHealth < 0 || input.nutrition < 0) {
+    return {CombatStatus::failure, 0, false};
+  }
+  HealthResult clamped = clampHealth(input.health, input.maximumHealth);
+  if (!clamped) {
+    return {clamped.status, 0, false};
+  }
+  if (!input.actorAlive || !input.targetAlive ||
+      (input.maximumHealth > 0 && clamped.health == 0)) {
+    return {CombatStatus::success, clamped.health, false};
+  }
+  const int64_t next = static_cast<int64_t>(clamped.health) + input.nutrition;
+  return {CombatStatus::success,
+          static_cast<int32_t>(std::min<int64_t>(input.maximumHealth, next)),
+          true};
+}
+
 // ShouldNotAttack: true when the attack should be skipped.
-inline bool shouldNotAttack(const AttackGate &g) {
+inline bool shouldNotAttack(const AttackGate& g) {
   if (g.sameResource) {
     return true;
   }
@@ -125,4 +255,26 @@ inline bool shouldNotAttack(const AttackGate &g) {
   return false;
 }
 
-} // namespace openspore::sim
+inline AttackResult evaluateAttack(const AttackInputs& inputs,
+                                   const AttackGate& gate) {
+  AttackResult result;
+  if (!gate.attackerAlive || !gate.victimAlive || gate.attackerMaxHealth < 0 ||
+      gate.victimMaxHealth < 0) {
+    result.allowed = false;
+    return result;
+  }
+  if (gate.attackerMaxHealth > 0 && gate.attackerHealth <= 0) {
+    return result;
+  }
+  if (gate.victimMaxHealth > 0 && gate.victimHealth <= 0) {
+    return result;
+  }
+  if (shouldNotAttack(gate)) {
+    return result;
+  }
+  result.allowed = true;
+  result.damage = getDamageAmount(inputs);
+  return result;
+}
+
+}  // namespace openspore::sim

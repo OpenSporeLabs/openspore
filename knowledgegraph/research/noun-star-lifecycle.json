@@ -1,0 +1,675 @@
+{
+  "$schema": "openspore-noun-star-lifecycle-1",
+  "schema": "openspore-noun-star-lifecycle-1",
+  "artifact": {
+    "name": "noun-star-lifecycle",
+    "kind": "final-static-synthesis",
+    "scope": [
+      "noun and star root accessors",
+      "manager-local publication and materialization",
+      "ownership, invalidation, erase, rekey, and teardown",
+      "mode and save/load survival boundaries",
+      "minimum clean-room semantic abstraction"
+    ],
+    "analysis_mode": "static_read_only_with_ghidra_validation_and_bounded_runtime_attempt",
+    "runtime_evidence": false,
+    "runtime_attempt_performed": true,
+    "runtime_attempt_decisive": false,
+    "implementation_performed": false,
+    "historical_artifacts_modified": false,
+    "spore_directory_modified": false,
+    "architecture_decision_register_modified": false
+  },
+  "inputs": {
+    "worker_reports": [
+      "knowledgegraph/research/noun-star-lifecycle/review-identity-ordering.md",
+      "knowledgegraph/research/noun-star-lifecycle/review-roots-publication.md",
+      "knowledgegraph/research/noun-star-lifecycle/track-a-root-identity.md",
+      "knowledgegraph/research/noun-star-lifecycle/track-b-noun-publication.md",
+      "knowledgegraph/research/noun-star-lifecycle/track-c-star-publication.md",
+      "knowledgegraph/research/noun-star-lifecycle/track-d-identity-ownership.md",
+      "knowledgegraph/research/noun-star-lifecycle/track-e-cross-root-callers.md",
+      "knowledgegraph/research/noun-star-lifecycle/track-f-lifecycle-ordering.md",
+      "knowledgegraph/research/noun-star-lifecycle/track-g-edge-cases.md"
+    ],
+    "authoritative_artifacts": [
+      "docs/analysis/architecture-blockers.md",
+      "docs/analysis/architecture-decisions.md",
+      "docs/analysis/gameplay-data-model.md",
+      "docs/analysis/gameplay-state-machines.md",
+      "docs/analysis/serialization-model.md",
+      "docs/analysis/semantic-blueprint.md",
+      "docs/analysis/simulator-root-closure.md",
+      "docs/analysis/simulator-shared-state-interface.md",
+      "docs/analysis/type-archaeology.md",
+      "knowledgegraph/research/architecture-blockers.json",
+      "knowledgegraph/research/architecture-resolution.json",
+      "knowledgegraph/research/root-closure-f0e310e0.json"
+    ],
+    "runtime_reports": [
+      "knowledgegraph/research/noun-star-lifecycle/runtime-experiment.md",
+      "knowledgegraph/research/noun-star-lifecycle/runtime-feasibility.md"
+    ]
+  },
+  "binary": {
+    "path": "SPORE/SporeBin/SporeApp.exe",
+    "version": "3.1.0.22",
+    "architecture": "x86:LE:32:windows",
+    "image_base": "0x00400000",
+    "sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e"
+  },
+  "executive_decision": {
+    "status": "UNRESOLVED_BUT_SAFE",
+    "original_runtime_compatibility": "BLOCKED",
+    "clean_room_semantic_design": "AUTHORIZED_WITH_EXPLICIT_BOUNDARIES",
+    "model_selection": "Layered owner-qualified lifecycle graph; no single A/B/C/D model is selected.",
+    "headline": "The four target globals are physically distinct observation slots. A bounded runtime attempt mapped SporeApp.exe and activated 16 probes but collected zero boundary events and zero root samples before exit, so it was not a lifecycle result; the original publishers, value equality, rebind order, liveness, and unpublication order remain unresolved.",
+    "clean_room_boundary": "Use four separate opaque root ports with explicit host-side publication, replacement, invalidation, and unpublication events. Do not merge roots, assert singleton ownership, persist raw pointers, or claim original lifecycle parity."
+  },
+  "required_questions": [
+    {
+      "id": 1,
+      "question": "Are 00b3d300 and 00b3d2a0 aliases or distinct services?",
+      "answer": "They are distinct service paths and are not aliases of each other. 00b3d300 is an alternate noun-manager-compatible receiver accessor over DAT_0167eae0; 00b3d2a0 is an alternate cStarManager-compatible receiver accessor over DAT_0167eae4. Their exact owner and relation to their canonical counterparts remain unresolved.",
+      "status": "STATIC_FACT_WITH_IDENTITY_LIMIT",
+      "confidence": "high",
+      "evidence_ids": ["E001", "E002", "E003", "E004"]
+    },
+    {
+      "id": 2,
+      "question": "What are DAT_0167eae0 and DAT_0167eb60?",
+      "answer": "They are two distinct four-byte global words. DAT_0167eae0 is read by the alternate noun accessor 00b3d300; DAT_0167eb60 is read by the named canonical cGameNounManager::Get accessor 00b3d400. Physical aliasing is rejected; value equality, publisher, owner, and lifetime authority are not proven.",
+      "status": "STATIC_FACT_AND_OPEN_LIFECYCLE",
+      "confidence": "high",
+      "evidence_ids": ["E001", "E002", "E015"]
+    },
+    {
+      "id": 3,
+      "question": "Who publishes the noun root?",
+      "answer": "No concrete original noun-root publisher is recovered. cGameNounManager construction at 00b232b0 and parent/registration at 00b61bd3..00b61c5d are candidate manager-construction surfaces, but no dataflow joins their object to DAT_0167eae0 or DAT_0167eb60.",
+      "status": "UNRESOLVED",
+      "confidence": "high for the negative boundary; low for a positive publisher",
+      "evidence_ids": ["E002", "E010", "E015"]
+    },
+    {
+      "id": 4,
+      "question": "Who publishes the star root?",
+      "answer": "No concrete original star-root publisher is recovered. cStarManager construction at 00bae490 and the later alternate-root read at 00b634ab are known, but no dataflow joins the constructed manager to DAT_0167eae4 or DAT_0167eb0c.",
+      "status": "UNRESOLVED",
+      "confidence": "high for the negative boundary; low for a positive publisher",
+      "evidence_ids": ["E002", "E004", "E010", "E015"]
+    },
+    {
+      "id": 5,
+      "question": "When are noun and star materialization performed?",
+      "answer": "Noun objects are allocated and linked eagerly by 00b20c60; typed noun vectors are created or refreshed lazily by 00b21340 on a lower-bound miss or dirty marker. Star records are generated and registered by 00bb5d80, planet records by 00bb4100, live planets lazily by 00baf130 and 00bb59b0, and solar-system planet collection by 00c86760. None of these proves when a global root becomes non-null.",
+      "status": "STATIC_FACT_FOR_MANAGER_LOCAL_PATHS; ROOT_TIMING_UNRESOLVED",
+      "confidence": "high",
+      "evidence_ids": ["E005", "E006", "E008", "E010", "E015"]
+    },
+    {
+      "id": 6,
+      "question": "What owns the noun and star state?",
+      "answer": "The selected noun manager owns noun list/object participation and projection containers. The star manager owns or holds record registries, empire references, home-map entries, and a live-planet cache; cEmpire independently holds star-record references; cStar and cSolarSystem hold typed links. The four global slots have no proven ownership authority, and their accessors are borrowed raw loads.",
+      "status": "STATIC_FACT_FOR_LOCAL_OWNERSHIP; ROOT_OWNER_UNRESOLVED",
+      "confidence": "high",
+      "evidence_ids": ["E001", "E004", "E005", "E008", "E014"]
+    },
+    {
+      "id": 7,
+      "question": "What invalidation is proven?",
+      "answer": "Noun invalidation is lower-bound-selected dirty marking at 00b201a0, followed by a cast-compatible scan; 00b21340 lazily clears and rebuilds dirty vectors. Normal noun destruction does not establish per-key mNounMap eviction. Empire map erase at 00bad7a0 is separate from current-player cache teardown at 01022460. Star collection cleanup and manager-local teardown are separate operations, and no root invalidation path is proven.",
+      "status": "STATIC_FACT_FOR_LOCAL_INVALIDATION; ROOT_INVALIDATION_UNRESOLVED",
+      "confidence": "high",
+      "evidence_ids": ["E006", "E007", "E009", "E011", "E015"]
+    },
+    {
+      "id": 8,
+      "question": "What is the erase and rekey contract?",
+      "answer": "Normal noun destroy unlinks mNouns and defers mObjects and pending-reference reclamation; 00b21410 is a +0xd0 manager-map erase, not mNounMap+0x98 eviction. Empire erase is lower-bound-selected and requires an exact-membership invariant. General political-ID rekey and universal star rekey are unresolved. OpenSpore should make indexed keys immutable or mediate rekey transactionally.",
+      "status": "STATIC_FACT_FOR_LOWER_BOUND; GENERAL_REKEY_UNRESOLVED",
+      "confidence": "high",
+      "evidence_ids": ["E006", "E007", "E008", "E009", "E015"]
+    },
+    {
+      "id": 9,
+      "question": "Does noun or star state survive a mode transition?",
+      "answer": "Not statically proven. The concrete App helper proves old OnExit, active-index write, exit announcement, new OnEnter, and enter announcement at 007d85b0, but mode axes and manager publication are separate. Scenario teardown reaches noun cleanup, not root unpublication. The bounded runtime attempt was not decisive because it collected no mode-boundary events. Survival or rebuild of a selected manager, noun, star, empire, or cache requires a successful runtime transition trace.",
+      "status": "UNRESOLVED",
+      "confidence": "high for local order; low for survival",
+      "evidence_ids": ["E012", "E015", "E016", "E017"]
+    },
+    {
+      "id": 10,
+      "question": "Does noun or star state survive save/load?",
+      "answer": "The original field-level survival contract is not proven. cGameData, cStarRecord, cEmpire, and related records are persistence candidates; stars.db.tmp to stars.db replacement is a bounded database path. Raw root words and live pointers are not established save fields, and restore order, remapping, and field coverage are unresolved.",
+      "status": "UNRESOLVED",
+      "confidence": "high for candidate/rejection boundary; low for original round trip",
+      "evidence_ids": ["E013", "E015"]
+    },
+    {
+      "id": 11,
+      "question": "What teardown is proven?",
+      "answer": "Manager-local noun teardown, star-manager teardown, record/vector/map cleanup, and SpacePlayerData field teardown are directly present. No inspected teardown path proves final unpublication or release of all four root words, nor a total order across noun, star, empire-cache, and root lifecycles.",
+      "status": "STATIC_FACT_FOR_LOCAL_TEARDOWN; ROOT_TEARDOWN_UNRESOLVED",
+      "confidence": "high",
+      "evidence_ids": ["E011", "E015", "E016", "E017"]
+    },
+    {
+      "id": 12,
+      "question": "What is runtime identity?",
+      "answer": "For a live object, the narrowest defensible identity is process-local address plus virtual type, with reference lifetime tracked separately. The four root values are process-local observations without generation or membership metadata; allocator reuse, stale values, and phase rebind cannot be excluded statically. Runtime identity of the original roots is unresolved.",
+      "status": "STATIC_IDENTITY_BOUNDARY; RUNTIME_IDENTITY_UNRESOLVED",
+      "confidence": "high for address-plus-vtable boundary",
+      "evidence_ids": ["E001", "E014", "E015", "E017"]
+    },
+    {
+      "id": 13,
+      "question": "What is the correct OpenSpore semantic abstraction?",
+      "answer": "Use an owner-qualified, domain-separated lifecycle graph: typed content and domain identities; owner-qualified registry keys; borrowed views, owned references, and snapshots; explicit exact and ceiling lookup; separate invalidate, evict, clear, erase, release, destroy, and unpublish operations; generation-aware root observation ports; and logical persistence followed by reconstruction.",
+      "status": "CLEAN_ROOM_DECISION",
+      "confidence": "high",
+      "evidence_ids": ["E006", "E007", "E009", "E012", "E013", "E014"]
+    },
+    {
+      "id": 14,
+      "question": "Is Blocker A resolved?",
+      "answer": "Not for original compatibility. Blocker A remains unresolved and architecture-changing. The bounded runtime attempt was not decisive because it collected zero boundary events and zero root samples. The safe clean-room boundary is resolved, but original root publication, equality, liveness, rebind, and unpublication are still blocked.",
+      "status": "UNRESOLVED_ARCHITECTURE_BLOCKED",
+      "confidence": "high",
+      "evidence_ids": ["E002", "E015", "E017"]
+    },
+    {
+      "id": 15,
+      "question": "What evidence supports that resolution status?",
+      "answer": "Direct Ghidra bodies at 00b3d300, 00b3d400, 00b3d2a0, and 00b3d3a0 prove four raw loads from four words; direct xrefs show only reads at those roots; receiver-field chains prove noun/star compatibility; noun, star, cache, and manager teardown bodies prove substantial local lifecycles; the authoritative blocker and adversarial reviews preserve the publisher/equality/teardown gap. Absence of a direct writer is a bounded negative, not proof that no publisher exists.",
+      "status": "EVIDENCE_LEDGERED",
+      "confidence": "high",
+      "evidence_ids": ["E001", "E002", "E003", "E004", "E005", "E008", "E010", "E011", "E015", "E016", "E017"]
+    },
+    {
+      "id": 16,
+      "question": "Are downstream packages unblocked?",
+      "answer": "Yes, for clean-room semantic design, characterization, fixtures, and host-side lifecycle tests. Unblocked packages are PKG-01-SHARED-STATE-ROOTS, PKG-02-APP-LIFECYCLE, PKG-03-RESOURCE-IO where identity is consumed, PKG-06-CELL-STATE, PKG-08-CELL-MODE, PKG-11-SIM-CORE, PKG-12-SIM-SPACE, PKG-13-SIM-CREATURE-TRIBECIV, PKG-20-GAMEGLOBAL, and PKG-21-UNKNOWN-ROUTING. Original ABI, root publication parity, complete save parity, and raw vtable parity remain non-goals or blocked.",
+      "status": "CLEAN_ROOM_DOWNSTREAM_UNBLOCKED; ORIGINAL_PARITY_BLOCKED",
+      "confidence": "high",
+      "evidence_ids": ["E013", "E015"]
+    }
+  ],
+  "model": {
+    "selected_model": "layered_owner_qualified_lifecycle_graph",
+    "original_runtime_architecture": {
+      "proven_static_shape": [
+        "Four physically separate four-byte root words are read by four accessors.",
+        "The alternate noun result is consumed as a noun-manager-compatible receiver.",
+        "The alternate star result is consumed as a cStarManager-compatible receiver.",
+        "Manager-local registries, caches, and teardown bodies exist independently of the root slots.",
+        "Mode helper order and serializer/database surfaces are local boundaries, not root survival proof."
+      ],
+      "not_proven": [
+        "Whether either alternate/canonical pair holds equal values.",
+        "Whether a root is a canonical owner, phase-specific manager, stale pointer, or opaque service value.",
+        "The original publisher, replacement order, unpublication order, or cross-root teardown order.",
+        "The original complete restore and rebind graph."
+      ]
+    },
+    "minimum_clean_room_semantic_model": {
+      "identity_domains": [
+        "ContentKey or ResourceKey identifies packaged content.",
+        "NounCategoryId identifies a noun projection category, not a unique live object.",
+        "StarKey identifies a star-record/grid domain key, not a live pointer.",
+        "PoliticalId identifies an empire/player domain value, not a star key.",
+        "LiveObjectIdentity is process-local address plus virtual type.",
+        "RegistryIdentity is owner plus key domain plus key.",
+        "PersistenceReference is a logical serialized reference subject to reconstruction."
+      ],
+      "result_kinds": [
+        "BorrowedView: valid only under an owner generation and does not prove registry membership.",
+        "OwnedReference: keeps payload alive but does not keep registry membership.",
+        "Snapshot: owns payload references and is explicitly historical rather than current."
+      ],
+      "root_ports": [
+        "noun.alternate at DAT_0167eae0",
+        "noun.canonical at DAT_0167eb60",
+        "star.alternate at DAT_0167eae4",
+        "star.canonical at DAT_0167eb0c"
+      ],
+      "root_port_operations": [
+        "observe",
+        "publish",
+        "rebind",
+        "invalidate dependent observations",
+        "unpublish"
+      ],
+      "root_port_states": [
+        "unpublished",
+        "published",
+        "replacing",
+        "live",
+        "unpublishing",
+        "dead"
+      ],
+      "lookup_operations": [
+        "lookupExact: lower-bound primitive plus key/identity postcondition.",
+        "lookupCeiling: explicit successor-tolerant compatibility operation.",
+        "upsert or getOrCreate: deterministic duplicate policy.",
+        "removeCurrent: exact membership and generation required.",
+        "rekey: forbidden by default or manager-mediated transaction."
+      ],
+      "lifecycle_operations": [
+        "cached hit",
+        "materialize",
+        "invalidate",
+        "evict",
+        "clear",
+        "registry erase",
+        "owner release",
+        "owner destroy",
+        "root unpublish"
+      ],
+      "invariants": [
+        "Alternate and canonical ports have independent lifecycle events until runtime equality is observed.",
+        "A pointer address is not a durable identity or save reference.",
+        "Registry membership is not implied by object liveness or an identity-only cache hit.",
+        "A lower-bound result is not an exact result without a postcondition.",
+        "Teardown is ordered: unpublish, block new lookup, invalidate dependents, release owners, destroy storage.",
+        "A mode transition or serializer capability does not imply state survival or autosave.",
+        "Persistence serializes logical values and references, then performs an explicit reconstruction phase."
+      ]
+    }
+  },
+  "evidence_ledger": [
+    {
+      "id": "E001",
+      "topic": "raw_root_accessors",
+      "claim": "The four accessors are no-argument raw four-byte loads and do not AddRef, Release, validate, allocate, lock, or write.",
+      "source_paths": [
+        "Ghidra read-only: SporeApp.exe FUN_00b3d300, FUN_00b3d400, FUN_00b3d2a0, FUN_00b3d3a0",
+        "knowledgegraph/research/noun-star-lifecycle/track-a-root-identity.md:34-45",
+        "knowledgegraph/research/noun-star-lifecycle/review-roots-publication.md:20-41"
+      ],
+      "addresses": ["0x00b3d300", "0x00b3d400", "0x00b3d2a0", "0x00b3d3a0"],
+      "symbols": ["DAT_0167eae0", "DAT_0167eb60", "DAT_0167eae4", "DAT_0167eb0c"],
+      "evidence_level": "STATIC_FACT",
+      "scope": "Direct accessor bodies only."
+    },
+    {
+      "id": "E002",
+      "topic": "physical_root_separation",
+      "claim": "The four target words are physically distinct; direct xrefs show only reads at the accessor sites, and no direct writer, clear, or equality operation was recovered.",
+      "source_paths": [
+        "Ghidra read-only: SporeApp.exe xrefs to 0x0167eae0, 0x0167eb60, 0x0167eae4, 0x0167eb0c",
+        "knowledgegraph/research/root-closure-f0e310e0.json:112-218",
+        "docs/analysis/simulator-root-closure.md:20-28"
+      ],
+      "addresses": ["0x0167eae0", "0x0167eb60", "0x0167eae4", "0x0167eb0c", "0x00b3d2c0"],
+      "symbols": ["FUN_00b3d300", "Simulator::cGameNounManager::Get", "FUN_00b3d2a0", "Simulator::cStarManager::Get"],
+      "evidence_level": "STATIC_FACT_PLUS_BOUNDED_NEGATIVE",
+      "scope": "Physical storage and inspected direct references; not universal absence of a computed or external publisher."
+    },
+    {
+      "id": "E003",
+      "topic": "noun_receiver_compatibility",
+      "claim": "The result of 00b3d300 is propagated as the receiver of 00b21340 and is accepted as a noun-manager-compatible receiver by mNounMap+0x98 and mNouns+0x78 use.",
+      "source_paths": [
+        "Ghidra read-only: SporeApp.exe 00bff408, 00bff426, 00bff428",
+        "knowledgegraph/research/noun-star-lifecycle/track-a-root-identity.md:60-74",
+        "knowledgegraph/research/noun-star-lifecycle/review-roots-publication.md:43-60"
+      ],
+      "addresses": ["0x00b3d300", "0x00bff408", "0x00bff426", "0x00bff428", "0x00b21340"],
+      "symbols": ["FUN_00b21340", "cGameNounManager-compatible receiver"],
+      "evidence_level": "STATIC_FACT_FOR_RECEIVER_USE",
+      "scope": "Selected consumer path; exact C++ class, root owner, and alias relation remain open."
+    },
+    {
+      "id": "E004",
+      "topic": "star_receiver_compatibility",
+      "claim": "The result of 00b3d2a0 reaches a cStarManager-compatible mEmpires map at +0x150 and relationship field at +0x204; 00b3d2a0 is not the named canonical getter.",
+      "source_paths": [
+        "Ghidra read-only: SporeApp.exe 00ba9370, 00b3d2c0, 00c4f030",
+        "knowledgegraph/research/noun-star-lifecycle/track-a-root-identity.md:76-104",
+        "knowledgegraph/research/noun-star-lifecycle/review-roots-publication.md:62-70"
+      ],
+      "addresses": ["0x00b3d2a0", "0x00ba9370", "0x00b3d2c0", "0x00c4f030", "0x00b3d3a0"],
+      "symbols": ["mEmpires+0x150", "mpRelationshipManager+0x204", "Simulator::cStarManager::Get"],
+      "evidence_level": "STATIC_FACT_FOR_RECEIVER_USE",
+      "scope": "Selected consumer paths; exact owner and value equality remain open."
+    },
+    {
+      "id": "E005",
+      "topic": "noun_object_lifecycle",
+      "claim": "00b20c60 eagerly creates and links concrete noun objects into manager-local mObjects and mNouns; 00b201a0 invalidates projections; 00b225d0 stages destruction; 00b22960 later prunes and releases deferred state.",
+      "source_paths": [
+        "Ghidra read-only: SporeApp.exe 00b20c60, 00b201a0, 00b225d0, 00b22960",
+        "knowledgegraph/research/noun-star-lifecycle/track-b-noun-publication.md:161-198",
+        "knowledgegraph/research/noun-star-lifecycle/track-b-noun-publication.md:277-365"
+      ],
+      "addresses": ["0x00b20c60", "0x00b201a0", "0x00b225d0", "0x00b20d30", "0x00b22960"],
+      "symbols": ["cGameNounManager", "mObjects+0x10c", "mNouns+0x78", "field_80+0x80"],
+      "evidence_level": "STATIC_FACT",
+      "scope": "Manager-local object and reclamation mechanics; no root join."
+    },
+    {
+      "id": "E006",
+      "topic": "noun_lookup_and_invalidation",
+      "claim": "00b21340 performs lower-bound lookup, create/insert on end, conditional clear/filter/add rebuild, and clears needsUpdate. 00b201a0 marks a lower-bound-selected projection dirty and scans cast-compatible records.",
+      "source_paths": [
+        "Ghidra read-only: SporeApp.exe 00b21340 and 00b201a0",
+        "knowledgegraph/research/noun-star-lifecycle/track-b-noun-publication.md:200-292",
+        "knowledgegraph/research/noun-star-lifecycle/track-g-edge-cases.md:206-235"
+      ],
+      "addresses": ["0x00e5c780", "0x00b21340", "0x00ba8420", "0x00b21080", "0x00d3d420", "0x00b201a0"],
+      "symbols": ["mNounMap+0x98", "mNouns+0x78", "needsUpdate+0x00"],
+      "evidence_level": "STATIC_FACT",
+      "scope": "Raw ABI uses four callback pointers plus nounID; not five callbacks. Exact-key membership is not proven."
+    },
+    {
+      "id": "E007",
+      "topic": "noun_erase_correction",
+      "claim": "Normal noun destruction does not establish per-key mNounMap+0x98 eviction. 00b21410 operates on a manager map at +0xd0, checks a payload pointer, and erases through 01045590; the normal noun path unlinks mNouns and invalidates lazily.",
+      "source_paths": [
+        "Ghidra read-only: SporeApp.exe 00b21410",
+        "knowledgegraph/research/noun-star-lifecycle/track-g-edge-cases.md:206-251",
+        "knowledgegraph/research/noun-star-lifecycle/review-identity-ordering.md:186-202"
+      ],
+      "addresses": ["0x00b21410", "0x00b20d30", "0x00b225d0", "0x00b22960", "0x01045590"],
+      "symbols": ["+0xd0 manager map", "+0x98 noun projection", "mNouns"],
+      "evidence_level": "STATIC_FACT_CORRECTING_PRIOR_REPORT",
+      "scope": "Corrects the stale claim that 00b21410 proves mNounMap erase."
+    },
+    {
+      "id": "E008",
+      "topic": "star_representation_graph",
+      "claim": "cStarManager, cStarRecord, cStar, cSolarSystem, cPlanet, cPlanetRecord, and cEmpire are distinct physical/typed representations with multiple reference-bearing owners and links.",
+      "source_paths": [
+        "knowledgegraph/research/noun-star-lifecycle/track-c-star-publication.md:17-58",
+        "knowledgegraph/research/noun-star-lifecycle/track-c-star-publication.md:86-201",
+        "knowledgegraph/research/noun-star-lifecycle/track-c-star-publication.md:502-513"
+      ],
+      "addresses": ["0x00bae490", "0x00bb5d80", "0x00bb4100", "0x00bb5b50", "0x00baf130", "0x00c86760"],
+      "symbols": ["cStarManager", "cStarRecord", "cStar", "cSolarSystem", "cPlanet", "cPlanetRecord", "cEmpire"],
+      "evidence_level": "STATIC_FACT_FOR_LAYOUT_AND_LINKS",
+      "scope": "Logical cardinality and restore order remain unresolved; cStarManager is not proven sole owner."
+    },
+    {
+      "id": "E009",
+      "topic": "empire_lookup_and_cache",
+      "claim": "00ba9370 returns a lower-bound/ceiling empire payload and 01021300 lazily AddRefs, stores, and Releases a current-player cache result; 00bad7a0 and 01022460 are separate map-erasure and cache-teardown paths.",
+      "source_paths": [
+        "Ghidra read-only: SporeApp.exe 00ba9370 and 01021300",
+        "knowledgegraph/research/noun-star-lifecycle/track-c-star-publication.md:272-303",
+        "knowledgegraph/research/noun-star-lifecycle/track-d-identity-ownership.md:303-338",
+        "docs/analysis/architecture-decisions.md:45-51"
+      ],
+      "addresses": ["0x00e5c780", "0x00ba9370", "0x00baf0b0", "0x00bad7a0", "0x01021300", "0x01022460"],
+      "symbols": ["mEmpires+0x150", "cEmpire+0x84", "SpacePlayerData+0x18", "SpacePlayerData+0x1c"],
+      "evidence_level": "STATIC_FACT",
+      "scope": "Lower-bound, successor-tolerant cache and independent teardown."
+    },
+    {
+      "id": "E010",
+      "topic": "manager_initialization_order",
+      "claim": "Within 00b60d80, noun-manager allocation, constructor, virtual initialization, and registration precede star-manager allocation, constructor, virtual initialization, and registration; an alternate star-root read occurs later. This proves local construction order, not root publication.",
+      "source_paths": [
+        "Ghidra read-only: SporeApp.exe 00b60d80, 00b61bd3, 00b61ce0, 00b634ab",
+        "knowledgegraph/research/noun-star-lifecycle/track-f-lifecycle-ordering.md:72-147",
+        "knowledgegraph/research/noun-star-lifecycle/review-identity-ordering.md:103-123"
+      ],
+      "addresses": ["0x00b60d80", "0x00b232b0", "0x00b25e80", "0x00bae490", "0x00bb6a30", "0x00b634ab"],
+      "symbols": ["cGameNounManager", "cStarManager", "FUN_00b3d2a0"],
+      "evidence_level": "STATIC_LOCAL_ORDER",
+      "scope": "Conditional service body; no allocation-to-root slot join."
+    },
+    {
+      "id": "E011",
+      "topic": "teardown",
+      "claim": "Noun manager and star manager teardown release local maps, vectors, lists, and relationship/planet state; SpacePlayerData field teardown clears active planet/star and the current empire cache. No direct root-word clear or total cross-root order is proven.",
+      "source_paths": [
+        "Ghidra read-only: SporeApp.exe 00b22440, 00b237d0, 00bb6390, 00bb7250, 01022460",
+        "knowledgegraph/research/noun-star-lifecycle/track-f-lifecycle-ordering.md:544-586",
+        "docs/analysis/architecture-blockers.md:46-52"
+      ],
+      "addresses": ["0x00b22440", "0x00b237d0", "0x00bb6390", "0x00bb7250", "0x01022460", "0x0167eae0", "0x0167eae4", "0x0167eb60", "0x0167eb0c"],
+      "symbols": ["SpacePlayerData+0x04", "SpacePlayerData+0x08", "SpacePlayerData+0x1c", "DAT_0167eae0", "DAT_0167eae4"],
+      "evidence_level": "STATIC_FACT_PLUS_BOUNDED_NEGATIVE",
+      "scope": "Manager-local cleanup is closed; root unpublication remains unresolved."
+    },
+    {
+      "id": "E012",
+      "topic": "mode_ordering",
+      "claim": "The concrete App helper order is old OnExit, active-index write, exit announcement, new OnEnter, enter announcement. App, Simulator, input, scenario, SpaceContext, and Cell axes are separate; this order is not a survival rule.",
+      "source_paths": [
+        "knowledgegraph/research/noun-star-lifecycle/track-f-lifecycle-ordering.md:253-291",
+        "knowledgegraph/research/noun-star-lifecycle/review-identity-ordering.md:168-178",
+        "docs/analysis/architecture-decisions.md:7-13"
+      ],
+      "addresses": ["0x007d85b0", "0x007d8c80", "0x00ef12d0", "0x01021960", "0x00b63510"],
+      "symbols": ["IGameMode::OnExit", "IGameMode::OnEnter", "SpaceContext", "cScenarioMode::mMode"],
+      "evidence_level": "STATIC_LOCAL_ORDER",
+      "scope": "Local transition mechanics only; listener timing and state survival remain open."
+    },
+    {
+      "id": "E013",
+      "topic": "persistence_boundary",
+      "claim": "Serializable candidates and bounded database replacement exist, but raw manager/root/live-pointer persistence and complete restore order are not established.",
+      "source_paths": [
+        "knowledgegraph/research/noun-star-lifecycle/track-f-lifecycle-ordering.md:492-542",
+        "knowledgegraph/research/noun-star-lifecycle/track-b-noun-publication.md:424-448",
+        "docs/analysis/serialization-model.md:253-299",
+        "docs/analysis/serialization-model.md:335-380"
+      ],
+      "addresses": ["0x00b3d440", "0x00b28ec0", "0x00b279e0", "0x00bb4ba0", "0x006a1540", "0x006a2f60", "0x00692900", "0x00693e10"],
+      "symbols": ["PropertyList", "ClassSerializer", "cStarRecord", "cEmpire", "stars.db.tmp", "stars.db"],
+      "evidence_level": "STATIC_CANDIDATE_AND_BOUNDARY",
+      "scope": "No field-level survival, pointer remapping, outer envelope, or total restore order."
+    },
+    {
+      "id": "E014",
+      "topic": "identity_and_validity",
+      "claim": "Content, noun category, star/political domain, live object, registry, handle, and persistence identities are separate. Object liveness, registry membership, cache residency, snapshot validity, and root generation are separate states.",
+      "source_paths": [
+        "knowledgegraph/research/noun-star-lifecycle/track-d-identity-ownership.md:20-30",
+        "knowledgegraph/research/noun-star-lifecycle/track-d-identity-ownership.md:32-192",
+        "knowledgegraph/research/noun-star-lifecycle/track-g-edge-cases.md:253-302",
+        "knowledgegraph/research/noun-star-lifecycle/review-identity-ordering.md:49-62"
+      ],
+      "addresses": ["0x00b3d300", "0x00b21340", "0x00ba9370", "0x01021300"],
+      "symbols": ["ResourceKey", "NounID", "StarID", "PoliticalID", "cGameData*", "RegistryIdentity"],
+      "evidence_level": "STATIC_SYNTHESIS",
+      "scope": "Minimum semantic identity model; not an original universal ID implementation."
+    },
+    {
+      "id": "E015",
+      "topic": "blocker_and_bounded_negative",
+      "claim": "The authoritative blocker and adversarial reviews classify original root publication compatibility as unresolved architecture-changing, while permitting a compatibility-excluded clean-room seam. No direct-writer result is a bounded negative, not proof of no publisher.",
+      "source_paths": [
+        "docs/analysis/architecture-blockers.md:19-27",
+        "docs/analysis/architecture-blockers.md:31-89",
+        "docs/analysis/architecture-decisions.md:29-43",
+        "knowledgegraph/research/architecture-blockers.json:28-135",
+        "knowledgegraph/research/architecture-resolution.json:76-128",
+        "knowledgegraph/research/noun-star-lifecycle/review-roots-publication.md:3-18",
+        "knowledgegraph/research/noun-star-lifecycle/review-identity-ordering.md:19-30"
+      ],
+      "addresses": ["0x00b3d300", "0x00b3d400", "0x00b3d2a0", "0x00b3d3a0"],
+      "symbols": ["DAT_0167eae0", "DAT_0167eb60", "DAT_0167eae4", "DAT_0167eb0c"],
+      "evidence_level": "AUTHORITATIVE_STATIC_ADJUDICATION",
+      "scope": "Architecture status; no original runtime conclusion."
+    },
+    {
+      "id": "E016",
+      "topic": "runtime_feasibility_preflight",
+      "claim": "The feasibility report found host tools and binary identity available, but the existing probe tracer lacked root-memory sampling and strict process-memory read-only operation; no noun/star lifecycle experiment was launched by that report.",
+      "source_paths": [
+        "knowledgegraph/research/noun-star-lifecycle/runtime-feasibility.md:3-11",
+        "knowledgegraph/research/noun-star-lifecycle/runtime-feasibility.md:28-58",
+        "knowledgegraph/research/noun-star-lifecycle/runtime-feasibility.md:196-198"
+      ],
+      "addresses": ["0x0167eae0", "0x0167eb60", "0x0167eae4", "0x0167eb0c"],
+      "symbols": ["SporeApp.exe", "probe_tracer", "WineDBG", "GDB"],
+      "evidence_level": "HOST_PREFLIGHT_ONLY",
+      "scope": "Tool availability, binary identity, harness limitations, and conditional feasibility; no lifecycle result."
+    },
+    {
+      "id": "E017",
+      "topic": "failed_runtime_reachability_attempt",
+      "claim": "The bounded no-input attempt mapped SporeApp.exe at 0x400000, installed and activated 16 probes, and collected zero boundary events and zero four-word root samples before the traced process tree exited. This is runtime evidence of a failed reachability attempt only and is not decisive for the original lifecycle.",
+      "source_paths": [
+        "knowledgegraph/research/noun-star-lifecycle/runtime-experiment.md:1-5",
+        "knowledgegraph/research/noun-star-lifecycle/runtime-experiment.md:72-98",
+        "knowledgegraph/research/noun-star-lifecycle/runtime-experiment.md:100-127"
+      ],
+      "addresses": ["0x00b3d300", "0x00b3d400", "0x00b3d2a0", "0x00b3d3a0", "0x00b60d80", "0x007d85b0", "0x00b22440", "0x00bb7250", "0x01022460"],
+      "symbols": ["16 active probes", "zero boundary events", "zero root samples", "NOT_OBSERVED"],
+      "evidence_level": "RUNTIME_FAILED_REACHABILITY_ATTEMPT",
+      "scope": "The attempt did not reach any selected lifecycle boundary and cannot establish root equality, publication, liveness, replacement, teardown, or absence."
+    }
+  ],
+  "confidence": {
+    "high": [
+      "Accessor bodies, backing words, physical non-aliasing, and absence of ref operations in the accessors.",
+      "Noun receiver compatibility in the selected 00bff2d0 -> 00b21340 path.",
+      "Star receiver compatibility through mEmpires+0x150 and +0x204.",
+      "Noun object eager publication, lazy lower-bound materialization, dirty invalidation, and staged reclamation.",
+      "Star record/live object/planet/empire typed representation separation.",
+      "Lower-bound and independent cache/erase/teardown mechanics.",
+      "Local manager construction order and App mode helper order.",
+      "The bounded runtime attempt mapped the module and activated 16 probes but produced zero boundary events and zero root samples, so it is non-decisive for lifecycle behavior."
+    ],
+    "medium": [
+      "Manager construction and parent registration as the strongest publisher candidates, not a proven publisher.",
+      "The exact practical behavior of allocation failure, reentrancy, duplicate cache insertion, and rekey beyond the recovered bounded surfaces."
+    ],
+    "unresolved": [
+      "Alternate/canonical value equality and phase identity for noun and star pairs.",
+      "Original root publishers, replacement order, root liveness, and unpublication order.",
+      "Original mode-state survival and complete save/load field/reference survival.",
+      "General rekey, duplicate publication race, allocation failure, and cross-root teardown order."
+    ]
+  },
+  "unresolved_questions": [
+    {
+      "id": "U001",
+      "question": "Which allocation or service-registration operation first publishes each root word?",
+      "required_observation": "Allocation-to-slot dataflow for all four words, including computed, table, bulk, loader, and external paths.",
+      "why_static_insufficient": "Direct scans are bounded negatives and do not select a publisher mechanism."
+    },
+    {
+      "id": "U002",
+      "question": "Are alternate/canonical noun and star values equal, unequal, phase-specific, stale, or rebound?",
+      "required_observation": "Synchronized values and pointee vtables/generation markers across a naturally reachable transition.",
+      "why_static_insufficient": "No recovered equality operation, common writer, or runtime snapshot."
+    },
+    {
+      "id": "U003",
+      "question": "What is the total teardown order for roots, managers, player cache, and dependent payloads?",
+      "required_observation": "Root slot sampling before/after noun and star manager destruction and SpacePlayerData field teardown.",
+      "why_static_insufficient": "Manager-local teardown is closed, but no cross-root order is joined."
+    },
+    {
+      "id": "U004",
+      "question": "What is the original save/load logical restore order and field survival matrix?",
+      "required_observation": "Disposable explicit save/load round trip with domain IDs, references, addresses, cache generations, and root slots.",
+      "why_static_insufficient": "Serializer and database surfaces do not close outer framing, reference remapping, or field coverage."
+    },
+    {
+      "id": "U005",
+      "question": "How does the original cache handle duplicate insertion, allocation failure, and general rekey?",
+      "required_observation": "Non-destructive natural traces for publication races; isolated disposable save for rekey if required.",
+      "why_static_insufficient": "The bodies expose conditional hazards but not ordinary runtime occurrence or safe failure policy."
+    }
+  ],
+  "runtime_evidence_status": {
+    "obtained": false,
+    "status": "FAILED_REACHABILITY_ATTEMPT_NO_LIFECYCLE_RESULT",
+    "attempted": true,
+    "attempt_status": "NOT_OBSERVED",
+    "attempt_result": "FAILED_REACHABILITY_ATTEMPT",
+    "attempt_decisive": false,
+    "attempted_module_mapped": true,
+    "attempted_probes": 16,
+    "attempted_boundary_events": 0,
+    "attempted_root_samples": 0,
+    "attempted_exit_before_boundary": true,
+    "attempt_scope": "A bounded no-input SporeApp.exe attempt mapped the module and activated 16 probes, but no selected boundary was reached before process exit.",
+    "positive_static_lifecycle_evidence": [
+      "Manager construction and registration order.",
+      "Noun create, lazy materialization, invalidation, logical erase, deferred reclamation, and manager cleanup.",
+      "Star record generation, live-planet materialization, empire lookup/cache, local teardown, and stars.db replacement."
+    ],
+    "not_established_by_static": [
+      "Runtime root equality, first publication, rebind, liveness, and unpublication.",
+      "Mode-transition survival of managers, noun/star records, empires, and caches.",
+      "Original save/load field and reference survival.",
+      "Allocator reuse and stale-handle behavior in a real transition."
+    ],
+    "attempt_does_not_establish": [
+      "Root equality or inequality.",
+      "Root publication, replacement, rebind, liveness, or unpublication.",
+      "Cross-root teardown order.",
+      "Mode-transition survival or complete save/load survival.",
+      "Absence of a publisher, writer, manager, or lifecycle path."
+    ],
+    "required_next_experiment": {
+      "name": "human_gated_synchronized_root_transition_and_teardown_trace",
+      "kind": "bounded_runtime_experiment_with_disclosed_breakpoint_memory_writes",
+      "required_events": [
+        "00b60d80 and manager constructor/registration windows",
+        "00b3d300, 00b3d400, 00b3d2a0, and 00b3d3a0 reads",
+        "00b20c60, 00b201a0, 00b21340, 00b225d0, 00b20d30, and 00b22960",
+        "00bb5d80, 00bb5b50, 00baf130, 00bb59b0, 00c86760, 00bb5640, 00bb4af0",
+        "00bad7a0, 01021300, 01022460, 00b22440, 00bb6390, and 00bb7250",
+        "App mode 007d85b0 boundaries"
+      ],
+      "samples": [
+        "All four root words.",
+        "Pointee address, primary vtable, and a host-side generation marker for each non-null root.",
+        "Selected noun mNouns, mObjects, field_80, and mNounMap sizes.",
+        "Selected star mEmpires, record collections, home map, and relationship field.",
+        "SpacePlayerData+0x04, +0x08, +0x10, +0x18, and +0x1c.",
+        "Cache requested key, actual lower-bound key, record key, needsUpdate, and returned pointer.",
+        "Object/reference and membership state at each create, destroy, erase, and teardown event."
+      ],
+      "pass_condition": "A complete publisher/equality/rebind/teardown matrix for one naturally reachable lifecycle. One unequal or one-sided-null snapshot rejects unconditional equality but cannot prove an always-equal model or universal teardown order.",
+      "not_justified_now": [
+        "forced null allocation",
+        "synthetic live rekey",
+        "forced duplicate race",
+        "destructive empire erase",
+        "stale-handle dereference"
+      ]
+    }
+  },
+  "contradictions": [
+    {
+      "id": "C001",
+      "issue": "SDK singleton wording and accessor names could suggest that alternate/canonical pairs are always equal.",
+      "resolution": "Names are semantic priors only. Physical storage is distinct; value equality, common publisher, and shared teardown are unresolved."
+    },
+    {
+      "id": "C002",
+      "issue": "00b21410 was described in some reports as an mNounMap erase.",
+      "resolution": "Superseded by direct decompilation: it uses the manager map at +0xd0 and is not evidence of mNounMap+0x98 per-key eviction."
+    },
+    {
+      "id": "C003",
+      "issue": "The noun ABI is sometimes described as five callbacks.",
+      "resolution": "Use four callback pointers plus one uint32 nounID. The nounID is not a callback."
+    },
+    {
+      "id": "C004",
+      "issue": "SDK exact-null GetEmpire wording conflicts with the raw 00ba9370 wrapper.",
+      "resolution": "The binary helper is lower-bound/ceiling. Callers requiring exactness must compare the returned key or cEmpire+0x84."
+    },
+    {
+      "id": "C005",
+      "issue": "Manager construction and teardown could be mistaken for root publication/unpublication.",
+      "resolution": "Manager-local construction and cleanup are proven; no direct join to the four root words is proven."
+    },
+    {
+      "id": "C006",
+      "issue": "A mode Write call or stars.db replacement could be mistaken for a complete save or automatic mode save.",
+      "resolution": "Both are local persistence-adjacent surfaces. Complete save envelope, field survival, restore order, and automatic mode save remain unresolved."
+    }
+  ]
+}

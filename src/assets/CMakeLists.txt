@@ -1,12 +1,19 @@
 # Objective-8a asset pipeline: DBPF v3 + QFS + minimal GMDL walker -> Mesh.
 add_library(openspore_assets STATIC
+  CellContent.cpp
   CellResource.cpp
   Dbpf.cpp
   Dxt5.cpp
   Gmdl.cpp
+  MaterialRegistry.cpp
   Mesh.cpp
+  ModelStore.cpp
+  PropertyStore.cpp
+  ResourceKey.cpp
+  ResourceStore.cpp
   Rw4.cpp
   Texture.cpp
+  TextureStore.cpp
   WorldObject.cpp)
 target_include_directories(openspore_assets PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17,6 +24,30 @@ target_link_libraries(assets_test PRIVATE openspore_assets)
 add_test(
   NAME assets_synthetic
   COMMAND assets_test
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+
+add_executable(resource_io_test tests/resource_io_test.cpp)
+target_link_libraries(resource_io_test PRIVATE openspore_assets)
+add_test(
+  NAME assets_resource_io
+  COMMAND resource_io_test
+          ${PROJECT_SOURCE_DIR}/tests/fixtures/mini_package.dbpf
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+
+add_executable(cell_content_test tests/cell_content_test.cpp)
+target_link_libraries(cell_content_test PRIVATE openspore_assets)
+add_test(
+  NAME assets_cell_content
+  COMMAND cell_content_test
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+
+add_executable(pkg04_asset_test tests/pkg04_asset_test.cpp)
+target_link_libraries(pkg04_asset_test PRIVATE openspore_assets)
+add_test(
+  NAME assets_pkg04
+  COMMAND pkg04_asset_test
+          ${PROJECT_SOURCE_DIR}/tests/fixtures/mini.gmdl
+          ${PROJECT_SOURCE_DIR}/tests/fixtures/mini_rw4.rw4
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
 # Env-dependent: loads the real chosen asset from the local game install at

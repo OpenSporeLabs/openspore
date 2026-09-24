@@ -1,0 +1,567 @@
+{
+  "$schema": "openspore-semantic-decomp-worker-1",
+  "artifact": "knowledgegraph/research/semantic-decomp/worker-03-space.json",
+  "research_only": true,
+  "read_only": true,
+  "scope": {
+    "program": "SporeApp.exe",
+    "language": "x86:LE:32:default",
+    "compiler": "windows",
+    "image_base": "0x00400000",
+    "owned_group": "disjoint Space group",
+    "target_vas": ["00606880", "00aeb720", "00c877f0", "00de9fc0"],
+    "target_count": 4,
+    "target_order": "ascending lexical VA",
+    "ownership_rule": "This worker owns only the four target VAs listed above. Direct callers, callees, vtables, structures, strings, and sibling functions are cited only as bounded evidence and are not silently promoted into this worker's ownership set.",
+    "no_broad_rescan": true
+  },
+  "mutation_scope": {
+    "ghidra_program_mutated": false,
+    "canonical_knowledgegraph_mutated": false,
+    "package_docs_mutated": false,
+    "historical_artifacts_mutated": false,
+    "gameplay_implemented": false,
+    "runtime_trace_performed": false
+  },
+  "method": {
+    "ghidra_program": "SporeApp.exe",
+    "operations": [
+      "targeted_decompilation",
+      "targeted_disassembly",
+      "direct_caller_callee_census",
+      "targeted_structure_layout_read",
+      "targeted_vtable_memory_and_xref_read",
+      "targeted_string_search_and_xref_read",
+      "bounded_sibling_and_caller_comparison"
+    ],
+    "counting_basis": "Caller and callee counts are distinct direct function endpoints returned by the live Ghidra program. Downstream unlock counts are direct endpoint counts only; no transitive reachability or runtime reachability is implied.",
+    "chokepoint_definition": "sqrt(distinct direct callers * distinct direct callees), with the repository's formal candidate gate requiring at least five callers and at least one callee. This is a topology proxy, not exact betweenness."
+  },
+  "global_semantic_findings": {
+    "family_count": 4,
+    "families": [
+      {
+        "id": "shared-0x24-value-container",
+        "members": ["00606880", "004e38d0", "004e39a0", "004e39d0", "00558960"],
+        "boundary": "Cross-domain value/container copy and range management; 00606880 is used by Space and non-Space callers and is not a Space gameplay rule."
+      },
+      {
+        "id": "simulator-comm-event",
+        "members": ["00aeb720", "00aeb160", "00aebe90", "cCommManager", "cCommEvent"],
+        "boundary": "Communication-event creation followed by manager/display dispatch; the wrapper's public SDK identity remains partial."
+      },
+      {
+        "id": "space-inventory-property-application",
+        "members": ["00c877f0", "cSpaceInventoryItem", "PropertyList", "00c87660", "00c878d0"],
+        "boundary": "Inventory-item property-list ownership and field application; not a canonical constructor contract."
+      },
+      {
+        "id": "galaxy-game-entry-ui-bootstrap",
+        "members": ["00de9fc0", "00de9600", "00de7010", "GlobalGGEUI", "IGameModeManager"],
+        "boundary": "Game-entry UI/game-mode bootstrap sub-initializer with descriptor filtering; not proven to be the SDK Initialize entry."
+      }
+    ],
+    "non_merges": [
+      "The 0x24 copy helper must not be merged into cSpaceInventoryItem or cCommEvent identity.",
+      "The cSpaceInventoryItem property application must not be treated as a cCommEvent or Generic UI event producer.",
+      "The game-entry bootstrap sub-initializer must not be merged with the communication-event family or the inventory family.",
+      "No target establishes a universal event ABI, save codec, network protocol record, or Cell gameplay state transition."
+    ]
+  },
+  "records": [
+    {
+      "va": "00606880",
+      "live_name": "FUN_00606880",
+      "semantic_name": "shared_0x24_value_copy_constructor",
+      "category": "ENGINE_INFRASTRUCTURE",
+      "subsystem": "shared container/value infrastructure",
+      "semantic_family": "shared_0x24_value_container",
+      "classification": {
+        "class": "container_copy_infrastructure",
+        "status": "static_contract_supported_gameplay_semantics_rejected",
+        "rationale": "The function copies a fixed 0x24-byte value, then range-copies its +0x10 begin/end/capacity member through FUN_004e38d0. Its direct callers span Space, UTFWin, engine, unknown, and Sporepedia domains."
+      },
+      "confidence": {
+        "mechanics": 0.99,
+        "infrastructure_identity": 0.94,
+        "space_gameplay_semantics": 0.25,
+        "overall_contract": 0.96
+      },
+      "contract": {
+        "status": "supported_static_contract",
+        "receiver": "ECX destination object",
+        "inputs": ["one explicit source object at [ESP+0x4]"],
+        "preconditions": ["destination and source are valid objects for the fixed layout; the body contains no null guard"],
+        "operations": [
+          "copy source dwords +0x00, +0x04, +0x08, and +0x0c to destination",
+          "repeat the +0x08 and +0x0c stores",
+          "call FUN_004e38d0 with destination+0x10 and source+0x10",
+          "return destination"
+        ],
+        "ordering": ["fixed fields", "range member", "return destination"],
+        "side_effects": ["destination fields are overwritten", "range storage may allocate and copy pointed-to elements"],
+        "ownership": "The function transfers a value into a caller-provided destination; it does not establish ownership of the concrete 0x24 element type.",
+        "errors_or_guards": "No explicit null or type guard was observed.",
+        "output": "destination pointer",
+        "identity_limit": "The concrete 0x24-byte element type and aliasing/deep-copy rules remain unresolved."
+      },
+      "direct_caller_callee": {
+        "caller_count": 18,
+        "callee_count": 1,
+        "direct_callers": [
+          "006068c0", "00661740", "00bd5ea0", "00bf8ff0", "00bf9300", "00ddd1a0", "00de9fc0", "00dfd5b0", "00dfd8a0", "00dfda50", "00dfdc50", "00e44d20", "00e84f30", "00eef810", "00f2dde0", "00f43010", "00f43200", "0102c7f0"
+        ],
+        "direct_callees": ["004e38d0"],
+        "representative_space_caller": "00de9fc0",
+        "representative_non_space_callers": ["00bd5ea0", "00661740", "00bf8ff0"],
+        "comparison": "FUN_00bd5ea0 constructs the same 0x24 temporaries and uses this helper while handling game-mode services; FUN_00bf8ff0 and FUN_00661740 provide additional non-Space reuse. This is positive evidence against Space-specific ownership."
+      },
+      "chokepoint": {
+        "caller_count": 18,
+        "callee_count": 1,
+        "score": 4.24,
+        "formal_candidate": false,
+        "status": "high_reuse_but_below_formal_chokepoint_fan_in_gate",
+        "reason": "The transparent topology score is below the repository's five-caller formal candidate threshold, despite 18 direct callers."
+      },
+      "downstream_unlock": {
+        "direct_endpoint_count": 19,
+        "direct_caller_count": 18,
+        "direct_callee_count": 1,
+        "transitive_count": null,
+        "status": "direct_only_static_endpoints",
+        "unlock_scope": "19 direct canonical endpoints become semantically safer if the 0x24 value and range ownership contract are recovered; transitive unlock is not claimed."
+      },
+      "family_relationships": [
+        {"relationship": "primary_family", "members": ["004e38d0", "004e39a0", "004e39d0", "00558960"]},
+        {"relationship": "space_consumer", "members": ["00de9fc0"]},
+        {"relationship": "non_space_consumer", "members": ["00bd5ea0", "00bf8ff0", "00661740"]},
+        {"relationship": "must_not_merge_with", "members": ["cSpaceInventoryItem", "cCommEvent", "GlobalGGEUI"]}
+      ],
+      "structure_checks": [
+        {"type": "anonymous 0x24-byte value", "observation": "FUN_00558960 initializes offsets +0x00..+0x17 and returns a 0x24-byte value; no SDK type is present."},
+        {"type": "range member", "observation": "FUN_004e38d0 computes count as (source_end - source_begin) / 0x24, allocates count * 0x24 bytes, and copies the range."},
+        {"type": "container lifecycle", "observation": "FUN_004e39a0 walks +0x24 stride elements for destruction and FUN_004e39d0 appends/copies one 0x24-byte element."}
+      ],
+      "vtable_checks": [
+        {"status": "no_vtable_or_indirect_call", "observation": "The target contains no vtable load, virtual call, or SDK/vtable evidence."}
+      ],
+      "string_checks": [
+        {"status": "no_direct_string_reference", "observation": "No direct string load or string xref is present in the target body."},
+        {"status": "cross_domain_negative_evidence", "observation": "Direct callers include engine, UTFWin, unknown, Sporepedia, and Space functions, so the Space cluster label is not a semantic ownership proof."}
+      ],
+      "negative_evidence": [
+        "No Space-specific constant, string, global, virtual call, or event/state dispatch appears in the body.",
+        "The direct caller set is cross-domain and does not support a Space-only gameplay contract.",
+        "The concrete 0x24 element type and whether FUN_004e38d0 deep-copies or aliases the range member are not established.",
+        "Static topology does not establish runtime reachability or a gameplay transition."
+      ],
+      "evidence": [
+        {"source": "ghidra://SporeApp.exe@0x00606880", "kind": "targeted_decompilation_and_disassembly", "observation": "RET 0x4, fixed dword copies, FUN_004e38d0 range call, destination return."},
+        {"source": "ghidra://SporeApp.exe@0x004e38d0", "kind": "callee_decompilation", "observation": "0x24 stride range allocation and copy."},
+        {"source": "ghidra://SporeApp.exe@0x00bd5ea0", "kind": "sibling_caller_comparison", "observation": "Non-Space caller constructs the same 0x24 temporaries and calls FUN_00606880."},
+        {"source": "ghidra://SporeApp.exe@0x00de9fc0", "kind": "space_caller_comparison", "observation": "Space bootstrap constructs three constant-backed 0x24 temporaries and appends them through the same container helpers."}
+      ],
+      "validation_strategy": {
+        "static_gate": [
+          "Read one non-Space caller and the matching append/destruction path to identify the concrete 0x24 element type.",
+          "Prove whether FUN_004e38d0 aliases, moves, or deep-copies its +0x10 range member.",
+          "Keep the helper in shared infrastructure until the element type is named from a non-Space use."
+        ],
+        "runtime_gate_required_for_original_abi": true,
+        "runtime_probe": "Capture one non-Space producer's 0x24 element before and after the copy and record source/destination range pointers and refcounts.",
+        "pass_criteria": ["concrete element type identified", "range ownership and aliasing rule identified", "no Space-only behavior is required by the replacement boundary"]
+      },
+      "runtime_gate_alternatives": [
+        {"option": "original_abi_trace", "when_required": "If byte layout, aliasing, or persistence compatibility matters.", "action": "Trace a non-Space caller through FUN_00606880 and FUN_004e38d0, recording pointer identity before/after."},
+        {"option": "static_replacement_boundary", "when_sufficient": "If gameplay behavior is out of scope and only a safe shared container API is needed.", "action": "Keep the value opaque, preserve 0x24 stride and range cleanup, and do not attach a Space semantic label."},
+        {"option": "no_runtime_gate", "when_sufficient": "If the element is already typed by another package and this helper is never exposed as a gameplay ABI.", "action": "Retain static mechanics and mark concrete element identity as an infrastructure dependency."}
+      ],
+      "unresolved_questions": [
+        "What concrete 0x24-byte element type is used by the callers?",
+        "Does FUN_004e38d0 deep-copy the +0x10 member or preserve aliasing in every case?",
+        "Which modern shared container boundary should replace this helper if original ABI compatibility is not required?"
+      ],
+      "recommended_next_action": "Type one non-Space use and its matching destruction path before any Space gameplay implementation."
+    },
+    {
+      "va": "00aeb720",
+      "live_name": "j_Sim_cCommManager_CreateSpaceCommEvent",
+      "semantic_name": "cCommManager_create_space_communication_event_default_duration_wrapper",
+      "category": "GAMEPLAY_LOGIC",
+      "subsystem": "Simulator",
+      "semantic_family": "simulator_comm_event",
+      "classification": {
+        "class": "communication_event_factory_wrapper",
+        "status": "mechanics_supported_sdk_identity_partial",
+        "rationale": "The wrapper preserves ECX as the manager receiver, forwards six stack arguments plus a trailing zero to FUN_00aeb160, and sends the returned event to FUN_00aebe90."
+      },
+      "confidence": {
+        "mechanics": 0.99,
+        "communication_family": 0.94,
+        "public_sdk_identity": 0.68,
+        "overall_contract": 0.90
+      },
+      "contract": {
+        "status": "supported_static_contract_with_identity_limit",
+        "receiver": "ECX cCommManager-like manager; preserved into ESI and restored into ECX for both internal calls",
+        "inputs": ["six explicit stack arguments; RET 0x18 confirms six dword arguments"],
+        "preconditions": ["manager receiver and argument values must be valid for FUN_00aeb160 and FUN_00aebe90; the wrapper has no local null guard"],
+        "operations": [
+          "call FUN_00aeb160(manager, argument1, argument2, argument3, argument4, argument5, argument6, 0)",
+          "pass the returned event pointer to FUN_00aebe90 with the manager receiver",
+          "return void"
+        ],
+        "ordering": ["create event", "append/populate event in creator", "dispatch/display event in consumer", "return"],
+        "side_effects": ["allocates or constructs a 0xa0-byte cCommEvent-compatible object in the creator", "updates event fields and manager list storage in the creator", "may alter current/list/UI state in the consumer"],
+        "ownership": "The event is intrusive/refcounted and is retained by the manager/event vector path; the wrapper does not expose a release handle.",
+        "errors_or_guards": "No wrapper-level null or duplicate-event check was observed; deeper creator/consumer behavior is delegated.",
+        "output": "void",
+        "identity_limit": "The body supports a default-duration create-and-dispatch wrapper, but exact public SDK entry identity and original argument names remain contested."
+      },
+      "direct_caller_callee": {
+        "caller_count": 13,
+        "callee_count": 2,
+        "direct_callers": ["00aed2c0", "00c75520", "00dd5160", "0102c9e0", "0102caa0", "0102cae0", "0102cc30", "0102cd90", "0102ce30", "0102cf10", "0102d1b0", "0102df20", "01072d40"],
+        "direct_callees": ["00aeb160", "00aebe90"],
+        "representative_callers": ["00aed2c0", "0102caa0", "0102df20"],
+        "comparison": "FUN_00aed2c0 calls the internal creator directly when an existing event is available and otherwise calls this wrapper; FUN_0102caa0 and FUN_0102df20 show mission/generic six-argument call sites with different source, planet, file, dialog, mission, and priority values."
+      },
+      "chokepoint": {
+        "caller_count": 13,
+        "callee_count": 2,
+        "score": 5.1,
+        "formal_candidate": true,
+        "status": "formal_topology_chokepoint_candidate",
+        "reason": "The direct topology score exceeds the five-caller formal candidate gate; this does not establish exact betweenness or runtime centrality."
+      },
+      "downstream_unlock": {
+        "direct_endpoint_count": 15,
+        "direct_caller_count": 13,
+        "direct_callee_count": 2,
+        "transitive_count": null,
+        "status": "direct_only_static_endpoints",
+        "unlock_scope": "15 direct endpoints become safer when the event creation, field mapping, list ownership, and dispatch boundary are separated; transitive unlock is not claimed."
+      },
+      "family_relationships": [
+        {"relationship": "event_creator", "members": ["00aeb160", "00aea250", "00aea5d0"]},
+        {"relationship": "dispatch_consumer", "members": ["00aebe90", "00aeb890", "00aeb7b0"]},
+        {"relationship": "manager_siblings", "members": ["00aeb3e0", "00aebc10", "00aed2c0", "00ae9b90"]},
+        {"relationship": "must_not_merge_with", "members": ["cSpaceInventoryItem", "GlobalGGEUI", "shared 0x24 value records"]}
+      ],
+      "structure_checks": [
+        {"type": "cCommEvent", "size": "0xa0", "observation": "FUN_00aeb160 allocates 0xa0 bytes with the Simulator allocator and initializes a cCommEvent-compatible object through FUN_00aea250."},
+        {"type": "cCommEvent fields", "observation": "FUN_00aeb160 writes source at +0x18, planetKey at +0x34, fileID at +0x38, dialogID at +0x3c, mission at +0x40, priority at +0x44, and duration at +0x48; the final wrapper duration is zero."},
+        {"type": "cCommManager", "size": "0x64", "observation": "Ghidra supplies cCommManager fields including mCurrentCommEvent and mListCommEvents, but the creator's observed list storage uses receiver+0x28/+0x2c; the named Ghidra field offsets are not promoted without a constructor/consumer proof."}
+      ],
+      "vtable_checks": [
+        {"status": "event_vtable_observed_in_creator", "address": "0x0145bed8", "observation": "FUN_00aea250 installs the cCommEvent primary vtable and a secondary interface vtable; this is indirect lifecycle evidence, not a direct virtual call in 00aeb720."},
+        {"status": "no_direct_wrapper_vtable_call", "observation": "The wrapper has no vtable load or indirect call; its dispatch is through the two direct callees."},
+        {"status": "manager_vtable_identity_unresolved", "observation": "The Ghidra cCommManager type has vtable fields but no concrete manager vtable address was recovered for this path."}
+      ],
+      "string_checks": [
+        {"status": "type_string_support", "address": "0x0145befc", "value": "cCommEvent", "xrefs": ["00aea2e0"]},
+        {"status": "type_string_support", "address": "0x0145bf70", "value": "cCommManager", "xrefs": ["00aebbd0"]},
+        {"status": "field_name_metadata", "address": "0x0145bf8c", "value": "mListCommEvents", "xrefs": ["013159de", "01315a32"]},
+        {"status": "field_name_metadata", "address": "0x0145bf9c", "value": "mCurrentCommEvent", "xrefs": ["0131596c", "013159ce"]},
+        {"status": "no_direct_string_in_target", "observation": "The 00aeb720 body contains no direct string load; the strings support the surrounding type family only."}
+      ],
+      "negative_evidence": [
+        "The triage/SDK HandleSpaceCommAction association is not promoted: the recovered body has six explicit stack arguments and a create-then-dispatch sequence, not the HandleSpaceCommAction shape.",
+        "The exact public name CreateSpaceCommEvent remains partial because the body appends a trailing zero duration and the original SDK argument names are not directly observable.",
+        "The current cCommManager Ghidra field layout conflicts with the creator's observed +0x28/+0x2c storage use; no named-field offset is treated as a proven ABI for this wrapper.",
+        "No event ID, callback order, cancellation condition, UI timing, reward/tool payout, or runtime reachability is established by this wrapper alone.",
+        "No universal event ABI or serialization/protocol record is established."
+      ],
+      "evidence": [
+        {"source": "ghidra://SporeApp.exe@0x00aeb720", "kind": "targeted_decompilation_and_disassembly", "observation": "ECX manager, six stack arguments, RET 0x18, trailing zero, direct creator then dispatch calls."},
+        {"source": "ghidra://SporeApp.exe@0x00aeb160", "kind": "callee_decompilation", "observation": "0xa0 allocation, event field writes, intrusive add, manager storage append."},
+        {"source": "ghidra://SporeApp.exe@0x00aebe90", "kind": "callee_decompilation", "observation": "Large, warning-heavy consumer; exact current-event, cancellation, and UI ordering remain unresolved."},
+        {"source": "ghidra://SporeApp.exe@0x00aed2c0", "kind": "caller_comparison", "observation": "Bypasses the wrapper to the creator for an existing event and otherwise uses the wrapper."},
+        {"source": "ghidra://SporeApp.exe@0x0102df20", "kind": "caller_comparison", "observation": "Mission-oriented dispatcher calls the wrapper with six concrete communication fields."}
+      ],
+      "validation_strategy": {
+        "static_gate": [
+          "Preserve the six-argument forwarding shape and final zero until a caller/SDK ABI proof contradicts it.",
+          "Type FUN_00aeb160's event field writes against cCommEvent and resolve the cCommManager +0x28/+0x2c vector conflict with a constructor and a consumer.",
+          "Keep HandleSpaceCommAction and CreateSpaceCommEvent as competing identity hypotheses, not as interchangeable names."
+        ],
+        "runtime_gate_required_for_original_abi": true,
+        "runtime_probe": "From a mission communication action, capture manager current/list pointers and the 0xa0 event fields before and after the wrapper, including event type, source, planetKey, fileID, dialogID, mission, priority, and duration.",
+        "pass_criteria": ["six forwarded fields and zero duration are confirmed", "event lifetime and list/current ownership are observed", "public SDK identity or an explicit internal-wrapper boundary is recorded"]
+      },
+      "runtime_gate_alternatives": [
+        {"option": "mission_trace", "when_required": "If event lifecycle, callback timing, cancellation, rewards, or original SDK identity matters.", "action": "Trigger a known mission communication path and capture manager/event snapshots around 00aeb720."},
+        {"option": "static_creator_consumer_gate", "when_sufficient": "If only the generic event construction/dispatch contract is needed.", "action": "Validate FUN_00aeb160 field writes and FUN_00aebe90 invocation statically, but keep the public name and UI timing unresolved."},
+        {"option": "opaque_event_replacement", "when_sufficient": "If the replacement does not require original event ABI or persistence compatibility.", "action": "Model a 0xa0 intrusive event with explicit manager list ownership and leave cCommEvent field names only where the Ghidra layout is corroborated."}
+      ],
+      "unresolved_questions": [
+        "Is the exact entry CreateSpaceCommEvent, a default-duration wrapper, or an internal helper absorbed by the SDK address?",
+        "Which original ABI names correspond to the six forwarded stack arguments?",
+        "What exact current-event assignment, list/cancellation mutation, UI handling, and release timing does FUN_00aebe90 impose?",
+        "Why does the creator's observed manager storage offset differ from the named Ghidra cCommManager vector field?"
+      ],
+      "recommended_next_action": "Resolve the manager layout and then trace one mission caller; do not promote HandleSpaceCommAction or a universal event ABI."
+    },
+    {
+      "va": "00c877f0",
+      "live_name": "cSpaceInventoryItem_ctor",
+      "semantic_name": "cSpaceInventoryItem_apply_property_list",
+      "category": "GAMEPLAY_LOGIC",
+      "subsystem": "Simulator",
+      "semantic_family": "space_inventory_property_application",
+      "classification": {
+        "class": "inventory_item_state_mutator",
+        "status": "mechanics_supported_canonical_constructor_rejected",
+        "rationale": "The body takes an already allocated cSpaceInventoryItem, maintains its PropertyList reference, populates localized fields, conditionally writes mItemPosition, and invokes vtable slot +0x4c. The live ctor name is not a safe semantic identity."
+      },
+      "confidence": {
+        "mechanics": 0.99,
+        "structure_identity": 0.96,
+        "vtable_slot_semantics": 0.82,
+        "constructor_identity": 0.36,
+        "overall_contract": 0.94
+      },
+      "contract": {
+        "status": "supported_static_contract_identity_partial",
+        "receiver": "ECX cSpaceInventoryItem-like receiver",
+        "inputs": ["one explicit PropertyList pointer; RET 0x4 confirms one dword stack argument"],
+        "preconditions": ["receiver is a valid cSpaceInventoryItem-like object", "PropertyList virtual methods are valid when the list is non-null"],
+        "operations": [
+          "if the new PropertyList differs from receiver+0x30, AddRef the new list, assign receiver+0x30, and Release the old list",
+          "for a non-null list, call App::Property::GetText for 0x3068d95d into receiver+0x34 and 0x04cad19b into receiver+0x48",
+          "query property 0x1bfc1dee",
+          "if the returned property type is 10, call FUN_0041ea00 and copy its first dword to receiver+0x24",
+          "invoke receiver vtable slot +0x4c with the receiver in ECX"
+        ],
+        "ordering": ["PropertyList ownership replacement", "description/detail text writes", "typed property query and conditional item-position write", "virtual slot +0x4c", "return"],
+        "side_effects": ["mpPropList reference count changes", "mDescription and mDetailDescription are updated", "mItemPosition may be updated", "virtual receiver behavior may run"],
+        "ownership": "PropertyList is intrusive/reference-managed through the receiver's +0x30 field; the helper does not own the receiver.",
+        "errors_or_guards": "A null PropertyList skips property extraction and the virtual call, but still performs the old-list release path when different.",
+        "output": "void",
+        "identity_limit": "Use SetPropList/apply-from-PropertyList as the semantic role; retain cSpaceInventoryItem_ctor only as the live Ghidra name."
+      },
+      "direct_caller_callee": {
+        "caller_count": 6,
+        "callee_count": 2,
+        "direct_callers": ["00ac0cb0", "00c878d0", "00c879a0", "0103a480", "0103fc10", "0104e340"],
+        "direct_callees": ["0041ea00", "App::Property::GetText"],
+        "representative_callers": ["00c878d0", "0103a480", "0103fc10"],
+        "comparison": "FUN_00c878d0 allocates a 0x7c object, invokes the cSpaceInventoryItem constructor, initializes properties, and then calls this body. FUN_0103a480 and FUN_0103fc10 independently allocate/base-construct 0x7c objects and call this body, proving post-allocation property application rather than canonical construction."
+      },
+      "chokepoint": {
+        "caller_count": 6,
+        "callee_count": 2,
+        "score": 3.46,
+        "formal_candidate": false,
+        "status": "bounded_inventory_state_mutator",
+        "reason": "The direct topology does not meet the five-caller formal chokepoint gate, although it is a high-value inventory/trade boundary."
+      },
+      "downstream_unlock": {
+        "direct_endpoint_count": 8,
+        "direct_caller_count": 6,
+        "direct_callee_count": 2,
+        "transitive_count": null,
+        "status": "direct_only_static_endpoints",
+        "unlock_scope": "8 direct endpoints become safer when PropertyList ownership, localized fields, and the virtual hook are separated; transitive unlock is not claimed."
+      },
+      "family_relationships": [
+        {"relationship": "owner_type", "members": ["cSpaceInventoryItem", "PropertyList", "App::Property"]},
+        {"relationship": "constructor_sibling", "members": ["00c87660", "00c87770"]},
+        {"relationship": "factory_and_initialization_callers", "members": ["00c878d0", "0103a480", "0103fc10", "0104e340"]},
+        {"relationship": "must_not_merge_with", "members": ["cCommEvent", "GlobalGGEUI", "shared 0x24 value copies"]}
+      ],
+      "structure_checks": [
+        {"type": "cSpaceInventoryItem", "size": "0x7c", "fields": [{"offset": "0x00", "name": "_vftable0"}, {"offset": "0x24", "name": "mItemPosition"}, {"offset": "0x30", "name": "mpPropList"}, {"offset": "0x34", "name": "mDescription"}, {"offset": "0x48", "name": "mDetailDescription"}, {"offset": "0x5c", "name": "mItemID"}]},
+        {"type": "cSpaceInventoryItem__vftable", "size": "0x50", "fields": [{"offset": "0x40", "name": "func40h"}, {"offset": "0x44", "name": "IsAvailableInCurrentPlanet"}, {"offset": "0x48", "name": "func48h"}, {"offset": "0x4c", "name": "ParseProp"}]},
+        {"type": "PropertyList", "observation": "The target uses PropertyList virtual AddRef/Release/GetProperty through its vtable; no concrete PropertyList layout is required for the contract."}
+      ],
+      "vtable_checks": [
+        {"status": "candidate_vtable_confirmed", "address": "0x01473558", "observation": "Direct data xrefs from FUN_00c87660 and FUN_00c87770, the two cSpaceInventoryItem setup/teardown paths."},
+        {"status": "slot_mapping_corrected", "observation": "The target's indirect call is vtable+0x4c. Under the current Ghidra cSpaceInventoryItem vtable type, +0x4c is ParseProp, not IsAvailableInCurrentPlanet; IsAvailableInCurrentPlanet is +0x44."},
+        {"status": "slot_target_observed", "address": "0x00b1e4d0", "observation": "The live vtable memory at 0x01473558+0x4c points to FUN_00b1e4d0, which decompiles to a zero-return stub. Do not substitute the separate FUN_00b14ed0 body for this slot."}
+      ],
+      "string_checks": [
+        {"status": "type_string_support", "address": "0x014735d0", "value": "Simulator/cSpaceInventoryItem", "xrefs": ["00c878d9", "0103a492", "0103fc1a", "0105a4d6", "00c8788a", "00c88338"]},
+        {"status": "no_direct_string_in_target", "observation": "The target uses immediate hashed property IDs and direct calls; no string load is present in the function body."},
+        {"status": "hashed_properties_unresolved", "observation": "0x3068d95d, 0x04cad19b, and 0x1bfc1dee are observed IDs, but their human-readable property names are not recovered here."}
+      ],
+      "negative_evidence": [
+        "The body is not a canonical constructor: callers allocate and base-construct before invoking it.",
+        "The previous interpretation of vtable+0x4c as IsAvailableInCurrentPlanet is rejected by the current Ghidra vtable layout; +0x4c is ParseProp.",
+        "No direct inventory string, trade rule, price, capacity, payment, acquisition, or runtime state transition is present in the target.",
+        "The semantic names of the three hashed properties and the exact behavior of the +0x4c virtual hook remain unresolved.",
+        "The helper does not prove trade/store request timing or stock mutation ordering."
+      ],
+      "evidence": [
+        {"source": "ghidra://SporeApp.exe@0x00c877f0", "kind": "targeted_decompilation_and_disassembly", "observation": "PropertyList AddRef/Release, three property IDs, type check 10, +0x24 write, vtable+0x4c call, RET 0x4."},
+        {"source": "ghidra://SporeApp.exe@0x00c87660", "kind": "sibling_constructor", "observation": "Installs vtable 0x01473558 and initializes cSpaceInventoryItem fields."},
+        {"source": "ghidra://SporeApp.exe@0x00c878d0", "kind": "factory_caller", "observation": "Allocates 0x7c, base-constructs, and invokes the target with a property list."},
+        {"source": "ghidra://SporeApp.exe@0x01473558", "kind": "vtable_memory", "observation": "The +0x4c slot points to FUN_00b1e4d0; the separate 0x00b14ed0 function is not this slot."}
+      ],
+      "validation_strategy": {
+        "static_gate": [
+          "Keep the role as apply-from-PropertyList, not canonical constructor.",
+          "Retain the exact offsets +0x24, +0x30, +0x34, and +0x48 and the final +0x4c hook.",
+          "Treat the three hashed property IDs as data-driven opaque IDs until a dictionary or equivalent consumer identifies them."
+        ],
+        "runtime_gate_required_for_original_abi": false,
+        "runtime_probe": "If available, exercise an inventory factory path and snapshot cSpaceInventoryItem fields before and after the +0x4c call; preserve the live vtable pointer and PropertyList refcount.",
+        "pass_criteria": ["receiver and PropertyList ownership behavior is reproduced", "mItemPosition conditional write is reproduced", "virtual hook ordering is preserved", "property IDs remain opaque or are independently named"]
+      },
+      "runtime_gate_alternatives": [
+        {"option": "inventory_factory_trace", "when_required": "If original vtable behavior, localized text, or inventory serialization compatibility matters.", "action": "Trace 00c878d0/0103a480/0103fc10 through the target and record fields plus the +0x4c hook."},
+        {"option": "static_property_boundary", "when_sufficient": "If replacement only needs data-driven item initialization.", "action": "Implement PropertyList ownership, hashed-ID reads, localized fields, and the virtual hook without assigning semantic property names."},
+        {"option": "no_runtime_gate", "when_sufficient": "If the item type and its vtable are already owned by another reconstruction package.", "action": "Retain this record as a typed mutator contract and leave trade/store runtime behavior to the inventory package."}
+      ],
+      "unresolved_questions": [
+        "What is the exact semantic identity of receiver vtable slot +0x4c/ParseProp?",
+        "What do hashed property IDs 0x3068d95d, 0x04cad19b, and 0x1bfc1dee name?",
+        "Is the +0x24 write semantically mItemPosition for every accepted property, or only for a narrower property context?",
+        "Should the canonical replacement name be SetPropList or InitializeFromPropertyList?"
+      ],
+      "recommended_next_action": "Resolve the +0x4c hook and one property dictionary/consumer; do not implement trade prices, capacity, payment, or stock behavior from this record."
+    },
+    {
+      "va": "00de9fc0",
+      "live_name": "FUN_00de9fc0",
+      "semantic_name": "galaxy_game_entry_game_mode_bootstrap_sub_initializer",
+      "category": "GAMEPLAY_LOGIC",
+      "subsystem": "Space",
+      "semantic_family": "galaxy_game_entry_ui_bootstrap",
+      "classification": {
+        "class": "game_entry_ui_and_game_mode_bootstrap_sub_initializer",
+        "status": "mechanics_supported_sdk_entry_rejected",
+        "rationale": "The function builds three constant-backed 0x24 temporaries, filters a 0x0c-stride service descriptor vector against receiver+0x3c, invokes the GGE/game-mode helper FUN_00de9600 for matches, then runs FUN_00de7010 and cleanup. It is not proven to be the SDK GlobalGGEUI::Initialize entry."
+      },
+      "confidence": {
+        "mechanics": 0.98,
+        "ui_game_mode_family": 0.83,
+        "global_gge_identity": 0.48,
+        "overall_contract": 0.86
+      },
+      "contract": {
+        "status": "supported_static_contract_identity_partial",
+        "receiver": "ECX receiver treated as a GlobalGGEUI-like object by the SDK type hypothesis; the body uses receiver+0x38 and receiver+0x3c",
+        "inputs": ["no explicit stack arguments; ECX receiver"],
+        "preconditions": ["receiver and the service returned by FUN_0067cb40 are valid", "the service returns a descriptor vector with a 0x0c stride"],
+        "operations": [
+          "construct three 0x24 temporaries from (0x2dd90af, 0, 0x366a930d), (0x3cc89b1, 0, 0x913b23be), and (0x54a32960, 0, 1)",
+          "append/copy the temporaries through the 0x24 container helpers",
+          "call the service vtable slot +0x38 to obtain a descriptor range",
+          "for each 0x0c descriptor, call FUN_00a21dc0 and compare its result with receiver+0x3c",
+          "for a match, call FUN_00de9600 with the descriptor context",
+          "call FUN_00de7010 with the receiver",
+          "destroy/release temporary range storage"
+        ],
+        "ordering": ["constant temporary construction", "temporary append/copy", "service descriptor retrieval", "descriptor filtering and matching game-mode initialization", "post-pass behavior-manager cleanup", "temporary destruction"],
+        "side_effects": ["initializes GGE/game-mode state for matching descriptors", "mutates the receiver/game-mode state observed by FUN_00de7010", "allocates and releases temporary 0x24 records"],
+        "ownership": "The function owns only local temporary range storage; the service and receiver own their persistent state.",
+        "errors_or_guards": "No explicit null guard is present; descriptor vector count zero skips the matching loop. FUN_00de9600 is called only for descriptors whose resolved value equals receiver+0x3c.",
+        "output": "void",
+        "identity_limit": "Describe this as a bootstrap sub-initializer; do not rename the entry to GlobalGGEUI::Initialize or InitializeUI."
+      },
+      "direct_caller_callee": {
+        "caller_count": 1,
+        "callee_count": 9,
+        "direct_callers": ["00dea200"],
+        "direct_callees": ["004e39a0", "004e39d0", "00558960", "00606880", "0067cb40", "00a21dc0", "00de7010", "00de9600", "00f47380"],
+        "representative_caller": "00dea200",
+        "comparison": "FUN_00dea200 calls this function once after setting receiver state and before multiple InitGraphics calls. FUN_00de9600 initializes a 0x38 Simulator/GGE object and an IGameModeManager; FUN_00de7010 traverses the game behavior manager. This is a bootstrap family, not the separate cCommEvent path."
+      },
+      "chokepoint": {
+        "caller_count": 1,
+        "callee_count": 9,
+        "score": 3.0,
+        "formal_candidate": false,
+        "status": "low_fan_in_high_semantic_leverage",
+        "reason": "It is not a formal degree chokepoint because it has one caller, but its nine direct callees connect temporary storage, service enumeration, game-mode initialization, and cleanup."
+      },
+      "downstream_unlock": {
+        "direct_endpoint_count": 10,
+        "direct_caller_count": 1,
+        "direct_callee_count": 9,
+        "transitive_count": null,
+        "status": "direct_only_static_endpoints",
+        "unlock_scope": "10 direct endpoints become safer when descriptor filtering, GGE/game-mode initialization, and cleanup ordering are separated; transitive unlock is not claimed."
+      },
+      "family_relationships": [
+        {"relationship": "caller_bootstrap", "members": ["00dea200"]},
+        {"relationship": "gge_game_mode_helper", "members": ["00de9600", "App::PropertyList", "IGameModeManager"]},
+        {"relationship": "post_pass_cleanup", "members": ["00de7010", "cGameBehaviorManager"]},
+        {"relationship": "shared_temporary_container", "members": ["00606880", "004e39a0", "004e39d0", "00558960"]},
+        {"relationship": "must_not_merge_with", "members": ["cCommEvent", "cSpaceInventoryItem", "GlobalGGEUI::Initialize exact entry"]}
+      ],
+      "structure_checks": [
+        {"type": "GlobalGGEUI", "size": "0x264", "observation": "Ghidra supplies a generic GlobalGGEUI layout with field_38 at +0x38 and Unknown field_3C at +0x3c; the body uses +0x38 as a map-like lookup object and +0x3c as the matching sentinel, but does not prove the SDK field types."},
+        {"type": "descriptor vector", "observation": "The service slot +0x38 returns a range whose count is computed as (end - begin) / 0x0c; each descriptor is three dwords."},
+        {"type": "temporary value", "observation": "FUN_00558960 creates 0x24-byte values and FUN_00606880/FUN_004e39d0 manage the temporary range."},
+        {"type": "GGE object", "observation": "FUN_00de9600 allocates a 0x38-byte Simulator/GGE object and attaches it to a property parent before IGameModeManager initialization."}
+      ],
+      "vtable_checks": [
+        {"status": "service_vtable_indirect", "observation": "FUN_0067cb40 returns a service object; the target reads its vtable slot +0x38 to obtain the descriptor range."},
+        {"status": "game_mode_manager_vtable_indirect", "observation": "FUN_00de9600 calls IGameModeManager vtable slot +0x0c/Initialize through a service object; the concrete interface vtable address is not recovered."},
+        {"status": "no_target_vtable_or_rtti", "observation": "The target has no GlobalGGEUI vtable xref, no concrete vtable address, and no RTTI proof."}
+      ],
+      "string_checks": [
+        {"status": "no_direct_target_string", "observation": "The target body has no direct string load; it uses immediate constant triples and service data."},
+        {"status": "sdk_type_only", "observation": "GlobalGGEUI and Initialize/InitializeUI are present in Ghidra's imported data types, but no direct live string or xref binds them to 00de9fc0."},
+        {"status": "sibling_runtime_string", "observation": "The surrounding caller path contains unrelated galaxy/game strings; none is a direct string reference in this target."}
+      ],
+      "negative_evidence": [
+        "The SDK address for GlobalGGEUI::Initialize, 0x00dea1b0, is 0x1f0 bytes inside the 0x00de9fc0 body and is not an independent function entry; the exact SDK entry identity is rejected for this target.",
+        "No concrete GlobalGGEUI vtable, RTTI, or direct GlobalGGEUI string is present; the SDK type is supporting context only.",
+        "The 0x0c descriptor's three dwords and the exact type of receiver+0x38 remain opaque.",
+        "The target proves a game-mode/GGE bootstrap path but not a complete UI initialization, screen transition, save/persistence, or gameplay state rule.",
+        "No runtime reachability, descriptor count, game-mode success result, or UI side effect is observed."
+      ],
+      "evidence": [
+        {"source": "ghidra://SporeApp.exe@0x00de9fc0", "kind": "targeted_decompilation_and_disassembly", "observation": "Three constant-backed 0x24 temporaries, 0x0c descriptor stride, receiver+0x38/+0x3c comparison, FUN_00de9600, FUN_00de7010, cleanup."},
+        {"source": "ghidra://SporeApp.exe@0x00de9600", "kind": "callee_decompilation", "observation": "Allocates Simulator/GGE state, sets a property parent, and invokes IGameModeManager Initialize."},
+        {"source": "ghidra://SporeApp.exe@0x00de7010", "kind": "callee_decompilation", "observation": "Traverses game behavior manager state and conditionally performs a bounded post-pass."},
+        {"source": "ghidra://SporeApp.exe@0x00dea200", "kind": "caller_comparison", "observation": "Calls 00de9fc0 before a sequence of InitGraphics calls and later receiver virtual operations."},
+        {"source": "ghidra://SporeApp.exe@structure:GlobalGGEUI", "kind": "structure_layout", "observation": "The imported type supplies +0x38 and +0x3c fields but not enough type identity to prove the SDK entry."}
+      ],
+      "validation_strategy": {
+        "static_gate": [
+          "Preserve the three immediate triples, 0x24 temporary stride, 0x0c descriptor stride, receiver+0x3c equality gate, and cleanup order.",
+          "Use the semantic role game-entry/game-mode bootstrap sub-initializer; do not promote the SDK Initialize name.",
+          "Resolve the service returned by FUN_0067cb40 and the concrete type of the receiver+0x38 map before modeling game-mode state."
+        ],
+        "runtime_gate_required_for_original_ui": true,
+        "runtime_probe": "Enter the Galaxy game-entry/UI path and capture receiver+0x38/+0x3c, the service descriptor range, matching descriptor count, and the game-mode/GGE state before and after FUN_00de9600.",
+        "pass_criteria": ["descriptor range and match predicate are observed", "GGE/game-mode initialization order is observed", "true SDK entry remains separated from the sub-initializer"]
+      },
+      "runtime_gate_alternatives": [
+        {"option": "galaxy_entry_trace", "when_required": "If exact UI bootstrap timing, game-mode initialization, or descriptor filtering matters.", "action": "Trace the receiver and service vector through 00de9fc0 and FUN_00de9600 during game entry."},
+        {"option": "static_bootstrap_contract", "when_sufficient": "If the replacement needs only the observable bootstrap mechanics.", "action": "Keep descriptors as three opaque dwords and preserve the match, initialization, post-pass, and cleanup ordering without naming the SDK entry."},
+        {"option": "infrastructure_only_boundary", "when_sufficient": "If only 0x24 temporary storage is relevant.", "action": "Split 00606880 into shared infrastructure and leave this function as a separate bootstrap caller; no runtime gate is required for the copy helper."}
+      ],
+      "unresolved_questions": [
+        "What concrete 0x0c descriptor type is returned by the service, and what do its three dwords mean?",
+        "What concrete ordered-map/container type occupies receiver+0x38, and why is only the receiver+0x3c result acted upon?",
+        "Which service is returned by FUN_0067cb40, and what is the true GlobalGGEUI::Initialize entry?",
+        "What state does FUN_00de7010 observe after the matching game-mode initialization?",
+        "Which UI/game-mode side effects are required for a replacement, and which are SDK-only compatibility behavior?"
+      ],
+      "recommended_next_action": "Resolve the service descriptor and receiver+0x38 type, then validate the bootstrap path with a Galaxy-entry trace; do not merge it with the exact SDK Initialize entry."
+    }
+  ],
+  "aggregate": {
+    "owned_record_count": 4,
+    "unique_va_count": 4,
+    "duplicate_va_count": 0,
+    "all_targets_have_targeted_ghidra_evidence": true,
+    "all_targets_have_direct_caller_callee_evidence": true,
+    "all_targets_have_structure_check": true,
+    "all_targets_have_vtable_check": true,
+    "all_targets_have_string_check": true,
+    "all_targets_have_negative_evidence": true,
+    "all_targets_have_validation_strategy": true,
+    "all_targets_have_unresolved_questions": true,
+    "runtime_evidence": "none",
+    "gameplay_implementation": "none",
+    "canonical_kg_mutation": false,
+    "historical_artifact_mutation": false
+  }
+}

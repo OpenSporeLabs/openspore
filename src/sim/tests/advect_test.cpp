@@ -1,17 +1,17 @@
 // CS-20: the advect system (GetCurrentAdvectInfo / GetNextAdvectID).
 // Verifies the scale -> bucket-key table (from the binary) and the entry
 // lookup (exact bucket, then the -1 default fallback).
+#include "Advect.hpp"
+
 #include <cmath>
 #include <cstdio>
 #include <vector>
-
-#include "Advect.hpp"
 
 namespace {
 
 int g_failures = 0;
 
-void check(bool cond, const char *label) {
+void check(bool cond, const char* label) {
   if (!cond) {
     std::printf("FAIL: %s\n", label);
     ++g_failures;
@@ -21,6 +21,7 @@ void check(bool cond, const char *label) {
 }
 
 using openspore::sim::AdvectEntry;
+using openspore::sim::AdvectState;
 using openspore::sim::bucketKeyForScale;
 using openspore::sim::getCurrentAdvectInfo;
 using openspore::sim::getNextAdvectID;
@@ -74,7 +75,8 @@ void testNextID() {
   auto w = makeFullWorld();
   uint32_t id = openspore::sim::getNextAdvectID(w, 120);  // key 2 -> key 3
   check(id == 103, "next: scale 120 -> bucket 3 advectID 103");
-  uint32_t id9 = openspore::sim::getNextAdvectID(w, 950);  // key 10 -> key 11 (none)
+  uint32_t id9 =
+      openspore::sim::getNextAdvectID(w, 950);  // key 10 -> key 11 (none)
   check(id9 == 999, "next: at the top bucket, falls back to the default ID");
 }
 
@@ -91,13 +93,30 @@ void testDefaultFallback() {
   check(std::fabs(info.strength - 7.0F) < 1e-3, "current: default strength");
 }
 
-} // namespace
+void testSelectionTransitions() {
+  auto world = makeFullWorld();
+  AdvectState state(world);
+  auto current = state.current(120);
+  auto next = state.next(120);
+  check(current.status == openspore::sim::AdvectStatus::success &&
+            current.matched && current.info.value == 102,
+        "advect: current selection has explicit success");
+  check(next.status == openspore::sim::AdvectStatus::success && next.matched &&
+            next.info.value == 103,
+        "advect: next selection transitions to the following bucket");
+  auto missing = state.next(950);
+  check(missing.matched && missing.info.value == 999,
+        "advect: top bucket uses the default transition");
+}
+
+}  // namespace
 
 int main() {
   testBucketKeyTable();
   testCurrentInfoExact();
   testNextID();
   testDefaultFallback();
+  testSelectionTransitions();
   if (g_failures == 0) {
     std::printf("advect_test: ALL PASS\n");
     return 0;

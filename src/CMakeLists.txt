@@ -177,6 +177,23 @@ set_tests_properties(cell_stage_interactive_smoke PROPERTIES
   TIMEOUT 20
   ENVIRONMENT "DISPLAY=:99")
 
+add_executable(editor_support_test editor/tests/editor_support_test.cpp
+  editor/EditorSupport.cpp)
+add_test(
+  NAME editor_support
+  COMMAND editor_support_test
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+
+add_executable(cell_presentation_test apps/cell_presentation_test.cpp
+  apps/CellPresentation.cpp apps/CellSceneStage.cpp
+  apps/CellGfx.cpp apps/CellUI.cpp)
+target_link_libraries(cell_presentation_test PRIVATE
+  openspore_assets openspore_renderer)
+add_test(
+  NAME cell_presentation
+  COMMAND cell_presentation_test
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+
 add_subdirectory(assets)
 add_subdirectory(sim)
 add_subdirectory(replace)

@@ -1,41 +1,21 @@
-// cCellModeStrategy + cGameModeManager (CS-28, clean-room).
-//
-// The original cCellModeStrategy is a 12-byte struct behind the 27-slot vtable:
-// +0x00 vtable ptr, +0x04 mbEnableLoadingCards, +0x09 field_09, +0x0A field_0A.
-// It owns the cell-stage singletons (sCellGame / sCellGFX / sCellUI) — global
-// pointers in the original, owned here for clean-room encapsulation.
-//
-//   Initialize (slot 6)  allocates the singletons, resets the flags, creates the
-//                        world, and calls cCellGFX::Initialize.
-//   OnEnter    (slot 8)  starts the display (cCellGFX::StartDisplay) + enables
-//                        the mode.
-//   OnExit     (slot 9)  resets the background-map color globals
-//                        (DAT_01550adc <- DAT_016b3bf0) + disables the mode.
-//   Update     (slot 17) drives the real per-frame tick (FUN_00e806b0).
-//   Dispose    (slot 7)  frees the pool, resets the globals, disposes the GFX +
-//                        world, and frees the singletons.
-//
-// cGameModeManager is a 52-byte struct (mnActiveIndex at +0x28 = 40) holding
-// the registered modes; SetActiveModeAt(index) calls OnExit on the current mode
-// then activates + OnEnter the new index.
 #pragma once
+
+#include <cstddef>
+#include <cstdint>
+#include <string>
+#include <vector>
 
 #include "CellGfx.hpp"
 #include "CellUI.hpp"
 #include "IGameMode.hpp"
 
-#include <cstddef>
-#include <cstdint>
-#include <vector>
-
 namespace openspore::gamemode {
 
-// DAT_016b3bf0 — the background-map clear-color defaults OnExit/Dispose restore.
 inline constexpr float kDefaultBgClearR = 0.0F;
 inline constexpr float kDefaultBgClearG = 0.0F;
 inline constexpr float kDefaultBgClearB = 0.0F;
+inline constexpr std::uint32_t kNoActiveIndex = 0xFFFFFFFFu;
 
-// DAT_01550adc — the live background-map clear-color globals.
 struct BgClear {
   float r = kDefaultBgClearR;
   float g = kDefaultBgClearG;
@@ -44,56 +24,53 @@ struct BgClear {
 
 class CellModeStrategy : public IGameMode {
  public:
-  // +0x04 mbEnableLoadingCards (the original's documented flag).
   bool mEnableLoadingCards = false;
-
-  // +0x09 / +0x0A lifecycle flags (clean-room names for the documented fields).
   bool mInitialized = false;
   bool mEntered = false;
-
-  BgClear mBgClear;  // the background-map clear globals (DAT_01550adc).
-
-  // The owned cell-stage resources (original sCellGFX / sCellUI).
+  BgClear mBgClear;
   openspore::cellgfx::CellGfx mGfx;
   openspore::cellui::CellUI mUI;
-
-  // Per-frame tick counter (Update / FUN_00e806b0).
   std::uint64_t mFrame = 0;
-
-  // Last routed key (OnKeyDown / slot 11) — for testability.
   InputEvent mLastKey;
+  InputEvent mLastInput;
   bool mGotKey = false;
+  bool mGotInput = false;
 
   void initialize() override;
   void dispose() override;
   void onEnter() override;
   void onExit() override;
-  void onKeyDown(const InputEvent &ev) override;
-  void onMouseMove(const InputEvent &) override;
-  void onMouseDown(const InputEvent &) override;
-  void onMouseUp(const InputEvent &) override;
-  void onMouseWheel(const InputEvent &) override;
+  void onKeyDown(const InputEvent& event) override;
+  void onKeyUp(const InputEvent& event) override;
+  void onMouseMove(const InputEvent& event) override;
+  void onMouseDown(const InputEvent& event) override;
+  void onMouseUp(const InputEvent& event) override;
+  void onMouseWheel(const InputEvent& event) override;
   void update(float delta) override;
 };
 
-class GameModeManager {
+class GameModeManager final : public IGameModeRegistry {
  public:
   struct Entry {
-    IGameMode *mode = nullptr;
+    IGameMode* mode = nullptr;
+    std::string name;
   };
 
-  std::uint32_t mActiveIndex = 0;  // +0x28
+  std::uint32_t mActiveIndex = 0;
 
-  IGameMode *add(IGameMode *mode);
-  IGameMode *active() const;
+  IGameMode* add(IGameMode* mode, std::string name = {});
+  bool registerMode(IGameMode* mode, std::string name = {}) override;
+  IGameMode* active() const override;
   std::size_t size() const;
-
-  // SetActiveModeAt: OnExit the current mode (if it differs), then activate +
-  // OnEnter the new index. Returns false if the index is out of range.
+  bool activate(std::uint32_t index) override;
+  bool activateByName(std::string_view name) override;
+  bool activate_by_name(std::string_view name) override;
   bool setActiveModeAt(std::uint32_t index);
+  void dispose();
+  void update(float delta);
 
  private:
   std::vector<Entry> mEntries;
 };
 
-} // namespace openspore::gamemode
+}  // namespace openspore::gamemode

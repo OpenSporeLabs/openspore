@@ -14,11 +14,10 @@ constexpr size_t kMagicSize = 4;
 constexpr size_t kHeaderSize = 96;
 constexpr size_t kOffIndexCount = 0x24;
 constexpr size_t kOffIndexOffset = 0x40;
-constexpr size_t kEntrySize = 28;
 constexpr uint16_t kCompQfs = 0xFFFF;
 constexpr uint32_t kSizeMask = 0x7FFFFFFFu;
 
-uint32_t peekU32(const uint8_t *data, size_t size, size_t off, bool &ok) {
+uint32_t peekU32(const uint8_t* data, size_t size, size_t off, bool& ok) {
   if (off + 4 > size) {
     ok = false;
     return 0;
@@ -32,10 +31,10 @@ uint32_t peekU32(const uint8_t *data, size_t size, size_t off, bool &ok) {
   return v;
 }
 
-} // namespace
+}  // namespace
 
-bool parseDbpfIndex(const uint8_t *data, size_t size,
-                    std::vector<DbpfEntry> &out, std::string &error) {
+bool parseDbpfIndex(const uint8_t* data, size_t size,
+                    std::vector<DbpfEntry>& out, std::string& error) {
   out.clear();
   if (data == nullptr || size < kHeaderSize) {
     error = "dbpf: image smaller than 96-byte header";
@@ -54,6 +53,10 @@ bool parseDbpfIndex(const uint8_t *data, size_t size,
   const uint32_t indexOff = peekU32(data, size, kOffIndexOffset, ok);
   if (!ok) {
     error = "dbpf: truncated header";
+    return false;
+  }
+  if (indexOff < kHeaderSize) {
+    error = "dbpf: index offset overlaps header";
     return false;
   }
   if (static_cast<uint64_t>(indexOff) + 4 > size) {
@@ -77,6 +80,15 @@ bool parseDbpfIndex(const uint8_t *data, size_t size,
   if ((flags & 4u) != 0u) {
     r.skip(4);
   }
+  if (!r.ok()) {
+    error = "dbpf: truncated index header";
+    return false;
+  }
+  const size_t rowSize = 20u + (haveType ? 0u : 4u) + (haveGroup ? 0u : 4u);
+  if (static_cast<uint64_t>(count) > r.remaining() / rowSize) {
+    error = "dbpf: index count exceeds available bytes";
+    return false;
+  }
   out.reserve(count);
   for (uint32_t i = 0; i < count; ++i) {
     DbpfEntry e;
@@ -87,8 +99,9 @@ bool parseDbpfIndex(const uint8_t *data, size_t size,
     e.storedSize = r.readU32() & kSizeMask;
     e.memSize = r.readU32();
     const uint16_t comp = r.readU16();
-    r.skip(1); // saved-game flag, not needed for extraction
-    r.skip(1); // padding
+    r.skip(1);  // saved-game flag, not needed for extraction
+    r.skip(1);  // padding
+    e.compression = comp;
     e.compressed = (comp == kCompQfs);
     if (!r.ok()) {
       error = "dbpf: truncated index row " + std::to_string(i);
@@ -100,8 +113,8 @@ bool parseDbpfIndex(const uint8_t *data, size_t size,
   return true;
 }
 
-bool qfsDecompress(const uint8_t *data, size_t size, std::vector<uint8_t> &out,
-                   std::string &error) {
+bool qfsDecompress(const uint8_t* data, size_t size, std::vector<uint8_t>& out,
+                   std::string& error) {
   out.clear();
   if (data == nullptr || size < 5) {
     error = "qfs: record shorter than 5-byte header";
@@ -197,16 +210,20 @@ bool qfsDecompress(const uint8_t *data, size_t size, std::vector<uint8_t> &out,
   return true;
 }
 
-bool extractDbpfRecord(const uint8_t *pkg, size_t pkgSize,
-                       const DbpfEntry &entry, std::vector<uint8_t> &out,
-                       std::string &error) {
+bool extractDbpfRecord(const uint8_t* pkg, size_t pkgSize,
+                       const DbpfEntry& entry, std::vector<uint8_t>& out,
+                       std::string& error) {
   out.clear();
   if (pkg == nullptr ||
       static_cast<uint64_t>(entry.offset) + entry.storedSize > pkgSize) {
     error = "dbpf: record extent past end of image";
     return false;
   }
-  const uint8_t *raw = pkg + entry.offset;
+  if (entry.compression != 0u && entry.compression != kCompQfs) {
+    error = "dbpf: unsupported compression";
+    return false;
+  }
+  const uint8_t* raw = pkg + entry.offset;
   if (!entry.compressed) {
     out.assign(raw, raw + entry.storedSize);
     return true;
@@ -223,7 +240,7 @@ bool extractDbpfRecord(const uint8_t *pkg, size_t pkgSize,
   return true;
 }
 
-int findDbpfEntry(const std::vector<DbpfEntry> &entries, uint32_t type,
+int findDbpfEntry(const std::vector<DbpfEntry>& entries, uint32_t type,
                   uint32_t group, uint32_t instance) {
   for (size_t i = 0; i < entries.size(); ++i) {
     if (entries[i].type == type && entries[i].group == group &&
@@ -234,4 +251,4 @@ int findDbpfEntry(const std::vector<DbpfEntry> &entries, uint32_t type,
   return -1;
 }
 
-} // namespace openspore::assets
+}  // namespace openspore::assets

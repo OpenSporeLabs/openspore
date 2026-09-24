@@ -254,11 +254,23 @@ class ViewerQueryContractTestCase(unittest.TestCase):
 
         readiness = query.nodes(readiness="implemented", db=self.db)
         self.assertEqual(readiness["status"], "ok")
-        self.assertEqual({node["name"] for node in readiness["nodes"]},
-                         {"fun:00100000", "sub:movement"})
-        self.assertEqual(query.readiness_distribution(db=self.db)[
-            "readiness_counts"], [{"status": "candidate", "count": 1},
-                                  {"status": "implemented", "count": 2}])
+        self.assertEqual(readiness["nodes"], [])
+        canonical = query.functions(readiness="READY", limit=5,
+                                    db=os.path.join(ROOT, "knowledgegraph",
+                                                    "spore.db"))
+        self.assertEqual(canonical["status"], "ok")
+        self.assertTrue(canonical["functions"])
+        self.assertTrue(all(item["readiness"] == "READY"
+                            for item in canonical["functions"]))
+        self.assertEqual(canonical["inventory"]["total"], 58757)
+        readiness_distribution = query.readiness_distribution(db=self.db)
+        self.assertTrue(readiness_distribution["available"])
+        self.assertEqual({item["status"] for item in
+                          readiness_distribution["readiness_counts"]},
+                         {"READY", "READY_WITH_LOCAL_CONTEXT", "DEPENDENCY_FIRST",
+                          "ENGINE_BOUNDARY", "NEEDS_RE", "LIKELY_INFRASTRUCTURE"})
+        self.assertEqual(sum(item["count"] for item in
+                             readiness_distribution["readiness_counts"]), 368)
 
     def test_explicit_graph_limit_reports_truncation(self):
         data = query.node_neighbors("fun:00100000", depth=2, limit=1,
@@ -305,7 +317,8 @@ class ViewerQueryContractTestCase(unittest.TestCase):
             query.subsystem_summary(self.db),
             query.search(q="PKG-07", db=self.db),
             query.nodes(evidence="SUPPORTED", db=self.db),
-            query.nodes(readiness="READY", db=self.db),
+            query.functions(readiness="READY", limit=2,
+                            db=os.path.join(ROOT, "knowledgegraph", "spore.db")),
             query.packages(q="PKG-07", db=self.db),
             query.readiness_distribution(db=self.db),
             query.node_detail("fun:00100000", self.db),

@@ -42,7 +42,7 @@ class TestRw4Differential(unittest.TestCase):
         r = subprocess.run([BIN, '--dump', PKG],
                            capture_output=True, text=True, timeout=120)
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
-        cpp_lines = [ln for ln in r.stdout.splitlines() if ln.strip()]
+        cpp_lines = [ln for ln in r.stdout.splitlines() if ' obj=' in ln]
 
         self.assertEqual(len(cpp_lines), len(py_lines),
                          "record count mismatch")

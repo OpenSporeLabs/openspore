@@ -1,105 +1,106 @@
-// CS-29: table-driven key->action test.
-//
-// Verifies the clean-room CellInput table mirrors the app's mapping:
-//   - every bound key looks up to its action; an unbound key is nullptr.
-//   - the thrust/boost frame reflects the held keys (W/S/A/D/Shift).
-//   - the arrow keys produce the right camera deltas (sign-matched).
-//   - ESC is the quit key.
-//   - the health-display toggle (the original's virtualKey==2) is
-//     edge-triggered: consumed on the first read, clear on the next.
 #include "CellInput.hpp"
 
 #include <cstdio>
 
 namespace {
+
 int g_failures = 0;
-void check(bool cond, const char *label) {
-  std::printf("%s: %s\n", cond ? "ok" : "FAIL", label);
-  if (!cond) {
+
+void check(bool condition, const char* label) {
+  std::printf("%s: %s\n", condition ? "ok" : "FAIL", label);
+  if (!condition) {
     ++g_failures;
   }
 }
-} // namespace
 
-using openspore::cellinput::Action;
-using openspore::cellinput::CellInput;
-using openspore::cellinput::Key;
-using openspore::cellinput::Table;
+}  // namespace
 
 int main() {
-  // Table lookup: every bound key -> its action.
-  check(*Table::lookup(Key::kW) == Action::kThrustForward, "table: W -> forward");
-  check(*Table::lookup(Key::kS) == Action::kThrustBack, "table: S -> back");
-  check(*Table::lookup(Key::kA) == Action::kThrustLeft, "table: A -> left");
-  check(*Table::lookup(Key::kD) == Action::kThrustRight, "table: D -> right");
-  check(*Table::lookup(Key::kShift) == Action::kBoost, "table: Shift -> boost");
-  check(*Table::lookup(Key::kEscape) == Action::kQuit, "table: ESC -> quit");
-  check(*Table::lookup(Key::kLeft) == Action::kCamLeft, "table: Left -> camLeft");
-  check(*Table::lookup(Key::kRight) == Action::kCamRight, "table: Right -> camRight");
-  check(*Table::lookup(Key::kUp) == Action::kCamUp, "table: Up -> camUp");
-  check(*Table::lookup(Key::kDown) == Action::kCamDown, "table: Down -> camDown");
+  using openspore::cellinput::Action;
+  using openspore::cellinput::CellInput;
+  using openspore::cellinput::Key;
+  using openspore::cellinput::Table;
+  using openspore::gamemode::InputEventType;
+  using openspore::gamemode::MouseButton;
+
+  check(*Table::lookup(Key::kW) == Action::kThrustForward, "table maps W");
+  check(*Table::lookup(Key::kS) == Action::kThrustBack, "table maps S");
+  check(*Table::lookup(Key::kA) == Action::kThrustLeft, "table maps A");
+  check(*Table::lookup(Key::kD) == Action::kThrustRight, "table maps D");
+  check(*Table::lookup(Key::kShift) == Action::kBoost, "table maps boost");
+  check(*Table::lookup(Key::kEscape) == Action::kQuit, "table maps quit");
+  check(*Table::lookup(Key::kLeft) == Action::kCamLeft,
+        "table maps left camera");
+  check(*Table::lookup(Key::kRight) == Action::kCamRight,
+        "table maps right camera");
+  check(*Table::lookup(Key::kUp) == Action::kCamUp, "table maps up camera");
+  check(*Table::lookup(Key::kDown) == Action::kCamDown,
+        "table maps down camera");
   check(*Table::lookup(Key::kToggleHealth) == Action::kToggleHealthDisplay,
-        "table: toggle -> healthDisplay");
-  // An unbound key (a scancode with no action) looks up to nullptr.
-  check(Table::lookup(static_cast<Key>(999)) == nullptr, "table: unbound key -> null");
+        "table maps health toggle");
+  check(Table::lookup(static_cast<Key>(999)) == nullptr,
+        "unknown key is not mapped");
 
-  // Frame: held keys -> thrust/boost.
-  CellInput in;
-  in.press(Key::kW);
-  in.press(Key::kShift);
-  {
-    const auto f = in.frame();
-    check(f.thrustForward && f.boost && !f.thrustBack && !f.thrustLeft &&
-              !f.thrustRight,
-          "frame: W+Shift -> forward+boost only");
-  }
-  in.clear();
-  {
-    const auto f = in.frame();
-    check(!f.thrustForward && !f.thrustBack && !f.thrustLeft && !f.thrustRight &&
-              !f.boost,
-          "frame: empty -> no thrust/boost");
-  }
-  in.press(Key::kA);
-  in.press(Key::kD);
-  {
-    const auto f = in.frame();
-    check(f.thrustLeft && f.thrustRight, "frame: A+D -> both strafe");
-  }
-  in.clear();
+  CellInput input;
+  input.press(Key::kW);
+  input.press(Key::kShift);
+  const auto frame = input.frame();
+  check(frame.thrustForward && frame.boost && !frame.thrustBack &&
+            !frame.thrustLeft && !frame.thrustRight,
+        "held keys produce normalized movement input");
+  input.clear();
+  check(!input.frame().thrustForward && !input.frame().boost,
+        "clear removes held state");
 
-  // Camera directions: the table reports which arrows are held.
-  in.press(Key::kLeft);
-  in.press(Key::kUp);
-  {
-    const auto c = in.camera();
-    check(c.left && c.up && !c.right && !c.down, "camera: Left+Up -> left/up");
-  }
-  in.clear();
-  in.press(Key::kRight);
-  in.press(Key::kDown);
-  {
-    const auto c = in.camera();
-    check(c.right && c.down && !c.left && !c.up, "camera: Right+Down -> right/down");
-  }
-  in.clear();
-  {
-    const auto c = in.camera();
-    check(!c.any(), "camera: none -> no direction");
-  }
+  input.press(Key::kA);
+  input.press(Key::kD);
+  check(input.frame().thrustLeft && input.frame().thrustRight,
+        "opposite movement keys remain independently observable");
+  input.clear();
+  input.press(Key::kLeft);
+  input.press(Key::kUp);
+  const auto camera = input.camera();
+  check(camera.left && camera.up && !camera.right && !camera.down,
+        "camera directions are normalized");
+  input.clear();
+  check(!input.camera().any(), "empty camera input is clear");
 
-  // Quit key.
-  check(!in.wantsQuit(), "quit: none -> false");
-  in.press(Key::kEscape);
-  check(in.wantsQuit(), "quit: ESC -> true");
-  in.release(Key::kEscape);
-  check(!in.wantsQuit(), "quit: released -> false");
+  check(!input.wantsQuit(), "quit is false without a held key");
+  input.press(Key::kEscape);
+  check(input.wantsQuit(), "quit is true while held");
+  input.release(Key::kEscape);
+  check(!input.wantsQuit(), "release ends quit");
 
-  // Health-display toggle: edge-triggered, consumed on read.
-  check(!in.takeToggleHealth(), "toggle: none -> false");
-  in.press(Key::kToggleHealth);
-  check(in.takeToggleHealth(), "toggle: pressed -> true");
-  check(!in.takeToggleHealth(), "toggle: consumed -> false");
+  check(!input.takeToggleHealth(), "toggle starts clear");
+  input.press(Key::kToggleHealth);
+  input.press(Key::kToggleHealth);
+  check(input.takeToggleHealth(), "toggle press is edge-triggered");
+  check(!input.takeToggleHealth(), "toggle is consumed once");
+  input.press(Key::kToggleHealth);
+  input.clear();
+  check(!input.takeToggleHealth(), "reset drops pending edges");
+
+  const auto keyDown = input.keyDown(Key::kW);
+  check(keyDown.type == InputEventType::kKeyDown && keyDown.key == Key::kW &&
+            keyDown.virtualKey == static_cast<std::uint32_t>(Key::kW),
+        "key down event is typed");
+  const auto keyUp = input.keyUp(Key::kW);
+  check(keyUp.type == InputEventType::kKeyUp && keyUp.key == Key::kW,
+        "key up event is typed");
+  const auto move = input.mouseMove(2.0F, 3.0F);
+  check(move.type == InputEventType::kMouseMove && move.x == 2.0F &&
+            move.y == 3.0F,
+        "mouse move event is typed");
+  const auto down = input.mouseDown(4.0F, 5.0F, MouseButton::kLeft);
+  check(down.type == InputEventType::kMouseDown &&
+            down.button == MouseButton::kLeft,
+        "mouse down event is typed");
+  const auto up = input.mouseUp(4.0F, 5.0F, MouseButton::kLeft);
+  check(up.type == InputEventType::kMouseUp && up.button == MouseButton::kLeft,
+        "mouse up event is typed");
+  const auto wheel = input.mouseWheel(6.0F, 7.0F, -1.0F);
+  check(wheel.type == InputEventType::kMouseWheel && wheel.wheel == -1.0F,
+        "mouse wheel event is typed");
 
   std::printf("cellinput_test: %s\n", g_failures == 0 ? "ALL PASS" : "FAIL");
   return g_failures == 0 ? 0 : 1;

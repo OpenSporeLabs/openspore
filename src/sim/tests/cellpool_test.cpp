@@ -3,10 +3,10 @@
 // VERIFIED capacity 4,096 (0x1000, cCellGame::Initialize allocation). This test
 // fills the whole pool, confirms the next allocation fails, then drains and
 // refills. Pure C++ + stdlib.
+#include "CellPool.hpp"
+
 #include <cstdio>
 #include <vector>
-
-#include "CellPool.hpp"
 
 namespace {
 
@@ -15,7 +15,7 @@ using openspore::sim::cObjectPool;
 
 int g_failures = 0;
 
-void check(bool cond, const char *label) {
+void check(bool cond, const char* label) {
   if (cond) {
     std::printf("ok: %s\n", label);
   } else {
@@ -24,7 +24,7 @@ void check(bool cond, const char *label) {
   }
 }
 
-} // namespace
+}  // namespace
 
 int main() {
   constexpr int kCap = 0x1000;  // 4096, VERIFIED cell pool capacity
@@ -38,11 +38,11 @@ int main() {
   check(pool.mNextAvailableIndex == 0, "free-list head starts at index 0");
 
   // Fill the whole pool: every object allocated exactly once.
-  std::vector<cCellObjectData *> all;
+  std::vector<cCellObjectData*> all;
   all.reserve(kCap);
   bool filled = true;
   for (int i = 0; i < kCap; ++i) {
-    cCellObjectData *o = pool.allocate();
+    cCellObjectData* o = pool.allocate();
     if (!o) {
       filled = false;
       break;
@@ -50,14 +50,15 @@ int main() {
     all.push_back(o);
   }
   check(filled, "allocated all 4096 objects");
-  check(pool.mNumAllocatedObjects == kCap, "mNumAllocatedObjects == 4096 at full");
+  check(pool.mNumAllocatedObjects == kCap,
+        "mNumAllocatedObjects == 4096 at full");
 
   // Distinct indices covering the full range; allocated objects are
   // self-indexed and no longer idle.
   std::vector<bool> seen(static_cast<size_t>(kCap), false);
   bool distinct = true;
   bool noneIdle = true;
-  for (cCellObjectData *o : all) {
+  for (cCellObjectData* o : all) {
     uint32_t idx = pool.index(o);
     if (idx >= static_cast<uint32_t>(kCap) || seen[idx]) {
       distinct = false;
@@ -74,19 +75,33 @@ int main() {
   check(noneIdle, "all allocated objects are not idle");
 
   // Exhaustion: one more allocation returns null, count unchanged.
-  check(pool.allocate() == nullptr, "allocate at full returns null (exhaustion)");
-  check(pool.mNumAllocatedObjects == kCap, "count unchanged after failed alloc");
+  check(pool.allocate() == nullptr,
+        "allocate at full returns null (exhaustion)");
+  check(pool.mNumAllocatedObjects == kCap,
+        "count unchanged after failed alloc");
+
+  cCellObjectData* released = pool.lookup(0);
+  check(released == all[0] && pool.isAllocatedAt(0),
+        "lookup preserves the stable index identity");
+  check(pool.release(released) && !pool.isAllocatedAt(0),
+        "release removes the object from the live set");
+  check(!pool.release(released) && pool.allocatedCount() == kCap - 1,
+        "double release is rejected without changing capacity");
+  cCellObjectData* reused = pool.allocate();
+  check(reused == released && pool.index(reused) == 0,
+        "released index is reused deterministically");
+  all[0] = reused;
 
   // Drain, then refill: deallocate everything, confirm the count resets, and
   // that a full re-allocation again covers every index exactly once.
-  for (cCellObjectData *o : all) {
+  for (cCellObjectData* o : all) {
     pool.deallocate(o);
   }
   check(pool.mNumAllocatedObjects == 0, "count back to 0 after full drain");
   std::vector<bool> refilled(static_cast<size_t>(kCap), false);
   bool refillOk = true;
   for (int i = 0; i < kCap; ++i) {
-    cCellObjectData *o = pool.allocate();
+    cCellObjectData* o = pool.allocate();
     if (!o) {
       refillOk = false;
       break;

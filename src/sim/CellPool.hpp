@@ -31,7 +31,7 @@ namespace openspore::sim {
 struct cCellObjectData {
   uint32_t mObjectPoolIndex = 0xFFFFFFFFu;  // 0x00  own index / free-list next
   uint8_t mIsIdle = 1;                      // 0x04
-  float mTargetPosition[3] = {0.0F, 0.0F, 0.0F};  // 0x08
+  float mTargetPosition[3] = {0.0F, 0.0F, 0.0F};           // 0x08
   float mTargetOrientation[4] = {0.0F, 0.0F, 0.0F, 1.0F};  // 0x14
   uint8_t _pad_24[0x48 - 0x24];            // 0x24 field_24/30/3C/40/44
   uint8_t mTransform[0x38];                // 0x48 Transform (56 B)
@@ -47,11 +47,11 @@ struct cCellObjectData {
   float mTargetSize = 1.0F;                // 0xb4
   float field_B8 = 0.0F;                   // 0xb8
   float field_BC = 0.0F;                   // 0xbc  computed cellSize
-  uint8_t _pad_c0[0xfc - 0xc0];           // 0xc0 field_C0 (Transform 56) + field_F8
-  uint32_t mModelKey[3] = {0, 0, 0};      // 0xfc ResourceKey {group,type,instance}
-  uint8_t _pad_108[0x358 - 0x108];        // 0x108 mCellResource + bools + int fields
-  int32_t mScaleLevel = -1;               // 0x358 CellStageScale
-  uint8_t _pad_end[0x398 - 0x35c];        // 0x35c
+  uint8_t _pad_c0[0xfc - 0xc0];       // 0xc0 field_C0 (Transform 56) + field_F8
+  uint32_t mModelKey[3] = {0, 0, 0};  // 0xfc ResourceKey {group,type,instance}
+  uint8_t _pad_108[0x358 - 0x108];  // 0x108 mCellResource + bools + int fields
+  int32_t mScaleLevel = -1;         // 0x358 CellStageScale
+  uint8_t _pad_end[0x398 - 0x35c];  // 0x35c
 };
 static_assert(sizeof(cCellObjectData) == 0x398, "cCellObjectData is 920 B");
 static_assert(offsetof(cCellObjectData, mTargetPosition) == 0x08, "");
@@ -65,11 +65,11 @@ static_assert(offsetof(cCellObjectData, mScaleLevel) == 0x358, "");
 
 template <typename T>
 class cObjectPool {
-public:
+ public:
   static constexpr uint32_t kInvalidIndex = 0xFFFFFFFFu;
 
   // SDK cObjectPool fields (see header comment).
-  void *mpData = nullptr;
+  void* mpData = nullptr;
   int32_t mNextAvailableIndex = 0;
   int32_t mObjectPoolIdentifier = 0;
   int32_t mNumObjects = 0;
@@ -80,8 +80,8 @@ public:
   cObjectPool() = default;
   ~cObjectPool() { release(); }
 
-  cObjectPool(const cObjectPool &) = delete;
-  cObjectPool &operator=(const cObjectPool &) = delete;
+  cObjectPool(const cObjectPool&) = delete;
+  cObjectPool& operator=(const cObjectPool&) = delete;
 
   // Preallocate `capacity` zeroed objects and build the free list: object i
   // links to i+1, the last to kInvalidIndex, head at index 0.
@@ -96,7 +96,7 @@ public:
       return;
     }
     mpData = new uint8_t[static_cast<size_t>(capacity) * sizeof(T)]();
-    T *buf = reinterpret_cast<T *>(mpData);
+    T* buf = reinterpret_cast<T*>(mpData);
     for (uint32_t i = 0; i < capacity; ++i) {
       buf[i].mObjectPoolIndex =
           (i + 1 < capacity) ? i + 1 : static_cast<uint32_t>(kInvalidIndex);
@@ -105,60 +105,81 @@ public:
     mNextAvailableIndex = 0;
   }
 
-  // Pop the free-list head. Returns nullptr on exhaustion (pool full).
-  T *allocate() {
+  T* allocate() {
     if (mNextAvailableIndex < 0 ||
         mNextAvailableIndex == static_cast<int32_t>(kInvalidIndex)) {
       return nullptr;
     }
-    T *buf = reinterpret_cast<T *>(mpData);
+    T* buf = reinterpret_cast<T*>(mpData);
     uint32_t obj = static_cast<uint32_t>(mNextAvailableIndex);
     int32_t next = static_cast<int32_t>(buf[obj].mObjectPoolIndex);
-    buf[obj].mObjectPoolIndex = obj;  // now allocated: own index
+    buf[obj].mObjectPoolIndex = obj;
     buf[obj].mIsIdle = false;
     mNextAvailableIndex = next;
     ++mNumAllocatedObjects;
     return buf + obj;
   }
 
-  // Push `obj` back onto the free-list head.
-  void deallocate(T *obj) {
-    if (!obj) {
-      return;
-    }
+  bool release(T* obj) {
     uint32_t i = index(obj);
-    if (i >= static_cast<uint32_t>(mNumObjects)) {
-      return;
+    if (i == kInvalidIndex || !isAllocated(obj)) {
+      return false;
     }
-    T *buf = reinterpret_cast<T *>(mpData);
+    T* buf = reinterpret_cast<T*>(mpData);
     buf[i].mIsIdle = true;
     buf[i].mObjectPoolIndex = static_cast<uint32_t>(mNextAvailableIndex);
     mNextAvailableIndex = static_cast<int32_t>(i);
     --mNumAllocatedObjects;
+    return true;
   }
 
-  uint32_t index(const T *obj) const {
-    const T *buf = reinterpret_cast<const T *>(mpData);
-    return static_cast<uint32_t>(obj - buf);
+  void deallocate(T* obj) { release(obj); }
+
+  uint32_t index(const T* obj) const {
+    if (obj == nullptr || mpData == nullptr || mNumObjects <= 0) {
+      return kInvalidIndex;
+    }
+    const uintptr_t address = reinterpret_cast<uintptr_t>(obj);
+    const uintptr_t begin = reinterpret_cast<uintptr_t>(mpData);
+    const uintptr_t end =
+        begin + static_cast<uintptr_t>(mNumObjects) * sizeof(T);
+    if (address < begin || address >= end ||
+        (address - begin) % sizeof(T) != 0) {
+      return kInvalidIndex;
+    }
+    return static_cast<uint32_t>((address - begin) / sizeof(T));
   }
-  T *at(uint32_t i) const {
+
+  T* at(uint32_t i) const {
     return i < static_cast<uint32_t>(mNumObjects)
-               ? reinterpret_cast<T *>(mpData) + i
+               ? reinterpret_cast<T*>(mpData) + i
                : nullptr;
   }
-  bool isAllocated(const T *obj) const {
-    uint32_t i = index(obj);
-    return i < static_cast<uint32_t>(mNumObjects) &&
-           obj->mObjectPoolIndex == i;
+
+  T* lookup(uint32_t i) const { return at(i); }
+
+  bool isAllocatedAt(uint32_t i) const {
+    const T* obj = at(i);
+    return obj != nullptr && isAllocated(obj);
   }
 
-private:
+  bool isAllocated(const T* obj) const {
+    uint32_t i = index(obj);
+    return i < static_cast<uint32_t>(mNumObjects) && obj->mObjectPoolIndex == i;
+  }
+
+  uint32_t capacity() const { return static_cast<uint32_t>(mNumObjects); }
+  uint32_t allocatedCount() const {
+    return static_cast<uint32_t>(mNumAllocatedObjects);
+  }
+
+ private:
   void release() {
     if (mpData) {
-      delete[] static_cast<uint8_t *>(mpData);
+      delete[] static_cast<uint8_t*>(mpData);
       mpData = nullptr;
     }
   }
 };
 
-} // namespace openspore::sim
+}  // namespace openspore::sim

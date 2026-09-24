@@ -1,32 +1,49 @@
 // cCellGame state object implementation (see CellGame.hpp for evidence labels).
 #include "CellGame.hpp"
 
-#include <cstring>
+#include <cmath>
+#include <limits>
 
 namespace openspore::sim {
 namespace {
 
-float bitsToFloat(uint32_t bits) {
-  float f;
-  std::memcpy(&f, &bits, sizeof(f));
-  return f;
-}
-
 // Size table DAT_01483bd0 (VERIFIED, SporeApp.exe 3.1.0.22 .rdata):
 // the per-tier base sizes. CreateCellObject scales by 0.033333335 (= 1/30).
-const float kScaleTable[8] = {10.0F,  30.0F,   100.0F,  300.0F,
+const float kScaleTable[8] = {10.0F,   30.0F,   100.0F,   300.0F,
                               1000.0F, 3000.0F, 10000.0F, 30000.0F};
 
-} // namespace
+}  // namespace
 
-void CellGame::initialize() {
-  // OBSERVABLE Initialize sequence (Simulator::Cell::cCellGame::Initialize @
-  // 00e80ba0, decompilation). The IAppSystem::SetTimeScale call at the top and
-  // the cGameNounManager / collectable-items calls are app-layer side effects
-  // this state object does not model; only the sCellGame field writes and the
-  // pool allocation are reproduced.
+CellGameLifecycleResult CellGame::initialize() {
+  return initialize(CellGameConfig{});
+}
 
-  // Early flag / field resets (decompiled store order).
+CellGameLifecycleResult CellGame::initialize(const CellGameConfig& config) {
+  if (config.poolCapacity == 0 ||
+      config.poolCapacity >
+          static_cast<uint32_t>(std::numeric_limits<int32_t>::max()) ||
+      config.timeScale <= 0.0F || !std::isfinite(config.timeScale)) {
+    return {CellGameLifecycleStatus::failure};
+  }
+
+  mCells.initialize(config.poolCapacity);
+  mMovementState = {};
+  mConfiguredCapacity = config.poolCapacity;
+  mInitialized = true;
+  mTickCount = 0;
+  mElapsedSeconds = 0.0F;
+
+  mQueryPool = {};
+  mQueryBgPool = {};
+  mPool4 = {};
+  mPool5 = {};
+  mPool6 = {};
+  mpCellQuery = 0;
+  mpCellQueryBackground = 0;
+  mpCurrentWorld = {};
+  mpCurrentWorldBackground = {};
+  mAvatarCellIndex = cObjectPool<cCellObjectData>::kInvalidIndex;
+
   field_5194 = 0;
   field_5198 = 0;
   flag_5168 = 0;
@@ -34,22 +51,11 @@ void CellGame::initialize() {
   field_515C = 0;
   field_5160 = 0;
   field_516C = 0;
-
-  // Pool allocation: thunk_FUN_00bbb400(0x1000, 0x1000) -> capacity 4096.
-  mCells.initialize(0x1000);
-
-  // Time-scale load value (OBSERVED): field_514C = 0x3f000000 (1.0f), and the
-  // adjacent field_5150 is written with the same value.
   flag_5148 = 0;
-  field_514C = bitsToFloat(0x3F800000u);
-  field_5150 = field_514C;
+  field_514C = config.timeScale;
+  field_5150 = config.timeScale;
   flag_518C = 0;
-
-  // field_4124 = 0x14 (20).
   field_4124 = 0x14;
-
-  // Late-zeroed block (0x51B0..0x51E0). field_51B4 = 0xffffffff (-1);
-  // field_51BC is a runtime value (FUN_00e52b70, INFERRED) left at 0.0f.
   field_51B0 = 0;
   field_51B4 = 0xFFFFFFFFu;
   field_51B8 = 0;
@@ -65,31 +71,42 @@ void CellGame::initialize() {
   mShowCallMateButtonCountdown = 0.0F;
   field_51D4 = 0;
   field_51D8 = 0;
-
-  // flag_51DA is set to 1 only when serializable data is present on entry; the
-  // load-time / no-save path leaves it 0.
   flag_51DA = 0;
-
-  // Background visible-bbox, from the read source constants (VERIFIED).
-  bgBBoxMin = kBBoxSrcY - 7.5F;       // DAT_016b3c8c
-  bgBBoxZ0 = kBBoxSrcZ + 0.0F;        // DAT_016b3c90
-  bgBBoxMax = kBBoxSrcX + 10.0F;      // DAT_016b3c94
-  bgVisibleMin = kBBoxSrcX - 10.0F;   // sVisibleBackgroundBBox
-  bgBBoxMax2 = kBBoxSrcY + 7.5F;      // DAT_016b3c98
-  bgBBoxZ1 = kBBoxSrcZ + 0.0F;        // DAT_016b3c9c
+  bgBBoxMin = kBBoxSrcY - 7.5F;
+  bgBBoxZ0 = kBBoxSrcZ;
+  bgBBoxMax = kBBoxSrcX + 10.0F;
+  bgVisibleMin = kBBoxSrcX - 10.0F;
+  bgBBoxMax2 = kBBoxSrcY + 7.5F;
+  bgBBoxZ1 = kBBoxSrcZ;
+  return {CellGameLifecycleStatus::success};
 }
 
-uint32_t
-CellGame::createCellObject(const CellResourceSpec &resource,
-                           const float position[3],
-                           float elevation,
-                           CellStageScale scaleLevel,
-                           float sizeFactor,
-                           float cellSize,
-                           bool applySize,
-                           const float *targetOrientation) {
+CellGameLifecycleResult CellGame::reset() {
+  if (!mInitialized || mConfiguredCapacity == 0) {
+    return {CellGameLifecycleStatus::failure};
+  }
+  return initialize(CellGameConfig{mConfiguredCapacity, field_514C});
+}
+
+CellGameLifecycleResult CellGame::tick(float deltaSeconds) {
+  if (!mInitialized || deltaSeconds < 0.0F || !std::isfinite(deltaSeconds)) {
+    return {CellGameLifecycleStatus::failure};
+  }
+  mElapsedSeconds += deltaSeconds * field_514C;
+  ++mTickCount;
+  return {CellGameLifecycleStatus::success};
+}
+
+uint32_t CellGame::createCellObject(const CellResourceSpec& resource,
+                                    const float position[3], float elevation,
+                                    CellStageScale scaleLevel, float sizeFactor,
+                                    float cellSize, bool applySize,
+                                    const float* targetOrientation) {
+  if (!mInitialized || position == nullptr) {
+    return cObjectPool<cCellObjectData>::kInvalidIndex;
+  }
   // Pool alloc (lines 57-59): pop a free object; exhaustion → invalid index.
-  cCellObjectData *obj = mCells.allocate();
+  cCellObjectData* obj = mCells.allocate();
   if (!obj) {
     return cObjectPool<cCellObjectData>::kInvalidIndex;
   }
@@ -126,7 +143,8 @@ CellGame::createCellObject(const CellResourceSpec &resource,
     obj->mTargetOrientation[i] = q[i];
   }
 
-  // Position (61-63) + elevation (122) + opacity (123-124) + size block (126-132).
+  // Position (61-63) + elevation (122) + opacity (123-124) + size block
+  // (126-132).
   obj->mTargetPosition[0] = position[0];
   obj->mTargetPosition[1] = position[1];
   obj->mTargetPosition[2] = position[2];
@@ -151,4 +169,26 @@ CellGame::createCellObject(const CellResourceSpec &resource,
   return obj->mObjectPoolIndex;
 }
 
-} // namespace openspore::sim
+CellMovementResult CellGame::applyCellMovement(
+    uint32_t targetIndex, const CellMovementInput& input,
+    const OrientationResolver& orientationResolver) {
+  if (!mInitialized) {
+    CellMovementResult result;
+    result.deltaTime = input.deltaTime;
+    return result;
+  }
+  return openspore::sim::applyCellMovement(mCells, targetIndex, mMovementState,
+                                           input, orientationResolver);
+}
+
+CellMovementResult CellGame::routeCellMovement(
+    uint32_t targetIndex, const MovementInputRouter& inputRouter,
+    const OrientationResolver& orientationResolver) {
+  if (!mInitialized) {
+    return CellMovementResult{};
+  }
+  return openspore::sim::routeCellMovement(
+      mCells, targetIndex, mMovementState, inputRouter, orientationResolver);
+}
+
+}  // namespace openspore::sim

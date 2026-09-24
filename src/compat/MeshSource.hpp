@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "assets/Gmdl.hpp"
+#include "assets/ModelStore.hpp"
 #include "assets/Mesh.hpp"
 #include "compat/ResourceProvider.hpp"
 #include "renderer/Renderer.hpp"
@@ -28,6 +29,15 @@ class IMeshSource {
   virtual ~IMeshSource() = default;
   virtual bool loadMesh(uint32_t meshIndex, assets::Mesh &out,
                         std::string &error) = 0;
+  virtual bool build(const assets::ModelRecord &, uint32_t, assets::Mesh &,
+                     std::string &error) {
+    error = "mesh: model build is unsupported";
+    return false;
+  }
+  bool build(const assets::ModelRecord &record, assets::Mesh &out,
+             std::string &error) {
+    return build(record, 0, out, error);
+  }
 };
 
 // GMDL-backed source: wraps one parsed model (version-8 static path only,
@@ -41,6 +51,15 @@ class GmdlMeshSource : public IMeshSource {
   bool loadMesh(uint32_t meshIndex, assets::Mesh &out,
                 std::string &error) override {
     return assets::meshFromGmdl(model_, meshIndex, out, error);
+  }
+
+  bool build(const assets::ModelRecord &record, uint32_t meshIndex,
+             assets::Mesh &out, std::string &error) override {
+    if (!record.hasGmdl) {
+      error = "mesh: model record has no GMDL payload";
+      return false;
+    }
+    return assets::meshFromGmdl(record.gmdl, meshIndex, out, error);
   }
 
  private:
@@ -79,6 +98,35 @@ inline bool submitMeshSource(IRenderer &renderer, IMeshSource &source,
   renderer.destroyMesh(handle);
   return true;
 }
+
+class ModelStoreMeshSource final : public IMeshSource {
+ public:
+  ModelStoreMeshSource(assets::IModelStore &store, assets::ResourceKey key)
+      : store_(&store), key_(key) {}
+
+  bool loadMesh(uint32_t meshIndex, assets::Mesh &out,
+                std::string &error) override {
+    const assets::ModelLoadResult loaded = store_->load(key_);
+    if (!loaded) {
+      error = loaded.error;
+      return false;
+    }
+    return build(loaded.record, meshIndex, out, error);
+  }
+
+  bool build(const assets::ModelRecord &record, uint32_t meshIndex,
+             assets::Mesh &out, std::string &error) override {
+    if (!record.hasGmdl) {
+      error = "mesh: model record has no GMDL payload";
+      return false;
+    }
+    return assets::meshFromGmdl(record.gmdl, meshIndex, out, error);
+  }
+
+ private:
+  assets::IModelStore *store_ = nullptr;
+  assets::ResourceKey key_;
+};
 
 static_assert(std::is_base_of<IMeshSource, GmdlMeshSource>::value,
               "GMDL source must satisfy the mesh seam");

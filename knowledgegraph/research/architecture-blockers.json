@@ -1,0 +1,418 @@
+{
+  "campaign": {
+    "title": "Architecture blocker resolution",
+    "date": "2026-09-24",
+    "binary": "SporeApp.exe 3.1.0.22",
+    "architecture": "x86:LE:32:windows",
+    "image_base": "0x00400000",
+    "scope": [
+      "noun/star publication lifecycle",
+      "DAT_0167eaec and 0x00b5b800 state identity",
+      "persistence reference/restore and mode-handoff graph"
+    ],
+    "constraints": [
+      "No OpenSpore implementation performed",
+      "No SPORE/ modification or inspection performed",
+      "No canonical SQLite knowledgegraph mutation performed",
+      "Static evidence was preferred; runtime plans are observations to run only if static evidence cannot decide"
+    ],
+    "research_reports": [
+      "knowledgegraph/research/architecture-blockers/blocker-a-primary.md",
+      "knowledgegraph/research/architecture-blockers/blocker-a-adversarial.md",
+      "knowledgegraph/research/architecture-blockers/blocker-b-primary.md",
+      "knowledgegraph/research/architecture-blockers/blocker-b-adversarial.md",
+      "knowledgegraph/research/architecture-blockers/blocker-c-primary.md",
+      "knowledgegraph/research/architecture-blockers/blocker-c-adversarial.md"
+    ]
+  },
+  "blockers": {
+    "A": {
+      "name": "Noun/star publication lifecycle",
+      "status": "UNRESOLVED_ARCHITECTURE_BLOCKED",
+      "resolution": {
+        "resolved": [
+          "Four physical root slots are distinct: DAT_0167eae0, DAT_0167eb60, DAT_0167eae4, and DAT_0167eb0c.",
+          "The noun path is receiver-compatible with cGameNounManager and materializes a noun-ID vector through a lower-bound map helper.",
+          "The star path is receiver-compatible with cStarManager and uses a lower-bound political-ID map plus an independently reference-managed current-player cache.",
+          "Noun object creation, list insertion, dirty-vector invalidation, object erase, and manager cleanup bodies are statically present.",
+          "Star empire map erase and current-player cache clearing are separate paths.",
+          "cStar is a live cGameData noun and cStarRecord is a separate serializable record linked through a typed pointer; physical aliasing is rejected."
+        ],
+        "unresolved": [
+          "Root publishers, replacement, clear, and teardown stores",
+          "Value equality and phase identity for both root pairs",
+          "Whether the slots retain the same manager object, phase-specific objects, stale objects, or opaque service values",
+          "Exact root ownership and lifetime authority",
+          "Whether noun invalidation or star erase is always preceded by exact-key membership",
+          "Complete star record-to-live-planet materialization ownership"
+        ]
+      },
+      "strongest_evidence": [
+        {
+          "source": "Ghidra direct bodies",
+          "addresses": ["0x00b3d300", "0x00b3d400", "0x00b3d2a0", "0x00b3d3a0"],
+          "finding": "Each accessor reads a different global word; no direct root store or equality path was recovered."
+        },
+        {
+          "source": "Ghidra noun lifecycle",
+          "addresses": ["0x00b20c60", "0x00b21340", "0x00b201a0", "0x00b225d0", "0x00b20d30", "0x00b22440"],
+          "finding": "Factory/list registration, lower-bound materialization, dirty-vector invalidation, staged destruction, and manager cleanup are direct."
+        },
+        {
+          "source": "Ghidra star lifecycle",
+          "addresses": ["0x00ba9370", "0x01021300", "0x00bad7a0", "0x01022460", "0x00bb4ba0"],
+          "finding": "Empire lookup is lower-bound, the current-player cache is lazy and reference-managed, map erase is separate from cache clearing, and stars.db replacement is a bounded database path."
+        },
+        {
+          "source": "Types/vtables and local SDK",
+          "references": ["GameNounManager.h", "StarManager.h", "cStar.h", "cStarRecord.h"],
+          "finding": "Manager layouts and typed links support compatibility boundaries, not root publication ownership or logical identity cardinality."
+        },
+        {
+          "source": "State/events, data/serialization, runtime/community",
+          "references": ["serialization-model.md", "runtime-oracle plans", "Spore-ModAPI headers"],
+          "finding": "No root serialization or runtime publication trace is available; SDK singleton language is corroboration only."
+        }
+      ],
+      "competing_hypotheses": [
+        {
+          "id": "H1",
+          "claim": "Each root pair always contains the same manager pointer.",
+          "predictions": ["Paired publication/clear stores", "No unequal or null/stale window", "Equivalent consumer behavior across accessors"],
+          "supporting_evidence": ["Manager-compatible receiver layouts", "Repeated noun/star service vocabulary"],
+          "contradictory_evidence": ["Distinct storage words", "No paired direct writer or equality operation", "Very different accessor fan-in"],
+          "status": "unresolved"
+        },
+        {
+          "id": "H2",
+          "claim": "Roots are phase-specific or independently rebound.",
+          "predictions": ["Unequal/null windows during initialization or transitions", "Rebind order matters", "Consumer behavior follows the selected root"],
+          "supporting_evidence": ["Distinct words and independent manager families", "Alternate star accessor is used by the player-empire cache path"],
+          "contradictory_evidence": ["No runtime unequal window or root writer recovered"],
+          "status": "unresolved and architecture-relevant"
+        },
+        {
+          "id": "H3",
+          "claim": "One accessor in each pair is stale or compatibility-only.",
+          "predictions": ["Consumers see old maps/lists after rebind", "Canonical root teardown has no effect on active consumers"],
+          "supporting_evidence": ["Alternate accessors have much larger fan-in", "Canonical publishers are not recovered"],
+          "contradictory_evidence": ["Canonical noun has 43 direct callers", "Canonical star has a raw code reference"],
+          "status": "unresolved; neither port may be removed"
+        },
+        {
+          "id": "H4",
+          "claim": "Publication occurs through computed, bulk, loader, or external paths.",
+          "predictions": ["Indirect store or data-table writer", "Runtime write not visible as a direct literal xref"],
+          "supporting_evidence": ["Direct scans are bounded negatives", "Slots are in a writable global service region"],
+          "contradictory_evidence": ["None decisive"],
+          "status": "possible but not selected as the leading explanation"
+        }
+      ],
+      "adversarial_corrections": [
+        "Four slots do not prove four owners, four lifetimes, or four publications.",
+        "Manager-compatible receivers do not prove that a root points to that manager.",
+        "Lower-bound invalidation and erase must be described as lower-bound-selected; exact-key membership is not proven.",
+        "A cStar noun and cStarRecord have distinct physical representations and a typed link; logical identity/cardinality remains unresolved.",
+        "The four-port boundary is safe only as a compatibility-excluded opaque observation seam with explicit host-side rebind/generation policy."
+      ],
+      "remaining_ambiguity": [
+        "No complete publisher/equality/teardown matrix",
+        "No proof of root unpublication order or final release",
+        "No complete star record-to-live-planet ownership trace",
+        "No exact-failure, locking, or callback cleanup contract"
+      ],
+      "architecture_impact": "A single-owner result could collapse the root graph; a phase-specific result forces phase-aware identities, rebind order, and separate teardown/cache graphs. The noun and star object graphs must remain physically distinct even if their logical records are associated.",
+      "affected_packages": ["PKG-01-SHARED-STATE-ROOTS", "PKG-02-APP-LIFECYCLE", "PKG-11-SIM-CORE", "PKG-12-SIM-SPACE", "PKG-06-CELL-STATE", "PKG-08-CELL-MODE"],
+      "exact_next_action": {
+        "static_first": "Trace constructor/registration results, aliases, bulk-copy helpers, tables, loader paths, and all computed writes/clears for the four root words.",
+        "runtime_if_static_fails": "One naturally reachable transition with synchronized captures of all four words, pointee addresses, vtable pointers, manager generations, noun/star map sizes, and teardown/release events. Include noun create/destroy, empire erase/cache refresh, and manager teardown.",
+        "pass_condition": "Produce a complete publisher/equality/teardown matrix; one unequal snapshot only rejects unconditional equality."
+      },
+      "implementation_can_proceed_safely": {
+        "clean_room": true,
+        "original_compatibility": false,
+        "boundary": "Use four opaque observation ports with no implicit equality, fallback, owner claims, raw-pointer persistence, or original lifecycle emulation. Use lower-bound/successor-tolerant semantics only with explicit exactness postconditions where the replacement requires exact keys."
+      }
+    },
+    "B": {
+      "name": "Forwarded state: DAT_0167eaec / 0x00b5b800",
+      "status": "PARTIALLY_RESOLVED_ARCHITECTURE_BLOCKED",
+      "resolution": {
+        "resolved": [
+          "0x00b5b800 reads DAT_0167eaec through 0x00b3d320, returns 0xffffffff for a zero receiver, and otherwise copies [receiver+0x20] through 0x00a42730.",
+          "The returned value is a borrowed 32-bit mode-domain scalar discriminator in observed consumers.",
+          "0x00b289ac and 0x00b5f056 are direct pointee-field writers for the current result of 0x00b3d320.",
+          "0x00b1d870 constructs a 0x9c cGameModeManager-compatible family and initializes +0x20 and +0x24 to -1, but is not statically joined to DAT_0167eaec."
+        ],
+        "unresolved": [
+          "Whether DAT_0167eaec ever publishes the cGameModeManager-compatible allocation",
+          "Exact receiver class identity for the current pointee",
+          "First writer and first mode transition",
+          "Backing storage and publication/replacement/clear path",
+          "Aliasing or pointer equality with canonical DAT_0167eb2c",
+          "Ownership, thread-safe lifetime, and whether the field is authoritative/current or a stale mirror"
+        ]
+      },
+      "strongest_evidence": [
+        {
+          "source": "Ghidra direct forwarding chain",
+          "addresses": ["0x00b5b800", "0x00b3d320", "0x00a42730"],
+          "finding": "The read path and -1 null path are exact and contain no ownership operation."
+        },
+        {
+          "source": "Ghidra pointee writers",
+          "addresses": ["0x00b289ac", "0x00b5f056"],
+          "finding": "The current accessor result receives kLoadGameMode and normalized transition mode values."
+        },
+        {
+          "source": "Ghidra constructor family",
+          "addresses": ["0x00b1d870", "0x00b60d80", "0x00b1d970"],
+          "finding": "A cGameModeManager-compatible object family has matching size, vtable, fields, allocation, and teardown, but no publication join to DAT_0167eaec."
+        },
+        {
+          "source": "Global xref scan",
+          "addresses": ["0x0167eaec", "0x00b3d420", "DAT_0167eb2c"],
+          "finding": "The alternate global has one direct read and no recovered direct writer; the canonical global is a distinct slot with no demonstrated equality operation."
+        },
+        {
+          "source": "SDK, events, state, and callers",
+          "references": ["GameModeManager.h", "CommonIDs.h", "event-message-map.md", "0x00b63510"],
+          "finding": "Mode-ID constants and transition payloads corroborate scalar mode semantics, but do not prove freshness or receiver identity."
+        }
+      ],
+      "competing_hypotheses": [
+        {
+          "id": "H1",
+          "claim": "A strategy/mode owner is forwarded through the slot.",
+          "predictions": ["Returned value is a mode ID", "Mode transition writers and event consumers converge"],
+          "evidence": ["Mode constants", "0x00b289ac and 0x00b5f056", "SDK mode manager layout"],
+          "contradictions": ["Constructor-to-slot identity is unjoined", "Freshness and canonicality unresolved"],
+          "status": "supported as semantic compatibility, not ownership proof"
+        },
+        {
+          "id": "H2",
+          "claim": "The field is current-object state.",
+          "predictions": ["+0x20 changes on mode events", "Value is scalar and copied by consumers"],
+          "evidence": ["Mode writers", "scalar caller use"],
+          "contradictions": ["No runtime trace or slot publication join"],
+          "status": "supported for field meaning only"
+        },
+        {
+          "id": "H3",
+          "claim": "The returned value is a handle or pointer.",
+          "predictions": ["Returned value is dereferenced, virtually called, or retained as a pointer"],
+          "evidence": ["The receiver is pointer-shaped"],
+          "contradictions": ["Direct loads of mode constants", "Scalar comparisons", "Plain [receiver+0x20] return"],
+          "status": "rejected for the returned value"
+        },
+        {
+          "id": "H4",
+          "claim": "The result is a tagged value.",
+          "predictions": ["A tag decoder or tagged-state representation is required"],
+          "evidence": ["Some address-like constants"],
+          "contradictions": ["Direct normalizer and mode constants explain the values without a tag layer"],
+          "status": "not needed under the current model"
+        },
+        {
+          "id": "H5",
+          "claim": "+0x20 is a forwarded interface or strategy pointer.",
+          "predictions": ["+0x20 is dispatched or treated as a vtable/interface pointer"],
+          "evidence": ["Receiver has a vtable"],
+          "contradictions": ["+0x20 is written with mode IDs", "No returned-value interface dispatch"],
+          "status": "rejected for +0x20"
+        },
+        {
+          "id": "H6",
+          "claim": "0x00b28990 is the first target writer.",
+          "predictions": ["The earliest direct non-initializing mode store is the runtime first transition"],
+          "evidence": ["It is an early direct mode writer"],
+          "contradictions": ["Address order is not runtime order", "0x00b5f040 is another direct writer", "Target publication is unjoined"],
+          "status": "unresolved"
+        }
+      ],
+      "adversarial_corrections": [
+        "The cGameModeManager-compatible constructor is not proof that its allocation is published in DAT_0167eaec.",
+        "Pointee-field writers must not be reported as global-slot writers.",
+        "0xffffffff has at least two possible origins: zero receiver and -1 field state; the root does not distinguish them.",
+        "The safe API is a non-authoritative forwarded mode-word adapter, not an exposed cGameModeManager pointer or canonical active-state promise.",
+        "The alternate and canonical slots remain separate even if a runtime trace later observes equal values."
+      ],
+      "remaining_ambiguity": [
+        "Allocation-to-slot-to-field identity join",
+        "Runtime first writer and first mode transition",
+        "Slot publication, freshness, replacement, and teardown",
+        "Aliasing with DAT_0167eb2c",
+        "Ownership and concurrency-safe lifetime"
+      ],
+      "architecture_impact": "The existing mode-routing state machine can consume a scalar mode discriminator, but authoritative state ownership, publication lifecycle, and receiver typing remain open. A future pointer/tagged/strategy resolution would add an adapter and lifecycle model; it must not be smuggled into the current uint32 seam.",
+      "affected_packages": ["PKG-01-SHARED-STATE-ROOTS", "PKG-02-APP-LIFECYCLE", "PKG-08-CELL-MODE", "PKG-11-SIM-CORE"],
+      "exact_next_action": {
+        "static_first": "Trace all aliases, bulk-copy paths, service registration, and computed writers for DAT_0167eaec and compare them with the cGameModeManager allocation at 0x00b1d870.",
+        "runtime_if_static_fails": "Record one allocation-to-slot-to-field chain: allocation base and vtable at 0x00b1d870, first non-zero alternate accessor result, canonical accessor result, [P+0x20] first write, and first replacement/clear/teardown.",
+        "pass_condition": "Establish P == allocation, P == canonical pointer or observed separation, and the first target field writer; otherwise retain the opaque adapter."
+      },
+      "implementation_can_proceed_safely": {
+        "clean_room": true,
+        "original_compatibility": false,
+        "boundary": "Expose only a non-owning, non-authoritative mode-word adapter with explicit 0xffffffff handling and separate alternate/canonical freshness states. Do not expose the receiver, merge slots, claim first writer, or promise lifetime safety."
+      }
+    },
+    "C": {
+      "name": "Persistence reference/restore and mode handoff",
+      "status": "PARTIALLY_RESOLVED_CLEAN_ROOM_ONLY",
+      "resolution": {
+        "resolved": [
+          "PropertyList has explicit local-entry Read/Write operations and typed-value dispatch, with an unresolved parent-related negative-count branch.",
+          "ClassSerializer uses ordered attribute descriptors and callback-based write/read dispatch with identity/count checks and status handling.",
+          "ISimulatorSerializable is a serialization capability, not proof of complete field coverage.",
+          "cSavedGameHeader and cCellSerializableData are serializer-vtable/copy-adopt candidates, not raw fixed blocks proven to be the whole save document.",
+          "Save/load candidates have static helper-local database/stream, header, service, and replacement sequences; stars.db replacement is separate.",
+          "App mode lifecycle, Simulator strategy state, and Cell runtime/presentation state are separate axes."
+        ],
+        "unresolved": [
+          "Outer .spo/.prop/database/COM framing and first-record order",
+          "Meaning of the shared 0x01A80D26 class/serializer identifier and descriptor key domain",
+          "Durable object-reference table, instance IDs, forward-reference/cycle behavior, and restore order",
+          "Property parent encoding and exact Property carrier layout",
+          "Whether cCellSerializableData is directly reached by the save/load candidates",
+          "cGamePersistenceManager membership/binding for 0x00b28ec0 and 0x00b279e0",
+          "Cell mode handoff/automatic save, cross-file atomicity, migration, field survival, and recovery"
+        ]
+      },
+      "strongest_evidence": [
+        {
+          "source": "Ghidra serializer/property bodies",
+          "addresses": ["0x006a1540", "0x006a2f60", "0x00692880", "0x00692900", "0x00693e10", "0x00e0e9f0"],
+          "finding": "Local property entries, parent branch, attribute setup, write/read callbacks, identity/count checks, and status checks are direct."
+        },
+        {
+          "source": "Ghidra association helpers",
+          "addresses": ["0x00695140", "0x00695b40", "0x00695770"],
+          "finding": "Runtime object association/create-or-reuse behavior exists, but durable persistence identity and cycle encoding are not established."
+        },
+        {
+          "source": "Ghidra header/Cell serializer surfaces",
+          "addresses": ["0x00b268a0", "0x00e51300", "0x00e51370", "0x00e61550", "0x00e63d10", "0x00e627a0"],
+          "finding": "Header and Cell wrappers use serializer callbacks; Cell has a bounded in-memory DTO copy/adopt seam. Direct save/load participation is not fully joined."
+        },
+        {
+          "source": "Ghidra save/load candidates and replacement",
+          "addresses": ["0x00b28ec0", "0x00b275a0", "0x00b279e0", "0x006891f0", "0x00bb4ba0", "0x00bb66f0"],
+          "finding": "Static operation sequences include path setup, database/stream lifecycle, header serializer calls, close, and temporary-path replacement; no universal transaction or crash atomicity is proven."
+        },
+        {
+          "source": "Mode/state/event evidence",
+          "addresses": ["0x007d85b0", "0x00b5b960", "0x00b63510", "0x00e7fc00", "0x00e81f30"],
+          "finding": "Mode exit/enter order and separate strategy state are direct; direct Cell OnExit/Dispose bodies do not call the observed save/load candidates, but higher-level autosave is not excluded."
+        }
+      ],
+      "competing_hypotheses": [
+        {
+          "id": "H1",
+          "claim": "Persistence uses a callback/class-attribute object graph with logical associations.",
+          "predictions": ["Class/attribute identity is checked before callbacks", "References can be associated before field population"],
+          "evidence": ["ClassSerializer setup/write/read", "Association helpers", "Attribute resolver"],
+          "contradictions": ["Shared 0x01A80D26 identifier", "Exact object table, durable instance IDs, and cycles unresolved"],
+          "status": "supported architecture, wire details open"
+        },
+        {
+          "id": "H2",
+          "claim": "The header or Cell object is copied as a raw fixed struct.",
+          "predictions": ["Save/load would not require attribute callbacks or class/attribute validation"],
+          "evidence": ["Known object sizes"],
+          "contradictions": ["ClassSerializer-backed header and Cell vtable methods", "Callback dispatch and resolver"],
+          "status": "rejected as the general model"
+        },
+        {
+          "id": "H3",
+          "claim": "PropertyList is the outer .spo format.",
+          "predictions": ["Save body directly writes a PropertyList or begins with it"],
+          "evidence": ["PropertyList stream operations and .prop paths"],
+          "contradictions": ["No direct .spo-to-PropertyList edge", "Outer framing unresolved"],
+          "status": "not established"
+        },
+        {
+          "id": "H4",
+          "claim": "cGamePersistenceManager owns the save/load candidates.",
+          "predictions": ["DAT_0167eb34 or a manager vtable reaches 0x00b28ec0/0x00b279e0 as this"],
+          "evidence": ["Persistence service accessor and SDK LoadGame surface"],
+          "contradictions": ["Candidates call other service accessors; no manager this/vtable binding recovered"],
+          "status": "unconfirmed"
+        },
+        {
+          "id": "H5",
+          "claim": "Cell OnExit/Dispose automatically saves or transfers a live graph.",
+          "predictions": ["Teardown reaches serializer/file helpers and preserves the live graph"],
+          "evidence": ["Cell serializable object and copy/adopt helpers"],
+          "contradictions": ["Direct OnExit/Dispose bodies are cleanup-only", "Live pool/presentation state is rebuilt separately"],
+          "status": "no static autosave; higher-level behavior open"
+        },
+        {
+          "id": "H6",
+          "claim": "Temp/old/replace helpers establish one crash-atomic multi-artifact transaction.",
+          "predictions": ["A manifest/journal binds .spo and stars.db and rolls back failures"],
+          "evidence": ["Replacement and recovery marker surfaces"],
+          "contradictions": ["Replacement paths are separate; no manifest or universal rollback recovered"],
+          "status": "bounded replacement only"
+        },
+        {
+          "id": "H7",
+          "claim": "Host addresses or Cell pool indices are durable object identity.",
+          "predictions": ["Save/load compares or serializes raw addresses"],
+          "evidence": ["Pointer-shaped fields"],
+          "contradictions": ["Domain IDs, association helpers, refcounted owners, and DTO copy boundary"],
+          "status": "rejected as a clean-room design; original exact behavior remains open"
+        }
+      ],
+      "adversarial_corrections": [
+        "The proposed object graph is a candidate clean-room architecture, not the smallest recovered original model.",
+        "Use SchemaKey/opaque descriptor identity until the shared 0x01A80D26 meaning and key scope are resolved.",
+        "Keep serializer/class keys, document instance handles, political/noun IDs, ResourceKeys, and Cell pool indices in separate domains.",
+        "Property parent state is an unresolved stream relationship with runtime resolution, not proven runtime-only data.",
+        "The save/load evidence is a static helper-local operation sequence, not a proven transaction or serialized-record order.",
+        "The Cell object remains a serializer/copy-adopt candidate until a direct save/load edge or runtime trace connects it.",
+        "Deferred binding, cycle detection, DTO handoff, staged replacement, and manifest/journal are OpenSpore policies, not recovered original guarantees."
+      ],
+      "remaining_ambiguity": [
+        "Class/descriptor identity and durable object-reference encoding",
+        "Outer framing and first-record boundaries",
+        "Property value/parent encoding and round-trip behavior",
+        "Cell field survival and direct save/load participation",
+        "Persistence manager binding and restore order",
+        "Automatic mode save, cross-file atomicity, migration, and recovery"
+      ],
+      "architecture_impact": "The persistence seam must remain separate from live runtime ownership and from App mode lifecycle. OpenSpore may choose explicit schema, logical handles, deferred binding, DTO handoff, and staged artifact policies, but these are replacement contracts rather than recovered original compatibility. Raw pointers, Cell pool indices, and live GFX/UI handles remain prohibited from durable state.",
+      "affected_packages": ["PKG-02-APP-LIFECYCLE", "PKG-03-RESOURCE-IO", "PKG-06-CELL-STATE", "PKG-08-CELL-MODE", "PKG-11-SIM-CORE", "PKG-12-SIM-SPACE", "PKG-15-EDITOR-SUPPORT"],
+      "exact_next_action": {
+        "static_first": [
+          "Resolve the runtime-populated header and Cell descriptor tables and the read resolver key domain, including the shared 0x01A80D26 value.",
+          "Trace 0x00b28ec0/0x00b279e0 through Cell-specific helpers to 0x00e51300/0x00e51370 or prove the edge is absent.",
+          "Trace PropertyList constructor/getter/map-node layout and the negative-count parent branch.",
+          "Recover close/status branches before 0x006891f0 and the service vtable/this binding for the candidates."
+        ],
+        "runtime_if_static_fails": [
+          "One explicit save/load round trip with a forward reference and, if naturally reachable, a cycle; record schema keys, callback order, object bindings, field whitelist, and failure behavior.",
+          "One Cell teardown without manual save, followed by explicit load/reopen; record serializer/file calls and whether copy/adopt helpers participate.",
+          "One controlled stream/callback failure and one successful two-artifact update to measure replacement and recovery."
+        ],
+        "pass_condition": "A candidate can be promoted to compatibility architecture only after descriptor identity, durable reference semantics, Cell save participation, field survival, and manager/transaction boundaries are separately observed."
+      },
+      "implementation_can_proceed_safely": {
+        "clean_room": true,
+        "original_compatibility": false,
+        "boundary": "Use an OpenSpore-defined versioned document with explicit schema descriptors, typed property values, domain-separated logical handles, deterministic deferred binding, explicit DTO handoff, and independently specified artifact transaction/recovery policies. Do not claim original .spo/.prop bytes or runtime behavior."
+      }
+    }
+  },
+  "synthesis": {
+    "common_rule": "No unresolved question may be promoted to a canonical type, singleton, owner, automatic save, exact lookup, raw-pointer identity, or cross-root teardown order.",
+    "architecture_rewrite_required": false,
+    "implementation_boundary": "OpenSpore implementation may proceed only as a compatibility-excluded clean-room architecture using opaque/root observation seams and explicit domain contracts.",
+    "reopen_triggers": [
+      "Original root/plugin ABI or manager identity is required",
+      "Original .spo/.prop/database bytes or field survival is required",
+      "Original Cell autosave, cross-mode live-pointer transfer, or restore order is required",
+      "Original multi-file atomicity, migration, or manager binding is required"
+    ]
+  }
+}

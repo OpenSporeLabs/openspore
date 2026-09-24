@@ -2,12 +2,12 @@
 // Evidence: Simulator::Cell::cCellGame::Initialize @ 00e80ba0 (decompiled).
 // The background-bbox source constants DAT_015a7d3c/40/44 were read from the
 // static binary (SporeApp.exe 3.1.0.22 .data, VERIFIED). This test asserts the
-// OBSERVABLE field writes initialize() performs: time-scale load value, the flag
-// resets, the pool capacity, and the background-bbox. Pure C++ + stdlib.
+// OBSERVABLE field writes initialize() performs: time-scale load value, the
+// flag resets, the pool capacity, and the background-bbox. Pure C++ + stdlib.
+#include "CellGame.hpp"
+
 #include <cmath>
 #include <cstdio>
-
-#include "CellGame.hpp"
 
 namespace {
 
@@ -15,7 +15,7 @@ using openspore::sim::CellGame;
 
 int g_failures = 0;
 
-void check(bool cond, const char *label) {
+void check(bool cond, const char* label) {
   if (!cond) {
     std::printf("FAIL: %s\n", label);
     ++g_failures;
@@ -26,7 +26,7 @@ void check(bool cond, const char *label) {
 
 bool feq(float a, float b) { return a == b; }
 
-} // namespace
+}  // namespace
 
 int main() {
   CellGame g;
@@ -76,6 +76,28 @@ int main() {
   check(g.currentWorld().id == 42 && g.currentWorldBackground().id == 7,
         "setCurrentWorld / setCurrentWorldBackground update references");
 
+  check(g.tick(0.25F).status ==
+                openspore::sim::CellGameLifecycleStatus::success &&
+            g.mTickCount == 1 && g.mElapsedSeconds == 0.25F,
+        "lifecycle: tick advances pure time state");
+  check(!g.tick(-1.0F) && g.mTickCount == 1,
+        "lifecycle: negative tick fails without mutation");
+  check(g.reset() && g.mTickCount == 0 && g.mElapsedSeconds == 0.0F &&
+            g.mCells.mNumObjects == 0x1000,
+        "lifecycle: reset clears runtime counters and keeps capacity");
+
+  CellGame configured;
+  openspore::sim::CellGameConfig config;
+  config.poolCapacity = 2;
+  check(configured.initialize(config) && configured.mCells.mNumObjects == 2,
+        "lifecycle: custom bounded capacity initializes");
+  CellGame uninitialized;
+  check(uninitialized.createCellObject({}, nullptr, 0.0F,
+                                       openspore::sim::CellStageScale::None,
+                                       1.0F, 0.0F, false, nullptr) ==
+            openspore::sim::cObjectPool<
+                openspore::sim::cCellObjectData>::kInvalidIndex,
+        "lifecycle: create before initialization is rejected");
   if (g_failures == 0) {
     std::printf("cellgame_test: ALL PASS\n");
     return 0;

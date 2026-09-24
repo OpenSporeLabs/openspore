@@ -1,7 +1,9 @@
 // See Gmdl.hpp. Clean-room implementation, independently authored.
 #include "Gmdl.hpp"
 
+#include <cmath>
 #include <cstring>
+#include <utility>
 
 #include "Stream.hpp"
 
@@ -12,23 +14,23 @@ namespace {
 // Byte size of each documented D3DDECLTYPE code, indexed by code (0..16).
 // Codes beyond the table are not understood by this walker.
 constexpr uint32_t kDeclTypeSizes[] = {
-    4,  // 0 FLOAT1
-    8,  // 1 FLOAT2
-    12, // 2 FLOAT3
-    16, // 3 FLOAT4
-    4,  // 4 D3DCOLOR
-    4,  // 5 UBYTE4
-    4,  // 6 SHORT2
-    8,  // 7 SHORT4
-    4,  // 8 UBYTE4N
-    4,  // 9 SHORT2N
-    8,  // 10 SHORT4N
-    4,  // 11 USHORT2N
-    8,  // 12 USHORT4N
-    4,  // 13 UDEC3
-    4,  // 14 DEC3N
-    4,  // 15 FLOAT16_2
-    8,  // 16 FLOAT16_4
+    4,   // 0 FLOAT1
+    8,   // 1 FLOAT2
+    12,  // 2 FLOAT3
+    16,  // 3 FLOAT4
+    4,   // 4 D3DCOLOR
+    4,   // 5 UBYTE4
+    4,   // 6 SHORT2
+    8,   // 7 SHORT4
+    4,   // 8 UBYTE4N
+    4,   // 9 SHORT2N
+    8,   // 10 SHORT4N
+    4,   // 11 USHORT2N
+    8,   // 12 USHORT4N
+    4,   // 13 UDEC3
+    4,   // 14 DEC3N
+    4,   // 15 FLOAT16_2
+    8,   // 16 FLOAT16_4
 };
 
 uint32_t declTypeSize(uint8_t t) {
@@ -44,20 +46,20 @@ struct ShaderSize {
   uint32_t size;
 };
 constexpr ShaderSize kShaderSizes[] = {
-    {0x201, 8}, {0x202, 20}, {0x203, 8}, {0x204, 16}, {0x205, 20},
-    {0x206, 256}, {0x208, 8}, {0x209, 4}, {0x20A, 64}, {0x20B, 64},
-    {0x20C, 16}, {0x20E, 8}, {0x20F, 8}, {0x210, 20}, {0x211, 20},
-    {0x212, 32}, {0x213, 48}, {0x216, 1}, {0x217, 1}, {0x21C, 32},
-    {0x21E, 16}, {0x220, 16}, {0x223, 164}, {0x224, 152}, {0x226, 16},
-    {0x22D, 16}, {0x22E, 16}, {0x22F, 16428}, {0x230, 4}, {0x231, 12},
-    {0x232, 1}, {0x233, 4}, {0x235, 4}, {0x236, 4}, {0x237, 1},
-    {0x238, 1}, {0x23B, 96}, {0x23C, 48}, {0x241, 64}, {0x242, 64},
-    {0x243, 144}, {0x244, 1}, {0x245, 12}, {0x246, 20}, {0x247, 16},
-    {0x248, 16}, {0x24A, 48}, {0x255, 32}, {0x256, 16},
+    {0x201, 8},   {0x202, 20}, {0x203, 8},     {0x204, 16},  {0x205, 20},
+    {0x206, 256}, {0x208, 8},  {0x209, 4},     {0x20A, 64},  {0x20B, 64},
+    {0x20C, 16},  {0x20E, 8},  {0x20F, 8},     {0x210, 20},  {0x211, 20},
+    {0x212, 32},  {0x213, 48}, {0x216, 1},     {0x217, 1},   {0x21C, 32},
+    {0x21E, 16},  {0x220, 16}, {0x223, 164},   {0x224, 152}, {0x226, 16},
+    {0x22D, 16},  {0x22E, 16}, {0x22F, 16428}, {0x230, 4},   {0x231, 12},
+    {0x232, 1},   {0x233, 4},  {0x235, 4},     {0x236, 4},   {0x237, 1},
+    {0x238, 1},   {0x23B, 96}, {0x23C, 48},    {0x241, 64},  {0x242, 64},
+    {0x243, 144}, {0x244, 1},  {0x245, 12},    {0x246, 20},  {0x247, 16},
+    {0x248, 16},  {0x24A, 48}, {0x255, 32},    {0x256, 16},
 };
 
 uint32_t shaderDataSize(uint32_t id) {
-  for (const auto &e : kShaderSizes) {
+  for (const auto& e : kShaderSizes) {
     if (e.id == id) {
       return e.size;
     }
@@ -70,16 +72,16 @@ constexpr uint32_t kTextureSetId = 0x20D;
 // instance/group key of the referenced texture (4 + 12 + 8 = 24 bytes).
 constexpr size_t kTexEntrySize = 24;
 
-bool fail(std::string &error, const char *what) {
+bool fail(std::string& error, const char* what) {
   error = what;
   return false;
 }
 
-} // namespace
+}  // namespace
 
-uint32_t gmdlVertexStride(const std::vector<GmdlVertexElement> &desc) {
+uint32_t gmdlVertexStride(const std::vector<GmdlVertexElement>& desc) {
   uint32_t stride = 0;
-  for (const auto &e : desc) {
+  for (const auto& e : desc) {
     const uint32_t size = declTypeSize(e.declType);
     if (size == 0) {
       return 0;
@@ -92,21 +94,23 @@ uint32_t gmdlVertexStride(const std::vector<GmdlVertexElement> &desc) {
   return stride;
 }
 
-bool parseGmdl(const uint8_t *data, size_t size, GmdlModel &out,
-               std::string &error) {
+bool parseGmdl(const uint8_t* data, size_t size, GmdlModel& out,
+               std::string& error) {
   out = GmdlModel{};
+  error.clear();
+  GmdlModel parsed;
   if (data == nullptr) {
     return fail(error, "gmdl: null input");
   }
   Reader r(data, size);
-  out.version = r.readU32();
+  parsed.version = r.readU32();
   if (!r.ok()) {
     return fail(error, "gmdl: truncated header");
   }
-  if (out.version != 8) {
+  if (parsed.version != 8) {
     // Version 9 changes the material-info framing and is unvalidated; newer
     // records are outside this walker's tested path.
-    error = "gmdl: unsupported version " + std::to_string(out.version) +
+    error = "gmdl: unsupported version " + std::to_string(parsed.version) +
             " (want 8)";
     return false;
   }
@@ -117,39 +121,64 @@ bool parseGmdl(const uint8_t *data, size_t size, GmdlModel &out,
   if (!r.ok()) {
     return fail(error, "gmdl: truncated refCount");
   }
+  if (static_cast<uint64_t>(refCount) * 12u > r.remaining()) {
+    return fail(error, "gmdl: truncated referenced-file table");
+  }
   for (uint32_t i = 0; i < refCount; ++i) {
-    r.skip(12); // {instance, group, type} file key
+    r.skip(12);  // {instance, group, type} file key
   }
-  out.meshCount = r.readU32();
+  parsed.meshCount = r.readU32();
   for (int i = 0; i < 3; ++i) {
-    out.bboxMin[static_cast<size_t>(i)] = r.readF32();
+    parsed.bboxMin[static_cast<size_t>(i)] = r.readF32();
   }
   for (int i = 0; i < 3; ++i) {
-    out.bboxMax[static_cast<size_t>(i)] = r.readF32();
+    parsed.bboxMax[static_cast<size_t>(i)] = r.readF32();
   }
-  out.radius = r.readF32();
+  parsed.radius = r.readF32();
   if (!r.ok()) {
     return fail(error, "gmdl: truncated bounds");
   }
+  for (const float value : parsed.bboxMin) {
+    if (!std::isfinite(value)) {
+      return fail(error, "gmdl: non-finite bounds");
+    }
+  }
+  for (const float value : parsed.bboxMax) {
+    if (!std::isfinite(value)) {
+      return fail(error, "gmdl: non-finite bounds");
+    }
+  }
+  if (!std::isfinite(parsed.radius)) {
+    return fail(error, "gmdl: invalid bounds");
+  }
 
   const uint32_t numIndexBuffers = r.readU32();
+  if (static_cast<uint64_t>(numIndexBuffers) * 16u > r.remaining()) {
+    return fail(error, "gmdl: truncated index-buffer table");
+  }
   for (uint32_t i = 0; i < numIndexBuffers; ++i) {
     GmdlIndexBuffer ib;
     ib.primType = r.readU32();
     ib.indexCount = r.readU32();
     ib.indexBits = r.readU32();
     const uint32_t bufSize = r.readU32();
-    const uint8_t *view = nullptr;
+    const uint8_t* view = nullptr;
     if (!r.readView(bufSize, view)) {
       return fail(error, "gmdl: truncated index buffer");
     }
     ib.bytes.assign(view, view + bufSize);
-    out.indexBuffers.push_back(std::move(ib));
+    parsed.indexBuffers.push_back(std::move(ib));
   }
 
   const uint32_t numDescs = r.readU32();
+  if (static_cast<uint64_t>(numDescs) * 4u > r.remaining()) {
+    return fail(error, "gmdl: truncated vertex-descriptor table");
+  }
   for (uint32_t i = 0; i < numDescs; ++i) {
     const uint32_t elements = r.readU32();
+    if (static_cast<uint64_t>(elements) * 12u > r.remaining()) {
+      return fail(error, "gmdl: truncated vertex descriptor");
+    }
     std::vector<GmdlVertexElement> desc;
     desc.reserve(elements);
     for (uint32_t k = 0; k < elements; ++k) {
@@ -166,50 +195,68 @@ bool parseGmdl(const uint8_t *data, size_t size, GmdlModel &out,
     if (!r.ok()) {
       return fail(error, "gmdl: truncated vertex descriptor");
     }
-    for (const auto &e : desc) {
+    for (const auto& e : desc) {
       if (declTypeSize(e.declType) == 0) {
         error = "gmdl: undocumented declType " + std::to_string(e.declType) +
                 " in descriptor " + std::to_string(i);
         return false;
       }
     }
-    out.descriptors.push_back(std::move(desc));
+    parsed.descriptors.push_back(std::move(desc));
   }
 
   const uint32_t numVtxBufs = r.readU32();
+  if (static_cast<uint64_t>(numVtxBufs) * 12u > r.remaining()) {
+    return fail(error, "gmdl: truncated vertex-buffer table");
+  }
   for (uint32_t i = 0; i < numVtxBufs; ++i) {
     GmdlVertexBuffer vb;
     vb.descIndex = r.readU32();
     vb.vertexCount = r.readU32();
     const uint32_t bufSize = r.readU32();
-    const uint8_t *view = nullptr;
+    const uint8_t* view = nullptr;
     if (!r.readView(bufSize, view)) {
       return fail(error, "gmdl: truncated vertex buffer");
     }
     vb.bytes.assign(view, view + bufSize);
-    if (vb.descIndex >= out.descriptors.size()) {
+    if (vb.descIndex >= parsed.descriptors.size()) {
       return fail(error, "gmdl: vertex buffer with bad descriptor index");
     }
-    out.vertexBuffers.push_back(std::move(vb));
+    parsed.vertexBuffers.push_back(std::move(vb));
   }
 
-  for (uint32_t i = 0; i < out.meshCount; ++i) {
+  if (static_cast<uint64_t>(parsed.meshCount) * 16u > r.remaining()) {
+    return fail(error, "gmdl: truncated mesh table");
+  }
+  parsed.meshes.reserve(parsed.meshCount);
+  parsed.materialIds.reserve(parsed.meshCount);
+  for (uint32_t i = 0; i < parsed.meshCount; ++i) {
     GmdlMeshRef m;
     m.indexBuffer = r.readU32();
     m.vertexBuffer = r.readU32();
-    out.meshes.push_back(m);
+    if (m.indexBuffer >= parsed.indexBuffers.size() ||
+        m.vertexBuffer >= parsed.vertexBuffers.size()) {
+      return fail(error, "gmdl: mesh references missing buffers");
+    }
+    parsed.meshes.push_back(m);
   }
-  for (uint32_t i = 0; i < out.meshCount; ++i) {
-    out.materialIds.push_back(r.readU32());
+  for (uint32_t i = 0; i < parsed.meshCount; ++i) {
+    parsed.materialIds.push_back(r.readU32());
   }
-  r.skip(4); // observed zero word
+  r.skip(4);  // observed zero word
   if (!r.ok()) {
     return fail(error, "gmdl: truncated mesh table");
   }
 
   const uint32_t matInfoCount = r.readU32();
+  if (static_cast<uint64_t>(matInfoCount) * 4u > r.remaining()) {
+    return fail(error, "gmdl: truncated material-info table");
+  }
   for (uint32_t i = 0; i < matInfoCount; ++i) {
     const uint32_t entries = r.readU32();
+    if (static_cast<uint64_t>(entries) * 4u > r.remaining()) {
+      return fail(error, "gmdl: truncated material info");
+    }
     for (uint32_t k = 0; k < entries; ++k) {
       const uint32_t id = r.readU32();
       if (!r.ok()) {
@@ -217,12 +264,15 @@ bool parseGmdl(const uint8_t *data, size_t size, GmdlModel &out,
       }
       if (id == kTextureSetId) {
         const uint32_t texCount = r.readU32();
+        if (static_cast<uint64_t>(texCount) * 24u > r.remaining()) {
+          return fail(error, "gmdl: truncated texture set");
+        }
         for (uint32_t t = 0; t < texCount; ++t) {
-          r.skip(16); // {sampler, opaque}
+          r.skip(16);  // {sampler, opaque}
           GmdlTextureRef ref;
           ref.instance = r.readU32();
           ref.group = r.readU32();
-          out.textureRefs.push_back(ref);
+          parsed.textureRefs.push_back(ref);
         }
         if (!r.ok()) {
           return fail(error, "gmdl: truncated texture set");
@@ -239,6 +289,12 @@ bool parseGmdl(const uint8_t *data, size_t size, GmdlModel &out,
         }
       }
     }
+  }
+  if (!r.ok()) {
+    return fail(error, "gmdl: truncated material info");
+  }
+  if (r.remaining() < 4) {
+    return fail(error, "gmdl: truncated trailer");
   }
 
   // Trailer. The known framing (bone ranges + anim data + baked deforms +
@@ -264,10 +320,11 @@ bool parseGmdl(const uint8_t *data, size_t size, GmdlModel &out,
     }
   }
   for (int i = 0; i < 3 && r.ok(); ++i) {
-    out.unknownKey[static_cast<size_t>(i)] = r.readU32();
+    parsed.unknownKey[static_cast<size_t>(i)] = r.readU32();
   }
-  out.consumed = size;
+  parsed.consumed = size;
+  out = std::move(parsed);
   return true;
 }
 
-} // namespace openspore::assets
+}  // namespace openspore::assets

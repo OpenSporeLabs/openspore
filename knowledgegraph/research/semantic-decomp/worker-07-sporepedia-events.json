@@ -1,0 +1,841 @@
+{
+  "$schema": "openspore-semantic-decomp-worker-1",
+  "schema_version": "1.0.0",
+  "artifact": "knowledgegraph/research/semantic-decomp/worker-07-sporepedia-events.json",
+  "worker_id": "worker-07-sporepedia-events",
+  "campaign": {
+    "program": "SporeApp.exe",
+    "version": "3.1.0.22",
+    "architecture": "x86:LE:32:windows",
+    "image_base": "0x00400000",
+    "analysis_mode": "targeted_read_only_ghidra",
+    "runtime_performed": false,
+    "ghidra_mutations": 0,
+    "canonical_knowledgegraph_mutations": 0,
+    "package_architecture_mutations": 0,
+    "historical_artifacts_mutated": false,
+    "implementation_changes": false
+  },
+  "scope": {
+    "target_count": 4,
+    "targets": ["0x005dda30", "0x00ff3f00", "0x00dd0e10", "0x0102d1b0"],
+    "disjoint_group": "Sporepedia timeline data and scenario-event surfaces",
+    "scope_rule": "Own only the four assigned targets; inspect callers, callees, structures, siblings, and representative consumers as evidence, but do not assign semantics to unrelated functions."
+  },
+  "methodology": {
+    "primary_analysis": "Decompiled each target and selected direct callers/callees in the connected Ghidra instance.",
+    "cross_checks": [
+      "Compared direct-call and data/vtable references rather than treating xref count as runtime reachability.",
+      "Inspected constructors, destructors, adjacent accessors, sibling dispatchers, and representative consumers.",
+      "Compared observed offsets and vtable ownership against cEditor, cSPAssetDataOTDB, cCommEvent, and local timeline-event allocation evidence.",
+      "Kept App transport, UTFWin/animation messages, cCommEvent, raw space records, resource records, and persistence as separate families unless a direct edge was observed."
+    ],
+    "confidence_scale": "0.0-1.0; confidence is about the bounded clean-room contract, not proprietary source reconstruction."
+  },
+  "summary": {
+    "record_count": 4,
+    "classification_counts": {
+      "ARCHITECTURE_LOCAL": 2,
+      "UNRESOLVED_BUT_SAFE": 2
+    },
+    "runtime_gated_records": 4,
+    "network_boundary": "No target has a direct network call, socket, protocol codec, or online request edge in the inspected body. Sporepedia, Pollinator, cCommEvent, and cSpaceTrading labels are local subsystem names unless an online edge is separately proven.",
+    "central_reclassification": "0x00ff3f00 and 0x00dd0e10 are vtable methods of UI/TimelineEventSporepediaData-like objects, not cSPAssetDataOTDB methods. The object is allocated at 0xb0 or 0x9c in the inspected consumer, and the target accesses fields beyond the 0x78-byte imported cSPAssetDataOTDB layout.",
+    "event_boundary": "The scenario surrender path has two separate event carriers: an anonymous keyed space-record pair built by 0x00e39ab0 and a 0xa0-byte Simulator::cCommEvent created by 0x00aeb720/0x00aeb160. Their co-call is correlation, not payload identity."
+  },
+  "records": [
+    {
+      "va": "0x005dda30",
+      "name": "FUN_005dda30",
+      "decompiler_signature": "void __fastcall FUN_005dda30(int param_1,cEditor *param_2)",
+      "semantic_family": "editor_mode_lifecycle",
+      "classification": "ARCHITECTURE_LOCAL",
+      "semantic_classification": "EDITOR_UI_MODE_REQUEST_AND_WINDOW_LIFECYCLE",
+      "gameplay_relevance": "Gameplay-adjacent editor lifecycle, but not a Sporepedia or online event surface. The sporepedia-online cluster label is not supported by the body.",
+      "contract": {
+        "status": "partial_static_contract",
+        "semantic_summary": "Receives a requested editor mode 0, 1, or 2, suppresses an unchanged mode, requests cEditor::SetActiveMode, toggles mode-specific window/layout hooks, and stores the requested mode in the controller field at receiver+0x60.",
+        "entry_shape": {
+          "receiver": "EditorUI-like controller; exact imported type is not proven",
+          "requested_mode": "0, 1, or 2, corresponding to BuildMode, PaintMode, and PlayMode in the committed editor state-machine evidence",
+          "hidden_call_convention": "The target decompiles as __thiscall; the cEditor callee has an argument-propagation warning, so raw parameter names are not promoted beyond the bounded mode contract."
+        },
+        "inputs": [
+          "receiver pointer",
+          "requested editor mode",
+          "mode-specific window/controller pointers at receiver+0x64, +0x6c, +0x68, +0x80, and +0x84"
+        ],
+        "outputs": [
+          "receiver+0x60 stores the requested mode after the transition path",
+          "mode-specific virtual +0x7c state/visibility calls are made on owned windows"
+        ],
+        "preconditions": [
+          "Return without change when receiver+0x60 already equals the requested mode.",
+          "The PlayMode-looking request has an additional early-return guard through FUN_00574a20(0).",
+          "The exact meaning of the first cEditor::SetActiveMode argument in the decompiler warning remains unresolved."
+        ],
+        "postconditions": [
+          "The receiver's displayed-mode field is updated to the requested mode after teardown/setup work.",
+          "Mode-specific UI windows are hidden, shown, or rebuilt through the same +0x7c virtual surface.",
+          "No direct event record is allocated by the target."
+        ],
+        "side_effects": [
+          "Calls the recovered Editors::cEditor::SetActiveMode body at 0x00587270.",
+          "Calls editor support helpers and App-lifecycle facade functions; those helpers are not network services."
+        ],
+        "limits": [
+          "The target is not a universal event/message producer.",
+          "Exact UI control names, layout semantics, and cEditor field propagation through the decompiler warning are not recovered here."
+        ]
+      },
+      "local_network_boundary": {
+        "local": "The entire observed path is local editor/controller state, editor windows, editor models, and mode-specific layout state.",
+        "network": {
+          "status": "no_direct_network_edge",
+          "evidence": [
+            "The direct callee set contains editor support functions, cEditor::SetActiveMode, and App-lifecycle facades, not a socket, protocol, or online-request function.",
+            "The committed editor state-machine evidence identifies UTFWin layouts and cEditor windows as the consumers."
+          ],
+          "not_claimed": "An App lifecycle facade called by a downstream editor helper is not treated as a network call."
+        },
+        "boundary_rule": "Keep editor mode state separate from App game-mode state, Simulator strategy state, and Sporepedia timeline data."
+      },
+      "state_event_lifecycle": {
+        "state_owner": "EditorUI-like receiver and the downstream Editors::cEditor instance",
+        "observed_fields": [
+          {"receiver_offset": "0x60", "meaning": "requested/displayed mode stored by the target"},
+          {"downstream_cEditor_offset": "0x31c", "meaning": "active editor mode written by the recovered SetActiveMode body"}
+        ],
+        "lifecycle": [
+          "Guard against a no-op request.",
+          "Request downstream cEditor mode transition.",
+          "Invoke old-mode teardown hooks and new-mode setup hooks through the +0x7c surface.",
+          "Update the controller's displayed mode.",
+          "Downstream cEditor paths may construct or post cEditorAnimEvent for some mode entries."
+        ],
+        "message_shape": "No target-local message object. The cEditorAnimEvent produced farther downstream is a separate 0x30-byte refcounted editor animation event family.",
+        "ordering": "The static body supports the order of guard -> SetActiveMode request -> window hook calls -> receiver+0x60 store. It does not prove listener execution or frame timing."
+      },
+      "data_resource_persistence_impact": {
+        "local_data": ["editor mode enum", "editor window/layout pointers", "editor model/world state reached by cEditor::SetActiveMode"],
+        "resource_io": "No direct Resource::IRecord, resource stream, or file write is called by the target.",
+        "persistence": "No direct persistence write. Downstream editor history or model-save paths may be affected by an editor mode transition, but they are not established as this function's direct effect.",
+        "ownership": "The target operates on receiver-owned/controller-owned UI pointers; it does not transfer ownership of the downstream cEditor object."
+      },
+      "family_relationships": {
+        "family": "Editors::EditorUI and Editors::cEditor lifecycle",
+        "related": [
+          {"address": "0x00587270", "name": "Editors::cEditor::SetActiveMode", "relation": "downstream transition implementation"},
+          {"address": "0x005dec10", "name": "FUN_005dec10", "relation": "direct caller and editor app-message dispatcher"},
+          {"address": "0x005e0000", "name": "FUN_005e0000", "relation": "direct caller for Build/Paint/Play and history commands"},
+          {"address": "0x0057c2f0", "name": "FUN_0057c2f0", "relation": "direct caller that maps an external mode field into the target"},
+          {"address": "0x005de9e0", "name": "FUN_005de9e0", "relation": "direct caller that requests mode 0 and updates editor controls"}
+        ],
+        "do_not_merge_with": [
+          "Sporepedia::cSPAssetDataOTDB",
+          "Simulator::cCommEvent",
+          "App::StandardMessage and the deferred message queue",
+          "Simulator mode-strategy state"
+        ],
+        "family_evidence": "The exact cEditor callee body writes cEditor+0x31c and performs old/new mode setup; the target itself updates the controller field and calls window hooks."
+      },
+      "chokepoint_propagation": {
+        "role": "EditorUI mode-request chokepoint",
+        "direct_callers": 4,
+        "direct_callees": 10,
+        "incoming_reference_edges": 6,
+        "outgoing_reference_edges": 22,
+        "direct_gameplay_callers": 2,
+        "downstream_unlock_count": {
+          "unique_direct_callee_endpoints": 10,
+          "incoming_call_sites": 6,
+          "representative_families_unlocked": 3,
+          "transitive_count": "not computed; static xrefs are not runtime reachability"
+        },
+        "representative_unlocks": [
+          "cEditor::SetActiveMode",
+          "EditorUI mode-specific window state",
+          "downstream cEditorAnimEvent production"
+        ]
+      },
+      "evidence_triangulation": [
+        {"kind": "target_decompilation", "source": "Ghidra 0x005dda30", "finding": "Mode guard, cEditor::SetActiveMode call, +0x7c window hooks, and receiver+0x60 store."},
+        {"kind": "direct_callers", "source": "Ghidra callers of 0x005dda30", "finding": "Four distinct callers; 0x005e0000 supplies explicit Build/Paint/Play request branches."},
+        {"kind": "sibling_and_consumer", "source": "Ghidra 0x00587270", "finding": "Recovered cEditor body performs old-mode teardown, writes cEditor+0x31c, and performs new-mode entry work."},
+        {"kind": "committed_state_artifact", "source": "knowledgegraph/research/state-machines/editor-workflows.json:846-882", "finding": "The target is independently recorded as the EditorUI mode updater and generated event editor_active_mode_requested."},
+        {"kind": "negative_family_check", "source": "Ghidra direct callee set and structure checks", "finding": "No direct Sporepedia metadata, cSPAssetDataOTDB, cCommEvent, or network edge."}
+      ],
+      "confidence": {
+        "overall": 0.9,
+        "body_behavior": 0.98,
+        "state_transition": 0.9,
+        "receiver_identity": 0.68,
+        "event_timing": 0.55,
+        "network_boundary": 0.95,
+        "classification": 0.94
+      },
+      "validation_strategy": {
+        "status": "NEEDS_RUNTIME",
+        "static": [
+          "Trace every writer and reader of receiver+0x60 and cEditor+0x31c across BuildMode, PaintMode, and PlayMode.",
+          "Resolve the argument-propagation warning at the cEditor::SetActiveMode call and record the exact receiver passed to the recovered body.",
+          "Enumerate the +0x7c virtual targets for the controller-owned windows and correlate each with visible mode/layout state."
+        ],
+        "runtime": [
+          "Perform one approved local BuildMode -> PaintMode -> PlayMode -> BuildMode sequence.",
+          "Capture receiver+0x60, cEditor+0x31c, each mode-window +0x7c call, and any cEditorAnimEvent send/post with timestamps and call order."
+        ]
+      },
+      "unresolved_questions": [
+        "What is the exact imported type of the target receiver and the exact mode-dependent window classes?",
+        "Does receiver+0x60 mirror cEditor+0x31c synchronously or is it updated after a deferred transition?",
+        "Which cEditorAnimEvent consumer observes each mode-entry send?",
+        "What do the unresolved 0x4fcc580/0x4fcc581 and 0x8c35f293 values select?"
+      ],
+      "competing_hypotheses": [
+        {
+          "id": "ED-H1",
+          "claim": "The target is an EditorUI mode updater and the cluster label is a historical misattribution.",
+          "supporting_evidence": ["Direct mode guard and cEditor::SetActiveMode callee", "Committed editor-workflow state record", "EditorUI callers and window hooks"],
+          "contradicting_evidence": [],
+          "status": "SUPPORTED",
+          "smallest_experiment": "Exercise one BuildMode to PlayMode transition and record receiver+0x60, cEditor+0x31c, and the exact cEditor receiver."
+        },
+        {
+          "id": "ED-H2",
+          "claim": "The target is a Sporepedia or scenario-event producer.",
+          "supporting_evidence": ["Only the cluster membership label"],
+          "contradicting_evidence": ["No Sporepedia object, cSPAssetDataOTDB field, timeline allocation, cCommEvent, or scenario string appears in the direct body"],
+          "status": "REJECTED_AS_ESTABLISHED_SEMANTICS",
+          "smallest_experiment": "No runtime experiment is needed for the current classification; the targeted body already separates it from the event families."
+        },
+        {
+          "id": "ED-H3",
+          "claim": "The target publishes through the App message bus.",
+          "supporting_evidence": ["Downstream editor paths may call App lifecycle facades"],
+          "contradicting_evidence": ["No message-manager registration, queue record, listener, or StandardMessage construction in the target"],
+          "status": "NOT_ESTABLISHED",
+          "smallest_experiment": "During one mode transition, trace whether a cEditorAnimEvent is sent synchronously or posted through a queue and record the receiver/listener."
+        }
+      ],
+      "smallest_experiment": {
+        "required": true,
+        "name": "editor_mode_transition_capture",
+        "procedure": "Run one local BuildMode -> PlayMode -> BuildMode sequence with a read-only breakpoint/probe set on 0x005dda30, 0x00587270, and the recovered cEditorAnimEvent send/post sites; capture receiver+0x60, cEditor+0x31c, requested mode, and call order.",
+        "pass_condition": "The target request, downstream cEditor state write, window hooks, and event timing are observed as separate phases.",
+        "failure_boundary": "If only the controller mirror is observed, retain the target as a local mode adapter and do not infer a global mode or network event."
+      },
+      "runtime_status": "not_performed",
+      "sources": [
+        "Ghidra SporeApp.exe:0x005dda30",
+        "Ghidra SporeApp.exe:0x00587270",
+        "Ghidra SporeApp.exe:0x0057c2f0",
+        "Ghidra SporeApp.exe:0x005de9e0",
+        "Ghidra SporeApp.exe:0x005dec10",
+        "Ghidra SporeApp.exe:0x005e0000",
+        "knowledgegraph/research/state-machines/editor-workflows.json",
+        "knowledgegraph/research/gameplay-state-machines.json",
+        "knowledgegraph/research/semantic-blueprint.json#PKG-16-SPOREPEDIA-ONLINE"
+      ]
+    },
+    {
+      "va": "0x00ff3f00",
+      "name": "FUN_00ff3f00",
+      "decompiler_signature": "undefined4 __fastcall FUN_00ff3f00(int param_1)",
+      "semantic_family": "sporepedia_timeline_event_data",
+      "classification": "ARCHITECTURE_LOCAL",
+      "semantic_classification": "TIMELINE_EVENT_DATA_COMMAND_LINE_POINTER_ACCESSOR",
+      "gameplay_relevance": "Local Sporepedia timeline-event state projection, not a generic asset metadata accessor and not an online service call.",
+      "contract": {
+        "status": "partial_static_contract",
+        "semantic_summary": "Returns the 32-bit pointer-sized value at receiver+0x8c. The surrounding constructor, destructor, teardown, and adjacent accessor identify the receiver as a UI/TimelineEventSporepediaData-like object and the field as a command-line-shaped local request pointer.",
+        "entry_shape": {
+          "receiver": "UI/TimelineEventSporepediaData-like object with a vtable at receiver+0x10",
+          "field_offset": "0x8c",
+          "return_type": "pointer-sized value; decompiler says undefined4 because x86-32 pointers are 32-bit"
+        },
+        "inputs": ["non-null receiver for a meaningful field read"],
+        "outputs": ["borrowed pointer-sized value from receiver+0x8c; no copy, AddRef, or Release in the target"],
+        "preconditions": ["The receiver must point to the inspected timeline-event data family; a null or unrelated receiver is not validated by the target."],
+        "postconditions": ["receiver+0x8c is unchanged; the target is a pure accessor."],
+        "side_effects": [],
+        "limits": [
+          "The exact semantic name of the command-line request subtype is unresolved.",
+          "The target does not itself establish ownership of the returned pointer."
+        ]
+      },
+      "local_network_boundary": {
+        "local": "The returned pointer is consumed by local timeline/event/UI state code. FUN_00ff3e80 passes the field through a local App service facade and then clears/releases it; FUN_00ff4540 compares and replaces a command-line-like object.",
+        "network": {
+          "status": "no_direct_network_edge",
+          "evidence": [
+            "The accessor is a raw receiver field load with no callees.",
+            "The nearby teardown and replacement paths use App::IAppSystem::Get locally and release the object; no online request or protocol function is in the inspected path."
+          ]
+        },
+        "boundary_rule": "Do not treat the pointer as cSPAssetDataOTDB, a network request, or a persistent handle merely because the historical cluster is sporepedia-online."
+      },
+      "state_event_lifecycle": {
+        "state_owner": "UI/TimelineEventSporepediaData-like receiver",
+        "observed_fields": [
+          {"receiver_offset": "0x8c", "meaning": "command-line-shaped pointer returned by the target"},
+          {"receiver_offset": "0x90", "meaning": "adjacent object pointer returned by FUN_00ff3f10; teardown clears it separately"},
+          {"receiver_offset": "0x10", "meaning": "vtable pointer to the inspected local event-data family"}
+        ],
+        "lifecycle": [
+          "FUN_00dd0ca0 constructs the 0xb0 variant and installs the vtable family.",
+          "FUN_00dd0cf0 restores the alternate vtables, releases the adjacent object, tears down the base, and optionally frees the receiver.",
+          "FUN_00ff3e80 clears and releases receiver+0x8c through the local service path.",
+          "FUN_00ff4540 selects a command-line-like replacement, releases/clears the previous field, and stores or applies the new local state.",
+          "Consumers test the returned pointer before branching; a null value is a meaningful no-request or unavailable state."
+        ],
+        "message_shape": "No target-local message object. The field is a local command-line-shaped request/reference; App message transport is not established.",
+        "ordering": "Accessor reads are pure. Replacement and release ordering is visible in nearby bodies, but listener timing and reentrancy are not."
+      },
+      "data_resource_persistence_impact": {
+        "local_data": ["receiver+0x8c command-line-shaped pointer", "receiver+0x90 adjacent local object pointer", "timeline event data owned by the UI object"],
+        "resource_io": "No direct Resource::IRecord, resource stream, or file access in the target or the adjacent teardown/replacement bodies.",
+        "persistence": "No direct persistence. The returned pointer is runtime UI/event state and is cleared/released; host pointers must not be serialized.",
+        "ownership": "The target is a borrowed accessor. Ownership and lifetime remain with the timeline-event data owner; nearby teardown explicitly clears and releases the field."
+      },
+      "family_relationships": {
+        "family": "UI/TimelineEventSporepediaData-like local event data",
+        "related": [
+          {"address": "0x00dd0ca0", "name": "FUN_00dd0ca0", "relation": "constructor for the 0xb0 variant and vtable installation"},
+          {"address": "0x00dd0cf0", "name": "FUN_00dd0cf0", "relation": "destructor/teardown for the vtable family"},
+          {"address": "0x00ff3f10", "name": "FUN_00ff3f10", "relation": "adjacent accessor for receiver+0x90"},
+          {"address": "0x00ff3e80", "name": "FUN_00ff3e80", "relation": "clears and releases receiver+0x8c"},
+          {"address": "0x00ff4540", "name": "FUN_00ff4540", "relation": "replaces or applies a command-line-shaped field"},
+          {"address": "0x00dd0e10", "name": "FUN_00dd0e10", "relation": "same vtable family; event-variant method"}
+        ],
+        "do_not_merge_with": [
+          "Sporepedia::cSPAssetDataOTDB",
+          "Simulator::cCommEvent",
+          "App::StandardMessage or the deferred message queue",
+          "Resource::IRecord or Cell persistence"
+        ],
+        "family_evidence": "The target and 0x00dd0e10 are entries in the vtable installed at receiver+0x10 by FUN_00dd0ca0. The consumer allocates UI/TimelineEventSporepediaData at 0xb0 and 0x9c and accesses fields beyond the imported 0x78-byte cSPAssetDataOTDB object."
+      },
+      "chokepoint_propagation": {
+        "role": "Shared pointer accessor for timeline-event command-line state",
+        "direct_callers": 27,
+        "direct_callees": 0,
+        "incoming_reference_edges": 32,
+        "outgoing_reference_edges": 0,
+        "vtable_data_reference_addresses": ["0x014439c8", "0x0147cbbc"],
+        "downstream_unlock_count": {
+          "unique_direct_consumer_endpoints": 27,
+          "vtable_reference_surfaces": 2,
+          "transitive_count": "not computed; direct consumers are not guaranteed runtime execution"
+        },
+        "representative_unlocks": [
+          "FUN_00ff3e80 teardown path",
+          "FUN_00ff4540 replacement path",
+          "FUN_0106aa10 local flag/request branch",
+          "FUN_0106c930 local timeline/event selection",
+          "FUN_0100a960 teardown and mode cleanup"
+        ]
+      },
+      "evidence_triangulation": [
+        {"kind": "target_decompilation", "source": "Ghidra 0x00ff3f00", "finding": "Exactly one receiver+0x8c load and return; no callees."},
+        {"kind": "constructor_destructor", "source": "Ghidra 0x00dd0ca0 and 0x00dd0cf0", "finding": "The receiver has a local UI timeline-event vtable and is allocated/torn down as a 0xb0 variant."},
+        {"kind": "field_lifecycle", "source": "Ghidra 0x00ff3e80, 0x00ff4540, 0x00ff3f10", "finding": "The field is command-line-shaped, cleared/released, replaced, and accompanied by an adjacent +0x90 pointer."},
+        {"kind": "representative_consumers", "source": "Ghidra 0x00e2f6e0, 0x00e47930, 0x0106c930, 0x0106aa10, 0x0100a960", "finding": "Consumers allocate/use the timeline-event data family and branch on the accessor result in local state paths."},
+        {"kind": "structure_separator", "source": "Ghidra cSPAssetDataOTDB layout", "finding": "The imported cSPAssetDataOTDB is 0x78 bytes; receiver+0x8c and receiver+0xb8 accesses are outside it."},
+        {"kind": "negative_family_check", "source": "Ghidra direct callee and data-reference inspection", "finding": "No cSPAssetDataOTDB constructor, cCommEvent constructor, Resource IRecord, or network call is attached to the accessor."}
+      ],
+      "confidence": {
+        "overall": 0.84,
+        "body_behavior": 0.99,
+        "receiver_family": 0.86,
+        "field_lifecycle": 0.84,
+        "field_semantic_name": 0.62,
+        "network_boundary": 0.93,
+        "classification": 0.91
+      },
+      "validation_strategy": {
+        "status": "NEEDS_RUNTIME",
+        "static": [
+          "Recover the first writer of receiver+0x8c and enumerate all writers of receiver+0x90.",
+          "Bind the pointer's vtable and release path to the UI/TimelineEventSporepediaData allocation family.",
+          "Check every direct caller for whether it treats the result as a null gate, replacement source, or presentation/request state."
+        ],
+        "runtime": [
+          "Construct one local timeline-event object with a non-null command-line-shaped field.",
+          "Trace stores/loads of receiver+0x8c through one replacement and teardown, including the service call in FUN_00ff3e80 and the release in FUN_00ff4540."
+        ]
+      },
+      "unresolved_questions": [
+        "What exact local command-line subtype is stored at receiver+0x8c?",
+        "Who first writes the field and who owns the pointer before the first accessor read?",
+        "Does the +0x8c pointer represent a request, an animation/event parameter, or a presentation handle?",
+        "Are the 0xb0 and 0x9c variants semantically distinct or only different feature sets?",
+        "What is the exact relationship between receiver+0x8c and receiver+0x90?"
+      ],
+      "competing_hypotheses": [
+        {
+          "id": "SP-H1",
+          "claim": "The target is a UI/TimelineEventSporepediaData command-line pointer accessor.",
+          "supporting_evidence": ["Constructor/destructor vtable family", "0xb0/0x9c allocation strings in consumers", "0x00ff3e80 and 0x00ff4540 pointer release/replacement paths"],
+          "contradicting_evidence": ["The exact subtype and field name remain unknown"],
+          "status": "SUPPORTED_WITH_LIMIT",
+          "smallest_experiment": "Trace one non-null receiver+0x8c allocation, accessor read, replacement, and teardown while recording the pointee vtable."
+        },
+        {
+          "id": "SP-H2",
+          "claim": "The target is cSPAssetDataOTDB local metadata access.",
+          "supporting_evidence": ["Historical vtable/cluster label"],
+          "contradicting_evidence": ["cSPAssetDataOTDB is 0x78 bytes", "The receiver+0x8c field is outside that layout", "The same receiver is installed with a UI/TimelineEventSporepediaData vtable and allocated at 0xb0/0x9c"],
+          "status": "REJECTED_AS_ESTABLISHED_SEMANTICS",
+          "smallest_experiment": "No metadata fixture is needed to reject the current identity; a pointee-vtable capture would only characterize the unknown subtype."
+        },
+        {
+          "id": "SP-H3",
+          "claim": "The target returns an online Sporepedia request or response.",
+          "supporting_evidence": ["The historical package name"],
+          "contradicting_evidence": ["Pure field load", "Local UI/timeline allocation family", "No network or protocol edge"],
+          "status": "REJECTED",
+          "smallest_experiment": "Run the same local transition with network disabled and verify the pointer lifecycle remains local."
+        }
+      ],
+      "smallest_experiment": {
+        "required": true,
+        "name": "timeline_commandline_field_trace",
+        "procedure": "Create one local UI/TimelineEventSporepediaData-like object, install a known non-null command-line-shaped pointee at receiver+0x8c, call 0x00ff3f00 and one representative consumer, then force the replacement and teardown paths. Record receiver, field value, pointee vtable, and release order.",
+        "pass_condition": "The field's local owner, replacement semantics, and release lifetime are separated from cSPAssetDataOTDB and network state.",
+        "failure_boundary": "If the field is not initialized in the exercised path, retain it as an opaque borrowed pointer and do not name it."
+      },
+      "runtime_status": "not_performed",
+      "sources": [
+        "Ghidra SporeApp.exe:0x00ff3f00",
+        "Ghidra SporeApp.exe:0x00dd0ca0",
+        "Ghidra SporeApp.exe:0x00dd0cf0",
+        "Ghidra SporeApp.exe:0x00ff3e80",
+        "Ghidra SporeApp.exe:0x00ff3f10",
+        "Ghidra SporeApp.exe:0x00ff4540",
+        "Ghidra SporeApp.exe:0x00e2f6e0",
+        "Ghidra SporeApp.exe:0x00e47930",
+        "Ghidra SporeApp.exe:0x0106c930",
+        "Ghidra SporeApp.exe:0x0106aa10",
+        "Ghidra SporeApp.exe:0x0100a960",
+        "Ghidra SporeApp.exe:structure:cSPAssetDataOTDB"
+      ]
+    },
+    {
+      "va": "0x00dd0e10",
+      "name": "FUN_00dd0e10",
+      "decompiler_signature": "int __fastcall FUN_00dd0e10(int *param_1)",
+      "semantic_family": "sporepedia_timeline_event_data",
+      "classification": "UNRESOLVED_BUT_SAFE",
+      "semantic_classification": "LOCAL_TIMELINE_EVENT_VARIANT_HANDLER",
+      "gameplay_relevance": "Local scenario/timeline event state and visible communication consequences; not a Sporepedia asset metadata method and not a network event transport.",
+      "contract": {
+        "status": "partial_static_contract",
+        "semantic_summary": "Reads a virtual result from receiver+0x0c, returns zero when that result is null, dispatches on receiver+0x84 and receiver+0x88, and applies one of several local event-specific paths. Two paths visibly send the labels ~Epic and ~MiniBoss; other paths build/update local event state and consult the empire lookup surface.",
+        "entry_shape": {
+          "receiver": "UI/TimelineEventSporepediaData-like object; the vtable installed at receiver+0x10 contains this function",
+          "dispatch_fields": ["receiver+0x84", "receiver+0x88"],
+          "event_payload_field": "receiver+0x9c is passed to FUN_00b6ec50 in selected branches; exact type is unresolved"
+        },
+        "inputs": ["TimelineEventSporepediaData-like receiver", "receiver+0x84 discriminator", "receiver+0x88 subtype or companion selector", "receiver+0x9c event payload candidate"],
+        "outputs": ["integer result from the selected local path", "possible local visible label/message emission", "local communication/event-state mutation"],
+        "preconditions": [
+          "The virtual call at receiver vtable+0x0c must return a non-zero local object or value; otherwise the method returns 0.",
+          "The exact meaning of the +0x84 and +0x88 discriminators is not named."
+        ],
+        "postconditions": [
+          "For the subtype-1 branch, the local service/UI path may emit ~Epic or ~MiniBoss.",
+          "For subtype-2 and subtype-4 branches, the method builds a local record through FUN_00b6ec50 and then returns through the local event path.",
+          "For subtype-5, the method consults the current noun/empire lookup path and returns an empire-related value or early result."
+        ],
+        "side_effects": [
+          "Calls FUN_005c3d90, FUN_006b54b0, FUN_006b55c0, FUN_00b6ec50, and local communication helpers.",
+          "May use FUN_00b1fdb0/FUN_00b3d2a0/FUN_00ba9370 and FUN_005c65e0 for the empire-dependent branch."
+        ],
+        "limits": [
+          "The method is virtual and has no direct call-site xref in the current static census.",
+          "The visible strings are direct evidence of local labels, not proof of a universal message payload or network protocol."
+        ]
+      },
+      "local_network_boundary": {
+        "local": "The receiver and all direct callees are local timeline, UI, communication, and simulator lookup services.",
+        "network": {
+          "status": "no_direct_network_edge",
+          "evidence": [
+            "The direct body contains local string labels and local service calls but no socket, HTTP, protocol, or online request path.",
+            "The surrounding object is allocated as UI/TimelineEventSporepediaData in local consumers."
+          ]
+        },
+        "boundary_rule": "Keep visible labels, local communication state, and empire lookup as family-specific effects; do not infer online Sporepedia request/response behavior."
+      },
+      "state_event_lifecycle": {
+        "state_owner": "UI/TimelineEventSporepediaData-like receiver and local communication/event services",
+        "observed_fields": [
+          {"receiver_offset": "0x84", "meaning": "event/discriminator field; values 1, 2, 4, 5 and other constants are selected"},
+          {"receiver_offset": "0x88", "meaning": "subtype/companion discriminator; values 2 and 3 select Epic/MiniBoss labels"},
+          {"receiver_offset": "0x9c", "meaning": "payload candidate passed to local record construction"},
+          {"receiver_offset": "0x10", "meaning": "vtable pointer containing this virtual method"}
+        ],
+        "lifecycle": [
+          "FUN_00dd0ca0 constructs the object and installs the vtable family.",
+          "The virtual method obtains a local source/value through vtable+0x0c and rejects a null source.",
+          "The +0x84/+0x88 dispatch selects visible-label, local-record, or empire-dependent behavior.",
+          "The selected path updates or releases local event state and returns a result.",
+          "FUN_00dd0cf0 tears down the same object family."
+        ],
+        "message_shape": "The direct evidence is family-specific visible text and local communication updates. It is not an App StandardMessage, UTFWin message, cCommEvent, or universal event object by this method alone.",
+        "ordering": "The method's internal guards and branch order are direct. The timing of any downstream listener, queue, or UI presentation is not proven."
+      },
+      "data_resource_persistence_impact": {
+        "local_data": ["receiver+0x84 and +0x88 discriminators", "receiver+0x9c local event payload candidate", "visible ~Epic/~MiniBoss labels", "local empire/communication result"],
+        "resource_io": "No direct Resource::IRecord, resource stream, or file read/write. The local lookup helpers may resolve IDs, but no resource carrier identity is established.",
+        "persistence": "No direct persistence write or read. The method mutates runtime event/communication state; host pointer fields must not be serialized.",
+        "ownership": "The receiver owns its local fields. The virtual result and payload candidate are borrowed or service-owned according to the selected branch; exact refcount ownership is unresolved."
+      },
+      "family_relationships": {
+        "family": "UI/TimelineEventSporepediaData-like local event data",
+        "related": [
+          {"address": "0x00dd0ca0", "name": "FUN_00dd0ca0", "relation": "constructor and vtable installer"},
+          {"address": "0x00dd0cf0", "name": "FUN_00dd0cf0", "relation": "destructor and vtable teardown"},
+          {"address": "0x00ff3f00", "name": "FUN_00ff3f00", "relation": "same vtable family; receiver+0x8c accessor"},
+          {"address": "0x00e2f6e0", "name": "FUN_00e2f6e0", "relation": "creates the 0xb0/0x9c timeline-event data variant and dispatches its vtable"},
+          {"address": "0x00e47930", "name": "FUN_00e47930", "relation": "creates UI/TimelineEventSporepediaData and invokes several virtual operations"}
+        ],
+        "do_not_merge_with": [
+          "Sporepedia::cSPAssetDataOTDB",
+          "Simulator::cCommEvent",
+          "App::StandardMessage and deferred message records",
+          "UTFWin::Message and animation messages"
+        ],
+        "family_evidence": "The constructor and allocation strings identify the receiver as UI/TimelineEventSporepediaData. The cSPAssetDataOTDB layout is only 0x78 bytes, while the method accesses +0x84, +0x88, +0x9c, and the consumer uses fields beyond +0x78."
+      },
+      "chokepoint_propagation": {
+        "role": "Virtual timeline-event variant handler",
+        "direct_callers": 0,
+        "direct_callees": 15,
+        "incoming_reference_edges": 0,
+        "outgoing_reference_edges": 23,
+        "vtable_data_reference_addresses": ["0x0147cbbc"],
+        "downstream_unlock_count": {
+          "unique_direct_callee_endpoints": 15,
+          "virtual_surface_count": 1,
+          "direct_callers": 0,
+          "transitive_count": "not computed; virtual consumers are not represented by direct xrefs"
+        },
+        "representative_unlocks": [
+          "local visible Epic/MiniBoss communication",
+          "local event-record construction through FUN_00b6ec50",
+          "local empire lookup through FUN_005c65e0",
+          "local communication-state update path"
+        ]
+      },
+      "evidence_triangulation": [
+        {"kind": "target_decompilation", "source": "Ghidra 0x00dd0e10", "finding": "Null gate, +0x84/+0x88 switch, ~Epic/~MiniBoss strings, local record construction, and empire lookup branch."},
+        {"kind": "constructor_destructor", "source": "Ghidra 0x00dd0ca0 and 0x00dd0cf0", "finding": "The method belongs to a concrete vtable installed on the timeline-event data object and is released by its destructor."},
+        {"kind": "allocation_anchor", "source": "Ghidra 0x00e2f6e0", "finding": "Allocates UI/TimelineEventSporepediaData at 0xb0 or 0x9c and dispatches its vtable."},
+        {"kind": "representative_consumer", "source": "Ghidra 0x00e47930", "finding": "Creates the same timeline-event data family and calls its virtual operations during local event setup."},
+        {"kind": "structure_separator", "source": "Ghidra cSPAssetDataOTDB layout", "finding": "The candidate cSPAssetDataOTDB is 0x78 bytes; the target accesses fields beyond its end and the observed allocation is 0xb0/0x9c."},
+        {"kind": "negative_family_check", "source": "Ghidra direct callees and data references", "finding": "No cSPAssetDataOTDB constructor, network call, cCommEvent constructor, or universal event queue is attached to this method."}
+      ],
+      "confidence": {
+        "overall": 0.83,
+        "body_behavior": 0.97,
+        "receiver_family": 0.88,
+        "variant_semantics": 0.65,
+        "event_timing": 0.5,
+        "network_boundary": 0.93,
+        "classification": 0.89
+      },
+      "validation_strategy": {
+        "status": "NEEDS_RUNTIME",
+        "static": [
+          "Enumerate the complete vtable family and bind the method's slot to the UI/TimelineEventSporepediaData allocation path.",
+          "Recover the producers of receiver+0x84, +0x88, and +0x9c and identify the vtable+0x0c result type.",
+          "Compare the local visible-label path with the cCommEvent and raw space-record families; do not merge them without a dataflow edge."
+        ],
+        "runtime": [
+          "Trigger one Epic or MiniBoss timeline event and capture receiver, vtable, +0x84, +0x88, +0x9c, the vtable+0x0c result, the visible string, and the selected downstream call.",
+          "Repeat with the null source and one different discriminator to verify the early return and branch isolation."
+        ]
+      },
+      "unresolved_questions": [
+        "What are the exact semantic names and allowed values of receiver+0x84 and +0x88?",
+        "What type and ownership does the vtable+0x0c result have?",
+        "Does receiver+0x9c hold a local event payload, a property list, or an opaque service record?",
+        "Are the Epic and MiniBoss labels presentation-only or part of a broader communication state transition?",
+        "Which virtual consumer invokes this method in each timeline-event variant?",
+        "What do the empire lookup values mean in the subtype-5 path?"
+      ],
+      "competing_hypotheses": [
+        {
+          "id": "SP-H1",
+          "claim": "The method is a local UI/TimelineEventSporepediaData variant handler.",
+          "supporting_evidence": ["Vtable installed by the timeline-event constructor", "0xb0/0x9c allocation anchors", "Field switch and local visible labels"],
+          "contradicting_evidence": ["Exact variant names are not imported"],
+          "status": "SUPPORTED_WITH_LIMIT",
+          "smallest_experiment": "Trigger one variant and record the receiver vtable plus the four discriminating fields."
+        },
+        {
+          "id": "SP-H2",
+          "claim": "The method is a cSPAssetDataOTDB metadata method.",
+          "supporting_evidence": ["Historical vtable-family label"],
+          "contradicting_evidence": ["0x78-byte candidate layout", "field accesses beyond 0x78", "UI/TimelineEventSporepediaData allocation and consumer strings"],
+          "status": "REJECTED_AS_ESTABLISHED_SEMANTICS",
+          "smallest_experiment": "No metadata experiment is required for rejection; capture the receiver allocation name and vtable if subtype identity is needed."
+        },
+        {
+          "id": "SP-H3",
+          "claim": "The method publishes a universal event/message payload.",
+          "supporting_evidence": ["Communication labels and event-like branch structure"],
+          "contradicting_evidence": ["No cCommEvent object, App queue record, StandardMessage, UTFWin message, or animation message construction in the direct path"],
+          "status": "REJECTED_AS_ESTABLISHED_RELATION",
+          "smallest_experiment": "Trace the selected local helper and record whether it allocates a carrier or only updates local state."
+        },
+        {
+          "id": "SP-H4",
+          "claim": "The method is an online Sporepedia request/response handler.",
+          "supporting_evidence": ["Sporepedia cluster label"],
+          "contradicting_evidence": ["Local allocation family", "No network edge", "Visible strings and local service calls"],
+          "status": "REJECTED",
+          "smallest_experiment": "Exercise the local path with networking disabled and verify that the observed variant behavior still occurs."
+        }
+      ],
+      "smallest_experiment": {
+        "required": true,
+        "name": "timeline_variant_dispatch_capture",
+        "procedure": "Use one local UI/TimelineEventSporepediaData object and trigger exactly one non-null Epic or MiniBoss variant. Capture receiver+0x84, +0x88, +0x9c, vtable+0x0c result, visible string, and the selected downstream helper; then destroy the object and record release order.",
+        "pass_condition": "The event variant, local payload, visible effect, and object lifetime are distinguished without assigning a network or cSPAssetDataOTDB ABI.",
+        "failure_boundary": "If the event cannot be triggered locally, retain the vtable family and branch mechanics as static only and leave variant semantics unresolved."
+      },
+      "runtime_status": "not_performed",
+      "sources": [
+        "Ghidra SporeApp.exe:0x00dd0e10",
+        "Ghidra SporeApp.exe:0x00dd0ca0",
+        "Ghidra SporeApp.exe:0x00dd0cf0",
+        "Ghidra SporeApp.exe:0x00e2f6e0",
+        "Ghidra SporeApp.exe:0x00e47930",
+        "Ghidra SporeApp.exe:0x0106c930",
+        "Ghidra SporeApp.exe:structure:cSPAssetDataOTDB",
+        "knowledgegraph/research/residual-unknowns/worker-16-sporepedia-online.json",
+        "knowledgegraph/research/semantic-blueprint.json#PKG-16-SPOREPEDIA-ONLINE"
+      ]
+    },
+    {
+      "va": "0x0102d1b0",
+      "name": "FUN_0102d1b0",
+      "decompiler_signature": "void FUN_0102d1b0(undefined4 param_1,int param_2,int param_3)",
+      "semantic_family": "scenario_surrender_communication_event",
+      "classification": "UNRESOLVED_BUT_SAFE",
+      "semantic_classification": "LOCAL_SCENARIO_SURRENDER_ORCHESTRATOR",
+      "gameplay_relevance": "Core local scenario/surrender orchestration with communication, space-state, UI, and achievement side effects. The communication event is in-process; online/Pollinator transport is not established.",
+      "contract": {
+        "status": "partial_static_contract",
+        "semantic_summary": "Classifies a scenario surrender request, updates local surrender/communication state, records the anonymous keyed space pair through FUN_00e39ab0, applies local actor/visibility/achievement side effects, and creates a Simulator cCommEvent through the private 0x00aeb720 wrapper.",
+        "entry_shape": {
+          "inputs": ["opaque local actor/event source param_1", "local scenario/space context param_2", "numeric surrender/state selector param_3"],
+          "parameter_limit": "The parameter names are decompiler placeholders; the function does not expose a source-level type contract."
+        },
+        "inputs": ["param_1 local actor/event object", "param_2 local space/player context", "param_3 numeric state/threshold/event selector"],
+        "outputs": ["mutated local surrender/space/communication state", "local achievement-progress side effect", "one or more cCommEvent create-and-dispatch operations"],
+        "preconditions": [
+          "The local simulator, space-trading, and communication services must be available in the exercised mode.",
+          "The selected surrender branch is determined by param_3 and helper-returned state values."
+        ],
+        "postconditions": [
+          "The selected local state/visibility path is updated.",
+          "The anonymous space producer may have inserted independent key-0x0c/27-slot and key-0x06/24-slot entries.",
+          "A cCommEvent is constructed, appended to the communication manager, and immediately applied through the 0x00aeb720 wrapper."
+        ],
+        "side_effects": [
+          "Calls Pollinator::cAchievementsManager::SetProgressFlags with achievementID 1 in the decompiled path.",
+          "Allocates temporary strings SPG_SystemSurrender_Diplomatic_Planet or SPG_SystemSurrender_Diplomatic_Solar and releases them after local service calls.",
+          "May resolve nearest local space objects, mutate local visibility flags, and release borrowed object references."
+        ],
+        "limits": [
+          "The exact surrender subtype and parameter semantics are unresolved.",
+          "The anonymous keyed pair and cCommEvent are separate carriers; their co-production is not payload identity."
+        ]
+      },
+      "local_network_boundary": {
+        "local": "The target operates on local simulator, space-trading, actor, achievement, UI/visibility, and communication-manager services.",
+        "network": {
+          "status": "no_direct_network_edge",
+          "evidence": [
+            "The direct target body contains no socket, protocol, HTTP, or online request call.",
+            "The named cSpaceTrading and Pollinator achievements calls are local service calls in the inspected path.",
+            "cCommEvent is allocated and dispatched in-process by 0x00aeb720 -> 0x00aeb160 -> 0x00aebe90."
+          ],
+          "not_claimed": "A Pollinator namespace label does not establish an online request/response boundary."
+        },
+        "boundary_rule": "Keep local cCommEvent, anonymous keyed space records, App transport, resource records, and persistence as separate families."
+      },
+      "state_event_lifecycle": {
+        "state_owner": "Simulator space/communication state plus local scenario/space and achievement services",
+        "event_carriers": [
+          {"name": "anonymous keyed space pair", "producer": "0x00e39ab0", "shape": "independent key-0x0c/27-slot primary and key-0x06/24-slot sidecar raw entries"},
+          {"name": "Simulator::cCommEvent", "producer": "0x00aeb720 -> 0x00aeb160", "shape": "0xa0-byte object with two vtable pointers, refcount, event fields, and four vectors"}
+        ],
+        "lifecycle": [
+          "FUN_0102df20 dispatches a numeric scenario event and calls this target on selected surrender branches.",
+          "The target computes the surrender variant and local actor/position state.",
+          "FUN_00e39ab0 inserts and populates the independent keyed raw entries when that branch is selected.",
+          "Local visibility, actor, and achievement side effects are applied.",
+          "FUN_00aeb720 constructs a cCommEvent, appends it to the communication manager, and immediately calls FUN_00aebe90 to apply it.",
+          "Temporary strings and borrowed references are released; the cCommEvent follows manager/refcount lifetime."
+        ],
+        "message_shape": "The target does not create one universal event message. It coordinates a raw space-record side effect and a distinct cCommEvent object.",
+        "ordering": "The direct body supports branch order from classification through local state/achievement work to the final cCommEvent wrapper. Exact runtime listener timing and cross-family atomicity are unresolved."
+      },
+      "data_resource_persistence_impact": {
+        "local_data": [
+          "surrender selector and local scenario/space state",
+          "object IDs and positions resolved by local helpers",
+          "independent key-0x0c/27-slot and key-0x06/24-slot raw entries",
+          "local cCommEvent fields and communication-manager list state",
+          "local achievement progress flags"
+        ],
+        "resource_io": "No direct Resource::IRecord, resource stream, or file read/write. Object IDs may be resolved through local noun/space helpers, but no resource record identity is established.",
+        "persistence": "The cCommEvent is serializable by vtable family, but the target does not call a game persistence codec and no exact cCommEvent read-back is recovered. The anonymous keyed pair has a conditional App/Telemetry dump through generic container helpers when the table threshold is exceeded, followed by key removal; this is not game-save persistence.",
+        "ownership": "The anonymous raw entries are owned by the DAT_015fd910 keyed container. The cCommEvent is allocated as a 0xa0 object, appended to the communication manager, and reference-managed. The two ownership graphs must not be merged."
+      },
+      "family_relationships": {
+        "family": "Scenario surrender and space/communication orchestration",
+        "related": [
+          {"address": "0x0102df20", "name": "FUN_0102df20", "relation": "direct sibling dispatcher; calls this target on four surrender/state branches"},
+          {"address": "0x00e39ab0", "name": "FUN_00e39ab0", "relation": "anonymous keyed space-record producer co-called by this target"},
+          {"address": "0x00aeb720", "name": "j_Sim_cCommManager_CreateSpaceCommEvent", "relation": "private create-and-dispatch wrapper"},
+          {"address": "0x00aeb160", "name": "FUN_00aeb160", "relation": "allocates and appends the 0xa0 cCommEvent"},
+          {"address": "0x00aebe90", "name": "FUN_00aebe90", "relation": "applies/consumes the cCommEvent and drives local space/UI/gameplay effects"},
+          {"address": "0x00676e90", "name": "Pollinator::cAchievementsManager::SetProgressFlags", "relation": "local achievement side effect, not proven network"}
+        ],
+        "do_not_merge_with": [
+          "anonymous key-0x0c/27-slot and key-0x06/24-slot records as a cCommEvent variant",
+          "App::StandardMessage and deferred queue records",
+          "UTFWin::Message and animation messages",
+          "Resource::IRecord and game persistence records"
+        ],
+        "family_evidence": "The target directly calls both 0x00e39ab0 and 0x00aeb720. The 0x00e39ab0 builder creates raw keyed entries, while 0x00aeb160 allocates the distinct 0xa0 cCommEvent and 0x00aebe90 consumes it. No dataflow joins the two objects."
+      },
+      "chokepoint_propagation": {
+        "role": "Scenario surrender-to-communication orchestration chokepoint",
+        "direct_callers": 1,
+        "direct_callees": 53,
+        "incoming_reference_edges": 4,
+        "outgoing_reference_edges": 74,
+        "direct_gameplay_callers": 1,
+        "root_dependency_edges": 5,
+        "downstream_unlock_count": {
+          "unique_direct_callee_endpoints": 53,
+          "outgoing_reference_edges": 74,
+          "incoming_call_sites": 4,
+          "named_event_unlock_surfaces": 2,
+          "transitive_count": "not computed; static call edges are not runtime reachability"
+        },
+        "representative_unlocks": [
+          "anonymous keyed space-record producer",
+          "cCommManager create/dispatch path",
+          "local actor/visibility and achievement side effects",
+          "downstream space/UI/communication consumers"
+        ]
+      },
+      "evidence_triangulation": [
+        {"kind": "target_decompilation", "source": "Ghidra 0x0102d1b0", "finding": "Surrender classification, local state updates, achievement call, temporary labels, and final cCommEvent wrapper."},
+        {"kind": "direct_caller_sibling", "source": "Ghidra 0x0102df20", "finding": "Numeric dispatcher calls the target on four selected branches and also creates other local surrender/communication events."},
+        {"kind": "anonymous_record_builder", "source": "Ghidra 0x00e39ab0 and the focused space-pair resolution", "finding": "Independent raw key-0x0c/27-slot and key-0x06/24-slot entries under a common owner; no cCommEvent object flow."},
+        {"kind": "communication_structure", "source": "Ghidra 0x00aeb720, 0x00aeb160, 0x00aebe90, and structure:cCommEvent", "finding": "0xa0 allocation, manager append, refcount-shaped object, and immediate application path."},
+        {"kind": "state_and_sibling_consumer", "source": "Ghidra 0x0102df20 and committed event-family artifacts", "finding": "The target is one member of a local surrender/space event family, not a universal event ABI."},
+        {"kind": "persistence_separator", "source": "focused space-pair resolution and cCommEvent layout", "finding": "Conditional App/Telemetry encoding is separate from game persistence, resource serialization, and network protocol framing."},
+        {"kind": "negative_network_check", "source": "Ghidra direct callees and strings", "finding": "No direct network, socket, protocol, or online request edge appears in the target."}
+      ],
+      "confidence": {
+        "overall": 0.87,
+        "body_behavior": 0.96,
+        "surrender_role": 0.79,
+        "carrier_separation": 0.94,
+        "event_timing": 0.58,
+        "persistence_boundary": 0.9,
+        "network_boundary": 0.94,
+        "classification": 0.88
+      },
+      "validation_strategy": {
+        "status": "NEEDS_RUNTIME",
+        "static": [
+          "Enumerate the four 0x0102df20 callsites and label their surrender branches from the selected input/state values.",
+          "Trace the exact param_1/param_2/param_3 dataflow into FUN_00e39ab0 and the cCommEvent constructor.",
+          "Keep the anonymous keyed pair, cCommEvent, achievement progress, and temporary strings as separate lifecycle records."
+        ],
+        "runtime": [
+          "Trigger one local diplomatic Planet surrender and one local Solar surrender if both are available without network.",
+          "Capture the 0x00e39ab0 key/value-node identities, the 0xa0 cCommEvent allocation and manager append, the 0x00aebe90 application, the achievement call, and the temporary string lifecycle.",
+          "Record whether any network syscall/service is crossed; absence in one branch is not generalized to all indirect paths without a larger trace."
+        ]
+      },
+      "unresolved_questions": [
+        "What exact numeric/state values select diplomatic Planet versus Solar surrender?",
+        "What are param_1, param_2, and param_3 semantically?",
+        "Which raw keyed entry is consumed by the local space state and what is the key-0x06 sidecar's consumer?",
+        "What exact cCommEvent fields are populated for each surrender branch?",
+        "Does the achievement progress flag persist to a save or remain runtime-only?",
+        "What is the runtime ordering between the keyed space entry, cCommEvent application, and visible UI changes?",
+        "Does any indirect path cross a network service in a mode not covered by the direct call graph?"
+      ],
+      "competing_hypotheses": [
+        {
+          "id": "EV-H1",
+          "claim": "The target is a local surrender orchestrator that coordinates space state, UI, achievements, and cCommEvent application.",
+          "supporting_evidence": ["Direct body branches and local strings", "Four calls from the sibling dispatcher", "Direct cCommEvent wrapper and achievement call"],
+          "contradicting_evidence": ["Exact subtype names and argument semantics are unresolved"],
+          "status": "SUPPORTED_WITH_LIMIT",
+          "smallest_experiment": "Trigger one surrender branch and capture the order of the raw keyed insertion, cCommEvent allocation/application, and local UI/achievement effects."
+        },
+        {
+          "id": "EV-H2",
+          "claim": "The anonymous keyed pair is a cCommEvent variant or projection.",
+          "supporting_evidence": ["Both are co-produced in 0x0102d1b0 and 0x0102df20", "Both are in the space/surrender neighborhood"],
+          "contradicting_evidence": ["0x00e39ab0 creates raw 27/24-slot keyed values", "0x00aeb160 creates a separate 0xa0 two-vtable/refcount object", "No dataflow joins the pair and cCommEvent"],
+          "status": "REJECTED_AS_ESTABLISHED_RELATION",
+          "smallest_experiment": "Trace one instance identity from 0x00e39ab0 through 0x00aeb160 and compare vtable, key, payload pointer, and release owner."
+        },
+        {
+          "id": "EV-H3",
+          "claim": "The target publishes through an online Sporepedia/Pollinator service.",
+          "supporting_evidence": ["Pollinator and Sporepedia package labels"],
+          "contradicting_evidence": ["Direct path is simulator/space/UI/achievement", "No network, request, socket, or protocol edge"],
+          "status": "REJECTED",
+          "smallest_experiment": "Repeat the local surrender with networking disabled and verify the cCommEvent and keyed-state effects still occur."
+        },
+        {
+          "id": "EV-H4",
+          "claim": "The target's App/Telemetry path is game-save persistence.",
+          "supporting_evidence": ["A conditional keyed-container byte-writing path exists in the surrounding space-record family"],
+          "contradicting_evidence": ["The path is App/Telemetry, generic, conditional, and followed by key removal", "No cGamePersistenceManager, ClassSerializer, or read-back path is directly joined"],
+          "status": "REJECTED_AS_ESTABLISHED_PERSISTENCE",
+          "smallest_experiment": "If a save round trip is required, capture the telemetry stream and a separate game-save stream in the same surrender trace; do not infer equality from co-occurrence."
+        }
+      ],
+      "smallest_experiment": {
+        "required": true,
+        "name": "surrender_carrier_separation_trace",
+        "procedure": "Run one local diplomatic surrender with read-only probes at 0x0102df20, 0x0102d1b0, 0x00e39ab0, 0x00aeb720, 0x00aeb160, and 0x00aebe90. Record caller parameters, keyed owner/key/value-node identities, cCommEvent vtable and manager-list insertion, achievement call, and any network service crossing.",
+        "pass_condition": "The anonymous keyed record, cCommEvent, achievement state, and UI effects are observed as separate lifecycles and the surrender selector is correlated with one branch.",
+        "failure_boundary": "If only the cCommEvent is observed, retain the keyed pair as a conditional side effect; if only the pair is observed, retain cCommEvent as a separate downstream path."
+      },
+      "runtime_status": "not_performed",
+      "sources": [
+        "Ghidra SporeApp.exe:0x0102d1b0",
+        "Ghidra SporeApp.exe:0x0102df20",
+        "Ghidra SporeApp.exe:0x00e39ab0",
+        "Ghidra SporeApp.exe:0x00aeb720",
+        "Ghidra SporeApp.exe:0x00aeb160",
+        "Ghidra SporeApp.exe:0x00aebe90",
+        "Ghidra SporeApp.exe:0x00676e90",
+        "Ghidra SporeApp.exe:structure:cCommEvent",
+        "knowledgegraph/research/architecture-resolution/followup-05-space-pair.json",
+        "knowledgegraph/research/architecture-resolution/track-11-space-records-conditional.json",
+        "knowledgegraph/research/conflicts/track-a-type-signature.json",
+        "knowledgegraph/research/state-machines/global-events.json",
+        "knowledgegraph/research/residual-unknowns/worker-16-sporepedia-online.json"
+      ]
+    }
+  ]
+}

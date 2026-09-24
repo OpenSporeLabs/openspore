@@ -1,0 +1,262 @@
+{
+  "$schema": "openspore-semantic-decomp-worker/1.0.0",
+  "artifact": "knowledgegraph/research/semantic-decomp/worker-01-gameglobal.json",
+  "worker": {
+    "id": "worker-01-gameglobal",
+    "scope": "GameGlobal/resource group",
+    "package": "PKG-20-GAMEGLOBAL",
+    "target_order": ["0x00e5c780", "0x006a25a0", "0x00576650", "0x00b3d4f0"],
+    "ownership_rule": "The four target addresses are the complete scope of this artifact.",
+    "write_policy": "One new research JSON file only; no source, original binary, Ghidra state, canonical KG, triage artifact, or historical artifact mutation."
+  },
+  "basis": {
+    "binary": "SporeApp.exe",
+    "architecture": "x86:LE:32",
+    "image_base": "0x00400000",
+    "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+    "canonical_snapshot": "f0e310e0",
+    "canonical_xref_export": "knowledgegraph/triage/xrefs-2540f2ca.tsv",
+    "canonical_xref_sha256": "89e74b8a03c4db38a1927f8c95c38db507bf99cb8a11de6b6eb6a9484d8c79cb",
+    "analysis_mode": "Targeted read-only Ghidra decompilation, disassembly, xrefs, caller/callee, type, and raw-memory inspection plus repository and SDK cross-checks.",
+    "runtime_evidence": "none",
+    "mutations": []
+  },
+  "contracts": [
+    {
+      "target": {
+        "va": "0x00e5c780",
+        "rva": "0x00a5c780",
+        "name": "map_int_whatever_find",
+        "subsystem": "GameGlobal",
+        "triage_category": "GAMEPLAY_LOGIC",
+        "semantic_role": "generic unsigned ordered-map exact-find primitive"
+      },
+      "contract_status": {
+        "status": "STATIC_CONTRACT",
+        "semantic_understanding": "bounded_static_contract",
+        "runtime_validated": false,
+        "reason": "The traversal, output convention, and exact-key check are mechanically established. The helper is polymorphic over map owners and values, so it is a container primitive rather than a GameGlobal singleton."
+      },
+      "classification": {
+        "class": "CONTAINER_ALGORITHM",
+        "boundary": "generic ordered-map lookup prerequisite",
+        "reconstruction_role": "opaque typed map adapter",
+        "gameplay_relevance": "mixed high-fan-in infrastructure and gameplay",
+        "is_singleton": false
+      },
+      "confidence": {
+        "score": 0.96,
+        "label": "high",
+        "mechanics": 0.99,
+        "identity": 0.86,
+        "owner_and_value_semantics": 0.68,
+        "basis": [
+          "The target disassembly gives the exact unsigned tree walk, sentinel, and output-pointer behavior.",
+          "Direct callers 0x00b21340 and 0x00ba9370 independently pass the same map and output-iterator shape.",
+          "Repository architecture evidence identifies the same EASTL offsets but its lower-bound claim conflicts with the target's final equality check."
+        ]
+      },
+      "identity": {
+        "ghidra_name": "map_int_whatever_find",
+        "sdk_name": "map_int_whatever_find",
+        "name_evidence": "SUPPORTED",
+        "semantic_name": "eastl_map_exact_find",
+        "historical_label_caveat": "The target's final candidate-key check makes this exact find. Existing repository lower_bound claims are retained as a contradiction, not silently adopted.",
+        "identity_boundary": "The function does not identify one owner or one value type."
+      },
+      "signature": {
+        "calling_convention": "__thiscall",
+        "prototype": "MapNode* __thiscall map_int_whatever_find(MapType* map, MapNode** out, const uint32_t* key)",
+        "observed_return": "EAX receives the same node pointer written through out; the current Ghidra typed signature is undefined/void, so the assembly ABI is authoritative here.",
+        "stack_cleanup": "RET 0x8"
+      },
+      "parameters": [
+        {"ordinal": 0, "name": "map", "storage": "ECX", "type": "MapType*", "meaning": "Sentinel-backed ordered map object."},
+        {"ordinal": 1, "name": "out", "storage": "stack", "type": "MapNode**", "direction": "out", "meaning": "Receives the node whose key equals *key, or the end sentinel when no exact match exists."},
+        {"ordinal": 2, "name": "key", "storage": "stack", "type": "const uint32_t*", "meaning": "Pointer to the unsigned search key."}
+      ],
+      "return_value": {"type": "MapNode*", "value": "The exact-key node written to out, or the end sentinel when no exact match exists.", "caveat": "No separate found flag is returned; equality is enforced by the final comparison."},
+      "preconditions": ["map points to a valid sentinel-backed map.", "out is writable.", "key points to a readable uint32_t.", "The map is not structurally mutated concurrently."],
+      "postconditions": ["An exact-key node or map end sentinel is written to out; a strictly greater successor is rejected.", "Map header and nodes are not modified.", "No allocation, deletion, callback, lock, or exception operation occurs."],
+      "control_flow": [
+        "Initialize candidate to map+0x04 and load root from map+0x0c.",
+        "Compare node key at node+0x10 with *key using unsigned JC semantics.",
+        "Move left when node key is smaller; otherwise save candidate and move right.",
+        "At termination, reject the sentinel and reject the candidate when candidate key is greater than *key; equality is the only accepted candidate."
+      ],
+      "reads": ["map+0x04 end sentinel", "map+0x0c root", "node+0x00 left", "node+0x04 right", "node+0x10 uint32_t key", "*key"],
+      "writes": [{"location": "*out", "meaning": "exact-key node or end sentinel", "kind": "single output store"}],
+      "side_effects": {"items": ["Writes the caller output pointer and returns that pointer in EAX."], "not_observed": ["map mutation", "allocation", "reference counting", "callback", "lock"]},
+      "constants": [{"value": "0x04", "meaning": "map end sentinel displacement"}, {"value": "0x0c", "meaning": "map root displacement"}, {"value": "0x10", "meaning": "node key displacement"}, {"value": "0x14", "meaning": "node payload displacement in consumers"}, {"value": "0x08", "meaning": "RET stack cleanup"}],
+      "globals": [],
+      "structs": [
+        {"name": "EASTL ordered map/node", "status": "observed layout", "fields": ["map+0x04 end", "map+0x0c root", "node+0x00 left", "node+0x04 right", "node+0x10 uint32_t key", "node+0x14 opaque payload"]},
+        {"name": "cGameNounManager", "status": "representative owner", "field": "mNounMap at receiver+0x98; the helper receives the map beginning there."},
+        {"name": "cStarManager", "status": "representative owner", "field": "mEmpires at receiver+0x150; end sentinel observed at receiver+0x154."}
+      ],
+      "callees": {"count": 0, "items": [], "status": "leaf"},
+      "siblings": [
+        {"va": "0x00612db0", "name": "FUN_00612db0", "relationship": "Separate sorted-vector lower_bound; same ordered-search concept, not the tree implementation."},
+        {"va": "0x0059c740", "name": "map_int_EditorCreatureControllerPtr__get", "relationship": "Adjacent exact map getter with the same candidate update and final key-equality check; it returns a payload or default."},
+        {"va": "0x00ba8420", "name": "FUN_00ba8420", "relationship": "Ordered-map insertion helper using the same tree child/key layout."},
+        {"va": "0x00ba9370", "name": "FUN_00ba9370", "relationship": "cStarManager empire lookup wrapper; passes cStarManager+0x150 and reads node payload +0x14."},
+        {"va": "0x00b21340", "name": "FUN_00b21340", "relationship": "Noun-data materialization helper; uses this lookup and inserts through 0x00ba8420 on a miss."}
+      ],
+      "callers": {
+        "canonical": {"unique_direct_caller_functions": 239, "direct_call_references": 265, "gameplay_fan_in": 49, "fan_out_internal": 0, "fan_out_external": 0},
+        "read_only_ghidra": {"unique_direct_caller_functions": 239, "direct_call_xrefs": 308},
+        "representative": [
+          {"va": "0x00b21340", "name": "FUN_00b21340", "use": "noun lookup/materialization"},
+          {"va": "0x00ba9370", "name": "FUN_00ba9370", "use": "empire map lookup"},
+          {"va": "0x01021300", "name": "FUN_01021300", "use": "lazy current-empire cache validation"},
+          {"va": "0x00e9c9a0", "name": "FUN_00e9c9a0", "use": "typed noun-data consumer documented in repository conflict resolution"}
+        ]
+      },
+      "family_links": [
+        {"family": "EASTL ordered map", "links": ["0x00e5c780 exact_find", "0x00ba8420 insertion", "0x00ba9370 lookup", "0x00b21340 noun materialization"]},
+        {"family": "Simulator noun/empire registries", "links": ["cGameNounManager.mNounMap", "cStarManager.mEmpires", "0x01021300"]}
+      ],
+      "chokepoint_propagation": {
+        "role": "high-fan-in generic lookup chokepoint",
+        "downstream_counts": {"canonical_unique_direct_callers": 239, "canonical_direct_call_references": 265, "canonical_gameplay_direct_callers": 49, "canonical_internal_fan_out": 0, "canonical_external_fan_out": 0, "read_only_ghidra_direct_call_xrefs": 308},
+        "propagation": "The leaf algorithm reaches noun materialization, empire lookup, cache validation, editor, UI, terrain, and other map-owning domains. Its risk is that a caller expecting a lower-bound successor will receive the stricter exact-key result.",
+        "downstream_families": ["PKG-01-SHARED-STATE-ROOTS", "PKG-06-CELL-STATE", "PKG-11-SIM-CORE", "PKG-12-SIM-SPACE", "PKG-13-SIM-CREATURE-TRIBECIV", "PKG-20-GAMEGLOBAL", "PKG-21-UNKNOWN-ROUTING"]
+      },
+      "evidence": [
+        {"source": "ghidra://SporeApp.exe@0x00e5c780", "kind": "disassembly", "statement": "The 31 instructions load map+0x0c, use map+0x04 as sentinel, compare node+0x10 unsigned against *key, reject a candidate whose key is greater than *key, write the exact candidate through the output pointer, and return with RET 0x8."},
+        {"source": "ghidra://SporeApp.exe@0x00e5c780", "kind": "decompilation", "statement": "Targeted pseudocode exposes the same sentinel-backed tree traversal and output assignment."},
+        {"source": "ghidra://SporeApp.exe@0x00b21340", "kind": "direct_caller", "statement": "The caller passes a noun-ID key and output local, compares to the owner map end sentinel, and invokes insertion on a miss."},
+        {"source": "ghidra://SporeApp.exe@0x00ba9370", "kind": "direct_caller", "statement": "The caller passes cStarManager+0x150 and reads node payload +0x14."},
+        {"source": "docs/analysis/simulator-shared-state-interface.md:188-216", "kind": "repository", "statement": "The committed interface freeze records mEmpires +0x150, map end +0x154, and payload +0x14."},
+        {"source": "docs/analysis/architecture-resolution.md:50-86", "kind": "repository_contradiction", "statement": "The committed resolution claims lower_bound and rejects exact find; this conflicts with the target's final CMP/JC equality check and is retained as a contradiction."},
+        {"source": "knowledgegraph/research/global-campaign-2026/conflicts/track-a-type-signature.json:602-779", "kind": "repository_contradiction", "statement": "The conflict artifact calls the target an ordered lower-bound helper, while the live target body and sibling 0x0059c740 enforce exact-key selection."}
+      ],
+      "independent_triangulation": [
+        {"claim": "The function is exact find rather than lower_bound.", "sources": ["target final unsigned equality check", "adjacent 0x0059c740 exact getter", "0x00b21340 miss/materialization", "0x00ba9370 end-sentinel wrapper"], "result": "supported; repository lower_bound claims are contradictory"},
+        {"claim": "The key is unsigned 32-bit.", "sources": ["JC comparison", "repository map/key evidence", "decompiler uint type"], "result": "supported"},
+        {"claim": "The helper is not a GameGlobal singleton.", "sources": ["no globals in body", "ECX map receiver and owner-specific callers", "repository shared-state boundary"], "result": "supported"}
+      ],
+      "validation_strategy": [
+        {"id": "map-exact-find-fixture", "type": "static_differential_fixture", "setup": "Map keys 10 and 20; query 15, 20, and 30.", "expected": "15 returns end, 20 returns node 20, 30 returns end, out equals EAX, and map contents are unchanged."},
+        {"id": "consumer-policy-check", "type": "direct_caller_validation", "setup": "Exercise 0x00b21340 and 0x00ba9370 with exact and in-between keys.", "expected": "The wrapper consumes only an exact-key result; it does not receive a greater successor from this helper."}
+      ],
+      "blockers": ["One owner, value type, comparator policy, and mutation policy cannot represent all 239 callers.", "Repository documents describe this helper as lower_bound, contradicting the target's exact-key final check; the contradiction must not be collapsed silently.", "No runtime trace validates exact-key behavior under real map states or concurrent mutation."],
+      "runtime_requirement": {"required": false, "status": "STATIC_READY_FOR_ADAPTER", "reason": "The generic exact-find helper contract is mechanically complete; runtime work is only needed for owner-specific and caller-policy questions.", "smallest_runtime_experiment": {"purpose": "Confirm one real caller's exact-key policy.", "procedure": "At one existing 0x00ba9370 call, log queried ID, end sentinel, returned node key, and subsequent payload use; repeat with an ID between two empire keys.", "expected_observation": "The helper rejects the in-between ID and the wrapper's miss path is taken.", "implementation_boundary": "Debugger observation only; no replacement code or game-state mutation."}},
+      "events": {"items": [], "status": "not_applicable_to_container_primitive"},
+      "transitions": {"items": [], "status": "not_applicable"},
+      "persistence": {"items": [], "status": "not_applicable"},
+      "invariants": {"observed": ["The output pointer is written once on either result path.", "The map itself is read-only in this function."], "semantic_status": "bounded_static"},
+      "next_action": "Expose a typed exact_find adapter and reconcile the stale repository lower_bound claim before dependent work.",
+      "not_claimed": ["A single owner or value type", "A universal caller equality policy", "Runtime parity"]
+    },
+    {
+      "target": {"va": "0x006a25a0", "rva": "0x002a25a0", "name": "Prop_GetPropValueBool", "subsystem": "GameGlobal/resource configuration", "triage_category": "GAMEPLAY_SUPPORT", "semantic_role": "App::DirectPropertyList::GetDirectBool"},
+      "contract_status": {"status": "STATIC_CONTRACT", "semantic_understanding": "static_supported_with_type_blocker", "runtime_validated": false, "reason": "The fast-array/map branches, exact-key check, type conversion, fallback, and temporary-property cleanup are established by the target disassembly and independently matched by the SDK DirectPropertyList implementation and sibling getters."},
+      "classification": {"class": "ENGINE_INTERFACE", "boundary": "resource/property lookup bridge", "reconstruction_role": "typed DirectPropertyList boolean accessor", "gameplay_relevance": "configuration and resource-dependent gameplay", "is_chokepoint": true},
+      "confidence": {"score": 0.95, "label": "high", "mechanics": 0.99, "identity": 0.94, "struct_layout": 0.9, "runtime_behavior": 0.45, "basis": ["Target offsets +0x38/+0x3c and map +0x18/+0x1c match DirectPropertyList.", "The SDK defines the same 0x54-byte receiver and fast-access boolean contract.", "Sibling int and float getters repeat the same two-branch structure."]},
+      "identity": {"ghidra_name": "Prop_GetPropValueBool", "sdk_name": "App::DirectPropertyList::GetDirectBool", "name_evidence": "SUPPORTED_BY_BODY_AND_SDK", "semantic_name": "DirectPropertyList::GetDirectBool", "identity_boundary": "The imported label is generic; the receiver layout identifies DirectPropertyList, not cPropManager."},
+      "signature": {"calling_convention": "__thiscall", "prototype": "bool __thiscall App::DirectPropertyList::GetDirectBool(DirectPropertyList* this, uint32_t propertyID)", "return_abi": "AL is normalized to 0 or 1 on both paths.", "stack_cleanup": "RET 0x4"},
+      "parameters": [{"ordinal": 0, "name": "this", "storage": "ECX", "type": "App::DirectPropertyList*", "meaning": "Direct property list receiver."}, {"ordinal": 1, "name": "propertyID", "storage": "stack", "type": "uint32_t", "meaning": "Property identifier, normally an SDK fast-access ID."}],
+      "return_value": {"type": "bool", "value": "Nonzero fast lane or exact map-backed Bool/Void value becomes true; absent or unsupported values become false.", "fallback": "DAT_015d115d is the false fallback."},
+      "preconditions": ["this is a valid DirectPropertyList or ABI-compatible receiver.", "propertyID is indexed only when less than this+0x38.", "SDK semantics expect fast-access IDs; non-fast IDs are undefined by the SDK even though a map branch exists."],
+      "postconditions": ["Fast IDs read this+0x3c + propertyID*4 and normalize to bool.", "Other IDs use the exact-key vector_map lookup at +0x18/+0x1c.", "A found Property is materialized through 0x006a19b0 and only Bool or Void is accepted.", "The scratch Property at this+0x40 is cleaned through 0x0093db80 when flagged."],
+      "control_flow": ["Compare propertyID with this+0x38.", "Read the fast lane for IDs below the count.", "Call 0x00612db0 for the sorted property map otherwise.", "Reject end, successor, and sentinel candidates.", "Select inline or pointed Property storage, read the first byte, clean scratch state, and return bool."],
+      "reads": ["this+0x18 map begin", "this+0x1c map end", "this+0x2c comparator/support byte", "this+0x38 fast count", "this+0x3c values", "this+0x40 temporary Property", "map-node+0x00 key", "property+0x00 value or pointer", "property+0x10 flags", "property+0x12 type", "DAT_015d115d false fallback"],
+      "writes": [{"location": "this+0x40", "meaning": "temporary Property scratch storage", "kind": "scratch_only"}],
+      "side_effects": {"items": ["Materializes a temporary Property and may invoke cleanup.", "Does not mutate persistent property map or fast-access array in the observed body."], "concurrency": "No lock; caller must provide normal receiver lifetime/ownership conditions."},
+      "constants": [{"value": "0x38", "meaning": "fast count offset"}, {"value": "0x3c", "meaning": "values pointer offset"}, {"value": "0x40", "meaning": "temporary Property offset"}, {"value": "0x01", "meaning": "PropertyType::Bool"}, {"value": "0x10", "meaning": "PropertyType::Void accepted by conversion"}, {"value": "0x04", "meaning": "cleanup flag"}, {"value": "0x30", "meaning": "pointer/skip-deallocation mask"}, {"value": "0x00", "meaning": "false fallback"}],
+      "globals": [{"address": "0x015d115d", "name": "DAT_015d115d", "access": "read", "meaning": "false default", "observation": "Target reads this byte; targeted audit found 28 xrefs to the global and no target write."}],
+      "structs": [
+        {"name": "App::DirectPropertyList", "size": "0x54", "fields": ["vtable +0x00", "PropertyMap +0x18 size 0x18", "parent +0x30", "fast count +0x38", "values +0x3c", "temporary Property +0x40"]},
+        {"name": "App::PropertyList::PropertyMap", "size": "0x18", "meaning": "eastl::vector_map<uint32_t, Property>; begin/end observed at +0x18/+0x1c"},
+        {"name": "App::Property", "status": "partially typed", "fields": ["value storage +0x00", "flags +0x10", "PropertyType +0x12"], "blocker": "Ghidra exposes a 4-byte imported Property stub while SDK source asserts 0x14 and the target accesses +0x10/+0x12."}
+      ],
+      "callees": {"count": 3, "items": [{"va": "0x00612db0", "name": "FUN_00612db0", "callsite": "0x006a25d8", "role": "unsigned sorted-vector lower_bound"}, {"va": "0x006a19b0", "name": "FUN_006a19b0", "callsite": "0x006a25fe", "role": "temporary Property materialization"}, {"va": "0x0093db80", "name": "FUN_0093db80", "callsite": "0x006a263c", "role": "temporary Property cleanup"}], "fan_out_internal": 3, "fan_out_external": 0},
+      "siblings": [{"va": "0x006a2660", "name": "FUN_006a2660", "relationship": "DirectPropertyList::GetDirectInt"}, {"va": "0x006a2710", "name": "FUN_006a2710", "relationship": "DirectPropertyList::GetDirectFloat"}, {"va": "0x006a17e0", "name": "App::DirectPropertyList::SetBool", "relationship": "typed boolean setter"}, {"va": "0x006a1880", "name": "App::DirectPropertyList::SetInt", "relationship": "typed integer setter"}],
+      "callers": {"canonical": {"unique_direct_caller_functions": 99, "direct_call_references": 144, "gameplay_fan_in": 0, "global_fan_in": 14, "fan_out_internal": 3, "fan_out_external": 0}, "read_only_ghidra": {"unique_direct_caller_functions": 99, "direct_call_xrefs": 162}, "representative": [{"va": "0x00b3c1a0", "name": "FUN_00b3c1a0", "use": "queries several feature flags"}, {"va": "0x0040a590", "name": "FUN_0040a590", "use": "editor startup/configuration gate"}, {"va": "0x0058be50", "name": "Editors::cEditor::Update", "use": "editor update"}, {"va": "0x0058a5a0", "name": "Editors::cEditor::Undo", "use": "editor undo path"}]},
+      "family_links": [{"family": "DirectPropertyList accessors", "links": ["0x006a25a0 GetDirectBool", "0x006a2660 GetDirectInt", "0x006a2710 GetDirectFloat"]}, {"family": "App::Property", "links": ["0x006a19b0 temporary Property materialization", "0x0093db80 Property cleanup", "SDK Property::GetBool family"]}],
+      "chokepoint_propagation": {"role": "configuration/property lookup chokepoint", "downstream_counts": {"canonical_unique_direct_callers": 99, "canonical_direct_call_references": 144, "canonical_gameplay_direct_callers": 0, "global_fan_in": 14, "fan_out_internal": 3, "read_only_ghidra_direct_call_xrefs": 162}, "propagation": "The accessor gates editor, renderer, UI, startup, and resource-dependent behavior through shared property IDs. Its impact is configuration semantics rather than a gameplay state transition.", "downstream_families": ["PKG-20-GAMEGLOBAL", "PKG-02-APP-LIFECYCLE", "PKG-03-RESOURCE-IO", "editor and UI consumers"]},
+      "evidence": [{"source": "ghidra://SporeApp.exe@0x006a25a0", "kind": "disassembly", "statement": "The body compares propertyID to +0x38, reads +0x3c + id*4 on the fast path, calls 0x00612db0 on the map path, and returns a normalized byte."}, {"source": "ghidra://SporeApp.exe@0x006a25a0", "kind": "decompilation", "statement": "Pseudocode shows exact-key rejection, Property type/flag selection, DAT_015d115d fallback, and cleanup call."}, {"source": "ghidra://SporeApp.exe@0x006a2660", "kind": "sibling", "statement": "GetDirectInt repeats the same fast-array and vector_map branches."}, {"source": "ghidra://SporeApp.exe@0x006a2710", "kind": "sibling", "statement": "GetDirectFloat repeats the same fast-array and vector_map branches."}, {"source": "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/App/DirectPropertyList.h:31-46,109-145", "kind": "SDK", "statement": "The SDK defines the 0x54-byte DirectPropertyList and GetDirectBool fast-access contract."}, {"source": "docs/analysis/reconstruction-research-queue.md:202", "kind": "repository", "statement": "The committed queue records the target as a 99-fan-in GameGlobal support bridge with three callees."}],
+      "independent_triangulation": [{"claim": "The receiver is DirectPropertyList rather than cPropManager.", "sources": ["target field offsets", "Ghidra DirectPropertyList layout", "SDK DirectPropertyList layout"], "result": "supported"}, {"claim": "The method returns false for absent or wrong-type values.", "sources": ["target end/type branches", "DAT_015d115d zero fallback", "sibling getter pattern"], "result": "supported"}, {"claim": "Persistent property data is not changed by the getter.", "sources": ["only observed write is temporary Property +0x40", "sibling getter pattern", "SDK getter contract"], "result": "supported"}],
+      "validation_strategy": [{"id": "direct-bool-fixture", "type": "static_differential_fixture", "setup": "Create a valid DirectPropertyList with fast count 1, a false/true lane, exact Bool map value, wrong-type value, and absent ID.", "expected": "Fast lane and exact Bool return expected bool; wrong type and absent return false; temporary cleanup occurs only for flagged Property."}, {"id": "sibling-parity", "type": "static_cross_check", "setup": "Run the same receiver shape through 0x006a2660 and 0x006a2710.", "expected": "All three getters preserve fast-count, exact-key, type-default, and cleanup conventions."}],
+      "blockers": ["Ghidra's imported Property type is a 4-byte stub while the target requires offsets +0x10/+0x12.", "The SDK declares non-fast IDs undefined for GetDirectBool even though the binary has a map fallback.", "No original runtime trace validates property values or cleanup lifetime."],
+      "runtime_requirement": {"required": false, "status": "STATIC_READY_WITH_TYPE_CLEANUP", "reason": "Mechanics and receiver identity are established; runtime is optional for value-level confirmation.", "smallest_runtime_experiment": {"purpose": "Confirm one fast and one map-backed read.", "procedure": "Log receiver address, propertyID, branch, returned AL, and temporary Property flags at 0x006a25a0 for one known configuration ID.", "expected_observation": "The branch and return match the static contract and no persistent map write occurs.", "implementation_boundary": "Debugger observation only; no replacement code or game-state mutation."}},
+      "events": {"items": [], "status": "not_applicable_to_property_getter"},
+      "transitions": {"items": [], "status": "not_applicable"},
+      "persistence": {"items": [], "status": "not_applicable"},
+      "invariants": {"observed": ["Persistent map and fast-access array are read-only in this function.", "Return is normalized to boolean."], "semantic_status": "static_supported"},
+      "next_action": "Repair the imported Property type metadata before using this accessor as a typed reconstruction boundary.",
+      "not_claimed": ["cPropManager identity", "safe semantics for arbitrary non-fast IDs", "runtime property values"]
+    },
+    {
+      "target": {"va": "0x00576650", "rva": "0x00176650", "name": "TexturePtr_Set", "subsystem": "GameGlobal/resource lifetime", "triage_category": "GAMEPLAY_LOGIC", "semantic_role": "eastl::intrusive_ptr<Graphics::Texture>::operator="},
+      "contract_status": {"status": "STATIC_CONTRACT", "semantic_understanding": "static_supported", "runtime_validated": false, "reason": "The atomic reference-count order, equality no-op, pointer publication, release clamp, and no-delete behavior are explicit in the target disassembly and independently corroborated by the SDK Texture and TexturePtr definitions."},
+      "classification": {"class": "RESOURCE_LIFETIME", "boundary": "shared graphics resource handle assignment", "reconstruction_role": "intrusive Texture pointer assignment", "gameplay_relevance": "rendering/resource dependent", "is_singleton": false},
+      "confidence": {"score": 0.97, "label": "high", "mechanics": 0.99, "identity": 0.95, "ownership": 0.9, "runtime_behavior": 0.5, "basis": ["The 33-instruction disassembly shows the complete assignment and atomic XADD sequence.", "SDK Texture.h defines TexturePtr as eastl::intrusive_ptr<Graphics::Texture> and mnRefCount at +0x08.", "Adjacent 0x005766b0 and 0x005766e0 show the same intrusive-handle family."]},
+      "identity": {"ghidra_name": "TexturePtr_Set", "sdk_name": "eastl::intrusive_ptr<Graphics::Texture>::operator=", "name_evidence": "SUPPORTED_BY_BODY_AND_SDK", "semantic_name": "TexturePtr assignment", "identity_boundary": "The receiver is a pointer slot embedded in a larger object, not a Texture object itself."},
+      "signature": {"calling_convention": "__thiscall", "prototype": "void __thiscall eastl::intrusive_ptr<Graphics::Texture>::operator=(intrusive_ptr<Graphics::Texture>* this, Graphics::Texture* rhs)", "return_abi": "No value return; the slot is updated in place.", "stack_cleanup": "RET 0x4"},
+      "parameters": [{"ordinal": 0, "name": "this", "storage": "ECX", "type": "intrusive_ptr<Graphics::Texture>*", "meaning": "Address of the one-word pointer slot."}, {"ordinal": 1, "name": "rhs", "storage": "stack", "type": "Graphics::Texture*", "meaning": "New texture pointer, or null."}],
+      "return_value": {"type": "void", "value": "The caller's slot is updated; no ownership is transferred to the caller separately."},
+      "preconditions": ["this points to a writable intrusive pointer slot.", "rhs is null or a live Graphics::Texture whose reference count is at +0x08.", "The slot is not concurrently assigned without the same external synchronization assumptions as the original intrusive_ptr."],
+      "postconditions": ["If rhs equals the old pointer, the function is a complete no-op.", "If rhs is non-null, rhs->mnRefCount is atomically incremented before publication.", "The slot is assigned rhs.", "If the old pointer is non-null, old->mnRefCount is atomically decremented.", "If the old post-decrement count is below 1, it is restored to 1; the function does not delete the Texture."],
+      "control_flow": ["Read old pointer from [this] and rhs from the stack.", "Return immediately when equal.", "Atomically increment rhs+0x08 when rhs is non-null.", "Publish rhs into [this].", "Atomically decrement old+0x08 and clamp a resulting count below 1 back to 1."],
+      "reads": ["this+0x00 old Texture pointer", "rhs+0x08 reference count", "old+0x08 reference count"],
+      "writes": [{"location": "this+0x00", "meaning": "new Texture pointer"}, {"location": "rhs+0x08", "meaning": "atomic increment when rhs is non-null"}, {"location": "old+0x08", "meaning": "atomic decrement and possible clamp-to-one restore"}],
+      "side_effects": {"items": ["Reference-count update is performed with LOCK XADD.", "Old pointer is released after the new pointer is published.", "No callee, virtual call, allocation, or deletion occurs."], "concurrency": "Reference counts are atomic; pointer publication and equality are ordinary instructions in the observed body."},
+      "constants": [{"value": "+0x08", "meaning": "Texture::mnRefCount offset"}, {"value": "+0x01", "meaning": "new reference increment"}, {"value": "-0x01", "meaning": "old reference decrement"}, {"value": "0x01", "meaning": "minimum restored reference count"}, {"value": "LOCK XADD", "meaning": "atomic read-modify-write"}],
+      "globals": [],
+      "structs": [{"name": "eastl::intrusive_ptr<Graphics::Texture>", "size": "0x04", "field": "single Texture pointer"}, {"name": "Graphics::Texture", "size": "0x20", "fields": ["Raster* +0x00", "flags +0x04", "mnRefCount +0x08", "field_0C +0x0c", "ResourceKey +0x10", "resource pointer +0x1c"]}],
+      "callees": {"count": 0, "items": [], "status": "leaf"},
+      "siblings": [{"va": "0x005766b0", "name": "FUN_005766b0", "relationship": "Adjacent intrusive-handle clear/reset path; clears the slot and releases the old object with the same no-delete clamp family."}, {"va": "0x005766e0", "name": "FUN_005766e0", "relationship": "Adjacent intrusive-handle attach/copy path; reads a source handle and invokes the handle's ref-count methods."}],
+      "callers": {"canonical": {"unique_direct_caller_functions": 67, "direct_call_references": 118, "gameplay_fan_in": 0, "global_fan_in": 2, "fan_out_internal": 0, "fan_out_external": 0}, "read_only_ghidra": {"unique_direct_caller_functions": 67, "direct_call_xrefs": 124}, "representative": [{"va": "0x00580700", "name": "FUN_00580700", "use": "editor texture/object setup"}, {"va": "0x00659270", "name": "FUN_00659270", "use": "render-target texture assignment"}, {"va": "0x00ae4430", "name": "FUN_00ae4430", "use": "copy assignment of a structure containing a TexturePtr"}, {"va": "0x00f3d210", "name": "FUN_00f3d210", "use": "graphics/material path"}, {"va": "0x00fba330", "name": "FUN_00fba330", "use": "repeated graphics resource assignment"}]},
+      "family_links": [{"family": "TexturePtr", "links": ["TexturePtr_Set operator=", "0x005766b0 clear/reset", "0x005766e0 attach/copy"]}, {"family": "Graphics::Texture", "links": ["Texture::AddRef", "Texture::Release", "mnRefCount +0x08", "ResourceKey +0x10"]}, {"family": "resource ownership", "links": ["IRenderTargetManager::GetTexture", "editor texture records", "material/render callers"]}],
+      "chokepoint_propagation": {"role": "shared texture-handle assignment chokepoint", "downstream_counts": {"canonical_unique_direct_callers": 67, "canonical_direct_call_references": 118, "canonical_gameplay_direct_callers": 0, "global_fan_in": 2, "canonical_internal_fan_out": 0, "read_only_ghidra_direct_call_xrefs": 124}, "propagation": "The assignment helper is used by editor setup, render-target, material, skinning, and graphics structures. A wrong order can create a dangling texture or double-release; an equality mistake causes unnecessary reference churn.", "downstream_families": ["PKG-20-GAMEGLOBAL", "PKG-15-EDITOR-SUPPORT", "graphics/render/resource consumers"]},
+      "evidence": [{"source": "ghidra://SporeApp.exe@0x00576650", "kind": "disassembly", "statement": "The target compares old/rhs, uses LOCK XADD for rhs+8 and old+8, stores rhs into the slot, and restores a below-one old count to one."}, {"source": "ghidra://SporeApp.exe@0x00576650", "kind": "decompilation", "statement": "Pseudocode independently shows the same add-new, publish, release-old sequence."}, {"source": "ghidra://SporeApp.exe@0x005766b0", "kind": "sibling", "statement": "The adjacent clear/reset path also clears the slot and clamps the reference count without deletion."}, {"source": "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Graphics/Texture.h:26-30,45-75,84-97", "kind": "SDK", "statement": "TexturePtr is eastl::intrusive_ptr<Graphics::Texture>; Texture stores mnRefCount at +0x08 and Release restores a below-one count to one without deleting itself."}, {"source": "docs/analysis/reconstruction-research-queue.md:128", "kind": "repository", "statement": "The committed queue records TexturePtr_Set as a 67-fan-in GameGlobal resource-content candidate with no callees."}],
+      "independent_triangulation": [{"claim": "The target is intrusive Texture pointer assignment rather than a raw Texture store.", "sources": ["atomic refcount at +0x08", "SDK TexturePtr typedef", "adjacent intrusive-handle siblings"], "result": "supported"}, {"claim": "The old object is released after the new object is published.", "sources": ["target instruction order", "intrusive_ptr assignment convention", "adjacent clear/reset path"], "result": "supported"}, {"claim": "Release does not delete the texture in this helper.", "sources": ["target has no call or delete branch", "SDK Texture::Release comment and clamp", "adjacent reset path"], "result": "supported"}],
+      "validation_strategy": [{"id": "texture-assignment-fixture", "type": "static_differential_fixture", "setup": "Use a slot with old texture A and rhs B, then repeat with rhs equal to A, rhs null, and an old count of one.", "expected": "Equality is a no-op; non-null rhs is incremented before publication; old is decremented after publication; below-one old count returns to one; no deletion call occurs."}, {"id": "refcount-order-check", "type": "static_cross_check", "setup": "Trace the slot, rhs+0x08, and old+0x08 at each instruction boundary.", "expected": "Order matches the contract and LOCK XADD is preserved."}],
+      "blockers": ["Ghidra has no typed this association for the imported helper.", "The original runtime object population and external lifetime owners are not observed.", "No runtime trace validates behavior under real concurrent TexturePtr assignment."],
+      "runtime_requirement": {"required": false, "status": "STATIC_READY_FOR_RESOURCE_ADAPTER", "reason": "The assignment mechanics and SDK ownership rule are sufficient for an opaque adapter; runtime is optional for lifetime confirmation.", "smallest_runtime_experiment": {"purpose": "Confirm one real replacement order.", "procedure": "At one existing 0x00576650 call, log old, rhs, old+8, rhs+8, and the slot immediately before and after the call.", "expected_observation": "The observed refcount and publication order match the static contract.", "implementation_boundary": "Debugger observation only; no replacement code or game-state mutation."}},
+      "events": {"items": [], "status": "not_applicable_to_handle_assignment"},
+      "transitions": {"items": [], "status": "not_applicable"},
+      "persistence": {"items": [], "status": "not_applicable"},
+      "invariants": {"observed": ["Equal pointers are not released twice.", "Reference counts never remain below one in the observed release path."], "semantic_status": "static_supported"},
+      "next_action": "Keep this as an opaque intrusive TexturePtr assignment boundary and validate one real resource transition.",
+      "not_claimed": ["A concrete owner for every containing slot", "A deletion policy for the Texture object beyond the observed clamp", "Runtime concurrency parity"]
+    },
+    {
+      "target": {"va": "0x00b3d4f0", "rva": "0x0073d4f0", "name": "Simulator_GetUIMissionLogManager", "subsystem": "GameGlobal/Simulator UI", "triage_category": "GAMEPLAY_LOGIC", "semantic_role": "read-only global accessor for a UI mission-log manager handle"},
+      "contract_status": {"status": "NEEDS_RUNTIME", "semantic_understanding": "static_mechanics_with_unresolved_lifetime", "runtime_validated": false, "reason": "The two-instruction accessor and global slot are established, and consumers prove that the returned value is used as a vtable-bearing manager, but the publisher, exact type, null/lifetime window, and manager identity are not established."},
+      "classification": {"class": "SHARED_STATE_ACCESSOR", "boundary": "Simulator global service slot", "reconstruction_role": "opaque borrowed UI manager accessor", "gameplay_relevance": "mission/UI gameplay interaction", "is_singleton": true, "runtime_blocked": true},
+      "confidence": {"score": 0.82, "label": "medium-high mechanics, medium type", "mechanics": 0.99, "identity": 0.72, "lifetime": 0.35, "basis": ["The target is exactly MOV EAX,[0x0167eb64]; RET.", "Direct consumers dereference the result as a vtable-bearing object and use manager vector fields.", "The global has one direct accessor read xref and no targeted direct writer evidence."]},
+      "identity": {"ghidra_name": "Simulator_GetUIMissionLogManager", "sdk_name": "Simulator_GetUIMissionLogManager", "name_evidence": "SUPPORTED_AS_IMPORTED_LABEL", "semantic_name": "opaque UIMissionLogManager accessor", "identity_boundary": "Do not equate this slot with Simulator::cMissionManager without runtime or stronger structural evidence."},
+      "signature": {"calling_convention": "cdecl-compatible no-argument accessor; exact formal convention is not typed in Ghidra", "prototype": "uint32_t Simulator_GetUIMissionLogManager(void)", "return_abi": "EAX receives the 32-bit value at absolute global 0x0167eb64.", "stack_cleanup": "RET"},
+      "parameters": [],
+      "return_value": {"type": "opaque uint32_t", "value": "Current value of DAT_0167eb64; consumers treat it as a pointer to a vtable-bearing UI mission-log manager.", "null_behavior": "The accessor itself has no null guard; consumer safety depends on publication/lifetime outside this function."},
+      "preconditions": ["The global slot is readable.", "For consumers that dereference the result, the slot contains a live manager at the time of use."],
+      "postconditions": ["DAT_0167eb64 is read exactly once.", "No global, manager, or caller state is modified by the accessor.", "No call, lock, allocation, or reference-count operation occurs."],
+      "control_flow": ["Load the 32-bit word at 0x0167eb64 into EAX.", "Return immediately."],
+      "reads": [{"address": "0x0167eb64", "name": "DAT_0167eb64", "meaning": "UI mission-log manager slot"}],
+      "writes": [],
+      "side_effects": {"items": [], "status": "none_in_target", "consumer_effects": "Consumers may add UI mission-log entries, call vtable slot +0x38, or publish mission state; those effects belong to callers."},
+      "constants": [{"value": "0x0167eb64", "meaning": "absolute global slot address"}, {"value": "vtable+0x38", "meaning": "consumer virtual call observed in 0x00e82de0"}, {"value": "manager+0x3c/+0x40/+0x44", "meaning": "consumer vector begin/end/capacity fields observed in 0x00e30d20"}],
+      "globals": [{"address": "0x0167eb64", "name": "DAT_0167eb64", "access": "read", "meaning": "opaque UI mission-log manager pointer/handle", "xref_observation": "Targeted Ghidra xrefs to the slot found one read at 0x00b3d4f0; raw image bytes at the slot are zero.", "writer_status": "No direct writer xref was established in the targeted scan; absence is not proof of no computed or bulk publication."}],
+      "structs": [{"name": "unknown UI mission-log manager", "status": "consumer-inferred opaque object", "fields": ["vtable at +0x00", "vector-like begin/end/capacity observed at +0x3c/+0x40/+0x44 by 0x00e30d20", "virtual operation at +0x38 by 0x00e82de0"]}, {"name": "Simulator::cMissionManager", "status": "related but not equated", "size": "0x144", "reason": "SDK defines a separate mission manager with tracked missions at +0xa8; its SDK Get mapping is an interior address of another Ghidra function and does not prove this global is cMissionManager."}],
+      "callees": {"count": 0, "items": [], "status": "leaf"},
+      "siblings": [{"va": "0x00b3d400", "name": "Simulator::cGameNounManager::Get", "relationship": "adjacent direct global accessor returning DAT_0167eb60"}, {"va": "0x00b3d480", "name": "Simulator::cGameTimeManager::Get", "relationship": "adjacent direct global accessor returning DAT_0167eb3c"}, {"va": "0x00b3d4d0", "name": "Simulator::cSpaceTrading::Get", "relationship": "adjacent direct global accessor returning DAT_0167eb50"}, {"va": "0x00b3d510", "name": "Simulator_GetUITimeline", "relationship": "adjacent direct global accessor returning DAT_0167eb68"}],
+      "callers": {"canonical": {"unique_direct_caller_functions": 22, "direct_call_references": 32, "gameplay_fan_in": 0, "global_fan_in": 4, "fan_out_internal": 0, "fan_out_external": 0}, "read_only_ghidra": {"unique_direct_caller_functions": 22, "direct_call_xrefs": 38}, "representative": [{"va": "0x00ba4f30", "name": "FUN_00ba4f30", "use": "mission/communication state path followed by UI log update"}, {"va": "0x00c73cf0", "name": "FUN_00c73cf0", "use": "planet event mission-log path"}, {"va": "0x00cf50e0", "name": "FUN_00cf50e0", "use": "multiple event and mission-log notifications"}, {"va": "0x00e82dc0", "name": "FUN_00e82dc0", "use": "add-card helper wrapper"}, {"va": "0x00e82de0", "name": "FUN_00e82de0", "use": "vtable slot +0x38 call"}, {"va": "0x00dd2e80", "name": "FUN_00dd2e80", "use": "mode teardown/notification path"}]},
+      "family_links": [{"family": "Simulator direct global accessors", "links": ["0x00b3d400 cGameNounManager", "0x00b3d480 cGameTimeManager", "0x00b3d4d0 cSpaceTrading", "0x00b3d510 UITimeline", "0x00b3d4f0 UIMissionLogManager"]}, {"family": "UI mission-log consumers", "links": ["0x00e30d20 AssetDiscoveryCard vector insertion", "0x00e82de0 vtable +0x38", "0x00ba4f30 and 0x00cf50e0 mission notification paths"]}, {"family": "Simulator::cMissionManager", "links": ["related SDK type only", "not proven to be the returned object"]}],
+      "chokepoint_propagation": {"role": "global UI mission-log manager publication/read chokepoint", "downstream_counts": {"canonical_unique_direct_callers": 22, "canonical_direct_call_references": 32, "canonical_gameplay_direct_callers": 0, "global_fan_in": 4, "fan_out_internal": 0, "read_only_ghidra_direct_call_xrefs": 38, "read_only_ghidra_callers_following_00e30d20": 13, "read_only_ghidra_00e30d20_callsites": 21, "read_only_ghidra_vtable_plus_0x38_consumer_callers": 1}, "propagation": "The accessor result is consumed by mission/communication paths that add UI cards or invoke a manager virtual operation. The target itself is a leaf; downstream impact is mission-log publication and UI state, not a direct gameplay-state mutation.", "downstream_families": ["PKG-20-GAMEGLOBAL", "PKG-11-SIM-CORE", "PKG-18-UI-SCRIPTING", "mission and communication consumers"]},
+      "evidence": [{"source": "ghidra://SporeApp.exe@0x00b3d4f0", "kind": "disassembly", "statement": "The complete function is MOV EAX,[0x0167eb64]; RET with no branches, calls, writes, or stack arguments."}, {"source": "ghidra://SporeApp.exe@0x00b3d4f0", "kind": "decompilation", "statement": "Targeted pseudocode returns DAT_0167eb64 directly."}, {"source": "ghidra://SporeApp.exe@0x00e82de0", "kind": "direct_consumer", "statement": "The consumer loads the accessor result, dereferences its vtable, and calls slot +0x38 with two arguments."}, {"source": "ghidra://SporeApp.exe@0x00e30d20", "kind": "downstream_helper", "statement": "The helper uses manager fields at +0x3c, +0x40, and +0x44 as vector-like storage and adds UI/AssetDiscoveryCard entries."}, {"source": "ghidra://SporeApp.exe@0x00b3d400,0x00b3d480,0x00b3d4d0,0x00b3d510", "kind": "sibling_accessors", "statement": "Adjacent accessors read neighboring global slots, establishing a direct global service block."}, {"source": "knowledgegraph/research/global-campaign-2026/track-f-empire-economy.json:182-190", "kind": "repository", "statement": "The mission-root overlay records the same address/global/return contract with SUPPORTED evidence and explicitly says the SDK/triage label is not a full manager layout."}, {"source": "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cMissionManager.h:33-53,100-140", "kind": "SDK_related", "statement": "cMissionManager is a separate 0x144-byte saved-game manager type; the source does not establish that this accessor returns it."}],
+      "independent_triangulation": [{"claim": "The function is a side-effect-free global read.", "sources": ["two-instruction disassembly", "decompilation", "zero callees and zero writes"], "result": "supported"}, {"claim": "The returned value is a vtable-bearing manager handle.", "sources": ["0x00e82de0 vtable +0x38", "0x00e30d20 vector-like fields", "imported accessor name"], "result": "supported"}, {"claim": "The returned object is not proven to be cMissionManager.", "sources": ["separate SDK cMissionManager layout", "stale/interior SDK Get mapping at 0x00feb880", "consumer offsets differ from cMissionManager tracked-mission layout"], "result": "supported"}],
+      "validation_strategy": [{"id": "slot-lifetime-fixture", "type": "static_differential_fixture", "setup": "Model DAT_0167eb64 as a published opaque manager pointer and compare the accessor against adjacent direct accessors.", "expected": "The function returns the slot verbatim and performs no additional policy or reference operation."}, {"id": "consumer-vtable-check", "type": "direct_caller_validation", "setup": "Trace 0x00e82de0 and 0x00e30d20 with a non-null manager and with a null slot.", "expected": "The trace records whether callers guard null and which vtable/vector operations are legal before publication."}],
+      "blockers": ["No direct or computed publisher was established for DAT_0167eb64.", "Exact manager type, vtable identity, ownership, replacement, and teardown are unresolved.", "The raw image slot is zero and no runtime publication/lifetime trace exists.", "The SDK cMissionManager mapping cannot be used to promote this returned value to cMissionManager."],
+      "runtime_requirement": {"required": true, "status": "NEEDS_RUNTIME", "reason": "Static evidence proves the slot read but cannot establish publication, null windows, or the lifetime of the returned manager.", "smallest_runtime_experiment": {"purpose": "Capture the first non-null publication and one safe consumer use of the mission-log manager.", "procedure": "Set a debugger watchpoint on 0x0167eb64 and a breakpoint at 0x00b3d4f0; start from a clean boot, trigger one existing mission/communication event through 0x00ba4f30 or 0x00cf50e0, and log the slot value, caller return address, manager vtable pointer, and the subsequent 0x00e30d20 or vtable+0x38 operation.", "expected_observation": "A reproducible transition from zero to a stable manager pointer before the first consumer, with a live vtable and no null dereference; capture teardown/replacement if it occurs.", "implementation_boundary": "Debugger observation only; do not mutate the global, patch the game, or implement a replacement."}},
+      "events": {"items": ["consumer-side UI mission-log/AssetDiscoveryCard insertion", "consumer-side virtual manager operation at +0x38"], "status": "consumer_paths_observed, runtime_identity_unverified"},
+      "transitions": {"items": ["slot zero to published manager", "published manager replacement or teardown"], "status": "runtime_required"},
+      "persistence": {"items": [], "status": "target_has_no_persistence_logic; related cMissionManager persistence is not assigned"},
+      "invariants": {"observed": ["Accessor reads exactly one 32-bit global word.", "Accessor has no null normalization, reference count, or call."], "semantic_status": "static_mechanics_only"},
+      "next_action": "Run the slot watchpoint experiment before assigning a concrete manager type or ownership policy.",
+      "not_claimed": ["Concrete manager class", "cMissionManager identity", "publisher or teardown owner", "null/lifetime guarantee", "runtime mission-log contents"]
+    }
+  ]
+}

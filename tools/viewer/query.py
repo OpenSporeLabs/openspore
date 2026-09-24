@@ -291,6 +291,17 @@ def _normalize_va(value):
     return value[2:] if value.startswith("0x") else value
 
 
+def _va_candidates(value):
+    text = str(value or "").strip().lower()
+    if text.startswith("fun:"):
+        text = text[4:]
+    if text.startswith("0x"):
+        text = text[2:]
+    if text and len(text) <= 16 and all(char in "0123456789abcdef" for char in text):
+        return [text]
+    return []
+
+
 def _readiness_data():
     loaded = _load_json_artifact(_READINESS_ARTIFACT)
     if not loaded.get("available"):
@@ -544,6 +555,19 @@ def _research_for_function(va, name, limit):
     transitions = [_research_item("transition", row, _RESEARCH_EVENTS, limit)
                    for row in research["transitions"]
                    if _contains_function(row, needles)]
+    if not transitions:
+        for row in research["state_machines"]:
+            if not _contains_function(row, needles):
+                continue
+            for transition in row.get("transitions", []):
+                if not isinstance(transition, dict):
+                    continue
+                value = _research_item("transition", transition,
+                                       _RESEARCH_EVENTS, limit)
+                value["source_refs"] = _source_refs(
+                    value.get("source_refs"), row.get("sources"),
+                    row.get("provenance"))
+                transitions.append(value)
     return states[:limit], events[:limit], callbacks[:limit], transitions[:limit], research
 
 
@@ -777,7 +801,9 @@ def subsystem_summary(db=None):
 
 
 def _attach_readiness(item, readiness):
-    va = _normalize_va(item.get("va") or item.get("address"))
+    attrs = item.get("attrs") if isinstance(item.get("attrs"), dict) else {}
+    va = _normalize_va(item.get("va") or item.get("address")
+                       or attrs.get("address") or attrs.get("va"))
     row = readiness["functions"].get(va) if readiness.get("available") else None
     status = row.get("readiness") if isinstance(row, dict) else None
     if isinstance(status, dict):
@@ -818,12 +844,14 @@ def functions(q=None, evidence=None, readiness=None, subsystem=None,
     if canonical.get("available"):
         rows = canonical["rows"]
         needle = str(q).casefold() if q is not None else None
+        needles = {needle} if needle else set()
+        needles.update(_va_candidates(q))
         filtered = []
         for source_row in rows:
-            if needle:
+            if needles:
                 searchable = " ".join(str(source_row.get(key) or "") for key in (
                     "va", "name", "sdk_name", "id", "struct_names")).casefold()
-                if needle not in searchable:
+                if not any(candidate in searchable for candidate in needles):
                     continue
             if evidence is not None and source_row.get("evidence") != evidence:
                 continue
@@ -842,33 +870,55 @@ def functions(q=None, evidence=None, readiness=None, subsystem=None,
         selected = filtered[offset:offset + limit]
         headline = summary.get("headline", {}) if summary.get("available") else {}
         package_counts = Counter()
+        canonical_readiness_counts = Counter()
         for row in rows:
             for value in row.get("packages", []):
                 package_counts[value] += 1
+            readiness_row = readiness_data.get("functions", {}).get(row["va"])
+            if isinstance(readiness_row, dict):
+                status = readiness_row.get("readiness")
+                if isinstance(status, dict):
+                    status = status.get("status")
+                if isinstance(status, str):
+                    canonical_readiness_counts[status] += 1
         statistics_payload = {
             "evidence": _distribution(rows, "evidence"),
             "subsystem": _distribution(rows, "subsystem"),
             "package": [{"value": value, "count": package_counts[value]}
                         for value in sorted(package_counts)],
-            "readiness": [{"status": state, "count": readiness_data["counts"].get(state, 0)}
+            "readiness": [{"status": state, "count": canonical_readiness_counts.get(state, 0)}
                           for state in readiness_data.get("states", [])],
+            "readiness_artifact_counts": [
+                {"status": state, "count": readiness_data["counts"].get(state, 0)}
+                for state in readiness_data.get("states", [])],
             "headline": headline,
         }
         canonical_inventory = {
             "available": True,
-            "source": canonical.get("source"),
-            "source_refs": canonical.get("source_refs", []),
+            "source": "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+            "accounting_source": canonical.get("source"),
+            "source_refs": _source_refs(
+                "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+                canonical.get("source_refs")),
             "snapshot": (summary.get("canonical", {}).get("snapshot_sha256")
                          if summary.get("available") else None),
             "total": len(rows),
             "unique_va": len({row["va"] for row in rows}),
             "readiness_available": readiness_data.get("available", False),
-            "readiness_total": readiness_data.get("total", 0),
+            "readiness_artifact_total": readiness_data.get("total", 0),
+            "readiness_total": sum(canonical_readiness_counts.values()),
+            "readiness_outside_canonical": max(
+                0, readiness_data.get("total", 0)
+                - sum(canonical_readiness_counts.values())),
             "package_source": _PACKAGE_ARTIFACT if _package_clusters() else None,
         }
         return _ok(available=True, total=len(filtered), limit=limit,
-                   offset=offset, source=canonical.get("source"),
-                   source_refs=canonical.get("source_refs", []),
+                   offset=offset,
+                   source="knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+                   accounting_source=canonical.get("source"),
+                   source_refs=_source_refs(
+                       "knowledgegraph/triage/triage-f0e310e0.triage-v6.jsonl",
+                       canonical.get("source_refs")),
                    canonical_function=canonical_inventory,
                    inventory=canonical_inventory,
                    statistics=statistics_payload,
@@ -991,8 +1041,14 @@ def nodes(label=None, q=None, limit=200, offset=0, db=None,
             clauses.append("origin=?")
             args.append(origin)
         if q is not None:
-            clauses.append("name LIKE ? ESCAPE '\\'")
-            args.append("%" + _like(q) + "%")
+            escaped = _like(q)
+            va = _va_candidates(q)
+            if va:
+                clauses.append("(name LIKE ? ESCAPE '\\' OR name=?)")
+                args.extend(["%" + escaped + "%", "fun:" + va[0]])
+            else:
+                clauses.append("name LIKE ? ESCAPE '\\'")
+                args.append("%" + escaped + "%")
         where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
         if readiness is None:
             total = conn.execute(
@@ -1042,9 +1098,17 @@ def search(q=None, label=None, evidence=None, origin=None, readiness=None,
     try:
         clauses, args = [], []
         escaped = _like(q)
-        clauses.append(
-            "(name LIKE ? ESCAPE '\\' OR attrs_json LIKE ? ESCAPE '\\')")
-        args += ["%" + escaped + "%", "%" + escaped + "%"]
+        va = _va_candidates(q)
+        if va:
+            clauses.append(
+                "(name LIKE ? ESCAPE '\\' OR attrs_json LIKE ? ESCAPE '\\'"
+                " OR name=?)")
+            args += ["%" + escaped + "%", "%" + escaped + "%",
+                     "fun:" + va[0]]
+        else:
+            clauses.append(
+                "(name LIKE ? ESCAPE '\\' OR attrs_json LIKE ? ESCAPE '\\')")
+            args += ["%" + escaped + "%", "%" + escaped + "%"]
         selected_label = "Function" if readiness is not None else label
         if selected_label is not None:
             clauses.append("label=?")
@@ -1083,25 +1147,44 @@ def search(q=None, label=None, evidence=None, origin=None, readiness=None,
 
 
 def _resolve_node(conn, ref):
-    if str(ref).isdigit():
+    text = str(ref if ref is not None else "").strip()
+    if text.isdigit():
         row = conn.execute("SELECT * FROM node WHERE id=?",
-                           (ref,)).fetchone()
+                           (text,)).fetchone()
         if row is None:
             return None, _err("not_found", "no node with id %s" % ref)
         return row, None
     rows = conn.execute(
         "SELECT * FROM node WHERE name=? ORDER BY label, id",
-        (str(ref),)).fetchall()
-    if not rows:
-        return None, _err("not_found", "no node named %r" % ref)
-    if len(rows) > 1:
-        return None, _err(
-            "ambiguous", "name %r matches %d labels" % (ref, len(rows)),
-            labels=[r["label"] for r in rows])
-    return rows[0], None
+        (text,)).fetchall()
+    if rows:
+        if len(rows) > 1:
+            return None, _err(
+                "ambiguous", "name %r matches %d labels" % (ref, len(rows)),
+                labels=[r["label"] for r in rows])
+        return rows[0], None
+    va = _va_candidates(text)
+    if va:
+        canonical = "fun:" + va[0]
+        rows = conn.execute(
+            "SELECT * FROM node WHERE name=? ORDER BY label, id",
+            (canonical,)).fetchall()
+        if rows:
+            if len(rows) > 1:
+                return None, _err(
+                    "ambiguous", "VA %r matches %d labels" % (ref, len(rows)),
+                    labels=[r["label"] for r in rows])
+            return rows[0], None
+    if not text:
+        return None, _err("not_found", "no node with empty reference")
+    return None, _err("not_found", "no node named %r" % ref)
 
 
-def node_detail(ref, db=None):
+def node_detail(ref, db=None, limit=_MAX_DETAIL_ITEMS):
+    page, bad = _page(limit, 0, default=_MAX_DETAIL_ITEMS,
+                      maximum=_MAX_DETAIL_ITEMS)
+    if bad:
+        return bad
     conn, guard = _open(db)
     if conn is None:
         return guard
@@ -1112,29 +1195,38 @@ def node_detail(ref, db=None):
         node = _node_row(row)
         node["note"] = row["note"]
         node["created_at"] = row["created_at"]
+        field_total = conn.execute(
+            "SELECT COUNT(*) FROM field WHERE struct_id=?",
+            (row["id"],)).fetchone()[0]
         fields = [dict(f) for f in conn.execute(
-            "SELECT * FROM field WHERE struct_id=? ORDER BY id",
-            (row["id"],))]
+            "SELECT * FROM field WHERE struct_id=? ORDER BY id LIMIT ?",
+            (row["id"], page[0]))]
         attrs = node["attrs"] if isinstance(node["attrs"], dict) else {}
         va_candidates = {row["name"]}
-        for key in ("address", "rva"):
+        for key in ("va", "address", "rva", "addr"):
             val = attrs.get(key)
             if isinstance(val, str):
-                va_candidates.add(val[2:] if val.lower().startswith("0x")
-                                  else val)
-        # Bounded: one parameterized query over the <=3 candidate keys,
-        # never a full-table scan (exact match, same semantics as before).
+                va_candidates.update(_va_candidates(val) or [val])
         cands = sorted(va_candidates)
         marks = ",".join("?" * len(cands))
         inv_columns = {r["name"] for r in conn.execute(
             "PRAGMA table_info(investigations)")}
         inv_status = ", triage_status" if "triage_status" in inv_columns else ""
+        inv_where = " WHERE name = ? OR va IN (%s)" % marks
+        investigation_total = conn.execute(
+            "SELECT COUNT(*) FROM investigations" + inv_where,
+            [row["name"]] + cands).fetchone()[0]
         invs = [dict(iv) for iv in conn.execute(
             "SELECT id, kind, va, name, subsystem, mode, stage, status"
             + inv_status + ", binary_sha256 FROM investigations"
-            + " WHERE name = ? OR va IN (%s)" % marks,
-            [row["name"]] + cands)]
-        out = _ok(node=node, fields=fields, investigations=invs)
+            + inv_where + " ORDER BY id LIMIT ?",
+            [row["name"]] + cands + [page[0]])]
+        out = _ok(node=node, fields=fields, investigations=invs,
+                  limit=page[0], field_total=field_total,
+                  investigation_total=investigation_total,
+                  fields_truncated=field_total > len(fields),
+                  investigations_truncated=investigation_total > len(invs),
+                  source_refs=["sqlite:node/%s" % row["id"]])
         if isinstance(node["attrs"], dict):
             out["provenance"] = {
                 "origin": row["origin"],
@@ -1361,8 +1453,92 @@ def packages(q=None, limit=200, offset=0, db=None):
         conn.close()
 
 
-def types(q=None, limit=200, offset=0, db=None):
+def _type_facet_payload(conn, query, limit, offset, edge_limit):
+    terms = []
+    for term in (str(query).strip().lower(),):
+        if term and term not in terms:
+            terms.append(term)
+    for term in list(terms):
+        if term.startswith("struct:/spore/simulator/"):
+            suffix = term[len("struct:/spore/simulator/"):]
+            for candidate in ("struct:Simulator::" + suffix,
+                              "struct:/Spore/Simulator/" + suffix):
+                if candidate.lower() not in {value.lower() for value in terms}:
+                    terms.append(candidate)
+    matches = []
+    for term in terms:
+        matches.extend((("name LIKE ? ESCAPE '\\'", "%" + _like(term) + "%"),
+                        ("attrs_json LIKE ? ESCAPE '\\'", "%" + _like(term) + "%")))
+    facet_where = " AND (" + " OR ".join(clause for clause, _ in matches) + ")"
+    facet_args = [value for _, value in matches]
+    facets = conn.execute(
+        "SELECT * FROM node WHERE label IN ('Class','Structure','VTable')"
+        + facet_where + " ORDER BY label, name, id LIMIT ? OFFSET ?",
+        facet_args + [limit, offset]).fetchall()
+    facet_nodes = [_node_row(row) for row in facets]
+    facet_ids = [row["id"] for row in facets]
+    if not facet_ids:
+        return {"facet_nodes": [], "nodes": [], "incident_nodes": [],
+                "holders": [], "edges": [], "edge_truncated": False}
+    marks = ",".join("?" * len(facet_ids))
+    edges = conn.execute(
+        "SELECT id, src, dst, rel FROM edge WHERE src IN (%s) OR dst IN (%s)"
+        " ORDER BY id LIMIT ?" % (marks, marks),
+        facet_ids + facet_ids + [edge_limit]).fetchall()
+    endpoint_ids = {row["src"] for row in edges} | {row["dst"] for row in edges}
+    endpoint_ids.difference_update(facet_ids)
+    endpoint_rows = []
+    for chunk in _chunks(sorted(endpoint_ids)):
+        chunk_marks = ",".join("?" * len(chunk))
+        endpoint_rows.extend(conn.execute(
+            "SELECT * FROM node WHERE id IN (%s) ORDER BY label, name, id"
+            % chunk_marks, chunk).fetchall())
+    endpoint_nodes = [_node_row(row) for row in endpoint_rows]
+    expression = ("COALESCE(json_extract(attrs_json, '$.type'),"
+                  "json_extract(attrs_json, '$.value_type'),"
+                  "json_extract(attrs_json, '$.type_semantics'))")
+    holder_clauses = []
+    holder_args = []
+    for term in terms:
+        holder_clauses.append("%s LIKE ? ESCAPE '\\'" % expression)
+        holder_args.append("%" + _like(term) + "%")
+    holders = []
+    if holder_clauses:
+        holders = conn.execute(
+            "SELECT * FROM node WHERE json_valid(attrs_json) AND ("
+            + " OR ".join(holder_clauses)
+            + ") ORDER BY label, name, id LIMIT ? OFFSET ?",
+            holder_args + [limit, offset]).fetchall()
+    holder_nodes = [_node_row(row) for row in holders]
+    all_nodes = {}
+    for node in facet_nodes + endpoint_nodes + holder_nodes:
+        all_nodes.setdefault(node["id"], node)
+    nodes = list(all_nodes.values())[:limit]
+    incident_ids = {node["id"] for node in endpoint_nodes}
+    incident_nodes = [node for node in nodes if node["id"] in incident_ids]
+    holder_ids = {node["id"] for node in holder_nodes}
+    holders = [node for node in nodes
+               if node["id"] in holder_ids or node["id"] in incident_ids]
+    node_ids = {node["id"] for node in nodes}
+    normalized_edges = []
+    for row in edges:
+        if row["src"] in node_ids and row["dst"] in node_ids:
+            normalized_edges.append({"id": row["id"], "src": row["src"],
+                                     "dst": row["dst"], "rel": row["rel"],
+                                     "source_refs": ["sqlite:edge/%s" % row["id"]]})
+    return {"facet_nodes": facet_nodes, "nodes": nodes,
+            "incident_nodes": incident_nodes[:limit], "holders": holders[:limit],
+            "attribute_holders": holder_nodes[:limit],
+            "edges": normalized_edges,
+            "edge_truncated": len(edges) >= edge_limit}
+
+
+def types(q=None, limit=200, offset=0, db=None, edge_limit=_MAX_GRAPH_EDGES):
     page, bad = _page(limit, offset, default=200)
+    if bad:
+        return bad
+    edge_page, bad = _page(edge_limit, 0, default=_MAX_GRAPH_EDGES,
+                           maximum=_MAX_GRAPH_EDGES)
     if bad:
         return bad
     conn, guard = _open(db)
@@ -1391,7 +1567,17 @@ def types(q=None, limit=200, offset=0, db=None):
                     "count": row["n"]}
             item["value"] = _parse_jsonish(row["type_value"])
             values.append(item)
-        return _ok(total=total, limit=page[0], offset=page[1], types=values)
+        result = _ok(total=total, limit=page[0], offset=page[1], types=values)
+        if q is not None and str(q).strip():
+            result.update(_type_facet_payload(
+                conn, q, page[0], page[1], edge_page[0]))
+            result["graph"] = {"nodes": result["nodes"],
+                               "edges": result["edges"]}
+            result["facet"] = {"query": q, "nodes": result["facet_nodes"],
+                               "holders": result["holders"]}
+            result["edge_limit"] = edge_page[0]
+            result["edge_truncated"] = result.pop("edge_truncated", False)
+        return result
     finally:
         conn.close()
 
@@ -1682,69 +1868,310 @@ def simulator_hierarchy(depth=2, limit=_MAX_GRAPH_NODES,
         subsystem = _node_row(subsystem_rows[0]) if subsystem_rows else None
         loaded = _load_json_artifact(_SIMULATOR_ARTIFACT)
         artifact = loaded.get("value") if loaded.get("available") else {}
-        artifact_roots = artifact.get("roots", []) if isinstance(artifact, dict) else []
-        roots_by_id = {
-            _normalize_va(row.get("root")): row
-            for row in artifact_roots if isinstance(row, dict)
-            and _normalize_va(row.get("root"))
-        }
-        artifact_order = [_normalize_va(value) for value in artifact.get("root_order", [])
-                          if _normalize_va(value)] if isinstance(artifact, dict) else []
+        artifact = artifact if isinstance(artifact, dict) else {}
+        artifact_roots = [row for row in artifact.get("roots", [])
+                          if isinstance(row, dict)]
+        roots_by_id = {_normalize_va(row.get("root")): row
+                       for row in artifact_roots
+                       if _normalize_va(row.get("root"))}
+        full_order = []
+        for value in artifact.get("root_order", []):
+            va = _normalize_va(value)
+            if va and va not in full_order:
+                full_order.append(va)
+        artifact_functions = {}
+        for row in artifact.get("nodes", []):
+            if isinstance(row, dict) and _normalize_va(row.get("id")):
+                artifact_functions[_normalize_va(row.get("id"))] = row
+        selected_row = None
+        selected_va = None
         if root is not None:
-            selected_va = _normalize_va(root)
-            artifact_order = [selected_va] if selected_va in roots_by_id else []
+            selected_row, bad = _resolve_node(conn, root)
+            if bad:
+                selected_va = _normalize_va(root)
+                if selected_va not in roots_by_id:
+                    return bad
+            else:
+                name_candidates = _va_candidates(selected_row["name"])
+                selected_va = name_candidates[0] if name_candidates else None
+                if not selected_va:
+                    attrs = selected_row["attrs_json"]
+                    attrs = _parse_jsonish(attrs) or {}
+                    selected_va = _normalize_va(
+                        attrs.get("address") or attrs.get("va") or attrs.get("rva"))
+                if selected_row["label"] != "Function" or not selected_va:
+                    return _err("not_found", "node %r is not a Function" % root)
+        if root is None:
+            selected_order = full_order[:page[0]]
+        elif selected_va in roots_by_id:
+            selected_order = [selected_va]
         else:
-            artifact_order = artifact_order[:page[0]]
-        selected_roots = [roots_by_id[va] for va in artifact_order
+            selected_order = full_order[:page[0]]
+        selected_roots = [roots_by_id[va] for va in selected_order
                           if va in roots_by_id]
+        root_function_ids = set()
+        nodes_by_id = {}
         functions_out = []
-        for artifact_root in selected_roots:
-            va = _normalize_va(artifact_root.get("root"))
-            node_rows = conn.execute(
+        selected_function = None
+
+        def add_node(node):
+            if not node or node.get("id") in nodes_by_id:
+                return node.get("id") if node else None
+            nodes_by_id[node["id"]] = node
+            return node["id"]
+
+        def function_for_va(va):
+            va = _normalize_va(va)
+            if not va:
+                return None
+            rows = conn.execute(
                 "SELECT * FROM node WHERE label='Function' AND (name=?"
                 " OR name=? OR (json_valid(attrs_json) AND"
                 " (json_extract(attrs_json, '$.address')=? OR"
-                " json_extract(attrs_json, '$.va')=?)))"
+                " json_extract(attrs_json, '$.va')=? OR"
+                " json_extract(attrs_json, '$.rva')=?)))"
                 " ORDER BY name, id LIMIT 1",
-                ("fun:" + va, va, va, va)).fetchall()
-            if not node_rows:
+                ("fun:" + va, va, va, va, va)).fetchall()
+            if rows:
+                return _node_row(rows[0])
+            record = artifact_functions.get(va)
+            if not record:
+                return None
+            return {"id": "artifact:function:" + va, "label": "Function",
+                    "name": record.get("name") or ("FUN_" + va),
+                    "origin": "artifact", "evidence_level": "UNKNOWN",
+                    "attrs": {"artifact": record},
+                    "source_refs": [_SIMULATOR_ARTIFACT]}
+
+        for artifact_root in selected_roots:
+            va = _normalize_va(artifact_root.get("root"))
+            function = function_for_va(va)
+            if function is None:
                 continue
-            function = _node_row(node_rows[0])
+            function = dict(function)
             function["artifact_root"] = artifact_root
             function["source_refs"] = _source_refs(
-                _SIMULATOR_ARTIFACT,
-                artifact_root.get("evidence"),
-                attrs.get("source") if (attrs := function.get("attrs")) else None)
+                _SIMULATOR_ARTIFACT, artifact_root.get("evidence"),
+                function.get("attrs", {}).get("source"))
             functions_out.append(function)
-        nodes_out = ([subsystem] if subsystem is not None else []) + functions_out
-        interfaces = []
-        for edge in artifact.get("edges", []) if isinstance(artifact, dict) else []:
-            if isinstance(edge, dict):
-                value = dict(edge)
-                value["source_refs"] = [_SIMULATOR_ARTIFACT]
-                interfaces.append(value)
-        interfaces.sort(key=lambda item: (
+            add_node(function)
+            root_function_ids.add(function["id"])
+            if root is not None and va == selected_va:
+                selected_function = function
+        if root is not None and selected_va not in roots_by_id:
+            selected_function = function_for_va(selected_va)
+            if selected_function is None:
+                return _err("not_found", "no Function node for %r" % root)
+            selected_function = dict(selected_function)
+            selected_function["selected"] = True
+            selected_function["source_refs"] = _source_refs(
+                "sqlite:node/%s" % selected_function["id"],
+                _SIMULATOR_ARTIFACT)
+            functions_out.append(selected_function)
+            add_node(selected_function)
+        if subsystem is not None:
+            add_node(subsystem)
+
+        structure_nodes = []
+        structure_ids_by_name = {}
+        structure_records = [row for row in artifact.get("structures", [])
+                             if isinstance(row, dict)][:page[0]]
+        for record in structure_records:
+            name = record.get("name")
+            if not isinstance(name, str) or not name:
+                continue
+            candidate_names = [name, "struct:Simulator::" + name,
+                               "struct:/Spore/Simulator/" + name]
+            marks = ",".join("?" * len(candidate_names))
+            rows = conn.execute(
+                "SELECT * FROM node WHERE label='Structure' AND name IN (%s)"
+                " ORDER BY name, id" % marks, candidate_names).fetchall()
+            ids = []
+            for row in rows:
+                node = _node_row(row)
+                ids.append(add_node(node))
+                structure_nodes.append(node)
+            if not rows:
+                node = {"id": "artifact:structure:" + name,
+                        "label": "Structure", "name": name,
+                        "origin": "artifact",
+                        "evidence_level": record.get("evidence_level", "UNKNOWN"),
+                        "attrs": {"artifact": record},
+                        "source_refs": [_SIMULATOR_ARTIFACT]}
+                add_node(node)
+                structure_nodes.append(node)
+                ids = [node["id"]]
+            structure_ids_by_name[name] = [value for value in ids if value]
+
+        def resolve_structure(ref):
+            if not isinstance(ref, str):
+                return None
+            rows = conn.execute(
+                "SELECT * FROM node WHERE label='Structure' AND name=? ORDER BY id LIMIT 1",
+                (ref,)).fetchall()
+            if rows:
+                return add_node(_node_row(rows[0]))
+            short_name = ref.split("::")[-1].split("/")[-1]
+            values = structure_ids_by_name.get(short_name, [])
+            return values[0] if values else None
+
+        def resolve_destination(ref):
+            if not isinstance(ref, str):
+                return None
+            function_va = _normalize_va(ref[4:] if ref.startswith("fun:") else ref)
+            if function_va and (ref.startswith("fun:") or len(function_va) == 8):
+                node = function_for_va(function_va)
+                return add_node(node) if node else None
+            if ref.startswith("struct:"):
+                return resolve_structure(ref)
+            rows = conn.execute(
+                "SELECT * FROM node WHERE name=? ORDER BY label, id LIMIT 1",
+                (ref,)).fetchall()
+            return add_node(_node_row(rows[0])) if rows else None
+
+        edges_by_id = {}
+
+        def add_edge(edge_id, src, dst, rel, source_refs):
+            if not src or not dst or src == dst:
+                return
+            edge = {"id": edge_id, "src": src, "dst": dst, "rel": rel,
+                    "source_refs": list(dict.fromkeys(source_refs))}
+            edges_by_id.setdefault(edge_id, edge)
+
+        actual_ids = [node_id for node_id in nodes_by_id if isinstance(node_id, int)]
+        db_edges = []
+        for chunk in _chunks(actual_ids):
+            if len(db_edges) >= edge_page[0]:
+                break
+            marks = ",".join("?" * len(chunk))
+            db_edges.extend(conn.execute(
+                "SELECT id, src, dst, rel FROM edge WHERE src IN (%s) OR dst IN (%s)"
+                " ORDER BY id LIMIT ?" % (marks, marks),
+                chunk + chunk + [edge_page[0] - len(db_edges)]).fetchall())
+        for edge in db_edges:
+            for endpoint in (edge["src"], edge["dst"]):
+                if endpoint not in nodes_by_id:
+                    row = conn.execute("SELECT * FROM node WHERE id=?",
+                                       (endpoint,)).fetchone()
+                    if row:
+                        add_node(_node_row(row))
+            add_edge(edge["id"], edge["src"], edge["dst"], edge["rel"],
+                     ["sqlite:edge/%s" % edge["id"]])
+
+        artifact_edges = []
+        for edge in artifact.get("edges", []):
+            if len(artifact_edges) >= edge_page[0]:
+                break
+            if not isinstance(edge, dict):
+                continue
+            src = resolve_destination(edge.get("from"))
+            dst = resolve_destination(edge.get("to"))
+            if src is None or dst is None:
+                continue
+            edge_id = "artifact:%s:%s:%s" % (
+                edge.get("from"), edge.get("to"), edge.get("kind"))
+            add_edge(edge_id, src, dst, edge.get("kind") or "related",
+                     [_SIMULATOR_ARTIFACT])
+            artifact_edges.append({
+                "from": edge.get("from"), "to": edge.get("to"),
+                "kind": edge.get("kind"), "evidence_level": edge.get("evidence_level"),
+                "evidence": edge.get("evidence"),
+                "source_refs": [_SIMULATOR_ARTIFACT]})
+
+        selected_artifact = roots_by_id.get(selected_va)
+        if selected_function is not None:
+            selected_attrs = selected_function.get("attrs", {})
+            closure = selected_attrs.get("root_closure_f0e310e0")
+            closure_relationships = closure.get("relationships", []) if isinstance(closure, dict) else []
+            for relationship in _bounded(closure_relationships, page[0]):
+                if not isinstance(relationship, dict):
+                    continue
+                dst = resolve_destination(relationship.get("dst"))
+                if dst is None:
+                    continue
+                rel = relationship.get("rel") or "related"
+                add_edge("research:%s:%s:%s" % (
+                    selected_function["id"], relationship.get("dst"), rel),
+                    selected_function["id"], dst, rel,
+                    _source_refs(relationship.get("source_refs"),
+                                 relationship.get("provenance"),
+                                 "sqlite:node/%s" % selected_function["id"]))
+            attrs_events = selected_attrs.get("events")
+            if attrs_events not in (None, 0, "", [], {}):
+                selected_function["events"] = _bounded(attrs_events, page[0])
+        if selected_artifact:
+            for field in ("dependency_roots", "dependency_helpers"):
+                for value in _bounded(selected_artifact.get(field, []), page[0]):
+                    dst = resolve_destination(value)
+                    if dst is not None and selected_function is not None:
+                        add_edge("artifact:%s:%s" % (selected_va, value),
+                                 selected_function["id"], dst, "dependency",
+                                 [_SIMULATOR_ARTIFACT])
+
+        priority_ids = []
+        if subsystem is not None:
+            priority_ids.append(subsystem["id"])
+        if selected_function is not None:
+            priority_ids.append(selected_function["id"])
+        priority_ids.extend(function["id"] for function in functions_out)
+        graph_nodes = []
+        for node_id in priority_ids + list(nodes_by_id):
+            if node_id in nodes_by_id and node_id not in {node["id"] for node in graph_nodes}:
+                graph_nodes.append(nodes_by_id[node_id])
+        graph_nodes = graph_nodes[:page[0]]
+        graph_node_ids = {node["id"] for node in graph_nodes}
+        graph_edges = [edge for edge in edges_by_id.values()
+                       if edge["src"] in graph_node_ids and edge["dst"] in graph_node_ids]
+        graph_edges = sorted(graph_edges, key=lambda edge: str(edge["id"]))[:edge_page[0]]
+        classes = [node for node in graph_nodes if node.get("label") == "Class"]
+        packages = [node for node in graph_nodes if node.get("label") == "Package"]
+        dependent_functions = [node for node in graph_nodes
+                               if node.get("label") == "Function"
+                               and node.get("id") not in root_function_ids
+                               and node.get("id") != (selected_function or {}).get("id")]
+        research_states = []
+        research_events = []
+        callbacks = []
+        transitions = []
+        research = {"available": False, "source_refs": []}
+        if selected_function is not None:
+            research_states, research_events, callbacks, transitions, research = \
+                _research_for_function(selected_va, selected_function.get("name"),
+                                       min(page[0], _MAX_DETAIL_ITEMS))
+        structures = structure_records
+        interfaces = sorted(artifact_edges[:edge_page[0]], key=lambda item: (
             str(item.get("from") or ""), str(item.get("to") or ""),
             str(item.get("kind") or "")))
-        structures = [row for row in artifact.get("structures", [])
-                      if isinstance(row, dict)] if isinstance(artifact, dict) else []
-        truncated = len(artifact_order) < len(artifact.get("root_order", [])) if isinstance(artifact, dict) else False
         return _ok(available=subsystem is not None,
                    artifact_available=bool(loaded.get("available")),
                    root=subsystem, subsystem=subsystem,
-                   root_order=artifact_order,
+                   root_order=selected_order,
                    roots=selected_roots,
-                   nodes=nodes_out[:page[0]],
-                   edges=interfaces[:edge_page[0]],
-                   functions=functions_out,
-                   classes=[],
-                   structures=structures[:page[0]],
+                   selected_ref=("fun:" + selected_va) if selected_va else None,
+                   selected_function=selected_function,
+                   selected_artifact=selected_artifact,
+                   nodes=graph_nodes,
+                   edges=graph_edges,
+                   interfaces=interfaces,
+                   functions=functions_out[:page[0]],
+                   classes=classes[:page[0]],
+                   packages=packages[:page[0]],
+                   dependent_functions=dependent_functions[:page[0]],
+                   structures=structures,
+                   structure_nodes=structure_nodes[:page[0]],
+                   state_machines=research_states,
+                   events=research_events,
+                   callbacks=callbacks,
+                   transitions=transitions,
                    source=_SIMULATOR_ARTIFACT,
                    source_refs=loaded.get("source_refs", [_SIMULATOR_ARTIFACT]),
                    snapshot=(artifact.get("snapshot", {}).get("id")
-                             if isinstance(artifact, dict)
-                             and isinstance(artifact.get("snapshot"), dict) else None),
-                   limit=page[0], edge_limit=edge_page[0], truncated=truncated)
+                             if isinstance(artifact.get("snapshot"), dict) else None),
+                   limit=page[0], edge_limit=edge_page[0],
+                   truncated=(len(selected_order) < len(full_order)
+                              or len(db_edges) >= edge_page[0]
+                              or len(graph_nodes) >= page[0]
+                              or len(edges_by_id) > len(graph_edges)))
     finally:
         conn.close()
 
@@ -1823,15 +2250,15 @@ def _function_candidates(node):
 
 
 def function_detail(ref, limit=200, db=None):
-    base = node_detail(ref, db)
+    page, bad = _page(limit, 0, default=200, maximum=_MAX_LIMIT)
+    if bad:
+        return bad
+    base = node_detail(ref, db, limit=page[0])
     if base.get("status") != "ok":
         return base
     node = base["node"]
     if node["label"] != "Function":
         return _err("not_found", "node %r is not a Function" % ref)
-    page, bad = _page(limit, 0, default=200, maximum=_MAX_LIMIT)
-    if bad:
-        return bad
     conn, guard = _open(db)
     if conn is None:
         return guard
@@ -1907,31 +2334,36 @@ def function_detail(ref, limit=200, db=None):
             simulator_root = next((row for row in simulator["value"].get("roots", [])
                                    if isinstance(row, dict)
                                    and _normalize_va(row.get("root")) == va), None)
-        structure_names = set((triage or {}).get("struct_names") or [])
-        for relationship in attrs.get("root_closure_f0e310e0", {}).get("relationships", []) \
-                if isinstance(attrs.get("root_closure_f0e310e0"), dict) else []:
+        structure_names = set()
+        for value in _bounded((triage or {}).get("struct_names") or [], page[0]):
+            if isinstance(value, str):
+                structure_names.add(value)
+        closure = attrs.get("root_closure_f0e310e0")
+        relationships = closure.get("relationships", []) if isinstance(closure, dict) else []
+        for relationship in _bounded(relationships, page[0]):
             destination = relationship.get("dst") if isinstance(relationship, dict) else None
             if isinstance(destination, str) and destination.startswith("struct:"):
-                structure_names.add(destination.split(":", 1)[1])
+                structure_names.add(destination)
         for machine in research_states:
-            for value in machine.get("relevant_structures", []):
+            for value in _bounded(machine.get("relevant_structures", []), page[0]):
                 if isinstance(value, str):
                     structure_names.add(value)
         if simulator_root:
             if isinstance(simulator_root.get("backing_structure"), str):
                 structure_names.add(simulator_root["backing_structure"])
-            for field in simulator_root.get("fields", []):
+            for field in _bounded(simulator_root.get("fields", []), page[0]):
                 if isinstance(field, dict) and isinstance(field.get("structure"), str):
                     structure_names.add(field["structure"])
         artifact_structures = {}
         if simulator.get("available"):
             artifact_structures = {
-                row.get("name"): row for row in simulator["value"].get("structures", [])
+                row.get("name"): row for row in _bounded(
+                    simulator["value"].get("structures", []), page[0])
                 if isinstance(row, dict) and row.get("name")
             }
         related_structures = []
         related_fields = []
-        for name in sorted(structure_names):
+        for name in sorted(structure_names)[:page[0]]:
             node_rows = conn.execute(
                 "SELECT * FROM node WHERE label='Structure' AND name=?"
                 " ORDER BY id LIMIT 1", (name,)).fetchall()
@@ -1943,7 +2375,8 @@ def function_detail(ref, limit=200, db=None):
                     (node_rows[0]["id"], page[0])).fetchall()]
             artifact_structure = artifact_structures.get(name)
             if artifact_structure:
-                fields.extend(field for field in artifact_structure.get("known_offsets", [])
+                fields.extend(field for field in _bounded(
+                    artifact_structure.get("known_offsets", []), page[0])
                               if isinstance(field, str))
             value = {
                 "name": name,
@@ -1951,16 +2384,20 @@ def function_detail(ref, limit=200, db=None):
                 "artifact": artifact_structure,
                 "fields": fields,
                 "source_refs": _source_refs(
-                    "sqlite:node/Structure", _SIMULATOR_ARTIFACT,
+                    "sqlite:node/%s" % structure["id"] if structure else None,
+                    _SIMULATOR_ARTIFACT if artifact_structure else None,
                     (artifact_structure or {}).get("provenance")),
             }
             related_structures.append(value)
             for field in fields:
+                if len(related_fields) >= page[0]:
+                    break
                 related_fields.append({"structure": name, "field": field,
                                        "source_ref": "sqlite:field"})
         db_events = []
         if attrs.get("events") not in (None, 0, "", [], {}):
-            db_events.append({"origin": "db_attrs", "value": attrs["events"],
+            db_events.append({"origin": "db_attrs",
+                              "value": _bounded(attrs["events"], page[0]),
                               "source_refs": ["sqlite:node/%s" % node["id"]]})
         metadata = {
             "id": node["id"], "label": node["label"], "name": node["name"],
@@ -1983,7 +2420,7 @@ def function_detail(ref, limit=200, db=None):
                 "evidence": simulator_root.get("evidence"),
                 "source_refs": [_SIMULATOR_ARTIFACT],
             }
-            unresolved.extend(simulator_root.get("unresolved", []))
+            unresolved.extend(_bounded(simulator_root.get("unresolved", []), page[0]))
         source_refs = _source_refs(
             "sqlite:node/%s" % node["id"], "sqlite:triage",
             "sqlite:xref", readiness_data.get("source_refs"),
@@ -1992,6 +2429,7 @@ def function_detail(ref, limit=200, db=None):
             attrs.get("source"), attrs.get("src"), attrs.get("decompiled_file"),
             (readiness_record or {}).get("provenance"),
             simulator_root.get("evidence") if simulator_root else None)
+        source_refs = source_refs[:_MAX_DETAIL_ITEMS]
         base["function"] = function_value
         base["metadata"] = metadata
         base["triage"] = triage

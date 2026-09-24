@@ -2,7 +2,8 @@
 # scripted input replay). Pure C++ — no GPU, no SPORE/ package.
 add_library(openspore_sim STATIC
   Sim.cpp
-  CellGame.cpp)
+  CellGame.cpp
+  CellMovement.cpp)
 target_include_directories(openspore_sim PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -87,4 +88,11 @@ target_link_libraries(combat_test PRIVATE openspore_sim)
 add_test(
   NAME combat_test
   COMMAND combat_test
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+
+add_executable(cellmovement_test tests/cellmovement_test.cpp)
+target_link_libraries(cellmovement_test PRIVATE openspore_sim)
+add_test(
+  NAME cellmovement_test
+  COMMAND cellmovement_test
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})

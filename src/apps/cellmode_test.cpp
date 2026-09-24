@@ -1,103 +1,132 @@
-// CS-28: cCellModeStrategy lifecycle + cGameModeManager mode switching.
-//
-// Verifies the clean-room strategy mirrors the original slot semantics:
-//   - Initialize builds the world table + loads the UI, sets the initialized
-//     flag, and does NOT start the display.
-//   - OnEnter starts the display and enables the mode.
-//   - Update ticks one frame per call.
-//   - OnKeyDown routes the key event.
-//   - OnExit resets the background-map clear globals + disables the mode.
-//   - Dispose frees the rollover pool, destroys the world, stops the display,
-//     resets the globals, and clears both lifecycle flags.
-//   - The manager's setActiveModeAt OnExits the old mode, OnEnters the new one,
-//     and rejects out-of-range indices.
+#include <cstdio>
+#include <string>
+#include <vector>
+
 #include "CellModeStrategy.hpp"
 
-#include <cstdio>
-
 namespace {
+
 int g_failures = 0;
-void check(bool cond, const char *label) {
-  std::printf("%s: %s\n", cond ? "ok" : "FAIL", label);
-  if (!cond) {
+
+void check(bool condition, const char* label) {
+  std::printf("%s: %s\n", condition ? "ok" : "FAIL", label);
+  if (!condition) {
     ++g_failures;
   }
 }
-} // namespace
 
-using openspore::gamemode::CellModeStrategy;
-using openspore::gamemode::GameModeManager;
-using openspore::gamemode::kDefaultBgClearR;
+struct RecordingMode final : openspore::gamemode::IGameMode {
+  explicit RecordingMode(std::vector<std::string>* events, std::string id)
+      : events(events), id(std::move(id)) {}
+
+  void initialize() override { events->push_back(id + ":initialize"); }
+  void dispose() override { events->push_back(id + ":dispose"); }
+  void onEnter() override { events->push_back(id + ":enter"); }
+  void onExit() override { events->push_back(id + ":exit"); }
+  void onKeyDown(const openspore::gamemode::InputEvent&) override {}
+  void onMouseMove(const openspore::gamemode::InputEvent&) override {}
+  void onMouseDown(const openspore::gamemode::InputEvent&) override {}
+  void onMouseUp(const openspore::gamemode::InputEvent&) override {}
+  void onMouseWheel(const openspore::gamemode::InputEvent&) override {}
+  void update(float) override { events->push_back(id + ":update"); }
+
+  std::vector<std::string>* events;
+  std::string id;
+};
+
+}  // namespace
 
 int main() {
-  CellModeStrategy s;
+  using openspore::gamemode::CellModeStrategy;
+  using openspore::gamemode::GameModeManager;
+  using openspore::gamemode::InputEvent;
+  using openspore::gamemode::InputEventType;
+  using openspore::gamemode::InputKey;
 
-  // Initial state.
-  check(!s.mInitialized, "cellmode: starts uninitialized");
-  check(!s.mEntered, "cellmode: starts not-entered");
+  CellModeStrategy strategy;
+  check(!strategy.mInitialized && !strategy.mEntered,
+        "cell strategy starts outside both lifecycle states");
+  strategy.initialize();
+  check(strategy.mInitialized && !strategy.mEntered,
+        "initialize does not enter the mode");
+  strategy.update(1.0F);
+  check(strategy.mFrame == 0, "update is inert before enter");
+  strategy.onEnter();
+  check(strategy.mEntered, "enter activates the mode");
+  strategy.update(1.0F);
+  strategy.update(1.0F);
+  check(strategy.mFrame == 2, "entered update advances once per call");
+  InputEvent event;
+  event.type = InputEventType::kKeyDown;
+  event.key = InputKey::kW;
+  event.virtualKey = static_cast<std::uint32_t>(InputKey::kW);
+  strategy.onKeyDown(event);
+  check(strategy.mGotKey && strategy.mLastInput.key == InputKey::kW,
+        "key down records normalized input");
+  strategy.onKeyUp(event);
+  check(strategy.mGotInput &&
+            strategy.mLastInput.type == InputEventType::kKeyDown,
+        "last input is observable after callbacks");
+  strategy.onExit();
+  check(!strategy.mEntered && !strategy.mGfx.displayActive,
+        "exit deactivates the mode and its display");
+  strategy.dispose();
+  check(!strategy.mInitialized && !strategy.mEntered && strategy.mFrame == 0,
+        "dispose clears lifecycle and frame state");
+  check(!strategy.mUI.loaded, "dispose releases the owned UI state");
 
-  // Initialize (slot 6): world table + UI, flag set, display still off.
-  s.initialize();
-  check(s.mInitialized, "cellmode: initialize() sets initialized");
-  check(!s.mGfx.slots.empty(), "cellmode: initialize() builds world table");
-  check(s.mUI.loaded, "cellmode: initialize() loads UI");
-  check(!s.mGfx.displayActive, "cellmode: initialize() leaves display off");
+  std::vector<std::string> events;
+  RecordingMode cell(&events, "cell");
+  RecordingMode menu(&events, "menu");
+  GameModeManager manager;
+  check(manager.add(&cell, "Cell") == &cell, "registry accepts named mode");
+  check(manager.add(&menu, "Menu") == &menu, "registry accepts second mode");
+  check(manager.size() == 2 && manager.mActiveIndex == 0,
+        "registry starts at active index zero");
+  check(manager.active() == &cell, "active returns index zero mode");
 
-  // OnEnter (slot 8): start display + enable.
-  s.onEnter();
-  check(s.mEntered, "cellmode: onEnter() enables mode");
-  check(s.mGfx.displayActive, "cellmode: onEnter() starts display");
+  check(manager.activate(1), "activation accepts a valid index");
+  check(manager.mActiveIndex == 1 && manager.active() == &menu,
+        "activation commits the new active index");
+  check(events.size() == 2 && events[0] == "cell:exit" &&
+            events[1] == "menu:enter",
+        "different-mode activation orders old exit before new enter");
 
-  // Update (slot 17): one tick per call.
-  s.update(1.0f / 60.0f);
-  s.update(1.0f / 60.0f);
-  check(s.mFrame == 2, "cellmode: update() ticks per frame");
+  events.clear();
+  check(manager.activate(1), "same-index activation succeeds");
+  check(events.empty(), "same-index activation is a no-op");
+  check(manager.activateByName("mEnU"), "name activation is case-insensitive");
+  check(events.empty(), "same-mode name activation is a no-op");
 
-  // OnKeyDown (slot 11): routes the event.
-  s.onKeyDown({0x2A, 0, 0, 0});  // VK_LEFT
-  check(s.mGotKey && s.mLastKey.virtualKey == 0x2A,
-        "cellmode: onKeyDown routes the key");
+  check(manager.activateByName("Cell"), "name activation selects another mode");
+  check(manager.mActiveIndex == 0 && events.size() == 2 &&
+            events[0] == "menu:exit" && events[1] == "cell:enter",
+        "name activation preserves transition ordering");
+  events.clear();
+  check(!manager.activate(7), "out-of-range activation fails");
+  check(manager.mActiveIndex == 0 && events.empty(),
+        "failed activation preserves active index and lifecycle");
+  check(!manager.activateByName("missing"), "unknown name activation fails");
 
-  // OnExit (slot 9): reset bg globals + disable.
-  s.mBgClear.r = 1.0f;  // perturb
-  s.onExit();
-  check(!s.mEntered, "cellmode: onExit() disables mode");
-  check(s.mBgClear.r == kDefaultBgClearR,
-        "cellmode: onExit() resets bg clear globals");
+  manager.update(0.25F);
+  check(events.size() == 1 && events[0] == "cell:update",
+        "manager updates only the active mode");
+  events.clear();
+  cell.initialize();
+  menu.initialize();
+  check(manager.registerMode(&cell, "cell") == false,
+        "registry rejects duplicate case-insensitive names");
+  check(manager.registerMode(nullptr, "null") == false,
+        "registry rejects a null mode");
 
-  // Dispose (slot 7): free pool, destroy world, stop display, clear flags.
-  s.initialize();
-  s.onEnter();
-  s.mUI.showHealthRollover(1, 0, 120);
-  check(!s.mUI.rollovers.empty(), "cellmode: pool populated before dispose");
-  s.dispose();
-  check(!s.mInitialized, "cellmode: dispose() clears initialized");
-  check(!s.mEntered, "cellmode: dispose() clears entered");
-  check(s.mUI.rollovers.empty(), "cellmode: dispose() frees pool");
-  check(s.mGfx.slots.empty(), "cellmode: dispose() destroys world");
-  check(!s.mGfx.displayActive, "cellmode: dispose() stops display");
-  check(s.mBgClear.r == kDefaultBgClearR,
-        "cellmode: dispose() resets bg clear globals");
-
-  // --- cGameModeManager switching ---
-  GameModeManager mgr;
-  CellModeStrategy a, b;
-  mgr.add(&a);
-  mgr.add(&b);
-  check(mgr.size() == 2, "manager: two modes registered");
-  check(mgr.mActiveIndex == 0, "manager: index 0 active by default");
-
-  // Switch 0 -> 1: OnExit a, OnEnter b.
-  a.initialize();
-  a.onEnter();
-  check(mgr.setActiveModeAt(1), "manager: switch to index 1 ok");
-  check(mgr.mActiveIndex == 1, "manager: active index is 1");
-  check(!a.mEntered, "manager: old mode OnExit'd");
-  check(b.mEntered, "manager: new mode OnEnter'd");
-  check(b.mGfx.displayActive, "manager: new mode display started");
-
-  // Out-of-range rejected.
-  check(!mgr.setActiveModeAt(7), "manager: out-of-range index rejected");
+  events.clear();
+  manager.dispose();
+  check(manager.size() == 0 &&
+            manager.mActiveIndex == openspore::gamemode::kNoActiveIndex,
+        "manager dispose clears modes and active index");
+  check(events.size() == 3 && events[0] == "cell:exit" &&
+            events[1] == "cell:dispose" && events[2] == "menu:dispose",
+        "manager disposes active mode before registered modes");
 
   std::printf("cellmode_test: %s\n", g_failures == 0 ? "ALL PASS" : "FAIL");
   return g_failures == 0 ? 0 : 1;
