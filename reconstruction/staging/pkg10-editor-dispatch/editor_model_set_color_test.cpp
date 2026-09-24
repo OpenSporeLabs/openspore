@@ -3,21 +3,22 @@
 namespace openspore::reconstruction::pkg10_editor_dispatch {
 
 struct TestEditorModel {
-  unsigned char bytes[0xe0]{};
+  unsigned char bytes[0xe0];
 };
 
+static_assert(sizeof(TestEditorModel) == 0xe0);
 static_assert(__builtin_offsetof(EditorModelColor, red) == 0);
 static_assert(__builtin_offsetof(EditorModelColor, green) == 4);
 static_assert(__builtin_offsetof(EditorModelColor, blue) == 8);
 
-bool unchanged(OpaqueEditorModel *model, int index, EditorModelColor color) {
-  unsigned char before[0xe0]{};
-  unsigned char after[0xe0]{};
+bool unchanged(OpaqueEditorModel *model) {
+  unsigned char before[0xe0];
+  unsigned char after[0xe0];
   auto *bytes = reinterpret_cast<unsigned char *>(model);
   for (unsigned int offset = 0; offset < 0xe0; ++offset) {
     before[offset] = bytes[offset];
   }
-  editor_model_set_color(model, index, color);
+  editor_model_set_color(model);
   for (unsigned int offset = 0; offset < 0xe0; ++offset) {
     after[offset] = bytes[offset];
   }
@@ -30,22 +31,22 @@ bool unchanged(OpaqueEditorModel *model, int index, EditorModelColor color) {
 }
 
 bool run() {
-  const EditorModelColor color{-1.0f, 0.5f, 1.0f};
-  editor_model_set_color(nullptr, 0, color);
+  editor_model_set_color(nullptr);
+  auto *near_null = reinterpret_cast<OpaqueEditorModel *>(1u);
+  editor_model_set_color(near_null);
 
   TestEditorModel model;
-  for (unsigned int index = 0; index < 0xe0; ++index) {
-    model.bytes[index] = static_cast<unsigned char>(index * 37u + 11u);
+  for (unsigned int offset = 0; offset < 0xe0; ++offset) {
+    model.bytes[offset] = static_cast<unsigned char>(offset * 37u + 11u);
   }
-
-  auto *opaque = reinterpret_cast<OpaqueEditorModel *>(&model);
-  return unchanged(opaque, -1, color) && unchanged(opaque, 0, color) &&
-         unchanged(opaque, 2, color) && unchanged(opaque, 3, color) &&
-         unchanged(opaque, -2147483647 - 1, color) &&
-         unchanged(opaque, 2147483647, color);
+  model.bytes[0xa4] = 0x21;
+  model.bytes[0xa5] = 0x43;
+  model.bytes[0xa6] = 0x65;
+  model.bytes[0xa7] = 0x87;
+  return unchanged(reinterpret_cast<OpaqueEditorModel *>(&model));
 }
 
-} // namespace openspore::reconstruction::pkg10_editor_dispatch
+}
 
 int main() {
   return openspore::reconstruction::pkg10_editor_dispatch::run() ? 0 : 1;

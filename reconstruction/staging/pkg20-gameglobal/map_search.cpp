@@ -35,4 +35,4 @@ void PKG20_THISCALL pkg20_gameglobal_00e5c780(
 
 #undef PKG20_THISCALL
 
-}  // namespace openspore::reconstruction::pkg20_gameglobal
+}

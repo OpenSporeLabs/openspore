@@ -4,13 +4,13 @@
   "address": "0x004ae250",
   "symbol": "Editors::EditorModel::SetColor",
   "role": "target",
-  "declaration": "void __thiscall editor_model_set_color(OpaqueEditorModel*, int, EditorModelColor);",
+  "declaration": "void __thiscall editor_model_set_color(OpaqueEditorModel*);",
   "body_implementation": true,
   "abi": {
     "return_type": "void",
     "calling_convention": "__thiscall",
     "hidden_this_register": "ECX",
-    "formal_stack_arguments": [
+    "sdk_symbol_parameters_not_observed_at_entry": [
       {
         "name": "index",
         "type": "int",
@@ -32,6 +32,7 @@
         "observed_body_access": false
       }
     ],
+    "observed_stack_arguments": [],
     "stack_cleanup_bytes": 0,
     "ret_evidence": "The sole return is RET without an immediate cleanup at 0x004ae25a.",
     "effective_direct_call_shape": "All 20 direct call sites load ECX and call the target without an argument-setup sequence for this call. The body also never reads ESP, so the observed executable entry tolerates the ECX-only shape even though the SDK/Ghidra formal signature names a signed index and a 12-byte ColorRGB value."
@@ -61,8 +62,8 @@
   "behavior": {
     "body": "No-op",
     "null_this": "Safe: ECX is copied to a local slot but is never dereferenced.",
-    "index": "Ignored. Negative, in-range, boundary, and out-of-range values have identical behavior because there is no comparison or address calculation.",
-    "color": "Ignored. No component is read or copied.",
+    "index": "Not present in the observed executable entry. The SDK associates a signed int parameter with the symbol, but the body and all direct calls expose no index slot or index-dependent behavior.",
+    "color": "Not present in the observed executable entry. The SDK associates a 12-byte ColorRGB parameter, but the body and all direct calls expose no color slot or color-dependent behavior.",
     "model_fields": "No EditorModel field is read or written, including mColors at +0xa4.",
     "return": "Void; no status, sentinel, error, or EAX assignment is produced by the target instructions."
   },
@@ -160,11 +161,11 @@
     "header": "reconstruction/staging/pkg10-editor-dispatch/editor_model_set_color.hpp",
     "model_test": "reconstruction/staging/pkg10-editor-dispatch/editor_model_set_color_test.cpp",
     "steps": [
-      "Accept the formal EditorModel this pointer in ECX, signed int index, and 12-byte ColorRGB value without reading any of them.",
-      "Perform no null check, index validation, color conversion, model-field load, model-field store, call, or branch.",
+      "Accept the observed EditorModel receiver in ECX without reading or dereferencing it.",
+      "Perform no null check, model-field load, model-field store, call, or branch.",
       "Return void with RET and no stack cleanup or EAX assignment."
     ],
-    "test_scope": "The focused model test calls with null this, indices -1, 0, 2, 3, INT_MIN, and INT_MAX, verifies all 0xe0 model bytes are unchanged, and preserves the ColorRGB 0/4/8 field offsets."
+    "test_scope": "The focused model test checks the observed null and near-null receiver boundary, invokes a valid 0xe0-byte model, verifies every model byte including the +0xa4 color-field start is unchanged, and preserves the SDK ColorRGB 0/4/8 field offsets. No index-boundary test is claimed because the observed direct entry has no index argument."
   },
   "direct_callers": [
     {"address": "0x00441440", "call_sites": ["0x004414f4"]},

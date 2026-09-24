@@ -4,6 +4,7 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
 #include <cstring>
 #include <csignal>
 #include <sys/types.h>
@@ -103,7 +104,9 @@ void run() {
   assert(sporepedia_has_name_00641770(&data));
 
   std::uint64_t destination = UINT64_C(0x0123456789abcdef);
-  assert(sporepedia_get_asset_id_006417c0(&data, &destination) == -1.0F);
+  const float observed = sporepedia_get_asset_id_006417c0(&data, &destination);
+  std::fprintf(stderr, "%a\n", static_cast<double>(observed));
+  assert(observed == -1.0F);
   assert(destination == UINT64_C(0x0123456789abcdef));
   assert(sporepedia_get_asset_id_006417c0(nullptr, &destination) == -1.0F);
   assert(destination == UINT64_C(0x0123456789abcdef));

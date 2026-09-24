@@ -2,7 +2,19 @@
 
 namespace openspore::reconstruction::pkg10_editor_dispatch {
 
-void __thiscall editor_model_set_color(OpaqueEditorModel *, int,
-                                       EditorModelColor) {}
+#if defined(__i386__) && (defined(__GNUC__) || defined(__clang__))
+__attribute__((naked)) void __thiscall
+editor_model_set_color(OpaqueEditorModel *) {
+  __asm__("pushl %ebp\n\t"
+          "movl %esp, %ebp\n\t"
+          "pushl %ecx\n\t"
+          "movl %ecx, -4(%ebp)\n\t"
+          "movl %ebp, %esp\n\t"
+          "popl %ebp\n\t"
+          "ret\n\t");
+}
+#else
+void __thiscall editor_model_set_color(OpaqueEditorModel *) {}
+#endif
 
-} // namespace openspore::reconstruction::pkg10_editor_dispatch
+}

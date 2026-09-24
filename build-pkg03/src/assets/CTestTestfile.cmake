@@ -1,0 +1,36 @@
+# CMake generated Testfile for 
+# Source directory: /home/juanr/Proyectos/OpenSpore/src/assets
+# Build directory: /home/juanr/Proyectos/OpenSpore/build-pkg03/src/assets
+# 
+# This file includes the relevant testing commands required for 
+# testing this directory and lists subdirectories to be tested as well.
+add_test(assets_synthetic "/home/juanr/Proyectos/OpenSpore/build-pkg03/src/assets/assets_test")
+set_tests_properties(assets_synthetic PROPERTIES  WORKING_DIRECTORY "/home/juanr/Proyectos/OpenSpore/build-pkg03/src/assets" _BACKTRACE_TRIPLES "/home/juanr/Proyectos/OpenSpore/src/assets/CMakeLists.txt;20;add_test;/home/juanr/Proyectos/OpenSpore/src/assets/CMakeLists.txt;0;")
+add_test(assets_resource_io "/home/juanr/Proyectos/OpenSpore/build-pkg03/src/assets/resource_io_test" "/home/juanr/Proyectos/OpenSpore/tests/fixtures/mini_package.dbpf")
+set_tests_properties(assets_resource_io PROPERTIES  WORKING_DIRECTORY "/home/juanr/Proyectos/OpenSpore/build-pkg03/src/assets" _BACKTRACE_TRIPLES "/home/juanr/Proyectos/OpenSpore/src/assets/CMakeLists.txt;27;add_test;/home/juanr/Proyectos/OpenSpore/src/assets/CMakeLists.txt;0;")
+add_test(assets_real "/home/juanr/Proyectos/OpenSpore/build-pkg03/src/assets/real_asset_test" "/home/juanr/Proyectos/OpenSpore/SPORE/Data/Spore_Content.package")
+set_tests_properties(assets_real PROPERTIES  _BACKTRACE_TRIPLES "/home/juanr/Proyectos/OpenSpore/src/assets/CMakeLists.txt;38;add_test;/home/juanr/Proyectos/OpenSpore/src/assets/CMakeLists.txt;0;")
+add_test(assets_cellgmdl "/home/juanr/Proyectos/OpenSpore/build-pkg03/src/assets/cell_gmdl_test" "/home/juanr/Proyectos/OpenSpore/SPORE/Data/Spore_Content.package")
+set_tests_properties(assets_cellgmdl PROPERTIES  _BACKTRACE_TRIPLES "/home/juanr/Proyectos/OpenSpore/src/assets/CMakeLists.txt;48;add_test;/home/juanr/Proyectos/OpenSpore/src/assets/CMakeLists.txt;0;")
+add_test(assets_worldobj "/home/juanr/Proyectos/OpenSpore/build-pkg03/src/assets/worldobj_test" "/home/juanr/Proyectos/OpenSpore/SPORE/Data/Spore_Content.package" "/home/juanr/Proyectos/OpenSpore/SPORE/DataEP1/Spore_EP1_Content_01.package")
+set_tests_properties(assets_worldobj PROPERTIES  _BACKTRACE_TRIPLES "/home/juanr/Proyectos/OpenSpore/src/assets/CMakeLists.txt;57;add_test;/home/juanr/Proyectos/OpenSpore/src/assets/CMakeLists.txt;0;")
+add_test(assets_cellres "/home/juanr/Proyectos/OpenSpore/build-pkg03/src/assets/cellres_test" "/home/juanr/Proyectos/OpenSpore/SPORE/DataEP1/Spore_EP1_Data.package")
+set_tests_properties(assets_cellres PROPERTIES  _BACKTRACE_TRIPLES "/home/juanr/Proyectos/OpenSpore/src/assets/CMakeLists.txt;69;add_test;/home/juanr/Proyectos/OpenSpore/src/assets/CMakeLists.txt;0;")
+add_test(assets_cellcell "/home/juanr/Proyectos/OpenSpore/build-pkg03/src/assets/cell_cell_test" "/home/juanr/Proyectos/OpenSpore/SPORE/Data/Spore_Game.package" "/home/juanr/Proyectos/OpenSpore/SPORE/DataEP1/Spore_EP1_Data.package")
+set_tests_properties(assets_cellcell PROPERTIES  _BACKTRACE_TRIPLES "/home/juanr/Proyectos/OpenSpore/src/assets/CMakeLists.txt;80;add_test;/home/juanr/Proyectos/OpenSpore/src/assets/CMakeLists.txt;0;")
+add_test(assets_cellworld "/home/juanr/Proyectos/OpenSpore/build-pkg03/src/assets/cell_world_test" "/home/juanr/Proyectos/OpenSpore/SPORE/Data/Spore_Game.package" "/home/juanr/Proyectos/OpenSpore/SPORE/DataEP1/Spore_EP1_Data.package")
+set_tests_properties(assets_cellworld PROPERTIES  _BACKTRACE_TRIPLES "/home/juanr/Proyectos/OpenSpore/src/assets/CMakeLists.txt;91;add_test;/home/juanr/Proyectos/OpenSpore/src/assets/CMakeLists.txt;0;")
+add_test(assets_cellpopulate "/home/juanr/Proyectos/OpenSpore/build-pkg03/src/assets/cell_populate_test" "/home/juanr/Proyectos/OpenSpore/SPORE/Data/Spore_Game.package" "/home/juanr/Proyectos/OpenSpore/SPORE/DataEP1/Spore_EP1_Data.package")
+set_tests_properties(assets_cellpopulate PROPERTIES  _BACKTRACE_TRIPLES "/home/juanr/Proyectos/OpenSpore/src/assets/CMakeLists.txt;102;add_test;/home/juanr/Proyectos/OpenSpore/src/assets/CMakeLists.txt;0;")
+add_test(assets_cellstructure "/home/juanr/Proyectos/OpenSpore/build-pkg03/src/assets/cell_structure_test" "/home/juanr/Proyectos/OpenSpore/SPORE/Data/Spore_Game.package" "/home/juanr/Proyectos/OpenSpore/SPORE/Data/PatchData.package" "/home/juanr/Proyectos/OpenSpore/SPORE/DataEP1/Spore_EP1_Data.package")
+set_tests_properties(assets_cellstructure PROPERTIES  _BACKTRACE_TRIPLES "/home/juanr/Proyectos/OpenSpore/src/assets/CMakeLists.txt;113;add_test;/home/juanr/Proyectos/OpenSpore/src/assets/CMakeLists.txt;0;")
+add_test(assets_cellloot "/home/juanr/Proyectos/OpenSpore/build-pkg03/src/assets/cell_loot_test" "/home/juanr/Proyectos/OpenSpore/SPORE/Data/Spore_Game.package" "/home/juanr/Proyectos/OpenSpore/SPORE/Data/PatchData.package" "/home/juanr/Proyectos/OpenSpore/SPORE/DataEP1/Spore_EP1_Data.package")
+set_tests_properties(assets_cellloot PROPERTIES  _BACKTRACE_TRIPLES "/home/juanr/Proyectos/OpenSpore/src/assets/CMakeLists.txt;125;add_test;/home/juanr/Proyectos/OpenSpore/src/assets/CMakeLists.txt;0;")
+add_test(assets_celllook "/home/juanr/Proyectos/OpenSpore/build-pkg03/src/assets/cell_look_test" "/home/juanr/Proyectos/OpenSpore/SPORE/Data/Spore_Game.package" "/home/juanr/Proyectos/OpenSpore/SPORE/Data/PatchData.package" "/home/juanr/Proyectos/OpenSpore/SPORE/DataEP1/Spore_EP1_Data.package")
+set_tests_properties(assets_celllook PROPERTIES  _BACKTRACE_TRIPLES "/home/juanr/Proyectos/OpenSpore/src/assets/CMakeLists.txt;137;add_test;/home/juanr/Proyectos/OpenSpore/src/assets/CMakeLists.txt;0;")
+add_test(assets_randcreature "/home/juanr/Proyectos/OpenSpore/build-pkg03/src/assets/randcreature_test" "/home/juanr/Proyectos/OpenSpore/SPORE/Data/Spore_Game.package" "/home/juanr/Proyectos/OpenSpore/SPORE/Data/PatchData.package" "/home/juanr/Proyectos/OpenSpore/SPORE/DataEP1/Spore_EP1_Data.package")
+set_tests_properties(assets_randcreature PROPERTIES  _BACKTRACE_TRIPLES "/home/juanr/Proyectos/OpenSpore/src/assets/CMakeLists.txt;149;add_test;/home/juanr/Proyectos/OpenSpore/src/assets/CMakeLists.txt;0;")
+add_test(assets_effectmap "/home/juanr/Proyectos/OpenSpore/build-pkg03/src/assets/effectmap_test" "/home/juanr/Proyectos/OpenSpore/SPORE/Data/Spore_Game.package" "/home/juanr/Proyectos/OpenSpore/SPORE/Data/PatchData.package" "/home/juanr/Proyectos/OpenSpore/SPORE/DataEP1/Spore_EP1_Data.package")
+set_tests_properties(assets_effectmap PROPERTIES  _BACKTRACE_TRIPLES "/home/juanr/Proyectos/OpenSpore/src/assets/CMakeLists.txt;161;add_test;/home/juanr/Proyectos/OpenSpore/src/assets/CMakeLists.txt;0;")
+add_test(assets_rw4 "/home/juanr/Proyectos/OpenSpore/build-pkg03/src/assets/rw4_test" "/home/juanr/Proyectos/OpenSpore/SPORE/Data/Spore_Content.package")
+set_tests_properties(assets_rw4 PROPERTIES  _BACKTRACE_TRIPLES "/home/juanr/Proyectos/OpenSpore/src/assets/CMakeLists.txt;174;add_test;/home/juanr/Proyectos/OpenSpore/src/assets/CMakeLists.txt;0;")

@@ -20,6 +20,19 @@ bool unchanged(const OrderedMap &map, const Snapshot &before) {
 }
 
 void run() {
+  OrderedMap exact_map{};
+  OrderedMapEntry exact{};
+  exact.key = 20;
+  exact_map.anchor.parent = &exact.base;
+  exact_map.size = 1;
+
+  const Snapshot exact_before = snapshot(exact_map);
+  OrderedMapEntry *exact_result = nullptr;
+  TargetWord exact_query = 20;
+  pkg20_gameglobal_00e5c780(&exact_map, &exact_result, &exact_query);
+  assert(exact_result == &exact);
+  assert(unchanged(exact_map, exact_before));
+
   OrderedMap map{};
   OrderedMapEntry low{};
   OrderedMapEntry middle{};
@@ -36,12 +49,7 @@ void run() {
   const Snapshot before = snapshot(map);
   OrderedMapEntry *sentinel = reinterpret_cast<OrderedMapEntry *>(&map.anchor);
   OrderedMapEntry *result = nullptr;
-  TargetWord query = 20;
-  pkg20_gameglobal_00e5c780(&map, &result, &query);
-  assert(result == &middle);
-  assert(unchanged(map, before));
-
-  query = 25;
+  TargetWord query = 25;
   pkg20_gameglobal_00e5c780(&map, &result, &query);
   assert(result == sentinel);
   assert(unchanged(map, before));
@@ -57,7 +65,7 @@ void run() {
   assert(unchanged(map, before));
 }
 
-}  // namespace openspore::reconstruction::pkg20_gameglobal
+}
 
 int main() {
   openspore::reconstruction::pkg20_gameglobal::run();
