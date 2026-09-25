@@ -1,0 +1,118 @@
+{
+  "schema": "wave6-containers-memory-function-handoff-v1",
+  "package": "PKG-WAVE6-CONTAINERS-MEMORY",
+  "function_address": "0x00432a50",
+  "ghidra_name": "Reference",
+  "normalized_symbol": "wave6_reference_00432a50",
+  "source_files": [
+    "reconstruction/staging/wave6-containers-memory/containers_memory.hpp",
+    "reconstruction/staging/wave6-containers-memory/containers_memory.cpp",
+    "reconstruction/staging/wave6-containers-memory/containers_memory_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "std::uint32_t __thiscall wave6_reference_00432a50(Wave6ReferenceCounted* object);",
+  "abi": {
+    "return_type": "std::uint32_t",
+    "return_register": "EAX",
+    "calling_convention": "__thiscall observed",
+    "receiver_register": "ECX",
+    "stack_arguments": [],
+    "stack_cleanup_bytes": 0,
+    "termination": "RET",
+    "model_status": "exact x86-32 thiscall boundary"
+  },
+  "target_layout": {
+    "minimum_size_bytes": 8,
+    "fields": [
+      {"offset": "0x00", "size_bytes": 4, "meaning": "opaque vftable or prefix word"},
+      {"offset": "0x04", "size_bytes": 4, "meaning": "signed 32-bit reference count"}
+    ],
+    "evidence": "The decompilation and disassembly both add 4 to the saved ECX receiver and perform the locked XADD at that address; no complete ResourceManager layout is claimed."
+  },
+  "mechanics": {
+    "receiver": "Save ECX, add 4 to form the count address, and do not null-check the receiver.",
+    "atomic_increment": "Initialize ECX to 1 and execute LOCK XADD [count], ECX.",
+    "return": "Increment the old count returned in ECX and return old-count-plus-one in EAX.",
+    "signedness": "The field is observed as a signed 32-bit word; the model preserves modulo-2^32 wraparound for the returned and stored values.",
+    "other_writes": "The function has no direct calls and no writes outside the word at receiver+0x04."
+  },
+  "call_graph": {
+    "direct_callers_count": 83,
+    "representative_direct_callers": [
+      "0x00404660",
+      "0x0040f4a0",
+      "0x0040f820",
+      "0x005598b0",
+      "0x00813e70",
+      "0x00ad95c0"
+    ],
+    "direct_callees": [],
+    "function_xrefs": 186
+  },
+  "evidence": [
+    {
+      "tool": "ghidra_get_function_by_address",
+      "address": "0x00432a50",
+      "observation": "Ghidra reports Reference with body range 0x00432a50-0x00432a6c and 13 instructions."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x00432a50",
+      "observation": "The disassembly saves ECX, adds 4, initializes ECX to 1, executes LOCK XADD, increments ECX, returns EAX, and uses RET."
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x00432a50",
+      "observation": "The live pseudocode exposes a LOCK/UNLOCK pair around the receiver+0x04 increment and returns the incremented count."
+    },
+    {
+      "tool": "ghidra_get_function_callers",
+      "address": "0x00432a50",
+      "observation": "Ghidra reports 83 direct caller functions, making this a high-fan-in lifetime primitive."
+    },
+    {
+      "tool": "ghidra_get_function_xrefs",
+      "address": "0x00432a50",
+      "observation": "Ghidra reports 186 function xrefs, including computed and data references."
+    },
+    {
+      "tool": "ghidra_get_function_callees",
+      "address": "0x00432a50",
+      "observation": "Ghidra reports no direct callees."
+    }
+  ],
+  "confidence": {
+    "overall": "high for the locked increment, return value, field offset, and no-direct-call contract",
+    "high": [
+      "thiscall ECX receiver",
+      "count at receiver+0x04",
+      "LOCK XADD increment by one",
+      "return old count plus one",
+      "signed 32-bit wraparound",
+      "no null guard",
+      "no direct callees"
+    ],
+    "medium": [
+      "the complete ResourceManager owner and the meaning of receiver+0x00 are unresolved"
+    ],
+    "low": []
+  },
+  "verification": {
+    "command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror reconstruction/staging/wave6-containers-memory/containers_memory.cpp reconstruction/staging/wave6-containers-memory/containers_memory_model_test.cpp -o /tmp/opencode/wave6-containers-memory-model && /tmp/opencode/wave6-containers-memory-model",
+    "result": "passed",
+    "model_cases": [
+      "ordinary count increment and returned value",
+      "INT32_MAX increment wrapping to INT32_MIN"
+    ],
+    "format_result": "passed"
+  },
+  "unresolved_questions": [
+    "The concrete ResourceManager subtype and complete receiver layout are not established by the local body.",
+    "The exact synchronization guarantees of the original atomic primitive and the lifetime policy for count zero are outside this function.",
+    "The imported function name Reference is retained as the Ghidra label; the source-level class ownership remains opaque."
+  ],
+  "blockers": [
+    "No original-process runtime trace is available for concurrent callers.",
+    "The package model exposes only the observed four-byte count prefix and does not synthesize a complete ResourceManager type."
+  ]
+}

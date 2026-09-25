@@ -1,0 +1,129 @@
+{
+  "schema": "wave6-containers-memory-function-handoff-v1",
+  "package": "PKG-WAVE6-CONTAINERS-MEMORY",
+  "function_address": "0x00926100",
+  "ghidra_name": "FixedPoolAllocator::Alloc",
+  "normalized_symbol": "wave6_fixed_pool_allocator_alloc_00926100",
+  "source_files": [
+    "reconstruction/staging/wave6-containers-memory/containers_memory.hpp",
+    "reconstruction/staging/wave6-containers-memory/containers_memory.cpp",
+    "reconstruction/staging/wave6-containers-memory/containers_memory_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "void* wave6_fixed_pool_allocator_alloc_00926100(Wave6FixedPoolAllocator* allocator);",
+  "abi": {
+    "return_type": "void*",
+    "return_register": "EAX",
+    "calling_convention": "cdecl observed from direct caller",
+    "receiver_register": null,
+    "stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "ESP+0x04",
+        "name": "allocator",
+        "type": "Wave6FixedPoolAllocator*",
+        "width_bytes": 4
+      }
+    ],
+    "stack_cleanup_bytes": 4,
+    "termination": "RET",
+    "model_status": "exact x86-32 direct-call boundary"
+  },
+  "target_layout": {
+    "size_bytes": 32,
+    "fields": [
+      {"offset": "0x00", "size_bytes": 4, "meaning": "opaque vftable pointer"},
+      {"offset": "0x04", "size_bytes": 4, "meaning": "opaque allocator pointer"},
+      {"offset": "0x08", "size_bytes": 4, "meaning": "opaque word"},
+      {"offset": "0x0c", "size_bytes": 4, "meaning": "opaque word"},
+      {"offset": "0x10", "size_bytes": 4, "meaning": "opaque word"},
+      {"offset": "0x14", "size_bytes": 4, "meaning": "opaque object-size word"},
+      {"offset": "0x18", "size_bytes": 4, "meaning": "active critical-section count"},
+      {"offset": "0x1c", "size_bytes": 4, "meaning": "opaque trailing word"}
+    ],
+    "evidence": "ghidra_get_struct_layout(FixedPoolAllocator) reports size 32 and the field_18 offset used by the body."
+  },
+  "mechanics": {
+    "null_path": "A null allocator returns null before any field access or callback.",
+    "initialization": "For a non-null allocator, write zero to offset 0x18, call InitializeCriticalSectionAndSpinCount(allocator, 10), and return the same allocator pointer.",
+    "ignored_words": "The direct caller pushes only the allocator pointer. The imported Ghidra signature showing size, name, and flags is contradicted by the live call site and the body reads neither word."
+  },
+  "call_graph": {
+    "direct_callers": [
+      {
+        "address": "0x009274d0",
+        "name": "FUN_009274d0",
+        "call_site": "0x009274f1"
+      }
+    ],
+    "direct_callees": [
+      {
+        "name": "InitializeCriticalSectionAndSpinCount",
+        "ghidra_address": "0x00000069"
+      }
+    ],
+    "function_xrefs": 1
+  },
+  "evidence": [
+    {
+      "tool": "ghidra_get_function_by_address",
+      "address": "0x00926100",
+      "observation": "Ghidra reports FixedPoolAllocator::Alloc with body range 0x00926100-0x0092611a and 12 instructions."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x00926100",
+      "observation": "The body loads the first stack word, checks it for null, writes zero to [ESI+0x18], pushes 10 and the pointer, calls the imported initializer, and returns the pointer."
+    },
+    {
+      "tool": "ghidra_get_function_callers",
+      "address": "0x00926100",
+      "observation": "Ghidra reports one direct caller at 0x009274d0."
+    },
+    {
+      "tool": "ghidra_get_function_xrefs",
+      "address": "0x00926100",
+      "observation": "The sole direct call xref is 0x009274f1."
+    },
+    {
+      "tool": "ghidra_get_function_callees",
+      "address": "0x00926100",
+      "observation": "The only direct callee is InitializeCriticalSectionAndSpinCount."
+    },
+    {
+      "tool": "ghidra_get_struct_layout",
+      "type": "FixedPoolAllocator",
+      "observation": "The imported structure is 32 bytes and exposes field_18 at offset 0x18."
+    }
+  ],
+  "confidence": {
+    "overall": "high for the observed local mechanics; imported function identity is bounded",
+    "high": [
+      "one cdecl stack word",
+      "null guard",
+      "field_18 zeroing",
+      "initializer spin count 10",
+      "returned pointer identity",
+      "32-byte layout"
+    ],
+    "medium": [
+      "whether the imported Alloc name denotes initialization rather than a different allocator entry point"
+    ],
+    "low": []
+  },
+  "verification": {
+    "command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror reconstruction/staging/wave6-containers-memory/containers_memory.cpp reconstruction/staging/wave6-containers-memory/containers_memory_model_test.cpp -o /tmp/opencode/wave6-containers-memory-model && /tmp/opencode/wave6-containers-memory-model",
+    "result": "passed",
+    "format_command": "clang-format --dry-run --Werror -style='{BasedOnStyle: Google, FixNamespaceComments: false}' reconstruction/staging/wave6-containers-memory/containers_memory.hpp reconstruction/staging/wave6-containers-memory/containers_memory.cpp reconstruction/staging/wave6-containers-memory/containers_memory_model_test.cpp",
+    "format_result": "passed"
+  },
+  "unresolved_questions": [
+    "The imported Alloc label may not be the source-level method name.",
+    "The concrete FixedPoolAllocator owner and the runtime critical-section state remain outside the local body.",
+    "The caller's later EnterCriticalSection and active-count increment are separate operations and are not folded into this function."
+  ],
+  "blockers": [
+    "No runtime execution of the original allocator is available.",
+    "The external initializer is represented by a package-local port for focused model testing."
+  ]
+}

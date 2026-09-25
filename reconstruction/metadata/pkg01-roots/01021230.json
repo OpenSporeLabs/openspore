@@ -1,0 +1,89 @@
+{
+  "schema": "pkg01-space-player-data-accessor-metadata.v1",
+  "assignment_id": "SPACE-ACCESSORS-METADATA-09",
+  "phase": "integration-metadata",
+  "package": "PKG-01-SHARED-STATE-ROOTS",
+  "va": "0x01021230",
+  "ghidra_name": "FUN_01021230",
+  "declaration": "OpaqueActiveStar *PKG01_CDECL FUN_01021230();",
+  "source": {
+    "header": "src/reconstruction/pkg01_roots/space_player_data_accessors.hpp",
+    "implementation": "src/reconstruction/pkg01_roots/space_player_data_accessors.cpp",
+    "model_test": "src/reconstruction/pkg01_roots/space_player_data_accessors_model_test.cpp",
+    "status": "static_host_model"
+  },
+  "live_abi": {
+    "target": "x86:LE:32:windows",
+    "calling_convention": "cdecl-compatible no-argument accessor",
+    "formal_parameters": [],
+    "stack_cleanup_bytes": 0,
+    "return_register": "EAX",
+    "return_width_bytes": 4,
+    "return_type": "opaque 32-bit active-star pointer word"
+  },
+  "mechanics": {
+    "read_offset": "+0x08",
+    "source_global": "Simulator::sSpacePlayerData at 0x016dda8c",
+    "behavior": "Loads the four-byte word at source_global+0x08 and returns it unchanged; the pointee is not dereferenced.",
+    "null_behavior": "A zero +0x08 word returns zero. There is no null guard for source_global, so a null global reaches the +0x08 load and has no defined null result."
+  },
+  "model_boundary": {
+    "represented": "SpacePlayerDataAccessPrefix is a 0x14-byte host prefix sufficient for the +0x08 read.",
+    "field_provenance": "Repository SDK/layout evidence labels +0x08 mpActiveStar and describes intrusive-pointer mechanics elsewhere.",
+    "type_boundary": "OpaqueActiveStar is an incomplete host return type; no concrete star subtype, vtable identity, or full star layout is asserted.",
+    "not_represented": "The 0x14-byte prefix does not claim the 0x34-byte whole SpacePlayerData layout or model its allocation, replacement, release, or teardown paths."
+  },
+  "return_semantics": {
+    "kind": "borrowed pointer return",
+    "reference_counting": "The target performs no AddRef or Release and has no reachable call path.",
+    "ownership": "The returned pointer is a view of the current slot value; this function does not own or transfer the star, the SpacePlayerData object, or any whole-object state."
+  },
+  "evidence": {
+    "classification": "static_only",
+    "runtime_validated": false,
+    "function_size_bytes": 9,
+    "direct_callees": 0,
+    "assembly": [
+      "01021230: MOV EAX,[0x016dda8c]",
+      "01021235: MOV EAX,dword ptr [EAX + 0x8]",
+      "01021238: RET"
+    ],
+    "decompiler": "return *(undefined4 *)(Simulator__sSpacePlayerData + 8);"
+  },
+  "runtime_gates": [
+    "No trace establishes when the published global is valid during initialization or teardown.",
+    "Separate static writers and cleanup routines can replace or release the +0x08 slot; use-after-clear or stale-pointer windows remain runtime questions.",
+    "The concrete returned object and its lifetime are not established by this accessor."
+  ],
+  "unresolved_questions": [
+    "What concrete star subtype and vtable can the +0x08 word contain?",
+    "What lifetime guarantee accompanies use of the borrowed returned pointer?"
+  ],
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I src/reconstruction/pkg01_roots src/reconstruction/pkg01_roots/space_player_data_accessors.cpp src/reconstruction/pkg01_roots/space_player_data_accessors_model_test.cpp",
+    "model_test_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -I src/reconstruction/pkg01_roots src/reconstruction/pkg01_roots/space_player_data_accessors.cpp src/reconstruction/pkg01_roots/space_player_data_accessors_model_test.cpp -o /tmp/opencode/space-player-data-accessors-metadata-test && /tmp/opencode/space-player-data-accessors-metadata-test",
+    "result": "passed x86-32 syntax and host-model assertions; this is not runtime validation"
+  },
+  "provenance": [
+    {
+      "kind": "live_ghidra",
+      "program": "SporeApp.exe",
+      "operations": [
+        "decompile_function(0x01021230)",
+        "disassemble_function(0x01021230)",
+        "get_function_by_address(0x01021230)",
+        "get_function_callees(0x01021230)",
+        "get_xrefs_to(0x016dda8c)",
+        "read_memory(0x016dda8c, 4)",
+        "decompile_function(0x01021240)"
+      ]
+    },
+    {
+      "kind": "repository_static_context",
+      "sources": [
+        "knowledgegraph/research/root-closure/track-f-space-context.md",
+        "knowledgegraph/research/root-closure/followup-space-lifecycle.json"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,227 @@
+{
+  "schema": "pkg12-space-player-cache-handoff.v1",
+  "package": "PKG-12-SIM-SPACE",
+  "function_address": "0x01021300",
+  "ghidra_name": "FUN_01021300",
+  "normalized_symbol": "pkg12_space_01021300",
+  "source_files": [
+    "reconstruction/staging/pkg12-space/space_player_cache.hpp",
+    "reconstruction/staging/pkg12-space/space_player_cache.cpp",
+    "reconstruction/staging/pkg12-space/space_player_cache_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "Empire* pkg12_space_01021300();",
+  "model_boundary": "pkg12_space_01021300 is modeled as the live zero-argument global-state wrapper. It reads the host stand-ins g_simulator_space_player_data and g_simulator_empire_lookup, then calls refresh_player_empire_staged. The staged helper is not claimed to be the exact entry point; it exposes the live pre-staged four-byte ID word and lookup boundary without recreating the shared map type.",
+  "live_abi": {
+    "calling_convention": "cdecl-compatible no-argument accessor",
+    "stack_arguments": [],
+    "stack_cleanup_bytes": 0,
+    "return_register": "EAX",
+    "return_type": "cEmpire* as a borrowed 32-bit pointer word",
+    "return_observation": "The return is the cached pointer at sSpacePlayerData+0x1c, or zero when the empire key is 0xffffffff. No return-path AddRef is present.",
+    "global_state_pointer": "Simulator::sSpacePlayerData at 0x016DDA8C"
+  },
+  "state_layout": {
+    "space_player_data_type": "/Spore/Simulator/SpacePlayerData",
+    "space_player_data_size": 52,
+    "key_field": {
+      "offset": "+0x18",
+      "name": "mPlayerEmpireID",
+      "type": "uint32_t",
+      "comparison": "CMP EAX,0xffffffff",
+      "use": "The exact -1/0xffffffff sentinel returns null before lookup, AddRef, store, or Release"
+    },
+    "cache_field": {
+      "offset": "+0x1c",
+      "name": "mpPlayerEmpire",
+      "type": "intrusive_ptr<Simulator::cEmpire>",
+      "use": "Cached old empire pointer"
+    },
+    "empire_type": "/Spore/Simulator/cEmpire",
+    "empire_size": 344,
+    "identity_field": {
+      "offset": "+0x84",
+      "ghidra_field_name": "mTrait",
+      "type": "EmpireTrait",
+      "use": "The target compares this raw word with the player empire key; the semantic identity name remains unresolved"
+    }
+  },
+  "lookup_interface": {
+    "root": "FUN_00B3D2A0 at 0x00B3D2A0 returns DAT_0167EAE4 in EAX and has no formal arguments; the live body has already staged the empire ID on the caller stack",
+    "find": "FUN_00BA9370 at 0x00BA9370 is __thiscall, receives the root object in ECX and consumes the staged empire ID from the caller stack with RET 4, and returns a pointer word",
+    "model_shape": "EmpireLookup contains RootWithStagedId and FindWithStagedId callbacks; both receive the four-byte StagedIdWord so the host model exposes the machine path without claiming a formal argument on the live root getter",
+    "staged_id_word": {
+      "type": "StagedIdWord",
+      "width_bytes": 4,
+      "live_path": "PUSH EAX precedes the no-argument root getter, then the same stack word is consumed by FUN_00BA9370",
+      "model_path": "refresh_player_empire_staged creates one StagedIdWord and passes it to RootWithStagedId and FindWithStagedId",
+      "entry_boundary": "refresh_player_empire_staged is a testable machine-boundary model, not the live zero-argument entry"
+    },
+    "shared_map_policy": "No map or map entry type is duplicated; the callback boundary preserves only the root and find operations required by this body"
+  },
+  "mechanics": [
+    "The live zero-argument entry reads the global state pointer and dispatches to the staged-ID model boundary.",
+    "The staged model creates one four-byte StagedIdWord from the global cache+0x18 field before the sentinel check.",
+    "Return null immediately for staged_id.value == 0xffffffff, preserving the old cache and all reference counts.",
+    "Read old_empire from cache+0x1c; accept it without a lookup when it is non-null and empire+0x84 equals staged_id.value.",
+    "On refresh, pass the same StagedIdWord to the root boundary first, then pass it to the thiscall find boundary with the root.",
+    "If the lookup result equals old_empire, leave the cache unchanged and do not call AddRef or Release.",
+    "If the lookup result is distinct and non-null, AddRef it before storing it at cache+0x1c.",
+    "After the store, Release old_empire when it is non-null.",
+    "Return cache+0x1c without AddRef; the returned empire is borrowed from the cache."
+  ],
+  "state_cases": [
+    {
+      "name": "invalid_empire_id",
+      "condition": "empire_id == 0xffffffff",
+      "result": "null",
+      "cache": "unchanged",
+      "calls": []
+    },
+    {
+      "name": "identity_hit",
+      "condition": "old_empire != null and old_empire+0x84 == empire_id",
+      "result": "old_empire",
+      "cache": "unchanged",
+      "calls": []
+    },
+    {
+      "name": "distinct_refresh",
+      "condition": "lookup returns a pointer different from old_empire",
+      "result": "new_empire",
+      "cache": "new_empire",
+      "calls": ["root", "find", "AddRef(new_empire)", "Release(old_empire)"]
+    },
+    {
+      "name": "equal_pointer_refresh",
+      "condition": "refresh lookup returns old_empire",
+      "result": "old_empire",
+      "cache": "unchanged",
+      "calls": ["root", "find"]
+    },
+    {
+      "name": "null_lookup",
+      "condition": "lookup returns null and old_empire is non-null",
+      "result": "null",
+      "cache": "null",
+      "calls": ["root", "find", "Release(old_empire)"]
+    }
+  ],
+  "call_graph": {
+    "direct_callers": 182,
+    "direct_callees": [
+      {
+        "address": "0x00b3d2a0",
+        "role": "no-argument root getter"
+      },
+      {
+        "address": "0x00ba9370",
+        "role": "thiscall empire lookup by key"
+      }
+    ],
+    "function_xrefs": 299,
+    "representative_call_sites": [
+      "0x0102d5d4 from FUN_0102d1b0",
+      "0x01021370 from FUN_01021370",
+      "0x0102f02a from FUN_0102df20"
+    ],
+    "data_xrefs": {
+      "state_global": {
+        "address": "0x016DDA8C",
+        "name": "Simulator::sSpacePlayerData",
+        "xref_count": 56,
+        "observed_initialization": "FUN_01021D40 allocates 0x34 bytes, writes +0x18 and +0x1c, and stores the pointer at 0x016DDA8C"
+      },
+      "root_global": {
+        "address": "0x0167EAE4",
+        "name": "DAT_0167EAE4",
+        "xref_count": 2,
+        "observed_readers": ["FUN_00B3D2A0", "FUN_00B3D2C0"]
+      }
+    }
+  },
+  "evidence": [
+    {
+      "tool": "ghidra_get_function_by_address",
+      "address": "0x01021300",
+      "observation": "The live function has no parameters, body range 0x01021300 through 0x01021368, and undefined return type."
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x01021300",
+      "observation": "The decompiler shows the +0x18 sentinel check, +0x84 identity check, root lookup, distinct-pointer AddRef, cache store, old-pointer Release, and cached return."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x01021300",
+      "observation": "The exact 43-instruction body compares EAX with -1, reads [ECX+0x84], calls 0x00B3D2A0 and 0x00BA9370, invokes vtable slot 0 on a distinct new pointer, stores it, invokes vtable slot 1 on the old pointer, and returns [global+0x1c]."
+    },
+    {
+      "tool": "ghidra_read_memory",
+      "address": "0x01021300",
+      "observation": "The live body is 105 bytes; the bytes confirm CMP EAX,-1, the +0x84 load, the two calls, the two indirect vtable calls, and the two return paths."
+    },
+    {
+      "tool": "ghidra_get_function_callees",
+      "address": "0x01021300",
+      "observation": "Only FUN_00B3D2A0 and FUN_00BA9370 are direct callees."
+    },
+    {
+      "tool": "ghidra_get_function_callers",
+      "address": "0x01021300",
+      "observation": "The live function has 182 direct caller functions."
+    },
+    {
+      "tool": "ghidra_get_function_xrefs",
+      "address": "0x01021300",
+      "observation": "The live function has 299 xrefs, including calls from FUN_0102D1B0, FUN_01021370, and FUN_0102DF20."
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "addresses": ["0x00b3d2a0", "0x00ba9370"],
+      "observation": "The root getter returns DAT_0167EAE4 with no arguments; the lookup helper rejects -1, searches its shared map through the thiscall boundary, and returns the stored intrusive pointer word."
+    },
+    {
+      "tool": "ghidra_get_struct_layout",
+      "addresses": ["SpacePlayerData", "cEmpire"],
+      "observation": "SpacePlayerData exposes +0x18 mPlayerEmpireID and +0x1c mpPlayerEmpire; cEmpire exposes the compared raw word at +0x84."
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x01021d40",
+      "observation": "Initialization allocates the 0x34-byte state, writes 0xffffffff to +0x18, writes zero to +0x1c, and publishes the state pointer at 0x016DDA8C."
+    },
+    {
+      "tool": "ghidra_audit_global",
+      "address": "0x016DDA8C",
+      "observation": "The live global is named Simulator::sSpacePlayerData and has 56 xrefs; its documentation state is incomplete in Ghidra but its field accesses are directly observed."
+    }
+  ],
+  "confidence": {
+    "body_and_reference_order": "high",
+    "state_offsets": "high",
+    "lookup_callback_shape": "high",
+    "shared_map_storage": "medium; consumed through the existing lookup boundary",
+    "empire_identity_semantics": "medium-low; the compared field is labeled mTrait in Ghidra",
+    "borrowed_return": "high"
+  },
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only reconstruction/staging/pkg12-space/space_player_cache.cpp reconstruction/staging/pkg12-space/space_player_cache_model_test.cpp",
+    "model_test_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror reconstruction/staging/pkg12-space/space_player_cache.cpp reconstruction/staging/pkg12-space/space_player_cache_model_test.cpp -o /tmp/pkg12-space-player-cache-test && /tmp/pkg12-space-player-cache-test",
+    "layout_check": "The model static_asserts SpacePlayerCache offsets 0x18 and 0x1c and Empire identity offset 0x84.",
+    "json_check": "python3 -m json.tool reconstruction/metadata/pkg12-space/01021300.json >/dev/null"
+  },
+  "unresolved_questions": [
+    "The shared map owner and concrete manager type behind DAT_0167EAE4 and FUN_00BA9370 remain outside this package.",
+    "The semantic name of cEmpire+0x84 is unresolved; Ghidra labels it mTrait while the target treats it as the cache identity word.",
+    "The live cache validates only the existing cached empire's +0x84 identity before refresh and does not validate a newly returned empire's +0x84 identity after 0x00ba9370. Because 0x00ba9370 is guarded-hybrid dependent, its result can be null/anchor or a nonmatching empire, so the live body may AddRef/store a nonmatching new pointer without an identity check.",
+    "The 182 callers establish broad use but do not by themselves establish a universal ownership contract beyond the observed cache AddRef/store/Release behavior.",
+    "The host globals are explicit stand-ins for the live global at 0x016DDA8C and the lookup boundary; they are not linked to integrated PKG-12 source in this assignment.",
+    "The live root getter has no formal staged-ID argument; RootWithStagedId is intentionally a host adapter that exposes the pre-existing stack word for the model."
+  ],
+  "blockers": [
+    "A native integration test against the original global state is not available without modifying the existing PKG-12 integration boundary, which is out of scope.",
+    "The lookup interface is modeled at the root and thiscall find boundaries; no shared map type or runtime manager allocation is reconstructed here.",
+    "The borrowed return is preserved by the absence of a return-path AddRef, but concrete cEmpire vtable ownership remains unresolved."
+  ]
+}

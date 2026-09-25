@@ -1,0 +1,82 @@
+{
+  "schema": "pkg10-editor-dispatch.function-handoff.v1",
+  "package": "PKG-10-EDITOR-DISPATCH",
+  "address": "0x005dd750",
+  "symbol": "editor_query_reset_005dd750",
+  "role": "target",
+  "source_files": [
+    "reconstruction/staging/pkg10-editor-dispatch/editor_query_helpers.hpp",
+    "reconstruction/staging/pkg10-editor-dispatch/editor_query_helpers.cpp",
+    "reconstruction/staging/pkg10-editor-dispatch/editor_query_helpers_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "OpaquePreferenceQuery * __thiscall editor_query_reset_005dd750(OpaquePreferenceQuery *query, OpaquePropertyValue *value);",
+  "abi": {
+    "return_type": "OpaquePreferenceQuery *",
+    "return_register": "EAX",
+    "calling_convention": "__thiscall observed",
+    "hidden_this_register": "ECX",
+    "stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "ESP+0x04",
+        "type": "OpaquePropertyValue *",
+        "width_bytes": 4,
+        "observed_use": "Forwarded unchanged to the property-value callback"
+      }
+    ],
+    "stack_cleanup_bytes": 4,
+    "termination": "RET 0x4"
+  },
+  "layout": {
+    "query_size_bytes": "0x14",
+    "flags_word_offset": "0x10",
+    "trailing_flags_word_offset": "0x12"
+  },
+  "mechanics": {
+    "order": [
+      "Save ECX in ESI and load the stack value pointer into EDX.",
+      "Clear the word at query+0x12 to zero.",
+      "Push the stack value pointer, clear the word at query+0x10 to zero, and call the property-value boundary with ECX=query.",
+      "Return query in EAX; the callback return is not propagated."
+    ],
+    "callback": {
+      "address": "0x00422e20",
+      "contract": "OpaquePreferenceQuery * __thiscall(OpaquePreferenceQuery *, OpaquePropertyValue *)",
+      "return_use": "The staged helper discards the callback return and returns its own query pointer."
+    },
+    "null_paths": "No null guard is added for query or the stack value pointer."
+  },
+  "call_graph": {
+    "direct_callers": 3,
+    "function_xrefs": 6,
+    "direct_callees": ["0x00422e20"],
+    "representative_callers": [
+      {"address": "0x005e0000", "use": "Preference query reset before the preferences-list slot"},
+      {"address": "0x00b76160", "use": "Additional query/property caller"},
+      {"address": "0x00de9a00", "use": "Additional query/property caller"}
+    ]
+  },
+  "evidence": [
+    {"tool": "ghidra_decompile_function", "address": "0x005dd750", "observation": "The function clears both flag words, invokes App::Property::SetValueBool, and returns param_1."},
+    {"tool": "ghidra_disassemble_function", "address": "0x005dd750", "observation": "The exact sequence is word[+0x12]=0, push stack pointer, clear word[+0x10]=0, call 0x00422e20, and return query."},
+    {"tool": "ghidra_get_function_callers", "address": "0x005dd750", "observation": "Three direct caller functions are present."},
+    {"tool": "ghidra_get_function_xrefs", "address": "0x005dd750", "observation": "Six direct code references are present."},
+    {"tool": "ghidra_get_function_signature", "address": "0x00422e20", "observation": "The external property setter has two parameters and is the only direct callee."}
+  ],
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/pkg10-editor-dispatch reconstruction/staging/pkg10-editor-dispatch/editor_query_helpers.cpp",
+    "model_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg10-editor-dispatch reconstruction/staging/pkg10-editor-dispatch/editor_query_helpers.cpp reconstruction/staging/pkg10-editor-dispatch/editor_query_helpers_model_test.cpp -o /tmp/opencode/pkg10-query-helpers && /tmp/opencode/pkg10-query-helpers",
+    "format_command": "clang-format --dry-run --Werror -style=\"{BasedOnStyle: Google, FixNamespaceComments: false}\" reconstruction/staging/pkg10-editor-dispatch/editor_query_helpers.hpp reconstruction/staging/pkg10-editor-dispatch/editor_query_helpers.cpp reconstruction/staging/pkg10-editor-dispatch/editor_query_helpers_model_test.cpp",
+    "json_command": "python3 -m json.tool reconstruction/metadata/pkg10-editor-dispatch/005dd750.json >/dev/null"
+  },
+  "unresolved_questions": [
+    "What concrete Property value is supplied by each caller and how is it populated?",
+    "What owns the 0x14-byte query object and its flags?",
+    "Does the external property setter have runtime side effects beyond the observed call?"
+  ],
+  "blockers": [
+    "The stack value pointer is semantically opaque and is not assigned a message or preference meaning.",
+    "The external property owner and its persistence behavior are not reconstructed here."
+  ]
+}

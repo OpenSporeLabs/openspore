@@ -1,0 +1,279 @@
+{
+  "schema": "pkg13-c2-tribe-civilization.function-handoff.v1",
+  "package": "PKG-13-C2-TRIBE-CIVILIZATION",
+  "function_address": "0x00b25f40",
+  "ghidra_name": "FUN_00b25f40",
+  "normalized_symbol": "tribe_civilization_resolver_00b25f40",
+  "binary": {
+    "program": "SporeApp.exe",
+    "version": "3.1.0.22",
+    "architecture": "x86:LE:32",
+    "image_base": "0x00400000"
+  },
+  "phase": "body-reconstruction",
+  "status": "implemented in worker-owned staging",
+  "staging_paths": [
+    "reconstruction/staging/pkg13-c2-tribe-civilization/tribe_civilization.hpp",
+    "reconstruction/staging/pkg13-c2-tribe-civilization/tribe_civilization.cpp",
+    "reconstruction/staging/pkg13-c2-tribe-civilization/tribe_civilization_model_test.cpp"
+  ],
+  "declaration": "NounObject* __thiscall tribe_civilization_resolver_00b25f40(NounProjection* receiver, std::uint32_t identity)",
+  "abi": {
+    "architecture": "x86-32",
+    "calling_convention": "thiscall",
+    "hidden_this_register": "ECX",
+    "hidden_this_type": "NounProjection* receiver forwarded to 0x00b21340",
+    "ordinary_stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "ESP+0x04",
+        "name": "identity",
+        "type": "std::uint32_t",
+        "width_bytes": 4
+      }
+    ],
+    "stack_cleanup_bytes": 4,
+    "return_register": "EAX",
+    "return_width_bytes": 4,
+    "return_type": "NounObject* borrowed candidate pointer or null",
+    "termination": "RET 0x4",
+    "saved_registers": ["EBX", "EBP", "ESI", "EDI"]
+  },
+  "mechanics": {
+    "execution_order": [
+      "Save EBX, EBP, ESI, and EDI.",
+      "Push the fixed callback words in reverse argument order: 0x018c816a, 0x00b1e500, 0x00b236c0, 0x00d3d420, and 0x00b21080.",
+      "Call 0x00b21340 with the hidden ECX receiver and the five stack words; live 0x00b21340 ends with RET 0x14.",
+      "Save the returned NounProjectionVector pointer in EDI.",
+      "Compute the signed element count as ((vector->end - vector->begin) >> 2), read begin from vector+0x04 and end from vector+0x08.",
+      "For each positive-count element, load the candidate object pointer from the 32-bit element array.",
+      "Load candidate->vtable and the function pointer at vtable+0x4c, set ECX to the candidate, and call the identity probe with no ordinary stack arguments.",
+      "Compare the full EAX identity word with the incoming identity word and return the candidate on the first exact match.",
+      "Restore the saved registers and return null after exhaustion with RET 0x4."
+    ],
+    "fixed_projection_arguments": {
+      "receiver": "ECX receiver forwarded unchanged to 0x00b21340",
+      "callback_word_0": "0x00b21080",
+      "callback_word_1": "0x00d3d420",
+      "callback_word_2": "0x00b236c0",
+      "callback_word_3": "0x00b1e500",
+      "projection_identity": "0x018c816a",
+      "stack_push_order": ["0x018c816a", "0x00b1e500", "0x00b236c0", "0x00d3d420", "0x00b21080"]
+    },
+    "vector_contract": {
+      "size_bytes": "0x18",
+      "begin_offset": "0x04",
+      "end_offset": "0x08",
+      "capacity_offset": "0x0c",
+      "count_operation": "signed arithmetic shift of the byte difference by two",
+      "empty_or_nonpositive_span": "returns null without an identity probe"
+    },
+    "vtable_contract": {
+      "vtable_offset": "0x00",
+      "identity_slot_offset": "0x4c",
+      "receiver_register": "ECX",
+      "ordinary_stack_arguments": [],
+      "return_width": 4,
+      "identity_separation": "The object identity returned by the vtable probe is compared as a raw 32-bit word and is not merged with the current-player state or political state."
+    },
+    "null_and_invalid_paths": [
+      "A null returned vector is dereferenced at its +0x08 and +0x04 fields; no target-local null guard is present.",
+      "A null or invalid begin pointer with a positive span reaches the raw element load.",
+      "A null candidate vtable or null +0x4c slot reaches the indirect call fault path.",
+      "UINT32_MAX is not rejected as an invalid identity; a probe returning UINT32_MAX is an exact match.",
+      "A negative or zero signed span returns null without probing."
+    ]
+  },
+  "ownership_state_and_events": {
+    "return_ownership": "The matching candidate pointer is borrowed from the projection vector. The target performs no AddRef, Release, allocation, deletion, or ownership transfer.",
+    "relationship_state": "No relationship entry, political state, tribe state, civilization state, or container is written directly by this body.",
+    "event_order": "No event record or event dispatch is created by the target. The ordered operations are projection lookup, then zero or more identity probes, then result return.",
+    "release_order": "No target-local release operation exists. Any callback effects inside 0x00b21340 remain outside the direct body."
+  },
+  "direct_callers": [
+    {
+      "address": "0x00b25fb0",
+      "role": "current-player bridge with ECX receiver and current identity word on stack"
+    },
+    {
+      "address": "0x00b262c0",
+      "role": "current-player bridge-like consumer"
+    },
+    {
+      "address": "0x00d05a20",
+      "role": "relationship/civilization scoring consumer"
+    },
+    {
+      "address": "0x00d05d90",
+      "role": "relationship/civilization transition consumer"
+    },
+    {
+      "address": "0x00c737a0",
+      "role": "multi-identifier resolver consumer"
+    }
+  ],
+  "direct_callees": [
+    {
+      "address": "0x00b21340",
+      "role": "noun projection/list lookup dependency",
+      "native_shape": "hidden ECX receiver plus five stack words and live RET 0x14"
+    },
+    {
+      "address": "vtable+0x4c",
+      "role": "candidate identity probe",
+      "native_shape": "ECX candidate, no ordinary stack arguments, EAX raw identity word"
+    }
+  ],
+  "call_graph": {
+    "direct_caller_query": "64 direct caller functions returned by the live query",
+    "function_xref_query": "94 code xrefs returned by the live query",
+    "fan_in_boundary": "The high fan-in is consistent with a shared identity resolver but does not establish one concrete noun or civilization owner."
+  },
+  "type_dependencies": [
+    {
+      "type": "NounProjection",
+      "role": "hidden receiver forwarded to noun projection dependency",
+      "status": "opaque"
+    },
+    {
+      "type": "NounProjectionVector",
+      "role": "returned 0x18-byte vector with begin/end/capacity words",
+      "status": "observed offset view; concrete payload owner unresolved"
+    },
+    {
+      "type": "NounObject",
+      "role": "candidate pointer returned from the vector and passed through the vtable identity probe",
+      "status": "opaque vtable-bearing object; complete layout not claimed"
+    },
+    {
+      "type": "NounObjectVtable",
+      "role": "vtable slot +0x4c identity probe",
+      "status": "slot width and call ABI observed; concrete owner unresolved"
+    },
+    {
+      "type": "NounProjectionLookupPort",
+      "role": "normalized package seam for 0x00b21340",
+      "status": "opaque native boundary; not a claim that the host callback words are source-level callback types"
+    }
+  ],
+  "evidence": [
+    {
+      "tool": "ghidra_get_function_by_address",
+      "address": "0x00b25f40",
+      "observation": "Live function range is 0x00b25f40 through 0x00b25fa0."
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x00b25f40",
+      "observation": "Live pseudocode calls 0x00b21340, iterates the returned vector, invokes candidate vtable slot +0x4c, compares the result with the stack identity, and returns the first matching candidate or null."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x00b25f40",
+      "observation": "Forty-one instructions fix the five fixed callback words, projection identity, saved-register frame, vector offsets, arithmetic-shift count, vtable slot, ECX probe receiver, exact compare, and RET 0x4."
+    },
+    {
+      "tool": "ghidra_get_function_callers",
+      "address": "0x00b25f40",
+      "observation": "The live query returned 64 direct caller functions."
+    },
+    {
+      "tool": "ghidra_get_function_callees",
+      "address": "0x00b25f40",
+      "observation": "The only direct named callee is 0x00b21340; the identity probe is an indirect vtable call."
+    },
+    {
+      "tool": "ghidra_get_function_xrefs",
+      "address": "0x00b25f40",
+      "observation": "The live query returned 94 code xrefs."
+    },
+    {
+      "tool": "ghidra_get_assembly_context",
+      "addresses": ["0x00b25fc6", "0x00b262d6", "0x00d05a86", "0x00c7387b"],
+      "observation": "Representative callers load a noun/root pointer into ECX before the resolver call and pass one identity word on the stack."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x00b21340",
+      "observation": "The direct dependency has a hidden ECX receiver, five stack words, and RET 0x14; its existing package metadata is consumed only as comparison and was not modified."
+    }
+  ],
+  "dependencies": [
+    {
+      "address": "0x00b21340",
+      "package": "PKG-11-SIM-CORE",
+      "status": "existing integrated dependency",
+      "use": "Supplies the returned projection vector and owns downstream map/list callback effects"
+    },
+    {
+      "address": "0x00b21080",
+      "status": "unresolved fixed callback word",
+      "use": "first projection callback argument"
+    },
+    {
+      "address": "0x00d3d420",
+      "status": "unresolved fixed callback word",
+      "use": "second projection callback argument"
+    },
+    {
+      "address": "0x00b236c0",
+      "status": "unresolved fixed callback word",
+      "use": "third projection callback argument"
+    },
+    {
+      "address": "0x00b1e500",
+      "status": "unresolved fixed callback word",
+      "use": "fourth projection callback argument"
+    }
+  ],
+  "runtime_gates": [
+    "The receiver must be valid for the existing 0x00b21340 projection/list layout.",
+    "The returned vector must have readable +0x04 and +0x08 words and a valid positive or nonpositive span.",
+    "Each candidate pointer and vtable must be readable, and vtable+0x4c must point to a callable identity probe.",
+    "The fixed callback words and 0x00b21340's map/list behavior require original-process observation.",
+    "The ownership and lifetime of returned candidate objects remain external to this function."
+  ],
+  "unresolved_questions": [
+    "What concrete noun projection and object owner implement the receiver and vector?",
+    "What semantic fields or callbacks are represented by the four fixed callback words?",
+    "What stable meaning, if any, belongs to projection identity 0x018c816a?",
+    "What concrete vtable owner and identity method implement vtable+0x4c?",
+    "Does any caller rely on a null vector, negative span, or UINT32_MAX match as a special condition?",
+    "What ownership and event effects occur inside 0x00b21340's callbacks?"
+  ],
+  "tests": {
+    "path": "reconstruction/staging/pkg13-c2-tribe-civilization/tribe_civilization_model_test.cpp",
+    "coverage": [
+      "exact identity match and first-match early return",
+      "UINT32_MAX sentinel accepted when a probe returns it",
+      "no-match returns null after all probes",
+      "empty vector returns null without probes",
+      "negative vector span returns null without probes",
+      "receiver and fixed callback/identity propagation",
+      "identity probe order and no post-match probe",
+      "relationship/tribe state unchanged",
+      "no event or release operation in the direct resolver path"
+    ],
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/pkg13-c2-tribe-civilization reconstruction/staging/pkg13-c2-tribe-civilization/tribe_civilization.cpp reconstruction/staging/pkg13-c2-tribe-civilization/tribe_civilization_model_test.cpp",
+    "model_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg13-c2-tribe-civilization reconstruction/staging/pkg13-c2-tribe-civilization/tribe_civilization.cpp reconstruction/staging/pkg13-c2-tribe-civilization/tribe_civilization_model_test.cpp -o /tmp/opencode/pkg13-c2-tribe-civilization-model && /tmp/opencode/pkg13-c2-tribe-civilization-model",
+    "format_command": "clang-format --dry-run --Werror --style='{BasedOnStyle: Google, FixNamespaceComments: false}' reconstruction/staging/pkg13-c2-tribe-civilization/tribe_civilization.hpp reconstruction/staging/pkg13-c2-tribe-civilization/tribe_civilization.cpp reconstruction/staging/pkg13-c2-tribe-civilization/tribe_civilization_model_test.cpp",
+    "results": {
+      "syntax": "passed",
+      "model": "passed",
+      "format": "passed",
+      "runtime": "not run"
+    },
+    "runtime_validation": 0
+  },
+  "static_vs_runtime_boundary": {
+    "static": "The ABI, fixed argument order, vector count arithmetic, candidate traversal, vtable slot, identity comparison, return values, and direct call order are fixed by live Ghidra evidence.",
+    "runtime": "No original-process execution, pointer-validity trace, projection callback trace, relationship trace, event trace, or ownership validation was performed.",
+    "claims_not_made": [
+      "concrete receiver, vector, object, or vtable owner identity",
+      "semantic meaning of callback words or the projection identity",
+      "runtime behavior of 0x00b21340 or vtable+0x4c",
+      "relationship, political, tribe, civilization, or event state transitions",
+      "ownership, release, or lifetime guarantees for returned candidates"
+    ]
+  }
+}

@@ -1,0 +1,147 @@
+{
+  "schema": "wave6-engine-runtime.function-handoff.v1",
+  "package": "WAVE6-ENGINE-RUNTIME",
+  "function_address": "0x007e5f30",
+  "ghidra_name": "App::cAppSystem::Unpause",
+  "normalized_symbol": "app_system_service_gate_dispatch_007e5f30",
+  "source_files": [
+    "reconstruction/staging/wave6-engine-runtime/engine_runtime.hpp",
+    "reconstruction/staging/wave6-engine-runtime/engine_runtime.cpp",
+    "reconstruction/staging/wave6-engine-runtime/engine_runtime_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "included": true,
+  "body_implementation": true,
+  "binary": {
+    "program": "SporeApp.exe",
+    "version": "3.1.0.22",
+    "architecture": "x86:LE:32",
+    "image_base": "0x00400000"
+  },
+  "abi": {
+    "target": "x86-32",
+    "calling_convention": "__thiscall",
+    "receiver_register": "ECX",
+    "receiver_type": "OpaqueWave6AppSystem*",
+    "ordinary_stack_arguments": [],
+    "stack_cleanup_bytes": 0,
+    "return_register": "EAX",
+    "return_width_bytes": 4,
+    "termination": "plain RET",
+    "return_contract": "When the gate is zero, EAX is incoming residue; when nonzero, EAX is the unresolved service slot +0x18 result unchanged.",
+    "name_limit": "The imported Unpause label is not independently corroborated beyond this service-gate body."
+  },
+  "body": {
+    "entry": "0x007e5f30",
+    "body_end_inclusive": "0x007e5f59",
+    "instruction_count": 13,
+    "assembly": [
+      "0x007e5f30: CMP DWORD PTR [ECX+0x16c],0",
+      "0x007e5f37: MOV BYTE PTR [ECX+0x172],1",
+      "0x007e5f3e: JZ 0x007e5f59",
+      "0x007e5f40: CALL 0x0067dcc0",
+      "0x007e5f45: MOV EDX,[EAX]",
+      "0x007e5f47-0x007e5f4d: push 0,0,0 and set ECX=EAX",
+      "0x007e5f4f: MOV EAX,[EDX+0x18]",
+      "0x007e5f52: PUSH 0x0462dde3",
+      "0x007e5f57: CALL EAX"
+    ],
+    "observed_order": [
+      "read the four-byte service gate at receiver+0x16c",
+      "store byte value 1 at receiver+0x172 before either branch outcome",
+      "return incoming EAX unchanged when the gate word is zero",
+      "otherwise call 0x0067dcc0 and dereference its unchecked EAX result as a vtable",
+      "invoke vtable displacement +0x18 with logical arguments 0x0462dde3, 0, 0, 0",
+      "return the service slot EAX result unchanged"
+    ]
+  },
+  "receiver_layout": {
+    "field_16c": {
+      "width_bytes": 4,
+      "meaning": "opaque nonzero service-dispatch gate"
+    },
+    "field_172": {
+      "width_bytes": 1,
+      "meaning": "opaque lifecycle state unconditionally set to 1"
+    },
+    "concrete_owner": "unresolved",
+    "null_policy": "No receiver, service, vtable, or function-pointer guard is present."
+  },
+  "call_graph": {
+    "unique_direct_caller_functions": 0,
+    "function_xrefs": [
+      {
+        "address": "0x01413b48",
+        "type": "DATA"
+      }
+    ],
+    "direct_callees": [
+      {
+        "address": "0x0067dcc0",
+        "role": "unchecked App::IAppSystem service lookup"
+      }
+    ],
+    "indirect_calls": [
+      {
+        "vtable_displacement": "0x18",
+        "receiver": "0x0067dcc0 return value",
+        "arguments": [73588195, 0, 0, 0],
+        "argument_hex": ["0x0462dde3", "0x00000000", "0x00000000", "0x00000000"],
+        "push_order": [0, 0, 0, "0x0462dde3"],
+        "stack_cleanup_bytes": 16,
+        "cleanup_limit": "The dynamic callee must balance all sixteen pushed argument bytes; its concrete target is unresolved."
+      }
+    ]
+  },
+  "implementation_boundary": {
+    "ports_type": "Wave6AppLifecyclePorts",
+    "lookup_port": "get_app_system_0067dcc0 normalizes the direct accessor result",
+    "dispatch_port": "invoke_slot_18 normalizes the unresolved thiscall vtable operation",
+    "eax_preservation": "The x86-32 implementation captures incoming EAX before other work and returns it unchanged on the zero-gate path.",
+    "ownership": "No service or receiver ownership is claimed."
+  },
+  "model_tests": [
+    "zero gate sets receiver+0x172 and performs no service lookup",
+    "nonzero gate sets state before callback",
+    "unchecked service lookup result reaches the port",
+    "selector 0x0462dde3 and three zero words are forwarded in logical order",
+    "service slot EAX result passes through unchanged"
+  ],
+  "unresolved_questions": [
+    "What lifecycle or pause state is represented by receiver+0x16c and receiver+0x172?",
+    "Which concrete vtable target occupies service+0x18 at runtime?",
+    "What do selector 0x0462dde3 and the three zero words mean?",
+    "What EAX value is present on entry to the zero-gate path in real callers?",
+    "Which table owner reaches the data pointer at 0x01413b48?"
+  ],
+  "runtime_gate": {
+    "status": "required",
+    "runtime_validation": 0,
+    "conditions": [
+      "The receiver is a valid concrete AppSystem object for the recorded table slot.",
+      "The service lookup at 0x0067dcc0 returns a live object with a valid vtable.",
+      "The +0x18 target accepts four 32-bit arguments and callee-cleans sixteen bytes.",
+      "The trace captures receiver fields before and after the call and the dynamic target address."
+    ],
+    "minimum_positive_claim": "An original-process trace records both gate outcomes, the selected vtable target, all four argument words, and the returned EAX value.",
+    "promotion_status": "not_promoted"
+  },
+  "provenance": [
+    "ghidra_get_function_by_address(0x007e5f30)",
+    "ghidra_decompile_function(0x007e5f30)",
+    "ghidra_disassemble_function(0x007e5f30)",
+    "ghidra_read_memory(0x007e5f30)",
+    "ghidra_get_function_callers(0x007e5f30)",
+    "ghidra_get_function_callees(0x007e5f30)",
+    "ghidra_get_function_xrefs(0x007e5f30)",
+    "ghidra_read_memory(0x01413b30)"
+  ],
+  "verification": {
+    "compile_and_model_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror reconstruction/staging/wave6-engine-runtime/engine_runtime.cpp reconstruction/staging/wave6-engine-runtime/engine_runtime_model_test.cpp -o /tmp/opencode/wave6-engine-runtime-model && /tmp/opencode/wave6-engine-runtime-model",
+    "compile_and_model_result": "passed",
+    "format_command": "clang-format --dry-run --Werror --style='{BasedOnStyle: Google, FixNamespaceComments: false}' reconstruction/staging/wave6-engine-runtime/engine_runtime.hpp reconstruction/staging/wave6-engine-runtime/engine_runtime.cpp reconstruction/staging/wave6-engine-runtime/engine_runtime_model_test.cpp",
+    "format_result": "passed",
+    "json_result": "passed",
+    "runtime_validation": "not run"
+  }
+}

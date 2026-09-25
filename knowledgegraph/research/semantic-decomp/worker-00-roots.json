@@ -47,7 +47,7 @@
       "allocations_frees": {
         "direct": [],
         "indirect": [
-          "On a lower-bound end result, FUN_00ba8420 performs generic map-node insertion and may allocate a 0x18-byte node.",
+            "On an end result, FUN_00ba8420 performs generic map-node insertion and may allocate a 0x18-byte node.",
           "The caller-supplied create callback allocates or supplies the record payload; the create result and map-node allocation are distinct visible allocations.",
           "The clear callback releases existing intrusive vector elements through the element vtable at +0x04.",
           "The add callback for the cCivilization specialization AddRefs an accepted element before appending it and Releases the temporary."
@@ -56,7 +56,7 @@
       },
       "branches_constants": [
         {
-          "condition": "lower_bound iterator == this+0x9c",
+          "condition": "guarded lookup result == this+0x9c",
           "constant": "0x9c",
           "meaning": "mNounMap end/anchor; enter create-and-insert path"
         },
@@ -95,7 +95,7 @@
           },
           {
             "name": "map_int_whatever_find",
-            "role": "unsigned lower-bound lookup",
+            "role": "unsigned guarded lower-bound lookup with exact-candidate acceptance",
             "va": "0x00e5c780"
           }
         ],
@@ -153,7 +153,7 @@
       "chokepoint_propagation": {
         "counting_rule": "downstream_unlock_count is the distinct direct-caller function count mechanically constrained by this contract; it is not transitive reach and does not imply every caller is semantically understood.",
         "downstream_unlock_count": 254,
-        "propagation": "The returned typed noun vector is consumed directly as a pointer to begin/end intrusive data, so clarifying the lower-bound, callback, and dirty-record contract mechanically unblocks noun-category lookups across the Simulator.",
+        "propagation": "The returned typed noun vector is consumed directly as a pointer to begin/end intrusive data, so clarifying the guarded exact-result, callback, and dirty-record contract mechanically unblocks noun-category lookups across the Simulator.",
         "selected_high_information_chain": "0x00b3d300 -> ECX -> 0x00bff2d0 -> 0x00b21340"
       },
       "classification": "BOUNDED_SEMANTIC",
@@ -172,7 +172,7 @@
         {
           "independence": "same-binary decompilation",
           "source": "Ghidra SporeApp.exe FUN_00b21340",
-          "supports": "lower-bound selection, end-only insertion, dirty rebuild, borrowed return"
+          "supports": "guarded exact-result selection, end-only insertion, dirty rebuild, borrowed return"
         },
         {
           "independence": "independent same-binary consumer chain",
@@ -182,12 +182,12 @@
         {
           "independence": "same-binary helper decompilation",
           "source": "Ghidra SporeApp.exe 0x00e5c780, 0x00ba8420, 0x00b201a0, 0x00b21410",
-          "supports": "lower_bound versus exact_find, insertion branch, invalidation and sibling erase boundary"
+          "supports": "guarded lower-bound versus exact_find, insertion branch, invalidation and sibling erase boundary"
         },
         {
           "independence": "independent repository static adjudication",
           "source": "knowledgegraph/research/root-closure/followup-noun-boundary.md:7-13,38-80,84-103,176-183",
-          "supports": "actual GetData identity, callback roles, successor hazard, and preserved allocation/locking unknowns"
+          "supports": "actual GetData identity, callback roles, guarded exact-result hazard, and preserved allocation/locking unknowns"
         },
         {
           "independence": "independent repository closure synthesis",
@@ -206,7 +206,7 @@
           },
           {
             "name": "FUN_00b21410",
-            "relation": "sibling lower-bound-selected removal path using a different map at this+0xd0; not evidence that normal destruction erases mNounMap",
+            "relation": "sibling guarded-result removal path using a different map at this+0xd0; not evidence that normal destruction erases mNounMap",
             "va": "0x00b21410"
           },
           {
@@ -276,8 +276,8 @@
         }
       },
       "invariants_failure_semantics": [
-        "The lookup is lower_bound, not exact find; a missing requested key with a greater successor can return and even rebuild the successor record using the requested noun ID.",
-        "Only the map end sentinel is compared; the returned node key is never validated.",
+        "The guarded lookup rejects a greater successor; a non-end result is treated as the requested record without a caller-side key check.",
+        "Only the map end sentinel is compared; the returned node key is never validated by the caller, so exact-result behavior is required.",
         "A dirty rebuild executes clear, then filter and optional add for each intrusive-list element, then writes needsUpdate=0.",
         "The receiver, map, list, callbacks, and resulting record are assumed valid; there is no receiver-null, callback-null, or record-null guard before dereference.",
         "The clear callback releases record elements, not the record; callback exception behavior and map insertion failure behavior are not defined by the visible function.",
@@ -315,7 +315,7 @@
         "classification_specific": [],
         "performed": false,
         "required_for_classification": false,
-        "strategy": "Model a std::map-like unsigned lower_bound with an end-only insertion check, callback-order recorder, intrusive-list filter, and dirty flag. Include exact hit, end hit, missing-key-with-successor, null create, and callback exception cases in a test harness."
+        "strategy": "Model the guarded candidate lookup with an end-only insertion check, callback-order recorder, intrusive-list filter, and dirty flag. Include exact hit, present-key-with-successor rejection, missing between/below/above keys, null create, and callback exception cases in a test harness."
       },
       "signature": {
         "calling_convention": "__thiscall; ECX=this; callee cleanup RET 0x14",
@@ -351,14 +351,14 @@
       "unresolved_questions": [
         "What exact parameter and exception contracts do all caller-supplied callbacks enforce?",
         "How does the create-callback payload allocation relate to the separate map-node allocation under allocator failure?",
-        "Does gameplay guarantee that the requested noun key exists whenever a greater successor exists?",
+        "Does gameplay rely on an exact noun key being returned even when a greater candidate would be retained during the guarded walk?",
         "Is any lock or single-thread invariant assumed across callback invocation and map mutation?",
         "Can callback reentrancy invalidate the selected iterator or record?"
       ],
       "validation_strategy": [
         "Assert the exact five-stack-argument order and callee-cleaned __thiscall ABI from disassembly and two direct consumers.",
-        "Implement a deterministic test double for lower_bound, insertion, clear, filter, add, and dirty transitions.",
-        "Verify the successor case preserves the missing-key behavior rather than silently changing it to exact find.",
+        "Implement a deterministic test double for the guarded candidate walk, insertion, clear, filter, add, and dirty transitions.",
+        "Verify the successor case returns the end sentinel and preserves exact-result consumer behavior rather than silently changing it to lower bound.",
         "Model AddRef/Release counts only at the callback/container layer; do not transfer ownership of the returned record."
       ]
     },
@@ -473,7 +473,7 @@
           },
           {
             "name": "FUN_00ba9370",
-            "relation": "mEmpires lower-bound consumer",
+            "relation": "mEmpires exact-result consumer through the guarded lookup",
             "va": "0x00ba9370"
           }
         ],
@@ -813,7 +813,7 @@
           },
           {
             "name": "FUN_00ba9370",
-            "role": "unsigned lower-bound lookup in cStarManager.mEmpires",
+            "role": "unsigned guarded lower-bound lookup with exact-candidate acceptance in cStarManager.mEmpires",
             "va": "0x00ba9370"
           }
         ],
@@ -867,7 +867,7 @@
       "confidence": {
         "mechanics": 0.99,
         "purpose": 0.99,
-        "rationale": "The sentinel, hit predicate, lower-bound refresh, AddRef/store/Release ordering, null replacement, and separate teardown are directly visible and independently corroborated.",
+        "rationale": "The sentinel, hit predicate, guarded exact-result refresh, AddRef/store/Release ordering, null replacement, and separate teardown are directly visible and independently corroborated.",
         "score": 0.99
       },
       "evidence": [
@@ -879,7 +879,7 @@
         {
           "independence": "independent same-binary lookup helper",
           "source": "Ghidra SporeApp.exe 0x00ba9370",
-          "supports": "mEmpires lower-bound lookup and end-only failure check"
+          "supports": "mEmpires guarded exact-result lookup and end-only failure check"
         },
         {
           "independence": "independent same-binary lifecycle paths",
@@ -894,7 +894,7 @@
         {
           "independence": "independent repository static adjudication",
           "source": "knowledgegraph/research/root-closure/track-e-empire-chain.md:15-44,55-117,160-186",
-          "supports": "current-player cEmpire cache purpose, field map, successor behavior, ownership"
+          "supports": "current-player cEmpire cache purpose, field map, exact-result lookup, ownership"
         },
         {
           "independence": "independent repository lifecycle adjudication",
@@ -908,7 +908,7 @@
         "related": [
           {
             "name": "FUN_00ba9370",
-            "relation": "ceiling/lower-bound empire registry helper; not exact find",
+            "relation": "guarded exact-result empire registry helper; not a conventional lower bound",
             "va": "0x00ba9370"
           },
           {
@@ -964,7 +964,7 @@
         "Simulator::sSpacePlayerData must be non-null; there is no global-pointer null guard.",
         "ID 0xffffffff returns null without clearing or releasing a previously cached pointer.",
         "A hit is identity-only: it compares cEmpire+0x84 to mPlayerEmpireID and performs no registry, generation, or lifetime validation.",
-        "A missing key can return a greater successor because 0x00ba9370 uses lower_bound and checks only end; the miss path stores that successor without comparing its identity.",
+        "A missing key returns null through 0x00ba9370 because the guarded lookup rejects a greater successor; the miss path stores null without comparing a returned empire identity.",
         "A null lookup clears the cache and Releases a distinct old non-null pointer exactly once.",
         "When new equals old, no AddRef or Release call occurs.",
         "Ordering is AddRef-new, store-new, Release-old; the old reference remains valid until after the store."
@@ -988,7 +988,7 @@
         "state_transitions": [
           "ID=-1 -> return null; cache unchanged",
           "cache identity hit -> return cached pointer",
-          "cache miss/mismatch -> lower-bound lookup -> optional AddRef -> store -> optional Release old -> return cache",
+          "cache miss/mismatch -> guarded exact-result lookup -> optional AddRef -> store -> optional Release old -> return cache",
           "lookup null -> store null -> Release old"
         ],
         "writes": [
@@ -999,7 +999,7 @@
         "classification_specific": [],
         "performed": false,
         "required_for_classification": false,
-        "strategy": "Use a deterministic intrusive-reference mock and a map containing exact, successor, absent, and empty cases. Assert refcount deltas and AddRef/store/Release call order for every branch."
+        "strategy": "Use a deterministic intrusive-reference mock and a map containing exact, successor-rejected, absent, and empty cases. Assert refcount deltas and AddRef/store/Release call order for every branch."
       },
       "signature": {
         "calling_convention": "__cdecl",
@@ -1052,15 +1052,15 @@
       "subsystem": "Simulator",
       "unresolved_questions": [
         "Which gameplay path writes mPlayerEmpireID after initialization; the narrow target analysis did not close that writer.",
-        "How often can a lower-bound successor be stored, and do any consumers treat it as an exact-ID result?",
+        "How often can an exact key be rejected because a greater candidate is retained during the guarded walk?",
         "What manager lifecycle or event invalidates the cache when an empire is erased or rekeyed?",
         "When is the whole 0x34-byte SpacePlayerData object freed after field teardown?",
         "Can the cStarManager alternate slot be null during a valid player-ID state?"
       ],
       "validation_strategy": [
-        "Assert all four terminal branches: ID sentinel, identity hit, exact lookup hit, and lower-bound/miss refresh.",
+        "Assert all four terminal branches: ID sentinel, identity hit, exact lookup hit, and guarded-miss refresh.",
         "Use reference-counting instrumentation to prove AddRef-new, store, Release-old ordering and equal-pointer no-op behavior.",
-        "Test null lookup with old non-null, old null, successor key, exact key, and no greater key.",
+        "Test null lookup with old non-null, old null, successor-rejected key, exact key, and no greater key.",
         "Keep registry erase and SpacePlayerData cache teardown as separate state-transition tests."
       ]
     }

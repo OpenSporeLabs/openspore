@@ -1,0 +1,192 @@
+{
+  "schema": "pkg12-space-inventory-entry-handoff.v1",
+  "package": "PKG-12-SIM-SPACE",
+  "function_address": "0x00de9fc0",
+  "ghidra_name": "FUN_00de9fc0",
+  "normalized_symbol": "pkg12_space_00de9fc0",
+  "source_files": [
+    "reconstruction/staging/pkg12-space/space_inventory_entry.hpp",
+    "reconstruction/staging/pkg12-space/space_inventory_entry.cpp",
+    "reconstruction/staging/pkg12-space/space_inventory_entry_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "void pkg12_space_00de9fc0(InventoryEntryContext& context, InventoryEntryServices& services);",
+  "model_boundary": "The live function is a fastcall-style no-stack-argument method using ECX as a context receiver. The staging function passes that context and the separate PropertyRecord, Galaxy/game-entry, GameMode, behavior-cleanup, and allocation services explicitly; no shared map or event-family type is recreated.",
+  "live_abi": {
+    "calling_convention": "fastcall-style method; Ghidra reports unknown convention",
+    "this_register": "ECX",
+    "stack_arguments": [],
+    "stack_cleanup_bytes": 0,
+    "return_type": "void",
+    "return_observation": "The function returns after the final guarded cleanup/free sequence and has no value return."
+  },
+  "body": {
+    "status": "reconstructed",
+    "entry_address": "0x00de9fc0",
+    "body_addresses": [
+      "0x00de9fc0",
+      "0x00dea1af",
+      "0x00dea1fb"
+    ],
+    "instruction_count": 193,
+    "basic_block_count": 34,
+    "direct_call_count": 22,
+    "mechanics": [
+      "Initialize and append three independent 0x24-byte property records in fixed order: key 0x2dd90af/value 0x366a930d, key 0x3cc89b1/value 0x913b23be, and key 0x54a32960/value 1.",
+      "The record initializer writes the observed tag 0x2e1a75d at +0x04, the value at +0x08, value+1 at +0x0c, and zeroes the remaining observed words.",
+      "After each append, invoke the record-range cleanup boundary and release the owned temporary pointer when its four-byte prefix is nonzero.",
+      "Obtain the Galaxy/game-entry descriptor range from the service owner returned by FUN_0067CB40, whose live vtable +0x38 supplies the range.",
+      "Copy each 0x0c-byte descriptor to a local three-word record and pass it to the entry index lower-bound boundary.",
+      "Initialize the game-mode boundary only when the index result equals the context anchor at +0x3c; a non-anchor candidate is skipped.",
+      "Invoke the behavior cleanup boundary after the descriptor loop.",
+      "Release the descriptor range pointer when its four-byte prefix is nonzero, clean the secondary record range, then release that range pointer when its prefix is nonzero."
+    ]
+  },
+  "new_contracts": {
+    "property_record": {
+      "size_bytes": 36,
+      "size_hex": "0x24",
+      "fields": [
+        {"offset": "+0x00", "role": "record key"},
+        {"offset": "+0x04", "role": "opaque tag 0x2e1a75d"},
+        {"offset": "+0x08", "role": "record value"},
+        {"offset": "+0x0c", "role": "value plus one"},
+        {"offset": "+0x10", "role": "opaque cleanup/data word"},
+        {"offset": "+0x14", "role": "opaque cleanup/data word"},
+        {"offset": "+0x18", "role": "opaque cleanup/data word"},
+        {"offset": "+0x1c", "role": "opaque cleanup/data word"},
+        {"offset": "+0x20", "role": "opaque cleanup/data word"}
+      ],
+      "policy": "Property records are separate from PropertyList and from the Galaxy/game-entry descriptors; unknown words remain opaque."
+    },
+    "property_record_service": {
+      "initialize": "0x00558960 record initialization boundary",
+      "append": "0x00606880 in-capacity or 0x004e39d0 grow-boundary",
+      "cleanup": "0x004e39a0 range cleanup",
+      "free": "0x00f47380 owned-pointer release"
+    },
+    "game_entry_descriptor": {
+      "size_bytes": 12,
+      "size_hex": "0x0c",
+      "fields": ["word0", "word1", "word2"],
+      "policy": "The three words are copied to a local record and are not assigned Galaxy or game-mode semantic names."
+    },
+    "entry_index": {
+      "receiver": "context map base at this+0x38",
+      "anchor": "context+0x3c",
+      "root_observed_by_FUN_00A21DC0": "context+0x44",
+      "search": "0x00A21DC0 lower-bound-shaped search over the three descriptor words",
+      "filter": "Only an anchor result reaches the game-mode initialization boundary."
+    },
+    "service_owners": {
+      "galaxy_game_entry": {
+        "getter": "FUN_0067CB40 returns DAT_015FCC74",
+        "vtable_boundary": "+0x38",
+        "role": "obtains the descriptor range"
+      },
+      "game_mode": {
+        "boundary": "FUN_00DE9600",
+        "role": "initializes a game mode from a descriptor; separate from the Galaxy service owner",
+        "direct_string": "Simulator/GGE"
+      },
+      "behavior_cleanup": {
+        "boundary": "FUN_00DE7010",
+        "role": "behavior-manager cleanup boundary; separate from game-mode initialization and event families"
+      },
+      "allocation": {
+        "boundary": "FUN_00F47380",
+        "role": "conditional owned-pointer release after a nonzero four-byte prefix"
+      }
+    }
+  },
+  "structures_and_globals": {
+    "context_offsets": [
+      {"offset": "+0x38", "role": "entry-index map receiver"},
+      {"offset": "+0x3c", "role": "map anchor / descriptor filter result"},
+      {"offset": "+0x40", "role": "behavior/cache list word observed by FUN_00DE7010"},
+      {"offset": "+0x44", "role": "map root word observed by FUN_00A21DC0"}
+    ],
+    "service_global": {
+      "address": "0x015FCC74",
+      "name": "DAT_015FCC74",
+      "access": "READ through FUN_0067CB40",
+      "role": "Galaxy/game-entry service owner"
+    },
+    "related_structures": [
+      {"type": "/Spore/Simulator/cGameModeManager", "size_bytes": 52, "role": "game-mode manager dependency"},
+      {"type": "/Spore/App/IGameModeManager", "role": "game-mode initialization interface"},
+      {"type": "/Spore/Simulator/cGameBehaviorManager", "role": "behavior cleanup dependency"},
+      {"type": "/Spore/GalaxyGameEntry/GlobalGGEUI", "size_bytes": 612, "role": "related Galaxy UI type; not a target-state assertion"}
+    ],
+    "event_boundary": "No event family is created or consumed by the target; service-owner and behavior cleanup boundaries remain separate from event lifecycle reconstruction."
+  },
+  "direct_dependencies": [
+    {"address": "0x00558960", "role": "property record initializer"},
+    {"address": "0x00606880", "role": "in-capacity property record append"},
+    {"address": "0x004e39d0", "role": "property record grow/append path"},
+    {"address": "0x004e39a0", "role": "property record range cleanup"},
+    {"address": "0x0067cb40", "role": "Galaxy/game-entry service owner getter"},
+    {"address": "0x00a21dc0", "role": "three-word descriptor index lower-bound"},
+    {"address": "0x00de9600", "role": "game-mode initialization boundary"},
+    {"address": "0x00de7010", "role": "behavior cleanup boundary"},
+    {"address": "0x00f47380", "role": "conditional owned-pointer free"}
+  ],
+  "call_graph": {
+    "direct_callers": {
+      "ghidra_unique_functions": 1,
+      "name": "FUN_00DEA200",
+      "call_site": "0x00DEA27F"
+    },
+    "direct_callees": {
+      "ghidra_count": 9,
+      "names": [
+        "FUN_004E39A0",
+        "FUN_004E39D0",
+        "FUN_00558960",
+        "FUN_00606880",
+        "FUN_0067CB40",
+        "FUN_00A21DC0",
+        "FUN_00DE7010",
+        "FUN_00DE9600",
+        "FUN_00F47380"
+      ]
+    },
+    "function_xrefs": 1,
+    "data_xrefs": 0
+  },
+  "strings": {
+    "direct_target_string_refs": 0,
+    "related_dependency_strings": ["Simulator/GGE"],
+    "observation": "The target uses hashed property/descriptor words rather than direct string literals; the GGE string belongs to the separate game-mode initialization dependency."
+  },
+  "tests": [
+    "property-list text application and type-10 item-cost application",
+    "new-list AddRef/store/old-list Release order",
+    "same-list no-ref/no-release and null-list replacement release",
+    "three property record initializers and append/cleanup/free order",
+    "anchor result initializes the copied game descriptor",
+    "non-anchor index result suppresses game-mode initialization",
+    "empty and invalid descriptor ranges perform cleanup without descriptor initialization",
+    "final behavior cleanup, descriptor-range free, secondary record cleanup, and secondary free order"
+  ],
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only reconstruction/staging/pkg12-space/space_inventory_entry.cpp reconstruction/staging/pkg12-space/space_inventory_entry_model_test.cpp",
+    "model_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror reconstruction/staging/pkg12-space/space_inventory_entry.cpp reconstruction/staging/pkg12-space/space_inventory_entry_model_test.cpp -o /tmp/pkg12-space-inventory-entry-test && /tmp/pkg12-space-inventory-entry-test",
+    "format_command": "clang-format --dry-run --Werror -style=\"{BasedOnStyle: Google, FixNamespaceComments: false}\" reconstruction/staging/pkg12-space/space_inventory_entry.hpp reconstruction/staging/pkg12-space/space_inventory_entry.cpp reconstruction/staging/pkg12-space/space_inventory_entry_model_test.cpp",
+    "json_command": "python3 -m json.tool reconstruction/metadata/pkg12-space/00c877f0.json >/dev/null && python3 -m json.tool reconstruction/metadata/pkg12-space/00de9fc0.json >/dev/null",
+    "status": "verified_static_staging"
+  },
+  "unresolved_questions": [
+    "The concrete Galaxy/game-entry service owner type and the vtable +0x38 return contract are not named by Ghidra.",
+    "The three descriptor words and their relationship to Galaxy coordinates, game IDs, and game-mode selection remain unknown.",
+    "The three property records' opaque words and the exact ownership of their allocated buffers are not closed by this body.",
+    "The behavior/cache list at context+0x40 and the secondary record range ownership remain opaque.",
+    "The live body has no explicit null or reversed-range guard; the staging descriptor_count guard is a model safety boundary and not a recovered source branch.",
+    "The game-mode initialization and behavior cleanup services are separate dependencies; no event lifecycle is inferred here."
+  ],
+  "blockers": [
+    "A linkable runtime model for the service owner, descriptor map, property record allocator, and game-mode manager is not available without changing the integrated PKG-12 boundary.",
+    "Concrete vtable targets and service return types remain unresolved even though their call order and record widths are preserved.",
+    "Empty/invalid range behavior is modeled defensively; the live implementation may fault on malformed service-returned ranges."
+  ]
+}

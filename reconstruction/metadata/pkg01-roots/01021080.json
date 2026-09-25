@@ -1,0 +1,87 @@
+{
+  "schema": "pkg01-space-player-data-accessor-metadata.v1",
+  "assignment_id": "SPACE-ACCESSORS-METADATA-09",
+  "phase": "integration-metadata",
+  "package": "PKG-01-SHARED-STATE-ROOTS",
+  "va": "0x01021080",
+  "ghidra_name": "FUN_01021080",
+  "declaration": "SpaceContextValue PKG01_CDECL FUN_01021080();",
+  "source": {
+    "header": "src/reconstruction/pkg01_roots/space_player_data_accessors.hpp",
+    "implementation": "src/reconstruction/pkg01_roots/space_player_data_accessors.cpp",
+    "model_test": "src/reconstruction/pkg01_roots/space_player_data_accessors_model_test.cpp",
+    "status": "static_host_model"
+  },
+  "live_abi": {
+    "target": "x86:LE:32:windows",
+    "calling_convention": "cdecl-compatible no-argument accessor",
+    "formal_parameters": [],
+    "stack_cleanup_bytes": 0,
+    "return_register": "EAX",
+    "return_width_bytes": 4,
+    "return_type": "SpaceContext enum word"
+  },
+  "mechanics": {
+    "read_offset": "+0x10",
+    "source_global": "Simulator::sSpacePlayerData at 0x016dda8c",
+    "behavior": "Loads the four-byte word at source_global+0x10 and returns it unchanged; there is no validation or transformation.",
+    "null_behavior": "No null guard is present. A null source_global reaches the +0x10 load and has no defined null result.",
+    "value_boundary": "Repository layout provenance identifies the word as mCurrentContext and the SDK values as None=0xffffffff, Planet=0, SolarSystem=1, Galaxy=2. The function itself accepts and returns the raw four-byte value."
+  },
+  "model_boundary": {
+    "represented": "SpacePlayerDataAccessPrefix is a 0x14-byte host prefix needed to address source_global+0x10.",
+    "not_represented": "The 0x14-byte model does not claim the SDK-proven 0x34-byte whole SpacePlayerData layout and carries no publication, destruction, or ownership behavior."
+  },
+  "return_semantics": {
+    "kind": "scalar field copy",
+    "reference_counting": "No AddRef, Release, allocation, write, or call occurs.",
+    "ownership": "No pointer or object ownership is transferred."
+  },
+  "evidence": {
+    "classification": "static_only",
+    "runtime_validated": false,
+    "function_size_bytes": 9,
+    "direct_callees": 0,
+    "assembly": [
+      "01021080: MOV EAX,[0x016dda8c]",
+      "01021085: MOV EAX,dword ptr [EAX + 0x10]",
+      "01021088: RET"
+    ],
+    "decompiler": "return *(undefined4 *)(Simulator__sSpacePlayerData + 0x10);"
+  },
+  "runtime_gates": [
+    "No trace establishes when the published global is valid during initialization or teardown.",
+    "Static evidence does not establish runtime context-transition ordering.",
+    "Whole-object finalization for Simulator::sSpacePlayerData remains unresolved; this accessor does not establish ownership."
+  ],
+  "unresolved_questions": [
+    "Does this address have an exact SDK-exported function identity, independent of its supported +0x10 field mechanics?",
+    "What runtime publication, replacement, and lifetime guarantees apply to the returned state context?"
+  ],
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I src/reconstruction/pkg01_roots src/reconstruction/pkg01_roots/space_player_data_accessors.cpp src/reconstruction/pkg01_roots/space_player_data_accessors_model_test.cpp",
+    "model_test_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -I src/reconstruction/pkg01_roots src/reconstruction/pkg01_roots/space_player_data_accessors.cpp src/reconstruction/pkg01_roots/space_player_data_accessors_model_test.cpp -o /tmp/opencode/space-player-data-accessors-metadata-test && /tmp/opencode/space-player-data-accessors-metadata-test",
+    "result": "passed x86-32 syntax and host-model assertions; this is not runtime validation"
+  },
+  "provenance": [
+    {
+      "kind": "live_ghidra",
+      "program": "SporeApp.exe",
+      "operations": [
+        "decompile_function(0x01021080)",
+        "disassemble_function(0x01021080)",
+        "get_function_by_address(0x01021080)",
+        "get_function_callees(0x01021080)",
+        "get_xrefs_to(0x016dda8c)",
+        "read_memory(0x016dda8c, 4)"
+      ]
+    },
+    {
+      "kind": "repository_static_context",
+      "sources": [
+        "knowledgegraph/research/root-closure/track-f-space-context.md",
+        "knowledgegraph/research/root-closure/followup-space-lifecycle.json"
+      ]
+    }
+  ]
+}

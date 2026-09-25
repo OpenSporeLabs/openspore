@@ -1,0 +1,94 @@
+{
+  "schema": "pkg13-diplomacy-transitions.function-handoff.v1",
+  "package": "PKG-13-SIM-DIPLOMACY-TRANSITIONS",
+  "function_address": "0x00d01e30",
+  "ghidra_name": "FUN_00d01e30",
+  "normalized_symbol": "DiplomacyTransition_00d01e30",
+  "source_files": [
+    "reconstruction/staging/pkg13-diplomacy-transitions/diplomacy_transitions.hpp",
+    "reconstruction/staging/pkg13-diplomacy-transitions/diplomacy_transitions.cpp",
+    "reconstruction/staging/pkg13-diplomacy-transitions/diplomacy_transitions_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "void __thiscall DiplomacyTransition_00d01e30(OpaqueRelationshipManager*, OpaqueTransitionRecord*, OpaqueTransitionRecord*);",
+  "abi": {
+    "calling_convention": "thiscall",
+    "hidden_this_register": "ECX",
+    "hidden_this_type": "OpaqueRelationshipManager*",
+    "stack_arguments": [
+      {"position": 1, "entry_offset": "ESP+0x04", "name": "first", "type": "OpaqueTransitionRecord*", "width_bytes": 4},
+      {"position": 2, "entry_offset": "ESP+0x08", "name": "second", "type": "OpaqueTransitionRecord*", "width_bytes": 4}
+    ],
+    "stack_cleanup_bytes": 8,
+    "return_type": "void",
+    "termination": "RET 0x8",
+    "pair_call_order": {
+      "first_call": {"receiver_register": "ECX", "receiver": "first record", "stack_argument": "second record"},
+      "second_call": {"receiver_register": "ECX", "receiver": "second record", "stack_argument": "first record"}
+    },
+    "event_dispatch": {
+      "calling_convention": "thiscall",
+      "receiver_register": "ECX",
+      "receiver_type": "OpaqueEventFactory*",
+      "stack_arguments": [
+        {"position": 1, "name": "event_id", "type": "OpaqueWord"},
+        {"position": 2, "name": "event_pointer", "type": "OpaqueEventRecord*"},
+        {"position": 3, "name": "zero", "type": "OpaqueWord"}
+      ],
+      "stack_cleanup_bytes": 12
+    }
+  },
+  "layout": {
+    "record_key_offset": "0x84",
+    "entry_flags_offset": "0x04",
+    "event_record": {
+      "size": "0x3c",
+      "vtable_offset": "0x00",
+      "zero_offset": "0x04",
+      "first_offset": "0x08",
+      "second_offset": "0x10",
+      "cleanup_bitmask_offset": "0x38"
+    },
+    "concrete_owner": "unresolved"
+  },
+  "mechanics": {
+    "current_player_fallback": "FUN_01021300 is called first; a null second record is replaced with the returned current-player pointer.",
+    "forward_lookup": "Select map with first+0x84 and second+0x84, then lookup the resulting map and clear bit 0x02 in a non-null entry.",
+    "reverse_lookup": "When second is not the current-player record, repeat selection and lookup with reversed keys and clear bit 0x02.",
+    "pair_order": "Call the c32830 pair port with first receiver/second stack word, then second receiver/first stack word.",
+    "current_event": "When second is current-player, build the 0x3c event carrier with first at +0x08, second at +0x10, and cleanup bitmask at +0x38; call the event factory port, dispatch event id 0x4445D44 with the factory in ECX and three stack arguments through vtable +0x14, then call the event cleanup port.",
+    "final_cleanup": "Call c31c50 with first and then second receiver."
+  },
+  "call_graph": {
+    "direct_callers": ["0x010134D0", "0x0102CD90"],
+    "direct_callees": ["0x00C32830", "0x00C31C50", "0x00D01410", "0x00D01AB0", "0x00421CF0", "0x00883860", "0x01021300"],
+    "function_xrefs": 2,
+    "direct_data_globals": []
+  },
+  "evidence": [
+    {"tool": "ghidra_decompile_function", "address": "0x00d01e30", "observation": "Live body performs current-player fallback, forward and reverse relationship operations, bit-1 clears, pair cleanup, optional event emission, and two final cleanup calls."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00d01e30", "observation": "The 80-instruction body preserves ECX receiver, two stack arguments, record +0x84 loads, first/second ECX-plus-stack pair order, event carrier offsets +0x08/+0x10/+0x38, event id 0x4445D44, and RET 0x8."},
+    {"tool": "ghidra_get_function_callers", "address": "0x00d01e30", "observation": "Two direct caller functions are reported."},
+    {"tool": "ghidra_get_function_callees", "address": "0x00d01e30", "observation": "Seven direct callees are reported and all remain opaque ports in this staging model."}
+  ],
+  "dependency_contracts": {
+    "0x00c32830": "opaque pair operation, first record in ECX and second record on stack followed by the reverse pair order",
+    "0x00d01410": "opaque relationship lookup",
+    "0x00d01ab0": "opaque map selection",
+    "0x01021300": "opaque current-player cache accessor",
+    "0x00883860": "opaque event service accessor",
+    "0x00421cf0": "opaque event cleanup",
+    "event_dispatch": "thiscall vtable +0x14 with OpaqueEventFactory* in ECX and event-id, event-pointer, zero stack arguments",
+    "0x00b3d300": "not directly called by this body"
+  },
+  "confidence": {"body": "high", "abi": "high", "key_order": "high", "event_fields": "high", "concrete_event_owner": "low"},
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/pkg13-diplomacy-transitions reconstruction/staging/pkg13-diplomacy-transitions/diplomacy_transitions.cpp",
+    "model_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg13-diplomacy-transitions reconstruction/staging/pkg13-diplomacy-transitions/diplomacy_transitions.cpp reconstruction/staging/pkg13-diplomacy-transitions/diplomacy_transitions_model_test.cpp -o /tmp/opencode/pkg13-diplomacy-transitions-model && /tmp/opencode/pkg13-diplomacy-transitions-model",
+    "format_command": "clang-format --dry-run --Werror --style='{BasedOnStyle: Google, FixNamespaceComments: false}' reconstruction/staging/pkg13-diplomacy-transitions/diplomacy_transitions.hpp reconstruction/staging/pkg13-diplomacy-transitions/diplomacy_transitions.cpp reconstruction/staging/pkg13-diplomacy-transitions/diplomacy_transitions_model_test.cpp",
+    "json_command": "python3 -m json.tool reconstruction/metadata/pkg13-diplomacy-transitions/00d01e30.json >/dev/null",
+    "results": {"syntax": "passed", "model": "passed", "format": "passed", "json": "passed"}
+  },
+  "unresolved_questions": ["concrete relationship manager and record owners", "0x00c32830 and 0x00c31c50 semantics", "0x00d01410 and 0x00d01ab0 map behavior", "runtime relationship and event lifetime"],
+  "blockers": ["No original-process trace is available.", "All helper, event, relationship, and current-player service types remain opaque."]
+}

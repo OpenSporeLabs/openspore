@@ -1,27 +1,27 @@
 # Source Reconstruction Audit
 
-As of 2026-09-24, 10 integrated functions were audited across `PKG-01`, `PKG-06`, `PKG-10`, and `PKG-12`. All 10 remain runtime-gated; `runtime_validated=0`.
+As of 2026-09-25, 10 integrated functions were audited across `PKG-01`, `PKG-06`, `PKG-10`, and `PKG-12`, plus the targeted `0x00e5c780` P0 resolution. All 10 integrated functions remain runtime-gated; `runtime_validated=0`.
 
 ## Counts
 
 | Metric | Count |
 |---|---:|
 | Functions audited | 10 |
-| P0 | 1 |
+| P0 | 0 |
 | P1 | 9 |
 | P2 | 1 |
 | P3 | 0 |
 | Repairs performed | 1 |
 | Runtime-gated findings | 10 |
-| Clean findings | 9 |
+| Clean findings | 10 |
 
-P0/P1/P2 counts include propagation and document metadata boundaries; they are not all integrated-body semantic defects. The repaired PKG-12 function is clean after final semantic and ABI re-review.
+P0-001 is statically resolved as a fixed guarded-lower-bound contract. P1/P2 counts include propagation and document metadata boundaries; they are not all integrated-body semantic defects. The repaired PKG-12 function is clean after final semantic and ABI re-review.
 
 ## Findings
 
 | ID | VA | Finding | Status / boundary | Evidence |
 |---|---|---|---|---|
-| P0-001 | `0x00e5c780` | Live traversal ends with an exact-key check: a greater successor is rejected and the end sentinel is returned otherwise. | Unresolved; block all lower-bound successor propagation. | Live Ghidra; `docs/analysis/semantic-decomp.md:121,194`. Contradictory historical claims remain at `docs/analysis/architecture-decisions.md:47-51`, `docs/analysis/simulator-shared-state-interface.md:270-283`, and `docs/analysis/architecture-resolution.md:50-75`. |
+| P0-001 | `0x00e5c780` | Live traversal retains a lower-bound-shaped candidate, then the final unsigned comparison rejects a greater successor; the accepted candidate is exactly equal to the query. | Resolved statically as a fixed hybrid guarded lower bound; do not propagate successor behavior. | `knowledgegraph/research/map-semantics-resolution.json`; `docs/analysis/map-semantics-resolution.md`. `0x00b21340`, `0x00ba9370`, and `0x01021300` are exact-find dependent; `0x00b3d300` is independent. |
 | P1-001 | `0x00b3d300` / `0x00b3d400` | Alternate and canonical noun roots read distinct slots; publication, equality, and lifetime are unresolved. | Metadata boundary; no body repair. | `src/reconstruction/pkg01_roots/pkg01_roots.cpp:15-17`; `docs/analysis/semantic-decomp.md:195`. |
 | P1-002 | `0x00b3d2a0` / `0x00b3d3a0` | Alternate and canonical star roots read distinct slots; publication, equality, and lifetime are unresolved. | Metadata boundary; no body repair. | `src/reconstruction/pkg01_roots/pkg01_roots.cpp:19-21`; `docs/analysis/semantic-decomp.md:195`. |
 | P1-003 | Nine interior alias pairs | SDK labels are interior aliases of containing live functions, not separate entries. Includes `0x01073730/0x01073700`, `0x00835080/0x00834fa0`, `0x005cb690/0x005cb5a0`, `0x005c54b0/0x005c53c0`, `0x005c9320/0x005c9230`, and `0x005cb2a0/0x005cb240`. | Metadata boundary; no fabricated repairs. | `docs/analysis/semantic-decomp.md:196`. |
@@ -58,6 +58,7 @@ The `0x00676e90` carrier is already correct as `{manager,0xd3f14a26,1}` in calle
 
 ## High-risk boundary ledger
 
+- `0x00e5c780` is a fixed guarded-lower-bound lookup: it rejects a strictly greater successor and is not a conventional lower-bound iterator. `0x00b21340`, `0x00ba9370`, and `0x01021300` therefore require exact-result behavior, while `0x00b3d300` remains independent.
 - Cell identity versus Cell GFX ordering is preserved in `0x00e780a0`.
 - Event-carrier separation is preserved in `0x0102d1b0`.
 - Persistence candidate `0x00b28ec0` is not promoted to a persistence manager.

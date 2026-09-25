@@ -1,0 +1,138 @@
+{
+  "schema": "pkg14-a1-world-state-function-handoff-v1",
+  "package": "PKG-14-A1-WORLD-STATE",
+  "function_address": "0x007c3c50",
+  "ghidra_name": "FUN_007c3c50",
+  "normalized_symbol": "world_viewer_apply_flags_007c3c50",
+  "source_files": [
+    "reconstruction/staging/pkg14-a1-world-state/world_state.hpp",
+    "reconstruction/staging/pkg14-a1-world-state/world_state.cpp",
+    "reconstruction/staging/pkg14-a1-world-state/world_state_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "std::uint8_t __thiscall world_viewer_apply_flags_007c3c50(OpaqueWorldViewer* viewer, std::uint8_t flags);",
+  "abi": {
+    "return_type": "std::uint8_t",
+    "return_register": "EAX",
+    "return_width_bytes": 1,
+    "calling_convention": "thiscall",
+    "hidden_this_register": "ECX",
+    "hidden_this_type": "OpaqueWorldViewer*",
+    "stack_arguments": [
+      {"position": 1, "entry_offset": "ESP+0x04", "name": "flags", "type": "std::uint8_t", "width_bytes": 1}
+    ],
+    "stack_cleanup_bytes": 4,
+    "termination": "RET 0x4",
+    "model_status": "raw-byte reconstruction across a Ghidra function-boundary split"
+  },
+  "body": {
+    "status": "reconstructed",
+    "entry_address": "0x007c3c50",
+    "body_addresses": ["0x007c3c50", "0x007c3c83"],
+    "mechanics": [
+      "Read the input byte from ESP+0x04 and initialize the result byte to zero.",
+      "Set result bit 0x1 when input bit 0x1 is set.",
+      "Set result bit 0x2 when input bit 0x2 is set.",
+      "Set result bit 0x4 when input bit 0x4 is set.",
+      "Pass receiver+0x140 as the first helper argument, load receiver+0x170 into ECX, pass the normalized byte as the second helper argument, and call 0x011f3d40.",
+      "Return the helper result. The raw byte stream shows no null guard for receiver+0x170; forwarding null or sentinel camera pointers remains observable behavior."
+    ]
+  },
+  "target_layout": {
+    "receiver_size_bytes": 372,
+    "receiver_fields": [
+      {"offset": "0x140", "size_bytes": 16, "meaning": "four-word opaque background/state block passed to helper"},
+      {"offset": "0x170", "size_bytes": 4, "meaning": "opaque camera/receiver object passed as helper ECX"}
+    ],
+    "helper": {
+      "address": "0x011f3d40",
+      "receiver": "value loaded from receiver+0x170",
+      "stack_arguments": [
+        "receiver+0x140",
+        "normalized flags byte"
+      ],
+      "return": "helper result forwarded through EAX"
+    },
+    "evidence": "Ghidra App::cViewer layout corroborates receiver+0x140 and receiver+0x170; raw disassembled bytes at 0x007c3c50-0x007c3c83 prove the continuation past Ghidra's split boundary."
+  },
+  "call_graph": {
+    "direct_callers": {
+      "ghidra_count": 35,
+      "representative_functions": [
+        "0x00430e70",
+        "0x005812b0",
+        "0x006e3100",
+        "0x006efe90",
+        "0x007b3340",
+        "0x00fa3860"
+      ]
+    },
+    "direct_callees": [],
+    "raw_continuation_callee": {"address": "0x011f3d40", "meaning": "opaque render-state helper"},
+    "boundary_note": "Ghidra's function record ends at 0x007c3c6f and labels the continuation as App::cViewer::Dispose; the direct raw call and 0x011f3d40 are not ignored because of that split."
+  },
+  "evidence": [
+    {
+      "tool": "ghidra_get_function_by_address",
+      "address": "0x007c3c50",
+      "observation": "Ghidra reports FUN_007c3c50 at 0x007c3c50 with body range 0x007c3c50-0x007c3c6f."
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x007c3c50",
+      "observation": "The decompiler proves normalization of bits 0x1, 0x2, and 0x4 and the call shape to 0x011f3d40."
+    },
+    {
+      "tool": "ghidra_disassemble_bytes",
+      "address": "0x007c3c50",
+      "length": 52,
+      "observation": "Raw disassembly runs through 0x007c3c83, loads [ECX+0x170] into ECX, passes [receiver+0x140] and the normalized byte to 0x011f3d40, then uses RET 0x4."
+    },
+    {
+      "tool": "ghidra_get_function_callers",
+      "address": "0x007c3c50",
+      "observation": "Ghidra reports 35 direct callers."
+    },
+    {
+      "tool": "ghidra_get_struct_layout",
+      "type": "cViewer",
+      "observation": "The imported cViewer layout reports size 372 and the fields used by the raw continuation."
+    }
+  ],
+  "confidence": {
+    "overall": "high for flag mask, helper argument order, raw continuation, and return forwarding",
+    "high": [
+      "three retained bits",
+      "receiver+0x140 helper pointer",
+      "receiver+0x170 helper receiver",
+      "0x011f3d40 call",
+      "RET 0x4",
+      "no added null guard"
+    ],
+    "medium": [
+      "concrete helper type and renderer effect"
+    ],
+    "low": [
+      "semantic meaning of each retained bit beyond the raw flag positions"
+    ]
+  },
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only reconstruction/staging/pkg14-a1-world-state/world_state.cpp reconstruction/staging/pkg14-a1-world-state/world_state_model_test.cpp",
+    "model_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror reconstruction/staging/pkg14-a1-world-state/world_state.cpp reconstruction/staging/pkg14-a1-world-state/world_state_model_test.cpp -o /tmp/opencode/pkg14-a1-world-state-model-test && /tmp/opencode/pkg14-a1-world-state-model-test",
+    "json_command": "python3 -m json.tool reconstruction/metadata/pkg14-a1-world-state/007c3c50.json >/dev/null",
+    "results": {
+      "syntax": "passed",
+      "model": "passed",
+      "json": "passed",
+      "format": "passed"
+    }
+  },
+  "unresolved_questions": [
+    "The concrete type and effect of helper 0x011f3d40 are not established by the target bytes.",
+    "The retained bit values are not promoted to named semantic flags without downstream evidence."
+  ],
+  "blockers": [
+    "No runtime render-state trace is available.",
+    "The Ghidra function-boundary split at 0x007c3c70 must be corrected or bypassed before any automatic integration."
+  ]
+}

@@ -1,0 +1,335 @@
+{
+  "schema": "pkg11-sim-core.function-handoff.v1",
+  "package": "PKG-11-SIM-CORE",
+  "function_address": "0x00b21340",
+  "ghidra_name": "FUN_00b21340",
+  "normalized_symbol": "pkg11_sim_core_00b21340",
+  "source_files": [
+    "reconstruction/staging/pkg11-sim-core/noun_projection.hpp",
+    "reconstruction/staging/pkg11-sim-core/noun_projection.cpp",
+    "reconstruction/staging/pkg11-sim-core/noun_projection_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "semantic_classification": "guarded-hybrid-result dependent",
+  "declaration": "NounProjectionVector *__thiscall pkg11_sim_core_00b21340(NounProjection *projection, NounCreateCallback create_callback, NounClearCallback clear_callback, NounAddCallback add_callback, NounFilterCallback filter_callback, std::uint32_t noun_id);",
+  "abi": {
+    "logical_return_type": "NounProjectionVector *",
+    "staged_return_type": "NounProjectionVector *",
+    "calling_convention": "__thiscall observed",
+    "hidden_this": true,
+    "stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "ESP+0x04",
+        "type": "NounCreateCallback",
+        "width_bytes": 4,
+        "observed_use": "Called with no source-level arguments on a map miss; its EAX result becomes the new value pointer."
+      },
+      {
+        "position": 2,
+        "entry_offset": "ESP+0x08",
+        "type": "NounClearCallback",
+        "width_bytes": 4,
+        "observed_use": "Called with the selected value pointer when the value dirty byte is nonzero."
+      },
+      {
+        "position": 3,
+        "entry_offset": "ESP+0x0C",
+        "type": "NounAddCallback",
+        "width_bytes": 4,
+        "observed_use": "Called with value then list-node arguments when the filter callback returns nonzero."
+      },
+      {
+        "position": 4,
+        "entry_offset": "ESP+0x10",
+        "type": "NounFilterCallback",
+        "width_bytes": 4,
+        "observed_use": "Called with list-node then noun-ID arguments; only a nonzero AL result invokes add."
+      },
+      {
+        "position": 5,
+        "entry_offset": "ESP+0x14",
+        "type": "std::uint32_t",
+        "width_bytes": 4,
+        "observed_use": "Used as the map key and forwarded as the second filter argument."
+      }
+    ],
+    "stack_cleanup_bytes": 0,
+    "return_register": "EAX",
+    "return_width_bytes": 4,
+    "return_value": "The same borrowed value pointer selected from the map or returned by the create callback.",
+    "return_semantics": "The body returns the map value pointer without an AddRef, copy, or ownership transfer."
+  },
+  "layout": {
+    "noun_projection": {
+      "size_bytes": 180,
+      "fields": [
+        {"name": "list_sentinel", "offset": "0x6c", "type": "NounListNode"},
+        {"name": "list_next_link", "offset": "0x78", "type": "void *"},
+        {"name": "noun_map", "offset": "0x98", "type": "OrderedMap"}
+      ],
+      "evidence": "The target reads the list link at +0x78, uses +0x6c as the traversal sentinel, and passes this+0x98 to map_int_whatever_find. cGameNounManager independently reports a map at +0x98."
+    },
+    "list_node": {
+      "size_bytes": 16,
+      "fields": [
+        {"name": "prefix", "offset": "0x00", "width_bytes": 12},
+        {"name": "next_link", "offset": "0x0c", "type": "void *"}
+      ],
+      "traversal_rule": "A stored link points at the next node's +0x0c field; the target subtracts 0x0c to recover the node base."
+    },
+    "noun_projection_vector": {
+      "size_bytes": 24,
+      "fields": [
+        {"name": "needs_update", "offset": "0x00", "type": "std::uint8_t"},
+        {"name": "begin", "offset": "0x04", "type": "void *"},
+        {"name": "end", "offset": "0x08", "type": "void *"},
+        {"name": "capacity", "offset": "0x0c", "type": "void *"},
+        {"name": "garbage", "offset": "0x10", "type": "std::int32_t"},
+        {"name": "allocator", "offset": "0x14", "type": "void *"}
+      ],
+      "evidence": "The returned value is read at byte +0x00 and the body clears that byte after filtering. Ghidra reports tGameDataVectorT<cGameData> with the same 24-byte field layout."
+    },
+    "map_entry": {
+      "size_bytes": 24,
+      "fields": [
+        {"name": "ordered_map_entry", "offset": "0x00", "type": "OrderedMapEntry"},
+        {"name": "value", "offset": "0x14", "type": "NounProjectionVector *"}
+      ],
+      "key_offset": "0x10",
+      "evidence": "The target reads the map node key through the PKG-20 search result and the value pointer at node +0x14."
+    }
+  },
+  "mechanics": {
+    "map_adjudication": [
+      "The implementation calls the guarded PKG-20 map_int_whatever_find implementation at 0x00e5c780 with the noun map at projection+0x98 and the fifth stack word as the key pointer.",
+      "The shared PKG-20 guarded-hybrid result is consumed without reinterpretation: the map anchor at projection+0x9c is the miss sentinel, and a non-sentinel result is the helper's accepted final candidate, interpreted as the equal node.",
+      "An exact key with a greater retained right candidate makes the helper return the anchor, so this body takes the create/insert path instead of borrowing the equal node.",
+      "A non-sentinel guarded result is interpreted as a NounMapEntry and its +0x14 value pointer is borrowed; this body performs no second key check."
+    ],
+    "miss_creation_and_insertion": [
+      "On the miss sentinel, create_callback is called with no source arguments and its return pointer is retained.",
+      "A two-dword pair is formed as {noun_id, created_value}.",
+      "The insertion boundary is declared as __thiscall: the noun map is in ECX and the output pointer, pair pointer, and zero context word are the three live stack arguments.",
+      "FUN_00ba8420 writes the insertion entry and one-byte insertion flag to the output pair; its returned output pointer is ignored by the target.",
+      "The newly created value pointer remains authoritative even if the insertion helper reports an existing or failed insertion."
+    ],
+    "insertion_boundary_abi": {
+      "declaration": "NounMapInsertResult *__thiscall noun_projection_insert_00ba8420(OrderedMap *map, NounMapInsertResult *output, const NounMapPair *pair, void *context);",
+      "map_register": "ECX",
+      "stack_words": ["output", "pair", "zero_context"],
+      "stack_cleanup_bytes": 12,
+      "return": "NounMapInsertResult * output pointer; the caller discards it"
+    },
+    "dirty_projection": [
+      "When value[0] is zero, the clear, filter, add, and dirty-clear sequence is skipped.",
+      "When value[0] is nonzero, clear_callback(value) runs first.",
+      "Traversal starts from the node link at projection+0x78, subtracts 0x0c, and stops at the sentinel projection+0x6c.",
+      "filter_callback(node, noun_id) runs in traversal order; a nonzero result invokes add_callback(value, node).",
+      "After the loop, value[0] is written as zero."
+    ],
+    "callback_order": [
+      "miss: create, map insertion, clear, filter/add sequence",
+      "hit: clear, filter/add sequence",
+      "filter rejection: no add callback",
+      "clean value: no callbacks"
+    ],
+    "return_and_mutation": [
+      "The target returns the same value pointer used for callbacks.",
+      "The map and list links are not modified by the target body.",
+      "The only value mutation in the target body is the final dirty-byte clear at value+0x00."
+    ]
+  },
+  "null_and_error_paths": {
+    "observed": [
+      "There is no null check after create_callback before value[0] is read.",
+      "There is no null check on a map-hit value pointer before value[0] is read.",
+      "There is no null check on clear, filter, or add callback pointers.",
+      "A normal empty list is represented by the sentinel link pointing to projection+0x78; a null next link follows the live pointer arithmetic and can fault on the next loop dereference.",
+      "The filter callback returning zero is the explicit rejection path and does not invoke add."
+    ],
+    "staging_policy": "The source preserves the absence of added null guards. The model tests cover clean values, empty lists, and filter rejection without inventing a null-return contract."
+  },
+  "call_graph": {
+    "direct_callers": {
+      "ghidra_count": 254,
+      "sample_call_sites": [
+        {
+          "from_address": "0x00b2962a",
+          "from_function": "FUN_00b294c0",
+          "observation": "Pushes the noun ID, add callback, filter callback, clear callback, and create callback before CALL."
+        },
+        {
+          "from_address": "0x00b25f5d",
+          "from_function": "FUN_00b25f40",
+          "observation": "Uses noun ID 0x018c816a and consumes the returned value as a vector at +0x04 through +0x08."
+        },
+        {
+          "from_address": "0x00b23a5d",
+          "from_function": "FUN_00b23a40",
+          "observation": "Uses noun ID 0x018c6d19 and iterates the returned vector entries."
+        },
+        {
+          "from_address": "0x00bf717d",
+          "from_function": "FUN_00bf7150",
+          "observation": "Uses noun ID 0x0403df5c and reads the returned vector bounds."
+        },
+        {
+          "from_address": "0x00c73922",
+          "from_function": "FUN_00c737a0",
+          "observation": "Uses noun ID 0x018c43e8 and iterates the returned vector."
+        },
+        {
+          "from_address": "0x00fee246",
+          "from_function": "FUN_00fee220",
+          "observation": "Uses noun ID 0x02aa5ada and scans returned vector entries."
+        }
+      ]
+    },
+    "direct_callees": {
+      "ghidra_count": 2,
+      "entries": [
+        {
+          "address": "0x00e5c780",
+          "name": "map_int_whatever_find",
+          "role": "Guarded PKG-20 hybrid-result sentinel lookup."
+        },
+        {
+          "address": "0x00ba8420",
+          "name": "FUN_00ba8420",
+          "role": "Map insertion helper called only on the miss path."
+        }
+      ]
+    },
+    "function_xrefs": {
+      "ghidra_count": 357,
+      "observation": "All reported references are unconditional call xrefs from the 254 direct callers."
+    }
+  },
+  "structure_and_global_evidence": [
+    {
+      "tool": "ghidra_get_struct_layout",
+      "type": "cGameNounManager",
+      "observation": "The live layout is 284 bytes and places mNounMap at +0x98 with type map<unsigned int, tGameDataVectorT<cGameData>>."
+    },
+    {
+      "tool": "ghidra_get_struct_layout",
+      "type": "tGameDataVectorT<Simulator::cGameData>",
+      "observation": "The live layout is 24 bytes with needsUpdate at +0x00, begin at +0x04, end at +0x08, capacity at +0x0c, garbage at +0x10, and allocator at +0x14."
+    },
+    {
+      "tool": "ghidra_get_struct_layout",
+      "type": "NounCreateMap",
+      "observation": "The live type is 48 bytes with a class hash map at +0x10; it is related noun infrastructure but is not directly accessed by this body."
+    },
+    {
+      "tool": "ghidra_get_type_size",
+      "type": "ContainerCreateCallback_t/ContainerClearCallback_t/ContainerAddCallback_t/ContainerFilterCallback_t",
+      "observation": "Each SDK callback typedef is four bytes, matching the five 32-bit stack arguments and the model callback function pointers."
+    },
+    {
+      "tool": "ghidra_audit_globals_in_function",
+      "address": "0x00b21340",
+      "observation": "No direct global data references are present; all persistent state is reached through the projection receiver and callbacks."
+    },
+    {
+      "tool": "ghidra_get_struct_layout",
+      "type": "cGameNounManager",
+      "observation": "The receiver's +0x98 map and the target's direct map pointer agree; no canonical structure type is promoted beyond the observed offsets."
+    }
+  ],
+  "evidence": [
+    {
+      "tool": "ghidra_get_function_by_address",
+      "address": "0x00b21340",
+      "observation": "The live function spans 0x00b21340 through 0x00b21409 with 80 instructions, 21 basic blocks, and cyclomatic complexity 9."
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x00b21340",
+      "observation": "The body performs the map lookup, miss create/insert path, dirty-byte test, callback traversal, dirty clear, and borrowed pointer return."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x00b21340",
+      "observation": "The prologue saves EBX/ESI/EDI, passes this+0x98 to the map helper, compares the result with this+0x9c, calls the create callback on miss, calls FUN_00ba8420, and uses +0x78/-0xc list-link arithmetic."
+    },
+    {
+      "tool": "ghidra_get_function_callers",
+      "address": "0x00b21340",
+      "observation": "Ghidra reports 254 direct callers."
+    },
+    {
+      "tool": "ghidra_get_function_callees",
+      "address": "0x00b21340",
+      "observation": "Ghidra reports two direct callees: map_int_whatever_find and FUN_00ba8420."
+    },
+    {
+      "tool": "ghidra_get_function_xrefs",
+      "address": "0x00b21340",
+      "observation": "Ghidra reports 357 unconditional call xrefs."
+    },
+    {
+      "tool": "ghidra_audit_globals_in_function",
+      "address": "0x00b21340",
+      "observation": "No direct globals are referenced."
+    },
+    {
+      "tool": "ghidra_get_assembly_context",
+      "addresses": ["0x00b2962a", "0x00b25f5d", "0x00b23a5d", "0x00bf717d", "0x00c73922", "0x00fee246"],
+      "observation": "Representative callers visibly push five 32-bit values in noun-ID, add, filter, clear, create order before CALL and consume the returned vector pointer afterward."
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x00ba8420",
+      "observation": "The insertion helper searches/inserts a map node, writes a node pointer and one-byte insertion flag to its output pair, and returns that output pointer; B21340 ignores the helper return."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x00ba8420",
+      "observation": "The helper has the observed three stack arguments, uses the pair pointer for key/value words, and writes the insertion result at output+0x00 and output+0x04."
+    }
+  ],
+  "confidence": {
+    "overall": "high for control flow, stack ABI, map/list offsets, callback order, dirty mutation, and borrowed return; medium for callback and value type names",
+    "high": [
+      "five explicit 32-bit stack arguments plus hidden this",
+      "noun map at receiver+0x98 and sentinel at +0x9c",
+      "create-before-insert miss ordering",
+      "clear-filter-add-dirty-clear ordering",
+      "filter rejection and empty-list behavior",
+      "no added null guards",
+      "four-byte return pointer and borrowed semantics"
+    ],
+    "medium": [
+      "the exact source-level callback typedefs and their calling conventions",
+      "the concrete NounProjectionVector payload type",
+      "the relationship between this body and the adjacent cGameNounManager::GetData helper"
+    ],
+    "low": [
+      "FUN_00ba8420 allocation and red-black rebalance internals",
+      "callback ownership and destruction policy for returned vector values"
+    ]
+  },
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging reconstruction/staging/pkg11-sim-core/noun_projection.cpp",
+    "syntax_result": "passed",
+    "model_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging reconstruction/staging/pkg20-gameglobal/map_search.cpp reconstruction/staging/pkg11-sim-core/noun_projection.cpp reconstruction/staging/pkg11-sim-core/noun_projection_model_test.cpp -o /tmp/opencode/pkg11-sim-core-noun-projection-model && /tmp/opencode/pkg11-sim-core-noun-projection-model",
+    "model_result": "passed; __thiscall insertion boundary, clean borrowed hit, exact key with a greater right child taking create/insert, dirty filter/add order, miss create/insert/order, filter rejection, and empty-list clear",
+    "format_command": "clang-format --dry-run --Werror -style=\"{BasedOnStyle: Google, FixNamespaceComments: false}\" reconstruction/staging/pkg11-sim-core/noun_projection.hpp reconstruction/staging/pkg11-sim-core/noun_projection.cpp reconstruction/staging/pkg11-sim-core/noun_projection_model_test.cpp",
+    "format_result": "passed; namespace comments disabled to honor the no-comments constraint",
+    "json_command": "python3 -m json.tool reconstruction/metadata/pkg11-sim-core/00b21340.json >/dev/null",
+    "json_result": "passed"
+  },
+  "unresolved_questions": [
+    "The live Ghidra prototype is undefined, so the callback typedef names and hidden-calling-convention details are staged from observed call widths and argument order.",
+    "FUN_00ba8420 is retained as an insertion boundary; its allocator, red-black rebalance, and failure behavior are not reconstructed in this package.",
+    "The target has no null guard after create_callback or map-hit value extraction; malformed null inputs remain fault paths rather than normalized errors.",
+    "The exact ownership and destruction policy for the returned noun vector pointer is not established by the target body."
+  ],
+  "blockers": [
+    "No differential runtime corpus is available for the 254 callers.",
+    "The concrete callback implementations and noun vector payload subtype remain unresolved.",
+    "The live function is not named as cGameNounManager::GetData, so the adjacent helper's semantic relationship is not promoted."
+  ]
+}

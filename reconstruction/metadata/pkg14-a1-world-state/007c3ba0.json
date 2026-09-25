@@ -1,0 +1,130 @@
+{
+  "schema": "pkg14-a1-world-state-function-handoff-v1",
+  "package": "PKG-14-A1-WORLD-STATE",
+  "function_address": "0x007c3ba0",
+  "ghidra_name": "FUN_007c3ba0",
+  "normalized_symbol": "world_viewer_clear_007c3ba0",
+  "source_files": [
+    "reconstruction/staging/pkg14-a1-world-state/world_state.hpp",
+    "reconstruction/staging/pkg14-a1-world-state/world_state.cpp",
+    "reconstruction/staging/pkg14-a1-world-state/world_state_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "std::uint8_t __thiscall world_viewer_clear_007c3ba0(OpaqueWorldViewer* viewer);",
+  "abi": {
+    "return_type": "std::uint8_t",
+    "return_register": "EAX",
+    "return_width_bytes": 1,
+    "calling_convention": "thiscall",
+    "hidden_this_register": "ECX",
+    "hidden_this_type": "OpaqueWorldViewer*",
+    "stack_arguments": [],
+    "stack_cleanup_bytes": 0,
+    "termination": "RET",
+    "model_status": "exact x86-32 direct-call boundary"
+  },
+  "body": {
+    "status": "reconstructed",
+    "entry_address": "0x007c3ba0",
+    "body_addresses": ["0x007c3ba0", "0x007c3c0a"],
+    "mechanics": [
+      "Read the opaque object at receiver+0x158. If non-null and equal to the global active-object word at 0x016f6dac, OR 0x2 into 0x016f8a38, OR 0x8 into 0x016f9110, and clear 0x016f6dac.",
+      "Call 0x00f47380 with receiver+0x158 and then clear receiver+0x158, regardless of whether the active-object identity matched.",
+      "Read the camera at receiver+0x170. If non-null, call 0x00f47410, clear the field, and return 1; otherwise return 0.",
+      "No container mutation, event creation, or additional field writes are present in the target body."
+    ]
+  },
+  "target_layout": {
+    "receiver_size_bytes": 372,
+    "receiver_fields": [
+      {"offset": "0x158", "size_bytes": 4, "meaning": "opaque active-object pointer"},
+      {"offset": "0x170", "size_bytes": 4, "meaning": "opaque camera pointer"}
+    ],
+    "globals": [
+      {"address": "0x016f6dac", "meaning": "active-object pointer word"},
+      {"address": "0x016f8a38", "meaning": "flag word receiving bit 0x2"},
+      {"address": "0x016f9110", "meaning": "flag word receiving bit 0x8"}
+    ],
+    "evidence": "Ghidra App::cViewer layout reports size 372 and exposes the 0x158 and 0x170 fields used by the body."
+  },
+  "call_graph": {
+    "direct_callers": {
+      "ghidra_count": 36,
+      "representative_functions": [
+        "0x00576c50 Editors::cEditor::Dispose",
+        "0x00430e70",
+        "0x006f0890",
+        "0x0076b000",
+        "0x007b29a0",
+        "0x010372b0"
+      ]
+    },
+    "direct_callees": [
+      {"address": "0x00f47380", "meaning": "opaque active-object release"},
+      {"address": "0x00f47410", "meaning": "opaque camera release"}
+    ]
+  },
+  "evidence": [
+    {
+      "tool": "ghidra_get_function_by_address",
+      "address": "0x007c3ba0",
+      "observation": "Ghidra reports FUN_007c3ba0 at 0x007c3ba0 with body range 0x007c3ba0-0x007c3c0a."
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x007c3ba0",
+      "observation": "Live decompilation proves the active-object identity check, flag writes, release order, field clearing, and boolean camera return."
+    },
+    {
+      "tool": "ghidra_get_function_callers",
+      "address": "0x007c3ba0",
+      "observation": "Ghidra reports 36 direct callers, including Editors::cEditor::Dispose."
+    },
+    {
+      "tool": "ghidra_get_function_callees",
+      "address": "0x007c3ba0",
+      "observation": "The only direct callees are 0x00f47380 and 0x00f47410."
+    },
+    {
+      "tool": "ghidra_get_struct_layout",
+      "type": "cViewer",
+      "observation": "The imported cViewer layout is 372 bytes and corroborates receiver+0x158 and receiver+0x170."
+    }
+  ],
+  "confidence": {
+    "overall": "high for field offsets, identity check, flag updates, release ordering, and return value",
+    "high": [
+      "thiscall boundary",
+      "receiver+0x158 and receiver+0x170 reads",
+      "0x016f6dac identity comparison",
+      "0x016f8a38 and 0x016f9110 bit updates",
+      "release-before-clear ordering",
+      "camera-present boolean return"
+    ],
+    "medium": [
+      "concrete ownership and semantic type of receiver+0x158"
+    ],
+    "low": [
+      "concrete renderer or world meaning of receiver+0x170"
+    ]
+  },
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only reconstruction/staging/pkg14-a1-world-state/world_state.cpp reconstruction/staging/pkg14-a1-world-state/world_state_model_test.cpp",
+    "model_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror reconstruction/staging/pkg14-a1-world-state/world_state.cpp reconstruction/staging/pkg14-a1-world-state/world_state_model_test.cpp -o /tmp/opencode/pkg14-a1-world-state-model-test && /tmp/opencode/pkg14-a1-world-state-model-test",
+    "json_command": "python3 -m json.tool reconstruction/metadata/pkg14-a1-world-state/007c3ba0.json >/dev/null",
+    "results": {
+      "syntax": "passed",
+      "model": "passed",
+      "json": "passed",
+      "format": "passed"
+    }
+  },
+  "unresolved_questions": [
+    "The concrete type and ownership of the object at receiver+0x158 are not established by this body.",
+    "The release routines remain package-local ports rather than promoted concrete classes."
+  ],
+  "blockers": [
+    "No runtime execution of the original release routines is available.",
+    "The opaque receiver and release contracts require integration with the world-viewer owner."
+  ]
+}

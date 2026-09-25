@@ -1,0 +1,185 @@
+{
+  "schema": "openspore-map-semantics-resolution-v1",
+  "artifact": "knowledgegraph/research/map-semantics-resolution.json",
+  "as_of": "2026-09-25",
+  "status": "statically_resolved",
+  "binary": {
+    "program": "SporeApp.exe",
+    "version": "3.1.0.22",
+    "architecture": "x86:LE:32",
+    "sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e"
+  },
+  "target": "0x00e5c780",
+  "final_classification": {
+    "option": "C",
+    "name": "fixed_hybrid_guarded_lower_bound",
+    "summary": "The body performs a lower-bound-shaped tree walk, then accepts the retained candidate only when the query is not less than the candidate key. With the traversal invariant candidate.key >= query, the accepted candidate is equal to the query. This is not caller-specific and it is not conventional lower_bound.",
+    "not_a": [
+      "A conventional lower_bound or ceiling iterator",
+      "A robust exact-find guarantee for every valid tree shape",
+      "A caller-dependent operation contract"
+    ]
+  },
+  "source_contract": "void __thiscall lookup(OrderedMap* map, OrderedMapEntry** out, const uint32_t* key): initialize candidate to &map->anchor and node to map->anchor.parent; while node is non-null, move left when node->key < *key, otherwise retain node and move right; write the retained node to *out only when *key >= candidate->key, otherwise write &map->anchor.",
+  "result_matrix": [
+    {
+      "query_state": "exact_key_with_no_greater_candidate_retained",
+      "result": "equal node"
+    },
+    {
+      "query_state": "exact_key_with_greater_candidate_retained_on_rightward_walk",
+      "result": "end sentinel"
+    },
+    {
+      "query_state": "below_first_key",
+      "result": "end sentinel"
+    },
+    {
+      "query_state": "between_existing_keys",
+      "result": "end sentinel because the least-greater successor is rejected"
+    },
+    {
+      "query_state": "above_final_key",
+      "result": "end sentinel"
+    },
+    {
+      "query_state": "empty_map",
+      "result": "end sentinel"
+    }
+  ],
+  "instruction_evidence": [
+    {
+      "address": "0x00e5c780",
+      "fact": "MOV EAX,[ECX+0x0c] loads the root from anchor.parent."
+    },
+    {
+      "address": "0x00e5c783",
+      "fact": "LEA EDX,[ECX+0x04] forms the map anchor/end sentinel."
+    },
+    {
+      "address": "0x00e5c78b",
+      "fact": "MOV ECX,EDX initializes the retained candidate to the end sentinel."
+    },
+    {
+      "address": "0x00e5c794-0x00e5c79b",
+      "fact": "CMP [EAX+0x10],ESI followed by JC takes the unsigned left branch when node.key < query; otherwise the node becomes the candidate and the right branch is taken."
+    },
+    {
+      "address": "0x00e5c7a2-0x00e5c7a4",
+      "fact": "The walk terminates only when the next child is null."
+    },
+    {
+      "address": "0x00e5c7a7-0x00e5c7a9",
+      "fact": "The sentinel candidate is rejected before reading candidate.key."
+    },
+    {
+      "address": "0x00e5c7ab-0x00e5c7b0",
+      "fact": "CMP EAX,[ECX+0x10] followed by JC rejects the candidate when query < candidate.key; there is no equality branch or equality instruction."
+    },
+    {
+      "address": "0x00e5c7b6",
+      "fact": "The retained candidate is written through the result pointer only on the accepted path."
+    },
+    {
+      "address": "0x00e5c7c0",
+      "fact": "The end sentinel is written through the result pointer on the rejected path."
+    }
+  ],
+  "caller_evidence": [
+    {
+      "function": "0x00b21340",
+      "call_site": "0x00b2135a",
+      "observation": "The noun consumer checks only whether the returned node is the map end at this+0x9c. The end branch creates and inserts; every non-end node is consumed at +0x14 without a key-equality test.",
+      "classification": "exact-find dependent",
+      "reason": "A successor return would incorrectly select a greater noun record instead of entering creation. It is not lower-bound dependent because no caller-side equality or range interpretation permits a greater key."
+    },
+    {
+      "function": "0x00ba9370",
+      "call_site": "0x00ba938b",
+      "observation": "The empire-map wrapper rejects this+0x154 and then dereferences node+0x14 without checking node+0x10 against the requested political ID.",
+      "classification": "exact-find dependent",
+      "reason": "A returned successor would be returned as though it were the requested empire."
+    },
+    {
+      "function": "0x00b3d300",
+      "call_site": null,
+      "observation": "The body is only MOV EAX,[0x0167eae0]; RET at 0x00b3d300-0x00b3d305.",
+      "classification": "independent",
+      "reason": "It neither calls nor consumes the map-search result. Its existing root-publication and lifetime gate remains separate."
+    },
+    {
+      "function": "0x01021300",
+      "call_site": "0x01021328",
+      "observation": "The current-empire cache calls 0x00ba9370 and stores the returned object without checking its +0x84 political ID. The +0x84 check at 0x01021315 applies only to the previously cached object.",
+      "classification": "exact-find dependent",
+      "reason": "A successor returned by 0x00ba9370 would be cached as the current empire. It is not lower-bound dependent and the helper result is not an iterator."
+    }
+  ],
+  "representative_query_fixture": {
+    "type": "static_model",
+    "tree": "20 with left 10 and right 30",
+    "cases": [
+      {"query": 10, "result": "end", "reason": "root 20 is retained and no qualifying right-side node is reached"},
+      {"query": 20, "result": "end", "reason": "30 replaces 20 as the retained candidate"},
+      {"query": 25, "result": "end", "reason": "30 is the least-greater candidate and is rejected"},
+      {"query": 35, "result": "end", "reason": "no candidate with key >= 35 is encountered"},
+      {"query": 20, "alternate_tree": "single node 20", "result": "node 20", "reason": "the equal node remains the final candidate"}
+    ]
+  },
+  "map_layout": {
+    "map": [
+      {"offset": "0x00", "meaning": "comparator"},
+      {"offset": "0x04", "meaning": "anchor/end sentinel"},
+      {"offset": "0x0c", "meaning": "root through anchor.parent"},
+      {"offset": "0x14", "meaning": "size"},
+      {"offset": "0x18", "meaning": "allocator"}
+    ],
+    "node": [
+      {"offset": "0x00", "meaning": "left"},
+      {"offset": "0x04", "meaning": "right"},
+      {"offset": "0x08", "meaning": "parent"},
+      {"offset": "0x0c", "meaning": "color"},
+      {"offset": "0x10", "meaning": "unsigned key"},
+      {"offset": "0x14", "meaning": "opaque payload used by consumers"}
+    ]
+  },
+  "sdk_corroboration": {
+    "status": "non_decisive",
+    "facts": [
+      "The imported alias map_int_whatever_find supports an ordered-map lookup family but not exact-versus-lower-bound semantics.",
+      "SDK eastl::map<uint32_t, cEmpirePtr> and eastl::map<uint32_t, tGameDataVectorT<cGameData>> corroborate the noun and empire map roles and the observed offsets.",
+      "Imported SDK addresses for cGameNounManager::GetData and cStarManager::GetEmpire differ from the live bodies used here, so aliases were not used to decide semantics."
+    ]
+  },
+  "stale_artifacts": [
+    "docs/analysis/architecture-decisions.md lower-bound propagation",
+    "docs/analysis/architecture-resolution.md lower-bound/ceiling interpretation",
+    "docs/analysis/simulator-shared-state-interface.md lower-bound/miss wording",
+    "docs/analysis/future-research/11-pkg-20-gameglobal.md",
+    "docs/analysis/future-research/06-pkg-12-sim-space.md",
+    "knowledgegraph/research/architecture-blockers/blocker-a-primary.md",
+    "knowledgegraph/research/architecture-blockers/blocker-a-adversarial.md",
+    "knowledgegraph/research/noun-star-lifecycle/review-roots-publication.md",
+    "knowledgegraph/research/noun-star-lifecycle/review-identity-ordering.md",
+    "docs/analysis/architecture-blockers.md",
+    "docs/analysis/noun-star-lifecycle.md",
+    "docs/analysis/simulator-root-closure.md"
+  ],
+  "source_changes": [
+    "reconstruction/staging/pkg20-gameglobal/map_search.cpp expresses the final accepted candidate as key equality while preserving the observed candidate walk.",
+    "reconstruction/staging/pkg20-gameglobal/map_search_model_test.cpp covers exact-without-successor, exact-with-successor rejection, between, below, and above queries.",
+    "reconstruction/metadata/pkg20-gameglobal/00e5c780.json records the fixed hybrid contract and removes the semantic blocker.",
+    "reconstruction/metadata/pkg11-sim-core/00b21340.json and 00ba9370.json classify noun and empire consumers as exact-result dependent.",
+    "knowledgegraph/research/source-reconstruction-manifest.json closes the map contradiction and points to this resolution.",
+    "knowledgegraph/research/source-reconstruction-audit.json resolves P0-001 and records downstream classifications."
+  ],
+  "remaining_runtime_gates": [
+    "0x00b3d300 global publication, canonical-slot equality, and object lifetime",
+    "Real-map key/tree-shape behavior is not runtime validated, but it is not required to reconstruct the static helper contract.",
+    "Callback allocation, failure, locking, and reentrancy for 0x00b21340 remain outside this narrow resolution."
+  ],
+  "runtime_validation": {
+    "performed": false,
+    "statement": "No original-process or differential runtime experiment was performed."
+  }
+}

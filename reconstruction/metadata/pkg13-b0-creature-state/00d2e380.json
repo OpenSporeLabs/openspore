@@ -1,0 +1,87 @@
+{
+  "schema": "pkg13-creature-state.function-handoff.v1",
+  "package": "PKG-13-SIM-CREATURE-TRIBECIV",
+  "function_address": "0x00d2e380",
+  "ghidra_name": "Simulator::cCreatureGameData::GetEvoPointsToNextBrainLevel",
+  "normalized_symbol": "Simulator_cCreatureGameData_GetEvoPointsToNextBrainLevel",
+  "source_files": [
+    "reconstruction/staging/pkg13-b0-creature-state/creature_state.hpp",
+    "reconstruction/staging/pkg13-b0-creature-state/creature_state.cpp",
+    "reconstruction/staging/pkg13-b0-creature-state/creature_state_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "float Simulator_cCreatureGameData_GetEvoPointsToNextBrainLevel(std::int32_t current_level);",
+  "abi": {
+    "calling_convention": "cdecl-compatible from one stack argument and RET",
+    "hidden_this": false,
+    "stack_arguments": [
+      {"position": 1, "entry_offset": "ESP+0x04", "after_push_ecx_offset": "ESP+0x08", "type": "std::int32_t", "width_bytes": 4, "observed_use": "Signed comparison with -1, followed by unsigned CMP EAX,3 / JA table bounds check"}
+    ],
+    "stack_cleanup_bytes": 0,
+    "return_register": "ST0",
+    "return_width_bytes": 4,
+    "return_semantics": "Returns the selected mutable global float exactly; all levels outside 0 through 3 return positive 0.0F."
+  },
+  "body": {
+    "status": "reconstructed",
+    "entry_address": "0x00d2e380",
+    "body_addresses": ["0x00d2e380", "0x00d2e3fd"],
+    "instruction_count": 36,
+    "basic_block_count": 6,
+    "raw_bytes": "518b4424080f57c00f30f11042483f8ff7518e869efe0ff8bc8e8121adfff8b108bc88b82d8000000ffd083f803774aff248500e4d200f30f1005382e5801f30f110424d9042459c3f30f10053c2e5801f30f110424d9042459c3f30f1005402e5801f30f110424d9042459c3f30f1005442e5801f30f110424d9042459c3",
+    "mechanics": [
+      "PUSH ECX allocates a four-byte local slot that is initialized to +0.0F; it is not a hidden receiver.",
+      "Only the signed input value -1 enters the lookup path.",
+      "The lookup calls 0x00b3d300, passes EAX in ECX to 0x00b1fdb0, reads the resulting vtable pointer, and calls slot vtable+0xd8 with no stack arguments.",
+      "CMP EAX,3 followed by JA implements an unsigned upper-bound check, so only 0, 1, 2, and 3 reach the jump table.",
+      "The four cases read mutable globals 0x01582e38, 0x01582e3c, 0x01582e40, and 0x01582e44 in that order.",
+      "Every other result returns the preinitialized +0.0F local."
+    ]
+  },
+  "state_evidence": {
+    "global_thresholds": [
+      {"level": 0, "address": "0x01582e38", "initial_float": 1000.0},
+      {"level": 1, "address": "0x01582e3c", "initial_float": 2000.0},
+      {"level": 2, "address": "0x01582e40", "initial_float": 3000.0},
+      {"level": 3, "address": "0x01582e44", "initial_float": 5000.0}
+    ],
+    "root_chain": ["global 0x0167eae0 through 0x00b3d300", "noun-manager field +0x54 through 0x00b1fdb0", "object vtable slot +0xd8"],
+    "null_and_sentinel_behavior": "No null checks exist for the root pointer, noun manager, object pointer, vtable pointer, or virtual slot. The -1 sentinel triggers lookup; other negative values and values above 3 return +0.0F without lookup."
+  },
+  "call_graph": {
+    "direct_callers": ["0x00d2d0b0", "0x00d2e830", "0x00d3fcf0"],
+    "direct_callees": ["0x00b3d300", "0x00b1fdb0", "vtable+0xd8"],
+    "function_xrefs": ["0x00d2d182", "0x00d2e861", "0x00d3fd13"]
+  },
+  "evidence": [
+    {"tool": "ghidra_get_function_by_address", "address": "0x00d2e380", "observation": "Live function range is 0x00d2e380 through 0x00d2e3fd with one signed int parameter and float return."},
+    {"tool": "ghidra_decompile_function", "address": "0x00d2e380", "observation": "Live decompilation preserves the -1 lookup, four global cases, and zero default."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00d2e380", "observation": "Exact assembly shows PUSH ECX as local storage, RET without cleanup, unsigned JA, jump table, and vtable+0xd8 dispatch."},
+    {"tool": "ghidra_read_memory", "address": "0x00d2e380", "observation": "Raw target bytes confirm the local-slot interpretation and complete four-case table."},
+    {"tool": "ghidra_read_memory", "address": "0x00d2e400", "observation": "Jump table targets are 0x00d2e3b6, 0x00d2e3c8, 0x00d2e3da, and 0x00d2e3ec."},
+    {"tool": "ghidra_read_memory", "address": "0x01582e38", "observation": "Initial threshold words decode to 1000.0F, 2000.0F, 3000.0F, and 5000.0F."},
+    {"tool": "ghidra_decompile_function", "address": "0x00b3d300", "observation": "The first helper returns global 0x0167eae0."},
+    {"tool": "ghidra_decompile_function", "address": "0x00b1fdb0", "observation": "The second helper is ECX-only and returns the receiver field at +0x54."},
+    {"tool": "ghidra_get_function_callers", "address": "0x00d2e380", "observation": "Three direct callers were reported."}
+  ],
+  "confidence": {
+    "body": "high",
+    "calling_convention": "high",
+    "local_stack_slot": "high",
+    "virtual_slot": "high",
+    "virtual_slot_semantics": "medium; slot behavior is observed, concrete implementation is unresolved"
+  },
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -fsyntax-only reconstruction/staging/pkg13-b0-creature-state/creature_state.cpp reconstruction/staging/pkg13-b0-creature-state/creature_state_test.cpp",
+    "model_test_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic reconstruction/staging/pkg13-b0-creature-state/creature_state.cpp reconstruction/staging/pkg13-b0-creature-state/creature_state_test.cpp -o /tmp/opencode/pkg13-creature-state-test && /tmp/opencode/pkg13-creature-state-test",
+    "json_check": "python3 -m json.tool reconstruction/metadata/pkg13-b0-creature-state/00d2e380.json"
+  },
+  "unresolved_questions": [
+    "The concrete object type and implementation behind vtable slot +0xd8 are unresolved.",
+    "The owner and later writers of the four mutable threshold globals are not established by this target.",
+    "No original-process -1 lookup result or customized threshold values have been observed."
+  ],
+  "blockers": [
+    "Runtime noun-manager/object availability and actual vtable dispatch remain gated."
+  ]
+}

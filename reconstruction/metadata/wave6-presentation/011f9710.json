@@ -1,0 +1,153 @@
+{
+  "schema": "wave6-presentation-function-handoff.v1",
+  "package": "WAVE6-PRESENTATION",
+  "function_address": "0x011f9710",
+  "ghidra_name": "RenderWare::Mesh::SetIndexBuffer",
+  "normalized_symbol": "renderware_mesh_set_index_buffer_011f9710",
+  "source_files": [
+    "reconstruction/staging/wave6-presentation/presentation_boundary.hpp",
+    "reconstruction/staging/wave6-presentation/presentation_boundary.cpp",
+    "reconstruction/staging/wave6-presentation/presentation_boundary_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "void __thiscall renderware_mesh_set_index_buffer_011f9710(Mesh* receiver);",
+  "abi": {
+    "return_type": "void",
+    "return_register": null,
+    "calling_convention": "__thiscall observed",
+    "hidden_this_register": "ECX",
+    "hidden_this_type": "Mesh*",
+    "stack_arguments": [],
+    "stack_cleanup_bytes": 0,
+    "return_evidence": "The target has no explicit stack argument read and returns with plain RET; the decompiler's pBuffer parameter is not present in the raw body."
+  },
+  "layout": {
+    "mesh": {
+      "size_bytes": 40,
+      "fields": {
+        "primitive_type": "0x04 uint32",
+        "index_buffer": "0x08 IndexBuffer*",
+        "triangle_count": "0x0c uint32",
+        "vertex_buffers_count": "0x10 uint32",
+        "first_index": "0x14 uint32",
+        "indices_count": "0x18 uint32",
+        "first_vertex": "0x1c uint32",
+        "vertex_count": "0x20 uint32",
+        "vertex_buffers": "0x24 VertexBuffer*"
+      },
+      "source": "Ghidra Mesh layout"
+    },
+    "index_buffer": {
+      "size_bytes": 28,
+      "native_buffer": "0x00 void*",
+      "start_index": "0x04 uint32"
+    },
+    "vertex_buffer": {
+      "description": "0x00 opaque pointer",
+      "native_buffer": "0x04 opaque pointer",
+      "base_vertex_index": "0x08 uint32",
+      "description_stride_read": "description+0x0f uint8"
+    }
+  },
+  "mechanics": {
+    "preparation": "Call 0x011f21a0, then invoke the active-state slot +0x14 with the mesh; a zero result returns before any state mutation.",
+    "single_stream_publication": "When vertexBuffersCount is one, publish vertex_buffer+0x08 (baseVertexIndex) to both graphics globals 0x01718614 and 0x01718618.",
+    "stream_update": "For each vertex buffer, read description+0x0f as stride, derive baseVertexIndex*stride when active-state+0xd4 bit zero is set, and call device slot +0x190 only when the three-word cache changes.",
+    "stream_clear": "Clear unused stream slots through device slot +0x190 with zero source, offset, and stride, clear their cache words, and publish the new stream count.",
+    "primitive_count": "Use mesh+0x0c when mesh+0x04 equals global 0x016f85a8; otherwise call 0x011f95c0 with the global primitive type and publish the result at 0x01718610.",
+    "null_index_path": "When mesh+0x08 is null, call device slot +0x144 with the primitive type, graphics global 0x01718618, and primitive count.",
+    "indexed_path": "When mesh+0x08 is non-null, optionally call device slot +0x1a0 for a changed native index buffer, update the cached native pointer, then call device slot +0x148 with the observed six stack arguments.",
+    "error_paths": "Negative stream-source or index-buffer binding results return immediately; draw results are not branched on.",
+    "ownership": "The body publishes and caches native pointers without AddRef or Release."
+  },
+  "call_graph": {
+    "direct_callers": {
+      "ghidra_count": 6,
+      "representative_functions": [
+        "0x006e7110",
+        "0x006e7270",
+        "0x006eae40",
+        "0x0073ede0",
+        "0x00759ec0",
+        "0x00faef10"
+      ]
+    },
+    "direct_callees": [
+      "0x011f21a0",
+      "0x011f8af0",
+      "0x011f95c0"
+    ],
+    "function_xrefs": 6,
+    "global_references": "The body directly references 0x016f9110, 0x01718614, 0x01718618, 0x01718610, 0x016f913c, 0x015d0934, 0x016f85a8, and 0x016f8afc."
+  },
+  "evidence": [
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x011f9710",
+      "observation": "The live body prepares graphics state, walks vertex streams with cache checks, clears stale streams, computes primitive count, and chooses primitive or indexed draw calls from mesh+0x08."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x011f9710",
+      "observation": "The 173-instruction body preserves ECX receiver, plain RET, vtable slots +0x190/+0x1a0/+0x148/+0x144, negative HRESULT branches, and the exact field offsets used by the model."
+    },
+    {
+      "tool": "ghidra_get_function_callers",
+      "address": "0x011f9710",
+      "observation": "Six direct caller functions were identified."
+    },
+    {
+      "tool": "ghidra_get_function_callees",
+      "address": "0x011f9710",
+      "observation": "Three direct helper calls were identified: 0x011f21a0, 0x011f8af0, and 0x011f95c0."
+    },
+    {
+      "tool": "ghidra_get_function_xrefs",
+      "address": "0x011f9710",
+      "observation": "Six direct call references were identified."
+    },
+    {
+      "tool": "ghidra_get_struct_layout",
+      "address": "0x011f9710",
+      "observation": "Ghidra reports Mesh, IndexBuffer, and VertexBuffer layouts used by the reconstruction."
+    }
+  ],
+  "confidence": {
+    "overall": "high for raw ABI, stream/cache order, draw branch selection, and field offsets",
+    "high": [
+      "thiscall receiver with no explicit stack argument",
+      "prepare-before-state-mutation order",
+      "stream cache three-word comparisons",
+      "stale stream clear order",
+      "primitive-count fast path",
+      "null-index versus indexed draw branch",
+      "native index-buffer cache and negative HRESULT returns"
+    ],
+    "medium": [
+      "semantic names of the four D3D device slots",
+      "maximum runtime stream count and global cache capacity"
+    ],
+    "low": []
+  },
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only reconstruction/staging/wave6-presentation/presentation_boundary.cpp",
+    "model_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror reconstruction/staging/wave6-presentation/presentation_boundary.cpp reconstruction/staging/wave6-presentation/presentation_boundary_test.cpp -o /tmp/opencode/wave6-presentation-model-test && /tmp/opencode/wave6-presentation-model-test",
+    "json_command": "python3 -m json.tool reconstruction/metadata/wave6-presentation/011f9710.json >/dev/null",
+    "results": {
+      "syntax": "passed",
+      "model": "passed",
+      "json": "passed"
+    }
+  },
+  "unresolved_questions": [
+    "What concrete D3D9 methods correspond to device slots +0x144, +0x148, +0x190, and +0x1a0?",
+    "What is the runtime maximum number of vertex streams and the exact owner of the stream-cache global?",
+    "What concrete graphics state is returned by the active-state slot +0x14 and what does its +0xd4 bit mean?",
+    "What are the concrete VertexBuffer description and native-buffer ownership rules?"
+  ],
+  "blockers": [
+    "D3D device vtable identities are represented as package-local ports.",
+    "The model uses a bounded cache array for tests; the live global capacity is unresolved.",
+    "No runtime D3D or RenderWare mesh trace is available."
+  ]
+}

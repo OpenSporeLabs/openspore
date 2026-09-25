@@ -1,0 +1,166 @@
+{
+  "schema": "pkg18-ui-scripting-function-handoff-v1",
+  "package": "pkg18-ui-scripting",
+  "function_address": "0x005bf9d0",
+  "ghidra_name": "FUN_005bf9d0",
+  "source_files": [
+    "reconstruction/staging/pkg18-ui-scripting/ui_shell_functions.hpp",
+    "reconstruction/staging/pkg18-ui-scripting/ui_shell_functions.cpp",
+    "reconstruction/staging/pkg18-ui-scripting/ui_shell_functions_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "included": true,
+  "body_implementation": true,
+  "body_range": {
+    "entry": "0x005bf9d0",
+    "body_end": "0x005bfb64",
+    "last_return": "0x005bfb62"
+  },
+  "abi": {
+    "receiver": {
+      "register": "ECX",
+      "type": "opaque UI shell/input state",
+      "width_bytes": 4
+    },
+    "stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "ESP+0x04",
+        "name": "message_id",
+        "type": "uint32",
+        "width_bytes": 4
+      },
+      {
+        "position": 2,
+        "entry_offset": "ESP+0x08",
+        "name": "message",
+        "type": "opaque UI message pointer",
+        "width_bytes": 4
+      }
+    ],
+    "stack_cleanup_bytes": 8,
+    "termination": "RET 0x8",
+    "return_observation": "AL is one for handled ids and zero for unmatched ids or failed shape checks."
+  },
+  "opaque_contracts": {
+    "shell": "OpaqueUiShell",
+    "message": "OpaqueUiMessage",
+    "service": "OpaqueUiObject",
+    "message_fields": {
+      "identity": "message+0x00",
+      "payload_pointer": "message+0x08",
+      "input_payload_kind": "payload+0x08",
+      "input_payload_size": "payload+0x0c",
+      "input_payload_enabled": "payload+0x10",
+      "input_payload_x": "payload+0x14",
+      "input_payload_y": "payload+0x18"
+    },
+    "unresolved_service_offsets": [
+      "shell+0x14",
+      "shell+0x18"
+    ]
+  },
+  "dispatch": [
+    {
+      "message_id": "0x14418c3f",
+      "condition": "message+0x00 equals shell+0x18",
+      "action": "lookup(shell+0x14, 0xaddc11ef, 1), then service vtable+0x80(message+0x08) when non-null",
+      "return": "true"
+    },
+    {
+      "message_id": "0x01ee1001",
+      "condition": "shell+0x0c is non-zero and payload fields are kind=5, size=1000, enabled=1",
+      "action": "call gate 0x008053b0; if zero, convert payload x/y, call 0x00804f80, obtain an item through presentation vtable+0x44, resolve shell+0x14 target 0x272eb68e, follow item vtable+0x10 links, and call shell-4 vtable+0x1c(0) when the chain ends",
+      "return": "true when the gate is zero; false otherwise"
+    },
+    {
+      "message_id": "0x073127e6",
+      "condition": "message+0x00 equals shell+0x18",
+      "action": "lookup(shell+0x14, 0x5415e48, 1), then service vtable+0x80(message+0x08) when non-null",
+      "return": "true"
+    },
+    {
+      "message_id": "0x7aa519dc",
+      "condition": "message+0x00 equals shell+0x18",
+      "action": "call 0x005bf950(shell, message+0x08)",
+      "return": "true"
+    }
+  ],
+  "branch_order": [
+    "For ids at or below 0x14418c3f, test 0x14418c3f, then 0x01ee1001, then 0x073127e6.",
+    "For ids above 0x14418c3f, test 0x7aa519dc.",
+    "An equal id with a failed identity/shape condition returns false without trying another id."
+  ],
+  "call_graph": {
+    "direct_callers": [],
+    "code_xrefs": [
+      {
+        "address": "0x00edae70",
+        "type": "UNCONDITIONAL_CALL",
+        "context": "unmodeled function entry; pushes message id and message pointer"
+      }
+    ],
+    "data_xrefs": [
+      {
+        "address": "0x013f7b84",
+        "type": "DATA",
+        "value": "0x005bf9d0",
+        "context": "function-pointer table entry"
+      }
+    ],
+    "direct_callees": [
+      "FUN_005bf950",
+      "FUN_0067caa0",
+      "FUN_00804f80",
+      "FUN_008053b0",
+      "FUN_008105b0"
+    ]
+  },
+  "registration": {
+    "table_address": "0x013f7b70",
+    "target_word": "0x013f7b84",
+    "target_value": "0x005bf9d0",
+    "adjacent_target_words": [
+      "0x013f7ba8=0x005c0100",
+      "0x013f7bac=0x005c0380"
+    ],
+    "ownership": "The table is a UI function-pointer table; its concrete registration owner and callback contract remain opaque."
+  },
+  "evidence": [
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x005bf9d0",
+      "observation": "The body has the four message-id branches, payload shape checks, coordinate conversion, service submission, and linked-item traversal described above."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x005bf9d0",
+      "observation": "The raw body uses ECX for the receiver, reads two stack dwords, preserves the compare/branch order, and ends with RET 0x8."
+    },
+    {
+      "tool": "ghidra_get_function_callees",
+      "address": "0x005bf9d0",
+      "observation": "The direct callee set is FUN_005bf950, FUN_0067caa0, FUN_00804f80, FUN_008053b0, and FUN_008105b0."
+    },
+    {
+      "tool": "ghidra_get_xrefs_to",
+      "address": "0x005bf9d0",
+      "observation": "The only code xref is 0x00edae70 and the data xref is the function-pointer word at 0x013f7b84."
+    }
+  ],
+  "model_tests": [
+    "resource-id routes for 0x14418c3f and 0x073127e6",
+    "input gate, coordinate conversion, service traversal, and parent callback path",
+    "0x7aa519dc text forwarding and unmatched-id null return"
+  ],
+  "unresolved_questions": [
+    "The concrete shell and service owners are not proven by this function.",
+    "The input payload and linked item types remain opaque; only offsets and call widths are asserted.",
+    "The surrounding function-pointer table owner is unresolved."
+  ],
+  "non_goals": [
+    "No merge with src/reconstruction/pkg18_ui_space.",
+    "No merge with App messages, Space events, or timeline records.",
+    "No interpretation of the unresolved service or presentation vtables beyond observed offsets."
+  ]
+}

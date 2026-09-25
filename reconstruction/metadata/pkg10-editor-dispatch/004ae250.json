@@ -4,38 +4,48 @@
   "address": "0x004ae250",
   "symbol": "Editors::EditorModel::SetColor",
   "role": "target",
-  "declaration": "void __thiscall editor_model_set_color(OpaqueEditorModel*);",
+  "declaration": "void __thiscall editor_model_set_color(OpaqueEditorModel*, int, EditorModelColor);",
+  "raw_declaration": "void __thiscall editor_model_set_color_raw(OpaqueEditorModel*);",
   "body_implementation": true,
   "abi": {
     "return_type": "void",
     "calling_convention": "__thiscall",
     "hidden_this_register": "ECX",
-    "sdk_symbol_parameters_not_observed_at_entry": [
-      {
-        "name": "index",
-        "type": "int",
-        "entry_offset_if_supplied": "ESP+4",
-        "width_bytes": 4,
-        "signed": true,
-        "observed_body_access": false
-      },
-      {
-        "name": "color",
-        "type": "EditorModelColor / ColorRGB",
-        "entry_offset_if_supplied": "ESP+8",
-        "width_bytes": 12,
-        "fields": [
-          {"offset": 0, "name": "red", "type": "float", "width_bytes": 4},
-          {"offset": 4, "name": "green", "type": "float", "width_bytes": 4},
-          {"offset": 8, "name": "blue", "type": "float", "width_bytes": 4}
-        ],
-        "observed_body_access": false
-      }
-    ],
-    "observed_stack_arguments": [],
-    "stack_cleanup_bytes": 0,
-    "ret_evidence": "The sole return is RET without an immediate cleanup at 0x004ae25a.",
-    "effective_direct_call_shape": "All 20 direct call sites load ECX and call the target without an argument-setup sequence for this call. The body also never reads ESP, so the observed executable entry tolerates the ECX-only shape even though the SDK/Ghidra formal signature names a signed index and a 12-byte ColorRGB value."
+    "formal_call_frame": {
+      "status": "explicit adapter ABI; no original instruction reads either stack argument",
+      "stack_arguments": [
+        {
+          "name": "index",
+          "type": "int",
+          "entry_offset": "ESP+4",
+          "width_bytes": 4,
+          "signed": true,
+          "adapter_use": "ignored"
+        },
+        {
+          "name": "color",
+          "type": "EditorModelColor / ColorRGB",
+          "entry_offset": "ESP+8",
+          "width_bytes": 12,
+          "fields": [
+            {"offset": 0, "name": "red", "type": "float", "width_bytes": 4},
+            {"offset": 4, "name": "green", "type": "float", "width_bytes": 4},
+            {"offset": 8, "name": "blue", "type": "float", "width_bytes": 4}
+          ],
+          "adapter_use": "ignored"
+        }
+      ],
+      "stack_cleanup_bytes": 16,
+      "ret_evidence": "The reconstructed formal adapter ends in RET 0x10 on x86-32."
+    },
+    "raw_entry_frame": {
+      "status": "direct evidence for 0x004ae250",
+      "observed_stack_arguments": [],
+      "stack_cleanup_bytes": 0,
+      "ret_evidence": "The original body ends in RET without an immediate cleanup at 0x004ae25a.",
+      "effective_direct_call_shape": "All 20 direct call sites load ECX and call without argument setup for the call; the body never reads ESP."
+    },
+    "unresolved_sdk_conflict": "The SDK and imported Ghidra signature associate a signed index and 12-byte ColorRGB value with SetColor, while the executable body and all direct calls expose only ECX. The reconstruction preserves the formal frame in a no-op adapter and the exact ECX-only bytes in a separate raw entry without assigning setter semantics."
   },
   "observed_body": {
     "size_bytes": 11,
@@ -62,8 +72,8 @@
   "behavior": {
     "body": "No-op",
     "null_this": "Safe: ECX is copied to a local slot but is never dereferenced.",
-    "index": "Not present in the observed executable entry. The SDK associates a signed int parameter with the symbol, but the body and all direct calls expose no index slot or index-dependent behavior.",
-    "color": "Not present in the observed executable entry. The SDK associates a 12-byte ColorRGB parameter, but the body and all direct calls expose no color slot or color-dependent behavior.",
+    "index": "The raw entry does not read a stack index. The formal adapter accepts a signed int at ESP+4 and ignores it; no bounds or success semantics are assigned.",
+    "color": "The raw entry does not read a stack color. The formal adapter accepts a 12-byte ColorRGB at ESP+8 and ignores it; no component write or conversion is assigned.",
     "model_fields": "No EditorModel field is read or written, including mColors at +0xa4.",
     "return": "Void; no status, sentinel, error, or EAX assignment is produced by the target instructions."
   },
@@ -161,11 +171,12 @@
     "header": "reconstruction/staging/pkg10-editor-dispatch/editor_model_set_color.hpp",
     "model_test": "reconstruction/staging/pkg10-editor-dispatch/editor_model_set_color_test.cpp",
     "steps": [
-      "Accept the observed EditorModel receiver in ECX without reading or dereferencing it.",
-      "Perform no null check, model-field load, model-field store, call, or branch.",
-      "Return void with RET and no stack cleanup or EAX assignment."
+      "Expose editor_model_set_color_raw with the evidence-backed ECX-only entry and preserve the exact 11-byte body at 0x004ae250.",
+      "Expose the formal __thiscall adapter with receiver in ECX, signed int index at ESP+4, and 12-byte ColorRGB at ESP+8.",
+      "Have the formal adapter forward only the receiver to the raw entry while preserving RET 0x10 cleanup and ignoring both formal arguments.",
+      "Perform no null check, model-field load, model-field store, color write, bounds check, call to an original dependency, or branch in the raw body."
     ],
-    "test_scope": "The focused model test checks the observed null and near-null receiver boundary, invokes a valid 0xe0-byte model, verifies every model byte including the +0xa4 color-field start is unchanged, and preserves the SDK ColorRGB 0/4/8 field offsets. No index-boundary test is claimed because the observed direct entry has no index argument."
+    "test_scope": "The focused i686 test binds the formal three-parameter function-pointer ABI, checks raw null and near-null calls, calls the formal adapter with null and near-null receivers, exercises indices -1, 0, 2, 3, INT_MIN, and INT_MAX, verifies all 0xe0 model bytes including the +0xa4 color-field start remain unchanged, and preserves ColorRGB offsets 0/4/8. The x86 object check verifies raw bytes 55 8b ec 51 89 4d fc 89 ec 5d c3 and formal RET 0x10."
   },
   "direct_callers": [
     {"address": "0x00441440", "call_sites": ["0x004414f4"]},
@@ -206,7 +217,7 @@
   ],
   "blockers": [
     "The executable body supports only a no-op contract; it contains no evidence for color assignment, bounds checks, sentinels, or errors.",
-    "The SDK formal signature and ECX-only direct call sites disagree on explicit argument presence, so the package preserves both facts without inventing a reconciliation.",
+    "The SDK formal signature and raw ECX-only executable entry disagree on explicit argument presence, so the package keeps a formal no-op adapter separate from the exact raw body without claiming setter semantics.",
     "The ten data pointer slots are unnamed and untyped in live Ghidra, so concrete owner and interface semantics remain unresolved."
   ]
 }

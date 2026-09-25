@@ -1,0 +1,258 @@
+{
+  "schema": "openspore-integrator-batch-handoff-1",
+  "batch": "batch-2026-09-25-pkg06d-cell-behavior-timer",
+  "date": "2026-09-25",
+  "review_status": "approved",
+  "integration_status": "integrated",
+  "runtime_validation_status": "blocked",
+  "packages": [
+    {
+      "id": "PKG-06D-CELL-BEHAVIOR-TIMER",
+      "canonical_path": "src/reconstruction/pkg06d_cell_behavior_timer",
+      "copied_files": [
+        "src/reconstruction/pkg06d_cell_behavior_timer/cell_behavior_timer.hpp",
+        "src/reconstruction/pkg06d_cell_behavior_timer/cell_behavior_timer.cpp",
+        "src/reconstruction/pkg06d_cell_behavior_timer/cell_behavior_timer_model_test.cpp"
+      ],
+      "evidence_files": [
+        "reconstruction/metadata/pkg06d-cell-behavior-timer/00e7e6c0.json"
+      ],
+      "staging_files": [
+        "reconstruction/staging/pkg06d-cell-behavior-timer/cell_behavior_timer.hpp",
+        "reconstruction/staging/pkg06d-cell-behavior-timer/cell_behavior_timer.cpp",
+        "reconstruction/staging/pkg06d-cell-behavior-timer/cell_behavior_timer_model_test.cpp"
+      ],
+      "promotion_change": {
+        "header_include_before": "../../../src/reconstruction/pkg06a_cell_ai_selection/cell_ai_selection.hpp",
+        "header_include_after": "../pkg06a_cell_ai_selection/cell_ai_selection.hpp",
+        "source_byte_identical_to_staging": true,
+        "model_test_byte_identical_to_staging": true,
+        "mechanics_changed": false
+      },
+      "mechanically_reconstructed_bodies": 1,
+      "functions": [
+        "0x00e7e6c0"
+      ]
+    }
+  ],
+  "canonical_file_sha256": {
+    "src/reconstruction/pkg06d_cell_behavior_timer/cell_behavior_timer.hpp": "d4d547a5258aa6cc26b9c2c87879ac6428c88e97aac5fe412f238afbcff70e70",
+    "src/reconstruction/pkg06d_cell_behavior_timer/cell_behavior_timer.cpp": "0319b00b582e5cd5c6b59bca7ffa85f2a3115fe1cd2751add3eb8c9ad8cf21db",
+    "src/reconstruction/pkg06d_cell_behavior_timer/cell_behavior_timer_model_test.cpp": "9dae1a4011767bcf5cf1643d9d44030e392da23d6c254f49776e95623d795549"
+  },
+  "reviews": [
+    {
+      "role": "semantic",
+      "status": "pass",
+      "scope": "Unconditional main-timer subtraction, exact ordered and unordered COMISS outcomes, four positive-slot decrement and ordered-negative expiry semantics, selector equality, selector-mismatch zeroing, and fallback call order"
+    },
+    {
+      "role": "abi",
+      "status": "pass",
+      "scope": "Custom x86-32 EAX record plus ECX entry residue plus one caller-cleaned float stack argument and plain RET, with normalized package-local callback contexts rather than claims of original port signatures"
+    },
+    {
+      "role": "type_lifecycle",
+      "status": "pass",
+      "scope": "Package-local opaque record and ECX-residue alias, four call-context types, and NativePorts; PKG-06A types are not duplicated, the live record stride remains unresolved, and no target-local release is claimed"
+    }
+  ],
+  "function_record": {
+    "va": "0x00e7e6c0",
+    "normalized_symbol": "cell_behavior_timer_update_00e7e6c0",
+    "caller": "0x00e7e7a0",
+    "callees": [
+      "0x00e59c10",
+      "0x00e7b540",
+      "0x00e7ba30",
+      "0x00e7e130"
+    ],
+    "package_dependencies": [
+      "PKG-06A-CELL-AI-SELECTION::g_cell_game_016b3c04+0x5198"
+    ],
+    "unresolved_dependencies": [
+      "0x00e7e130 fallback body and any release behavior"
+    ],
+    "reconstruction_confidence": 0.9,
+    "runtime_gate": "gate-cell-behavior-timer",
+    "runtime_validation": 0
+  },
+  "type_records": [
+    "OpaqueBehaviorTimerRecord",
+    "OpaqueBehaviorTimerEntryEcx",
+    "GateCallContext",
+    "ExpireCallContext",
+    "AdvanceCallContext",
+    "FallbackCallContext",
+    "NativePorts"
+  ],
+  "observed_contract": {
+    "native_abi": "EAX carries the borrowed record, ECX carries opaque caller/iterator residue that is not treated as a pool pointer, ESP+4 carries one four-byte float cleaned by the caller, and every target exit is a plain RET.",
+    "call_order": [
+      "write record[0x1c] = record[0x1c] - delta",
+      "call 0x00e59c10 with EAX=record, ECX=entry residue, and stack record+delta; a false AL result calls 0x00e7e130(delta,0,0) and returns",
+      "process timer slots at +0x0c, +0x10, +0x14, and +0x18 in order; an ordered-positive slot is decremented, and only an ordered-negative remainder is overwritten with +0.0f and passed with slot 0 through 3 to 0x00e7b540",
+      "a false 0x00e7b540 AL result calls 0x00e7e130(delta,0,0) and returns",
+      "after the loop, COMISS 0,record[0x1c] sends ordered-positive and unordered NaN results directly to 0x00e7ba30 without reading the selector",
+      "only an ordered non-positive main timer reads PKG-06A g_cell_game_016b3c04+0x5198; selector equality calls 0x00e7ba30, while selector inequality writes +0.0f to record[0x1c] before the final fallback",
+      "a false 0x00e7ba30 AL result reaches 0x00e7e130(delta,0,0)"
+    ],
+    "ordered_float_semantics": "The main COMISS/JC pair takes its branch for ordered-positive and unordered NaN values. Each slot's first COMISS/JBE skips zero, negative, and NaN initial values. The second COMISS/JBE treats ordered zero, ordered positive, and unordered NaN remainders as non-expiring, so only an ordered-negative remainder is zeroed and dispatched.",
+    "zeroing": "A selector mismatch writes +0.0f to record[0x1c] before fallback. Failed advance does not add another zeroing write. Fallback stack arguments after delta are exactly zero and zero.",
+    "native_ports": "0x00e59c10, 0x00e7b540, and 0x00e7ba30 remain unresolved semantic ports. 0x00e7e130 remains an unresolved external fallback body.",
+    "lifecycle": "The queued interaction record and pool are externally owned; its concrete type and live stride are unresolved. PKG-06D implements, calls directly, or claims no target-local pool release."
+  },
+  "validation_commands": [
+    "diff -u reconstruction/staging/pkg06d-cell-behavior-timer/cell_behavior_timer.cpp src/reconstruction/pkg06d_cell_behavior_timer/cell_behavior_timer.cpp",
+    "diff -u reconstruction/staging/pkg06d-cell-behavior-timer/cell_behavior_timer_model_test.cpp src/reconstruction/pkg06d_cell_behavior_timer/cell_behavior_timer_model_test.cpp",
+    "diff -u reconstruction/staging/pkg06d-cell-behavior-timer/cell_behavior_timer.hpp src/reconstruction/pkg06d_cell_behavior_timer/cell_behavior_timer.hpp",
+    "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only src/reconstruction/pkg06d_cell_behavior_timer/cell_behavior_timer.cpp",
+    "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror src/reconstruction/pkg06a_cell_ai_selection/cell_ai_selection.cpp src/reconstruction/pkg06d_cell_behavior_timer/cell_behavior_timer.cpp src/reconstruction/pkg06d_cell_behavior_timer/cell_behavior_timer_model_test.cpp -o /tmp/opencode/pkg06d-cell-behavior-timer-model && /tmp/opencode/pkg06d-cell-behavior-timer-model",
+    "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -DNDEBUG src/reconstruction/pkg06a_cell_ai_selection/cell_ai_selection.cpp src/reconstruction/pkg06d_cell_behavior_timer/cell_behavior_timer.cpp src/reconstruction/pkg06d_cell_behavior_timer/cell_behavior_timer_model_test.cpp -o /tmp/opencode/pkg06d-cell-behavior-timer-model-ndebug && /tmp/opencode/pkg06d-cell-behavior-timer-model-ndebug",
+    "clang-format --dry-run --Werror -style='{BasedOnStyle: Google, FixNamespaceComments: false}' src/reconstruction/pkg06d_cell_behavior_timer/cell_behavior_timer.hpp src/reconstruction/pkg06d_cell_behavior_timer/cell_behavior_timer.cpp src/reconstruction/pkg06d_cell_behavior_timer/cell_behavior_timer_model_test.cpp",
+    "sha256sum src/reconstruction/pkg06d_cell_behavior_timer/cell_behavior_timer.hpp src/reconstruction/pkg06d_cell_behavior_timer/cell_behavior_timer.cpp src/reconstruction/pkg06d_cell_behavior_timer/cell_behavior_timer_model_test.cpp",
+    "git diff --check -- src/reconstruction/pkg06d_cell_behavior_timer/cell_behavior_timer.hpp src/reconstruction/pkg06d_cell_behavior_timer/cell_behavior_timer.cpp src/reconstruction/pkg06d_cell_behavior_timer/cell_behavior_timer_model_test.cpp reconstruction/integrated/batch-2026-09-25-pkg06d-cell-behavior-timer/handoff.json knowledgegraph/research/source-reconstruction-manifest.json",
+    "python3 -m json.tool knowledgegraph/research/source-reconstruction-manifest.json && python3 -m json.tool reconstruction/integrated/batch-2026-09-25-pkg06d-cell-behavior-timer/handoff.json"
+  ],
+  "validation_results": {
+    "promotion_diff": {
+      "status": "passed",
+      "failed": 0,
+      "result": "source and model test are byte-identical to staging; header differs only by the required canonical include path"
+    },
+    "x86_32_syntax": {
+      "status": "passed",
+      "packages": 1,
+      "failed": 0,
+      "flags": "-Wall -Wextra -Wpedantic -Werror"
+    },
+    "cell_behavior_timer_model_test": {
+      "status": "passed",
+      "failed": 0,
+      "normal": {
+        "status": "passed",
+        "failed": 0
+      },
+      "ndebug": {
+        "status": "passed",
+        "failed": 0
+      }
+    },
+    "clang_format": {
+      "status": "passed",
+      "style": "{BasedOnStyle: Google, FixNamespaceComments: false}",
+      "mode": "dry-run",
+      "werror": true,
+      "files": 3
+    },
+    "canonical_sha256": {
+      "status": "passed",
+      "files": 3,
+      "src/reconstruction/pkg06d_cell_behavior_timer/cell_behavior_timer.hpp": "d4d547a5258aa6cc26b9c2c87879ac6428c88e97aac5fe412f238afbcff70e70",
+      "src/reconstruction/pkg06d_cell_behavior_timer/cell_behavior_timer.cpp": "0319b00b582e5cd5c6b59bca7ffa85f2a3115fe1cd2751add3eb8c9ad8cf21db",
+      "src/reconstruction/pkg06d_cell_behavior_timer/cell_behavior_timer_model_test.cpp": "9dae1a4011767bcf5cf1643d9d44030e392da23d6c254f49776e95623d795549"
+    },
+    "json_validation": {
+      "status": "passed",
+      "passed": 2,
+      "failed": 0,
+      "files": [
+        "knowledgegraph/research/source-reconstruction-manifest.json",
+        "reconstruction/integrated/batch-2026-09-25-pkg06d-cell-behavior-timer/handoff.json"
+      ]
+    },
+    "git_diff_check": {
+      "status": "passed",
+      "failed": 0,
+      "scope": "PKG-06D canonical files, batch handoff, and source reconstruction manifest"
+    },
+    "runtime_validation": 0,
+    "runtime_validation_status": "blocked pending original Cell observation"
+  },
+  "repository_wide_gates": {
+    "status": "passed",
+    "reason": "Final post-integration repository-wide gates passed; runtime validation remains blocked pending original Cell observation.",
+    "python": {
+      "status": "passed",
+      "tests": 427,
+      "failed": 0
+    },
+    "cmake_build": {
+      "status": "passed"
+    },
+    "ctest": {
+      "status": "passed",
+      "tests": 42,
+      "failed": 0
+    },
+    "canonical_pkg06a_pkg06d_x86_32": {
+      "status": "passed",
+      "packages": [
+        "PKG-06A-CELL-AI-SELECTION",
+        "PKG-06D-CELL-BEHAVIOR-TIMER"
+      ],
+      "syntax": {
+        "status": "passed"
+      },
+      "model": {
+        "status": "passed"
+      },
+      "ndebug": {
+        "status": "passed"
+      }
+    },
+    "canonical_clang_format": {
+      "status": "passed",
+      "style": "{BasedOnStyle: Google, FixNamespaceComments: false}",
+      "mode": "dry-run",
+      "werror": true
+    },
+    "json_validation": {
+      "status": "passed"
+    },
+    "git_diff_check": {
+      "status": "passed",
+      "failed": 0
+    },
+    "canonical_sha256": {
+      "status": "passed",
+      "hashes_unchanged": true
+    }
+  },
+  "runtime_gated": [
+    "0x00e7e6c0: observe original reachability through 0x00e7e7a0, EAX record and ECX residue provenance, record/stride and field validity, PKG-06A selector validity, all ordered/unordered branches, unresolved port behavior, and the unresolved 0x00e7e130 fallback without assuming a target-local release"
+  ],
+  "unresolved_runtime_boundary": {
+    "status": "blocked",
+    "runtime_validation": 0,
+    "pending": "original Cell observation",
+    "claims_not_made": [
+      "runtime branch outcomes",
+      "runtime record, pool-stride, or global-selector validity",
+      "semantics or side effects of the three AL-returning native ports",
+      "body, dispatch behavior, or release behavior of 0x00e7e130",
+      "a target-local pool release"
+    ]
+  },
+  "provenance": {
+    "metadata": "reconstruction/metadata/pkg06d-cell-behavior-timer/00e7e6c0.json",
+    "integrated_dependency": "reconstruction/metadata/pkg06a-cell-ai-selection/00e52910.json",
+    "live_ghidra": {
+      "program": "SporeApp.exe",
+      "version": "3.1.0.22",
+      "address": "0x00e7e6c0",
+      "tools": [
+        "ghidra_get_function_by_address",
+        "ghidra_decompile_function",
+        "ghidra_disassemble_function",
+        "ghidra_get_function_callers",
+        "ghidra_get_function_callees"
+      ],
+      "ghidra_mutations": 0,
+      "runtime_trace": "none"
+    }
+  },
+  "blockers": [
+    "Original Cell observation has not been run; runtime_validation remains 0 and gate-cell-behavior-timer remains unresolved."
+  ]
+}

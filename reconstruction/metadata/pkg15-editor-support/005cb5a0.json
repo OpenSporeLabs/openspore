@@ -1,0 +1,136 @@
+{
+  "schema": "pkg15-editor-support.function-handoff.v1",
+  "package": "pkg15-editor-support",
+  "address": "0x005cb5a0",
+  "ghidra_name": "FUN_005cb5a0",
+  "role": "palette construction and category-loop driver",
+  "implementation": {
+    "header": "src/reconstruction/pkg15_editor_support/editor_support.hpp",
+    "source": "src/reconstruction/pkg15_editor_support/editor_support.cpp",
+    "model_test": "src/reconstruction/pkg15_editor_support/editor_support_model_test.cpp",
+    "concrete_sdk_membership": false,
+    "service_boundary": "IPaletteServices with RefLifecycleAdapter"
+  },
+  "abi": {
+    "return_type": "void",
+    "calling_convention": "__thiscall",
+    "hidden_this_register": "ECX",
+    "explicit_stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "ESP+0x04",
+        "name": "category_source",
+        "type": "OpaqueObject*",
+        "width_bytes": 4
+      },
+      {
+        "position": 2,
+        "entry_offset": "ESP+0x08",
+        "name": "application",
+        "type": "IEditorService* adapter",
+        "width_bytes": 4
+      },
+      {
+        "position": 3,
+        "entry_offset": "ESP+0x0C",
+        "name": "context_key",
+        "type": "uint32_t",
+        "width_bytes": 4
+      },
+      {
+        "position": 4,
+        "entry_offset": "ESP+0x10",
+        "name": "owner",
+        "type": "OpaqueObject*",
+        "width_bytes": 4
+      }
+    ],
+    "stack_cleanup_bytes": 16,
+    "ret_evidence": "RET 0x10 at 0x005cba80"
+  },
+  "observed_field_offsets": {
+    "0x0c": "common service",
+    "0x10": "category panel service",
+    "0x14": "queried service",
+    "0x18": "queried service",
+    "0x1c": "queried service",
+    "0x20": "queried service",
+    "0x24": "queried service",
+    "0x28": "default service",
+    "0x2c": "category source reference",
+    "0x30": "owner reference",
+    "0x34": "constructed controller vector begin",
+    "0x38": "constructed controller vector end",
+    "0x3c": "constructed controller vector capacity",
+    "0x48": "category overlay vector begin",
+    "0x4c": "category overlay vector end",
+    "0x50": "category overlay vector capacity",
+    "0x60": "cleared selected state before category selection",
+    "0x64": "selected category"
+  },
+  "behavior": [
+    "Assigns category_source and the live fourth owner argument with add-reference, field replacement, then old-release ordering.",
+    "Creates and replaces the common 0x13eb430 service before the source-key branch.",
+    "For source key components 0x510a95b and 0x40464100, configures the common service, initializes the -1 default service, and directly stores services for 0x49afe6a1, 0xba83c461, 0x90d4aadc, 0x05aeff7f, 0x72df4cee, and 0x93019dbc without invented retain/release calls.",
+    "Dispatches callback slot 0x104 for service keys 0x5aec4b8, 0x5aec4b9, and 0x7bce6e8 when non-null without taking ownership of the fresh query results.",
+    "Reads category items from source vector offsets 0x0c and 0x10 as 32-bit target words, creates one palette controller per item, adds its local reference, and calls 0x005c53c0 with that item, the live editor+0x24 service, and the function's fourth owner argument.",
+    "Inserts the controller into editor+0x34/0x38/0x3c, then releases its local reference.",
+    "Only constructs the overlay path when the category panel exists and the source count is greater than one.",
+    "Acquires the overlay, configures its category source and template, retains fresh tooltip and category-fade services, and dispatches the template against each in order.",
+    "Adds the overlay's local reference, inserts it into editor+0x48/0x4c/0x50, then releases overlay, fade, tooltip, and finally the controller local reference; it does not add a reference to the second explicit application argument.",
+    "Finishes the loop, clears field 0x60, reads source offset 0x38 as the initial category, maps -1 to zero, and invokes category selection.",
+    "Re-enables the selected category transition when field 0x64 is non-null."
+  ],
+  "direct_callers": [
+    {
+      "address": "0x00d0e170",
+      "call_site": "0x00d0f31c"
+    },
+    {
+      "address": "0x00ed3c00",
+      "call_site": "0x00ed3e2c"
+    },
+    {
+      "address": "0x00ee8860",
+      "call_site": "0x00ee8a58"
+    }
+  ],
+  "direct_callees": [
+    "0x005c53c0",
+    "0x005cb240",
+    "0x005c5de0",
+    "0x005c9f20",
+    "0x005cae60",
+    "0x006650c0",
+    "0x00810000",
+    "0x008105b0",
+    "0x008120d0",
+    "0x008121b0"
+  ],
+  "evidence": [
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x005cb5a0",
+      "fact": "Live decompilation shows source and owner replacement, direct stores for the six keyed services, the category loop, overlay ownership sequence, final category selection, and final transition."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x005cb5a0",
+      "fact": "RET 0x10 proves four explicit stack words; instructions at 0x005cb804-0x005cb810 pass the fourth owner argument and editor+0x24 to 0x005c53c0, while 0x005cb823-0x005cba2f establish 32-bit vector strides and the controller/overlay release order."
+    },
+    {
+      "tool": "ghidra_get_function_callers",
+      "address": "0x005cb5a0",
+      "fact": "Three direct callers are recorded."
+    }
+  ],
+  "evidence_boundaries": [
+    "The reconstruction models service factories and callbacks rather than asserting a concrete SDK manager object.",
+    "The decompiler's parameter names are not used to promote stale SDK aliases.",
+    "The exact allocator and growth policy inside 0x005c9f20 and 0x006650c0 remains opaque; the direct-capacity versus growth-helper branch is preserved."
+  ],
+  "unresolved_contradictions": [
+    "The third explicit word remains a context value for allocator helpers, while the fourth explicit word is the live owner passed to 0x005c53c0.",
+    "The source-key test calls 0x008120d0 with a three-word runtime key and does not justify naming the key as a concrete SDK type."
+  ]
+}

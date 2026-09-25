@@ -1,0 +1,150 @@
+{
+  "schema": "wave6-presentation-function-handoff.v1",
+  "package": "WAVE6-PRESENTATION",
+  "function_address": "0x0040ccb0",
+  "ghidra_name": "Transform::PreTransformBy",
+  "normalized_symbol": "transform_pre_transform_by_0040ccb0",
+  "source_files": [
+    "reconstruction/staging/wave6-presentation/presentation_boundary.hpp",
+    "reconstruction/staging/wave6-presentation/presentation_boundary.cpp",
+    "reconstruction/staging/wave6-presentation/presentation_boundary_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "Transform* __thiscall transform_pre_transform_by_0040ccb0(Transform* receiver, Transform* other);",
+  "abi": {
+    "return_type": "Transform*",
+    "return_register": "EAX",
+    "calling_convention": "__thiscall observed",
+    "hidden_this_register": "ECX",
+    "hidden_this_type": "Transform*",
+    "stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "ESP+0x04",
+        "name": "other",
+        "type": "Transform*",
+        "width_bytes": 4,
+        "observed_use": "Reads the other transform offset, scale, flags, and rotation."
+      }
+    ],
+    "stack_cleanup_bytes": 4,
+    "return_evidence": "The target copies the receiver pointer into EAX and ends with RET 0x4."
+  },
+  "layout": {
+    "transform": {
+      "size_bytes": 56,
+      "fields": {
+        "flags": "0x00 int16",
+        "transform_count": "0x02 int16",
+        "offset": "0x04 Vector3",
+        "scale": "0x10 float",
+        "rotation": "0x14 Matrix3"
+      },
+      "source": "Ghidra Transform layout"
+    },
+    "helper_contracts": {
+      "0x0041dca0": "Three-float componentwise multiply helper.",
+      "0x0041ddb0": "Three-float in-place add helper.",
+      "0x0041daf0": "Opaque offset transform wrapper with unresolved helper payload.",
+      "0x0041de20": "Opaque rotation transform wrapper with unresolved helper payload."
+    }
+  },
+  "mechanics": {
+    "scaled_offset": "Multiply the other transform offset by the receiver scale before the unresolved offset transform boundary.",
+    "offset_accumulation": "Add the returned offset to receiver+0x04 using the observed three-float add helper contract.",
+    "rotation_copy": "Call the unresolved rotation transform boundary, then copy the returned 36-byte Matrix3 to receiver+0x14.",
+    "scale_product": "Multiply receiver+0x10 by other+0x10.",
+    "flags": "OR the signed 16-bit flags words at receiver+0x00 and other+0x00.",
+    "transform_count": "Increment the signed 16-bit receiver count at +0x02 by one.",
+    "return": "Return the receiver pointer.",
+    "null_guard": "No receiver or other-pointer guard is present in the live body."
+  },
+  "call_graph": {
+    "direct_callers": {
+      "ghidra_count": 25,
+      "representative_functions": [
+        "0x0040aeb0",
+        "0x004363d0",
+        "0x0043d240",
+        "0x005f6260",
+        "0x006271a0",
+        "0x00e62380",
+        "0x00e7aa20"
+      ]
+    },
+    "direct_callees": [
+      "0x0041dca0",
+      "0x0041ddb0",
+      "0x0041daf0",
+      "0x0041de20"
+    ],
+    "function_xrefs": 33,
+    "global_references": "No direct gameplay-global data references were identified in the target body."
+  },
+  "evidence": [
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x0040ccb0",
+      "observation": "The live body composes the offset, copies the rotation result, multiplies scale, ORs flags, increments the count, and returns the receiver."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x0040ccb0",
+      "observation": "The 71-instruction body preserves ECX as receiver, EBP+0x08 as other, the 36-byte MOVSD.REP copy, 16-bit flag/count operations, and RET 0x4."
+    },
+    {
+      "tool": "ghidra_get_function_callers",
+      "address": "0x0040ccb0",
+      "observation": "Twenty-five direct caller functions were identified."
+    },
+    {
+      "tool": "ghidra_get_function_callees",
+      "address": "0x0040ccb0",
+      "observation": "Four direct helper calls were identified: 0x0041dca0, 0x0041ddb0, 0x0041daf0, and 0x0041de20."
+    },
+    {
+      "tool": "ghidra_get_function_xrefs",
+      "address": "0x0040ccb0",
+      "observation": "Thirty-three direct call references were identified."
+    },
+    {
+      "tool": "ghidra_get_struct_layout",
+      "address": "0x0040ccb0",
+      "observation": "Ghidra reports Transform as 56 bytes with the exact offsets used by the reconstruction."
+    }
+  ],
+  "confidence": {
+    "overall": "high for ABI, field offsets, call order, scale/flags/count writes, and return value",
+    "high": [
+      "thiscall receiver and one stack argument",
+      "Transform layout offsets",
+      "36-byte rotation copy",
+      "scale multiplication",
+      "signed 16-bit flag OR and count increment",
+      "RET 0x4 and receiver return"
+    ],
+    "medium": [
+      "semantics of the two unresolved transform helper wrappers"
+    ],
+    "low": []
+  },
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only reconstruction/staging/wave6-presentation/presentation_boundary.cpp",
+    "model_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror reconstruction/staging/wave6-presentation/presentation_boundary.cpp reconstruction/staging/wave6-presentation/presentation_boundary_test.cpp -o /tmp/opencode/wave6-presentation-model-test && /tmp/opencode/wave6-presentation-model-test",
+    "json_command": "python3 -m json.tool reconstruction/metadata/wave6-presentation/0040ccb0.json >/dev/null",
+    "results": {
+      "syntax": "passed",
+      "model": "passed",
+      "json": "passed"
+    }
+  },
+  "unresolved_questions": [
+    "What exact matrix/vector operation is implemented by 0x0041daf0?",
+    "What exact rotation convention is implemented by 0x0041de20?",
+    "Are helper return pointers always the local destinations under runtime input?"
+  ],
+  "blockers": [
+    "The two helper wrappers are decompiler-conflicted and are represented as package-local ports.",
+    "No runtime transform trace is available."
+  ]
+}

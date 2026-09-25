@@ -1,0 +1,65 @@
+{
+  "schema": "pkg13-diplomacy-transitions.function-handoff.v1",
+  "package": "PKG-13-SIM-DIPLOMACY-TRANSITIONS",
+  "function_address": "0x00d038e0",
+  "ghidra_name": "FUN_00d038e0",
+  "normalized_symbol": "DiplomacyTransition_00d038e0",
+  "source_files": [
+    "reconstruction/staging/pkg13-diplomacy-transitions/diplomacy_transitions.hpp",
+    "reconstruction/staging/pkg13-diplomacy-transitions/diplomacy_transitions.cpp",
+    "reconstruction/staging/pkg13-diplomacy-transitions/diplomacy_transitions_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "void __thiscall DiplomacyTransition_00d038e0(OpaqueRelationshipManager*, OpaqueTransitionRecord*, OpaqueTransitionRecord*);",
+  "abi": {
+    "calling_convention": "thiscall",
+    "hidden_this_register": "ECX",
+    "hidden_this_type": "OpaqueRelationshipManager*",
+    "stack_arguments": [
+      {"position": 1, "entry_offset": "ESP+0x04", "name": "first", "type": "OpaqueTransitionRecord*", "width_bytes": 4},
+      {"position": 2, "entry_offset": "ESP+0x08", "name": "second", "type": "OpaqueTransitionRecord*", "width_bytes": 4}
+    ],
+    "stack_cleanup_bytes": 8,
+    "return_type": "void",
+    "termination": "RET 0x8",
+    "pair_call_order": {
+      "first_call": {"receiver_register": "ECX", "receiver": "first record", "stack_argument": "second record"},
+      "second_call": {"receiver_register": "ECX", "receiver": "second record", "stack_argument": "first record"}
+    },
+    "root_callbacks": {
+      "0x00b3d300": {"calling_convention": "cdecl", "stack_argument": "first record", "return_value": "opaque root"},
+      "0x00f67d90": {"calling_convention": "thiscall", "receiver_register": "ECX", "receiver": "root/owner returned by 0x00b3d300", "stack_arguments": [], "return_value": "follow-up owner/root used by the next callback"},
+      "0x00c78450": {"calling_convention": "thiscall", "receiver_register": "ECX", "receiver": "owner/root returned by 0x00f67d90", "stack_arguments": ["first record"], "stack_cleanup_bytes": 4}
+    }
+  },
+  "layout": {"record_key_offset": "0x84", "entry_flags_offset": "0x04", "concrete_owner": "unresolved"},
+  "mechanics": {
+    "current_player_fallback": "Call current-player accessor first and replace a null second record with its result.",
+    "predicate_gate": "Call 0x00d01f50 with manager, first, and second; a zero result goes directly to the two c31c50 cleanup calls.",
+    "true_branch": "On nonzero predicate, perform forward and optional reverse relationship lookup, clear bit 0x01, call c327a0 with first in ECX and second on stack followed by second in ECX and first on stack, and when second is current call b3d300(first) to obtain the root/owner, pass that root/owner in ECX to f67d90, then call c78450 with the follow-up owner/root in ECX and first on the stack.",
+    "cleanup": "Call c31c50 with first and then second."
+  },
+  "call_graph": {
+    "direct_callers": ["0x00D06920", "0x010134D0", "0x0102CF10", "0x0102DF20"],
+    "direct_callees": ["0x00B3D300", "0x00C31C50", "0x00C327A0", "0x00C78450", "0x00D01410", "0x00D01AB0", "0x00D01F50", "0x00F67D90", "0x01021300"],
+    "function_xrefs": 4,
+    "direct_data_globals": []
+  },
+  "evidence": [
+    {"tool": "ghidra_decompile_function", "address": "0x00d038e0", "observation": "Live body gates all relationship work on 0x00d01f50 and preserves reverse-key handling, c327a0 pair calls, current-root branch, and final cleanup."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00d038e0", "observation": "The 72-instruction body preserves ECX, two stack words, +0x84 record keys, bit-0 clears, c327a0 first/second ECX-plus-stack order, b3d300(first) returning the root/owner, f67d90 consuming that receiver in ECX and returning the follow-up owner, c78450 with follow-up owner in ECX and first on stack, and RET 0x8."},
+    {"tool": "ghidra_get_function_callers", "address": "0x00d038e0", "observation": "Four direct caller functions are reported."},
+    {"tool": "ghidra_get_function_callees", "address": "0x00d038e0", "observation": "Nine direct callees are reported and remain opaque ports."}
+  ],
+  "dependency_contracts": {"0x00d01f50": "opaque branch predicate", "0x00c327a0": "opaque pair operation with first/second ECX-plus-stack order", "0x00b3d300": "opaque cdecl root accessor receiving first record", "0x00f67d90": "opaque thiscall root follow-up consuming the b3d300 root/owner in ECX and returning the follow-up owner", "0x00c78450": "opaque thiscall root callback with follow-up owner/root in ECX and first record on stack", "0x01021300": "opaque current-player cache"},
+  "confidence": {"body": "high", "abi": "high", "predicate_order": "high", "root_callback_shape": "high", "concrete_root_owner": "low"},
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/pkg13-diplomacy-transitions reconstruction/staging/pkg13-diplomacy-transitions/diplomacy_transitions.cpp",
+    "model_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg13-diplomacy-transitions reconstruction/staging/pkg13-diplomacy-transitions/diplomacy_transitions.cpp reconstruction/staging/pkg13-diplomacy-transitions/diplomacy_transitions_model_test.cpp -o /tmp/opencode/pkg13-diplomacy-transitions-model && /tmp/opencode/pkg13-diplomacy-transitions-model",
+    "format_command": "clang-format --dry-run --Werror --style='{BasedOnStyle: Google, FixNamespaceComments: false}' reconstruction/staging/pkg13-diplomacy-transitions/diplomacy_transitions.hpp reconstruction/staging/pkg13-diplomacy-transitions/diplomacy_transitions.cpp reconstruction/staging/pkg13-diplomacy-transitions/diplomacy_transitions_model_test.cpp",
+    "json_command": "python3 -m json.tool reconstruction/metadata/pkg13-diplomacy-transitions/00d038e0.json >/dev/null",
+    "results": {"syntax": "passed", "model": "passed", "format": "passed", "json": "passed"}
+  },
+  "unresolved_questions": ["concrete manager and record owners", "0x00d01f50 predicate semantics", "0x00b3d300/0x00f67d90/0x00c78450 service contracts", "runtime relationship lifecycle"],
+  "blockers": ["No original-process trace is available.", "All dependency ports remain opaque by design."]
+}

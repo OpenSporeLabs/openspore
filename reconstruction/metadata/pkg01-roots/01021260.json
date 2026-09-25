@@ -1,0 +1,88 @@
+{
+  "schema": "pkg01-space-player-data-accessor-metadata.v1",
+  "assignment_id": "SPACE-ACCESSORS-METADATA-09",
+  "phase": "integration-metadata",
+  "package": "PKG-01-SHARED-STATE-ROOTS",
+  "va": "0x01021260",
+  "ghidra_name": "FUN_01021260",
+  "declaration": "ActivePlanetAccessWindow *PKG01_CDECL FUN_01021260();",
+  "source": {
+    "header": "src/reconstruction/pkg01_roots/space_player_data_accessors.hpp",
+    "implementation": "src/reconstruction/pkg01_roots/space_player_data_accessors.cpp",
+    "model_test": "src/reconstruction/pkg01_roots/space_player_data_accessors_model_test.cpp",
+    "status": "static_host_model"
+  },
+  "live_abi": {
+    "target": "x86:LE:32:windows",
+    "calling_convention": "cdecl-compatible no-argument accessor",
+    "formal_parameters": [],
+    "stack_cleanup_bytes": 0,
+    "return_register": "EAX",
+    "return_width_bytes": 4,
+    "return_type": "opaque 32-bit active-planet pointer word"
+  },
+  "mechanics": {
+    "read_offset": "+0x04",
+    "source_global": "Simulator::sSpacePlayerData at 0x016dda8c",
+    "behavior": "Returns the four-byte word at source_global+0x04. A null global selects a zero local; a non-null global selects global+0x04.",
+    "null_behavior": "Returns zero when source_global is null or when the +0x04 word is zero."
+  },
+  "model_boundary": {
+    "represented": "SpacePlayerDataAccessPrefix is a 0x14-byte host prefix sufficient for this +0x04 read. The shared header also defines a 0x140-byte opaque active-planet window for the related +0x13c accessor.",
+    "field_provenance": "Repository SDK/layout evidence labels +0x04 mpActivePlanet and describes intrusive-pointer mechanics elsewhere.",
+    "type_boundary": "ActivePlanetAccessWindow is an opaque access window, not a claimed complete cPlanet type or layout.",
+    "not_represented": "Neither host carrier claims the 0x34-byte whole SpacePlayerData layout or its allocation, replacement, release, or teardown behavior."
+  },
+  "return_semantics": {
+    "kind": "borrowed pointer return",
+    "reference_counting": "No entry path reaches a reference-count call. The linear body contains a virtual-call block at 0x01021290-0x01021298, but its guards are unreachable because the non-null path has DL=0 and the null path has ECX=0; Ghidra reports no direct callees.",
+    "ownership": "The returned pointer is a view of the current slot value; this function does not own or transfer the planet, the SpacePlayerData object, or any whole-object state."
+  },
+  "evidence": {
+    "classification": "static_only",
+    "runtime_validated": false,
+    "function_size_bytes": 63,
+    "direct_callees": 0,
+    "assembly": [
+      "01021260-01021263: create a zero local; 01021266-01021275 select global+0x04 only when the global is non-null with ECX=0 and DL=0",
+      "01021277-01021284: null-global path selects the zero local with ECX=0 and DL=1",
+      "01021285-0102129e: load ESI from the selected word, skip the guarded unreachable call block, return ESI, and balance PUSH ESI/PUSH ECX"
+    ],
+    "decompiler": "The decompiler reports the guarded +0x04 read and removes 0x01021290 as unreachable."
+  },
+  "runtime_gates": [
+    "No trace establishes when the published global is valid during initialization or teardown.",
+    "Separate static writers and cleanup routines can replace or release the +0x04 slot; stale-pointer and lifetime windows remain runtime questions.",
+    "The concrete active-planet object is not established by this accessor."
+  ],
+  "unresolved_questions": [
+    "What concrete planet subtype and vtable can the +0x04 word contain?",
+    "What lifetime guarantee accompanies use of the borrowed returned pointer?"
+  ],
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I src/reconstruction/pkg01_roots src/reconstruction/pkg01_roots/space_player_data_accessors.cpp src/reconstruction/pkg01_roots/space_player_data_accessors_model_test.cpp",
+    "model_test_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -I src/reconstruction/pkg01_roots src/reconstruction/pkg01_roots/space_player_data_accessors.cpp src/reconstruction/pkg01_roots/space_player_data_accessors_model_test.cpp -o /tmp/opencode/space-player-data-accessors-metadata-test && /tmp/opencode/space-player-data-accessors-metadata-test",
+    "result": "passed x86-32 syntax and host-model assertions; this is not runtime validation"
+  },
+  "provenance": [
+    {
+      "kind": "live_ghidra",
+      "program": "SporeApp.exe",
+      "operations": [
+        "decompile_function(0x01021260)",
+        "disassemble_function(0x01021260)",
+        "get_function_by_address(0x01021260)",
+        "get_function_callees(0x01021260)",
+        "get_xrefs_to(0x016dda8c)",
+        "read_memory(0x016dda8c, 4)"
+      ]
+    },
+    {
+      "kind": "repository_static_context",
+      "sources": [
+        "knowledgegraph/research/root-closure/track-f-space-context.md",
+        "knowledgegraph/research/root-closure/followup-space-lifecycle.json"
+      ]
+    }
+  ]
+}

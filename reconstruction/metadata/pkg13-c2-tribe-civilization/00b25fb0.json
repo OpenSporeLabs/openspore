@@ -1,0 +1,190 @@
+{
+  "schema": "pkg13-c2-tribe-civilization.function-handoff.v1",
+  "package": "PKG-13-C2-TRIBE-CIVILIZATION",
+  "function_address": "0x00b25fb0",
+  "ghidra_name": "FUN_00b25fb0",
+  "normalized_symbol": "tribe_civilization_bridge_00b25fb0",
+  "binary": {
+    "program": "SporeApp.exe",
+    "version": "3.1.0.22",
+    "architecture": "x86:LE:32",
+    "image_base": "0x00400000"
+  },
+  "phase": "body-reconstruction",
+  "status": "implemented in worker-owned staging",
+  "staging_paths": [
+    "reconstruction/staging/pkg13-c2-tribe-civilization/tribe_civilization.hpp",
+    "reconstruction/staging/pkg13-c2-tribe-civilization/tribe_civilization.cpp",
+    "reconstruction/staging/pkg13-c2-tribe-civilization/tribe_civilization_model_test.cpp"
+  ],
+  "declaration": "NounObject* __thiscall tribe_civilization_bridge_00b25fb0(NounProjection* receiver)",
+  "abi": {
+    "architecture": "x86-32",
+    "calling_convention": "thiscall",
+    "hidden_this_register": "ECX",
+    "hidden_this_type": "NounProjection*",
+    "ordinary_stack_arguments": [],
+    "stack_cleanup_bytes": 0,
+    "return_register": "EAX",
+    "return_width_bytes": 4,
+    "return_type": "NounObject* opaque result word",
+    "termination": "plain RET",
+    "saved_registers": ["ESI", "ECX"],
+    "bridge_fallback": "When the current-player port returns null, the body returns the saved ECX receiver word as the EAX result; it does not return null."
+  },
+  "mechanics": {
+    "execution_order": [
+      "Push ECX and ESI, save the incoming receiver in ESI, and call 0x01021300 with no ordinary arguments.",
+      "Test the current-player result in EAX.",
+      "If the result is zero, load the saved ECX receiver from the stack and return it unchanged.",
+      "If the result is nonzero, read the four-byte raw identity word at current-player+0x84.",
+      "Push that identity word, set ECX to the saved receiver, and call 0x00b25f40.",
+      "Pop ESI and ECX and return the resolver result in EAX."
+    ],
+    "identity_propagation": "The current-player object is not returned directly. Its +0x84 raw word is the identity request passed unchanged to 0x00b25f40.",
+    "receiver_fallback": "The null-current path returns the receiver pointer word, not a new object and not a null sentinel.",
+    "null_and_invalid_paths": [
+      "The current-player null branch is explicit and precedes the resolver call.",
+      "A non-null current-player object is dereferenced at +0x84 without an additional null or range guard.",
+      "The resolver result is forwarded without a post-call null check."
+    ],
+    "identity_separation": "The current-player state window, noun-projection receiver, and noun-object result remain separate types. No tribe, civilization, political, or object identity is merged by this function."
+  },
+  "direct_callees": [
+    {
+      "address": "0x01021300",
+      "role": "current-player provider",
+      "call_shape": "no ordinary stack arguments",
+      "return_shape": "opaque current-player state pointer word"
+    },
+    {
+      "address": "0x00b25f40",
+      "role": "identity resolver dependency",
+      "call_shape": "ECX=receiver, one 32-bit stack identity word, callee cleanup 0x4",
+      "return_shape": "opaque noun-object pointer word"
+    }
+  ],
+  "call_graph": {
+    "direct_caller_query": "at least 100 direct caller records returned by the live query",
+    "function_xref_query": "225 code xrefs returned by the live query",
+    "representative_callers": [
+      "0x00aeb240",
+      "0x00aebe90",
+      "0x00b262c0",
+      "0x00d00ee0",
+      "0x00d05a20"
+    ],
+    "fan_in_boundary": "The high fan-in establishes broad use of the bridge but not a universal concrete receiver or current-player type."
+  },
+  "ownership_and_events": {
+    "return_ownership": "The returned resolver word is forwarded unchanged; this function performs no AddRef, Release, allocation, deletion, or ownership transfer.",
+    "relationship_state": "No relationship entry, flag, container, or political state is written directly by this body.",
+    "event_order": "No event record, event factory, relationship mutation, or event dispatch occurs in the target body. The only observable ordering is current-player lookup followed by resolver dispatch when non-null.",
+    "release_order": "No target-local release operation is present. The resolver and its projection dependency remain separate ownership boundaries."
+  },
+  "evidence": [
+    {
+      "tool": "ghidra_get_function_by_address",
+      "address": "0x00b25fb0",
+      "observation": "Live function range is 0x00b25fb0 through 0x00b25fd4."
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x00b25fb0",
+      "observation": "Live pseudocode calls 0x01021300, conditionally reads +0x84, calls 0x00b25f40, and returns the resolver result or the saved receiver word."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x00b25fb0",
+      "observation": "Seventeen instructions fix the ECX receiver, two saved registers, current-player null branch, +0x84 read, resolver call, plain RET, and receiver fallback."
+    },
+    {
+      "tool": "ghidra_get_function_callers",
+      "address": "0x00b25fb0",
+      "observation": "The live query returned at least 100 direct caller records."
+    },
+    {
+      "tool": "ghidra_get_function_callees",
+      "address": "0x00b25fb0",
+      "observation": "The only direct callees are 0x01021300 and 0x00b25f40."
+    },
+    {
+      "tool": "ghidra_get_function_xrefs",
+      "address": "0x00b25fb0",
+      "observation": "The live query returned 225 code xrefs."
+    },
+    {
+      "tool": "ghidra_get_assembly_context",
+      "addresses": ["0x00b25fc6", "0x00b262d6", "0x00d05a86", "0x00c7387b"],
+      "observation": "Representative callers set ECX from the noun-manager/root result before calling the bridge or resolver and pass the identity word through the stack."
+    }
+  ],
+  "dependencies": [
+    {
+      "address": "0x01021300",
+      "status": "existing PKG-12 current-player cache boundary",
+      "use": "Supplies the current-player state pointer; side effects remain outside this target."
+    },
+    {
+      "address": "0x00b25f40",
+      "status": "worker-owned reconstruction in this package",
+      "use": "Resolves the identity word through the noun projection vector."
+    },
+    {
+      "address": "0x00b21340",
+      "status": "existing PKG-11 noun-projection dependency",
+      "use": "Indirectly reached through 0x00b25f40; live disassembly ends with RET 0x14 and is modeled as a callee-cleanup thiscall port."
+    }
+  ],
+  "runtime_gates": [
+    "The current-player provider must return a valid state window before +0x84 is read.",
+    "The receiver must be a valid noun-projection-compatible object for 0x00b25f40.",
+    "The resolver vector, object pointers, object vtables, and vtable+0x4c targets must be valid.",
+    "The resolver's 0x00b21340 map/list callbacks and their ownership effects require original-process observation.",
+    "The null-current receiver fallback must not be treated as a valid noun-object result by downstream callers without runtime evidence."
+  ],
+  "unresolved_questions": [
+    "What concrete state owner and semantic role belong to current-player+0x84?",
+    "What concrete noun-projection receiver type and vtable family does 0x00b21340 require?",
+    "What do the fixed callback words 0x00b21080, 0x00d3d420, 0x00b236c0, and 0x00b1e500 represent?",
+    "What concrete object type and vtable owner implement vtable+0x4c?",
+    "What runtime values and validity windows apply to the current-player and resolver objects?",
+    "What downstream callers assume when the null-current path returns the receiver word?"
+  ],
+  "tests": {
+    "path": "reconstruction/staging/pkg13-c2-tribe-civilization/tribe_civilization_model_test.cpp",
+    "coverage": [
+      "current-player identity propagation into the resolver",
+      "fixed callback words and projection identity propagation",
+      "null current-player receiver fallback",
+      "invalid UINT32_MAX identity sentinel acceptance when a probe matches",
+      "early probe stop on identity match",
+      "no-match and empty-vector null returns",
+      "negative vector span skips probes",
+      "relationship/tribe state unchanged",
+      "no event or release operation in the direct bridge path",
+      "current-player, projection lookup, and identity-probe ordering"
+    ],
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/pkg13-c2-tribe-civilization reconstruction/staging/pkg13-c2-tribe-civilization/tribe_civilization.cpp reconstruction/staging/pkg13-c2-tribe-civilization/tribe_civilization_model_test.cpp",
+    "model_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg13-c2-tribe-civilization reconstruction/staging/pkg13-c2-tribe-civilization/tribe_civilization.cpp reconstruction/staging/pkg13-c2-tribe-civilization/tribe_civilization_model_test.cpp -o /tmp/opencode/pkg13-c2-tribe-civilization-model && /tmp/opencode/pkg13-c2-tribe-civilization-model",
+    "format_command": "clang-format --dry-run --Werror --style='{BasedOnStyle: Google, FixNamespaceComments: false}' reconstruction/staging/pkg13-c2-tribe-civilization/tribe_civilization.hpp reconstruction/staging/pkg13-c2-tribe-civilization/tribe_civilization.cpp reconstruction/staging/pkg13-c2-tribe-civilization/tribe_civilization_model_test.cpp",
+    "results": {
+      "syntax": "passed",
+      "model": "passed",
+      "format": "passed",
+      "runtime": "not run"
+    },
+    "runtime_validation": 0
+  },
+  "static_vs_runtime_boundary": {
+    "static": "The ABI, current-player branch, +0x84 identity read, resolver call, saved-register cleanup, return fallback, fan-in, and call order are fixed by live Ghidra evidence.",
+    "runtime": "No original-process execution, pointer-validity trace, callback effect trace, relationship trace, event trace, or ownership validation was performed.",
+    "claims_not_made": [
+      "concrete current-player, receiver, object, or vtable owner identity",
+      "semantic meaning of the +0x84 word or fixed callback words",
+      "runtime validity of the null-current receiver fallback",
+      "relationship, political, tribe, civilization, or event state semantics",
+      "runtime ownership or release behavior of the resolver dependency"
+    ]
+  }
+}

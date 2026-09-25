@@ -94,8 +94,18 @@ class TestServerCore(unittest.TestCase):
         self.assertEqual(code, 0)  # EOF after the request: clean shutdown.
         (resp,) = responses(out)
         self.assertEqual(resp["id"], 1)
-        self.assertEqual(resp["result"]["server"], "openspore-mcp")
-        self.assertEqual(resp["result"]["tools"], 21)
+        self.assertEqual(resp["result"], {
+            "protocolVersion": "2025-06-18",
+            "capabilities": {"tools": {"listChanged": False}},
+            "serverInfo": {
+                "name": "openspore-mcp",
+                "version": "0.1.0",
+            },
+        })
+        self.assertNotIn("server", resp["result"])
+        self.assertNotIn("version", resp["result"])
+        self.assertNotIn("protocol", resp["result"])
+        self.assertNotIn("tools", resp["result"])
 
     def test_tools_list(self):
         code, out, _err = run_lines([req(1, "tools/list")])

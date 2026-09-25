@@ -1,0 +1,72 @@
+{
+  "schema": "pkg13-diplomacy-primitives.function-handoff.v1",
+  "package": "PKG-13-SIM-DIPLOMACY-PRIMITIVES",
+  "function_address": "0x00d01ab0",
+  "ghidra_name": "FUN_00d01ab0",
+  "normalized_symbol": "RelationshipMapSelect_00d01ab0",
+  "source_files": [
+    "reconstruction/staging/pkg13-diplomacy-primitives/diplomacy_primitives.hpp",
+    "reconstruction/staging/pkg13-diplomacy-primitives/diplomacy_primitives.cpp",
+    "reconstruction/staging/pkg13-diplomacy-primitives/diplomacy_primitives_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "OpaqueRelationshipMap* RelationshipMapSelect_00d01ab0(OpaqueRelationshipManager* receiver, std::uint32_t key_a, std::uint32_t key_b);",
+  "abi": {
+    "calling_convention": "thiscall",
+    "hidden_this": "ECX OpaqueRelationshipManager* receiver",
+    "stack_arguments": [
+      {"position": 1, "entry_offset": "ESP+0x04", "type": "std::uint32_t", "width_bytes": 4},
+      {"position": 2, "entry_offset": "ESP+0x08", "type": "std::uint32_t", "width_bytes": 4}
+    ],
+    "stack_cleanup_bytes": 8,
+    "return_register": "EAX",
+    "return_width_bytes": 4,
+    "return_semantics": "Returns receiver+0x24 fallback or selected record+0x04 map pointer; normal failure is a non-null fallback address."
+  },
+  "body": {
+    "status": "reconstructed",
+    "entry_address": "0x00d01ab0",
+    "body_addresses": ["0x00d01ab0", "0x00d01b49"],
+    "instruction_count": 59,
+    "basic_block_count": 10,
+    "raw_bytes": "56578d4424108bf1508d4c241051e8ddeeffff83c408e8d5f731008bf885ff74718b54240c52e8754beaff83c40484c074118b44241050e8644beaff83c40484c0754f538bcfe8554efeff0fb68eb00000008bbea0000000518d542414528bd88b869c0000005750895c2420e8eff6ffff83c4103bc7440b3b1872078d48203bc175028bc75b3bc744085f83c0045ec208005f8d46245ec20800",
+    "mechanics": [
+      "Save ESI/EDI, normalize the two key words through 0x00d009a0, and call 0x010212a0 for the context boundary.",
+      "A null context immediately returns receiver+0x24.",
+      "If both normalized keys have bit 31 set, return receiver+0x24 without calling the vector search.",
+      "Read context+0x184 through 0x00ce6950, manager begin/end at +0x9c/+0xa0, and the byte at +0xb0.",
+      "Call 0x00d01210 with begin, end, context key, and the pushed 32-bit form of the +0xb0 byte.",
+      "Reject end, a candidate whose first key is greater than the context key, and the observed candidate+0x20 pointer guard.",
+      "Return candidate+0x04 when accepted, otherwise receiver+0x24; both paths use RET 0x8."
+    ]
+  },
+  "state_evidence": {
+    "manager_fields": [
+      {"offset": "0x24", "meaning": "fallback map address returned as receiver+0x24"},
+      {"offset": "0x9c", "meaning": "selector record-range begin pointer"},
+      {"offset": "0xa0", "meaning": "selector record-range end pointer"},
+      {"offset": "0xb0", "meaning": "byte read and pushed as a 32-bit helper word"}
+    ],
+    "record_stride": "0x20",
+    "selected_map_offset": "candidate+0x04",
+    "null_and_sentinel_behavior": "No receiver or range null checks exist. Null context and both-high-bit keys return the fallback; missing or rejected candidates also return the fallback.",
+    "mutation_boundary": "The target writes no manager, record, or relationship payload; it only passes helper arguments and returns an address."
+  },
+  "call_graph": {
+    "direct_callers": ["0x00d01b50", "0x00d01b80", "0x00d01bb0", "0x00d01e30", "0x00d01f20", "0x00d01f50", "0x00d01fb0", "0x00d02050", "0x00d03860", "0x00d038a0", "0x00d038e0", "0x00d03d70", "0x00d05830", "0x00d05a20", "0x00d06240", "0x00d06270", "0x00d064b0", "0x00d065a0", "0x00d06920", "0x00d01ff0"],
+    "direct_callees": ["0x00d009a0", "0x010212a0", "0x00ba6650", "0x00ce6950", "0x00d01210"]
+  },
+  "evidence": [
+    {"tool": "ghidra_get_function_by_address", "address": "0x00d01ab0", "observation": "Live function is 0x00d01ab0 through 0x00d01b49 with thiscall and RET 0x8."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00d01ab0", "observation": "Live assembly proves manager offsets, high-bit short-circuit, record stride, candidate guard, and fallback paths."},
+    {"tool": "ghidra_get_function_callers", "address": "0x00d01ab0", "observation": "20 direct callers were reported."},
+    {"tool": "ghidra_get_function_callees", "address": "0x00d01ab0", "observation": "Five direct callees were reported."}
+  ],
+  "confidence": {"body": "high", "thiscall_and_cleanup": "high", "fallback_offsets": "high", "selector_search_semantics": "medium; delegated to opaque lower-bound helper"},
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -fsyntax-only reconstruction/staging/pkg13-diplomacy-primitives/diplomacy_primitives.cpp reconstruction/staging/pkg13-diplomacy-primitives/diplomacy_primitives_test.cpp",
+    "model_test_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic reconstruction/staging/pkg13-diplomacy-primitives/diplomacy_primitives.cpp reconstruction/staging/pkg13-diplomacy-primitives/diplomacy_primitives_test.cpp -o /tmp/opencode/pkg13-diplomacy-primitives-test && /tmp/opencode/pkg13-diplomacy-primitives-test"
+  },
+  "unresolved_questions": ["0x00d009a0 context-dependent key normalization", "0x010212a0 context ownership", "0x00ce6950 concrete context type", "0x00d01210 record lower-bound implementation", "runtime map/record values"],
+  "blockers": ["Selector and context helper bodies are intentionally unresolved; runtime relationship records remain gated."]
+}

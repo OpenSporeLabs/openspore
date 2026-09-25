@@ -1,0 +1,125 @@
+{
+  "schema": "pkg10-editor-dispatch.function-handoff.v1",
+  "package": "PKG-10-EDITOR-DISPATCH",
+  "address": "0x005dfd00",
+  "symbol": "editor_query_dispatch_005dfd00",
+  "role": "target",
+  "source_files": [
+    "reconstruction/staging/pkg10-editor-dispatch/editor_query_helpers.hpp",
+    "reconstruction/staging/pkg10-editor-dispatch/editor_query_helpers.cpp",
+    "reconstruction/staging/pkg10-editor-dispatch/editor_query_helpers_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "std::uint8_t __thiscall editor_query_dispatch_005dfd00(OpaqueEditorQueryContext *context, std::uint32_t command);",
+  "abi": {
+    "return_type": "std::uint8_t",
+    "return_register": "AL",
+    "calling_convention": "__thiscall observed",
+    "hidden_this_register": "ECX",
+    "stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "ESP+0x04",
+        "type": "std::uint32_t",
+        "width_bytes": 4,
+        "observed_use": "Command word selected by the 0x100-based switch table"
+      }
+    ],
+    "stack_cleanup_bytes": 4,
+    "termination": "RET 0x4"
+  },
+  "layout": {
+    "context": {
+      "owner_offset": "0x5c",
+      "material_registration_offset": "0xb4",
+      "material_mode_offset": "0xc8",
+      "state_offset": "0xcc",
+      "active_offset": "0xd0",
+      "size_bytes": "0xd4"
+    },
+    "external_global": {
+      "address": "0x015fd918",
+      "use": "Read through the app-properties owner to the runtime word at +0x118"
+    },
+    "material_data": {
+      "address": "0x01519a48",
+      "use": "Opaque data pointer passed to the material registration boundary"
+    }
+  },
+  "mechanics": {
+    "entry": [
+      "Write byte 1 to context+0xd0 before dispatch.",
+      "Compute the unsigned switch selector command-0x100.",
+      "Return zero for commands outside 0x100..0x10d."
+    ],
+    "branches": [
+      {"command": "0x100", "order": "Common material lookup; on miss set state, emit 0xa03e74b2, call the one-argument transition with zero"},
+      {"command": "0x101,0x107", "order": "Set state and call the two-argument transition with (command,1)"},
+      {"command": "0x102", "order": "Set state and call the zero-argument transition"},
+      {"command": "0x103", "order": "Set state and call the zero-argument transition"},
+      {"command": "0x104", "order": "Set state, emit 0xa03e74b2, and call the two-argument transition"},
+      {"command": "0x105", "order": "Material lookup; on miss set state, emit 0xa03e74b2, and call the three-word raw boundary"},
+      {"command": "0x106", "order": "Set state, emit 0xa03e74b2, call the port boundary, then conditionally call the mode-flag boundary"},
+      {"command": "0x108", "order": "Set state, emit 0xa03e74b2, and call the zero-argument transition"},
+      {"command": "0x109", "order": "Set state to zero, obtain a 16-byte owner result, copy four words to the stack, and call the four-word apply boundary"},
+      {"command": "0x10a", "order": "Emit 0xa03e74b2 and call the zero-argument transition"},
+      {"command": "0x10c", "order": "Obtain the app-system service and call vtable slot +0x14 with 0xf40f8fe4 and two null words"},
+      {"command": "0x10d", "order": "Emit 0xa03e74b2, look up 0x47bc920, call service vtable +0x28 when non-null, and pass the inverted low bit to the state-decision boundary"}
+    ],
+    "material_paths": {
+      "gate": "Read app-properties+0x3c then runtime+0x118 without an added null guard",
+      "lookup": "Call the material-manager getter, then vtable slot +0x30 with 0x604a51a",
+      "success": "Store 0x604fa6b for 0x100 or 0x604fab1 for 0x105 at +0xc8, then call registration with context+0xb4 and 0x01519a48",
+      "fallback": "Preserve the branch-specific fallback call and debug event"
+    },
+    "return": "Set AL to one on every handled command and leave unknown commands at zero; no EAX high-bit contract is claimed"
+  },
+  "call_graph": {
+    "direct_callers": 4,
+    "function_xrefs": 7,
+    "direct_callees": [
+      "0x0067dcc0",
+      "0x004a88d0",
+      "0x00572190",
+      "0x00572260",
+      "0x005dc310",
+      "0x005dc4d0",
+      "0x005dca00",
+      "0x005dd300",
+      "0x005dd610",
+      "0x005df470",
+      "0x005df8d0",
+      "0x005dfb40",
+      "0x006035d0",
+      "0x0064bc50",
+      "0x008098f0",
+      "0x00809db0",
+      "0x0067dd30"
+    ],
+    "external_boundaries": "All helper, service, material, debug, and app-system owners remain opaque callbacks or indirect slots."
+  },
+  "evidence": [
+    {"tool": "ghidra_decompile_function", "address": "0x005dfd00", "observation": "The switch covers command-0x100 values 0 through 13 and preserves the listed branch-specific calls."},
+    {"tool": "ghidra_disassemble_function", "address": "0x005dfd00", "observation": "The body writes +0xd0, uses a jump table, preserves RET 4, and writes AL on handled paths."},
+    {"tool": "ghidra_get_function_callers", "address": "0x005dfd00", "observation": "Four direct caller functions and seven call xrefs are present."},
+    {"tool": "ghidra_get_function_callees", "address": "0x005dfd00", "observation": "Seventeen direct callees are present."},
+    {"tool": "ghidra_get_xrefs_to", "address": "0x01519a48", "observation": "The material data address is referenced by the target at two data sites."}
+  ],
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/pkg10-editor-dispatch reconstruction/staging/pkg10-editor-dispatch/editor_query_helpers.cpp",
+    "model_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg10-editor-dispatch reconstruction/staging/pkg10-editor-dispatch/editor_query_helpers.cpp reconstruction/staging/pkg10-editor-dispatch/editor_query_helpers_model_test.cpp -o /tmp/opencode/pkg10-query-helpers && /tmp/opencode/pkg10-query-helpers",
+    "format_command": "clang-format --dry-run --Werror -style=\"{BasedOnStyle: Google, FixNamespaceComments: false}\" reconstruction/staging/pkg10-editor-dispatch/editor_query_helpers.hpp reconstruction/staging/pkg10-editor-dispatch/editor_query_helpers.cpp reconstruction/staging/pkg10-editor-dispatch/editor_query_helpers_model_test.cpp",
+    "json_command": "python3 -m json.tool reconstruction/metadata/pkg10-editor-dispatch/005dfd00.json >/dev/null"
+  },
+  "unresolved_questions": [
+    "What concrete editor, app-system, material-manager, and transition owners implement the external boundaries?",
+    "What are the meanings of the command values and material constants beyond their observed call order?",
+    "What are the runtime values and ownership of context fields +0x5c, +0xb4, +0xc8, and +0xd0?",
+    "Does the indirect vtable slot +0x14 return a width that any caller observes beyond AL?"
+  ],
+  "blockers": [
+    "No canonical persisted body or typed owner evidence exists for the external callback boundaries.",
+    "The material and app-system branches dereference live service globals without a source-level null guard.",
+    "The function is high fan-in for component dispatch, but payload and runtime transition semantics remain unresolved."
+  ]
+}

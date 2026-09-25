@@ -1,0 +1,152 @@
+{
+  "schema": "pkg15-editor-support.function-handoff.v1",
+  "package": "pkg15-editor-support",
+  "address": "0x005c9230",
+  "ghidra_name": "FUN_005c9230",
+  "role": "palette page construction with standard and advanced item branches",
+  "implementation": {
+    "header": "src/reconstruction/pkg15_editor_support/editor_support.hpp",
+    "source": "src/reconstruction/pkg15_editor_support/editor_support.cpp",
+    "model_test": "src/reconstruction/pkg15_editor_support/editor_support_model_test.cpp",
+    "concrete_sdk_membership": false,
+    "service_boundary": "IPaletteServices, IStandardController, and IAdvancedController"
+  },
+  "abi": {
+    "return_type": "opaque pointer value observed but not authoritative",
+    "calling_convention": "__thiscall",
+    "hidden_this_register": "ECX",
+    "explicit_stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "ESP+0x04",
+        "name": "page_definition",
+        "type": "OpaqueObject*",
+        "width_bytes": 4
+      },
+      {
+        "position": 2,
+        "entry_offset": "ESP+0x08",
+        "name": "application",
+        "type": "IEditorService* receiver",
+        "width_bytes": 4
+      },
+      {
+        "position": 3,
+        "entry_offset": "ESP+0x0C",
+        "name": "application_context",
+        "type": "OpaqueObject*",
+        "width_bytes": 4
+      },
+      {
+        "position": 4,
+        "entry_offset": "ESP+0x10",
+        "name": "page_index",
+        "type": "uint32_t",
+        "width_bytes": 4
+      },
+      {
+        "position": 5,
+        "entry_offset": "ESP+0x14",
+        "name": "mode_flag",
+        "type": "uint32_t",
+        "width_bytes": 4
+      }
+    ],
+    "stack_cleanup_bytes": 20,
+    "ret_evidence": "RET 0x14 at 0x005c97d1"
+  },
+  "observed_field_offsets": {
+    "0x0c": "page service",
+    "0x10": "page service selected by 0x12df7465",
+    "0x14": "page definition reference",
+    "0x18": "cell width",
+    "0x1c": "cell height",
+    "0x24": "page item vector begin",
+    "0x28": "page item vector end",
+    "0x2c": "page item vector capacity",
+    "0x34": "advanced controller vector begin",
+    "0x38": "advanced controller vector end",
+    "0x3c": "advanced controller vector capacity",
+    "page_definition+0x0c": "runtime key first word",
+    "page_definition+0x10": "automatic-template gate",
+    "page_definition+0x60": "advanced eccc3657 template argument",
+    "page_definition+0x70": "page item vector begin",
+    "page_definition+0x74": "page item vector end",
+    "explicit_argument_2": "application receiver passed to common-service configuration",
+    "application_context+0x24": "cell width used when page_index is nonzero",
+    "application_context+0x28": "cell height and -1 default sentinel",
+    "item+0x24": "item branch token"
+  },
+  "behavior": [
+    "Treats the first explicit word as page_definition, the second as the application receiver, the third as an opaque application context, the fourth as page_index, and the fifth as an unused mode flag.",
+    "Replaces page_definition at page+0x14 with add-reference, field replacement, and old-release order.",
+    "Uses global page metrics when application_context is null or application_context+0x28 equals -1.0; otherwise copies application_context+0x24 and +0x28 into page+0x18 and +0x1c. The separate page_index word is not consumed by the seeded body.",
+    "Creates the common 0x13eb430 service, rejects an invalid page_definition+0x0c runtime key, and configures it with the second explicit application receiver.",
+    "Initializes the -1 default service and directly stores the freshly queried 0x12df7465 page service without an added reference.",
+    "Iterates page_definition+0x70 through +0x74 as 32-bit target words and skips null items.",
+    "Creates a page query service for each item and uses it for the palette class probe without retaining or releasing that query service.",
+    "Queries paletteItemUIClassId 0x811c9dc5 when page_definition+0x10 is zero; class type 10 enables the automatic advanced branch.",
+    "Uses item+0x24 to select standard, token_b4e4f69b, token_71fa7d3f, token_87e8a1af, or token_eccc3657 construction; unknown tokens with no automatic template use the standard path.",
+    "Builds the standard controller's third argument through 0x005c8d70 for the current page/index and passes application_context as its fourth argument.",
+    "Standard construction adds a local reference, initializes the controller, inserts it into the 32-bit target-word vector, and releases the local reference.",
+    "Advanced construction uses the returned controller directly, creates and configures the page entity without adding a reference to that fresh service, passes the four-float 0x005c8d70 item layout to the entity, inserts the controller, and releases only the returned controller reference.",
+    "Hides page_service with (1, 0) after the loop."
+  ],
+  "direct_callers": [
+    {
+      "address": "0x005c51e0",
+      "call_site": "0x005c52a8"
+    }
+  ],
+  "direct_callees": [
+    "0x005c7010",
+    "0x005c7500",
+    "0x005c7f00",
+    "0x005c8480",
+    "0x005c8c10",
+    "0x005c8c50",
+    "0x005c8d70",
+    "0x005c90d0",
+    "0x005ee540",
+    "0x005ee7b0",
+    "0x005ef6b0",
+    "0x005f0d80",
+    "0x0067caa0",
+    "0x0067de30",
+    "0x00806370",
+    "0x00920090",
+    "0x00932e80"
+  ],
+  "evidence": [
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x005c9230",
+      "fact": "Live pseudocode preserves page service replacement, metric calculation, key validation, item loop, token hash branches, the four-float 0x005c8d70 layout handoff to both page-item branches, standard/advanced vector growth, and final service disable."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x005c9230",
+      "fact": "RET 0x14 proves five explicit words; caller instructions at 0x005c529b-0x005c52a6 push mode flag, page index, application context, application receiver, and page definition in reverse stack order."
+    },
+    {
+      "tool": "ghidra_get_function_callers",
+      "address": "0x005c9230",
+      "fact": "The only direct caller is FUN_005c51e0 at 0x005c52a8."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x005c51e0",
+      "fact": "The direct caller supplies a page definition, a service receiver, the owner/application context propagated from 0x005c53c0, the loop index, and a byte-derived mode flag."
+    }
+  ],
+  "evidence_boundaries": [
+    "The application receiver, page definition, and application context remain adapter or opaque types; no concrete SDK class is assigned.",
+    "The branch token values and factory sizes remain opaque factory requests.",
+    "The 0x005c8d70 result is represented as the observed four-float item-layout structure for both standard and advanced page-entity branches, rather than as a raw loop index.",
+    "The return register is not promoted to a concrete page type because the live function is typed undefined and its tail value is not a stable ownership contract."
+  ],
+  "unresolved_contradictions": [
+    "The live decompiler reports four named parameters, but the instruction stream and RET 0x14 establish five explicit stack words; the fifth mode flag is retained although the seeded body does not consume it.",
+    "The application context is both probed for cell metrics and passed to controller initialization, so it remains an opaque receiver rather than being named from stale decompiler annotations."
+  ]
+}

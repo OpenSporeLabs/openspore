@@ -1,0 +1,82 @@
+{
+  "schema": "pkg10-editor-dispatch.function-handoff.v1",
+  "package": "PKG-10-EDITOR-DISPATCH",
+  "address": "0x0093db80",
+  "symbol": "editor_query_clear_flags_0093db80",
+  "role": "target",
+  "source_files": [
+    "reconstruction/staging/pkg10-editor-dispatch/editor_query_helpers.hpp",
+    "reconstruction/staging/pkg10-editor-dispatch/editor_query_helpers.cpp",
+    "reconstruction/staging/pkg10-editor-dispatch/editor_query_helpers_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "void __thiscall editor_query_clear_flags_0093db80(OpaquePreferenceQuery *query, std::uint8_t clear_value);",
+  "abi": {
+    "return_type": "void",
+    "calling_convention": "__thiscall observed",
+    "hidden_this_register": "ECX",
+    "stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "ESP+0x04",
+        "type": "std::uint8_t",
+        "width_bytes": 1,
+        "observed_use": "Nonzero enables the conditional clear path"
+      }
+    ],
+    "stack_cleanup_bytes": 4,
+    "termination": "RET 0x4"
+  },
+  "layout": {
+    "query_size_bytes": "0x14",
+    "flags_word_offset": "0x10",
+    "trailing_flags_word_offset": "0x12",
+    "callback_global": "0x0154eb48"
+  },
+  "mechanics": {
+    "order": [
+      "Test byte[query+0x10] bit 0x04; if set, call the global function pointer with (1, query, 0, 0, 0, 0).",
+      "Test the stack byte; if nonzero and byte[query+0x10] bit 0x02 is clear, clear query+0x12 and query+0x10 as words.",
+      "Return without a status value."
+    ],
+    "callback": {
+      "global_address": "0x0154eb48",
+      "resolved_function": "0x009415a0",
+      "contract": "void __cdecl(std::uint32_t, OpaquePreferenceQuery *, std::uint32_t, std::uint32_t, std::uint32_t, std::uint32_t)",
+      "call_order": "The callback runs before the conditional clear."
+    },
+    "null_paths": "No null guard is added for query or the global callback pointer."
+  },
+  "call_graph": {
+    "direct_callers": 194,
+    "function_xrefs": 460,
+    "direct_callees": ["0x009415a0"],
+    "representative_callers": [
+      {"address": "0x005e0000", "use": "Preference query clear with an explicit zero stack byte"},
+      {"address": "0x00422e20", "use": "Property setter flag-clear path"},
+      {"address": "0x006a1859", "use": "Direct property setter"},
+      {"address": "0x006a17a3", "use": "Property-list parent path"}
+    ]
+  },
+  "evidence": [
+    {"tool": "ghidra_decompile_function", "address": "0x0093db80", "observation": "The callback is conditional on flag bit 0x04 and clearing is conditional on the stack byte and absence of bit 0x02."},
+    {"tool": "ghidra_disassemble_function", "address": "0x0093db80", "observation": "The exact six-word callback call uses stack cleanup 0x18, then the two flag words are conditionally zeroed."},
+    {"tool": "ghidra_get_function_callees", "address": "0x0093db80", "observation": "The indirect global resolves to 0x009415a0 as the only direct callee."},
+    {"tool": "ghidra_get_xrefs_to", "address": "0x0154eb48", "observation": "The global callback slot is read by this target and adjacent property helpers."}
+  ],
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/pkg10-editor-dispatch reconstruction/staging/pkg10-editor-dispatch/editor_query_helpers.cpp",
+    "model_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg10-editor-dispatch reconstruction/staging/pkg10-editor-dispatch/editor_query_helpers.cpp reconstruction/staging/pkg10-editor-dispatch/editor_query_helpers_model_test.cpp -o /tmp/opencode/pkg10-query-helpers && /tmp/opencode/pkg10-query-helpers",
+    "format_command": "clang-format --dry-run --Werror -style=\"{BasedOnStyle: Google, FixNamespaceComments: false}\" reconstruction/staging/pkg10-editor-dispatch/editor_query_helpers.hpp reconstruction/staging/pkg10-editor-dispatch/editor_query_helpers.cpp reconstruction/staging/pkg10-editor-dispatch/editor_query_helpers_model_test.cpp",
+    "json_command": "python3 -m json.tool reconstruction/metadata/pkg10-editor-dispatch/0093db80.json >/dev/null"
+  },
+  "unresolved_questions": [
+    "What concrete service or property owner is installed at 0x0154eb48?",
+    "What do the two flag bits mean beyond their observed callback and clear behavior?",
+    "Which callers depend on callback timing or mutation of the query words?"
+  ],
+  "blockers": [
+    "The global callback owner and payload semantics are unresolved.",
+    "The function has very broad property-system fan-in, so a typed implementation would overclaim without the owner."
+  ]
+}

@@ -1,0 +1,226 @@
+{
+  "schema": "pkg11-sim-core-function-handoff-v1",
+  "package": "PKG-11-SIM-CORE",
+  "function_address": "0x00ba9370",
+  "ghidra_name": "FUN_00ba9370",
+  "normalized_symbol": "Simulator_LookupEmpireByPoliticalId",
+  "source_files": [
+    "reconstruction/staging/pkg11-sim-core/empire_lookup.hpp",
+    "reconstruction/staging/pkg11-sim-core/empire_lookup.cpp",
+    "reconstruction/staging/pkg11-sim-core/empire_lookup_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "semantic_classification": "guarded-hybrid dependent",
+  "declaration": "OpaqueEmpire* __thiscall Simulator_LookupEmpireByPoliticalId(OpaqueStarManager* manager, TargetWord political_id);",
+  "abi": {
+    "logical_return_type": "OpaqueEmpire*",
+    "staged_return_type": "OpaqueEmpire*",
+    "calling_convention": "__thiscall observed; ECX receiver and one caller-cleaned stack word",
+    "this_parameter": true,
+    "receiver": {
+      "register": "ECX",
+      "type": "OpaqueStarManager*",
+      "width_bytes": 4
+    },
+    "stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "ESP+0x04",
+        "type": "TargetWord",
+        "width_bytes": 4,
+        "observed_use": "Political ID request; 0xffffffff is rejected before receiver dereference."
+      }
+    ],
+    "stack_cleanup_bytes": 4,
+    "return_register": "EAX",
+    "return_semantics": "Borrowed map payload pointer only when the guarded-hybrid dependent helper returns a non-anchor candidate whose final retained key exactly matches the request; zero on the anchor, invalid request, null payload, or a present key shadowed by a greater right-side candidate.",
+    "return_width_bytes": 4
+  },
+  "dependency": {
+    "header": "reconstruction/staging/pkg20-gameglobal/map_search.hpp",
+    "function": "pkg20_gameglobal_00e5c780",
+    "semantic_contract": "Guarded-hybrid dependent behavior through the shared PKG-20 uint32 map adapter. The helper walks a lower-bound-shaped tree, retains the latest node whose key is greater than or equal to the query, and accepts the result only when that retained candidate exactly equals the query. A present exact key is therefore not a robust hit when a greater right child replaces it before the final guard; the wrapper returns the anchor/null path. The wrapper does not define another map type or add successor tolerance."
+  },
+  "layout": {
+    "receiver": {
+      "name": "OpaqueStarManager",
+      "empire_map_offset": "0x150",
+      "map_end_offset": "0x154",
+      "map_size_bytes": 28,
+      "end_expression": "manager + 0x154"
+    },
+    "entry": {
+      "name": "EmpireMapEntry",
+      "key_offset": "0x10",
+      "payload_offset": "0x14",
+      "size_bytes": 24,
+      "payload_type": "OpaqueEmpire*",
+      "evidence": "The live body loads the shared helper's selected result and reads node payload at +0x14 when that result is not the map anchor. The shared OrderedMapEntry supplies the 20-byte node/key prefix; the staged entry adds only the observed one-word payload suffix."
+    },
+    "map": {
+      "end_offset": "0x04",
+      "root_offset": "0x0c",
+      "size_offset": "0x14",
+      "allocator_offset": "0x18"
+    }
+  },
+  "classification_basis": "guarded-hybrid dependent: the wrapper consumes the shared map helper's final exact-key guard and cannot promote a successor candidate to an empire hit",
+  "mechanics": {
+    "entry": [
+      "The live body compares the stack ID with 0xffffffff before reading the receiver or map.",
+      "For any other ID, it passes the receiver map at +0x150, a result local, and the ID pointer to 0x00e5c780.",
+      "It compares the result with the map anchor at receiver +0x154.",
+      "It returns the word at result +0x14 only for a non-anchor result."
+    ],
+    "hit_matrix": [
+      {"request": "0xffffffff", "result": "null", "receiver_access": "none"},
+      {"request": "exact existing key with no greater candidate retained", "result": "node payload at +0x14"},
+      {"request": "exact existing key with a greater right-side candidate retained", "result": "null; guarded-hybrid search rejects the successor candidate and the wrapper returns the anchor path"},
+      {"request": "in-between or otherwise absent key", "result": "null; the observed guarded search rejects any retained greater candidate or returns the anchor"},
+      {"request": "empty map", "result": "null"},
+      {"request": "accepted exact-key candidate with null payload", "result": "null"}
+    ],
+    "ownership": "The function returns a borrowed pointer. It performs no AddRef, Release, allocation, insertion, deletion, or cache mutation.",
+    "error_paths": "No valid-ID null receiver guard is present in the live body; a null or invalid receiver faults when the map field is accessed. The 0xffffffff path returns before that access."
+  },
+  "call_graph": {
+    "direct_callers": {
+      "ghidra_unique_functions": 136,
+      "ghidra_call_xrefs": 209
+    },
+    "direct_callees": [
+      {
+        "address": "0x00e5c780",
+        "name": "map_int_whatever_find",
+        "role": "shared guarded uint32 map search"
+      }
+    ],
+    "representative_callers": [
+      {
+        "address": "0x00b20790",
+        "role": "Uses the same registry lookup and only accepts a non-sentinel result."
+      },
+      {
+        "address": "0x01021300",
+        "role": "Uses the alternate star-root result for current-player cache refresh."
+      },
+      {
+        "address": "0x00c32cd0",
+        "role": "Uses registry results in current-empire identity/color logic."
+      },
+      {
+        "address": "0x00d01ff0",
+        "name": "Simulator::cRelationshipManager::IsAllied2",
+        "role": "Uses current-player empire identity."
+      },
+      {
+        "address": "0x00feb770",
+        "role": "Uses registry and current-player cache state."
+      }
+    ],
+    "root_dependency": {
+      "function": "0x00b3d2a0",
+      "global": "0x0167eae4",
+      "use": "The current-player cache obtains an alternate star-manager-compatible receiver from this untyped four-byte root slot."
+    }
+  },
+  "live_ghidra_evidence": [
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x00ba9370",
+      "observation": "The function rejects -1, calls 0x00e5c780 with the map at this+0x150, checks the result against this+0x154, and returns node+0x14 or zero."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x00ba9370",
+      "observation": "The 23-instruction body uses ECX as this, compares [ESP+8] with -1, calls 0x00e5c780, loads [EAX+0x14], and returns through RET 0x4."
+    },
+    {
+      "tool": "ghidra_get_function_callers",
+      "address": "0x00ba9370",
+      "observation": "Ghidra reports 136 direct caller functions."
+    },
+    {
+      "tool": "ghidra_get_function_callees",
+      "address": "0x00ba9370",
+      "observation": "The only direct callee is 0x00e5c780."
+    },
+    {
+      "tool": "ghidra_get_xrefs_to",
+      "address": "0x00ba9370",
+      "observation": "Ghidra reports 209 unconditional call xrefs."
+    },
+    {
+      "tool": "ghidra_audit_globals_in_function",
+      "address": "0x00ba9370",
+      "observation": "No direct global references occur in the target body; the receiver reaches the map through this+0x150."
+    },
+    {
+      "tool": "ghidra_get_struct_layout",
+      "struct_name": "cStarManager",
+      "observation": "The live layout is 556 bytes with EmpiresMap at +0x150 and relationship-manager evidence at +0x204."
+    },
+    {
+      "tool": "ghidra_get_struct_layout",
+      "struct_name": "cEmpire",
+      "observation": "The live layout is 344 bytes. The identity word is observed at +0x84, while the imported field label at that offset is disputed."
+    },
+    {
+      "tool": "ghidra_get_xrefs_to",
+      "address": "0x0167eae4",
+      "observation": "The alternate star root has two direct reads, from 0x00b3d2a0 and 0x00b3d2c0, and no recovered direct writer in this session."
+    },
+    {
+      "tool": "ghidra_get_function_callers",
+      "address": "0x00e5c780",
+      "observation": "The shared guarded-search dependency has 239 direct caller functions and 308 call xrefs in the live program."
+    }
+  ],
+  "persisted_evidence": [
+    {
+      "source": "reconstruction/metadata/pkg20-gameglobal/00e5c780.json",
+      "observation": "The shared PKG-20 handoff records the observed final candidate check and successor rejection. The wrapper remains dependent on the helper's non-anchor output and does not independently validate the node key."
+    },
+    {
+      "source": "knowledgegraph/research/root-closure/track-e-empire-chain.md",
+      "observation": "Prior persistence described this wrapper as lower-bound/ceiling and successor-tolerant. That description is superseded for this staged wrapper by the guarded-result dependency adjudication."
+    },
+    {
+      "source": "knowledgegraph/research/semantic-decomp/worker-01-gameglobal.json",
+      "observation": "The current persisted worker contract records the observed final candidate check and successor rejection; the exact-key final check is not an unconditional hit guarantee when a greater right-side candidate is retained."
+    }
+  ],
+  "model_tests": [
+    "0xffffffff rejects before receiver dereference",
+    "an exact existing key with a greater right child returns the map anchor and empire lookup returns null",
+    "an accepted exact-key candidate with no greater right-side candidate returns the payload pointer stored at node +0x14",
+    "below, in-between, and above queries return null",
+    "empty map returns null",
+    "an accepted exact-key candidate with a null payload returns null"
+  ],
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/pkg20-gameglobal reconstruction/staging/pkg11-sim-core/empire_lookup.cpp",
+    "model_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg20-gameglobal reconstruction/staging/pkg20-gameglobal/map_search.cpp reconstruction/staging/pkg11-sim-core/empire_lookup.cpp reconstruction/staging/pkg11-sim-core/empire_lookup_model_test.cpp -o /tmp/opencode/pkg11-empire-lookup-model && /tmp/opencode/pkg11-empire-lookup-model",
+    "format_command": "clang-format --dry-run --Werror -style=\"{BasedOnStyle: Google, FixNamespaceComments: false}\" reconstruction/staging/pkg11-sim-core/empire_lookup.hpp reconstruction/staging/pkg11-sim-core/empire_lookup.cpp reconstruction/staging/pkg11-sim-core/empire_lookup_model_test.cpp",
+    "json_command": "python3 -m json.tool reconstruction/metadata/pkg11-sim-core/00ba9370.json >/dev/null",
+    "syntax_result": "passed",
+    "model_result": "passed; sentinel rejection, exact payload offset, guarded-hybrid right-child rejection, in-between rejection, empty map, null payload, and x86-32 execution",
+    "format_result": "passed",
+    "json_result": "passed",
+    "assembly_result": "passed; x86-32 object contains the +0x150 map load, +0x154 anchor comparison, +0x14 payload load, and ret 4",
+    "status": "verified_static_staging"
+  },
+  "unresolved_questions": [
+    "What code publishes, replaces, or clears the alternate star root at 0x0167eae4?",
+    "Is the alternate root value-equal to the canonical star-manager slot for the full lifecycle?",
+    "Does every map entry's key remain synchronized with the payload's cEmpire identity at +0x84?",
+    "Can the alternate manager be null while a non-invalid current-player ID is present?",
+    "What are the ownership and teardown rules for the borrowed empire pointer?",
+    "The imported Ghidra cEmpire field label at +0x84 is not treated as authoritative for this wrapper."
+  ],
+  "blockers": [
+    "No runtime trace validates the shared map dependency under concurrent mutation.",
+    "The concrete empire subtype and complete cStarManager identity remain outside this wrapper's body.",
+    "The receiver root slot and empire-map payload ownership are not closed by this function alone."
+  ]
+}

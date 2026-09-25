@@ -1,0 +1,80 @@
+{
+  "schema": "pkg10-editor-dispatch.function-handoff.v1",
+  "package": "PKG-10-EDITOR-DISPATCH",
+  "address": "0x005ca960",
+  "symbol": "editor_query_service_005ca960",
+  "role": "target",
+  "source_files": [
+    "reconstruction/staging/pkg10-editor-dispatch/editor_query_helpers.hpp",
+    "reconstruction/staging/pkg10-editor-dispatch/editor_query_helpers.cpp",
+    "reconstruction/staging/pkg10-editor-dispatch/editor_query_helpers_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "OpaqueService * __cdecl editor_query_service_005ca960(OpaqueService *service);",
+  "abi": {
+    "return_type": "OpaqueService *",
+    "return_register": "EAX",
+    "calling_convention": "cdecl-compatible one-stack-word accessor",
+    "stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "ESP+0x04",
+        "type": "OpaqueService *",
+        "width_bytes": 4,
+        "observed_use": "Service whose vtable slot +0x0c is called"
+      }
+    ],
+    "stack_cleanup_bytes": 0,
+    "termination": "RET",
+    "null_result": "Null input returns zero in EAX"
+  },
+  "mechanics": {
+    "order": [
+      "Load the service pointer from ESP+0x04.",
+      "If the pointer is null, return zero.",
+      "Load the service vtable pointer from service+0x00.",
+      "Load vtable slot +0x0c and call it with ECX=service and stack literal 0x8ed27e7a.",
+      "Return the 32-bit callback result without adding a local guard."
+    ],
+    "indirect_callback": {
+      "vtable_offset": "0x0c",
+      "key": "0x8ed27e7a",
+      "contract": "OpaqueService * __thiscall(OpaqueService *, std::uint32_t)",
+      "return_use": "The full 32-bit EAX result is returned to the caller."
+    },
+    "null_paths": "Only the outer service pointer is checked. A null vtable or callback slot remains a live fault path."
+  },
+  "call_graph": {
+    "direct_callers": 13,
+    "function_xrefs": 29,
+    "direct_callees": [],
+    "representative_callers": [
+      {"address": "0x005e0000", "use": "Dispatch-pair secondary-target acquisition"},
+      {"address": "0x00817040", "use": "Additional service dispatch caller"},
+      {"address": "0x00995b20", "use": "Additional service dispatch caller"},
+      {"address": "0x01072d40", "use": "Space/editor service boundary caller"}
+    ]
+  },
+  "evidence": [
+    {"tool": "ghidra_decompile_function", "address": "0x005ca960", "observation": "The function checks the input pointer, loads vtable slot +0x0c, and calls it with 0x8ed27e7a."},
+    {"tool": "ghidra_disassemble_function", "address": "0x005ca960", "observation": "The exact body is stack load, null branch, vtable load, literal push, indirect call, and RET."},
+    {"tool": "ghidra_get_function_callers", "address": "0x005ca960", "observation": "Thirteen direct caller functions are present."},
+    {"tool": "ghidra_get_function_xrefs", "address": "0x005ca960", "observation": "Twenty-nine direct call references are present."},
+    {"tool": "ghidra_get_function_callees", "address": "0x005ca960", "observation": "No direct callee is reported because the only operation is an indirect vtable call."}
+  ],
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/pkg10-editor-dispatch reconstruction/staging/pkg10-editor-dispatch/editor_query_helpers.cpp",
+    "model_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg10-editor-dispatch reconstruction/staging/pkg10-editor-dispatch/editor_query_helpers.cpp reconstruction/staging/pkg10-editor-dispatch/editor_query_helpers_model_test.cpp -o /tmp/opencode/pkg10-query-helpers && /tmp/opencode/pkg10-query-helpers",
+    "format_command": "clang-format --dry-run --Werror -style=\"{BasedOnStyle: Google, FixNamespaceComments: false}\" reconstruction/staging/pkg10-editor-dispatch/editor_query_helpers.hpp reconstruction/staging/pkg10-editor-dispatch/editor_query_helpers.cpp reconstruction/staging/pkg10-editor-dispatch/editor_query_helpers_model_test.cpp",
+    "json_command": "python3 -m json.tool reconstruction/metadata/pkg10-editor-dispatch/005ca960.json >/dev/null"
+  },
+  "unresolved_questions": [
+    "Which concrete service owners install the vtable used at slot +0x0c?",
+    "What does the literal 0x8ed27e7a select in each owner?",
+    "What lifetime and aliasing rules apply to the returned service pointer?"
+  ],
+  "blockers": [
+    "The indirect owner and callback semantics are unresolved.",
+    "Null vtable and null callback paths remain untyped live fault paths and are not normalized."
+  ]
+}

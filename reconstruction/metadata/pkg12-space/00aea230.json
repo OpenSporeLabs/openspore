@@ -1,0 +1,88 @@
+{
+  "schema": "pkg12-space-comm-event-lifecycle-handoff-v1",
+  "package": "PKG-12-SIM-SPACE",
+  "address": "0x00aea230",
+  "ghidra_name": "FUN_00aea230",
+  "identity": "raw string-range assignment into the manager +0x64 slot",
+  "source_files": [
+    "reconstruction/staging/pkg12-space/space_comm_event_lifecycle.hpp",
+    "reconstruction/staging/pkg12-space/space_comm_event_lifecycle.cpp",
+    "reconstruction/staging/pkg12-space/space_comm_event_lifecycle_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "void* __thiscall pkg12_re_00aea230(cCommManager* manager, cCommStringRange* range);",
+  "scope_guard": {
+    "event_type": "No cCommEvent operation occurs in this function.",
+    "manager": "Opaque. The directly observed target address is manager +0x64; no manager ownership layout is promoted.",
+    "string": "The range is passed as raw begin/end pointers to a pointer-returning string-assignment boundary; 0x00aea230 preserves that EAX result."
+  },
+  "abi": {
+    "calling_convention": "__thiscall",
+    "receiver": {
+      "register": "ECX",
+      "type": "cCommManager*",
+      "width_bytes": 4
+    },
+    "stack_arguments": [
+      {"position": 1, "entry_offset": "ESP+0x04", "name": "range", "type": "cCommStringRange*", "fields": ["begin", "end"]}
+    ],
+    "stack_cleanup_bytes": 4,
+    "return_register": "EAX",
+    "return_type": "void*",
+    "return_width_bytes": 4,
+    "termination": "RET 0x4"
+  },
+  "raw_body_hex": "8b44240483c1643bc1740c8b50048b005050e869aa96ffc20400",
+  "mechanics": {
+    "target_slot": "manager +0x64",
+    "self_range_check": "If the range pointer equals manager +0x64, the assignment call is skipped.",
+    "assignment_arguments": ["manager +0x64", "range->begin", "range->end"],
+    "call_order": [
+      "load the range pointer",
+      "compare it with manager +0x64",
+      "when equal, preserve the range pointer in the pointer return",
+      "when different, call FUN_00454cb0 with the target slot and raw begin/end range",
+      "return the FUN_00454cb0 pointer unchanged in EAX with RET 0x4"
+    ],
+    "string_width": "The live decompiler labels the downstream type string16, but the observed caller literals are byte strings copied through begin/end pointers. No character-width conversion is performed by 0x00aea230."
+  },
+  "downstream_string_boundary": {
+    "address": "0x00454cb0",
+    "observed_behavior": "The downstream function returns its target object pointer in EAX, copies the supplied range into the target string object, preserves existing capacity when possible, or grows/reassigns through FUN_00455d60 when required.",
+    "staging_boundary": "The model hook verifies the target and range and copies the raw bytes without claiming the full allocator/string implementation."
+  },
+  "call_graph": {
+    "direct_callers": ["0x0102d1b0"],
+    "direct_callees": ["0x00454cb0"],
+    "function_xref_count_live": 2
+  },
+  "evidence": [
+    {"tool": "ghidra_decompile_function", "address": "0x00aea230", "observation": "The function conditionally passes range begin/end to FUN_00454cb0 after adding 0x64 to the receiver."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00aea230", "observation": "The complete body is compare, two-word load, two pushes, one call, and RET 4."},
+    {"tool": "ghidra_get_function_callers", "address": "0x00aea230", "observation": "The existing Space function 0x0102d1b0 is the only direct caller."},
+    {"tool": "ghidra_get_function_callees", "address": "0x00aea230", "observation": "FUN_00454cb0 is the only direct callee."},
+    {"tool": "ghidra_get_function_xrefs", "address": "0x00aea230", "observation": "Two code references originate in 0x0102d1b0."},
+    {"tool": "ghidra_get_assembly_context", "addresses": ["0x0102d56d", "0x0102d7a3"], "observation": "Both callers pass allocated literal ranges after writing a terminating zero byte, then conditionally release the allocation."},
+    {"tool": "ghidra_decompile_function", "address": "0x00454cb0", "observation": "The downstream string assignment uses memcpy and either tail cleanup or a growth path; the source function only forwards the range."}
+  ],
+  "model_tests": [
+    "raw UTF-16-shaped range forwarding to manager +0x64",
+    "raw byte-range contents are copied without width conversion",
+    "self-range pointer skips the assignment call and returns that pointer",
+    "injected null FUN_00454cb0 return is forwarded as null",
+    "null range reaches the live dereference fault"
+  ],
+  "verification": {
+    "syntax_and_model": "passed: x86-32 syntax compile and focused model completed",
+    "format": "passed: clang-format --dry-run --Werror with Google style and namespace comments disabled",
+    "json": "passed: python3 -m json.tool"
+  },
+  "unresolved_questions": [
+    "The authoritative cCommManager field containing the +0x64 string object is not promoted because the imported layout is incomplete/conflicting.",
+    "The downstream string allocator and capacity policy remain outside this staging boundary."
+  ],
+  "blockers": [
+    "The live function dereferences a null range on the non-self path; it has no null guard.",
+    "The caller literals are byte strings despite the downstream decompiler's string16 type label."
+  ]
+}

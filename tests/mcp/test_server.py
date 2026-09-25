@@ -281,9 +281,18 @@ class TestLaunch(ServerBase):
         self.assertIsNone(self.srv.proc.poll(), "server died on launch")
         result = self.assert_rpc_ok(
             self.srv.request("initialize", {}, req_id=1), 1)
-        self.assertEqual(result["server"], "openspore-mcp")
-        self.assertTrue(result["version"], result)
-        self.assertEqual(result["tools"], 21, result)
+        self.assertEqual(result, {
+            "protocolVersion": "2025-06-18",
+            "capabilities": {"tools": {"listChanged": False}},
+            "serverInfo": {
+                "name": "openspore-mcp",
+                "version": "0.1.0",
+            },
+        })
+        self.assertNotIn("server", result)
+        self.assertNotIn("version", result)
+        self.assertNotIn("protocol", result)
+        self.assertNotIn("tools", result)
         # Still alive after the handshake: launch implies persistence.
         self.assertIsNone(self.srv.proc.poll())
 
@@ -812,7 +821,7 @@ class TestFreshClone(ServerBase):
         self.start_server(extra={"HOME": home})
         result = self.assert_rpc_ok(
             self.srv.request("initialize", {}, req_id=131), 131)
-        self.assertEqual(result["tools"], 21)
+        self.assertEqual(result["serverInfo"]["name"], "openspore-mcp")
         result = self.assert_rpc_ok(
             self.srv.request("tools/list", None, req_id=132), 132)
         self.assertEqual(len(result["tools"]), 21)
@@ -827,7 +836,7 @@ class TestFreshClone(ServerBase):
         self.start_server(extra={"OPENSPORE_ROOT": empty_root})
         result = self.assert_rpc_ok(
             self.srv.request("initialize", {}, req_id=141), 141)
-        self.assertEqual(result["tools"], 21, result)
+        self.assertEqual(result["serverInfo"]["name"], "openspore-mcp", result)
 
         resp = self.srv.call_tool("asset_resolve", {}, req_id=142)
         result = self.assert_inband(resp, 142)

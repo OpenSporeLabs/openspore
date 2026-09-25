@@ -1,0 +1,123 @@
+{
+  "schema": "pkg14-a1-world-state-function-handoff-v1",
+  "package": "PKG-14-A1-WORLD-STATE",
+  "function_address": "0x007c3c20",
+  "ghidra_name": "FUN_007c3c20",
+  "normalized_symbol": "world_viewer_set_background_007c3c20",
+  "source_files": [
+    "reconstruction/staging/pkg14-a1-world-state/world_state.hpp",
+    "reconstruction/staging/pkg14-a1-world-state/world_state.cpp",
+    "reconstruction/staging/pkg14-a1-world-state/world_state_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "void __thiscall world_viewer_set_background_007c3c20(OpaqueWorldViewer* viewer, const std::uint32_t* source);",
+  "abi": {
+    "return_type": "void",
+    "return_register": null,
+    "calling_convention": "thiscall",
+    "hidden_this_register": "ECX",
+    "hidden_this_type": "OpaqueWorldViewer*",
+    "stack_arguments": [
+      {"position": 1, "entry_offset": "ESP+0x04", "name": "source", "type": "const std::uint32_t*", "width_bytes": 4}
+    ],
+    "stack_cleanup_bytes": 4,
+    "termination": "RET 0x4",
+    "model_status": "exact x86-32 direct-call boundary"
+  },
+  "body": {
+    "status": "reconstructed",
+    "entry_address": "0x007c3c20",
+    "body_addresses": ["0x007c3c20", "0x007c3c49"],
+    "mechanics": [
+      "Copy source[0] to receiver+0x140.",
+      "Copy source[1] to receiver+0x144.",
+      "Copy source[2] to receiver+0x148.",
+      "Copy source[3] to receiver+0x14c.",
+      "Perform no reads, writes, calls, container mutation, or event creation beyond the four word copies."
+    ]
+  },
+  "target_layout": {
+    "receiver_size_bytes": 372,
+    "receiver_fields": [
+      {"offset": "0x140", "size_bytes": 16, "meaning": "four-word opaque background/state block"},
+      {"offset": "0x144", "size_bytes": 4, "meaning": "second word in the opaque block"},
+      {"offset": "0x148", "size_bytes": 4, "meaning": "third word in the opaque block"},
+      {"offset": "0x14c", "size_bytes": 4, "meaning": "fourth word in the opaque block"}
+    ],
+    "evidence": "Ghidra App::cViewer layout reports the 0x140 block and the target decompilation proves all four word stores."
+  },
+  "call_graph": {
+    "direct_callers": {
+      "ghidra_count": 21,
+      "representative_functions": [
+        "0x007c6750 App::cCameraManager::SetActiveCameraByID",
+        "0x005812b0",
+        "0x006e3100",
+        "0x006e8810",
+        "0x00fa3860",
+        "0x00fa6480"
+      ]
+    },
+    "direct_callees": []
+  },
+  "evidence": [
+    {
+      "tool": "ghidra_get_function_by_address",
+      "address": "0x007c3c20",
+      "observation": "Ghidra reports FUN_007c3c20 at 0x007c3c20 with body range 0x007c3c20-0x007c3c49."
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x007c3c20",
+      "observation": "Live decompilation proves four unconditional 32-bit source-to-receiver copies and no other operations."
+    },
+    {
+      "tool": "ghidra_get_function_callers",
+      "address": "0x007c3c20",
+      "observation": "Ghidra reports 21 direct callers, including App::cCameraManager::SetActiveCameraByID."
+    },
+    {
+      "tool": "ghidra_get_function_callees",
+      "address": "0x007c3c20",
+      "observation": "Ghidra reports no direct callees."
+    },
+    {
+      "tool": "ghidra_get_struct_layout",
+      "type": "cViewer",
+      "observation": "The imported cViewer layout corroborates the receiver+0x140 four-word block."
+    }
+  ],
+  "confidence": {
+    "overall": "high for thiscall ABI, four word offsets, and copy ordering",
+    "high": [
+      "ECX receiver and ESP+0x04 source pointer",
+      "four consecutive 32-bit stores",
+      "RET 0x4",
+      "absence of callees"
+    ],
+    "medium": [
+      "semantic identity of the four-word block",
+      "whether every caller uses cViewer rather than a structurally equivalent receiver"
+    ],
+    "low": []
+  },
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only reconstruction/staging/pkg14-a1-world-state/world_state.cpp reconstruction/staging/pkg14-a1-world-state/world_state_model_test.cpp",
+    "model_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror reconstruction/staging/pkg14-a1-world-state/world_state.cpp reconstruction/staging/pkg14-a1-world-state/world_state_model_test.cpp -o /tmp/opencode/pkg14-a1-world-state-model-test && /tmp/opencode/pkg14-a1-world-state-model-test",
+    "json_command": "python3 -m json.tool reconstruction/metadata/pkg14-a1-world-state/007c3c20.json >/dev/null",
+    "results": {
+      "syntax": "passed",
+      "model": "passed",
+      "json": "passed",
+      "format": "passed"
+    }
+  },
+  "unresolved_questions": [
+    "The four-word block has no proven color, terrain, or renderer semantic identity from this function alone.",
+    "Caller receiver types are not assumed to be identical merely because they reach this common helper."
+  ],
+  "blockers": [
+    "No runtime source values or downstream reader semantics are available.",
+    "The receiver layout remains an evidence-bounded opaque layout."
+  ]
+}

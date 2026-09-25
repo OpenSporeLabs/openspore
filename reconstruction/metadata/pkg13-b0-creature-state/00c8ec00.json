@@ -1,0 +1,84 @@
+{
+  "schema": "pkg13-creature-state.function-handoff.v1",
+  "package": "PKG-13-SIM-CREATURE-TRIBECIV",
+  "function_address": "0x00c8ec00",
+  "ghidra_name": "Simulator::cTribeArchetype::GetTribeArchetype",
+  "normalized_symbol": "TribeState_test_purchased_tool_bit_00c8ec00",
+  "source_files": [
+    "reconstruction/staging/pkg13-b0-creature-state/creature_state.hpp",
+    "reconstruction/staging/pkg13-b0-creature-state/creature_state.cpp",
+    "reconstruction/staging/pkg13-b0-creature-state/creature_state_test.cpp"
+  ],
+  "phase": "body-reconstruction-after-semantic-and-abi-repair",
+  "declaration": "std::uint32_t TribeState_test_purchased_tool_bit_00c8ec00(OpaqueTribeState* receiver, std::uint32_t tool_index);",
+  "abi": {
+    "calling_convention": "thiscall",
+    "hidden_this": "ECX receiver",
+    "stack_arguments": [
+      {"position": 1, "entry_offset": "ESP+0x04", "type": "std::uint32_t", "width_bytes": 4, "observed_use": "Copied to ECX and used as the x86 shift count; x86 masks the count to five bits"}
+    ],
+    "stack_cleanup_bytes": 4,
+    "return_register": "EAX",
+    "return_width_bytes": 4,
+    "return_semantics": "Returns exactly 0 or 1. The imported cTribeArchetype* signature is not treated as a real object-pointer return because the direct caller immediately executes TEST AL,AL and the body contains no address load."
+  },
+  "body": {
+    "status": "reconstructed",
+    "entry_address": "0x00c8ec00",
+    "body_addresses": ["0x00c8ec00", "0x00c8ec1d"],
+    "instruction_count": 10,
+    "basic_block_count": 1,
+    "raw_bytes": "8bc18b4c24048bd8190000ba01000000d3e223c2f7d81bc0f7d8c20400",
+    "mechanics": [
+      "ECX receiver is moved to EAX, then the stack index argument replaces ECX.",
+      "The receiver word at +0x19d8 is loaded without a null or bounds check.",
+      "EDX is set to 1 and shifted left by CL; x86 shift-count masking reduces the index modulo 32.",
+      "AND EAX,EDX selects the requested bit.",
+      "NEG EAX; SBB EAX,EAX; NEG EAX normalizes any nonzero masked value to exactly 1 and zero to exactly 0.",
+      "RET 4 removes the stack argument."
+    ]
+  },
+  "state_evidence": {
+    "receiver_type": "OpaqueTribeState",
+    "field": {"offset": "0x19d8", "width_bytes": 4, "meaning": "purchased-tool bit mask; persisted SDK cTribe layout names this field mPurchasedTools"},
+    "receiver_type_boundary": "The imported cTribeArchetype structure is only 0xb8 bytes and cannot contain +0x19d8. The direct caller supplies a separate state pointer after obtaining the index through a manager virtual. The source therefore uses a bounded OpaqueTribeState rather than fabricating inheritance or reusing cTribeArchetype.",
+    "index_transform": "shift_count = tool_index & 0x1f through x86 SHL behavior",
+    "return_meaning_boundary": "The body proves a bit-test predicate. It does not prove a valid object pointer or a complete purchased-tool semantic contract.",
+    "null_and_sentinel_behavior": "No null check exists. A null receiver is an invalid unchecked dereference. index 32 selects bit 0; all-ones selects bit 31; no enum validation or out-of-range branch exists."
+  },
+  "call_graph": {
+    "direct_callers": ["0x00d10f90"],
+    "direct_callees": [],
+    "function_xrefs": ["0x00d115e5"]
+  },
+  "evidence": [
+    {"tool": "ghidra_get_function_by_address", "address": "0x00c8ec00", "observation": "Live function range is 0x00c8ec00 through 0x00c8ec1d; the imported method and pointer-return label are not independently corroborated by layout or use."},
+    {"tool": "ghidra_decompile_function", "address": "0x00c8ec00", "observation": "Live decompilation shows receiver+0x19d8, byte-masked index, and bit-0x1f selection."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00c8ec00", "observation": "Exact assembly shows ECX receiver, stack argument, x86 shift, NEG/SBB/NEG normalization, and RET 4."},
+    {"tool": "ghidra_read_memory", "address": "0x00c8ec00", "observation": "Raw bytes confirm offset 0x19d8, one-bit shift, exact 0/1 normalization, and callee stack cleanup."},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x00d115b4", "observation": "The direct caller obtains a stack index through a virtual, loads a state receiver into ECX, calls 0x00c8ec00, then executes TEST AL,AL."},
+    {"tool": "ghidra_get_function_callers", "address": "0x00c8ec00", "observation": "One direct caller at 0x00d10f90 was reported."},
+    {"tool": "persisted_sdk_layout", "artifact": ".spore-analysis/ghidra-exports/spore_sdk.xml", "observation": "cTribe is 0x19e0 bytes with mPurchasedTools at +0x19d8, while cTribeArchetype is only 0xb8 bytes."}
+  ],
+  "confidence": {
+    "body": "high",
+    "field_offset": "high",
+    "thiscall_and_cleanup": "high",
+    "raw_predicate_return": "high",
+    "purchased_tool_field_meaning": "medium-high; persisted SDK layout plus direct caller flow",
+    "imported_cTribeArchetype_receiver_identity": "rejected"
+  },
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -fsyntax-only reconstruction/staging/pkg13-b0-creature-state/creature_state.cpp reconstruction/staging/pkg13-b0-creature-state/creature_state_test.cpp",
+    "model_test_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic reconstruction/staging/pkg13-b0-creature-state/creature_state.cpp reconstruction/staging/pkg13-b0-creature-state/creature_state_test.cpp -o /tmp/opencode/pkg13-creature-state-test && /tmp/opencode/pkg13-creature-state-test",
+    "json_check": "python3 -m json.tool reconstruction/metadata/pkg13-b0-creature-state/00c8ec00.json"
+  },
+  "unresolved_questions": [
+    "The exact concrete state owner at ECX is not fully reconstructed, although the persisted layout and caller flow identify a tribe-state-shaped receiver.",
+    "The semantic producer and complete meaning of all 32 purchased-tool bits remain unresolved.",
+    "No original-process mask value or caller outcome has been observed."
+  ],
+  "blockers": [
+    "The receiver's runtime mask values and concrete owner remain gated."
+  ]
+}

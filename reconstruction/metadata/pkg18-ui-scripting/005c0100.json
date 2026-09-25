@@ -1,0 +1,182 @@
+{
+  "schema": "pkg18-ui-scripting-function-handoff-v1",
+  "package": "pkg18-ui-scripting",
+  "function_address": "0x005c0100",
+  "ghidra_name": "FUN_005c0100",
+  "source_files": [
+    "reconstruction/staging/pkg18-ui-scripting/ui_shell_functions.hpp",
+    "reconstruction/staging/pkg18-ui-scripting/ui_shell_functions.cpp",
+    "reconstruction/staging/pkg18-ui-scripting/ui_shell_functions_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "included": true,
+  "body_implementation": true,
+  "body_range": {
+    "entry": "0x005c0100",
+    "body_end": "0x005c031b",
+    "last_return": "0x005c0319"
+  },
+  "abi": {
+    "receiver": {
+      "register": "ECX",
+      "type": "opaque UI shell",
+      "width_bytes": 4
+    },
+    "stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "ESP+0x04",
+        "name": "unused",
+        "type": "opaque uint32",
+        "width_bytes": 4
+      },
+      {
+        "position": 2,
+        "entry_offset": "ESP+0x08",
+        "name": "message",
+        "type": "opaque UI message pointer",
+        "width_bytes": 4
+      }
+    ],
+    "stack_cleanup_bytes": 8,
+    "termination": "RET 0x8",
+    "return_observation": "AL is one for handled message shapes and zero for unmatched shapes."
+  },
+  "opaque_contracts": {
+    "shell": "OpaqueUiShell",
+    "message": "OpaqueUiMessage",
+    "service": "OpaqueUiObject",
+    "message_fields": {
+      "owner_pointer": "message+0x04",
+      "message_type": "message+0x08",
+      "message_subtype": "message+0x0c",
+      "input_subtype": "message+0x10",
+      "input_flags": "message+0x14",
+      "activation_argument": "message+0x14"
+    },
+    "shell_fields": {
+      "enabled": "shell+0x10",
+      "service_manager": "shell+0x18",
+      "activation_service": "shell+0x34",
+      "name_source": "shell+0x20"
+    }
+  },
+  "dispatch": [
+    {
+      "message_type": "0x00000001",
+      "subtype": "0x0000000d or 0x0000001b",
+      "condition": "message+0x14 flags masked with 0x47 are zero and shell+0x10 is non-zero",
+      "action": "call shell vtable+0x1c(0), then presentation vtable+0x4c(0,shell+0x34)",
+      "return": "true"
+    },
+    {
+      "message_type": "0x00000001",
+      "subtype": "0x00000009",
+      "condition": "message+0x04 is non-null",
+      "action": "read owner vtable+0x1c; for owner id 0xc7ceb1bd submit lookup 0xaddc11ef; for owner id 0xaddc11ef submit lookup 0x05415e48 then fallback 0xc7ceb1bd; for owner id 0x05415e48 submit lookup 0xc7ceb1bd; each submission uses presentation vtable+0x4c(0,service)",
+      "return": "true only when a service is found and submitted"
+    },
+    {
+      "message_type": "0x00000018",
+      "subtype": "0x00000001",
+      "condition": "message+0x0c equals 1",
+      "action": "call shell vtable+0x1c(message+0x14 equals 1)",
+      "return": "true"
+    },
+    {
+      "message_type": "0x287259f6",
+      "subtype": "0x00000002",
+      "condition": "message+0x0c equals 2",
+      "action": "read application vtable+0x20 when available, call 0x00435ed0(0xa03e74b2,value), call 0x004010a0 with shell+0x20 and a three-word output, call 0x005ecf80 with the same two stack words, forward output[0] through 0x005bf950, and free only when the masked output span is greater than 2 and output[0] is non-zero",
+      "return": "true"
+    }
+  ],
+  "branch_order": [
+    "Test message+0x08 against 1 first.",
+    "Within type 1, test subtype 0x0d/0x1b before subtype 9.",
+    "After type 1 fails, test 0x18 before 0x287259f6.",
+    "Unmatched type, subtype, owner, and service states return false."
+  ],
+  "call_graph": {
+    "direct_callers": [
+      {
+        "address": "0x00edb94c",
+        "ghidra_name": "FUN_00edb750"
+      }
+    ],
+    "code_xrefs": [
+      {
+        "address": "0x00edb94c",
+        "type": "UNCONDITIONAL_CALL",
+        "context": "FUN_00edb750 passes its original message id and message pointer"
+      }
+    ],
+    "data_xrefs": [
+      {
+        "address": "0x013f7ba8",
+        "type": "DATA",
+        "value": "0x005c0100",
+        "context": "function-pointer table entry"
+      }
+    ],
+    "direct_callees": [
+      "FUN_00435ed0",
+      "FUN_005bf950",
+      "FUN_005ecf80",
+      "FUN_0067caa0",
+      "FUN_008105b0",
+      "FUN_00a206f0",
+      "FUN_00f47380",
+      "Simulator::cSpaceNames::Get"
+    ]
+  },
+  "registration": {
+    "table_address": "0x013f7b70",
+    "target_word": "0x013f7ba8",
+    "target_value": "0x005c0100",
+    "adjacent_target_words": [
+      "0x013f7b84=0x005bf9d0",
+      "0x013f7bac=0x005c0380"
+    ],
+    "ownership": "The table is a UI function-pointer table; its registration owner remains opaque."
+  },
+  "evidence": [
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x005c0100",
+      "observation": "The body has the type 1, type 0x18, and 0x287259f6 branches, the owner-id fallback chain, and the space-name text handoff described above."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x005c0100",
+      "observation": "The raw body reads the message pointer at ESP+0x08, preserves the branch order, keeps the first stack argument unused, and ends with RET 0x8."
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x00edb750",
+      "observation": "The direct caller forwards its original param_2 and param_3 to FUN_005c0100, confirming the two-stack-word adapter contract."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x004010a0",
+      "observation": "The raw function returns the global cSpaceNames pointer without consuming its two pushed words; the following 0x005ecf80 call receives those same output/value words and cleans RET 0x8."
+    }
+  ],
+  "model_tests": [
+    "type 1 input activation and presentation submission",
+    "owner-id route and service fallback",
+    "type 0x18 state forwarding",
+    "type 0x287259f6 space-name setup, text forwarding, and span-gated free",
+    "unmatched message null return"
+  ],
+  "unresolved_questions": [
+    "The concrete UI shell, service, presentation, and cSpaceNames owners remain unresolved.",
+    "The three-word output and owner type at message+0x04 remain opaque.",
+    "The cSpaceNames thunk's ignored first stack words are preserved because the following thiscall consumes them."
+  ],
+  "non_goals": [
+    "No merge with src/reconstruction/pkg18_ui_space.",
+    "No merge with App messages, Space events, or timeline records.",
+    "No interpretation of the unresolved owner/service/presentation vtables beyond observed offsets and widths."
+  ]
+}

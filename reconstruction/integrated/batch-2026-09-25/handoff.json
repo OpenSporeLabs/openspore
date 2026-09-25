@@ -1,0 +1,94 @@
+{
+  "schema": "openspore-integrator-batch-handoff-1",
+  "batch": "batch-2026-09-25",
+  "date": "2026-09-25",
+  "review_status": "approved_after_semantic_and_abi_repair",
+  "integration_status": "integrated",
+  "packages": [
+    {
+      "id": "PKG-13-SIM-CREATURE-TRIBECIV",
+      "canonical_path": "src/reconstruction/pkg13_creature_state",
+      "copied_files": [
+        "src/reconstruction/pkg13_creature_state/creature_state.hpp",
+        "src/reconstruction/pkg13_creature_state/creature_state.cpp",
+        "src/reconstruction/pkg13_creature_state/creature_state_test.cpp"
+      ],
+      "evidence_files": [
+        "reconstruction/metadata/pkg13-b0-creature-state/00d2e350.json",
+        "reconstruction/metadata/pkg13-b0-creature-state/00d2e380.json",
+        "reconstruction/metadata/pkg13-b0-creature-state/00d2e490.json",
+        "reconstruction/metadata/pkg13-b0-creature-state/00c8ec00.json"
+      ],
+      "mechanically_reconstructed_bodies": 4,
+      "functions": [
+        "0x00d2e350",
+        "0x00d2e380",
+        "0x00d2e490",
+        "0x00c8ec00"
+      ]
+    }
+  ],
+  "canonical_file_sha256": {
+    "src/reconstruction/pkg13_creature_state/creature_state.hpp": "681be039bf6414ffbc65a83717ddca020dea5fe508acaa025cdfd6cc5db0889e",
+    "src/reconstruction/pkg13_creature_state/creature_state.cpp": "41a0647ddc00960e962d47430c3d6db3ccfb0af1af67bd97a8de0b76bdf0a192",
+    "src/reconstruction/pkg13_creature_state/creature_state_test.cpp": "10f504270de57541cf46a45f113056a1c8c9fb890826b70babecb1d1d757340a"
+  },
+  "reviews": [
+    {
+      "role": "semantic",
+      "status": "pass_after_repair",
+      "scope": "branch fidelity, domain bounds, caller consistency, state and event separation, null/sentinel behavior, focused test semantics"
+    },
+    {
+      "role": "abi_type",
+      "status": "pass_after_repair",
+      "scope": "x86-32 signatures, stack/local/receiver distinction, return widths, function-pointer vtable slot, field offset, shift behavior, cleanup, linkage"
+    }
+  ],
+  "repairs": [
+    "Replaced the unsupported cTribeArchetype receiver and pointer-return interpretation with a bounded OpaqueTribeState receiver and exact raw 0/1 predicate after caller and persisted-layout contradiction.",
+    "Replaced the vtable+0xd8 object-pointer carrier with an explicit thiscall function-pointer slot in source and test.",
+    "Corrected the 0x0169e398 writer xref from function entry 0x00d2e480 to instruction site 0x00d2e486.",
+    "Corrected 0x00d2e490 raw-byte provenance to address 0x00d2e490."
+  ],
+  "validation_commands": [
+    "cmake -S . -B build",
+    "cmake --build build -j",
+    "ctest --test-dir build -V",
+    "python3 -m unittest discover -s tests -t . -v",
+    "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -fsyntax-only <each integrated package source>",
+    "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic src/reconstruction/pkg13_creature_state/creature_state.cpp src/reconstruction/pkg13_creature_state/creature_state_test.cpp -o /tmp/opencode/pkg13-creature-state-canonical-test && /tmp/opencode/pkg13-creature-state-canonical-test",
+    "clang-format --dry-run --Werror -style=Google src/reconstruction/pkg13_creature_state/*",
+    "python3 -m json.tool knowledgegraph/research/source-reconstruction-manifest.json",
+    "git diff --check"
+  ],
+  "validation_results": {
+    "cmake_build": "passed",
+    "ctest": {"passed": 42, "failed": 0},
+    "python": {"status": "transient_blocked", "passed": 424, "failed": 3, "reason": "Another process held /tmp/openspore-machine.lock; the three failures are test_run lock-precedence assertions, not reconstruction behavior", "rerun_required": true},
+    "x86_32_syntax_packages": {"passed": 5, "failed": 0},
+    "focused_model_tests": {"passed": 2, "failed": 0},
+    "clang_format_pkg13": "passed",
+    "repository_wide_clang_format": "blocked by active unowned PKG-20 persistence-boundary files; those files were not modified",
+    "json_validation": "passed for manifest, four PKG-13 metadata files, and prior handoff",
+    "git_diff_check": "passed",
+    "runtime_validation": "not run; runtime_validated remains 0"
+  },
+  "runtime_gated": [
+    "0x00d2e350: observe global 0x0169e398",
+    "0x00d2e380: observe noun-manager/object availability, vtable+0xd8 implementation, and mutable thresholds",
+    "0x00d2e490: observe global 0x0169e394 and authoritative mode values",
+    "0x00c8ec00: observe concrete state owner, purchased-tools mask, and index producer"
+  ],
+  "next_frontier": {
+    "status": "ownership_refreshed",
+    "recommended_batch": ["0x00b3d3c0", "0x00d01410", "0x00d01ab0", "0x00d01ff0"],
+    "reserved_transitions": ["0x00d038e0", "0x00d01e30", "0x00d065a0", "0x00d06920", "0x00d06270"],
+    "deferred_boundary": "0x00c30e20 is a separate computed-jump entry, but it depends on incoming EAX preloaded by 0x00c30cc0; defer until that shared-default dispatch ABI is modeled explicitly."
+  },
+  "blockers": [
+    "No original-process validation was run; all four new records remain runtime-gated.",
+    "The full Python suite needs one rerun after the externally held machine lock is released.",
+    "Repository-wide formatting is temporarily blocked by another worker's active PKG-20 files; the integrated PKG-13 files pass formatting."
+  ]
+}

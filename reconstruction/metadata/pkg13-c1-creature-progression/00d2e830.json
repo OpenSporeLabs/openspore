@@ -1,0 +1,121 @@
+{
+  "schema": "pkg13-c1-creature-progression.function-handoff.v1",
+  "package": "PKG-13-SIM-CREATURE-TRIBECIV-C1",
+  "function_address": "0x00d2e830",
+  "ghidra_name": "FUN_00d2e830",
+  "normalized_symbol": "pkg13_progression_brain_level_00d2e830",
+  "source_files": [
+    "reconstruction/staging/pkg13-c1-creature-progression/creature_progression.hpp",
+    "reconstruction/staging/pkg13-c1-creature-progression/creature_progression.cpp",
+    "reconstruction/staging/pkg13-c1-creature-progression/creature_progression_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "ownership": "pkg13-c1-creature-progression",
+  "declaration": "std::int32_t PKG13_C1_CDECL pkg13_progression_brain_level_00d2e830();",
+  "signature": {
+    "normalized_form": "std::int32_t brain_level_00d2e830()",
+    "calling_convention": "cdecl-compatible no-argument entry",
+    "hidden_this": false,
+    "receiver": "none",
+    "stack_arguments": [],
+    "stack_cleanup_bytes": 0,
+    "local_stack_bytes": 8,
+    "preserved_registers": ["ESI"],
+    "return_register": "EAX",
+    "return_width_bytes": 4,
+    "return_semantics": "Returns level 0, 1, 2, or 3 at the first strict cumulative threshold crossing; returns sentinel 4 after all four requirements or for unordered comparison."
+  },
+  "body": {
+    "status": "staged_body_reconstructed",
+    "entry_address": "0x00d2e830",
+    "body_addresses": ["0x00d2e830", "0x00d2e893"],
+    "instruction_count": 32,
+    "basic_block_count": 4,
+    "raw_bytes": "83ec0856e8c7eae0ff8bc8e850952300f30f1080f0100000f30f114424080f57c0f30f1144240433f68da4240000000056e81afbffffd844240883c404d9542404d9442408d9c9dff1ddd877104683fe047cddb8040000005e83c408c38bc65e83c408c3",
+    "mechanics": [
+      "SUB ESP,0x8 and PUSH ESI establish an eight-byte local frame and preserve ESI.",
+      "Calls 0x00b3d300 with no arguments, moves its EAX result to ECX, and calls 0x00f67d90 as an ECX-only/fastcall-style accessor.",
+      "Reads the returned progression-player word at offset +0x10f0 into a local float before entering the loop.",
+      "Initializes the accumulated requirement to +0.0F and the level index ESI to zero.",
+      "For levels 0 through 3, pushes the index, calls 0x00d2e380 with one signed int stack argument, and removes that argument with ADD ESP,0x4.",
+      "Adds the returned threshold to the accumulated local and compares the cached current-points float against the rounded accumulated local with FCOMIP ST0,ST1.",
+      "The JA branch returns the current level only when current_points is strictly less than the cumulative requirement; equality advances to the next level.",
+      "After level 3, returns sentinel 4. No global write, allocation, release, event creation, or event dispatch occurs."
+    ]
+  },
+  "state_evidence": {
+    "root_chain": [
+      "0x00b3d300 reads global 0x0167eae0 and returns the noun-manager word.",
+      "0x00f67d90 receives that word in ECX and returns its +0x74 pointee word.",
+      "The returned progression-player access window is read at +0x10f0."
+    ],
+    "field": {
+      "path": "progression-player + 0x10f0",
+      "type": "float",
+      "width_bytes": 4,
+      "access": "read_once_before_loop",
+      "model_type": "ProgressionPlayerAccessWindow"
+    },
+    "requirement_source": "0x00d2e380 is called with level indices 0, 1, 2, and 3 in order; its exact integrated threshold body is an external dependency.",
+    "global_0169e398_relation": "This function does not read or write DAT_0169e398; it reads the separate progression-player field at +0x10f0.",
+    "sentinel_and_nan_behavior": "The FCOMIP/JA sequence uses strict ordered less-than. Equality advances; unordered comparisons, including NaN current points or NaN accumulated requirements, do not take JA and therefore end at sentinel 4.",
+    "null_behavior": "No null guard exists for the root word, returned player pointer, or port results; invalid native results fault at the corresponding dereference or call boundary.",
+    "event_behavior": "No event is created or dispatched; the function only selects a level value."
+  },
+  "call_graph": {
+    "direct_callers": ["0x00d3fcf0"],
+    "direct_callees": ["0x00b3d300", "0x00f67d90", "0x00d2e380"],
+    "function_xrefs": [
+      {"address": "0x00d3fd2f", "type": "UNCONDITIONAL_CALL", "from_function": "0x00d3fcf0"}
+    ],
+    "caller_evidence": "0x00d3fcf0 stores EAX after return, calls a later virtual through +0xdc, and compares the returned level to 4 at 0x00d3fd47; that later caller behavior is outside this target."
+  },
+  "dependencies": {
+    "integrated_dependencies": ["0x00d2e380 threshold accessor"],
+    "opaque_ports": [
+      "get_noun_manager models 0x00b3d300",
+      "get_progression_player models 0x00f67d90",
+      "get_level_requirement models 0x00d2e380"
+    ],
+    "unresolved_external_behavior": [
+      "Concrete noun-manager and progression-player types",
+      "Whether +0x10f0 is a current evolution-point field in every runtime subtype",
+      "Runtime values of the four mutable threshold globals"
+    ],
+    "ownership_boundary": "All root, player, and threshold objects are externally owned; this target only reads them and returns an index."
+  },
+  "evidence_provenance": [
+    {"tool": "ghidra_get_function_by_address", "address": "0x00d2e830", "observation": "Live function range is 0x00d2e830 through 0x00d2e893."},
+    {"tool": "ghidra_decompile_function", "address": "0x00d2e830", "observation": "Live decompilation shows root lookup, player lookup, +0x10f0 read, cumulative level loop, and return 4 fallback."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00d2e830", "observation": "Exact assembly proves the eight-byte frame, ESI preservation, x87 accumulation, FCOMIP/JA strict comparison, caller cleanup of the level argument, and plain RET."},
+    {"tool": "ghidra_read_memory", "address": "0x00d2e830", "observation": "Raw bytes confirm the 100-byte function body and the four call sites."},
+    {"tool": "ghidra_get_function_callers", "address": "0x00d2e830", "observation": "One direct caller function at 0x00d3fcf0 was reported."},
+    {"tool": "ghidra_get_function_callees", "address": "0x00d2e830", "observation": "Direct callees are 0x00b3d300, 0x00f67d90, and 0x00d2e380."},
+    {"tool": "ghidra_get_function_xrefs", "address": "0x00d2e830", "observation": "One direct call xref at 0x00d3fd2f from 0x00d3fcf0 was reported."},
+    {"tool": "ghidra_get_assembly_context", "address": "0x00d3fd2f", "observation": "The sole caller consumes EAX and later compares it with sentinel 4."}
+  ],
+  "runtime_gates": [
+    "Observe 0x0167eae0, the +0x74 returned object, the +0x10f0 float, and the four threshold globals in an original process.",
+    "Resolve concrete progression-player and noun-manager ownership and threshold writers.",
+    "No original-process level-selection trace has been run."
+  ],
+  "unresolved_questions": [
+    "The SDK semantic name for this selector is unresolved; the normalized symbol remains opaque.",
+    "The runtime relationship between the progression-player +0x10f0 field and DAT_0169e398 is not established by this body.",
+    "The later virtual action selected by the caller after sentinel 4 is outside this target."
+  ],
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only reconstruction/staging/pkg13-c1-creature-progression/creature_progression.cpp reconstruction/staging/pkg13-c1-creature-progression/creature_progression_model_test.cpp",
+    "model_test_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror reconstruction/staging/pkg13-c1-creature-progression/creature_progression.cpp reconstruction/staging/pkg13-c1-creature-progression/creature_progression_model_test.cpp -o /tmp/opencode/pkg13-c1-creature-progression-model && /tmp/opencode/pkg13-c1-creature-progression-model",
+    "format_command": "clang-format --dry-run --Werror --style='{BasedOnStyle: Google, FixNamespaceComments: false}' reconstruction/staging/pkg13-c1-creature-progression/creature_progression.hpp reconstruction/staging/pkg13-c1-creature-progression/creature_progression.cpp reconstruction/staging/pkg13-c1-creature-progression/creature_progression_model_test.cpp",
+    "results": {
+      "x86_32_syntax": "passed",
+      "focused_model_test": "passed",
+      "clang_format_dry_run": "passed",
+      "json_check": "passed"
+    }
+  },
+  "blockers": [
+    "Runtime object validity, field meaning, threshold values, and selector reachability remain gated."
+  ]
+}

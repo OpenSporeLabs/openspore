@@ -1,0 +1,75 @@
+{
+  "schema": "pkg13-diplomacy-transitions.function-handoff.v1",
+  "package": "PKG-13-SIM-DIPLOMACY-TRANSITIONS",
+  "function_address": "0x00d06920",
+  "ghidra_name": "FUN_00d06920",
+  "normalized_symbol": "DiplomacyTransition_00d06920",
+  "source_files": [
+    "reconstruction/staging/pkg13-diplomacy-transitions/diplomacy_transitions.hpp",
+    "reconstruction/staging/pkg13-diplomacy-transitions/diplomacy_transitions.cpp",
+    "reconstruction/staging/pkg13-diplomacy-transitions/diplomacy_transitions_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "void __thiscall DiplomacyTransition_00d06920(OpaqueRelationshipManager*, OpaqueTransitionRecord*, OpaqueTransitionRecord*);",
+  "abi": {
+    "calling_convention": "thiscall",
+    "hidden_this_register": "ECX",
+    "hidden_this_type": "OpaqueRelationshipManager*",
+    "stack_arguments": [
+      {"position": 1, "entry_offset": "ESP+0x04", "name": "first", "type": "OpaqueTransitionRecord*", "width_bytes": 4},
+      {"position": 2, "entry_offset": "ESP+0x08", "name": "second", "type": "OpaqueTransitionRecord*", "width_bytes": 4}
+    ],
+    "stack_cleanup_bytes": 8,
+    "return_type": "void",
+    "termination": "RET 0x8",
+    "pair_call_order": {
+      "first_call": {"receiver_register": "ECX", "receiver": "first record", "stack_argument": "second record"},
+      "second_call": {"receiver_register": "ECX", "receiver": "second record", "stack_argument": "first record"}
+    },
+    "event_dispatch": {
+      "calling_convention": "thiscall",
+      "receiver_register": "ECX",
+      "receiver_type": "OpaqueEventFactory*",
+      "stack_arguments": [
+        {"position": 1, "name": "event_id", "type": "OpaqueWord"},
+        {"position": 2, "name": "event_pointer", "type": "OpaqueEventRecord*"},
+        {"position": 3, "name": "zero", "type": "OpaqueWord"}
+      ],
+      "stack_cleanup_bytes": 12
+    },
+    "current_root": {"calling_convention": "cdecl", "return_type": "OpaqueCurrentRoot*"},
+    "current_empire_key": {"calling_convention": "thiscall", "receiver_register": "ECX", "receiver": "current_root", "member_offset": "0x1d8", "implementation": "0x00885c90"}
+  },
+  "layout": {"record_key_offset": "0x84", "entry_flags_offset": "0x04", "event_record": {"size": "0x3c", "vtable_offset": "0x00", "zero_offset": "0x04", "first_offset": "0x08", "second_offset": "0x10", "cleanup_bitmask_offset": "0x38"}, "current_root_empire_key_offset": "0x1d8", "post_selector": "0x68B2938", "float_argument": "1.0", "concrete_owner": "unresolved"},
+  "mechanics": {
+    "nested_transition": "Resolve current-player fallback, then call DiplomacyTransition_00d038e0 with the normalized second record before outer mutation.",
+    "outer_flag_mutation": "Select and lookup forward keys and set bit 0x02; when second is not current-player, repeat with reversed keys and set bit 0x02.",
+    "pair_cleanup": "Call c34680 with first receiver/second stack word and then second receiver/first stack word.",
+    "current_event": "When second is current-player, build the 0x3c event carrier with first at +0x08, second at +0x10, and cleanup bitmask at +0x38, then dispatch event id 0x4445D43 with the event service receiver in ECX and event-id, event-pointer, zero on the stack, followed by event cleanup.",
+    "final_cleanup": "Call c31c50 with first and then second.",
+    "post_transition": "Call b3d2a0 for current_root, call 00885c90 with current_root in ECX to read current_root+0x1d8, compare that value with first+0x84, and when equal call the post-transition port with current-player+0x84, selector 0x68B2938, and float 1.0."
+  },
+  "call_graph": {
+    "direct_callers": ["0x00FE9580", "0x0102CE30", "0x0102DF20"],
+    "direct_callees": ["0x00421CF0", "0x00883860", "0x00885C90", "0x00B3D2A0", "0x00C31C50", "0x00C34680", "0x00D01410", "0x00D01AB0", "0x00D038E0", "0x00D068C0", "0x01021300"],
+    "function_xrefs": 3,
+    "direct_data_globals": []
+  },
+  "evidence": [
+    {"tool": "ghidra_decompile_function", "address": "0x00d06920", "observation": "Live body first delegates to 0x00d038e0, then sets bit 0x02 in forward/reverse entries, performs c34680 and current event handling, cleans both records, and conditionally invokes the post-transition port."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00d06920", "observation": "The 99-instruction body preserves nested call order, +0x84 keys, first/second ECX-plus-stack c34680 order, event carrier offsets +0x08/+0x10/+0x38, event service receiver in ECX, 00885c90 current_root+0x1d8 read, event id 0x4445D43, selector 0x68B2938, float 1.0, and RET 0x8."},
+    {"tool": "ghidra_get_function_callers", "address": "0x00d06920", "observation": "Three direct caller functions are reported."},
+    {"tool": "ghidra_get_function_callees", "address": "0x00d06920", "observation": "Eleven direct callees are reported and remain opaque ports."}
+  ],
+  "dependency_contracts": {"0x00d038e0": "nested diplomacy transition", "0x00d01410": "opaque relationship lookup", "0x00d01ab0": "opaque map selection", "0x00b3d2a0": "opaque cdecl current-root accessor", "0x00885c90": "opaque thiscall current-empire-key accessor receiving current_root in ECX and reading +0x1d8", "0x00d068c0": "opaque post-transition port", "0x00883860": "opaque event service accessor", "0x00421cf0": "opaque event cleanup", "0x01021300": "opaque current-player cache"},
+  "confidence": {"body": "high", "abi": "high", "nested_order": "high", "event_and_post_values": "high", "concrete_transition_semantics": "low"},
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/pkg13-diplomacy-transitions reconstruction/staging/pkg13-diplomacy-transitions/diplomacy_transitions.cpp",
+    "model_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg13-diplomacy-transitions reconstruction/staging/pkg13-diplomacy-transitions/diplomacy_transitions.cpp reconstruction/staging/pkg13-diplomacy-transitions/diplomacy_transitions_model_test.cpp -o /tmp/opencode/pkg13-diplomacy-transitions-model && /tmp/opencode/pkg13-diplomacy-transitions-model",
+    "format_command": "clang-format --dry-run --Werror --style='{BasedOnStyle: Google, FixNamespaceComments: false}' reconstruction/staging/pkg13-diplomacy-transitions/diplomacy_transitions.hpp reconstruction/staging/pkg13-diplomacy-transitions/diplomacy_transitions.cpp reconstruction/staging/pkg13-diplomacy-transitions/diplomacy_transitions_model_test.cpp",
+    "json_command": "python3 -m json.tool reconstruction/metadata/pkg13-diplomacy-transitions/00d06920.json >/dev/null",
+    "results": {"syntax": "passed", "model": "passed", "format": "passed", "json": "passed"}
+  },
+  "unresolved_questions": ["concrete event, relationship, root, and post-transition owners", "0x00d038e0 nested side effects", "runtime current-player key and relationship state", "runtime callback side effects"],
+  "blockers": ["No original-process trace is available.", "All dependency ports remain opaque by design."]
+}

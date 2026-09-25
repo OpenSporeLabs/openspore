@@ -1,0 +1,108 @@
+{
+  "schema": "pkg12-space-comm-event-lifecycle-handoff-v1",
+  "package": "PKG-12-SIM-SPACE",
+  "address": "0x00aea250",
+  "ghidra_name": "FUN_00aea250",
+  "identity": "cCommEvent fixed-size constructor",
+  "source_files": [
+    "reconstruction/staging/pkg12-space/space_comm_event_lifecycle.hpp",
+    "reconstruction/staging/pkg12-space/space_comm_event_lifecycle.cpp",
+    "reconstruction/staging/pkg12-space/space_comm_event_lifecycle_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "void __fastcall pkg12_re_00aea250(cCommEvent* self);",
+  "scope_guard": {
+    "event_type": "cCommEvent",
+    "event_size_bytes": 160,
+    "event_family": "The constructor writes only the observed 0xa0-byte event object and does not model SpaceEvent.",
+    "manager": "No manager receiver or ownership operation is present.",
+    "allocator": "No allocator operation is present."
+  },
+  "abi": {
+    "calling_convention": "__fastcall",
+    "receiver": {
+      "register": "ECX",
+      "type": "cCommEvent*",
+      "width_bytes": 4
+    },
+    "stack_arguments": [],
+    "return_type": "void",
+    "termination": "RET"
+  },
+  "raw_bytes_hex": "8bc1c7400494f03e0133c9894808c700d8be4501c74004d4be450189481089481483caff89500c89501889501c89482089482489482889482c88483089503489503889503c89484089504489484889484c89485089485489485889486489486889486c89487889487c89888000000089888c000000898890000000898894000000c3",
+  "field_initialization": [
+    {"offset": "0x00", "value": "0x0145bed8", "note": "primary vtable pointer"},
+    {"offset": "0x04", "value": "0x0145bed4", "note": "secondary vtable pointer; an earlier 0x013ef094 store is overwritten before return"},
+    {"offset": "0x08", "value": "0"},
+    {"offset": "0x0c", "value": "0xffffffff"},
+    {"offset": "0x10", "value": "0"},
+    {"offset": "0x14", "value": "0"},
+    {"offset": "0x18", "value": "0xffffffff"},
+    {"offset": "0x1c", "value": "0xffffffff"},
+    {"offset": "0x20", "value": "0"},
+    {"offset": "0x24", "value": "0"},
+    {"offset": "0x28", "value": "0"},
+    {"offset": "0x2c", "value": "0"},
+    {"offset": "0x30", "value": "0", "width_bytes": 1},
+    {"offset": "0x34", "value": "0xffffffff"},
+    {"offset": "0x38", "value": "0xffffffff"},
+    {"offset": "0x3c", "value": "0xffffffff"},
+    {"offset": "0x40", "value": "0"},
+    {"offset": "0x44", "value": "0xffffffff"},
+    {"offset": "0x48", "value": "0"},
+    {"offset": "0x4c", "value": "0"},
+    {"offset": "0x50", "value": "0"},
+    {"offset": "0x54", "value": "0"},
+    {"offset": "0x58", "value": "0"},
+    {"offset": "0x64", "value": "0"},
+    {"offset": "0x68", "value": "0"},
+    {"offset": "0x6c", "value": "0"},
+    {"offset": "0x78", "value": "0"},
+    {"offset": "0x7c", "value": "0"},
+    {"offset": "0x80", "value": "0"},
+    {"offset": "0x8c", "value": "0"},
+    {"offset": "0x90", "value": "0"},
+    {"offset": "0x94", "value": "0"}
+  ],
+  "mechanics": {
+    "write_order": [
+      "write +0x04 with 0x013ef094",
+      "write +0x08 with zero",
+      "write +0x00 with 0x0145bed8",
+      "overwrite +0x04 with 0x0145bed4",
+      "initialize the remaining observed event words and the single byte at +0x30"
+    ],
+    "unwritten_offsets": ["0x60", "0x70", "0x74", "0x84", "0x88", "0x98", "0x9c", "0x31", "0x32", "0x33"],
+    "null_receiver": "faults on the first raw write"
+  },
+  "call_graph": {
+    "direct_callers": ["0x00aeb160", "0x00aeb240"],
+    "direct_callees": [],
+    "function_xref_count_live": 3
+  },
+  "evidence": [
+    {"tool": "ghidra_decompile_function", "address": "0x00aea250", "observation": "The body initializes vtable pointers, refcount/type words, event fields, and vector-adjacent words without calling another function."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00aea250", "observation": "Thirty-seven instructions end with RET; +0x20 is zero, not -1."},
+    {"tool": "ghidra_get_function_callers", "address": "0x00aea250", "observation": "The constructor is called by the two event-creation bodies at 0x00aeb160 and 0x00aeb240."},
+    {"tool": "ghidra_get_function_callees", "address": "0x00aea250", "observation": "No direct callees are present."},
+    {"tool": "ghidra_get_struct_layout", "struct_name": "cCommEvent", "observation": "The live layout is 160 bytes and contains the vtable, refcount, event type, pointer fields, and four vector regions."}
+  ],
+  "model_tests": [
+    "exact final values at all observed constructor offsets",
+    "single-byte write at +0x30",
+    "untouched bytes remain sentinel values",
+    "null receiver reaches a segmentation fault"
+  ],
+  "verification": {
+    "syntax_and_model": "passed: x86-32 syntax compile and focused model completed",
+    "format": "passed: clang-format --dry-run --Werror with Google style and namespace comments disabled",
+    "json": "passed: python3 -m json.tool"
+  },
+  "unresolved_questions": [
+    "The semantic labels of the initialized event fields remain SDK/type-model dependent.",
+    "The two vtable pointers are preserved as observed values without exposing their target implementations."
+  ],
+  "blockers": [
+    "The constructor does not initialize every byte in the 0xa0-byte allocation; unwritten bytes are intentionally not synthesized."
+  ]
+}

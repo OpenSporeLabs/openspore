@@ -1,0 +1,143 @@
+{
+  "schema": "wave6-app-manager.function-handoff.v1",
+  "package": "PKG-06-WAVE6-APP-MANAGERS",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "va": "0x007d8cc0",
+  "address": "0x007d8cc0",
+  "symbol": "FUN_007d8cc0",
+  "normalized_symbol": "GameModeManagerVectorDestroy_007d8cc0",
+  "target_state": "implemented staging handoff; canonical review pending",
+  "phase": "body reconstruction implemented and statically verified",
+  "captured_on": "2026-09-25",
+  "intended_paths": {
+    "staging_reconstruction": [
+      "reconstruction/staging/wave6-app-managers/app_managers.hpp",
+      "reconstruction/staging/wave6-app-managers/app_managers.cpp",
+      "reconstruction/staging/wave6-app-managers/app_managers_model_test.cpp"
+    ],
+    "canonical_reconstruction": [],
+    "status": "staging-only handoff; no canonical path is claimed"
+  },
+  "implementation": {
+    "status": "implemented in staging",
+    "symbol": "GameModeManagerVectorDestroy_007d8cc0",
+    "declaration": "extern \"C\" void PKG06_WAVE6_THISCALL GameModeManagerVectorDestroy_007d8cc0(OpaqueGameModeManager*);",
+    "linkage": "C language linkage",
+    "calling_convention": "__thiscall-shaped",
+    "argument_surface": "hidden ECX pointer to the manager mode-vector window at manager +0x14; no ordinary stack arguments",
+    "return_type": "void-like; target does not define EAX",
+    "package_owned_model": "OpaqueGameModeManager",
+    "model_test": "reconstruction/staging/wave6-app-managers/app_managers_model_test.cpp"
+  },
+  "function_extent": {
+    "entry": "0x007d8cc0",
+    "body_end_inclusive": "0x007d8d17",
+    "instruction_count": 29,
+    "return_site": "0x007d8d17: RET",
+    "seh_prologue": "installs an exception frame; exception metadata is not promoted into the C++ model"
+  },
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "hidden_receiver_register": "ECX",
+    "hidden_receiver_type": "mode-vector window at manager +0x14",
+    "ordinary_stack_argument_slots": 0,
+    "stack_cleanup_bytes": 0,
+    "return_register": "EAX is not assigned a defined result by the target body",
+    "ghidra_prototype": "undefined FUN_007d8cc0(void)",
+    "decompiler_note": "Live pseudocode labels the helper fastcall, while the machine body uses ECX as the sole receiver and no incoming EAX argument; staging models the observed ECX-only boundary."
+  },
+  "mechanics": {
+    "range_cleanup": {
+      "callee": "0x007d87e0",
+      "arguments_in_order": [
+        "vector begin at +0x14",
+        "vector end at +0x18"
+      ],
+      "callee_stack_cleanup_bytes": 8,
+      "entry_stride_bytes": 24,
+      "entry_payload_offsets": {
+        "begin": "0x08",
+        "end": "0x10"
+      },
+      "entry_owner_offset": "0x00",
+      "payload_release_condition": "signed comparison of end minus begin is greater than 1 and payload begin is non-zero",
+      "owner_dispatch": "if owner +0x00 is non-null, load its vtable and call slot +0x04"
+    },
+    "allocation_release": {
+      "begin_read": "re-read vector begin after range cleanup",
+      "guard": "begin non-null and dword[begin - 4] non-zero",
+      "callee": "0x00f47380",
+      "argument": "begin pointer",
+      "ordering": "after all mode-entry payload releases and owner dispatches"
+    },
+    "vector_field_writes": [],
+    "direct_callee_calls": 2,
+    "indirect_calls": 1
+  },
+  "implementation_abi_and_boundary": {
+    "manager_layout": "OpaqueGameModeManager preserves the mode-vector words at offsets 0x14, 0x18, and 0x1c and the 0x34-byte manager window.",
+    "nested_range_boundary": "The 0x007d87e0 loop is represented as an internal staging range cleanup because it is directly observed and has no public ownership claim.",
+    "native_release_port": "OpaqueGameModeManagerPorts::release_00f47380 is a normalized cdecl port for the unresolved allocator boundary; the model preserves the non-null/marker guard and call order.",
+    "seh": "Exception-list installation/restoration is recorded as observed machine structure but is not treated as a semantic C++ ownership operation."
+  },
+  "evidence": {
+    "classification": "static_observed",
+    "runtime_validated": false,
+    "assembly": [
+      "007d8cd5: PUSH ECX",
+      "007d8cd7: MOV ESI,ECX",
+      "007d8cdd: MOV EAX,dword ptr [ESI + 0x4]",
+      "007d8ce0: MOV ECX,dword ptr [ESI]",
+      "007d8cee: CALL 0x007d87e0",
+      "007d8cf3: MOV ESI,dword ptr [ESI]",
+      "007d8cf5: TEST ESI,ESI",
+      "007d8cf9: CMP dword ptr [ESI + -0x4],0x0",
+      "007d8d00: CALL 0x00f47380"
+    ],
+    "direct_callees": [
+      "0x007d87e0",
+      "0x00f47380"
+    ],
+    "direct_callers": 2,
+    "direct_caller_sample": [
+      "0x007d8d40 App::cGameModeManager::SetActiveModeAt",
+      "0x0121601e Unwind@0121601e"
+    ],
+    "function_xrefs": 2,
+    "function_xref_sample": [
+      "0x007d8d8f: UNCONDITIONAL_CALL from 0x007d8d40",
+      "0x01216024: UNCONDITIONAL_CALL from Unwind@0121601e"
+    ],
+    "nested_range_xref": "0x007d87e0 has one direct caller at 0x007d8cee and RET 8",
+    "allocator_boundary": "0x00f47380 null-checks its incoming pointer before delegating to 0x009276c0"
+  },
+  "provenance": [
+    "ghidra_get_function_by_address(0x007d8cc0)",
+    "ghidra_decompile_function(0x007d8cc0)",
+    "ghidra_disassemble_function(0x007d8cc0)",
+    "ghidra_get_function_callers(0x007d8cc0)",
+    "ghidra_get_function_callees(0x007d8cc0)",
+    "ghidra_get_function_xrefs(0x007d8cc0)",
+    "ghidra_decompile_function(0x007d87e0)",
+    "ghidra_disassemble_function(0x007d87e0)",
+    "ghidra_decompile_function(0x00f47380)",
+    "ghidra_disassemble_function(0x00f47380)"
+  ],
+  "unresolved_questions": [
+    "What concrete mode-entry owner and vtable are stored at each entry +0x00?",
+    "What do payload begin/end at +0x08/+0x10 represent, and why is the release condition greater than one byte?",
+    "What does the allocation marker immediately before vector begin represent?",
+    "What are the complete side effects of the allocator boundary at 0x00f47380?",
+    "Can the SEH path be reached for malformed vector ranges or invalid owner vtables?"
+  ],
+  "runtime_gate": {
+    "status": "required",
+    "runtime_validation": 0,
+    "conditions": [
+      "A live mode manager enters teardown with a non-null vector begin.",
+      "Mode-entry payload ranges and owner vtables are valid for the observed branches.",
+      "The allocator marker and release callback are observable."
+    ]
+  }
+}

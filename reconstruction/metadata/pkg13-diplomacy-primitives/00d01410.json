@@ -1,0 +1,64 @@
+{
+  "schema": "pkg13-diplomacy-primitives.function-handoff.v1",
+  "package": "PKG-13-SIM-DIPLOMACY-PRIMITIVES",
+  "function_address": "0x00d01410",
+  "ghidra_name": "FUN_00d01410",
+  "normalized_symbol": "RelationshipLookup_00d01410",
+  "source_files": [
+    "reconstruction/staging/pkg13-diplomacy-primitives/diplomacy_primitives.hpp",
+    "reconstruction/staging/pkg13-diplomacy-primitives/diplomacy_primitives.cpp",
+    "reconstruction/staging/pkg13-diplomacy-primitives/diplomacy_primitives_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "OpaqueRelationshipEntry* RelationshipLookup_00d01410(OpaqueRelationshipMap* map, std::uint32_t key_a, std::uint32_t key_b);",
+  "abi": {
+    "calling_convention": "stdcall-equivalent callee cleanup",
+    "hidden_this": false,
+    "stack_arguments": [
+      {"position": 1, "entry_offset": "ESP+0x04", "type": "OpaqueRelationshipMap*", "width_bytes": 4},
+      {"position": 2, "entry_offset": "ESP+0x08", "type": "std::uint32_t", "width_bytes": 4},
+      {"position": 3, "entry_offset": "ESP+0x0c", "type": "std::uint32_t", "width_bytes": 4}
+    ],
+    "stack_cleanup_bytes": 12,
+    "return_register": "EAX",
+    "return_width_bytes": 4,
+    "return_semantics": "Returns null for the map+0x04 sentinel; otherwise returns the lower-bound node+0x18 relationship payload pointer."
+  },
+  "body": {
+    "status": "reconstructed",
+    "entry_address": "0x00d01410",
+    "body_addresses": ["0x00d01410", "0x00d0146d"],
+    "instruction_count": 35,
+    "basic_block_count": 3,
+    "raw_bytes": "83ec0856578d44241c508d4c241c5133ffe87af5ffff8b5424208b4424248b74241c83c4088d4c240889542408518d54241c528bce89442414e832fbffff8b44241883c6043bc6740b5f83c0185e83c408c20c008bc75f5e83c408c20c00",
+    "mechanics": [
+      "Reserve eight local bytes, save ESI/EDI, and normalize the two key words through 0x00d009a0.",
+      "Call the 0x00d00f80 thiscall map lower-bound helper with the map in ECX, an output node slot, and the normalized key pair on the stack; the helper returns with RET 8.",
+      "Compare the returned node slot with map+0x04.",
+      "Return null for the sentinel; otherwise return node+0x18.",
+      "Both paths restore saved registers and remove 0x0c stack bytes with RET 0x0c."
+    ]
+  },
+  "state_evidence": {
+    "map_sentinel": "map+0x04",
+    "payload_offset": "node+0x18",
+    "lower_bound_contract": "0x00d00f80 writes a node pointer or map+0x04 sentinel; it is not modeled as an exact-key lookup here.",
+    "mutation_boundary": "The target writes no map or relationship payload; only the external lower-bound helper writes its output slot."
+  },
+  "call_graph": {
+    "direct_callers": ["0x00d01470", "0x00d015d0", "0x00d01b50", "0x00d01bb0", "0x00d01e30", "0x00d01f20", "0x00d01f50", "0x00d01fb0", "0x00d03860", "0x00d038a0", "0x00d038e0", "0x00d05830", "0x00d05a20", "0x00d05d90", "0x00d065a0", "0x00d06920", "0x00d01ff0"],
+    "direct_callees": ["0x00d009a0", "0x00d00f80"]
+  },
+  "evidence": [
+    {"tool": "ghidra_get_function_by_address", "address": "0x00d01410", "observation": "Live function is 0x00d01410 through 0x00d0146d with three stack words and RET 0x0c."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00d01410", "observation": "Live assembly proves map+0x04 sentinel, node+0x18 payload, local key pair, and both cleanup paths."},
+    {"tool": "ghidra_get_function_callers", "address": "0x00d01410", "observation": "17 direct callers were reported, including the integrated alliance predicate."}
+  ],
+  "confidence": {"body": "high", "stdcall_cleanup": "high", "sentinel_conversion": "high", "lower_bound_semantics": "medium; delegated to opaque helper"},
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -fsyntax-only reconstruction/staging/pkg13-diplomacy-primitives/diplomacy_primitives.cpp reconstruction/staging/pkg13-diplomacy-primitives/diplomacy_primitives_test.cpp",
+    "model_test_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic reconstruction/staging/pkg13-diplomacy-primitives/diplomacy_primitives.cpp reconstruction/staging/pkg13-diplomacy-primitives/diplomacy_primitives_test.cpp -o /tmp/opencode/pkg13-diplomacy-primitives-test && /tmp/opencode/pkg13-diplomacy-primitives-test"
+  },
+  "unresolved_questions": ["0x00d009a0 context-dependent key normalization", "0x00d00f80 tree layout and lower-bound result semantics", "runtime map and relationship ownership"],
+  "blockers": ["Lower-bound helper body is intentionally unresolved; runtime records remain gated."]
+}

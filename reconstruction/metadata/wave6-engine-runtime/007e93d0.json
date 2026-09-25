@@ -1,0 +1,161 @@
+{
+  "schema": "wave6-engine-runtime.function-handoff.v1",
+  "package": "WAVE6-ENGINE-RUNTIME",
+  "function_address": "0x007e93d0",
+  "ghidra_name": "App::cAppSystem::InitPlugins",
+  "normalized_symbol": "app_system_initialize_plugins_007e93d0",
+  "source_files": [
+    "reconstruction/staging/wave6-engine-runtime/engine_runtime.hpp",
+    "reconstruction/staging/wave6-engine-runtime/engine_runtime.cpp",
+    "reconstruction/staging/wave6-engine-runtime/engine_runtime_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "included": true,
+  "body_implementation": true,
+  "binary": {
+    "program": "SporeApp.exe",
+    "version": "3.1.0.22",
+    "architecture": "x86:LE:32",
+    "image_base": "0x00400000"
+  },
+  "abi": {
+    "target": "x86-32",
+    "calling_convention": "__thiscall",
+    "receiver_register": "ECX",
+    "receiver_type": "OpaqueWave6PluginRegistration*",
+    "ordinary_stack_arguments": [
+      {
+        "name": "command_line",
+        "type": "const std::uint16_t*",
+        "entry_offset": "ESP+0x04",
+        "width_bytes": 4
+      }
+    ],
+    "stack_cleanup_bytes": 4,
+    "termination": "RET 0x8",
+    "return_contract": "No stable EAX return is established. The imported bool label is not promoted; staging models the body as void-like.",
+    "decompiler_note": "Live Ghidra labels the convention unknown; ECX use, one pointer argument, and RET 8 establish the thiscall-shaped x86-32 frame."
+  },
+  "body": {
+    "entry": "0x007e93d0",
+    "body_end_inclusive": "0x007e943e",
+    "body_end_exclusive": "0x007e9440",
+    "instruction_count": 42,
+    "observed_order": [
+      "scan the incoming pointer two bytes at a time until a zero uint16 and compute the end pointer",
+      "call 0x00423650 with ECX=receiver+0x138, source pointer, and end pointer",
+      "call 0x004f6510 with ECX=receiver+0x138 and uint16 value 0x005c",
+      "reload the incoming pointer and rescan for its zero uint16",
+      "call 0x00423650 with ECX=receiver+0x148, source pointer, and second end pointer",
+      "call 0x004f6510 with ECX=receiver+0x148 and uint16 value 0x005c",
+      "return while removing the original four-byte argument"
+    ],
+    "null_policy": "No guard exists for the incoming pointer; a null source faults on the first 16-bit read.",
+    "sentinel": "The scan stops only on uint16 zero. No length, maximum, or encoding validation is present."
+  },
+  "layout_observations": {
+    "wide_string_helpers": {
+      "carrier_words": ["begin", "end", "capacity"],
+      "word_width_bytes": 4,
+      "terminator_width_bytes": 2,
+      "append_value": "0x005c",
+      "status": "Three-pointer carrier and helper pointer arithmetic are observed; allocator and string ownership remain unresolved."
+    },
+    "receiver_windows": [
+      {
+        "offset": "0x138",
+        "size_bytes": 12,
+        "meaning": "first three-pointer wide-string destination"
+      },
+      {
+        "offset": "0x148",
+        "size_bytes": 12,
+        "meaning": "second three-pointer wide-string destination"
+      }
+    ]
+  },
+  "direct_callees": [
+    {
+      "address": "0x00423650",
+      "call_count": 2,
+      "raw_abi": "thiscall ECX destination plus source/end stack pointers; RET 8",
+      "observed_role": "replace or assign a pointer-bounded UTF-16 span"
+    },
+    {
+      "address": "0x004f6510",
+      "call_count": 2,
+      "raw_abi": "thiscall ECX destination plus one uint16 stack argument; RET 4",
+      "observed_role": "append one uint16 and maintain a zero terminator"
+    }
+  ],
+  "call_graph": {
+    "unique_direct_caller_functions": 0,
+    "function_xrefs": [
+      {
+        "address": "0x01413aec",
+        "type": "DATA"
+      }
+    ],
+    "helper_fan_in": {
+      "0x00423650": "601 function xrefs returned in the bounded live query",
+      "0x004f6510": "67 function xrefs returned in the bounded live query"
+    }
+  },
+  "implementation_boundary": {
+    "ports_type": "Wave6WideStringPorts",
+    "assign_port": "assign_00423650 preserves the exact destination, source, and end-pointer call shape",
+    "append_port": "append_004f6510 preserves the exact destination and uint16 0x005c call shape",
+    "rescan_rule": "The second end pointer is recomputed after the first helper pair rather than cached.",
+    "return_limit": "Helper EAX residue is not promoted to a reconstructed return value.",
+    "ownership": "No destination storage or command-line ownership is claimed."
+  },
+  "model_tests": [
+    "three-unit and empty UTF-16 scans",
+    "first assign then append order at receiver+0x138",
+    "second assign then append order at receiver+0x148",
+    "both end pointers include the terminating uint16 and exclude it by address",
+    "both append calls use exact uint16 value 0x005c",
+    "second scan is issued against the reloaded incoming pointer"
+  ],
+  "unresolved_questions": [
+    "What concrete semantic values are stored at receiver+0x138 and receiver+0x148?",
+    "Does the imported CommandLine label accurately describe the UTF-16 input across every caller?",
+    "What allocation, growth, and destruction behavior do the two helper ports retain in the original?",
+    "Can either helper mutate or invalidate the incoming source pointer before the second scan?",
+    "What stable EAX value, if any, do callers consume after this wrapper?"
+  ],
+  "runtime_gate": {
+    "status": "required",
+    "runtime_validation": 0,
+    "conditions": [
+      "The incoming UTF-16 pointer is live and contains a reachable uint16 zero sentinel.",
+      "The receiver has valid initialized string carriers at +0x138 and +0x148.",
+      "The original helper implementations 0x00423650 and 0x004f6510 are available for correlated tracing.",
+      "The trace captures both destination spans, both end pointers, both appended 0x005c units, and the return-site EAX value."
+    ],
+    "minimum_positive_claim": "An original-process trace reaches 0x007e93d0 and records the exact four-helper sequence for both destinations.",
+    "promotion_status": "not_promoted"
+  },
+  "provenance": [
+    "ghidra_get_function_by_address(0x007e93d0)",
+    "ghidra_decompile_function(0x007e93d0)",
+    "ghidra_disassemble_function(0x007e93d0)",
+    "ghidra_read_memory(0x007e93d0)",
+    "ghidra_get_function_callers(0x007e93d0)",
+    "ghidra_get_function_callees(0x007e93d0)",
+    "ghidra_get_function_xrefs(0x007e93d0)",
+    "ghidra_decompile_function(0x00423650)",
+    "ghidra_disassemble_function(0x00423650)",
+    "ghidra_decompile_function(0x004f6510)",
+    "ghidra_disassemble_function(0x004f6510)",
+    "ghidra_read_memory(0x01413ad0)"
+  ],
+  "verification": {
+    "compile_and_model_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror reconstruction/staging/wave6-engine-runtime/engine_runtime.cpp reconstruction/staging/wave6-engine-runtime/engine_runtime_model_test.cpp -o /tmp/opencode/wave6-engine-runtime-model && /tmp/opencode/wave6-engine-runtime-model",
+    "compile_and_model_result": "passed",
+    "format_command": "clang-format --dry-run --Werror --style='{BasedOnStyle: Google, FixNamespaceComments: false}' reconstruction/staging/wave6-engine-runtime/engine_runtime.hpp reconstruction/staging/wave6-engine-runtime/engine_runtime.cpp reconstruction/staging/wave6-engine-runtime/engine_runtime_model_test.cpp",
+    "format_result": "passed",
+    "json_result": "passed",
+    "runtime_validation": "not run"
+  }
+}

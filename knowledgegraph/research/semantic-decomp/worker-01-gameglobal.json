@@ -29,13 +29,13 @@
         "name": "map_int_whatever_find",
         "subsystem": "GameGlobal",
         "triage_category": "GAMEPLAY_LOGIC",
-        "semantic_role": "generic unsigned ordered-map exact-find primitive"
+        "semantic_role": "generic unsigned ordered-map guarded-lower-bound lookup with exact-candidate acceptance"
       },
       "contract_status": {
         "status": "STATIC_CONTRACT",
         "semantic_understanding": "bounded_static_contract",
         "runtime_validated": false,
-        "reason": "The traversal, output convention, and exact-key check are mechanically established. The helper is polymorphic over map owners and values, so it is a container primitive rather than a GameGlobal singleton."
+        "reason": "The traversal, output convention, and final candidate guard are mechanically established. The helper is polymorphic over map owners and values, so it is a container primitive rather than a GameGlobal singleton."
       },
       "classification": {
         "class": "CONTAINER_ALGORITHM",
@@ -53,15 +53,15 @@
         "basis": [
           "The target disassembly gives the exact unsigned tree walk, sentinel, and output-pointer behavior.",
           "Direct callers 0x00b21340 and 0x00ba9370 independently pass the same map and output-iterator shape.",
-          "Repository architecture evidence identifies the same EASTL offsets but its lower-bound claim conflicts with the target's final equality check."
+          "Repository architecture evidence identifies the same EASTL offsets, but its lower_bound claim is stale because the final comparison rejects a greater candidate."
         ]
       },
       "identity": {
         "ghidra_name": "map_int_whatever_find",
         "sdk_name": "map_int_whatever_find",
         "name_evidence": "SUPPORTED",
-        "semantic_name": "eastl_map_exact_find",
-        "historical_label_caveat": "The target's final candidate-key check makes this exact find. Existing repository lower_bound claims are retained as a contradiction, not silently adopted.",
+        "semantic_name": "eastl_map_guarded_lower_bound",
+        "historical_label_caveat": "The target performs a lower-bound-shaped walk and rejects a greater successor in the final comparison. Existing repository lower_bound claims are stale and are superseded by knowledgegraph/research/map-semantics-resolution.json.",
         "identity_boundary": "The function does not identify one owner or one value type."
       },
       "signature": {
@@ -72,20 +72,20 @@
       },
       "parameters": [
         {"ordinal": 0, "name": "map", "storage": "ECX", "type": "MapType*", "meaning": "Sentinel-backed ordered map object."},
-        {"ordinal": 1, "name": "out", "storage": "stack", "type": "MapNode**", "direction": "out", "meaning": "Receives the node whose key equals *key, or the end sentinel when no exact match exists."},
+        {"ordinal": 1, "name": "out", "storage": "stack", "type": "MapNode**", "direction": "out", "meaning": "Receives the retained candidate only when the final comparison proves candidate->key equals *key; otherwise receives the end sentinel."},
         {"ordinal": 2, "name": "key", "storage": "stack", "type": "const uint32_t*", "meaning": "Pointer to the unsigned search key."}
       ],
-      "return_value": {"type": "MapNode*", "value": "The exact-key node written to out, or the end sentinel when no exact match exists.", "caveat": "No separate found flag is returned; equality is enforced by the final comparison."},
+      "return_value": {"type": "MapNode*", "value": "The candidate is written to out only when the final unsigned comparison accepts it; the traversal invariant makes that candidate equal to *key. Otherwise the end sentinel is written.", "caveat": "No separate found flag is returned; a present key can still be rejected when a greater candidate is retained on the rightward walk."},
       "preconditions": ["map points to a valid sentinel-backed map.", "out is writable.", "key points to a readable uint32_t.", "The map is not structurally mutated concurrently."],
-      "postconditions": ["An exact-key node or map end sentinel is written to out; a strictly greater successor is rejected.", "Map header and nodes are not modified.", "No allocation, deletion, callback, lock, or exception operation occurs."],
+      "postconditions": ["The retained candidate is written only when candidate->key equals the query; a strictly greater successor is rejected.", "A present key can return the end sentinel when a greater candidate is retained during the rightward walk.", "Map header and nodes are not modified.", "No allocation, deletion, callback, lock, or exception operation occurs."],
       "control_flow": [
         "Initialize candidate to map+0x04 and load root from map+0x0c.",
         "Compare node key at node+0x10 with *key using unsigned JC semantics.",
         "Move left when node key is smaller; otherwise save candidate and move right.",
-        "At termination, reject the sentinel and reject the candidate when candidate key is greater than *key; equality is the only accepted candidate."
+        "At termination, reject the sentinel and reject the candidate when query is less than candidate key; because the walk invariant makes candidate key greater than or equal to query, the accepted candidate is exactly equal."
       ],
       "reads": ["map+0x04 end sentinel", "map+0x0c root", "node+0x00 left", "node+0x04 right", "node+0x10 uint32_t key", "*key"],
-      "writes": [{"location": "*out", "meaning": "exact-key node or end sentinel", "kind": "single output store"}],
+      "writes": [{"location": "*out", "meaning": "guarded accepted candidate or end sentinel", "kind": "single output store"}],
       "side_effects": {"items": ["Writes the caller output pointer and returns that pointer in EAX."], "not_observed": ["map mutation", "allocation", "reference counting", "callback", "lock"]},
       "constants": [{"value": "0x04", "meaning": "map end sentinel displacement"}, {"value": "0x0c", "meaning": "map root displacement"}, {"value": "0x10", "meaning": "node key displacement"}, {"value": "0x14", "meaning": "node payload displacement in consumers"}, {"value": "0x08", "meaning": "RET stack cleanup"}],
       "globals": [],
@@ -97,7 +97,7 @@
       "callees": {"count": 0, "items": [], "status": "leaf"},
       "siblings": [
         {"va": "0x00612db0", "name": "FUN_00612db0", "relationship": "Separate sorted-vector lower_bound; same ordered-search concept, not the tree implementation."},
-        {"va": "0x0059c740", "name": "map_int_EditorCreatureControllerPtr__get", "relationship": "Adjacent exact map getter with the same candidate update and final key-equality check; it returns a payload or default."},
+        {"va": "0x0059c740", "name": "map_int_EditorCreatureControllerPtr__get", "relationship": "Adjacent guarded map getter with the same candidate update and final key guard; it returns a payload or default."},
         {"va": "0x00ba8420", "name": "FUN_00ba8420", "relationship": "Ordered-map insertion helper using the same tree child/key layout."},
         {"va": "0x00ba9370", "name": "FUN_00ba9370", "relationship": "cStarManager empire lookup wrapper; passes cStarManager+0x150 and reads node payload +0x14."},
         {"va": "0x00b21340", "name": "FUN_00b21340", "relationship": "Noun-data materialization helper; uses this lookup and inserts through 0x00ba8420 on a miss."}
@@ -113,13 +113,13 @@
         ]
       },
       "family_links": [
-        {"family": "EASTL ordered map", "links": ["0x00e5c780 exact_find", "0x00ba8420 insertion", "0x00ba9370 lookup", "0x00b21340 noun materialization"]},
+        {"family": "EASTL ordered map", "links": ["0x00e5c780 guarded lower-bound lookup", "0x00ba8420 insertion", "0x00ba9370 exact-result lookup", "0x00b21340 noun materialization"]},
         {"family": "Simulator noun/empire registries", "links": ["cGameNounManager.mNounMap", "cStarManager.mEmpires", "0x01021300"]}
       ],
       "chokepoint_propagation": {
         "role": "high-fan-in generic lookup chokepoint",
         "downstream_counts": {"canonical_unique_direct_callers": 239, "canonical_direct_call_references": 265, "canonical_gameplay_direct_callers": 49, "canonical_internal_fan_out": 0, "canonical_external_fan_out": 0, "read_only_ghidra_direct_call_xrefs": 308},
-        "propagation": "The leaf algorithm reaches noun materialization, empire lookup, cache validation, editor, UI, terrain, and other map-owning domains. Its risk is that a caller expecting a lower-bound successor will receive the stricter exact-key result.",
+        "propagation": "The leaf algorithm reaches noun materialization, empire lookup, cache validation, editor, UI, terrain, and other map-owning domains. Its risk is that stale caller contracts expecting a lower-bound successor will receive the stricter guarded exact-candidate result.",
         "downstream_families": ["PKG-01-SHARED-STATE-ROOTS", "PKG-06-CELL-STATE", "PKG-11-SIM-CORE", "PKG-12-SIM-SPACE", "PKG-13-SIM-CREATURE-TRIBECIV", "PKG-20-GAMEGLOBAL", "PKG-21-UNKNOWN-ROUTING"]
       },
       "evidence": [
@@ -128,25 +128,25 @@
         {"source": "ghidra://SporeApp.exe@0x00b21340", "kind": "direct_caller", "statement": "The caller passes a noun-ID key and output local, compares to the owner map end sentinel, and invokes insertion on a miss."},
         {"source": "ghidra://SporeApp.exe@0x00ba9370", "kind": "direct_caller", "statement": "The caller passes cStarManager+0x150 and reads node payload +0x14."},
         {"source": "docs/analysis/simulator-shared-state-interface.md:188-216", "kind": "repository", "statement": "The committed interface freeze records mEmpires +0x150, map end +0x154, and payload +0x14."},
-        {"source": "docs/analysis/architecture-resolution.md:50-86", "kind": "repository_contradiction", "statement": "The committed resolution claims lower_bound and rejects exact find; this conflicts with the target's final CMP/JC equality check and is retained as a contradiction."},
-        {"source": "knowledgegraph/research/global-campaign-2026/conflicts/track-a-type-signature.json:602-779", "kind": "repository_contradiction", "statement": "The conflict artifact calls the target an ordered lower-bound helper, while the live target body and sibling 0x0059c740 enforce exact-key selection."}
+        {"source": "docs/analysis/architecture-resolution.md:50-86", "kind": "historical_contradiction", "statement": "The older resolution calls the target lower_bound; that claim is stale because the final CMP/JC rejects a greater successor."},
+        {"source": "knowledgegraph/research/global-campaign-2026/conflicts/track-a-type-signature.json:602-779", "kind": "historical_contradiction", "statement": "The older conflict artifact calls the target an ordered lower-bound helper; the current resolution supersedes it with the guarded exact-candidate contract."}
       ],
       "independent_triangulation": [
-        {"claim": "The function is exact find rather than lower_bound.", "sources": ["target final unsigned equality check", "adjacent 0x0059c740 exact getter", "0x00b21340 miss/materialization", "0x00ba9370 end-sentinel wrapper"], "result": "supported; repository lower_bound claims are contradictory"},
+        {"claim": "The function is a guarded lower-bound lookup with exact-candidate acceptance, not a conventional lower_bound.", "sources": ["target final unsigned comparison", "candidate traversal invariant", "0x00b21340 end-only materialization", "0x00ba9370 end-only wrapper"], "result": "supported; successor expectations are stale"},
         {"claim": "The key is unsigned 32-bit.", "sources": ["JC comparison", "repository map/key evidence", "decompiler uint type"], "result": "supported"},
         {"claim": "The helper is not a GameGlobal singleton.", "sources": ["no globals in body", "ECX map receiver and owner-specific callers", "repository shared-state boundary"], "result": "supported"}
       ],
       "validation_strategy": [
-        {"id": "map-exact-find-fixture", "type": "static_differential_fixture", "setup": "Map keys 10 and 20; query 15, 20, and 30.", "expected": "15 returns end, 20 returns node 20, 30 returns end, out equals EAX, and map contents are unchanged."},
-        {"id": "consumer-policy-check", "type": "direct_caller_validation", "setup": "Exercise 0x00b21340 and 0x00ba9370 with exact and in-between keys.", "expected": "The wrapper consumes only an exact-key result; it does not receive a greater successor from this helper."}
+        {"id": "map-guarded-lookup-fixture", "type": "static_differential_fixture", "setup": "Use a single-node 20 map and a root-20 map with left 10/right 30; query 10, 20, 25, and 35.", "expected": "The single-node 20 query returns node 20; the three-node exact query 20, between query 25, below query 10, and above query 35 return end; map and node contents remain unchanged."},
+        {"id": "consumer-policy-check", "type": "direct_caller_validation", "setup": "Exercise 0x00b21340 and 0x00ba9370 with exact, in-between, below, and above keys.", "expected": "The wrappers consume only a guarded exact-candidate result; a greater successor is not returned by this helper."}
       ],
-      "blockers": ["One owner, value type, comparator policy, and mutation policy cannot represent all 239 callers.", "Repository documents describe this helper as lower_bound, contradicting the target's exact-key final check; the contradiction must not be collapsed silently.", "No runtime trace validates exact-key behavior under real map states or concurrent mutation."],
-      "runtime_requirement": {"required": false, "status": "STATIC_READY_FOR_ADAPTER", "reason": "The generic exact-find helper contract is mechanically complete; runtime work is only needed for owner-specific and caller-policy questions.", "smallest_runtime_experiment": {"purpose": "Confirm one real caller's exact-key policy.", "procedure": "At one existing 0x00ba9370 call, log queried ID, end sentinel, returned node key, and subsequent payload use; repeat with an ID between two empire keys.", "expected_observation": "The helper rejects the in-between ID and the wrapper's miss path is taken.", "implementation_boundary": "Debugger observation only; no replacement code or game-state mutation."}},
+      "blockers": ["One owner, value type, comparator policy, and mutation policy cannot represent all 239 callers.", "No runtime trace validates behavior under real map states or concurrent mutation; this does not block the static guarded-lookup contract."],
+      "runtime_requirement": {"required": false, "status": "STATIC_READY_FOR_ADAPTER", "reason": "The guarded helper contract is mechanically complete; runtime work is only needed for owner-specific and caller-policy questions.", "smallest_runtime_experiment": {"purpose": "Confirm one real caller's exact-result policy.", "procedure": "At one existing 0x00ba9370 call, log queried ID, end sentinel, returned node key, and subsequent payload use; repeat with an ID between two empire keys.", "expected_observation": "The helper rejects the in-between ID and the wrapper's miss path is taken.", "implementation_boundary": "Debugger observation only; no replacement code or game-state mutation."}},
       "events": {"items": [], "status": "not_applicable_to_container_primitive"},
       "transitions": {"items": [], "status": "not_applicable"},
       "persistence": {"items": [], "status": "not_applicable"},
       "invariants": {"observed": ["The output pointer is written once on either result path.", "The map itself is read-only in this function."], "semantic_status": "bounded_static"},
-      "next_action": "Expose a typed exact_find adapter and reconcile the stale repository lower_bound claim before dependent work.",
+      "next_action": "Expose a typed guarded-lower-bound adapter and preserve exact-result handling in noun and empire consumers.",
       "not_claimed": ["A single owner or value type", "A universal caller equality policy", "Runtime parity"]
     },
     {

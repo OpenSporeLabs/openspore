@@ -1,0 +1,132 @@
+{
+  "schema": "wave6-containers-memory-function-handoff-v1",
+  "package": "PKG-WAVE6-CONTAINERS-MEMORY",
+  "function_address": "0x00926140",
+  "ghidra_name": "FixedPoolAllocator::Free",
+  "normalized_symbol": "wave6_fixed_pool_allocator_free_00926140",
+  "source_files": [
+    "reconstruction/staging/wave6-containers-memory/containers_memory.hpp",
+    "reconstruction/staging/wave6-containers-memory/containers_memory.cpp",
+    "reconstruction/staging/wave6-containers-memory/containers_memory_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "std::int32_t wave6_fixed_pool_allocator_free_00926140(Wave6FixedPoolAllocator* allocator);",
+  "abi": {
+    "return_type": "std::int32_t",
+    "return_register": "EAX",
+    "calling_convention": "cdecl observed from direct caller",
+    "receiver_register": null,
+    "stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "ESP+0x04",
+        "name": "allocator",
+        "type": "Wave6FixedPoolAllocator*",
+        "width_bytes": 4
+      }
+    ],
+    "stack_cleanup_bytes": 4,
+    "termination": "RET",
+    "model_status": "exact x86-32 direct-call boundary"
+  },
+  "target_layout": {
+    "size_bytes": 32,
+    "fields": [
+      {"offset": "0x00", "size_bytes": 4, "meaning": "opaque vftable pointer"},
+      {"offset": "0x04", "size_bytes": 4, "meaning": "opaque allocator pointer"},
+      {"offset": "0x08", "size_bytes": 4, "meaning": "opaque word"},
+      {"offset": "0x0c", "size_bytes": 4, "meaning": "opaque word"},
+      {"offset": "0x10", "size_bytes": 4, "meaning": "opaque word"},
+      {"offset": "0x14", "size_bytes": 4, "meaning": "opaque object-size word"},
+      {"offset": "0x18", "size_bytes": 4, "meaning": "active critical-section count"},
+      {"offset": "0x1c", "size_bytes": 4, "meaning": "opaque trailing word"}
+    ],
+    "evidence": "ghidra_get_struct_layout(FixedPoolAllocator) reports size 32 and field_18 at offset 0x18."
+  },
+  "mechanics": {
+    "null_path": "The body has no null guard and dereferences the first stack word.",
+    "decrement": "Read the allocator pointer, decrement the signed 32-bit word at offset 0x18, and retain the post-decrement value in ESI.",
+    "release_call": "Pass the same allocator pointer to LeaveCriticalSection after the decrement, then return the retained post-decrement value in EAX.",
+    "underflow": "There is no clamp or branch in the body; the model preserves 32-bit wraparound when the signed count is INT32_MIN."
+  },
+  "call_graph": {
+    "direct_callers": [
+      {
+        "address": "0x00927a50",
+        "name": "FUN_00927a50",
+        "call_site": "0x00927bb7"
+      }
+    ],
+    "direct_callees": [
+      {
+        "name": "LeaveCriticalSection",
+        "ghidra_address": "0x000000b0"
+      }
+    ],
+    "function_xrefs": 1
+  },
+  "evidence": [
+    {
+      "tool": "ghidra_get_function_by_address",
+      "address": "0x00926140",
+      "observation": "Ghidra reports FixedPoolAllocator::Free with body range 0x00926140-0x00926155 and 9 instructions."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x00926140",
+      "observation": "The body loads the first stack word, decrements [EAX+0x18], reads the result into ESI, calls LeaveCriticalSection with EAX, and returns ESI."
+    },
+    {
+      "tool": "ghidra_get_function_callers",
+      "address": "0x00926140",
+      "observation": "Ghidra reports one direct caller at 0x00927a50."
+    },
+    {
+      "tool": "ghidra_get_function_xrefs",
+      "address": "0x00926140",
+      "observation": "The sole direct call xref is 0x00927bb7."
+    },
+    {
+      "tool": "ghidra_get_function_callees",
+      "address": "0x00926140",
+      "observation": "The only direct callee is LeaveCriticalSection."
+    },
+    {
+      "tool": "ghidra_get_struct_layout",
+      "type": "FixedPoolAllocator",
+      "observation": "The imported structure exposes the accessed field at offset 0x18."
+    }
+  ],
+  "confidence": {
+    "overall": "high for decrement, release order, return value, and absence of a null guard",
+    "high": [
+      "one cdecl stack word",
+      "signed field_18 decrement",
+      "LeaveCriticalSection after decrement",
+      "post-decrement EAX return",
+      "32-bit wraparound"
+    ],
+    "medium": [
+      "whether the imported Free label denotes destruction, release, or another allocator boundary"
+    ],
+    "low": []
+  },
+  "verification": {
+    "command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror reconstruction/staging/wave6-containers-memory/containers_memory.cpp reconstruction/staging/wave6-containers-memory/containers_memory_model_test.cpp -o /tmp/opencode/wave6-containers-memory-model && /tmp/opencode/wave6-containers-memory-model",
+    "result": "passed",
+    "model_cases": [
+      "ordinary decrement and release call",
+      "INT32_MIN decrement wrapping to INT32_MAX"
+    ],
+    "format_result": "passed"
+  },
+  "unresolved_questions": [
+    "The imported Free label and source-level allocator ownership semantics are not independently established.",
+    "The concrete critical-section object and runtime caller pairing remain opaque.",
+    "The later 0x00926340 call in the teardown caller is outside this function."
+  ],
+  "blockers": [
+    "No original-process runtime trace is available.",
+    "The external release call is represented by a package-local port for focused model testing."
+  ]
+}

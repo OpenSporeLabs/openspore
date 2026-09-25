@@ -1,0 +1,174 @@
+{
+  "schema": "pkg18-ui-space-zoom-boundary-handoff-v1",
+  "package": "PKG-18-UI-SPACE",
+  "function_address": "0x00834fa0",
+  "ghidra_name": "FUN_00834fa0",
+  "identity": "cSPUITextZoom rebinding boundary",
+  "source_files": [
+    "reconstruction/staging/pkg18-ui-space/zoom_boundary_00834fa0.hpp",
+    "reconstruction/staging/pkg18-ui-space/zoom_boundary_00834fa0.cpp",
+    "reconstruction/staging/pkg18-ui-space/zoom_boundary_00834fa0_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "bool __thiscall pkg18_text_zoom_rebind_00834fa0(ZoomOwner *owner, ZoomObject *source, ZoomObject *target, Opaque mode, Opaque state, Opaque resource_key_0, Opaque resource_key_1, Opaque resource_key_2);",
+  "scope_guard": {
+    "object_types": "ZoomObject, ZoomVtable, and ZoomOwner are opaque x86-32 staging carriers. No SDK alias or concrete UI/service type is promoted.",
+    "word_width_bytes": 4,
+    "pointer_width_bytes": 4,
+    "vtable_slot_width_bytes": 4,
+    "event_boundary": "No event, SpaceEvent, or event-family type is referenced by this function."
+  },
+  "abi": {
+    "calling_convention": "__thiscall",
+    "receiver": {
+      "register": "ECX",
+      "type": "ZoomOwner *",
+      "width_bytes": 4
+    },
+    "stack_arguments": [
+      {"position": 1, "entry_offset": "ESP+0x04", "name": "source", "type": "Opaque", "width_bytes": 4},
+      {"position": 2, "entry_offset": "ESP+0x08", "name": "target", "type": "Opaque", "width_bytes": 4},
+      {"position": 3, "entry_offset": "ESP+0x0c", "name": "mode", "type": "Opaque", "width_bytes": 4},
+      {"position": 4, "entry_offset": "ESP+0x10", "name": "state", "type": "Opaque", "width_bytes": 4},
+      {"position": 5, "entry_offset": "ESP+0x14", "name": "resource_key_0", "type": "Opaque", "width_bytes": 4},
+      {"position": 6, "entry_offset": "ESP+0x18", "name": "resource_key_1", "type": "Opaque", "width_bytes": 4},
+      {"position": 7, "entry_offset": "ESP+0x1c", "name": "resource_key_2", "type": "Opaque", "width_bytes": 4}
+    ],
+    "stack_cleanup_bytes": 28,
+    "return_register": "EAX",
+    "return_type": "bool",
+    "return_observation": "AL is zero on the null-source and zero-selected-value paths and one on the normal completion path.",
+    "termination": "RET 0x1c"
+  },
+  "field_offsets": {
+    "zoom_field": "owner+0x64",
+    "source_field": "owner+0x68",
+    "target_field": "owner+0x6c",
+    "mode_field": "owner+0x70",
+    "selected_value": "owner+0x74",
+    "state_word": "owner+0x54",
+    "resource_key_0": "owner+0x48",
+    "resource_key_1": "owner+0x4c",
+    "resource_key_2": "owner+0x50",
+    "callback_context": "owner+0x0c",
+    "resource_context": "owner+0x30"
+  },
+  "vtable_slots": [
+    {"offset": "0x00", "use": "new object acquisition"},
+    {"offset": "0x04", "use": "old object release"},
+    {"offset": "0x10", "use": "source or zoom-view traversal"},
+    {"offset": "0x30", "use": "selected zoom value"},
+    {"offset": "0x7c", "use": "ordered zoom-view calls with (1,0) and (0x10,1)"},
+    {"offset": "0xd8", "use": "target receives zoom view"},
+    {"offset": "0x104", "use": "post-mode callback"},
+    {"offset": "0x108", "use": "pre-mode callback"}
+  ],
+  "mechanics": {
+    "early_paths": [
+      "A null source returns false before any callback.",
+      "The source vtable +0x10 result is traversed through +0x10 again; a zero selected +0x30 result returns false.",
+      "If source already occupies owner+0x68, the resource triple is non-default, FUN_004EB930 compares owner+0x48 with the address of the first caller resource word, and owner+0x6c equals target, return true without rebinding."
+    ],
+    "replacement_order": [
+      "FUN_00834E30 runs before replacement work.",
+      "owner+0x68 replaces with source using new slot +0x00, field store, old slot +0x04.",
+      "The installed source view is obtained through +0x10 and its +0x30 result is stored at owner+0x74.",
+      "FUN_009512C0 supplies the factory context; FUN_009512D0 is called with size 0x834, alignment 4, raw name 0x014007f8, and that context.",
+      "A nonzero factory result is passed in ECX to FUN_00989000; its +0x20c child becomes the candidate zoom object.",
+      "owner+0x64 replaces with the candidate using the same acquire/store/release order.",
+      "The installed +0x64 object supplies the zoom view through vtable +0x10.",
+      "owner+0x6c replaces with target using the same order. A null field invokes FUN_0080FEE0, then FUN_00810620 with ECX equal to the error lookup result and stack word 0x05B598F6, then FUN_00B5F950 with the field address in ECX and the recovered object on the stack.",
+      "The reloaded target at owner+0x6c receives the zoom view through +0xd8; the zoom view receives +0x7c(1,0) followed by +0x7c(0x10,1).",
+      "The prior owner+0x70 object receives +0x108 with owner+0x0c, owner+0x70 is replaced with mode, owner+0x54 stores state, and the new +0x70 receives +0x104 with owner+0x0c."
+    ],
+    "resource_tail": [
+      "The default triple 0x0164F240/0x0164F244/0x0164F248 is normalized to 0x0164F234/0x0164F238/0x0164F23C before FUN_008120D0.",
+      "A successful lookup stores the normalized triple at owner+0x48/+0x4c/+0x50; a failed lookup stores the default triple.",
+      "A non-default stored triple calls FUN_008121B0 with owner+0x30 in ECX, the installed target, 1, and 0x05B598FA.",
+      "FUN_008105B0 receives owner+0x30 in ECX and stack words 0x0626E3B8 and 0. A non-null result receives vtable +0x7c(1,0), then the function returns true."
+    ]
+  },
+  "direct_callees": [
+    "FUN_004EB930",
+    "FUN_0080FEE0",
+    "FUN_008105B0",
+    "FUN_00810620",
+    "FUN_008120D0",
+    "FUN_008121B0",
+    "FUN_00834E30",
+    "FUN_009512C0",
+    "FUN_009512D0",
+    "FUN_00989000",
+    "FUN_00B5F950"
+  ],
+  "transfer_sites": {
+    "named_direct_count": 11,
+    "indirect_service_count": 1,
+    "indirect_service": "Final non-null FUN_008105B0 result vtable +0x7c(1,0)",
+    "total_count": 12,
+    "note": "Ghidra reports eleven named direct callees and twelve live code xrefs; the twelfth transfer is the final indirect service callback."
+  },
+  "call_graph": {
+    "direct_callers": [
+      "0x00658440",
+      "0x0066DAF0",
+      "0x00E15780",
+      "0x00ECF320",
+      "0x00EF50A0",
+      "0x00F149D0",
+      "0x0106F3D0"
+    ],
+    "code_xref_count_live": 12,
+    "code_xrefs": [
+      "0x0066E116",
+      "0x00F14AD5",
+      "0x00658734",
+      "0x00E15902",
+      "0x00EF582C",
+      "0x00EF5D4F",
+      "0x0106F51C",
+      "0x00EB99A8",
+      "0x00EB9FCA",
+      "0x00EB9903",
+      "0x00EB9A65",
+      "0x00ECF3F3"
+    ]
+  },
+  "caller_frame_evidence": {
+    "all_live_call_sites": "Each caller supplies seven stack words before the call; the target ends with RET 0x1c.",
+    "representative_site": "0x0106F51C"
+  },
+  "resources": [
+    {"raw_pointer": "0x014007f8", "decoded_string": "UI/cSPUITextZoom", "factory_size": "0x834", "factory_alignment": 4},
+    {"raw_pointer": "0x0626E3B8", "role": "final resource object id"},
+    {"raw_pointer": "0x05B598F6", "role": "null-target error lookup id"},
+    {"raw_pointer": "0x05B598FA", "role": "resource registration/apply id"}
+  ],
+  "model_tests": [
+    "fast same-source non-default resource no-op",
+    "null source early return",
+    "source, zoom, target, and mode acquire/store/release order",
+    "source and zoom-view traversal and ordered +0x7c calls",
+    "default resource-key normalization and successful lookup storage",
+    "null target error handoff with raw 0x05B598F6 stack id",
+    "final non-null service result receives +0x7c(1,0)"
+  ],
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only reconstruction/staging/pkg18-ui-space/zoom_boundary_00834fa0.cpp reconstruction/staging/pkg18-ui-space/zoom_boundary_00834fa0_model_test.cpp",
+    "model_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror reconstruction/staging/pkg18-ui-space/zoom_boundary_00834fa0.cpp reconstruction/staging/pkg18-ui-space/zoom_boundary_00834fa0_model_test.cpp -o /tmp/pkg18-ui-space-zoom-test && /tmp/pkg18-ui-space-zoom-test",
+    "format_command": "clang-format --dry-run --Werror -style=\"{BasedOnStyle: Google, FixNamespaceComments: false}\" reconstruction/staging/pkg18-ui-space/zoom_boundary_00834fa0.hpp reconstruction/staging/pkg18-ui-space/zoom_boundary_00834fa0.cpp reconstruction/staging/pkg18-ui-space/zoom_boundary_00834fa0_model_test.cpp",
+    "json_command": "python3 -m json.tool reconstruction/metadata/pkg18-ui-space/00834fa0.json >/dev/null",
+    "diff_command": "git diff --check plus untracked-file no-index whitespace checks for the four requested files",
+    "status": "verified_static_staging"
+  },
+  "unresolved_questions": [
+    "Concrete owners and vtable targets for the UI objects remain unresolved.",
+    "The semantic meanings of mode, state, and the three resource words remain opaque.",
+    "The exact behavior of a null factory result is a raw downstream dereference boundary, not a safe fallback contract."
+  ],
+  "non_goals": [
+    "No changes to src/reconstruction/pkg18_ui_space.",
+    "No changes to source-wave3 UI scripting files.",
+    "No manifest, audit, or other-package changes."
+  ]
+}

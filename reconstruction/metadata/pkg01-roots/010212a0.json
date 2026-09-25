@@ -1,0 +1,93 @@
+{
+  "schema": "pkg01-space-player-data-accessor-metadata.v1",
+  "assignment_id": "SPACE-ACCESSORS-METADATA-09",
+  "phase": "integration-metadata",
+  "package": "PKG-01-SHARED-STATE-ROOTS",
+  "va": "0x010212a0",
+  "ghidra_name": "FUN_010212a0",
+  "declaration": "OpaqueActivePlanetField13c *PKG01_CDECL FUN_010212a0();",
+  "source": {
+    "header": "src/reconstruction/pkg01_roots/space_player_data_accessors.hpp",
+    "implementation": "src/reconstruction/pkg01_roots/space_player_data_accessors.cpp",
+    "model_test": "src/reconstruction/pkg01_roots/space_player_data_accessors_model_test.cpp",
+    "status": "static_host_model"
+  },
+  "live_abi": {
+    "target": "x86:LE:32:windows",
+    "calling_convention": "cdecl-compatible no-argument accessor",
+    "formal_parameters": [],
+    "stack_cleanup_bytes": 0,
+    "return_register": "EAX",
+    "return_width_bytes": 4,
+    "return_type": "opaque 32-bit word loaded from active-planet+0x13c"
+  },
+  "mechanics": {
+    "read_chain": [
+      "Simulator::sSpacePlayerData at 0x016dda8c",
+      "active-planet pointer word at source_global+0x04",
+      "pointee word at active_planet+0x13c"
+    ],
+    "behavior": "Returns the four-byte word at active_planet+0x13c without transforming it.",
+    "null_behavior": "Returns zero if source_global is null, if source_global+0x04 is zero, or if active_planet+0x13c is zero."
+  },
+  "model_boundary": {
+    "represented": "SpacePlayerDataAccessPrefix is a 0x14-byte host prefix; ActivePlanetAccessWindow is a 0x140-byte opaque window whose last four bytes are exactly the +0x13c read.",
+    "field_provenance": "Repository layout evidence supports the +0x04 active-planet pointer, but does not establish the concrete +0x13c pointee type or field meaning.",
+    "type_boundary": "OpaqueActivePlanetField13c is an incomplete host return type; the 0x140-byte window is not a claim about the complete active-planet object.",
+    "not_represented": "The host carriers do not claim a full SpacePlayerData or active-planet layout and do not model whole-object ownership, publication, or teardown."
+  },
+  "return_semantics": {
+    "kind": "borrowed pointer-like return",
+    "reference_counting": "No entry path reaches a reference-count call. The virtual-call block at 0x010212d0-0x010212d8 is unreachable for the same DL/ECX invariants as FUN_01021260; Ghidra reports no direct callees.",
+    "ownership": "The function exposes the current +0x13c word without AddRef or Release. It does not own or transfer the pointee, active planet, SpacePlayerData object, or any whole-object state."
+  },
+  "evidence": {
+    "classification": "static_only",
+    "runtime_validated": false,
+    "function_size_bytes": 76,
+    "direct_callees": 0,
+    "assembly": [
+      "010212a0-010212c4: create a zero local and select active-planet+0x04 only for a non-null global with ECX=0 and DL=0; the null-global path selects zero with ECX=0 and DL=1",
+      "010212c5-010212d8: load ESI from the selected +0x04 word and skip the guarded unreachable call block",
+      "010212da-010212eb: return active_planet+0x13c when the selected planet word is non-null, otherwise return zero; balance PUSH ESI/PUSH ECX"
+    ],
+    "decompiler": "The decompiler reports the guarded +0x04 selection, null-planet return, and +0x13c load; it removes 0x010212d0 as unreachable."
+  },
+  "runtime_gates": [
+    "No trace establishes when the published global is valid during initialization or teardown.",
+    "The planet can be replaced or released by separate static lifecycle paths; validity of the two-level read and returned pointee remains runtime-gated.",
+    "The concrete +0x13c pointee, reference policy, and lifetime remain unresolved."
+  ],
+  "unresolved_questions": [
+    "What concrete type, vtable, and semantic role does active_planet+0x13c represent?",
+    "Is the +0x13c word always a pointer, and what ownership or lifetime applies to it?",
+    "What runtime ordering guarantees publication of the global, planet, and +0x13c pointee?"
+  ],
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I src/reconstruction/pkg01_roots src/reconstruction/pkg01_roots/space_player_data_accessors.cpp src/reconstruction/pkg01_roots/space_player_data_accessors_model_test.cpp",
+    "model_test_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -I src/reconstruction/pkg01_roots src/reconstruction/pkg01_roots/space_player_data_accessors.cpp src/reconstruction/pkg01_roots/space_player_data_accessors_model_test.cpp -o /tmp/opencode/space-player-data-accessors-metadata-test && /tmp/opencode/space-player-data-accessors-metadata-test",
+    "result": "passed x86-32 syntax and host-model assertions; this is not runtime validation"
+  },
+  "provenance": [
+    {
+      "kind": "live_ghidra",
+      "program": "SporeApp.exe",
+      "operations": [
+        "decompile_function(0x010212a0)",
+        "disassemble_function(0x010212a0)",
+        "get_function_by_address(0x010212a0)",
+        "get_function_callees(0x010212a0)",
+        "get_xrefs_to(0x016dda8c)",
+        "read_memory(0x016dda8c, 4)",
+        "decompile_function(0x01021370)"
+      ]
+    },
+    {
+      "kind": "repository_static_context",
+      "sources": [
+        "knowledgegraph/research/root-closure/track-f-space-context.md",
+        "knowledgegraph/research/root-closure/followup-space-lifecycle.json"
+      ]
+    }
+  ]
+}

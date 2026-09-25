@@ -1,0 +1,104 @@
+{
+  "schema": "pkg15-editor-support.function-handoff.v1",
+  "package": "pkg15-editor-support",
+  "address": "0x005cb240",
+  "ghidra_name": "FUN_005cb240",
+  "role": "category validation and selection",
+  "implementation": {
+    "header": "src/reconstruction/pkg15_editor_support/editor_support.hpp",
+    "source": "src/reconstruction/pkg15_editor_support/editor_support.cpp",
+    "model_test": "src/reconstruction/pkg15_editor_support/editor_support_model_test.cpp",
+    "concrete_sdk_membership": false,
+    "service_boundary": "IPaletteServices and ICategoryRow"
+  },
+  "abi": {
+    "return_type": "void",
+    "calling_convention": "__thiscall",
+    "hidden_this_register": "ECX",
+    "explicit_stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "ESP+0x04",
+        "name": "category",
+        "type": "uint32_t",
+        "width_bytes": 4
+      }
+    ],
+    "stack_cleanup_bytes": 4,
+    "ret_evidence": "RET 0x4 at 0x005cb371"
+  },
+  "observed_field_offsets": {
+    "0x34": "category vector begin",
+    "0x38": "category vector end",
+    "0x3c": "category vector capacity",
+    "0x48": "category-row vector begin",
+    "0x4c": "category-row vector end",
+    "0x50": "category-row vector capacity",
+    "0x20": "lighting service",
+    "0x64": "selected category"
+  },
+  "behavior": [
+    "Returns without side effects when the signed category word is negative or is not below the 32-bit target-word category-vector count.",
+    "When a selected category exists, finds its category index, uses that index for the matching row, calls the row vtable path with (4, 0), then transitions the old selection to disabled.",
+    "Directly stores the selected category pointer without adding a reference, transitions the new selection to enabled, and, when rows exist, calls the new row with (4, 1).",
+    "Calls the lighting service only when row entries exist.",
+    "Computes the row group as category / 9 and dispatches resize with that group.",
+    "Dispatches the standalone 0x38eb66f8 callback followed by one paired category transaction carrying keys 0x1d6253c0 and 0x3597e2da, with the category as the transaction's float value.",
+    "Obtains the live app system and calls its mode-target callback with 0x44ef2b8, the editor owner, and zero after the standalone and paired layout callbacks.",
+    "Toggles the global category-mode float, dispatches key 0x6ca71431 with the resulting mode value, and commits the final selection callback with enabled value one."
+  ],
+  "direct_callers": [
+    {
+      "address": "0x005cb5a0",
+      "call_site": "0x005cba64"
+    },
+    {
+      "address": "0x00d09690",
+      "call_site": "0x00d0969a"
+    },
+    {
+      "address": "0x00ee8860",
+      "call_site": "0x00ee8a62"
+    },
+    {
+      "address": "0x00591fa0",
+      "call_site": "0x00592c17"
+    }
+  ],
+  "direct_callees": [
+    "0x005c2960",
+    "0x005ca9c0",
+    "0x005cadb0",
+    "0x005ca880",
+    "0x005cb060",
+    "0x004a88d0",
+    "0x00435f40",
+    "0x0067dcc0"
+  ],
+  "evidence": [
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x005cb240",
+      "fact": "JL at 0x005cb24a and JGE at 0x005cb25b establish signed negative and upper-bound rejection; 0x005cb310-0x005cb35e prove the app-system callback/toggle order, and RET 0x4 proves one explicit word."
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x005cb240",
+      "fact": "Live pseudocode preserves the old-row visibility call, transition calls, row visibility calls, category divide by 9, the standalone and paired layout callbacks, app-system mode-target callback, global mode toggle, 0x6ca71431 dispatch, and final callback."
+    },
+    {
+      "tool": "ghidra_get_function_callers",
+      "address": "0x005cb240",
+      "fact": "The function is called by the construction loop and three external/message paths."
+    }
+  ],
+  "evidence_boundaries": [
+    "Category entries and row objects remain opaque pointers; no SDK category enum or row class is claimed.",
+    "The row vtable arguments are preserved as opaque ICategoryRow operations rather than named SDK methods.",
+    "The app-system receiver and global mode toggle remain opaque service operations; no concrete SDK manager type is claimed."
+  ],
+  "unresolved_contradictions": [
+    "The live decompiler's CommandLine-like type annotation is stale relative to the raw field accesses and is not used.",
+    "The paired category transaction carries a float conversion in the target; the adapter records both keys, index, and value without assigning a concrete SDK signature."
+  ]
+}

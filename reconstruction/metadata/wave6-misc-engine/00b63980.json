@@ -1,0 +1,123 @@
+{
+  "schema": "wave6-misc-engine.function-handoff.v1",
+  "package": "PKG-WAVE6-MISC-ENGINE",
+  "worker_ownership": "wave6-misc-engine",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "captured_on": "2026-09-25",
+  "va": "0x00b63980",
+  "function_address": "0x00b63980",
+  "ghidra_name": "Simulator::TimeAtStartOfFrame",
+  "normalized_symbol": "time_start_frame_deleting_destructor_00b63980",
+  "declaration": "OpaqueDestructible* WAVE6_THISCALL time_start_frame_deleting_destructor_00b63980(OpaqueDestructible* receiver, TargetWord deleting_flag)",
+  "phase": "body-reconstruction",
+  "review_status": "staged_static_review_with_semantic_label_boundary",
+  "runtime_validation": 0,
+  "implementation": {
+    "status": "implemented in worker-owned staging",
+    "staging_status": "header, source, and focused model test are present",
+    "canonical_status": "not present; canonical promotion is not claimed",
+    "staging_symbol": "time_start_frame_deleting_destructor_00b63980",
+    "header": "reconstruction/staging/wave6-misc-engine/misc_engine.hpp",
+    "source": "reconstruction/staging/wave6-misc-engine/misc_engine.cpp",
+    "model_test": "reconstruction/staging/wave6-misc-engine/misc_engine_model_test.cpp",
+    "types": "OpaqueDestructible is a package-local vtable-prefix window; DeletingDestructorPorts is a normalized unresolved native-call seam"
+  },
+  "selection": {
+    "reason": "Unclaimed shared lifecycle boundary with a vtable write, base destructor call, scalar deleting flag, explicit delete call, and pointer return; the imported SDK label is not trusted as the machine identity.",
+    "fan_in": {
+      "direct_caller_query_total": 0,
+      "function_data_xref_count": 1,
+      "function_data_xref": "0x01464450",
+      "direct_callee_count": 2
+    },
+    "dependencies_unlocked": [
+      "vtable lifecycle adapters",
+      "global deletion boundaries"
+    ]
+  },
+  "semantic_label_boundary": {
+    "imported_label": "Simulator::TimeAtStartOfFrame",
+    "machine_normalized_name": "time_start_frame_deleting_destructor_00b63980",
+    "reason": "The entry writes a vtable pointer, calls a one-instruction base destructor that writes another vtable pointer, conditionally calls the global delete wrapper, returns ECX in EAX, and cleans one stack word. This scalar-deleting-destructor shape is stronger evidence than the imported label for the mechanical boundary.",
+    "class_identity_claim": false
+  },
+  "original_native_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "thiscall with one hidden ECX receiver and one ordinary stack word",
+    "hidden_receiver": "ECX points to the destructible object",
+    "ordinary_stack_arguments": [
+      {
+        "entry_offset": "ESP+0x04",
+        "width_bytes": 4,
+        "type": "uint32_t",
+        "role": "MSVC scalar deleting-destructor flag"
+      }
+    ],
+    "stack_cleanup_bytes": 4,
+    "return_register": "EAX",
+    "return_width_bytes": 4,
+    "return_type": "opaque receiver pointer",
+    "ret_form": "RET 0x4"
+  },
+  "observed_mechanics": {
+    "instruction_count": 12,
+    "vtable_write": "receiver[0x00] = 0x01464450 before the base call",
+    "base_call": "0x005725a0 with ECX=receiver and no stack arguments",
+    "base_callee_observation": "0x005725a0 writes receiver[0x00] = 0x013ec458 and returns",
+    "delete_guard": "TEST byte [ESP+0x08],1 after PUSH ESI; only bit 0 of the low byte controls deletion",
+    "delete_call": "0x00f47380 with receiver pushed; target then performs ADD ESP,4 before its return",
+    "return": "MOV EAX,ESI; POP ESI; RET 4",
+    "callee_order": [
+      "vtable write",
+      "base destructor",
+      "conditional global delete"
+    ],
+    "guard": "no receiver null check; no vtable validity check before either direct call",
+    "mutation": "vtable word changes first to 0x01464450 and then to 0x013ec458 through the base call"
+  },
+  "live_evidence": {
+    "program": "SporeApp.exe",
+    "decompile_function": "0x00b63980",
+    "disassemble_function": "0x00b63980",
+    "function_by_address": "Simulator::TimeAtStartOfFrame; body 0x00b63980-0x00b639a3",
+    "callers": "get_function_callers; total 0",
+    "callees": "get_function_callees; 0x005725a0 and 0x00f47380",
+    "function_xrefs": "get_function_xrefs; one DATA reference from 0x01464450",
+    "base_decompiler": "0x005725a0 writes 0x013ec458 to ECX[0x00] and returns",
+    "delete_decompiler": "0x00f47380 forwards a non-null pointer to 0x009276c0 through global 0x016c8b44 and returns void"
+  },
+  "model_boundary": {
+    "represented": "vtable-prefix object, exact two vtable constants, base-call order, scalar deleting bit, global-delete call, receiver return, and RET 4",
+    "not_represented": [
+      "complete live object size or destructor family",
+      "the concrete class owning vtable 0x01464450",
+      "the base object fields or destructor side effects",
+      "the allocator/refcount semantics inside 0x00f47380"
+    ],
+    "ports": "DeletingDestructorPorts callbacks preserve unresolved native bodies and do not assert the original callback function-pointer types"
+  },
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/wave6-misc-engine -fsyntax-only reconstruction/staging/wave6-misc-engine/misc_engine.cpp reconstruction/staging/wave6-misc-engine/misc_engine_model_test.cpp",
+    "model_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fno-pie -Wl,-z,notext -I reconstruction/staging/wave6-misc-engine reconstruction/staging/wave6-misc-engine/misc_engine.cpp reconstruction/staging/wave6-misc-engine/misc_engine_model_test.cpp -o /tmp/opencode/wave6-misc-engine-test && /tmp/opencode/wave6-misc-engine-test",
+    "result": "passed",
+    "coverage": [
+      "deleting flags 0 and 1",
+      "non-low-bit flag 2",
+      "all-bits flag 0xffffffff",
+      "vtable order and base callback observation",
+      "global delete call count",
+      "receiver pointer return"
+    ],
+    "runtime": "not performed"
+  },
+  "unresolved_questions": [
+    "Which concrete class owns the vtable at 0x01464450?",
+    "Is the function a scalar deleting destructor, a generated adapter, or a differently named lifecycle thunk?",
+    "What object state does 0x005725a0 destroy beyond its vtable write?",
+    "What allocator, reference-count, and destruction behavior is hidden in 0x00f47380 and 0x009276c0?",
+    "What runtime vtable path reaches the function despite zero direct callers?"
+  ],
+  "ghidra_mutations": 0,
+  "ghidra_saves": 0
+}

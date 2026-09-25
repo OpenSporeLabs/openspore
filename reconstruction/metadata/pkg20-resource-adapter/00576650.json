@@ -1,0 +1,183 @@
+{
+  "schema": "pkg20-resource-adapter-function-handoff.v1",
+  "package": "PKG-20-RESOURCE-ADAPTER",
+  "function_address": "0x00576650",
+  "ghidra_name": "TexturePtr_Set",
+  "normalized_symbol": "TexturePtr_Set",
+  "source_files": [
+    "reconstruction/staging/pkg20-resource-adapter/texture_ptr.hpp",
+    "reconstruction/staging/pkg20-resource-adapter/texture_ptr.cpp",
+    "reconstruction/staging/pkg20-resource-adapter/texture_ptr_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "void __thiscall TexturePtr_Set(TexturePtr*, OpaqueTexture* rhs);",
+  "abi": {
+    "return_type": "void",
+    "return_register": null,
+    "calling_convention": "__thiscall observed",
+    "hidden_this_register": "ECX",
+    "hidden_this_type": "TexturePtr*",
+    "stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "ESP+0x04",
+        "name": "rhs",
+        "type": "OpaqueTexture*",
+        "width_bytes": 4,
+        "observed_use": "Compares against the current slot, increments rhs+0x08 when non-null, and publishes rhs to the slot."
+      }
+    ],
+    "stack_cleanup_bytes": 4,
+    "return_evidence": "The function ends with RET 0x4 on both normal and equality paths."
+  },
+  "layout": {
+    "pointer_slot": {
+      "size_bytes": 4,
+      "value_offset": "0x00",
+      "value_type": "OpaqueTexture*"
+    },
+    "opaque_texture": {
+      "minimum_size_bytes": 12,
+      "prefix_size_bytes": 8,
+      "refcount_offset": "0x08",
+      "refcount_type": "int32"
+    },
+    "owner": "The concrete Texture owner is unresolved and remains an opaque prefix."
+  },
+  "mechanics": {
+    "equality_noop": "If the incoming rhs equals the current slot value, return without changing either refcount.",
+    "rhs_acquire": "If rhs is non-null after the equality check, atomically increment the 32-bit word at rhs+0x08.",
+    "slot_publication": "Store rhs into the receiver slot at offset 0x00 before releasing the old value.",
+    "old_release": "If old is non-null, atomically decrement the 32-bit word at old+0x08.",
+    "below_one_clamp": "Read the post-decrement refcount; if it is below one, atomically add one and return without deleting the texture.",
+    "no_delete": "The target has no delete, destructor, or concrete Texture destruction call.",
+    "concurrency_boundary": "The model uses locked atomic read-modify-write operations, but concrete synchronization and object-lifetime guarantees remain opaque.",
+    "operation_trace": "The focused model test records rhs acquire, slot store, old release, and clamp in the reconstructed sequence without changing production source; distinct replacement asserts acquire, store, release, clamp and equality asserts an empty trace."
+  },
+  "call_graph": {
+    "direct_callers": {
+      "ghidra_count": 67,
+      "representative_functions": [
+        "0x00580700",
+        "0x00585d40",
+        "0x005fdca0",
+        "0x00646370",
+        "0x00659270",
+        "0x006ebb80",
+        "0x006ef9e0",
+        "0x006f0fb0",
+        "0x006f44c0",
+        "0x006f4500",
+        "0x006fbed0",
+        "0x0070ec80",
+        "0x00713070",
+        "0x007679f0",
+        "0x0076e110",
+        "0x0076edf0",
+        "0x00777290",
+        "0x007773c0",
+        "0x0077cb10",
+        "0x00780270",
+        "0x00ae4430",
+        "0x00ae4610",
+        "0x00c2fc10",
+        "0x00e49f80",
+        "0x00e834d0",
+        "0x00f3d210",
+        "0x00f9d5c0",
+        "0x00fa1650",
+        "0x01006370"
+      ]
+    },
+    "direct_callees": [],
+    "function_xrefs": 124,
+    "global_references": "No direct global data reference is present in the target body."
+  },
+  "evidence": [
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x00576650",
+      "observation": "The live body compares the incoming pointer with the current slot, conditionally increments rhs+0x08, stores rhs, conditionally decrements old+0x08, and clamps the post-decrement value below one to one."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x00576650",
+      "observation": "The 33-instruction body preserves ECX as the receiver, ESP+0x04 as rhs, locked XADD operations, the +0x08 refcount offset, the equality branch, and RET 0x4."
+    },
+    {
+      "tool": "ghidra_get_function_callers",
+      "address": "0x00576650",
+      "observation": "The target has 67 direct caller functions."
+    },
+    {
+      "tool": "ghidra_get_function_xrefs",
+      "address": "0x00576650",
+      "observation": "The target has 124 direct call xrefs, including repeated calls from several callers."
+    },
+    {
+      "tool": "ghidra_get_function_callees",
+      "address": "0x00576650",
+      "observation": "The target has no direct callees."
+    },
+    {
+      "tool": "ghidra_get_xrefs_from",
+      "address": "0x00576650",
+      "observation": "The target has no direct outgoing data or global references."
+    },
+    {
+      "tool": "ghidra_get_assembly_context",
+      "address": "0x00576650",
+      "observation": "Representative call sites load the receiver into ECX and push the incoming pointer before calling the target, corroborating the thiscall boundary."
+    },
+    {
+      "tool": "ghidra_search_data_types",
+      "address": "0x00576650",
+      "observation": "Texture-related SDK data types exist, but no concrete target layout is assigned to the opaque receiver or owner in this wave."
+    }
+  ],
+  "confidence": {
+    "overall": "high for equality, refcount update order, slot offset, and thiscall stack boundary",
+    "high": [
+      "ECX receiver and ESP+0x04 rhs",
+      "RET 0x4",
+      "texture refcount at +0x08",
+      "equality no-op",
+      "rhs acquire before slot publication",
+      "old release after slot publication",
+      "post-decrement clamp to one",
+      "no delete",
+      "distinct replacement trace order",
+      "equal-pointer empty trace"
+    ],
+    "medium": [
+      "concrete Texture owner",
+      "runtime concurrency and object-lifetime guarantees"
+    ],
+    "low": []
+  },
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/pkg20-resource-adapter reconstruction/staging/pkg20-resource-adapter/texture_ptr.cpp",
+    "model_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg20-resource-adapter reconstruction/staging/pkg20-resource-adapter/texture_ptr.cpp reconstruction/staging/pkg20-resource-adapter/texture_ptr_model_test.cpp -o /tmp/opencode/pkg20-texture-ptr-model && /tmp/opencode/pkg20-texture-ptr-model",
+    "format_command": "clang-format --dry-run --Werror -style=\"{BasedOnStyle: Google, FixNamespaceComments: false}\" reconstruction/staging/pkg20-resource-adapter/texture_ptr.hpp reconstruction/staging/pkg20-resource-adapter/texture_ptr.cpp reconstruction/staging/pkg20-resource-adapter/texture_ptr_model_test.cpp",
+    "trace_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg20-resource-adapter reconstruction/staging/pkg20-resource-adapter/texture_ptr.cpp reconstruction/staging/pkg20-resource-adapter/texture_ptr_model_test.cpp -o /tmp/opencode/pkg20-texture-ptr-model && /tmp/opencode/pkg20-texture-ptr-model",
+    "json_command": "python3 -m json.tool reconstruction/metadata/pkg20-resource-adapter/00576650.json >/dev/null",
+    "results": {
+      "syntax": "passed",
+      "model": "passed",
+      "trace": "passed",
+      "format": "passed",
+      "json": "passed"
+    }
+  },
+  "unresolved_questions": [
+    "What is the concrete Texture subtype and complete owner layout?",
+    "What are the exact runtime synchronization guarantees around the locked refcount updates?",
+    "How are TexturePtr slots embedded and published by the 67 direct callers?",
+    "What runtime paths exercise the below-one clamp and whether such objects are externally observable?"
+  ],
+  "blockers": [
+    "No runtime trace is available for refcount, allocator, or concurrency behavior.",
+    "Concrete Texture ownership and destruction remain outside this body.",
+    "Caller slot layouts and Texture producer semantics remain opaque."
+  ]
+}

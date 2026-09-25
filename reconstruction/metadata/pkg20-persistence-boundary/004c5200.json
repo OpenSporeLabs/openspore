@@ -1,0 +1,226 @@
+{
+  "schema": "pkg20-persistence-boundary.function-reconstruction.v1",
+  "package": "pkg20-persistence-boundary",
+  "address": "0x004c5200",
+  "role": "paint-job preparation and bake submission boundary",
+  "semantic_claim": "The function is modeled as an ordered paint-job preparation and submission boundary. EditorSkin, model, service, and job ownership remain opaque; no profile, editor transient, or UI ownership semantics are assigned.",
+  "implementation": {
+    "language": "C++17",
+    "model": "opaque editor and 0x84-byte paint job with injected boundary services",
+    "header": "reconstruction/staging/pkg20-persistence-boundary/paint_job_004c5200.hpp",
+    "source": "reconstruction/staging/pkg20-persistence-boundary/paint_job_004c5200.cpp",
+    "test": "reconstruction/staging/pkg20-persistence-boundary/paint_job_004c5200_model_test.cpp"
+  },
+  "abi": {
+    "return_type": "uint8_t",
+    "calling_convention": "__thiscall",
+    "hidden_this_register": "ECX",
+    "hidden_this_type": "opaque editor pointer",
+    "stack_arguments": [
+      {
+        "name": "request",
+        "type": "opaque request pointer",
+        "entry_offset": "ESP+4",
+        "width_bytes": 4,
+        "observed_fields": ["+0x10", "+0x58", "+0x8c", "+0x98", "+0xa4"]
+      }
+    ],
+    "stack_cleanup_bytes": 4,
+    "ret_evidence": "RET 0x4 at 0x004c58a7"
+  },
+  "scope_guard": {
+    "editor": "Opaque 0x88-byte carrier for the observed editor fields; the larger live cEditor type is not promoted into this boundary.",
+    "paint_job": "Opaque 0x84-byte carrier; Ghidra has no resolved PaintJob or cPaintJob structure for this allocation.",
+    "editor_skin": "Opaque; live cEditorSkin is 0x88 bytes, but no field is consumed directly by 0x004c5200.",
+    "model": "Opaque; live Model is 0x94 bytes and live EditorModel is 0xe0 bytes; no model ownership is inferred.",
+    "services": "IBakeManager, PropertyList, paint system, and property service pointers remain opaque ports.",
+    "cancellation_side_effect": "The injected cancellation service owns the live job+0x6b write; the boundary source does not duplicate that write."
+  },
+  "allocation_boundary": {
+    "result": "The allocator/construction port returns OpaquePaintJob* directly; its pointer value is the opaque job handle stored at editor+0x5c.",
+    "resolver": "No resolve_paint_job call or resolver-derived pointer is part of 0x004c5200."
+  },
+  "observed_layouts": {
+    "cEditor": {
+      "size_bytes": 1536,
+      "directly_observed_offsets": {
+        "0x1c": "opaque source reference",
+        "0x5c": "opaque current paint job",
+        "0x64": "opaque resource A",
+        "0x68": "opaque resource B",
+        "0x6c": "opaque resource C",
+        "0x84": "required state byte"
+      }
+    },
+    "cEditorSkin": {
+      "size_bytes": 136,
+      "observed_fields": ["mpEditor +0x0c", "mpEditorModel +0x10", "mpModelWorld +0x14"]
+    },
+    "EditorModel": {
+      "size_bytes": 224,
+      "observed_model_type_offset": "0x58"
+    },
+    "Model": {
+      "size_bytes": 148,
+      "use": "No direct Model field is read by 0x004c5200; the type remains opaque."
+    },
+    "PropertyList": {
+      "size_bytes": 56,
+      "observed_fields": ["vtable +0x00", "refcount +0x04", "parent +0x30"]
+    },
+    "IBakeManager": {
+      "size_bytes": 4,
+      "submission_slot": "vtable +0x64"
+    }
+  },
+  "observed_execution_order": [
+    {
+      "order": 1,
+      "addresses": ["0x004c5216", "0x004c521f", "0x004c58a1"],
+      "fact": "Read editor+0x84 and return zero without a service call when it is zero."
+    },
+    {
+      "order": 2,
+      "addresses": ["0x004c522b", "0x004c5241", "0x004c525d", "0x004c5264", "0x004c52b6"],
+      "fact": "When a current job exists and both job+0x6b and job+0x6c are zero, check reusable state, get the paint system, cancel the job, let the cancellation service own the job+0x6b write, clear editor+0x5c, and release the old job before preparation."
+    },
+    {
+      "order": 3,
+      "addresses": ["0x004c52bb", "0x004c52c4", "0x004c52e2"],
+      "fact": "Read request channel-zero record and call the resource preparation boundary with editor+0x64 and editor+0x6c before allocation."
+    },
+    {
+      "order": 4,
+      "addresses": ["0x004c52f2", "0x004c52fc", "0x004c530d", "0x004c5310"],
+      "fact": "Allocate exactly 0x84 bytes with the Editor allocator domain and invoke the observed 0x0051df40 constructor only for a non-null allocation."
+    },
+    {
+      "order": 5,
+      "addresses": ["0x004c5321", "0x004c5345", "0x004c5363", "0x004c5369", "0x004c5374", "0x004c5379", "0x004c53d2"],
+      "fact": "After the new allocation and constructor, read editor+0x5c as the previous job. If the new handle differs, retain the new job through the dedicated opaque refcount port when non-null, store the new handle, and release the prior job. If the handles are equal, skip all three operations. Then retain editor+0x1c into job+0x08 and release the prior job source after replacement."
+    },
+    {
+      "order": 6,
+      "addresses": ["0x004c53d7", "0x004c543e", "0x004c5473", "0x004c547a", "0x004c5617"],
+      "fact": "Copy editor resources, apply max(0x40, property 0xb8864eac), set -1, apply feature and channel flags, and copy three request channel records and arrays."
+    },
+    {
+      "order": 7,
+      "addresses": ["0x004c561e", "0x004c5670", "0x004c568a", "0x004c56c2", "0x004c56e3", "0x004c5731"],
+      "fact": "Resolve the property service root, resolve the property list, invoke the property query service, and conditionally read the 0x05e68c2e array; release the property list only after bake submission handling."
+    },
+    {
+      "order": 8,
+      "addresses": ["0x004c5737", "0x004c5758", "0x004c5780", "0x004c579c", "0x004c57b8"],
+      "fact": "Apply model-type-specific writes at job offsets 0x1c, 0x20, and 0x24 before submission."
+    },
+    {
+      "order": 9,
+      "addresses": ["0x004c57bf", "0x004c57f1", "0x004c57f6", "0x004c5802", "0x004c5864", "0x004c587e", "0x004c5885", "0x004c589a"],
+      "fact": "Get IBakeManager and call its vtable+0x64 submission slot. Rejection clears and releases the current job before releasing the property list and returns zero; acceptance releases only the property list and returns nonzero."
+    }
+  ],
+  "property_list_query_order": [
+    "get_property_service",
+    "resolve_property_list",
+    "query_property_list",
+    "get_uint32_array when query succeeds",
+    "submit_bake",
+    "release_property_list when handle is non-null"
+  ],
+  "allocation_failure_policy": {
+    "live_behavior": "After allocation and construction, a null result is compared with editor+0x5c. If a prior job exists, the null handle differs, so the live body stores null and releases the prior job; if both handles are null, the same-handle branch skips the store and release. The body then unconditionally reads the null job at +0x08 while attaching editor+0x1c. This is an unsafe null dereference, not a safe false return.",
+    "default_model": "A null allocation skips the new-job retain, replaces the current handle and releases any prior job when the handles differ, and then preserves the live job+0x08 dereference; there is no implicit allocation-failure guard.",
+    "explicit_model_guard": "PaintJobModelOptions.guard_invalid_allocation is an injected test-only option that returns false after replacement; it is not a claim about the live function."
+  },
+  "invalid_handle_policy": {
+    "live_behavior": "A non-null but invalid allocation pointer returned directly reaches the unguarded construction/field-write path; no resolver call intervenes.",
+    "explicit_model_guard": "PaintJobModelOptions.guard_invalid_job_handle is an injected test-only false return.",
+    "null_bake_manager": "A null IBakeManager reaches the unguarded indirect submission dereference. PaintJobModelOptions.guard_null_bake_manager is an injected test-only false return that releases the property list first."
+  },
+  "direct_callers": [
+    "0x00587557",
+    "0x00585f4e",
+    "0x00586373",
+    "0x0058715c",
+    "0x0059316e",
+    "0x00591a45",
+    "0x00591bea"
+  ],
+  "direct_callees": [
+    "0x006a0840 App::Property::GetArrayUInt32",
+    "0x00401010 Editors::IBakeManager::Get",
+    "0x00404f90 reference release boundary",
+    "0x00432f10 property-list resolution boundary",
+    "0x00453540 paint-job release boundary",
+    "0x004615e0 resource preparation boundary",
+    "0x004adc60 channel +0x8c accessor",
+    "0x004adc80 channel +0x98 accessor",
+    "0x004adca0 channel record accessor",
+    "0x004c58b0 reusable-job predicate",
+    "0x0051df40 0x84-byte job constructor",
+    "0x00522a40 paint-system cancellation",
+    "0x0067de30 property service root accessor",
+    "0x006a2660 uint32 property accessor",
+    "0x00f473a0 allocator",
+    "0x006a25a0 bool property accessor",
+    "0x00401080 Skinner::cPaintSystem::Get"
+  ],
+  "opaque_refcount_boundary": {
+    "new_job_retain_address": "0x004c5345",
+    "operation": "After allocation and construction, compare the new handle with editor+0x5c. When different, increment the non-null new job's opaque refcount before storing its handle, then release the previous job. When equal, skip retain, store, and release.",
+    "source_reference_retain": "The later editor+0x1c attachment uses a separate source-reference retain operation."
+  },
+  "indirect_boundaries": [
+    "property service vtable +0x2c query",
+    "IBakeManager vtable +0x64 bake submission",
+    "PropertyList vtable +0x04 release"
+  ],
+  "field_writes": {
+    "editor": {
+      "0x5c": "store the new job handle and release the prior job when the new handle differs; leave the handle unchanged when they are equal"
+    },
+    "paint_job": {
+      "0x08": "editor source reference",
+      "0x0c..0x14": "editor resources",
+      "0x18..0x28": "three channel arrays",
+      "0x38..0x5c": "three 12-byte channel records",
+      "0x5c": "max(0x40, property 0xb8864eac)",
+      "0x60": "0xffffffff",
+      "0x65": "feature flag with model-type short circuit",
+      "0x66": "request model type is not 0x438f6347",
+      "0x67": "1",
+      "0x68": "0",
+      "0x69": "0",
+      "0x6a": "1",
+      "0x6b": "set to 1 by the cancellation service; boundary source does not write it",
+      "0x6c": "reusable predicate guard"
+    }
+  },
+  "model_tests": [
+    "disabled editor state returns before every service",
+    "reusable cancellation notifies the paint system, delegates the +0x6b write to the cancellation service, clears the old handle, and releases it before preparation",
+    "new-job opaque refcount retain occurs before editor+0x5c storage only when the new handle differs and is distinct from source-reference retain",
+    "same-handle allocation skips new-job retain, editor+0x5c storage, and previous-job release",
+    "null allocation replaces and releases a non-null previous handle before the injected guard",
+    "non-reusable current job is released only during replacement",
+    "0x84 allocation and Editor domain are forwarded",
+    "resource fields, source attachment, quality floor, flags, channel records, and property fallback writes are verified",
+    "feature property short circuit and single-model type override are verified",
+    "property query/array ordering and invalid property-list handle behavior are verified",
+    "IBakeManager submission acceptance and rejection cleanup order are verified",
+    "injected invalid-allocation, invalid-job, and null-bake-manager guards return false",
+    "default invalid allocation, invalid allocation pointer, and null bake manager ports model the live crash boundaries",
+    "allocation returns the job pointer directly and no resolver is invoked"
+  ],
+  "verification": {
+    "syntax_and_model": "passed: x86-32 syntax compile and focused model completed",
+    "format": "passed: clang-format --dry-run --Werror with Google style and namespace comments disabled",
+    "json": "passed: python3 -m json.tool"
+  },
+  "unresolved_questions": [
+    "The exact class identity and semantic field names of the 0x84-byte allocation are unresolved.",
+    "The live cEditor, cEditorSkin, EditorModel, and Model layouts are not promoted into the opaque staging types.",
+    "The exact service ownership of IBakeManager, PropertyList, paint-system, and property-service pointers is not inferred."
+  ]
+}

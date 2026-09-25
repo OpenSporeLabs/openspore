@@ -1,7 +1,7 @@
 {
   "$schema": "openspore-source-reconstruction-audit-1",
   "artifact": "knowledgegraph/research/source-reconstruction-audit.json",
-  "as_of": "2026-09-24",
+  "as_of": "2026-09-25",
   "scope": {
     "binary": "SporeApp.exe 3.1.0.22",
     "packages": [
@@ -16,13 +16,13 @@
   },
   "counts": {
     "functions_audited": 10,
-    "P0": 1,
+    "P0": 0,
     "P1": 9,
     "P2": 1,
     "P3": 0,
     "repairs_performed": 1,
     "runtime_gated_findings": 10,
-    "clean_findings": 9,
+    "clean_findings": 10,
     "tests_after_audit": {
       "package_syntax": 4,
       "editor_model": 1,
@@ -34,25 +34,32 @@
       "git_diff_check": 1
     }
   },
-  "count_interpretation": "P0, P1, and P2 counts include propagation and document metadata boundaries; they are not all integrated-body semantic defects. The repaired PKG-12 function is clean after semantic and ABI re-review.",
+  "count_interpretation": "P0-001 is resolved by the targeted map-semantics audit. P1 and P2 counts include propagation and document metadata boundaries; they are not all integrated-body semantic defects. The repaired PKG-12 function is clean after semantic and ABI re-review.",
   "findings": [
     {
       "id": "P0-001",
       "severity": "P0",
       "va": "0x00e5c780",
-      "status": "unresolved_successor_propagation_blocked",
-      "title": "Exact-key behavior contradicts lower-bound propagation",
-      "finding": "Live assembly performs lower-bound traversal, then rejects a greater successor in a final exact-key comparison and otherwise returns the end sentinel.",
+      "status": "resolved_static_guarded_lookup",
+      "title": "Exact-key behavior versus lower-bound propagation",
+      "finding": "Live assembly performs a lower-bound-shaped candidate walk, then rejects a greater successor in the final unsigned comparison. The accepted candidate is exactly equal to the query; this is a fixed hybrid contract, not caller-specific lower-bound behavior.",
       "current_evidence": [
         "Live Ghidra disassembly and decompilation at 0x00e5c780",
-        "docs/analysis/semantic-decomp.md:121,194"
+        "knowledgegraph/research/map-semantics-resolution.json",
+        "docs/analysis/map-semantics-resolution.md"
       ],
+      "downstream_classification": {
+        "0x00b21340": "exact-find dependent",
+        "0x00b3d300": "independent",
+        "0x00ba9370": "exact-find dependent",
+        "0x01021300": "exact-find dependent through 0x00ba9370"
+      },
       "stale_contradictory_claims": [
         "docs/analysis/architecture-decisions.md:47-51",
         "docs/analysis/simulator-shared-state-interface.md:270-283",
         "docs/analysis/architecture-resolution.md:50-75"
       ],
-      "boundary": "Do not propagate lower-bound successor behavior to noun, star, cache, or other consumers until the contradiction is adjudicated."
+      "boundary": "Do not propagate successor behavior. Preserve the guarded candidate implementation and the end-sentinel consumer contracts. Root publication/lifetime remains runtime-gated."
     },
     {
       "id": "P1-001",

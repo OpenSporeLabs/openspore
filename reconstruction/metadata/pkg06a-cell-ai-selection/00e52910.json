@@ -1,0 +1,240 @@
+{
+  "schema": "pkg06a-cell-ai-selection.function-handoff.v1",
+  "package": "PKG-06A-CELL-AI-SELECTION",
+  "va": "0x00e52910",
+  "function_address": "0x00e52910",
+  "symbol": "cell_ai_select_profile_00e52910",
+  "normalized_symbol": "cell_ai_select_profile_00e52910",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "phase": "body-reconstruction",
+  "declaration": "extern \"C\" ObservedCellAiData* cell_ai_select_profile_00e52910(ObservedCellCellResource* resource);",
+  "staging_source_paths": [
+    "reconstruction/staging/pkg06a-cell-ai-selection/cell_ai_selection.hpp",
+    "reconstruction/staging/pkg06a-cell-ai-selection/cell_ai_selection.cpp",
+    "reconstruction/staging/pkg06a-cell-ai-selection/cell_ai_selection_model_test.cpp"
+  ],
+  "canonical_intended_paths": {
+    "header": "src/reconstruction/pkg06a_cell_ai_selection/cell_ai_selection.hpp",
+    "source": "src/reconstruction/pkg06a_cell_ai_selection/cell_ai_selection.cpp",
+    "test": "src/reconstruction/pkg06a_cell_ai_selection/cell_ai_selection_model_test.cpp"
+  },
+  "api": {
+    "namespace": "openspore::reconstruction::pkg06a_cell_ai_selection",
+    "observed_cell_ai_data": {
+      "type_field": "type",
+      "type_offset": "0x00",
+      "type": "std::int32_t",
+      "stride": "0xb4"
+    },
+    "observed_cell_cell_resource": {
+      "normal_profile_offset": "0xe0",
+      "ai_hard_profile_offset": "0x194",
+      "ai_easy_profile_offset": "0x248"
+    },
+    "package_global": "std::byte* g_cell_game_016b3c04",
+    "function": "extern \"C\" ObservedCellAiData* cell_ai_select_profile_00e52910(ObservedCellCellResource* resource)"
+  },
+  "static_contract": {
+    "serializable_offset_read": {
+      "source": "g_cell_game_016b3c04 + 0x5190",
+      "width": "u32",
+      "meaning": "u32 serializable pointer value consumed as a 32-bit address by the reconstructed body"
+    },
+    "difficulty_read": {
+      "source": "serializable + 0x7c",
+      "width": "i32"
+    },
+    "selection": [
+      "difficulty 0 selects resource.ai_easy",
+      "difficulty 2 selects resource.ai_hard",
+      "all other difficulty values select resource.normal"
+    ],
+    "fallback": {
+      "condition": "selected profile type == -1 and selected difficulty is 0 or 2",
+      "result": "resource.normal"
+    },
+    "normal_sentinel": "A normal profile with type -1 remains the normal profile when difficulty is outside 0 and 2.",
+    "mutation": false,
+    "null_check": false,
+    "direct_callers": 23,
+    "direct_callees": 0
+  },
+  "runtime_gate": {
+    "status": "required",
+    "conditions": [
+      "Original Cell reachability",
+      "valid g_cell_game_016b3c04 pointer",
+      "valid serializable pointer obtained from game + 0x5190",
+      "valid ObservedCellCellResource pointer",
+      "valid resource storage for the selected profile"
+    ],
+    "purpose": "The model and static contract assume the original Cell state and pointer chain are valid.",
+    "runtime_validation": "not performed"
+  },
+  "evidence": [
+    {
+      "source": "assignment target contract",
+      "observation": "SporeApp.exe 3.1.0.22 at VA 0x00e52910 normalizes to cell_ai_select_profile_00e52910."
+    },
+    {
+      "source": "assignment target contract",
+      "observation": "ObservedCellAiData has an i32 type field at +0x00 and a 0xb4 stride; ObservedCellCellResource stores normal, aiHard, and aiEasy profiles at +0xe0, +0x194, and +0x248."
+    },
+    {
+      "source": "assignment target contract",
+      "observation": "The function reads the serializable offset from game + 0x5190 and the difficulty from serializable + 0x7c, selects easy for 0 and hard for 2, and selects normal for all other values."
+    },
+    {
+      "source": "assignment target contract",
+      "observation": "Only selected easy or hard profiles with type -1 fall back to normal; the function performs no mutation and has no null check."
+    },
+    {
+      "source": "assignment target contract",
+      "observation": "The target has 23 direct callers and 0 direct callees."
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "program": "SporeApp.exe",
+      "address": "0x00e52910",
+      "observation": "Live decompilation reads the serializable pointer from Simulator__Cell__sCellGame + 0x5190, reads difficulty at +0x7c, selects +0x248 for 0, +0x194 for 2, and +0xe0 otherwise, then falls back to +0xe0 when the selected profile type is -1."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "program": "SporeApp.exe",
+      "address": "0x00e52910",
+      "observation": "Live disassembly has 21 instructions: MOV EAX,[0x016b3c04], MOV ECX,dword ptr [EAX+0x5190], MOV EAX,dword ptr [ECX+0x7c], difficulty branches to +0x248, +0x194, or +0xe0, followed by CMP dword ptr [EAX],-1 and the +0xe0 fallback; no write or CALL instruction appears."
+    },
+    {
+      "tool": "ghidra_get_function_callers",
+      "program": "SporeApp.exe",
+      "address": "0x00e52910",
+      "count": 23,
+      "addresses": [
+        "0x00e575f0",
+        "0x00e57890",
+        "0x00e67c40",
+        "0x00e686c0",
+        "0x00e69480",
+        "0x00e695f0",
+        "0x00e6cbd0",
+        "0x00e6f990",
+        "0x00e6fbb0",
+        "0x00e6fce0",
+        "0x00e6fd70",
+        "0x00e70650",
+        "0x00e707d0",
+        "0x00e70cf0",
+        "0x00e71300",
+        "0x00e71520",
+        "0x00e71f00",
+        "0x00e78fc0",
+        "0x00e792b0",
+        "0x00e79320",
+        "0x00e79c30",
+        "0x00e7a190",
+        "0x00e7d760"
+      ]
+    },
+    {
+      "tool": "ghidra_get_function_callees",
+      "program": "SporeApp.exe",
+      "address": "0x00e52910",
+      "count": 0,
+      "addresses": []
+    }
+  ],
+  "provenance": {
+    "origin": "provided target contract for the focused PKG-06A batch",
+    "analysis_basis": "Live Ghidra decompilation, disassembly, caller, and callee queries on SporeApp.exe 3.1.0.22, supplemented by the assignment contract",
+    "live_ghidra": {
+      "program": "SporeApp.exe",
+      "address": "0x00e52910",
+      "tools": [
+        "ghidra_decompile_function",
+        "ghidra_disassemble_function",
+        "ghidra_get_function_callers",
+        "ghidra_get_function_callees"
+      ]
+    },
+    "runtime_trace": "none",
+    "runtime_validation": "not performed",
+    "canonical_source": "not written by this worker"
+  },
+  "confidence": {
+    "overall": "high for the supplied static contract",
+    "selection_mapping": "high",
+    "sentinel_fallback_scope": "high",
+    "layout_offsets": "high",
+    "immutability": "high",
+    "runtime_behavior": "not established by this handoff"
+  },
+  "dependencies": [
+    {
+      "name": "cell_game_global",
+      "symbol": "g_cell_game_016b3c04",
+      "required_for": "serializable pointer read",
+      "status": "package-owned storage; runtime pointer value remains gated",
+      "owner": "reconstruction/staging/pkg06a-cell-ai-selection/cell_ai_selection.cpp",
+      "storage": "namespace-scope pointer with static storage duration, zero-initialized before main",
+      "lifetime_boundary": "The package definition owns the storage for the process lifetime; the model assigns fixture storage to the global before each modeled function call, and that fixture assignment does not establish a production lifetime guarantee.",
+      "model_assignment": "assigned before each modeled function call"
+    },
+    {
+      "name": "cell_ai_data_layout",
+      "required_for": "selected profile type fallback",
+      "status": "provided by package API"
+    },
+    {
+      "name": "cell_cell_resource_layout",
+      "required_for": "normal, aiHard, and aiEasy profile selection",
+      "status": "provided by package API"
+    },
+    {
+      "name": "original_cell_runtime_state",
+      "required_for": "valid game, serializable, and resource pointer chain",
+      "status": "runtime gated"
+    }
+  ],
+  "model_test": {
+    "path": "reconstruction/staging/pkg06a-cell-ai-selection/cell_ai_selection_model_test.cpp",
+    "scope": "Standalone x86-32 behavioral model",
+    "checks": [
+      "difficulty 0 selects the exact easy profile pointer",
+      "difficulty 2 selects the exact hard profile pointer",
+      "positive and negative non-0/2 difficulties select the exact normal profile pointer",
+      "easy and hard type -1 sentinels fall back to the exact normal profile pointer",
+      "normal type -1 remains the exact normal profile pointer for difficulty 1 and -1",
+      "game, resource, and all profile bytes remain unchanged",
+      "layout static_asserts enforce the supplied offsets and stride"
+    ],
+    "ndebug_behavior": "checks use explicit failure counting and are not suppressed by NDEBUG",
+    "runtime_validation": "not performed"
+  },
+  "unresolved_questions": [
+    "What runtime values produce difficulty 0, 2, or another value in the original Cell state?",
+    "What is the canonical concrete type and ownership of ObservedCellCellResource?",
+    "What concrete runtime values use the type -1 sentinel in normal, easy, and hard profiles?",
+    "What are the exact identities and field layouts of all 23 direct callers' resource and profile objects?",
+    "Does any caller violate the assumed valid game, serializable, resource, or selected profile pointer chain?"
+  ],
+  "static_vs_runtime_validation_boundary": {
+    "static": "The standalone test models only the supplied pointer reads, difficulty mapping, sentinel fallback, pointer identity, and no-mutation contract.",
+    "runtime": "The original Cell reachability and pointer validity gate is not exercised and no runtime result is claimed.",
+    "claims_not_made": [
+      "runtime selection outcomes",
+      "runtime pointer validity",
+      "caller-specific behavior",
+      "canonical type promotion"
+    ]
+  },
+  "review_state": {
+    "status": "pending",
+    "requires": "integrator review against the original Cell runtime gate and parallel package implementation"
+  },
+  "verification": {
+    "json_syntax": "validated",
+    "test_execution": "passed: x86-32 standalone model compiled and completed with explicit failure checks, including NDEBUG",
+    "runtime": "not performed"
+  }
+}

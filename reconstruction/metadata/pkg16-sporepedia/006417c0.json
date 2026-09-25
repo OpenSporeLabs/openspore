@@ -1,0 +1,146 @@
+{
+  "schema": "pkg16-sporepedia-function-handoff.v1",
+  "package": "PKG-16-SPOREPEDIA-ONLINE",
+  "address": "0x006417c0",
+  "sdk_name": "Sporepedia::cSPAssetDataOTDB::GetAssetID",
+  "staging_symbol": "sporepedia_get_asset_id_006417c0",
+  "phase": "body-reconstruction",
+  "scope": "local access only; no network behavior",
+  "raw_declaration": "long double __thiscall sporepedia_get_asset_id_006417c0(Pkg16AssetData *self, std::uint64_t *destination);",
+  "sdk_declaration_observed": "bool Sporepedia::cSPAssetDataOTDB::GetAssetID(uint64_t &destination);",
+  "contract_status": "address-label and raw-machine-body conflict; no asset-ID output contract is asserted",
+  "abi": {
+    "receiver": {
+      "register": "ECX",
+      "type": "Pkg16AssetData *",
+      "width_bytes": 4,
+      "observed_use": "none"
+    },
+    "stack_arguments": [
+      {
+        "entry_offset": "ESP+4",
+        "type": "std::uint64_t *",
+        "width_bytes": 4,
+        "observed_use": "none"
+      }
+    ],
+    "return_register": "ST0",
+    "source_load_width_bytes": 4,
+    "x87_register_width_bits": 80,
+    "return_observation": "FLD m32 loads the constant 0xbf800000 as a single-precision x87 value; AL and EAX are not written.",
+    "stack_cleanup_bytes": 0,
+    "termination": "RET"
+  },
+  "raw_body": [
+    "d9 05 bc b1 3e 01",
+    "c3"
+  ],
+  "mechanics": {
+    "global_address": "0x013eb1bc",
+    "global_name_in_live_ghidra": "DAT_013eb1bc",
+    "global_bytes_hex": "000080bf",
+    "constant_bit_pattern": "0xbf800000",
+    "constant_float": -1.0,
+    "staging_relocation": "The linker relocates the staged symbol; the emitted instruction retains the original FLD DWORD PTR [symbol] form.",
+    "receiver_access": "none",
+    "destination_access": "none",
+    "general_register_return": "unchanged",
+    "x87_return_effect": "FLD m32 pushes one x87 stack entry; the test consumes the actual staged function's ST0 result with FSTS, while a bool-typed SDK caller has no matching return protocol.",
+    "null_receiver": "returns the same x87 constant",
+    "null_destination": "returns the same x87 constant",
+    "empty_or_invalid_receiver": "returns the same x87 constant",
+    "success": "returns the same x87 constant and leaves destination unchanged"
+  },
+  "call_graph": {
+    "direct_callers": [],
+    "direct_callees": [],
+    "outgoing_xrefs": [
+      "0x013eb1bc READ"
+    ],
+    "data_xrefs": [
+      "0x013ff684",
+      "0x01462794",
+      "0x0147ca34",
+      "0x0147cafc",
+      "0x014890cc",
+      "0x014893ec"
+    ]
+  },
+  "evidence": [
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x006417c0",
+      "observation": "FLD DWORD PTR [0x013eb1bc]; RET is the complete body; ECX and ESP are not read."
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x006417c0",
+      "observation": "The live decompiler returns the incoming AL because the SDK-imported bool prototype does not match the x87 instruction stream."
+    },
+    {
+      "tool": "ghidra_read_memory",
+      "address": "0x013eb1bc",
+      "observation": "The first four bytes are 00 00 80 bf, the IEEE-754 single-precision encoding of -1.0."
+    },
+    {
+      "tool": "ghidra_audit_global",
+      "address": "0x013eb1bc",
+      "observation": "The global is a four-byte undefined datum with 1027 references; no asset semantics are assigned to it."
+    },
+    {
+      "tool": "ghidra_get_function_xrefs",
+      "address": "0x006417c0",
+      "observation": "Six stored data references and no direct callers are present."
+    },
+    {
+      "tool": "ghidra_get_xrefs_from",
+      "address": "0x006417c0",
+      "observation": "The only outgoing reference is a read of 0x013eb1bc."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x006417d0",
+      "observation": "The adjacent unnamed body checks the receiver metadata pointer at +0x1c, rejects an 8-byte value whose two dwords are both -1, copies two dwords to the destination, sets AL, and uses RET 4."
+    },
+    {
+      "tool": "ghidra_get_function_xrefs",
+      "address": "0x006417d0",
+      "observation": "The adjacent ID-shaped body has seven stored data references and calls FUN_005507a0 twice."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x005507a0",
+      "observation": "FUN_005507a0 returns its ECX input plus 0x18, so the adjacent body reads eight bytes from metadata +0x18."
+    }
+  ],
+  "adjacent_body_conflict": {
+    "address": "0x006417d0",
+    "observed_contract": "bool-like AL result, uint64_t& destination, RET 4, metadata +0x1c guard, source +0x18, two-dword -1 sentinel rejection, two-dword destination write",
+    "relation_to_assigned_address": "The live bytes at 0x006417c0 do not implement this SDK GetAssetID contract. The adjacent body is consistent with the SDK signature but remains outside the assigned trio and is not reconstructed here."
+  },
+  "model_tests": [
+    "the test calls the actual sporepedia_get_asset_id_006417c0 symbol through an x86 call/FSTS adapter",
+    "actual staged function returns the -1.0 x87 value",
+    "valid receiver and destination leave destination unchanged",
+    "null receiver returns the same x87 value",
+    "null destination returns the same x87 value",
+    "empty receiver returns the same x87 value",
+    "invalid pointer values are ignored by the body"
+  ],
+  "verification": {
+    "syntax_and_model": "passed: clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic compiled the raw source and focused model binary; the model invokes the staged x87 function",
+    "instruction_parity": "passed: llvm-objdump showed flds pkg16_g_get_asset_id_float_013eb1bc; ret, preserving the D9 05 m32 load",
+    "format": "passed: clang-format --dry-run --Werror -style=Google",
+    "json": "passed: python3 -m json.tool"
+  },
+  "unresolved_questions": [
+    "Why does the SDK/Ghidra import label 0x006417c0 as GetAssetID when the live body is an x87 constant return?",
+    "Should 0x006417c0 be reassigned to its unknown semantic method, or should the SDK address mapping be corrected to 0x006417d0?",
+    "Which exact vtable slots and owners contain each of the two addresses?"
+  ],
+  "blockers": [
+    "A bool/uint64_t GetAssetID host interface cannot be implemented faithfully at 0x006417c0 without changing its machine behavior.",
+    "Reconstructing the adjacent 0x006417d0 body or changing Ghidra names would exceed the assigned three-address reconstruction scope.",
+    "The broad 0x013eb1bc global has no asset-specific semantic evidence."
+  ]
+}

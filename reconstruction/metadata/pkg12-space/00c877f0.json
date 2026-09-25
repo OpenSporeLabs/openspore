@@ -1,0 +1,161 @@
+{
+  "schema": "pkg12-space-inventory-entry-handoff.v1",
+  "package": "PKG-12-SIM-SPACE",
+  "function_address": "0x00c877f0",
+  "ghidra_name": "cSpaceInventoryItem_ctor",
+  "normalized_symbol": "cSpaceInventoryItem_ctor_00c877f0",
+  "source_files": [
+    "reconstruction/staging/pkg12-space/space_inventory_entry.hpp",
+    "reconstruction/staging/pkg12-space/space_inventory_entry.cpp",
+    "reconstruction/staging/pkg12-space/space_inventory_entry_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "void __thiscall cSpaceInventoryItem_ctor_00c877f0(InventoryItem* item, OpaquePropertyList* property_list, const InventoryItemServices& services);",
+  "model_boundary": "The live function is a thiscall with ECX as cSpaceInventoryItem and one caller-cleaned PropertyList stack word. The staging function exposes the item, PropertyList, and unresolved text/value services explicitly for focused modeling; it does not integrate with the production PKG-12 source.",
+  "live_abi": {
+    "calling_convention": "__thiscall",
+    "this_register": "ECX",
+    "stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "ESP+0x04",
+        "type": "OpaquePropertyList*",
+        "width_bytes": 4,
+        "cleanup": "RET 0x4 in the live body"
+      }
+    ],
+    "stack_cleanup_bytes": 4,
+    "return_type": "void",
+    "return_observation": "The live body returns through the item vtable notification path and has no value return."
+  },
+  "body": {
+    "status": "reconstructed",
+    "entry_address": "0x00c877f0",
+    "body_addresses": [
+      "0x00c877f0",
+      "0x00c8781c",
+      "0x00c87876"
+    ],
+    "instruction_count": 57,
+    "basic_block_count": 11,
+    "direct_call_count": 3,
+    "mechanics": [
+      "Read the old PropertyList from item+0x30.",
+      "If the new PropertyList differs, AddRef a non-null new list, store it at item+0x30, then Release the non-null old list.",
+      "If the new list is null, return after replacement and old-list release; no text, property, or notification call follows.",
+      "Call App::Property::GetText for 0x3068d95d into item+0x34, then for 0x04cad19b into item+0x48; both calls are three-stack-word cdecl boundaries and their return values are ignored.",
+      "Call PropertyList vtable slot +0x24 for property 0x1bfc1dee and an output property pointer.",
+      "If the property lookup succeeds and the returned property type at +0x12 equals 10, call the FUN_0041ea00 value boundary and store the returned dword at item+0x24.",
+      "Call the item vtable slot +0x4c with ECX=item after property application."
+    ]
+  },
+  "structures_and_vtables": {
+    "inventory_item": {
+      "live_type": "/Spore/Simulator/cSpaceInventoryItem",
+      "size_bytes": 124,
+      "observed_fields": [
+        {"offset": "+0x24", "name": "mItemCost", "type": "uint"},
+        {"offset": "+0x30", "name": "mpPropList", "type": "intrusive_ptr<App::PropertyList>"},
+        {"offset": "+0x34", "name": "mDescription", "type": "LocalizedString"},
+        {"offset": "+0x48", "name": "mDetailDescription", "type": "LocalizedString"},
+        {"offset": "+0x5c", "name": "mItemID", "type": "ResourceKey"}
+      ],
+      "staging_layout": "Opaque fields preserve the observed offsets; fields outside the target's accesses are not interpreted."
+    },
+    "property_list": {
+      "live_type": "/Spore/App/PropertyList",
+      "size_bytes": 56,
+      "observed_vtable_slots": [
+        {"offset": "+0x00", "role": "AddRef"},
+        {"offset": "+0x04", "role": "Release"},
+        {"offset": "+0x24", "role": "GetProperty"}
+      ],
+      "staging_policy": "PropertyList remains a separate opaque owner with only the three observed vtable contracts."
+    },
+    "property_value": {
+      "observed_offsets": [
+        {"offset": "+0x00", "role": "opaque first word consumed by FUN_0041ea00 result dereference"},
+        {"offset": "+0x10", "role": "flags word"},
+        {"offset": "+0x12", "role": "type word compared with 10"}
+      ],
+      "FUN_0041ea00": "The helper has a fastcall-style hidden ECX property receiver and no ordinary stack arguments; its full type/value fallback is kept opaque."
+    },
+    "item_vtable": {
+      "observed_slot": {"offset": "+0x4c", "role": "post-property notification"}
+    }
+  },
+  "direct_dependencies": [
+    {
+      "address": "0x006a1360",
+      "name": "App::Property::GetText",
+      "role": "two direct text property lookups; caller cleans 0x18 bytes after both calls"
+    },
+    {
+      "address": "0x0041ea00",
+      "name": "FUN_0041ea00",
+      "role": "opaque property value extraction for the type-10 branch"
+    },
+    {
+      "address": "PropertyList vtable +0x24",
+      "role": "property lookup for 0x1bfc1dee"
+    },
+    {
+      "address": "PropertyList vtable +0x00/+0x04",
+      "role": "new AddRef and old Release"
+    },
+    {
+      "address": "cSpaceInventoryItem vtable +0x4c",
+      "role": "final item notification"
+    }
+  ],
+  "call_graph": {
+    "direct_callers": {
+      "ghidra_unique_functions": 6,
+      "call_sites": [
+        "0x00ac0d52",
+        "0x00c8795d",
+        "0x00c87ac1",
+        "0x0103a515",
+        "0x0103fcaa",
+        "0x0104e3d5"
+      ]
+    },
+    "direct_callees": {
+      "ghidra_count": 2,
+      "names": ["App::Property::GetText", "FUN_0041ea00"],
+      "vtable_calls": "The AddRef, Release, GetProperty, and item notification indirect calls are not included in Ghidra's named-callee count."
+    },
+    "direct_xrefs": {
+      "call_xrefs": 6,
+      "data_xrefs": 0
+    }
+  },
+  "strings": {
+    "direct_target_string_refs": 0,
+    "observed_constants": "The target contains hashed property IDs rather than direct string literals; App::Property::GetText is a separate dependency."
+  },
+  "tests": [
+    "new PropertyList AddRefs, stores, then Releases the old list",
+    "same PropertyList pointer skips AddRef and Release",
+    "null PropertyList replacement releases the old list and returns before text/property/notification",
+    "text properties populate the two opaque 20-byte destination records",
+    "type-10 property applies the opaque value to item+0x24",
+    "missing or non-type-10 property leaves item cost unchanged"
+  ],
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only reconstruction/staging/pkg12-space/space_inventory_entry.cpp reconstruction/staging/pkg12-space/space_inventory_entry_model_test.cpp",
+    "model_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror reconstruction/staging/pkg12-space/space_inventory_entry.cpp reconstruction/staging/pkg12-space/space_inventory_entry_model_test.cpp -o /tmp/pkg12-space-inventory-entry-test && /tmp/pkg12-space-inventory-entry-test",
+    "format_command": "clang-format --dry-run --Werror -style=\"{BasedOnStyle: Google, FixNamespaceComments: false}\" reconstruction/staging/pkg12-space/space_inventory_entry.hpp reconstruction/staging/pkg12-space/space_inventory_entry.cpp reconstruction/staging/pkg12-space/space_inventory_entry_model_test.cpp",
+    "status": "verified_static_staging"
+  },
+  "unresolved_questions": [
+    "The concrete target of cSpaceInventoryItem vtable +0x4c and the exact post-property side effects are not named by Ghidra.",
+    "The full PropertyList GetProperty and localized-string ownership contracts are preserved only at the observed call boundaries.",
+    "FUN_0041ea00's non-type-10 fallback and the complete property value layout are not assigned semantics.",
+    "The live function has no direct string or global references; no event-family or lifecycle ownership is inferred from its caller set."
+  ],
+  "blockers": [
+    "The live body uses an indirect vtable notification that cannot be linked to a concrete method without a separate vtable reconstruction.",
+    "The staging model does not modify the integrated PKG-12 source, so production linkability and runtime property ownership remain out of scope."
+  ]
+}

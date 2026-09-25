@@ -1,0 +1,206 @@
+{
+  "schema": "pkg20-gameglobal-function-handoff.v1",
+  "package": "PKG-20-GAMEGLOBAL",
+  "function_address": "0x00ba8420",
+  "ghidra_name": "FUN_00ba8420",
+  "normalized_symbol": "pkg20_gameglobal_00ba8420",
+  "source_files": [
+    "reconstruction/staging/pkg20-gameglobal/map_insert.hpp",
+    "reconstruction/staging/pkg20-gameglobal/map_insert.cpp",
+    "reconstruction/staging/pkg20-gameglobal/map_insert_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "MapInsertResult* __thiscall pkg20_gameglobal_00ba8420(OrderedMap*, MapInsertResult*, void* handoff, const MapInsertPair*);",
+  "abi": {
+    "return_type": "MapInsertResult*",
+    "return_register": "EAX",
+    "calling_convention": "__thiscall observed",
+    "hidden_this_register": "ECX",
+    "hidden_this_type": "OrderedMap*",
+    "stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "ESP+0x04",
+        "name": "output",
+        "type": "MapInsertResult*",
+        "width_bytes": 4,
+        "observed_use": "Receives the existing or newly inserted entry and the one-byte insertion result."
+      },
+      {
+        "position": 2,
+        "entry_offset": "ESP+0x08",
+        "name": "handoff",
+        "type": "opaque 32-bit handoff word",
+        "width_bytes": 4,
+        "observed_use": "No semantic use is established by the target body; preserved to retain the three-word caller boundary."
+      },
+      {
+        "position": 3,
+        "entry_offset": "ESP+0x0C",
+        "name": "pair",
+        "type": "const MapInsertPair*",
+        "width_bytes": 4,
+        "observed_use": "The first word is read as the unsigned query key and the pair is forwarded to node allocation."
+      }
+    ],
+    "stack_cleanup_bytes": 12,
+    "return_evidence": "The function ends with RET 0xc."
+  },
+  "layout": {
+    "map": {
+      "size_bytes": 28,
+      "anchor_offset": "0x04",
+      "anchor_right_offset": "0x08",
+      "root_offset": "0x0C",
+      "size_offset": "0x14"
+    },
+    "node_allocation": {
+      "size_bytes": "0x18",
+      "key_offset": "0x10",
+      "value_offset": "0x14"
+    },
+    "result": {
+      "size_bytes": 8,
+      "entry_offset": "0x00",
+      "inserted_offset": "0x04"
+    }
+  },
+  "mechanics": {
+    "candidate_walk": [
+      "Start at map->anchor.parent and retain the map anchor as the initial candidate.",
+      "For each node, compare the pair key as unsigned against node->key.",
+      "When key is less than node->key, retain the node and follow its right child.",
+      "Otherwise retain the node and follow its left child."
+    ],
+    "predecessor_handoff": [
+      "If the final comparison went right and the retained candidate is not the map anchor-right sentinel, call 0x009215c0 to obtain the predecessor used as the insertion parent.",
+      "Preserve the predecessor helper as an opaque boundary."
+    ],
+    "duplicate_result": [
+      "Read candidate->key without excluding the map anchor and accept the result when candidate->key is greater than or equal to the query key.",
+      "For an empty map with key zero, candidate->key aliases the anchor+0x10 word, so the function returns the anchor with inserted=0.",
+      "Return the output pointer without allocating or incrementing map size."
+    ],
+    "new_entry_result": [
+      "Call 0x00ba83a0 with the selected parent, the input pair, and insertion side zero.",
+      "Copy the returned entry pointer to output->entry and write one to output->inserted.",
+      "Return the output pointer."
+    ]
+  },
+  "null_and_failure_paths": {
+    "pair_null": "The live body dereferences the pair key before the search has a node and has no null guard.",
+    "output_null": "No output null check is present; duplicate and insertion result writes are unconditional.",
+    "map_null": "No map null check is present.",
+    "predecessor_failure": "The predecessor helper has no explicit failure return contract in the target; its result is consumed as the candidate.",
+    "allocator_failure": "Allocation failure is delegated to 0x00ba83a0 and remains unresolved."
+  },
+  "call_graph": {
+    "direct_callers": {
+      "ghidra_count": 6,
+      "functions": [
+        "0x00b21340",
+        "0x00b2ede0",
+        "0x00baa660",
+        "0x00d02440",
+        "0x00d33c30",
+        "0x00fe4d60"
+      ]
+    },
+    "function_xrefs": 7,
+    "direct_callees": [
+      {
+        "address": "0x009215c0",
+        "name": "predecessor helper",
+        "role": "Selects the predecessor insertion parent after a rightward search."
+      },
+      {
+        "address": "0x00ba83a0",
+        "name": "node insertion helper",
+        "role": "Allocates, initializes, links, and counts the new node."
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x00ba8420",
+      "observation": "The live body performs the candidate walk, predecessor handoff, duplicate result, and insertion handoff to 0x00ba83a0."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x00ba8420",
+      "observation": "The 59-instruction body preserves the three stack words, unsigned key comparisons, predecessor call, insertion result writes, and RET 0xc."
+    },
+    {
+      "tool": "ghidra_get_function_callers",
+      "address": "0x00ba8420",
+      "observation": "The live function has six direct caller functions."
+    },
+    {
+      "tool": "ghidra_get_function_xrefs",
+      "address": "0x00ba8420",
+      "observation": "Seven direct call xrefs are present, including 0x00b21340 and the 0x00baa660 insertion wrapper."
+    },
+    {
+      "tool": "ghidra_get_function_callees",
+      "address": "0x00ba8420",
+      "observation": "The only direct callees are 0x009215c0 and 0x00ba83a0."
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x009215c0",
+      "observation": "The helper walks predecessor links and left subtrees and returns a node pointer used by the insertion wrapper."
+    },
+    {
+      "tool": "ghidra_get_struct_layout",
+      "address": "map<unsigned int, int>",
+      "observation": "The map anchor is at +0x04, anchor-right sentinel at +0x08, root at +0x0c, and size at +0x14."
+    },
+    {
+      "tool": "ghidra_get_struct_layout",
+      "address": "rbtree_node_base",
+      "observation": "The node base is 16 bytes with left, right, parent, and color at +0x00, +0x04, +0x08, and +0x0c."
+    }
+  ],
+  "confidence": {
+    "overall": "high for the candidate walk, duplicate sentinel, insertion handoff, and stack cleanup",
+    "high": [
+      "three stack words and RET 0xc",
+      "unsigned key comparison direction",
+      "rightward predecessor handoff condition",
+      "duplicate output flag zero",
+      "new-entry output flag one",
+      "no allocation on duplicate path"
+    ],
+    "medium": [
+      "the semantic role of the opaque second stack handoff word",
+      "the exact predecessor boundary contract outside this function"
+    ],
+    "low": [
+      "the concrete value type carried by the pair"
+    ]
+  },
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/pkg20-gameglobal reconstruction/staging/pkg20-gameglobal/map_insert.cpp",
+    "model_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg20-gameglobal reconstruction/staging/pkg20-gameglobal/map_insert.cpp reconstruction/staging/pkg20-gameglobal/map_insert_model_test.cpp -o /tmp/opencode/pkg20-map-insert-model && /tmp/opencode/pkg20-map-insert-model",
+    "format_command": "clang-format --dry-run --Werror -style=\"{BasedOnStyle: Google, FixNamespaceComments: false}\" reconstruction/staging/pkg20-gameglobal/map_insert.hpp reconstruction/staging/pkg20-gameglobal/map_insert.cpp reconstruction/staging/pkg20-gameglobal/map_insert_model_test.cpp",
+    "json_command": "python3 -m json.tool reconstruction/metadata/pkg20-gameglobal/00ba8420.json >/dev/null",
+    "results": {
+      "syntax": "passed",
+      "model": "passed",
+      "format": "passed",
+      "json": "passed"
+    }
+  },
+  "unresolved_questions": [
+    "What is the semantic role of the second stack handoff word?",
+    "Does the predecessor helper ever return the map anchor or a null pointer on malformed trees?",
+    "What concrete value type is copied at node+0x14 by each caller?",
+    "What allocator behavior applies when the delegated node allocation fails?"
+  ],
+  "blockers": [
+    "No runtime trace is available for malformed-tree or allocator-failure paths.",
+    "The predecessor and red-black helpers remain external staging boundaries.",
+    "The pair value and second handoff word remain semantically opaque."
+  ]
+}

@@ -1,0 +1,206 @@
+{
+  "schema": "pkg20-gameglobal-function-handoff.v1",
+  "package": "PKG-20-GAMEGLOBAL",
+  "function_address": "0x00ba83a0",
+  "ghidra_name": "FUN_00ba83a0",
+  "normalized_symbol": "pkg20_gameglobal_00ba83a0",
+  "source_files": [
+    "reconstruction/staging/pkg20-gameglobal/map_insert.hpp",
+    "reconstruction/staging/pkg20-gameglobal/map_insert.cpp",
+    "reconstruction/staging/pkg20-gameglobal/map_insert_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "void __thiscall pkg20_gameglobal_00ba83a0(OrderedMap*, MapInsertResult*, OrderedMapEntry*, const MapInsertPair*, std::uint8_t);",
+  "abi": {
+    "return_type": "void",
+    "calling_convention": "__thiscall observed",
+    "hidden_this_register": "ECX",
+    "hidden_this_type": "OrderedMap*",
+    "stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "ESP+0x04",
+        "name": "output",
+        "type": "MapInsertResult*",
+        "width_bytes": 4,
+        "observed_use": "Receives the allocated entry pointer at offset zero."
+      },
+      {
+        "position": 2,
+        "entry_offset": "ESP+0x08",
+        "name": "parent",
+        "type": "OrderedMapEntry*",
+        "width_bytes": 4,
+        "observed_use": "Forwarded to the red-black insertion helper."
+      },
+      {
+        "position": 3,
+        "entry_offset": "ESP+0x0C",
+        "name": "pair",
+        "type": "const MapInsertPair*",
+        "width_bytes": 4,
+        "observed_use": "When non-null, supplies the key at +0x00 and value at +0x04."
+      },
+      {
+        "position": 4,
+        "entry_offset": "ESP+0x10",
+        "name": "insertion_side",
+        "type": "std::uint8_t",
+        "width_bytes": 4,
+        "observed_use": "Controls the automatic side decision; nonzero forces the helper side-zero path."
+      }
+    ],
+    "stack_cleanup_bytes": 16,
+    "return_evidence": "The function ends with RET 0x10."
+  },
+  "layout": {
+    "map": {
+      "size_bytes": 28,
+      "anchor_offset": "0x04",
+      "size_offset": "0x14",
+      "allocator_offset": "0x18"
+    },
+    "node_allocation": {
+      "size_bytes": "0x18",
+      "base_size_bytes": 16,
+      "key_offset": "0x10",
+      "value_offset": "0x14",
+      "value_write": "The value word is written at the allocated node offset +0x14 without defining a second node type."
+    },
+    "result": {
+      "size_bytes": 8,
+      "entry_offset": "0x00",
+      "inserted_offset": "0x04"
+    }
+  },
+  "mechanics": {
+    "side_decision": [
+      "Start with side zero.",
+      "When insertion_side is zero, parent is not the map anchor, and parent->key is less than or equal to pair->key, pass side one to the insertion helper.",
+      "Otherwise pass side zero."
+    ],
+    "allocation": [
+      "Call the allocator boundary with size 0x18, the observed Simulator domain, zero flags and alignment, source-path pointer 0x013ebb38, and source line 0xd1.",
+      "Treat the returned 24-byte block as the shared OrderedMapEntry prefix plus its opaque value word."
+    ],
+    "writes": [
+      "Copy pair->key to node+0x10 and pair->value to node+0x14 after allocation.",
+      "The live condition tests node+0x10, not the pair pointer; key/value reads are unconditional and have no null guard."
+    ],
+    "rebalance": [
+      "Call the red-black insertion helper with the new node, parent, map anchor, and computed side.",
+      "Increment map->size after the helper returns.",
+      "Write the allocated node pointer to output->entry.",
+      "Do not write output->inserted in this function; the caller owns that result byte."
+    ]
+  },
+  "null_and_failure_paths": {
+    "pair_null": "No pair null check is present; automatic side selection and the post-allocation key/value copy dereference the pair according to the live control flow.",
+    "allocation_failure": "The live body has no explicit null check after the allocator boundary; a null allocation is followed by the observed node writes and is not replaced with a new result contract.",
+    "output_null": "No output null check is present; output->entry is written unconditionally after the helper and size update.",
+    "map_null": "No map null check is present."
+  },
+  "call_graph": {
+    "direct_callers": {
+      "ghidra_count": 2,
+      "functions": ["0x00ba8420", "0x00baa660"]
+    },
+    "function_xrefs": 4,
+    "direct_callees": [
+      {
+        "address": "0x00f473a0",
+        "name": "allocator boundary",
+        "role": "Allocates the 0x18-byte node block."
+      },
+      {
+        "address": "0x009216a0",
+        "name": "red-black insertion helper",
+        "role": "Initializes links and performs insertion rebalancing."
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x00ba83a0",
+      "observation": "The live body computes the insertion side, allocates 0x18 bytes, copies pair words at +0x10 and +0x14, calls 0x009216a0, increments map size, and writes the node pointer to the output."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x00ba83a0",
+      "observation": "The 50-instruction body preserves the four stack arguments, the 0x18 allocation size, the source line immediate 0xd1, the insertion-helper call, and RET 0x10."
+    },
+    {
+      "tool": "ghidra_get_function_callers",
+      "address": "0x00ba83a0",
+      "observation": "The live function has two direct caller functions."
+    },
+    {
+      "tool": "ghidra_get_function_xrefs",
+      "address": "0x00ba83a0",
+      "observation": "Four direct call xrefs are present, from 0x00ba8420 and three sites in 0x00baa660."
+    },
+    {
+      "tool": "ghidra_get_struct_layout",
+      "address": "rbtree_node_base",
+      "observation": "The shared node base is 16 bytes with left, right, parent, and color at offsets 0x00, 0x04, 0x08, and 0x0c."
+    },
+    {
+      "tool": "ghidra_get_struct_layout",
+      "address": "map<unsigned int, int>",
+      "observation": "The shared map is 28 bytes with anchor at +0x04, size at +0x14, and allocator at +0x18."
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x009216a0",
+      "observation": "The insertion helper initializes the new node links and parent, chooses the requested child side, updates the anchor, and performs red-black fixup."
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x00f473a0",
+      "observation": "The allocator boundary forwards the six-word allocation request to the lower allocator implementation; the node allocation size is supplied by this body."
+    }
+  ],
+  "confidence": {
+    "overall": "high for body writes, call order, stack cleanup, allocation size, and map size update",
+    "high": [
+      "24-byte allocation",
+      "key/value offsets 0x10 and 0x14",
+      "four stack words and RET 0x10",
+      "red-black helper handoff",
+      "unconditional pair copy",
+      "output entry write",
+      "map size increment"
+    ],
+    "medium": [
+      "the semantic interpretation of insertion_side",
+      "the concrete allocator failure behavior"
+    ],
+    "low": [
+      "the semantic identity of the value word"
+    ]
+  },
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/pkg20-gameglobal reconstruction/staging/pkg20-gameglobal/map_insert.cpp",
+    "model_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg20-gameglobal reconstruction/staging/pkg20-gameglobal/map_insert.cpp reconstruction/staging/pkg20-gameglobal/map_insert_model_test.cpp -o /tmp/opencode/pkg20-map-insert-model && /tmp/opencode/pkg20-map-insert-model",
+    "format_command": "clang-format --dry-run --Werror -style=\"{BasedOnStyle: Google, FixNamespaceComments: false}\" reconstruction/staging/pkg20-gameglobal/map_insert.hpp reconstruction/staging/pkg20-gameglobal/map_insert.cpp reconstruction/staging/pkg20-gameglobal/map_insert_model_test.cpp",
+    "json_command": "python3 -m json.tool reconstruction/metadata/pkg20-gameglobal/00ba83a0.json >/dev/null",
+    "results": {
+      "syntax": "passed",
+      "model": "passed",
+      "format": "passed",
+      "json": "passed"
+    }
+  },
+  "unresolved_questions": [
+    "What does the allocator boundary return on allocation failure, and does it abort before this body can continue?",
+    "Does insertion_side encode a caller-selected child side or a duplicate/rebalance mode?",
+    "What concrete value type occupies the opaque word at node+0x14 across callers?",
+    "Does the red-black helper require any allocator state beyond the shared map allocator word?"
+  ],
+  "blockers": [
+    "No runtime allocator-failure trace is available.",
+    "The red-black helper is preserved as an external staging boundary rather than reimplemented in this exclusive file set.",
+    "The value word remains semantically opaque."
+  ]
+}

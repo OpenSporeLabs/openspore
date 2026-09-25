@@ -188,10 +188,12 @@ class Server(object):
     def _on_initialize(self, req_id, params):
         # type: (object, object) -> dict
         return _ok(req_id, {
-            "server": SERVER_NAME,
-            "version": SERVER_VERSION,
-            "protocol": "jsonrpc-2.0-stdio",
-            "tools": len(registry.tool_names()),
+            "protocolVersion": "2025-06-18",
+            "capabilities": {"tools": {"listChanged": False}},
+            "serverInfo": {
+                "name": SERVER_NAME,
+                "version": SERVER_VERSION,
+            },
         })
 
     def _on_ping(self, req_id, params):

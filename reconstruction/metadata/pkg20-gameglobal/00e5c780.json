@@ -9,7 +9,7 @@
     "reconstruction/staging/pkg20-gameglobal/map_search_model_test.cpp"
   ],
   "phase": "body-reconstruction",
-  "declaration": "void __thiscall pkg20_gameglobal_00e5c780(OrderedMap *map, OrderedMapNode **result, const std::uint32_t *key);",
+  "declaration": "void __thiscall pkg20_gameglobal_00e5c780(OrderedMap *map, OrderedMapEntry **result, const std::uint32_t *key);",
   "abi": {
     "return_type": "void",
     "calling_convention": "__thiscall observed",
@@ -17,7 +17,7 @@
       {
         "position": 1,
         "entry_offset": "ESP+0x04",
-        "type": "OrderedMapNode **",
+        "type": "OrderedMapEntry **",
         "width_bytes": 4,
         "observed_use": "Receives the node pointer selected by the search."
       },
@@ -34,15 +34,22 @@
   },
   "target_layout": {
     "node": {
-      "size_bytes": 20,
+      "size_bytes": 16,
       "fields": [
         {"name": "left", "offset": "0x00", "type": "OrderedMapNode *"},
         {"name": "right", "offset": "0x04", "type": "OrderedMapNode *"},
         {"name": "parent", "offset": "0x08", "type": "OrderedMapNode *"},
-        {"name": "color", "offset": "0x0c", "type": "std::uint32_t"},
+        {"name": "color", "offset": "0x0c", "type": "std::uint32_t"}
+      ],
+      "evidence": "The rbtree_node_base prefix is independently reported by Ghidra with left, right, parent, and color through +0x0c."
+    },
+    "keyed_entry": {
+      "size_bytes": 20,
+      "prefix": "node",
+      "fields": [
         {"name": "key", "offset": "0x10", "type": "std::uint32_t"}
       ],
-      "evidence": "The live search reads left at +0x00, right at +0x04, and key at +0x10. The rbtree_node_base prefix is independently reported by Ghidra with left, right, parent, and color through +0x0c."
+      "evidence": "The live search reads the comparison key at +0x10 after the 16-byte node prefix."
     },
     "map": {
       "size_bytes": 28,
@@ -66,21 +73,38 @@
     ],
     "search": [
       "While node is non-null, node->key < query follows the left child.",
-      "Otherwise the current node becomes the candidate and the right child is followed.",
-      "The candidate starts as the sentinel anchor and therefore represents no exact hit when the traversal ends without a qualifying node."
+      "Otherwise the current node becomes the candidate and the right child is followed, so the candidate is the most recent node whose key is greater than or equal to query.",
+      "The candidate starts as the sentinel anchor and therefore represents no qualifying node when the traversal ends without entering the candidate branch."
     ],
     "selection": [
-      "A non-sentinel candidate is returned only when query is greater than or equal to candidate->key.",
+      "The final unsigned comparison rejects candidate->key when it is greater than query; with the traversal invariant candidate->key >= query, the accepted candidate is exactly equal to query.",
+      "A successor candidate is rejected, including when the queried key is present but a greater candidate was encountered during the rightward traversal.",
       "All other outcomes write &map->anchor to the result pointer.",
       "The function performs no node, map, size, allocator, or color writes."
     ],
     "comparison": "The CMP/JC and CMP/JC sequence is unsigned 32-bit comparison through the target's branch flags."
   },
-  "semantic_uncertainty": {
-    "status": "unresolved",
-    "observed_result": "The branch sequence returns a node only for an exact key or an equivalent key ordering that satisfies the final non-greater candidate check; an in-between value returns the sentinel.",
-    "contradiction": "The live Ghidra symbol is map_int_whatever_find, while adjacent map_int_EditorCreatureControllerPtr__get at 0x0059c740 uses the same search shape and falls through to 0x0059c520 on a non-anchor result. Those callers and the helper do not prove whether the intended abstraction is exact lookup or successor lookup.",
-    "preservation": "The staging source implements the observed exact-hit and sentinel-rejection behavior and does not claim lower_bound or successor semantics."
+  "semantic_resolution": {
+    "status": "resolved_static",
+    "classification": "fixed_hybrid_guarded_lower_bound",
+    "source_contract": "Perform the observed lower-bound-shaped candidate walk, then apply exact final acceptance: write the retained candidate only when candidate->key equals the query; otherwise write &map->anchor. A present key shadowed by a greater right candidate therefore returns the anchor, never the greater successor result.",
+    "result_matrix": {
+      "exact_without_greater_candidate": "equal node",
+      "exact_with_greater_candidate": "end sentinel",
+      "below_first_key": "end sentinel",
+      "between_existing_keys": "end sentinel because the least-greater successor is rejected",
+      "above_final_key": "end sentinel",
+      "empty_map": "end sentinel"
+    },
+    "edge_case": "A present key is not a robust exact-find guarantee: any greater candidate retained during the rightward walk replaces it and causes the end sentinel to be returned.",
+    "downstream": {
+      "0x00b21340": "exact-find dependent; it treats only the exact accepted non-anchor result as a hit and otherwise takes the anchor/miss path; it never consumes a greater successor result",
+      "0x00ba9370": "exact-find dependent; it returns payload only from the exact accepted non-anchor result and otherwise returns the anchor/null path; it never returns a greater successor result",
+      "0x01021300": "exact-find dependent through 0x00ba9370; it may consume only the exact accepted non-anchor payload, while a shadowed present key remains anchor/null and no greater successor is propagated",
+      "0x00b3d300": "independent; raw DAT_0167eae0 accessor"
+    },
+    "runtime_gate": "None for the static helper contract; root publication/lifetime and callback failure remain separate runtime gates.",
+    "resolution_record": "knowledgegraph/research/map-semantics-resolution.json"
   },
   "direct_callers": {
     "ghidra_count": 239,
@@ -187,36 +211,36 @@
     }
   ],
   "confidence": {
-    "overall": "high for instruction-level control flow, layout use, and result selection; medium for generic map naming",
+    "overall": "high for the fixed guarded-lookup contract; bounded generic map naming",
     "high": [
       "x86-32 thiscall and two-stack-word ABI",
       "map anchor at +0x04 and root at +0x0c",
       "unsigned node-key comparisons",
       "left/right traversal and candidate retention",
+      "final candidate acceptance only when candidate->key equals query",
       "sentinel result for in-between, below, and above queries",
-      "map immutability"
+      "successor candidate rejection after a present key",
+      "map immutability",
+      "exact-find-dependent interpretation of 0x00b21340, 0x00ba9370, and 0x01021300"
     ],
     "medium": [
       "the node key is an unsigned 32-bit field shared by the observed map instantiations",
-      "the exact intended source-level operation name"
+      "a concise EASTL-style source name for the fixed hybrid contract"
     ],
-    "low": [
-      "whether the surrounding EASTL helper contract is exact lookup, successor lookup, or an insertion-assisted access path"
-    ]
+    "low": []
   },
   "verification": {
-    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -fsyntax-only -I reconstruction/staging/pkg20-gameglobal reconstruction/staging/pkg20-gameglobal/map_search.cpp",
-    "syntax_result": "pending",
-    "model_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -I reconstruction/staging/pkg20-gameglobal reconstruction/staging/pkg20-gameglobal/map_search.cpp reconstruction/staging/pkg20-gameglobal/map_search_model_test.cpp -o /tmp/opencode/pkg20-gameglobal-map-search-model && /tmp/opencode/pkg20-gameglobal-map-search-model",
-    "model_result": "pending",
-    "format_command": "clang-format --dry-run --Werror -style=Google reconstruction/staging/pkg20-gameglobal/map_search.hpp reconstruction/staging/pkg20-gameglobal/map_search.cpp reconstruction/staging/pkg20-gameglobal/map_search_model_test.cpp",
-    "format_result": "pending",
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/pkg20-gameglobal reconstruction/staging/pkg20-gameglobal/map_search.cpp",
+    "syntax_result": "passed",
+    "model_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg20-gameglobal reconstruction/staging/pkg20-gameglobal/map_search.cpp reconstruction/staging/pkg20-gameglobal/map_search_model_test.cpp -o /tmp/opencode/pkg20-gameglobal-map-search-model && /tmp/opencode/pkg20-gameglobal-map-search-model",
+    "model_result": "passed; exact hit without a retained successor, present-key-with-successor rejection, between, below, above, empty-map end, and map/node immutability",
+    "format_command": "clang-format --dry-run --Werror -style=\"{BasedOnStyle: Google, FixNamespaceComments: false}\" reconstruction/staging/pkg20-gameglobal/map_search.hpp reconstruction/staging/pkg20-gameglobal/map_search.cpp reconstruction/staging/pkg20-gameglobal/map_search_model_test.cpp",
+    "format_result": "passed; namespace comments disabled to honor the no-comments constraint",
     "json_command": "python3 -m json.tool reconstruction/metadata/pkg20-gameglobal/00e5c780.json >/dev/null",
-    "json_result": "pending"
+    "json_result": "passed"
   },
   "blockers": [
     "The live Ghidra prototype is undefined and does not name the generic map value type.",
-    "The exact-versus-successor intent is not settled by the available callers and adjacent helper.",
-    "No differential runtime corpus is available for the 239 caller sites."
+    "No differential runtime corpus is available for the 239 caller sites; runtime observation is not required for the static helper contract."
   ]
 }

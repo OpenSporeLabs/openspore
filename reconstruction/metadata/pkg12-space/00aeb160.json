@@ -1,0 +1,127 @@
+{
+  "schema": "pkg12-space-comm-event-lifecycle-handoff-v1",
+  "package": "PKG-12-SIM-SPACE",
+  "address": "0x00aeb160",
+  "ghidra_name": "FUN_00aeb160",
+  "identity": "cCommEvent constructor, payload initialization, and manager-list insertion",
+  "source_files": [
+    "reconstruction/staging/pkg12-space/space_comm_event_lifecycle.hpp",
+    "reconstruction/staging/pkg12-space/space_comm_event_lifecycle.cpp",
+    "reconstruction/staging/pkg12-space/space_comm_event_lifecycle_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "cCommEvent* __thiscall pkg12_re_00aeb160(cCommManager* manager, OpaqueWord payload0, OpaqueWord payload1, OpaqueWord payload2, OpaqueWord payload3, OpaqueWord payload4, OpaqueWord payload5, OpaqueWord payload6);",
+  "scope_guard": {
+    "event_type": "cCommEvent",
+    "event_size_bytes": 160,
+    "event_family": "The event remains a separate 0xa0-byte family and is not represented as SpaceEvent.",
+    "manager": "Opaque. Direct vector words at manager +0x24, +0x28, and +0x2c are used because the live body accesses them directly; no manager ownership type is promoted.",
+    "allocator": "Opaque allocation boundary.",
+    "refcount": "Opaque add-ref/release hooks model the observed vtable slot calls without exposing manager ownership."
+  },
+  "abi": {
+    "calling_convention": "__thiscall",
+    "receiver": {
+      "register": "ECX",
+      "type": "cCommManager*",
+      "width_bytes": 4
+    },
+    "stack_arguments": [
+      {"position": 1, "entry_offset": "ESP+0x04", "name": "payload0", "type": "OpaqueWord"},
+      {"position": 2, "entry_offset": "ESP+0x08", "name": "payload1", "type": "OpaqueWord"},
+      {"position": 3, "entry_offset": "ESP+0x0c", "name": "payload2", "type": "OpaqueWord"},
+      {"position": 4, "entry_offset": "ESP+0x10", "name": "payload3", "type": "OpaqueWord"},
+      {"position": 5, "entry_offset": "ESP+0x14", "name": "payload4", "type": "OpaqueWord"},
+      {"position": 6, "entry_offset": "ESP+0x18", "name": "payload5", "type": "OpaqueWord"},
+      {"position": 7, "entry_offset": "ESP+0x1c", "name": "payload6", "type": "OpaqueWord"}
+    ],
+    "stack_cleanup_bytes": 28,
+    "return_register": "EAX",
+    "return_type": "cCommEvent*",
+    "termination": "RET 0x1c"
+  },
+  "raw_bytes_hex": "535556576a006a006a006a0068b4093f0168a00000008be9e823c2450083c41885c0740b8bc8e8c5f0ffff8bf0eb0233f68b4424148b4c24188b54241c8b5c24248946188b442420c7460c00000000894e3489563889463c8b7e403bdf741c85db74088b138b028bcbffd0895e4085ff74098b178b42048bcfffd08b4c24288b54242c894e448956488b068b108bfe8bce897c2414ffd28b45283b452c8d4d2473168d500489510485c0741b89308b068b108bceffd2eb0f8d5424145250e8adf3ffff8b7c241485ff74098b078b50048bcfffd25f8bc65e5d5bc21c",
+  "mechanics": {
+    "allocation": {
+      "allocator": "FUN_00f473a0",
+      "size_bytes": 160,
+      "domain": "Simulator",
+      "arguments": ["0xa0", "Simulator", "0", "0", "0", "0"]
+    },
+    "field_writes": [
+      {"offset": "0x0c", "source": "literal 0", "meaning": "event type"},
+      {"offset": "0x18", "source": "payload0"},
+      {"offset": "0x34", "source": "payload1"},
+      {"offset": "0x38", "source": "payload2"},
+      {"offset": "0x3c", "source": "payload3"},
+      {"offset": "0x40", "source": "payload4", "condition": "add-ref payload4, store it, release old value when different"},
+      {"offset": "0x44", "source": "payload5"},
+      {"offset": "0x48", "source": "payload6"}
+    ],
+    "call_order": [
+      "allocate 0xa0 bytes",
+      "construct the event when allocation is non-null",
+      "write event type and payload fields",
+      "replace the event pointer at +0x40 with add-ref-before-store and release-old-after-store ordering",
+      "add-ref the new event",
+      "append to the vector at manager +0x24 using inline capacity path or FUN_00aea5d0 growth path",
+      "release the temporary event reference",
+      "return the event pointer"
+    ],
+    "vector_offsets": {
+      "begin": "manager +0x24",
+      "end": "manager +0x28",
+      "capacity": "manager +0x2c"
+    },
+    "capacity_path": "If end is below capacity, end advances by one pointer, the event is stored when the old end is non-null, and the event is add-reffed.",
+    "growth_path": "If end equals capacity, FUN_00aea5d0 receives the old end position and a pointer to the new event value.",
+    "null_allocation": "The live body continues with a null event pointer and faults on the first event-field write; it does not return null normally."
+  },
+  "ownership_and_refcount": {
+    "event_vtable_observed": ["0x0145bed8", "0x0145bed4"],
+    "slot_0_role": "add-ref-like call",
+    "slot_4_role": "release-like call",
+    "staging_boundary": "The model exposes pkg12_re_event_add_ref and pkg12_re_event_release so tests can verify order without claiming manager ownership.",
+    "manager_release": "No manager release is performed by this function."
+  },
+  "call_graph": {
+    "direct_callers": [
+      "0x00aeb3e0",
+      "0x00aeb7b0",
+      "0x00aebc10",
+      "0x00aed2c0",
+      "0x00aeb720"
+    ],
+    "direct_callees": ["0x00aea250", "0x00aea5d0", "0x00f473a0"],
+    "function_xref_count_live": 6
+  },
+  "evidence": [
+    {"tool": "ghidra_decompile_function", "address": "0x00aeb160", "observation": "Allocation, event construction, payload stores, refcount operations, vector insertion, and temporary release are visible in one body."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00aeb160", "observation": "RET 0x1c follows the final temporary release and EAX return."},
+    {"tool": "ghidra_get_function_callers", "address": "0x00aeb160", "observation": "Five direct caller functions are present, including the integrated 0x00aeb720 wrapper."},
+    {"tool": "ghidra_get_function_callees", "address": "0x00aeb160", "observation": "The only direct callees are the constructor, vector helper, and allocator."},
+    {"tool": "ghidra_get_struct_layout", "struct_name": "cCommEvent", "observation": "The live event type is 160 bytes; this staging type is kept separate and fixed at 0xa0 bytes."},
+    {"tool": "ghidra_get_struct_layout", "struct_name": "cCommManager", "observation": "The SDK/live manager layouts disagree on list placement; the staging manager remains opaque and uses only directly observed offsets."}
+  ],
+  "model_tests": [
+    "constructor and creator field writes",
+    "0xa0 allocation domain and size",
+    "payload4 add-ref and store ordering",
+    "event temporary add-ref, vector add-ref, and temporary release ordering",
+    "capacity append path",
+    "failed event allocation reaches the live null-dereference behavior"
+  ],
+  "verification": {
+    "syntax_and_model": "passed: x86-32 syntax compile and focused model completed",
+    "format": "passed: clang-format --dry-run --Werror with Google style and namespace comments disabled",
+    "json": "passed: python3 -m json.tool"
+  },
+  "unresolved_questions": [
+    "The exact cCommManager field names for the vector at +0x24 remain unresolved because the imported layout conflicts with the live accesses.",
+    "The semantic names of all seven opaque payload words are not asserted."
+  ],
+  "blockers": [
+    "The original allocation-failure path is a null dereference rather than a null-return contract.",
+    "The target vtable implementations are not reconstructed; refcount calls are staged as opaque hooks."
+  ]
+}

@@ -1,0 +1,109 @@
+{
+  "schema": "pkg12-space-comm-event-lifecycle-handoff-v1",
+  "package": "PKG-12-SIM-SPACE",
+  "address": "0x00aea5d0",
+  "ghidra_name": "FUN_00aea5d0",
+  "identity": "ref-aware cCommEvent vector insertion and growth helper",
+  "source_files": [
+    "reconstruction/staging/pkg12-space/space_comm_event_lifecycle.hpp",
+    "reconstruction/staging/pkg12-space/space_comm_event_lifecycle.cpp",
+    "reconstruction/staging/pkg12-space/space_comm_event_lifecycle_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "void __thiscall pkg12_re_00aea5d0(cCommVector* vector, cCommEvent** position, cCommEvent** value);",
+  "scope_guard": {
+    "event_type": "cCommEvent",
+    "event_size_bytes": 160,
+    "vector_receiver": "The receiver is the three-word vector at cCommManager +0x24; manager ownership remains opaque.",
+    "allocator": "Opaque allocation and release boundaries.",
+    "refcount": "The external move helper returns a pointer in EAX, but 0x00aea5d0 ignores that result and preserves the observed add-ref/release ordering without exposing manager ownership."
+  },
+  "abi": {
+    "calling_convention": "__thiscall",
+    "receiver": {
+      "register": "ECX",
+      "type": "cCommVector*",
+      "width_bytes": 4
+    },
+    "stack_arguments": [
+      {"position": 1, "entry_offset": "ESP+0x04", "name": "position", "type": "cCommEvent**"},
+      {"position": 2, "entry_offset": "ESP+0x08", "name": "value", "type": "cCommEvent**"}
+    ],
+    "stack_cleanup_bytes": 8,
+    "return_type": "void",
+    "termination": "RET 0x8"
+  },
+  "raw_bytes_hex": "83ec08535556578bf98b47043b4708746c8b4c24208b6c241c8bf13bcd72073bc873038d710485c0740f8b48fc890885c974068b018b10ffd28b47045083c0fc5055e889f1fdff8b368b5d0083c40c3bf3741c85f674088b068b108bceffd289750085db74098b038b50048bcbffd2834704045f5e5d5b83c408c208002b07c1f80285c0763003c08944241485c0743468d10000006838bb3e016a006a0003c003c068b4093f0150e823cd450083c41889442410eb16c7442414010000008b442414ebccc7442410000000008b078b6c241c8b4c24108bf52bf0565051e892606f00c1fe028d1cb083c40c85db74128b5424208b0a890b85c974068b018b10ffd28b77042bf55683c3045553e863606f00c1fe028d34b0783c40c85c0740f8378fc00740950e884cc450083c4048b4424108b4424148d148889770489078957085f5e5d5b83c408c20800",
+  "mechanics": {
+    "vector_layout": {
+      "begin": "vector +0x00",
+      "end": "vector +0x04",
+      "capacity": "vector +0x08"
+    },
+    "non_full_path": [
+      "adjust the value slot by one word when it lies between position and end",
+      "copy the last slot to the current end and add-ref its event",
+      "call FUN_00ac97a0 for the backward ref-aware shift and ignore its EAX return",
+      "add-ref the inserted event, store it, and release the replaced event",
+      "advance the original end by one pointer"
+    ],
+    "growth_path": [
+      "count existing elements as (end - begin) >> 2",
+      "use one slot for an empty vector, otherwise double the count",
+      "allocate count * 4 bytes with the Simulator allocator domain and EASTL allocator source string",
+      "copy the prefix, copy the tail, add-ref the value at the new end, conditionally free the old buffer, then publish begin/end/capacity"
+    ],
+    "allocator_arguments": [
+      "count * 4",
+      "Simulator",
+      "0",
+      "0",
+      "c:\\BuildAgent\\max-spore001-spore\\CMBuild\\SporeEP1_RL\\Core\\UTFKernel\\EASTL\\include\\EASTL/allocator.h",
+      "0xd1"
+    ],
+    "ref_aware_move": "FUN_00ac97a0 walks source slots backward, add-refs each moved source event, writes the destination slot, and releases the overwritten destination event.",
+    "old_buffer_release": "The old begin pointer is released only when it is non-null and the word immediately before it is non-zero.",
+    "failed_allocation": "A failed growth allocation is passed to the raw copy boundary; a nonzero prefix copy faults on the null destination, matching the live path."
+  },
+  "call_order": {
+    "non_full": ["last-slot copy/add-ref", "FUN_00ac97a0 EAX return ignored", "inserted add-ref", "replaced release", "original end + one slot as new end"],
+    "growth": ["allocate", "prefix copy", "new-end value copy/add-ref", "tail copy", "conditional old-buffer release", "publish vector words"]
+  },
+  "call_graph": {
+    "direct_callers": ["0x00aeb160", "0x00aeb240"],
+    "direct_callees": ["0x00ac97a0", "0x00f47380", "0x00f473a0", "0x011e0744"],
+    "caller_function_count": 105,
+    "xref_query_limit": 100
+  },
+  "evidence": [
+    {"tool": "ghidra_decompile_function", "address": "0x00aea5d0", "observation": "The function has distinct non-full and growth paths, uses a backward ref-aware move, ignores the move helper's EAX return, and advances the original end by one slot."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00aea5d0", "observation": "RET 0x8 closes the vector helper after the non-full or growth branch."},
+    {"tool": "ghidra_get_function_callees", "address": "0x00aea5d0", "observation": "The four direct callees are the ref-aware move, allocator, release, and memcpy boundary."},
+    {"tool": "ghidra_get_function_callers", "address": "0x00aea5d0", "observation": "The two reconstructed event-creation callers use the helper on the manager vector."},
+    {"tool": "ghidra_decompile_function", "address": "0x00ac97a0", "observation": "The move helper returns a pointer in EAX, walks backward, and performs add-ref before destination assignment and release of the overwritten event."},
+    {"tool": "ghidra_get_struct_layout", "struct_name": "cCommManager", "observation": "The live manager type is 100 bytes, but the body directly uses a vector receiver at +0x24; the staging type does not promote the conflicting manager layout."}
+  ],
+  "model_tests": [
+    "middle insertion uses three slots with two existing entries and inserts at slots + 1, not at end",
+    "beginning insertion preserves the shifted entries and the new value",
+    "last-slot add-ref precedes inserted add-ref and replaced release",
+    "empty vector growth publishes begin/end/capacity",
+    "growth add-refs the inserted event",
+    "injected FUN_00ac97a0 EAX return is ignored in favor of original end + one slot",
+    "injected null FUN_00ac97a0 return is also ignored for the end computation",
+    "failed nonempty growth allocation reaches the null raw-copy fault"
+  ],
+  "verification": {
+    "syntax_and_model": "passed: x86-32 syntax compile and focused model completed",
+    "format": "passed: clang-format --dry-run --Werror with Google style and namespace comments disabled",
+    "json": "passed: python3 -m json.tool"
+  },
+  "unresolved_questions": [
+    "The SDK manager field name for the +0x24 vector remains unresolved.",
+    "The exact ownership contract of the allocator's prefix word is not promoted beyond the observed conditional release."
+  ],
+  "blockers": [
+    "The target ref-aware move implementation is staged as an opaque helper boundary, although its call order and slot behavior are verified.",
+    "The live manager layout conflicts with the imported type, so only directly observed vector offsets are modeled."
+  ]
+}

@@ -1,0 +1,141 @@
+{
+  "schema": "wave6-presentation-function-handoff.v1",
+  "package": "WAVE6-PRESENTATION",
+  "function_address": "0x011f96e0",
+  "ghidra_name": "RenderWare::Mesh::SetIndicesCount",
+  "normalized_symbol": "renderware_mesh_set_indices_count_011f96e0",
+  "source_files": [
+    "reconstruction/staging/wave6-presentation/presentation_boundary.hpp",
+    "reconstruction/staging/wave6-presentation/presentation_boundary.cpp",
+    "reconstruction/staging/wave6-presentation/presentation_boundary_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "void __thiscall renderware_mesh_set_indices_count_011f96e0(Mesh* receiver, IndexBuffer* index_buffer);",
+  "abi": {
+    "return_type": "void",
+    "return_register": null,
+    "calling_convention": "__thiscall observed",
+    "hidden_this_register": "ECX",
+    "hidden_this_type": "Mesh*",
+    "stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "ESP+0x04",
+        "name": "index_buffer",
+        "type": "IndexBuffer*",
+        "width_bytes": 4,
+        "observed_use": "Stores the pointer at mesh+0x08 and conditionally reads primitiveType at index_buffer+0x14."
+      }
+    ],
+    "stack_cleanup_bytes": 4,
+    "return_evidence": "The target ends with RET 0x4."
+  },
+  "layout": {
+    "mesh": {
+      "size_bytes": 40,
+      "fields": {
+        "primitive_type": "0x04 uint32",
+        "index_buffer": "0x08 IndexBuffer*",
+        "triangle_count": "0x0c uint32"
+      },
+      "source": "Ghidra Mesh layout"
+    },
+    "index_buffer": {
+      "size_bytes": 28,
+      "primitive_type_offset": "0x14",
+      "start_index_offset": "0x04",
+      "source": "Ghidra IndexBuffer layout"
+    }
+  },
+  "mechanics": {
+    "pointer_store": "Always store the incoming index-buffer pointer at receiver+0x08 before the null branch.",
+    "primitive_copy": "When the incoming pointer is non-null, copy index_buffer+0x14 to receiver+0x04.",
+    "count_delegate": "Call 0x011f95c0 with receiver in ECX and the resulting primitive type as the stack argument, then store the returned uint32 at receiver+0x0c.",
+    "null_path": "A null incoming pointer leaves receiver+0x04 unchanged and still delegates the existing primitive type to 0x011f95c0.",
+    "ownership": "The pointer is published without AddRef or Release in this body."
+  },
+  "call_graph": {
+    "direct_callers": {
+      "ghidra_count": 7,
+      "representative_functions": [
+        "0x006eae40",
+        "0x006eed00",
+        "0x006ef9e0",
+        "0x0072b630",
+        "0x00769310",
+        "0x00faef10",
+        "0x00faef90"
+      ]
+    },
+    "direct_callees": [
+      "0x011f95c0"
+    ],
+    "function_xrefs": 7,
+    "global_references": "No direct global data references were identified in the target body."
+  },
+  "evidence": [
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x011f96e0",
+      "observation": "The live body stores the argument, conditionally copies its primitive type, calls the index-count helper, and stores the returned count."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x011f96e0",
+      "observation": "The 15-instruction body preserves ECX receiver, ESP+0x04 argument, offsets +0x08/+0x04/+0x0c, helper call 0x011f95c0, and RET 0x4."
+    },
+    {
+      "tool": "ghidra_get_function_callers",
+      "address": "0x011f96e0",
+      "observation": "Seven direct caller functions were identified."
+    },
+    {
+      "tool": "ghidra_get_function_callees",
+      "address": "0x011f96e0",
+      "observation": "The only direct callee is 0x011f95c0."
+    },
+    {
+      "tool": "ghidra_get_struct_layout",
+      "address": "0x011f96e0",
+      "observation": "Ghidra reports Mesh as 40 bytes and IndexBuffer as 28 bytes, including primitiveType at +0x14."
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x011f95c0",
+      "observation": "The dependency uses the receiver fields and primitive-type switch to return a uint32 count; the reconstruction leaves that contract as a port."
+    }
+  ],
+  "confidence": {
+    "overall": "high for thiscall ABI, field writes, null path, and delegated count call",
+    "high": [
+      "ECX receiver and ESP+0x04 pointer",
+      "mesh+0x08 pointer store",
+      "index-buffer+0x14 conditional copy",
+      "mesh+0x0c helper result store",
+      "RET 0x4"
+    ],
+    "medium": [
+      "semantic identity of the SDK-normalized SetIndicesCount name versus the raw pointer behavior"
+    ],
+    "low": []
+  },
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only reconstruction/staging/wave6-presentation/presentation_boundary.cpp",
+    "model_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror reconstruction/staging/wave6-presentation/presentation_boundary.cpp reconstruction/staging/wave6-presentation/presentation_boundary_test.cpp -o /tmp/opencode/wave6-presentation-model-test && /tmp/opencode/wave6-presentation-model-test",
+    "json_command": "python3 -m json.tool reconstruction/metadata/wave6-presentation/011f96e0.json >/dev/null",
+    "results": {
+      "syntax": "passed",
+      "model": "passed",
+      "json": "passed"
+    }
+  },
+  "unresolved_questions": [
+    "What is the concrete runtime owner of the published IndexBuffer pointer?",
+    "What runtime primitive-type values are accepted by 0x011f95c0?",
+    "Does the SDK-normalized method name describe a different formal source-level argument than the raw x86 body?"
+  ],
+  "blockers": [
+    "The dependency at 0x011f95c0 remains a package-local port.",
+    "No runtime mesh or index-buffer trace is available."
+  ]
+}

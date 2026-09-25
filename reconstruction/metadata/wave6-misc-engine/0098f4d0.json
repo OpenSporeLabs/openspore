@@ -1,0 +1,133 @@
+{
+  "schema": "wave6-misc-engine.function-handoff.v1",
+  "package": "PKG-WAVE6-MISC-ENGINE",
+  "worker_ownership": "wave6-misc-engine",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "captured_on": "2026-09-25",
+  "va": "0x0098f4d0",
+  "function_address": "0x0098f4d0",
+  "ghidra_name": "App::cMessageManager::GetMessageQueue",
+  "normalized_symbol": "message_manager_get_queue_0098f4d0",
+  "declaration": "TargetWord WAVE6_THISCALL message_manager_get_queue_0098f4d0(OpaqueMessageManager* manager, TargetWord queue_index, void* queue)",
+  "phase": "body-reconstruction",
+  "review_status": "staged_static_review",
+  "runtime_validation": 0,
+  "implementation": {
+    "status": "implemented in worker-owned staging",
+    "staging_status": "header, source, and focused model test are present",
+    "canonical_status": "not present; canonical promotion is not claimed",
+    "staging_symbol": "message_manager_get_queue_0098f4d0",
+    "header": "reconstruction/staging/wave6-misc-engine/misc_engine.hpp",
+    "source": "reconstruction/staging/wave6-misc-engine/misc_engine.cpp",
+    "model_test": "reconstruction/staging/wave6-misc-engine/misc_engine_model_test.cpp",
+    "types": "OpaqueMessageManager and OpaqueMessageService are package-local offset/opaque views; MessageQueuePorts is a normalized unresolved-callback seam"
+  },
+  "selection": {
+    "reason": "Unclaimed shared message-queue boundary with a bounded four-way write, unsigned out-of-range guard, and two ordered service callbacks.",
+    "fan_in": {
+      "direct_caller_query_total": 0,
+      "function_data_xref_count": 1,
+      "function_data_xref": "0x01445cec",
+      "direct_callee_count": 0,
+      "indirect_callback_count": 2
+    },
+    "dependencies_unlocked": [
+      "message queue registration and lookup adapters",
+      "UI and application callback boundaries"
+    ]
+  },
+  "original_native_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "thiscall with one hidden ECX receiver and two ordinary stack words",
+    "hidden_receiver": "ECX points to the cMessageManager object",
+    "ordinary_stack_arguments": [
+      {
+        "entry_offset": "ESP+0x04",
+        "width_bytes": 4,
+        "type": "uint32_t",
+        "role": "queue index"
+      },
+      {
+        "entry_offset": "ESP+0x08",
+        "width_bytes": 4,
+        "type": "opaque pointer word",
+        "role": "queue pointer"
+      }
+    ],
+    "stack_cleanup_bytes": 8,
+    "saved_register": "ESI is pushed before the first callback argument setup and popped after the second callback",
+    "return_register": "EAX",
+    "return_width_bytes": 4,
+    "return_type": "result of service vtable slot +0x90",
+    "ret_form": "RET 0x8"
+  },
+  "observed_mechanics": {
+    "instruction_count": 29,
+    "queue_index_guard": "CMP EAX,3; JA skips all four writes for unsigned values above 3",
+    "writes": [
+      {"index": 0, "offset": "0xac", "width_bytes": 4},
+      {"index": 1, "offset": "0xb0", "width_bytes": 4},
+      {"index": 2, "offset": "0xb4", "width_bytes": 4},
+      {"index": 3, "offset": "0xb8", "width_bytes": 4}
+    ],
+    "service_pointer": "dword[ECX-0x208]",
+    "call_order": [
+      "read service pointer from manager-0x208 and save ESI",
+      "call service vtable+0x7c with logical arguments 8 and 1; machine push order is 1 then 8",
+      "call service vtable+0x90 with no arguments",
+      "restore ESI, return the +0x90 result in EAX, and execute RET 0x8"
+    ],
+    "callback_receiver": "ECX is the service pointer for both virtual calls",
+    "guard": "no manager, service, or vtable null guard",
+    "out_of_range_behavior": "indices above 3 skip the queue-pointer write but still execute both callbacks",
+    "mutation": "only the selected queue-pointer field is written",
+    "return_value": "full 32-bit EAX result from +0x90"
+  },
+  "decompiler_boundary": {
+    "ghidra_signature_observation": "Ghidra reports an int method with no formal arguments, but direct disassembly reads ESP+4 and ESP+8 and ends with RET 8.",
+    "resolution": "the normalized staging declaration uses the directly observed thiscall and two-stack-word boundary; it does not copy the incomplete decompiler prototype"
+  },
+  "live_evidence": {
+    "program": "SporeApp.exe",
+    "decompile_function": "0x0098f4d0",
+    "disassemble_function": "0x0098f4d0",
+    "function_by_address": "App::cMessageManager::GetMessageQueue; body 0x0098f4d0-0x0098f535",
+    "callers": "get_function_callers; total 0",
+    "callees": "get_function_callees; total 0 because both calls are indirect",
+    "function_xrefs": "get_function_xrefs; one DATA reference from 0x01445cec"
+  },
+  "model_boundary": {
+    "represented": "manager offsets 0xac through 0xb8, the -0x208 service pointer, unsigned selector bound, callback order, and callback return forwarding",
+    "not_represented": [
+      "complete cMessageManager layout",
+      "the concrete service at manager-0x208",
+      "vtable slot +0x7c and +0x90 implementations",
+      "queue-pointer ownership and lifetime"
+    ],
+    "ports": "MessageQueuePorts.prepare_7c and query_90 are normalized package-owned callbacks; they are not asserted to be original function-pointer types"
+  },
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/wave6-misc-engine -fsyntax-only reconstruction/staging/wave6-misc-engine/misc_engine.cpp reconstruction/staging/wave6-misc-engine/misc_engine_model_test.cpp",
+    "model_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fno-pie -Wl,-z,notext -I reconstruction/staging/wave6-misc-engine reconstruction/staging/wave6-misc-engine/misc_engine.cpp reconstruction/staging/wave6-misc-engine/misc_engine_model_test.cpp -o /tmp/opencode/wave6-misc-engine-test && /tmp/opencode/wave6-misc-engine-test",
+    "result": "passed",
+    "coverage": [
+      "selectors 0 through 3",
+      "unsigned selector 4 out-of-range path",
+      "four-byte pointer stores at 0xac, 0xb0, 0xb4, and 0xb8",
+      "callback argument order 8 then 1",
+      "service pointer at manager-0x208",
+      "query result forwarding"
+    ],
+    "runtime": "not performed"
+  },
+  "unresolved_questions": [
+    "What concrete object is stored at manager-0x208 and how is it published?",
+    "What are the complete cMessageManager offsets and queue ownership rules?",
+    "What are the implementations and return widths of service slots +0x7c and +0x90?",
+    "Does the +0x90 result represent a queue pointer, count, or another word?",
+    "Can a selector above 3 occur at runtime and what side effects follow?"
+  ],
+  "ghidra_mutations": 0,
+  "ghidra_saves": 0
+}

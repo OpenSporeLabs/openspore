@@ -1,0 +1,142 @@
+{
+  "schema": "wave6-presentation-function-handoff.v1",
+  "package": "WAVE6-PRESENTATION",
+  "function_address": "0x005291f0",
+  "ghidra_name": "Graphics::GlobalState::SetTransform",
+  "normalized_symbol": "graphics_global_state_set_transform_005291f0",
+  "source_files": [
+    "reconstruction/staging/wave6-presentation/presentation_boundary.hpp",
+    "reconstruction/staging/wave6-presentation/presentation_boundary.cpp",
+    "reconstruction/staging/wave6-presentation/presentation_boundary_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "void __cdecl graphics_global_state_set_transform_005291f0(const Matrix4* matrix, MatrixType type);",
+  "abi": {
+    "return_type": "void",
+    "return_register": null,
+    "calling_convention": "__cdecl observed",
+    "hidden_this_register": null,
+    "stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "ESP+0x04",
+        "name": "matrix",
+        "type": "const Matrix4*",
+        "width_bytes": 4,
+        "observed_use": "Copies 64 bytes from matrix into the fixed global Matrix4 storage."
+      },
+      {
+        "position": 2,
+        "entry_offset": "ESP+0x08",
+        "name": "type",
+        "type": "MatrixType",
+        "width_bytes": 4,
+        "observed_use": "Writes the global transform type before the matrix copy."
+      }
+    ],
+    "stack_cleanup_bytes": 0,
+    "return_evidence": "The function returns through plain RET after the four 16-byte SSE moves."
+  },
+  "layout": {
+    "matrix": {
+      "size_bytes": 64,
+      "layout": "float[4][4]",
+      "source": "Ghidra Matrix4"
+    },
+    "global_state": {
+      "dirty_offset": "0x016f9528",
+      "type_offset": "0x016f96a0",
+      "slot_offset": "0x016fa380",
+      "storage_offset": "0x016fa4f0",
+      "concrete_owner": "Unresolved"
+    }
+  },
+  "mechanics": {
+    "dirty_order": "OR the global soft-state dirty word with 0x01 before writing the type and matrix.",
+    "type_publication": "Store the complete 32-bit type word at 0x016f96a0.",
+    "slot_publication": "Store the address of the fixed Matrix4 storage at 0x016fa380.",
+    "matrix_copy": "Copy all 16 row-major floats in four 16-byte chunks.",
+    "null_guard": "No null check protects the incoming matrix pointer; the original dereference fault behavior is preserved.",
+    "gameplay_authority": "This function only publishes presentation transform state and does not read or mutate gameplay state."
+  },
+  "call_graph": {
+    "direct_callers": {
+      "ghidra_count": 5,
+      "representative_functions": [
+        "0x006eae40",
+        "0x006ee6f0",
+        "0x007a8a50",
+        "0x00b80ea0",
+        "0x00528e90"
+      ]
+    },
+    "direct_callees": [],
+    "function_xrefs": 7,
+    "global_references": "The body directly references 0x016f9528, 0x016f96a0, 0x016fa380, and 0x016fa4f0."
+  },
+  "evidence": [
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x005291f0",
+      "observation": "The live body records the transform type, points the global transform slot at the fixed storage, copies four matrix rows, and ORs the soft-state dirty word with one."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x005291f0",
+      "observation": "The 37-instruction body reads EBP+0x08 and EBP+0x0c, writes the fixed globals, performs four MOVAPS copies, and returns with plain RET."
+    },
+    {
+      "tool": "ghidra_get_function_callers",
+      "address": "0x005291f0",
+      "observation": "Five direct caller functions were identified."
+    },
+    {
+      "tool": "ghidra_get_function_callees",
+      "address": "0x005291f0",
+      "observation": "No direct callees were identified."
+    },
+    {
+      "tool": "ghidra_get_function_xrefs",
+      "address": "0x005291f0",
+      "observation": "Seven direct call references were identified."
+    },
+    {
+      "tool": "ghidra_get_struct_layout",
+      "address": "0x005291f0",
+      "observation": "Ghidra reports Matrix4 as 64 bytes with a float[4][4] member."
+    }
+  ],
+  "confidence": {
+    "overall": "high for ABI, dirty-bit order, fixed global writes, and 64-byte copy",
+    "high": [
+      "cdecl two-argument boundary",
+      "plain RET",
+      "dirty bit 0x01",
+      "type and fixed storage publication",
+      "four 16-byte matrix copies"
+    ],
+    "medium": [
+      "concrete owner and publication lifecycle of the global graphics state"
+    ],
+    "low": []
+  },
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only reconstruction/staging/wave6-presentation/presentation_boundary.cpp",
+    "model_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror reconstruction/staging/wave6-presentation/presentation_boundary.cpp reconstruction/staging/wave6-presentation/presentation_boundary_test.cpp -o /tmp/opencode/wave6-presentation-model-test && /tmp/opencode/wave6-presentation-model-test",
+    "json_command": "python3 -m json.tool reconstruction/metadata/wave6-presentation/005291f0.json >/dev/null",
+    "results": {
+      "syntax": "passed",
+      "model": "passed",
+      "json": "passed"
+    }
+  },
+  "unresolved_questions": [
+    "Which runtime object owns the fixed global transform state?",
+    "When are the graphics globals initialized and published?",
+    "What concrete MatrixType values are valid at runtime?"
+  ],
+  "blockers": [
+    "No runtime graphics-state trace is available.",
+    "Global state ownership and matrix-type policy remain outside this body."
+  ]
+}

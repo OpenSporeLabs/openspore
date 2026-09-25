@@ -1,0 +1,88 @@
+{
+  "schema": "pkg13-diplomacy-predicate.function-handoff.v1",
+  "package": "PKG-13-SIM-CREATURE-TRIBECIV",
+  "function_address": "0x00d01ff0",
+  "ghidra_name": "Simulator::cRelationshipManager::IsAllied2",
+  "normalized_symbol": "RelationshipManager_IsAllied2_00d01ff0",
+  "source_files": [
+    "reconstruction/staging/pkg13-diplomacy-predicate/diplomacy_predicate.hpp",
+    "reconstruction/staging/pkg13-diplomacy-predicate/diplomacy_predicate.cpp",
+    "reconstruction/staging/pkg13-diplomacy-predicate/diplomacy_predicate_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "std::uint8_t RelationshipManager_IsAllied2_00d01ff0(OpaqueRelationshipManager* receiver, OpaqueEmpire* empire_a, OpaqueEmpire* empire_b);",
+  "abi": {
+    "calling_convention": "thiscall",
+    "hidden_this": "ECX OpaqueRelationshipManager* receiver",
+    "stack_arguments": [
+      {"position": 1, "entry_offset": "ESP+0x04", "type": "OpaqueEmpire*", "width_bytes": 4},
+      {"position": 2, "entry_offset": "ESP+0x08", "type": "OpaqueEmpire*", "width_bytes": 4}
+    ],
+    "stack_cleanup_bytes": 8,
+    "return_register": "AL",
+    "return_width_bytes": 1,
+    "return_semantics": "Returns byte 0 for a null relationship entry and otherwise (flags >> 1) & 1. Unrelated EAX high bits are not a semantic return contract."
+  },
+  "body": {
+    "status": "reconstructed",
+    "entry_address": "0x00d01ff0",
+    "body_addresses": ["0x00d01ff0", "0x00d02044"],
+    "instruction_count": 34,
+    "basic_block_count": 8,
+    "raw_bytes": "568bf1e808f331008b5424088b4c240c3bd0750885c974088bd18bc885c975028bc88b89840000008b8284000000515051508bcee887faffff508bcee8dff3ffff5e85c0740a8b4004d1e82401c2080032c0c20800",
+    "mechanics": [
+      "Save ESI, retain the manager receiver in ESI, and call 0x01021300 exactly once for the current empire pointer.",
+      "Load the two explicit empire pointers from the original stack arguments.",
+      "If empire_a equals the current empire and empire_b is non-null, swap the two selected empire pointers.",
+      "If the resulting second empire is null, replace only that pointer with the current empire.",
+      "Read political-ID-like words at empire+0x84 for both selected pointers; neither pointer is generally null-checked.",
+      "Call 0x00d01ab0 with the manager and the ordered identity pair, then call 0x00d01410 with the selected map and the same ordered pair.",
+      "Return 0 when the lookup result is null; otherwise return relationship flags bit 1 from entry+0x04."
+    ]
+  },
+  "state_evidence": {
+    "empire_field": {"offset": "0x84", "width_bytes": 4, "meaning": "raw political identity word"},
+    "relationship_entry_field": {"offset": "0x04", "width_bytes": 4, "meaning": "relationship flags; queried bit 1"},
+    "directed_pair_order": "The normal helper order is the post-branch first identity followed by the post-branch second identity. When the first explicit pointer is the current empire and the second is non-null, the pair is swapped before both reads and helper calls.",
+    "null_and_sentinel_behavior": "A null second explicit pointer is replaced by the current empire after the swap branch. A null first pointer is not generally defaulted. Null current-empire, manager, map, or relationship-entry behavior follows the original unchecked dereference/call boundaries; the test does not invent recovery.",
+    "mutation_boundary": "The target writes no relationship state and creates no event. The current-empire dependency may refresh or refcount cache state, but that side effect belongs to 0x01021300."
+  },
+  "call_graph": {
+    "direct_callers": ["0x00c4bc00", "0x01008e60", "0x0100dd40", "0x010134d0", "0x01047440"],
+    "direct_callees": ["0x01021300", "0x00d01ab0", "0x00d01410"],
+    "function_xrefs": ["0x00aed8f3", "0x00c4bc8a", "0x00c5bb1d", "0x00fe2ff3", "0x010090d1", "0x0100de65", "0x01013518", "0x0104a50b", "0x010474f1"],
+    "ownership_boundary": "0x01021300 is already staged by PKG-12 as openspore::reconstruction::pkg12_space::pkg12_space_01021300() and remains an opaque borrowed current-empire provider. 0x00d01ab0 and 0x00d01410 are unresolved dependency boundaries in this batch and are not claimed or implemented. The 0x00d01410 boundary is callee-cleanup stdcall-equivalent because the live body returns with RET 0x0c."
+  },
+  "evidence": [
+    {"tool": "ghidra_get_function_by_address", "address": "0x00d01ff0", "observation": "Live function range is 0x00d01ff0 through 0x00d02044 with a manager receiver, two empire pointers, and bool-sized return."},
+    {"tool": "ghidra_decompile_function", "address": "0x00d01ff0", "observation": "Live decompilation preserves current-empire substitution, helper ordering, null record handling, and the flags shift/mask."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00d01ff0", "observation": "Exact assembly proves ECX thiscall, two stack pointers, RET 8, ESI preservation, helper call order, +0x84 reads, +0x04 flags read, and bit-1 selection."},
+    {"tool": "ghidra_get_function_callers", "address": "0x00d01ff0", "observation": "Five unique direct callers and nine direct call xrefs were reported."},
+    {"tool": "ghidra_get_function_callees", "address": "0x00d01ff0", "observation": "Direct callees are 0x01021300, 0x00d01ab0, and 0x00d01410."},
+    {"tool": "read_only_dependency_analysis", "addresses": ["0x00d01ab0", "0x00d01410", "0x01021300"], "observation": "Helper contracts establish an opaque selected map, nullable relationship entry payload, and borrowed current-empire result without justifying a new relationship container."}
+  ],
+  "confidence": {
+    "body": "high",
+    "thiscall_and_cleanup": "high",
+    "argument_order": "high",
+    "political_id_offset": "high",
+    "alliance_bit": "high",
+    "current_empire_dependency_behavior": "medium; opaque at this target boundary"
+  },
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -fsyntax-only reconstruction/staging/pkg13-diplomacy-predicate/diplomacy_predicate.cpp reconstruction/staging/pkg13-diplomacy-predicate/diplomacy_predicate_test.cpp",
+    "model_test_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic reconstruction/staging/pkg13-diplomacy-predicate/diplomacy_predicate.cpp reconstruction/staging/pkg13-diplomacy-predicate/diplomacy_predicate_test.cpp -o /tmp/opencode/pkg13-diplomacy-predicate-test && /tmp/opencode/pkg13-diplomacy-predicate-test",
+    "format_command": "clang-format --dry-run --Werror -style=Google reconstruction/staging/pkg13-diplomacy-predicate/*",
+    "json_check": "python3 -m json.tool reconstruction/metadata/pkg13-diplomacy-predicate/00d01ff0.json"
+  },
+  "unresolved_questions": [
+    "The concrete manager, empire, map, and relationship-entry owners remain unresolved.",
+    "The exact lower-bound behavior inside 0x00d01ab0 and 0x00d01410 is not part of this target reconstruction.",
+    "The current empire cache and refcount side effects of 0x01021300 remain owned by PKG-12.",
+    "No original-process alliance records or helper return values have been observed."
+  ],
+  "blockers": [
+    "Runtime manager/empire/map availability and actual relationship records remain gated.",
+    "Invalid null-first and null-current combinations are preserved as unchecked paths and are not modeled as successful API inputs."
+  ]
+}
