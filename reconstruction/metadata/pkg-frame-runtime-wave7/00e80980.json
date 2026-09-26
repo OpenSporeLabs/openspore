@@ -1,0 +1,175 @@
+{
+  "schema": "pkg-frame-runtime-wave7.function-handoff.v1",
+  "package": "PKG-FRAME-RUNTIME-WAVE7",
+  "worker_ownership": "frame-update-timing-wave7",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "captured_on": "2026-09-25",
+  "va": "0x00e80980",
+  "function_address": "0x00e80980",
+  "ghidra_name": "App::cCellModeStrategy::Update",
+  "normalized_symbol": "cell_mode_update_00e80980",
+  "declaration": "void cell_mode_update_00e80980(OpaqueCellMode* receiver, float first_word, float second_word)",
+  "phase": "body-reconstruction",
+  "review_status": "staged_static_self_review",
+  "runtime_validation": 0,
+  "implementation": {
+    "status": "integrated",
+    "canonical_status": "present",
+    "header": "src/reconstruction/pkg_frame_runtime_wave7/frame_runtime_wave7.hpp",
+    "source": "src/reconstruction/pkg_frame_runtime_wave7/frame_runtime_wave7.cpp",
+    "model_test": "src/reconstruction/pkg_frame_runtime_wave7/frame_runtime_wave7_model_test.cpp",
+    "metadata": "src/reconstruction/pkg_frame_runtime_wave7/00e80980.json",
+    "canonical_path": "src/reconstruction/pkg_frame_runtime_wave7"
+  },
+  "original_native_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "thiscall with callee stack cleanup",
+    "receiver_register": "ECX",
+    "receiver_type": "OpaqueCellMode*",
+    "ordinary_stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "ESP+0x04",
+        "width_bytes": 4,
+        "machine_type": "float",
+        "normalized_name": "first_word"
+      },
+      {
+        "position": 2,
+        "entry_offset": "ESP+0x08",
+        "width_bytes": 4,
+        "machine_type": "float",
+        "normalized_name": "second_word"
+      }
+    ],
+    "stack_cleanup_bytes": 8,
+    "return_register": "EAX",
+    "return_width_bytes": 0,
+    "return_contract": "void-like; the entry performs no post-call EAX normalization",
+    "ret_form": "RET 0x8"
+  },
+  "observed_body": {
+    "entry": "0x00e80980",
+    "body_end_inclusive": "0x00e8099c",
+    "instruction_count": 8,
+    "raw_bytes_hex": "d944240883ec08d95c2404d944240cd91c24e819fdffff83c408c20800cccc",
+    "assembly": [
+      "FLD float ptr [ESP+0x08]",
+      "SUB ESP,0x08",
+      "FSTP float ptr [ESP+0x04]",
+      "FLD float ptr [ESP+0x0c]",
+      "FSTP float ptr [ESP]",
+      "CALL 0x00e806b0",
+      "ADD ESP,0x08",
+      "RET 0x08"
+    ],
+    "order": [
+      "load the first float word",
+      "allocate an eight-byte call frame",
+      "publish the first float at the callee stack offset ESP+0x04",
+      "load the second float word",
+      "publish the second float at the callee stack offset ESP",
+      "call 0x00e806b0 with the original receiver in ECX",
+      "discard all temporary stack results",
+      "remove both original argument words"
+    ]
+  },
+  "delta_semantics_boundary": {
+    "target_fact": "The wrapper forwards both four-byte float words without conversion, sign normalization, scaling, replacement, or dropping either word.",
+    "downstream_fact": "Live disassembly of 0x00e806b0 reads both forwarded words at distinct stack offsets on multiple paths, so neither word may be discarded on the basis of imported parameter names.",
+    "fixed_step_claim": false,
+    "accumulator_claim": false,
+    "frame_counter_claim": false
+  },
+  "call_graph": {
+    "unique_direct_caller_functions": 0,
+    "function_xrefs": [
+      {
+        "address": "0x01485594",
+        "type": "DATA"
+      }
+    ],
+    "dispatch_interpretation": "The data reference is the cCellModeStrategy vtable entry for this update adapter.",
+    "direct_callees": [
+      {
+        "address": "0x00e806b0",
+        "role": "Cell-mode orchestration body",
+        "receiver": "unchanged ECX value",
+        "stack_words": [
+          "first float word",
+          "second float word"
+        ],
+        "native_call": "caller-cleaned two-float stack call",
+        "callee_cleanup_bytes": 0,
+        "wrapper_cleanup_bytes": 8
+      }
+    ]
+  },
+  "model_boundary": {
+    "represented": [
+      "outer receiver entry",
+      "caller-cleaned cdecl two-float stack order",
+      "no receiver parameter on the normalized cdecl port",
+      "single callback invocation",
+      "callee-cleanup outer ABI",
+      "void-like return"
+    ],
+    "normalized_port": "cell_orchestrator_00e806b0 is a package-local cdecl callback seam carrying exactly two float stack words. The outer ECX receiver is not a port parameter; the native callee still receives the unchanged register residue.",
+    "not_represented": [
+      "0x00e806b0 state gates",
+      "0x00e806b0 service and helper bodies",
+      "runtime Cell reachability",
+      "meaning of either float word"
+    ]
+  },
+  "model_tests": [
+    "outer receiver entry",
+    "cdecl port has no receiver parameter",
+    "first float forwarding",
+    "negative-zero second-word preservation",
+    "exactly one orchestration callback",
+    "no local state publication"
+  ],
+  "runtime_gate": {
+    "status": "required",
+    "runtime_validation": 0,
+    "conditions": [
+      "The cCellModeStrategy vtable at 0x01485594 dispatches this exact entry.",
+      "The receiver is a valid active Cell-mode object.",
+      "Both forwarded float words and all downstream service state are observable.",
+      "One frame message produces one adapter entry and one 0x00e806b0 entry."
+    ],
+    "minimum_positive_claim": "An original-process trace records the vtable dispatch, receiver identity, both raw float words, and the single downstream call."
+  },
+  "verification": {
+    "x86_32_syntax": "passed with -O2 -Wall -Wextra -Wpedantic -Werror",
+    "focused_model_normal": "passed",
+    "focused_model_ndebug": "passed",
+    "clang_format": "passed",
+    "json": "passed",
+    "emitted_outer_abi": "x86-32 thiscall entry with RET 0x8",
+    "runtime_validation": "not run"
+  },
+  "provenance": [
+    "ghidra_get_function_by_address(0x00e80980)",
+    "ghidra_decompile_function(0x00e80980)",
+    "ghidra_disassemble_function(0x00e80980)",
+    "ghidra_get_function_callers(0x00e80980)",
+    "ghidra_get_function_callees(0x00e80980)",
+    "ghidra_get_function_xrefs(0x00e80980)",
+    "ghidra_read_memory(0x00e80980)",
+    "ghidra_disassemble_function(0x00e806b0)",
+    "knowledgegraph/research/state-machines/temporal-semantics.json",
+    "knowledgegraph/research/state-machines/cell-stage.json"
+  ],
+  "ghidra_mutations": 0,
+  "ghidra_saves": 0,
+  "target_state": "integrated canonical source; runtime validation gated",
+  "integration_status": "integrated",
+  "canonical_files": [
+    "src/reconstruction/pkg_frame_runtime_wave7/frame_runtime_wave7.hpp",
+    "src/reconstruction/pkg_frame_runtime_wave7/frame_runtime_wave7.cpp",
+    "src/reconstruction/pkg_frame_runtime_wave7/frame_runtime_wave7_model_test.cpp"
+  ]
+}

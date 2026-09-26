@@ -52,37 +52,37 @@ NativeResult invoke(OpaqueEditor* editor, NativeOp operation,
   return g_editor_lifecycle_wave6_ports.call(call);
 }
 
-void release_0098(OpaqueEditor* editor) {
-  void* owner = load<void*>(field(editor, kOffsetExitModeArg));
-  store(field(editor, kOffsetExitModeArg), static_cast<std::uint32_t>(0));
-  if (owner == nullptr) {
+void release_0098(OpaqueEditor* editor, std::size_t offset) {
+  void* base = load<void*>(field(editor, offset));
+  store(field(editor, offset), static_cast<std::uint32_t>(0));
+  if (base == nullptr) {
     return;
   }
-  auto* owner_bytes = static_cast<std::byte*>(owner);
-  std::uint32_t count = load<std::uint32_t>(owner_bytes + 8);
+  auto* owner = static_cast<std::byte*>(base) + 4;
+  std::uint32_t count = load<std::uint32_t>(owner + 4);
   --count;
-  store(owner_bytes + 8, count);
+  store(owner + 4, count);
   if (count == 0) {
-    store(owner_bytes + 8, static_cast<std::uint32_t>(1));
+    store(owner + 4, static_cast<std::uint32_t>(1));
     invoke(editor, NativeOp::dispose_release_virtual, 0, 0, 1, 0, 0, 0, 0,
            owner);
   }
 }
 
 void release_004b9140(OpaqueEditor* editor, std::size_t offset) {
-  void* owner = load<void*>(field(editor, offset));
+  void* object = load<void*>(field(editor, offset));
   store(field(editor, offset), static_cast<std::uint32_t>(0));
-  if (owner == nullptr) {
+  if (object == nullptr) {
     return;
   }
-  auto* owner_bytes = static_cast<std::byte*>(owner);
-  std::uint32_t count = load<std::uint32_t>(owner_bytes + 8);
+  auto* object_bytes = static_cast<std::byte*>(object);
+  std::uint32_t count = load<std::uint32_t>(object_bytes + 4);
   --count;
-  store(owner_bytes + 8, count);
+  store(object_bytes + 4, count);
   if (count == 0) {
-    store(owner_bytes + 8, static_cast<std::uint32_t>(1));
+    store(object_bytes + 4, static_cast<std::uint32_t>(1));
     invoke(editor, NativeOp::dispose_release_virtual, 0, 0, 1, 0, 0, 0, 0,
-           owner);
+           object);
   }
 }
 
@@ -104,11 +104,12 @@ void release_ref40(OpaqueEditor* editor, std::size_t offset) {
          object);
 }
 
-void release_slot4(OpaqueEditor* editor, std::size_t offset) {
+void release_slot(OpaqueEditor* editor, std::size_t offset,
+                  std::uint32_t slot) {
   void* object = load<void*>(field(editor, offset));
   store(field(editor, offset), static_cast<std::uint32_t>(0));
   if (object != nullptr) {
-    invoke(editor, NativeOp::dispose_release_virtual, 0, 4, 0, 0, 0, 0, 0,
+    invoke(editor, NativeOp::dispose_release_virtual, 0, slot, 0, 0, 0, 0, 0,
            object);
   }
 }
@@ -141,12 +142,6 @@ std::int32_t truncate_float(float value) {
   return static_cast<std::int32_t>(value);
 }
 
-NativeResult route_message(OpaqueEditor* editor, std::uint32_t message_id,
-                           void* message) {
-  return invoke(editor, NativeOp::message_route, 0x00591fa0, 0, message_id, 0,
-                0, 0, 0, message);
-}
-
 void transition_after_message_flag(OpaqueEditor* editor) {
   const std::uint32_t state =
       load<std::uint32_t>(field(editor, kOffsetMessageState));
@@ -154,7 +149,7 @@ void transition_after_message_flag(OpaqueEditor* editor) {
     store(field(editor, kOffsetMessageStateValue),
           static_cast<std::uint32_t>(3));
   } else {
-    invoke(editor, NativeOp::message_route, 0x0067ddd0, 0x50, 0, 0, 0, 0, 0,
+    invoke(editor, NativeOp::message_service, 0x0067ddd0, 0x50, 0, 0, 0, 0, 0,
            nullptr);
   }
 }
@@ -197,18 +192,20 @@ extern "C" bool __thiscall editor_dispose_00576c50(OpaqueEditor* editor) {
   invoke(editor, NativeOp::dispose_helper, 0x00563de0);
   if (load<std::uint32_t>(field(editor, kOffsetExitModeArg)) != 0) {
     invoke(editor, NativeOp::dispose_release_prepare, 0x004ad330);
-    release_0098(editor);
+    release_0098(editor, kOffsetExitModeArg);
   }
   if (load<std::uint32_t>(field(editor, kOffsetExitModeArg2)) != 0) {
     invoke(editor, NativeOp::dispose_release_prepare, 0x004ad330);
-    release_0098(editor);
+    if (load<std::uint32_t>(field(editor, kOffsetExitModeArg)) != 0) {
+      release_0098(editor, kOffsetExitModeArg);
+    }
   }
   release_ref40(editor, kOffsetObjectA0);
   release_ref40(editor, kOffsetObjectA8);
   release_ref40(editor, kOffsetObjectAc);
-  release_slot4(editor, kOffsetObject84);
-  release_slot4(editor, kOffsetObject8c);
-  release_slot4(editor, kOffsetObject88);
+  release_slot(editor, kOffsetObject84, 4);
+  release_slot(editor, kOffsetObject8c, 4);
+  release_slot(editor, kOffsetObject88, 4);
   invoke(editor, NativeOp::dispose_shadow_0018, 0x0067dd80, 0x18, 0x0e4c6e4, 0,
          0, 0, 0, nullptr);
   invoke(editor, NativeOp::dispose_shadow_0018, 0x0067dd80, 0x18, 0x21b37d6, 0,
@@ -217,7 +214,8 @@ extern "C" bool __thiscall editor_dispose_00576c50(OpaqueEditor* editor) {
          0, 0, 0, nullptr);
   invoke(editor, NativeOp::dispose_world_0050, 0x0067ddd0, 0x50, 0x0e4c6e4, 0,
          0, 0, 0, nullptr);
-  release_slot4(editor, kOffsetObject15c);
+  release_slot(editor, kOffsetObject15c, 8);
+  release_slot(editor, kOffsetExitObject94, 4);
   release_004b9140(editor, kOffsetObject90);
   release_viewers(editor);
   invoke(editor, NativeOp::dispose_preferences, 0x00a206f0, 0x38, 0x0347536b,
@@ -280,11 +278,8 @@ extern "C" bool __thiscall editor_initialize_00584300(OpaqueEditor* editor,
   }
   invoke(editor, NativeOp::initialize_late, 0x00584300, 0, 0, 0, 0, 0, 0,
          required.pointer);
-  const float scalar =
-      g_editor_lifecycle_wave6_globals.source_01465544 == nullptr
-          ? 0.0F
-          : *g_editor_lifecycle_wave6_globals.source_01465544;
-  store(field(editor, kOffsetDefaultScalar), scalar);
+  store(field(editor, kOffsetDefaultScalar),
+        static_cast<std::uint32_t>(0x43fa0000u));
   invoke(editor, NativeOp::initialize_manager_0050, 0x00584300, 0x50, 0, 0, 0,
          0, 0, editor);
   store(field(editor, 0x580), static_cast<std::uint32_t>(0));
@@ -348,7 +343,6 @@ extern "C" void __thiscall editor_on_exit_00587a20(OpaqueEditor* editor) {
 extern "C" void __thiscall editor_update_0058be50(OpaqueEditor* editor,
                                                   float first_delta,
                                                   float second_delta) {
-  static_cast<void>(first_delta);
   if (load<std::uint8_t>(field(editor, kOffsetActive)) == 0) {
     return;
   }
@@ -384,16 +378,17 @@ extern "C" void __thiscall editor_update_0058be50(OpaqueEditor* editor,
       return;
     }
   }
-  const std::int32_t milliseconds = truncate_float(second_delta * 1000.0F);
+  const std::int32_t milliseconds = truncate_float(first_delta * 1000.0F);
   if (load<std::uint32_t>(field(editor, kOffsetMessagePending)) != 0) {
     const NativeResult gate =
         invoke(editor, NativeOp::update_timer_gate, 0, 0, 0, 0, 0, 0, 0,
                field(editor, kOffsetMessagePending));
     if (gate.boolean) {
       const float remaining =
-          load<float>(field(editor, kOffsetMessageTimer)) - second_delta;
+          load<float>(field(editor, kOffsetMessageTimer)) - first_delta;
+
       store(field(editor, kOffsetMessageTimer), remaining);
-      if (remaining >= 0.0F) {
+      if (remaining <= 0.0F) {
         invoke(editor, NativeOp::update_timer_expire, 0x005cc0e0, 0, 0, 0, 0, 0,
                0, nullptr);
       }
@@ -401,7 +396,8 @@ extern "C" void __thiscall editor_update_0058be50(OpaqueEditor* editor,
   }
   invoke(editor, NativeOp::update_main, 0x0058be50, 0,
          static_cast<std::uint32_t>(milliseconds), 0, 0, 0, 0, nullptr,
-         second_delta, second_delta);
+         first_delta, second_delta);
+
   const std::uint32_t mode = load<std::uint32_t>(field(editor, kOffsetMode));
   if (mode == 0) {
     invoke(editor, NativeOp::update_mode, 0x0058be50, 0, 0, 0, 0, 0, 0,
@@ -421,23 +417,15 @@ extern "C" bool __thiscall editor_handle_message_00591fa0(
   switch (message_id) {
     case 0x1c94703:
       store(field(editor, kOffsetMessageFlag384), static_cast<std::uint8_t>(1));
-      invoke(editor, NativeOp::message_route, 0x00591fa0, 0, message_id, 0, 0,
-             0, 0, message);
       return false;
     case 0x1c94708:
       store(field(editor, kOffsetMessageFlag385), static_cast<std::uint8_t>(1));
-      invoke(editor, NativeOp::message_route, 0x00591fa0, 0, message_id, 0, 0,
-             0, 0, message);
       return false;
     case 0x29d57f4:
       store(field(editor, kOffsetMessageFlag389), static_cast<std::uint8_t>(0));
-      invoke(editor, NativeOp::message_route, 0x00591fa0, 0, message_id, 0, 0,
-             0, 0, message);
       return true;
     case 0x462c656:
       store(field(editor, 0x190), static_cast<std::uint32_t>(0));
-      invoke(editor, NativeOp::message_route, 0x00591fa0, 0, message_id, 0, 0,
-             0, 0, message);
       return true;
     case 0x657abe5:
       store(static_cast<std::uint8_t*>(message) + 8,
@@ -456,13 +444,18 @@ extern "C" bool __thiscall editor_handle_message_00591fa0(
           load<std::uint32_t>(field(editor, kOffsetMessageKey))) {
         return false;
       }
-      route_message(editor, message_id, message);
+      invoke(editor, NativeOp::message_service, 0x005d60c0, 0, message_id, 0, 0,
+             0, 0, message);
+      invoke(editor, NativeOp::message_service, 0x004edf40, 0, message_id, 0, 0,
+             0, 0, message);
       store(field(editor, kOffsetMessageFlag4a4),
             static_cast<std::uint32_t>(1));
       if (load<std::uint32_t>(field(editor, 0x68)) != 0) {
-        route_message(editor, message_id, message);
+        invoke(editor, NativeOp::message_service, 0x005dd7a0, 0, message_id, 0,
+               0, 0, 0, message);
       }
-      route_message(editor, message_id, message);
+      invoke(editor, NativeOp::message_service, 0x0067dcc0, 0, message_id, 0, 0,
+             0, 0, nullptr);
       return true;
     }
     case 0x14418c3f: {
@@ -472,7 +465,10 @@ extern "C" bool __thiscall editor_handle_message_00591fa0(
       }
       store(field(editor, kOffsetMessageFlag4a4),
             static_cast<std::uint32_t>(1));
-      route_message(editor, message_id, message);
+      invoke(editor, NativeOp::message_service, 0x005dd7a0, 0, message_id, 0, 0,
+             0, 0, message);
+      invoke(editor, NativeOp::message_service, 0x0067dcc0, 0, message_id, 0, 0,
+             0, 0, nullptr);
       return true;
     }
     case 0xd1511790: {
@@ -486,8 +482,13 @@ extern "C" bool __thiscall editor_handle_message_00591fa0(
                                                  editor, kOffsetMessageKey))) {
         return false;
       }
-      const NativeResult accepted = route_message(editor, message_id, message);
-      if (!accepted.boolean) {
+      const NativeResult accepted =
+          invoke(editor, NativeOp::message_service, 0x00574460, 0, message_id,
+                 0, 0, 0, 0, message);
+      if (accepted.boolean) {
+        invoke(editor, NativeOp::message_service, 0x00585330, 0, 0, 0, 0, 0, 0,
+               nullptr);
+      } else {
         invoke(editor, NativeOp::message_commit, 0x00572620, 0, message_id, 0,
                0, 0, 0, message);
       }
@@ -497,24 +498,71 @@ extern "C" bool __thiscall editor_handle_message_00591fa0(
       const std::uint32_t request =
           load<std::uint32_t>(static_cast<std::uint8_t*>(message) + 0x20);
       if (request == 0) {
-        return route_message(editor, message_id, message).boolean;
+        return invoke(editor, NativeOp::message_service, 0x00591690, 0,
+                      message_id, 0, 0, 0, 0, message)
+            .boolean;
       }
       void* object = load<void*>(static_cast<std::uint8_t*>(message) + 0x20);
       const NativeResult value = invoke(editor, NativeOp::message_object_000c,
                                         0, 0xc, 0, 0, 0, 0, 0, object);
-      return invoke(editor, NativeOp::message_route, 0x00591690, 0, value.word,
+      return invoke(editor, NativeOp::message_service, 0x00591690, 0,
+                    value.word,
                     load<std::uint32_t>(static_cast<std::uint8_t*>(message) +
                                         0x10),
                     0, 0, 0, message)
           .boolean;
     }
-    case 0x5132389:
-      return route_message(editor, message_id, message).boolean;
+    case 0x5132389: {
+      if (load<std::uint32_t>(message) == 0) {
+        return false;
+      }
+      if (load<std::uint8_t>(field(editor, 0x2a0)) == 0) {
+        return false;
+      }
+      const NativeResult view = invoke(editor, NativeOp::message_service,
+                                       0x00401030, 0, 0, 0, 0, 0, 0, nullptr);
+      const bool view_gate =
+          view.pointer != nullptr &&
+          load<std::uint8_t>(static_cast<std::uint8_t*>(view.pointer) + 0x1c) !=
+              0;
+      NativeResult service = invoke(editor, NativeOp::message_service,
+                                    0x005dc2e0, 0, 0, 0, 0, 0, 0, message);
+      if (!service.boolean) {
+        service = invoke(editor, NativeOp::message_service, 0x005dc2f0, 0, 0, 0,
+                         0, 0, 0, message);
+      }
+      if (!service.boolean) {
+        service = invoke(editor, NativeOp::message_service, 0x006a25a0, 0,
+                         0x678f3f1, 0, 0, 0, 0, nullptr);
+      }
+      if (view_gate || !service.boolean) {
+        return false;
+      }
+      if (load<std::uint32_t>(field(editor, 0x30c)) != 2) {
+        service = invoke(editor, NativeOp::message_service, 0x005dc450, 0, 0, 0,
+                         0, 0, 0, message);
+        if (!service.boolean) {
+          return false;
+        }
+        const NativeResult active =
+            invoke(editor, NativeOp::message_service, 0x0067caa0, 0, 0, 0, 0, 0,
+                   0, message);
+        if (active.word != 0) {
+          return false;
+        }
+        invoke(editor, NativeOp::message_service, 0x005df8f0, 0, 0, 0, 0, 0, 0,
+               message);
+        return false;
+      }
+      invoke(editor, NativeOp::message_service, 0x00628910, 0, 0, 0, 0, 0, 0,
+             message);
+      return true;
+    }
     case 0xf1ff568b: {
       if (load<std::uint8_t>(static_cast<std::uint8_t*>(message) + 0xc) == 0) {
         return false;
       }
-      if (invoke(editor, NativeOp::message_route, 0x004eb930).boolean) {
+      if (invoke(editor, NativeOp::message_service, 0x004eb930).boolean) {
         store(static_cast<std::uint8_t*>(message) + 0x10,
               static_cast<std::uint32_t>(0xa6c97621));
         store(static_cast<std::uint8_t*>(message) + 0x14,
@@ -530,7 +578,8 @@ extern "C" bool __thiscall editor_handle_message_00591fa0(
     case 0x7f18f481: {
       const std::uint32_t key = load<std::uint32_t>(message);
       if (key == load<std::uint32_t>(field(editor, kOffsetMessageKey2))) {
-        route_message(editor, message_id, message);
+        invoke(editor, NativeOp::message_service, 0x00573c00, 0, 0, 0, 0, 0, 0,
+               message);
       }
       if (key == load<std::uint32_t>(field(editor, kOffsetMessageKey4)) &&
           load<std::uint32_t>(field(editor, kOffsetMessageKey4)) != 0) {
@@ -538,20 +587,26 @@ extern "C" bool __thiscall editor_handle_message_00591fa0(
         store(field(editor, kOffsetMessageKey4), static_cast<std::uint32_t>(0));
         invoke(editor, NativeOp::message_release, 0, 8, 0, 0, 0, 0, 0, object);
       }
-      if (key == load<std::uint32_t>(field(editor, kOffsetMessageKey3))) {
-        route_message(editor, message_id, message);
+      if (key != load<std::uint32_t>(field(editor, kOffsetMessageKey3))) {
+        return false;
       }
+      invoke(editor, NativeOp::message_service, 0x0057e790, 0, 0, 0, 0, 0, 0,
+             message);
       return false;
     }
     case 0x90a03fdf:
-      route_message(editor, message_id, message);
+      invoke(editor, NativeOp::message_service, 0x005722f0, 0,
+             load<std::uint32_t>(static_cast<std::uint8_t*>(message) + 0x10), 0,
+             0, 0, 0, message);
       if (load<std::uint32_t>(field(editor, kOffsetMessagePayloadOwner)) != 0) {
         void* owner = load<void*>(field(editor, kOffsetMessagePayloadOwner));
         if (load<std::uint8_t>(static_cast<std::uint8_t*>(owner) + 0x64) != 0) {
-          route_message(editor, message_id, message);
+          invoke(editor, NativeOp::message_service, 0x0057bfb0, 0, 0, 0, 0, 0,
+                 0, owner);
         }
       }
-      route_message(editor, message_id, message);
+      invoke(editor, NativeOp::message_service, 0x00586690, 0, 0, 0, 0, 0, 0,
+             message);
       return false;
     case 0xb03bc30c: {
       if (load<std::uint8_t>(field(editor, 0x300)) == 0) {
@@ -568,56 +623,202 @@ extern "C" bool __thiscall editor_handle_message_00591fa0(
         store(field(editor, 0x1c8),
               load<std::uint32_t>(static_cast<std::uint8_t*>(source) + 0x18));
       }
-      route_message(editor, message_id, message);
+      invoke(editor, NativeOp::message_service, 0x00572620, 0, message_id, 0, 0,
+             0, 0, message);
+      invoke(editor, NativeOp::message_service, 0x0067caa0, 0, 0, 0, 0, 0, 0,
+             message);
       const NativeResult clock =
-          invoke(editor, NativeOp::message_route, 0x008130a0);
+          invoke(editor, NativeOp::message_service, 0x008130a0);
       store(field(editor, kOffsetMessageSnapshotClock), clock.qword);
       return false;
     }
     case 0xf058b0f2: {
-      if (load<std::uint8_t>(field(editor, 0x300)) == 0) {
-        store(field(editor, kOffsetMessageFlag1c0),
-              static_cast<std::uint32_t>(0));
-        store(field(editor, 0x1c4), static_cast<std::uint32_t>(0));
-        store(field(editor, 0x1c8), static_cast<std::uint32_t>(0));
-      } else {
-        void* source = load<void*>(field(editor, kOffsetMessagePayloadOwner));
-        store(field(editor, kOffsetMessageFlag1c0),
-              load<std::uint32_t>(static_cast<std::uint8_t*>(source) + 0x10));
-        store(field(editor, 0x1c4),
-              load<std::uint32_t>(static_cast<std::uint8_t*>(source) + 0x14));
-        store(field(editor, 0x1c8),
-              load<std::uint32_t>(static_cast<std::uint8_t*>(source) + 0x18));
+      void* property_list = load<void*>(field(editor, 0x14));
+      invoke(editor, NativeOp::message_service, 0x0040cf10, 0, 0xb3a88b0b, 0, 0,
+             0, 0, property_list);
+      if (load<void*>(message) == nullptr) {
+        return false;
+      }
+      const NativeResult instance =
+          invoke(editor, NativeOp::message_service, 0x006a12a0, 0, 0xd3a86351,
+                 0, 0, 0, 0, property_list);
+      if (!instance.boolean) {
+        return false;
+      }
+      invoke(editor, NativeOp::message_service, 0x00401050, 0, 0, 0, 0, 0, 0,
+             message);
+      invoke(editor, NativeOp::message_service, 0x0045ae10, 0, 0, 0, 0, 0, 0,
+             message);
+      invoke(editor, NativeOp::message_service, 0x007c3d30, 0, 0, 0, 0, 0, 0,
+             message);
+      invoke(editor, NativeOp::message_service, 0x007c4900, 0, 0, 0, 0, 0, 0,
+             message);
+      if (invoke(editor, NativeOp::message_service, 0x0044e640, 0, 0, 0, 0, 0,
+                 0, message)
+              .boolean) {
+        invoke(editor, NativeOp::message_service, 0x0067ddd0, 0, 0x4c, 0, 0, 0,
+               0, message);
+        invoke(editor, NativeOp::message_service, 0x00a16f40, 0, 0, 0, 0, 0, 0,
+               message);
       }
       return false;
     }
     case 0x22d308b:
-      route_message(editor, message_id, message);
+      invoke(editor, NativeOp::message_service, 0x00579720, 0,
+             load<std::uint32_t>(static_cast<std::uint8_t*>(message) + 8), 0, 0,
+             0, 0, message);
       return true;
     case 0x52f180:
-      route_message(editor, message_id, message);
+      invoke(editor, NativeOp::message_service, 0x0057c530, 0, message_id, 0, 0,
+             0, 0, message);
       return true;
+    case 0x3fc3f13: {
+      const NativeResult completion =
+          invoke(editor, NativeOp::message_service, 0x006b1f90, 0, 0, 0, 0, 0,
+                 0, nullptr);
+      const NativeResult path =
+          invoke(editor, NativeOp::message_service, 0x004ae000, 0, 0, 0, 0, 0,
+                 0, completion.pointer);
+      invoke(editor, NativeOp::message_service, 0x00930180, 0, path.word, 0, 0,
+             0, 0, message);
+      if (load<std::uint32_t>(field(editor, kOffsetMessageKey)) != 0) {
+        invoke(editor, NativeOp::message_service, 0x00466690, 0, 0, 0, 0, 0, 0,
+               field(editor, kOffsetMessageKey));
+      }
+      if (load<std::uint32_t>(field(editor, 0x68)) != 0) {
+        invoke(editor, NativeOp::message_service, 0x005dc460, 0, 0, 0, 0, 0, 0,
+               message);
+        invoke(editor, NativeOp::message_service, 0x00933960, 0, 0, 0, 0, 0, 0,
+               message);
+      }
+      invoke(editor, NativeOp::message_service, 0x00933960, 0, 0, 0, 0, 0, 0,
+             message);
+      return true;
+    }
     case 0x48e5911:
-      route_message(editor, message_id, message);
+      if (load<std::uint32_t>(field(editor, 0x490)) != 0) {
+        invoke(editor, NativeOp::message_service, 0x006b5770, 0, 0x496bfb26, 7,
+               0, 0, 0, message);
+        invoke(editor, NativeOp::message_service, 0x006b55c0, 0,
+               load<std::uint32_t>(static_cast<std::uint8_t*>(message) + 0x10),
+               0, 0, 0, 0, message);
+        invoke(editor, NativeOp::message_service, 0x005cc120, 0,
+               load<std::uint32_t>(static_cast<std::uint8_t*>(message) + 8), 0,
+               0, 0, 0, message);
+        invoke(editor, NativeOp::message_service, 0x006b5240, 0, 0, 0, 0, 0, 0,
+               message);
+      }
       return true;
     case 0x48e5912:
-      route_message(editor, message_id, message);
+      if (load<std::uint32_t>(field(editor, 0x490)) != 0) {
+        invoke(editor, NativeOp::message_service, 0x005cc0e0, 0, 0, 0, 0, 0, 0,
+               message);
+      }
       return true;
     case 0x24ce123:
-    case 0x3fc3f13:
+      invoke(editor, NativeOp::message_service, 0x008d3ac0, 0, 0, 0, 0, 0, 0,
+             message);
+      invoke(editor, NativeOp::message_service, 0x00688ed0, 0, 0, 0, 0, 0, 0,
+             message);
+      invoke(editor, NativeOp::message_service, 0x00589ce0, 0, 0, 0, 0, 0, 0,
+             message);
+      return false;
     case 0x44ef2b8:
+      if (load<std::uint32_t>(field(editor, 0x30c)) != 1) {
+        return false;
+      }
+      invoke(editor, NativeOp::message_service, 0x005744b0, 0, 0, 0, 0, 0, 0,
+             message);
+      if (load<std::uint32_t>(field(editor, 0x3b4)) == 0 ||
+          !invoke(editor, NativeOp::message_service, 0x005ca920, 0, 0, 0, 0, 0,
+                  0, message)
+               .boolean) {
+        return false;
+      }
+      invoke(editor, NativeOp::message_service, 0x00573c00, 0, 0, 0, 0, 0, 0,
+             message);
+      return false;
     case 0x4519b5f:
-    case 0x47d7cc6:
+      invoke(editor, NativeOp::message_service, 0x005dc310, 0, 0, 0, 0, 0, 0,
+             message);
+      invoke(editor, NativeOp::message_service, 0x008098f0, 0, 0, 0, 0, 0, 0,
+             message);
+      return false;
+    case 0x47d7cc6: {
+      const NativeResult enabled =
+          invoke(editor, NativeOp::message_service, 0x0067dd00, 0, 0, 0, 0, 0,
+                 0, message);
+      if (enabled.boolean) {
+        invoke(editor, NativeOp::message_service, 0x0067dd00, 0, 0x30, 0, 0, 0,
+               0, message);
+      }
+      invoke(editor, NativeOp::message_service, 0x005dc310, 0, 0, 0, 0, 0, 0,
+             message);
+      invoke(editor, NativeOp::message_service, 0x0067cac0, 0, 1, 1, 0, 0, 0,
+             message);
+      invoke(editor, NativeOp::message_service, 0x0067c420, 0, 1, 0, 0, 0, 0,
+             message);
+      return false;
+    }
     case 0x4aca143:
+      invoke(editor, NativeOp::message_service, 0x00572730, 0, 0, 0, 0, 0, 0,
+             message);
+      invoke(editor, NativeOp::message_service, 0x0061df40, 0, 0, 0, 0, 0, 0,
+             message);
+      return false;
     case 0x51cc0b8:
+      invoke(editor, NativeOp::message_service, 0x00587270, 0, 0, 0, 0, 0, 0,
+             message);
+      invoke(editor, NativeOp::message_service, 0x005dc310, 0, 0, 0, 0, 0, 0,
+             message);
+      invoke(editor, NativeOp::message_service, 0x00552300, 0, 0, 0, 0, 0, 0,
+             message);
+      invoke(editor, NativeOp::message_service, 0x0058cee0, 0, 0, 0, 0, 0, 0,
+             message);
+      return false;
     case 0x56d39e9:
+      invoke(editor, NativeOp::message_service, 0x005de9e0, 0, 0, 0, 0, 0, 0,
+             message);
+      return false;
     case 0x5d02a72:
+      if (load<std::uint32_t>(field(editor, 0x3ac)) == 0) {
+        return false;
+      }
+      invoke(editor, NativeOp::message_service, 0x005cb240, 0,
+             load<std::uint32_t>(static_cast<std::uint8_t*>(message) + 8), 0, 0,
+             0, 0, message);
+      return false;
     case 0x60b3d03:
+      invoke(editor, NativeOp::message_service, 0x005721b0, 0, 0x4000000, 0, 0,
+             0, 0, message);
+      return false;
     case 0x62628f0:
+      store(field(editor, 0x420), static_cast<std::uint8_t>(0));
+      return false;
     case 0x685309be:
-    case 0x68cd252:
+      invoke(editor, NativeOp::message_service, 0, 0x30, 0, 0, 0, 0, 0,
+             field(editor, 0x424));
+      return false;
+    case 0x68cd252: {
+      if (!invoke(editor, NativeOp::message_service, 0x004eb930, 0, 0, 0, 0, 0,
+                  0, message)
+               .boolean) {
+        return false;
+      }
+      invoke(editor, NativeOp::message_service, 0x00575120, 0, 0, 0, 0, 0, 0,
+             message);
+      if (load<std::uint8_t>(message) == 0) {
+        invoke(editor, NativeOp::message_service, 0x005dc580, 0, 0, 0, 0, 0, 0,
+               message);
+      } else {
+        invoke(editor, NativeOp::message_service, 0x005dc560, 0, 0, 0, 0, 0, 0,
+               message);
+      }
+      return false;
+    }
     case 0x90e08f60:
-      route_message(editor, message_id, message);
+      invoke(editor, NativeOp::message_service, 0x00576ab0, 0, 0, 0, 0, 0, 0,
+             message);
       return false;
     default:
       return false;

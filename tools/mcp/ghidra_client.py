@@ -29,6 +29,28 @@ DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 8089
 DEFAULT_TIMEOUT = 10.0
 
+# --------------------------------------------------------------------------- #
+# Calling-convention vocabulary.
+#
+# HARD POLICY: a calling convention reported by Ghidra is an OBSERVATION
+# ABOUT GHIDRA's own model of a function, never a verdict about the
+# function's real ABI. Nothing in this module (or in ghidra_tools) may use
+# these strings to set a calling convention, a receiver/"this" or an sret
+# claim -- they exist purely so the ABI cross-validation path can compare
+# them against a first-principles reading and notice disagreement.
+#
+# Measured over all 58757 functions of SporeApp.exe (3.1.0.22):
+#   unknown = 58691 (99.8877%), __cdecl = 30, __stdcall = 28,
+#   __thiscall = 7, __fastcall = 1, empty = 0.
+# So ~99.89% of functions carry NO INFORMATION here. The tokens below are
+# therefore treated as silence -- NOT as agreement and NOT as disagreement.
+# --------------------------------------------------------------------------- #
+CC_NO_INFO_TOKENS = frozenset(["", "unknown", "default", "none", "null"])
+
+CC_INFORMATIVE = "informative"
+CC_NO_INFORMATION = "no_information"
+CC_UNAVAILABLE = "unavailable"
+
 OFFLINE_HINT = ("start the headless GhidraMCP server "
                 "(see AGENTS.md); dossiers/snapshots keep working "
                 "from committed artifacts")
@@ -65,6 +87,31 @@ def _offline(message, **extra):
               "message": message, "hint": OFFLINE_HINT}
     result.update(extra)
     return result
+
+
+def classify_calling_convention(value):
+    # type: (object) -> tuple
+    """(string_or_None, signal) for one raw Ghidra convention value.
+
+    Never raises. ``signal`` is one of:
+
+      * ``CC_NO_INFORMATION`` -- Ghidra reported nothing usable
+        (absent, None, blank, ``unknown``, ``default``, ``none``,
+        ``null``). This is SILENCE: it must never be scored as agreement
+        or as disagreement with an independent reading, and it must
+        never be promoted into a convention/receiver/sret claim.
+      * ``CC_INFORMATIVE`` -- Ghidra holds an actual convention name
+        (e.g. ``__thiscall``). Even then the string stays an
+        observation about Ghidra, not a verdict.
+      * ``CC_UNAVAILABLE`` -- the endpoint was not consulted at all, or
+        answered with an error; also silence.
+    """
+    if value is None:
+        return None, CC_NO_INFORMATION
+    text = str(value).strip()
+    if text.lower() in CC_NO_INFO_TOKENS:
+        return None, CC_NO_INFORMATION
+    return text, CC_INFORMATIVE
 
 
 class GhidraClient(object):
@@ -177,10 +224,130 @@ class GhidraClient(object):
         return self.request("/get_function_by_address",
                             {"address": address})
 
-    def analyze_function(self, address):
+    def analyze_function(self, name, include_completeness=True):
+        # type: (str, bool) -> dict
+        """``/analyze_function_complete`` for one function. Never raises.
+
+        THE PARAMETER IS ``name``, NOT ``address`` -- confirmed against
+        the live bridge schema (``GET /mcp/schema``), whose
+        ``analyze_function_complete`` entry declares::
+
+            {"name":                {"source": "query", "required": true},
+             "include_xrefs":       {"source": "query", "required": false,
+                                     "default": "true"},
+             ...,
+             "include_completeness": {"source": "query",
+                                      "required": false,
+                                      "default": "false"}}
+
+        Sending ``address=`` therefore binds nothing and the bridge
+        answers ``{"error": "Function not found: null"}`` -- which is
+        how this whole payload used to be dropped on the floor.
+        Ghidra resolves the ``name`` argument by address OR by symbol
+        name, so a VA string is passed straight through (verified live:
+        both ``name=0x008db310`` and
+        ``name=Resource::PFIndexModifiable::Write`` return the same
+        6192-byte body).
+
+        ``include_completeness`` defaults to ON because the bridge only
+        emits the ``completeness`` block -- and therefore only
+        ``completeness.has_calling_convention`` -- when the flag is set
+        (verified live: the key is entirely absent without it).
+
+        Unknown extra query keys such as ``address`` are ignored by the
+        bridge rather than rejected, but sending one is pointless: only
+        ``name`` is bound.
+        """
+        params = {"name": str(name)}
+        if include_completeness:
+            params["include_completeness"] = "true"
+        return self.request("/analyze_function_complete", params)
+
+    def function_documentation(self, address):
         # type: (str) -> dict
-        return self.request("/analyze_function_complete",
+        """``/get_function_documentation`` for one function. Never raises.
+
+        The ONLY endpoint that returns a per-function calling-convention
+        STRING (the other source is the boolean
+        ``analyze_function_complete.completeness.has_calling_convention``).
+        Kept as an explicit, on-demand call: adding it to the
+        ``ghidra_function`` request chain would double that tool's
+        round-trips to surface a non-``unknown`` value for 0.11% of
+        functions.
+        """
+        return self.request("/get_function_documentation",
                             {"address": address})
+
+    def function_signature(self, address):
+        # type: (str) -> dict
+        """``/get_function_signature`` for one function. Never raises.
+
+        Source of the ``param_count`` / ``instruction_count`` /
+        ``basic_block_count`` observations. Also on-demand only, and
+        note 99.19% of SporeApp.exe functions report ``param_count == 0``,
+        so it is rarely informative.
+        """
+        return self.request("/get_function_signature", {"address": address})
+
+    def calling_convention(self, address, has_calling_convention=None):
+        # type: (str, bool | None) -> dict
+        """Cross-validation-only calling-convention observation.
+
+        Deliberately LAZY and deliberately separate from
+        ``analyze_function``: it costs one extra HTTP GET, and the
+        population statistic (99.8877% ``unknown`` over 58757 functions)
+        says that call almost never buys anything. The ABI
+        cross-validation path calls this explicitly when it wants to
+        compare Ghidra's opinion against its own reading.
+
+        Returns ``{"ghidra_calling_convention": str | None,
+        "ghidra_has_calling_convention": bool | None,
+        "ghidra_calling_convention_signal": "informative" |
+        "no_information" | "unavailable", ...}``.
+
+        ``has_calling_convention`` is the caller's already-fetched
+        ``completeness.has_calling_convention`` boolean, passed through
+        when given; when omitted it stays ``None`` (unknown) rather than
+        being inferred, because a missing observation is not a ``False``.
+
+        POLICY: the returned values are an OBSERVATION ABOUT GHIDRA.
+        They can never set a calling convention, a receiver or an sret
+        claim, and ``no_information``/``unavailable`` is silence -- not
+        agreement and not disagreement.
+        """
+        response = self.function_documentation(address)
+        ok = isinstance(response, dict) and response.get("status") == "ok"
+        data = {}
+        if ok:
+            candidate = response.get("data")
+            data = candidate if isinstance(candidate, dict) else response
+        if not isinstance(data, dict):
+            data = {}
+        raw = data.get("calling_convention")
+        if ok:
+            text, signal = classify_calling_convention(raw)
+        else:
+            # Bridge unreachable / refused: silence, not a negative.
+            text, signal = None, CC_UNAVAILABLE
+        if has_calling_convention is None:
+            flag = None
+        else:
+            flag = bool(has_calling_convention)
+        return {
+            "status": "ok" if ok else "error",
+            "ok": bool(ok),
+            "ghidra_calling_convention": text,
+            "ghidra_has_calling_convention": flag,
+            "ghidra_calling_convention_signal": signal,
+            "ghidra_calling_convention_raw": (
+                None if raw is None else str(raw)),
+            "convention_role": "cross-validation-only",
+            "endpoint": "/get_function_documentation",
+            "address": str(address),
+            "error": None if ok else (
+                response.get("message") if isinstance(response, dict)
+                else "unusable response"),
+        }
 
     def search_functions(self, pattern, limit=50):
         # type: (str, int) -> dict

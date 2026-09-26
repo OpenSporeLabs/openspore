@@ -1,0 +1,310 @@
+{
+  "schema": "openspore-worker-metadata-1",
+  "package": "wave13-w1-core-b11",
+  "va": "0x00c37120",
+  "address": "0x00c37120",
+  "function_address": "0x00c37120",
+  "entry_address": "0x00c37120",
+  "ghidra_name": "FUN_00c37120",
+  "normalized_symbol": "sim_core_00c37120",
+  "reconstructed_symbol": "t00c37120::float_field_768",
+  "declaration": "extern \"C\" float t00c37120_float_field_768(openspore::b11::FloatField768Owner* self);",
+  "source_files": [
+    "reconstruction/staging/wave13-w1-core-b11/00c37120_float_field_getter.cpp",
+    "reconstruction/staging/wave13-w1-core-b11/b11_opaque_types.hpp",
+    "reconstruction/staging/wave13-w1-core-b11/b11_model_test.cpp"
+  ],
+  "subsystem": "Simulator (cluster sim-core-systems). No owning class located.",
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "calling_convention_observation": "0x00c37120 is FLD dword ptr [ECX + 0x768] / RET. ECX is read and nothing else is read from any register; there is no stack argument read ([ESP+0x4] and above never appear) and the RET is bare, so the callee pops zero words. That combination is only produced by a receiver in ECX with no stack arguments. Every one of the 15 xref sites pushes no argument before the CALL, which corroborates the no-stack-argument half but cannot by itself distinguish __thiscall from a cdecl function that happens to take its pointer on the stack - the ECX read is what fixes it.",
+    "return_type": "float",
+    "return_semantics": "the 32-bit IEEE-754 single at receiver+0x768, widened to the x87 80-bit register ST(0)",
+    "return_register": "ST(0) (x87)",
+    "return_width_bytes": 4,
+    "return_observation": "0x00c37120 is a 32-bit memory FLD, so the value pushed is exactly the 4 bytes at +0x768. No rounding arithmetic precedes it in this body, so the value in ST(0) is that single widened without change.",
+    "ret_form": "RET",
+    "termination": "RET",
+    "stack_cleanup_bytes": 0,
+    "stack_cleanup_owner": "callee pops nothing; caller owns all cleanup",
+    "stack_arguments": [],
+    "ordinary_stack_argument_slots": 0,
+    "saved_registers": [],
+    "receiver": true,
+    "receiver_register": "ECX",
+    "hidden_this_register": "ECX, read exactly once at 0x00c37120 as the base of [ECX + 0x768]",
+    "frame": "none: no PUSH, no SUB ESP, no MOV EBP,ESP, no register save or restore"
+  },
+  "layout": {
+    "entry_address": "0x00c37120",
+    "body_start": "0x00c37120",
+    "body_end": "0x00c37126",
+    "body_span_bytes": 7,
+    "body_bytes_hex": "d98168070000c3",
+    "instruction_count": 2,
+    "instructions": [
+      {
+        "address": "0x00c37120",
+        "bytes": "d9 81 68 07 00 00",
+        "mnemonic": "FLD",
+        "operands": "dword ptr [ECX + 0x768]"
+      },
+      {
+        "address": "0x00c37127",
+        "bytes": "c3",
+        "mnemonic": "RET",
+        "operands": ""
+      }
+    ],
+    "padding_after": "0x00c37127 onwards read as cc cc cc cc cc cc cc cc cc cc, the standard inter-function INT3 pad",
+    "frame": "none",
+    "reads": "the 4 bytes at [ECX + 0x768]; nothing else - no register, no global, no field, no stack word",
+    "writes": "x87 register ST(0) only; no GPR or memory is written"
+  },
+  "observed_mechanics": [
+    "0x00c37120: d9 81 68 00 00 ... - live read at 0x00c37120 returns d9 81 68 07 00 00 c3 followed by ten cc bytes, so the two instructions and the INT3 pad are confirmed byte for byte",
+    "0x00c37120: FLD dword ptr [ECX + 0x768] - the only memory operand in the body, and the only proof of the field offset",
+    "0x00c37127: RET with no immediate - what proves the callee pops zero stack words",
+    "0x00dc0323 / 0x00dc0329: MOV ECX,dword ptr [ESI + 0x68c] then CALL 0x00c37120, so in this caller the receiver is a sub-object at +0x68c of the caller's own this, not the caller's this",
+    "0x00dc0331 / 0x00dc0334: FSTP float ptr [ESP] then CALL 0x00c3daa0, the returned float is consumed as a float",
+    "0x00fe153c / 0x00fe1540: MOV ECX,dword ptr [ESP + 0x4c] ; CALL 0x00c37120 ; 0x00fe1545 FSUB float ptr [ESP + 0x14] - subtraction straight off ST(0)",
+    "0x01017c37 / 0x01017c3c: CALL 0x00c37120 then FSUB float ptr [ESP + 0xc], and 0x01017c4a / 0x01017c4d FLD float ptr [ESP] ; FCOMI ST0,ST1 - compared as a float",
+    "0x0101d15f / 0x0101d166 / 0x0101d16b: CALL 0x00c37120 then FSTP float ptr [ESP + 0x44], and 0x0101d1ae FSUB float ptr [ESP + 0x44] consumes the earlier copy - the same field read twice in one body",
+    "0x0101ba91 / 0x0101ba96: CALL 0x00c37120 then FLD float ptr [ESP + 0xc] ; FXCH - the x87 result is exchanged, not spilled to a GPR",
+    "0x00c370e0 (the sibling 0x40 bytes earlier, same ECX-direct receiver shape) reads [ECX + 0x34] and the byte [ECX + 0x77e] and dispatches through [ECX + 0x34]'s vtable slot +0xac, so the same receiver is at least 0x780 bytes",
+    "0x00c370e0 / 0x00c370fb / 0x00c37103: MOVSS XMM0,dword ptr [0x0146bb74] ; COMISS XMM0,dword ptr [EAX + 0x18] in the sibling shows the same class of object also carries float fields, which is what makes a float accessor at +0x768 plausible but does not name it"
+  ],
+  "fields_and_offsets": [
+    {
+      "offset": "+0x768",
+      "width_bytes": 4,
+      "type": "float (inferred from the FLD width; the domain is not established)",
+      "proved_by": "0x00c37120: FLD dword ptr [ECX + 0x768]",
+      "confidence": "OBSERVED for the offset and width; INFERRED for the type"
+    }
+  ],
+  "constants": [],
+  "globals": [],
+  "virtual_dispatch": [],
+  "control_flow": {
+    "switches": [],
+    "jump_tables": [],
+    "loops": [],
+    "early_exits": [],
+    "branch_polarity": "no conditional branch exists in this body; the only control transfer is the unconditional RET at 0x00c37127"
+  },
+  "callers_evidence": [
+    {
+      "callsite": "0x00dc0329",
+      "caller": "0x00dc0230",
+      "form": "CALL",
+      "result_use": "FSTP float ptr [ESP] then passed to 0x00c3daa0",
+      "receiver_setup": "MOV ECX,dword ptr [ESI + 0x68c] at 0x00dc0323 - receiver is a sub-object at +0x68c"
+    },
+    {
+      "callsite": "0x00dc03ea",
+      "caller": "0x00dc0230",
+      "form": "CALL",
+      "result_use": "not inspected (same function as 0x00dc0329)"
+    },
+    {
+      "callsite": "0x00dc10d4",
+      "caller": "0x00dc1060",
+      "form": "CALL",
+      "result_use": "not inspected"
+    },
+    {
+      "callsite": "0x00dc1a9b",
+      "caller": "0x00dc18e0",
+      "form": "CALL",
+      "result_use": "not inspected"
+    },
+    {
+      "callsite": "0x00fe1540",
+      "caller": "0x00fe0f40",
+      "form": "CALL",
+      "result_use": "FSUB float ptr [ESP + 0x14] at 0x00fe1545, then FSTP at 0x00fe154d"
+    },
+    {
+      "callsite": "0x00ffedf1",
+      "caller": "0x00ffe860",
+      "form": "CALL",
+      "result_use": "not inspected"
+    },
+    {
+      "callsite": "0x01017c37",
+      "caller": "0x01017bb0",
+      "form": "CALL",
+      "result_use": "FSUB at 0x01017c3c, later FCOMI ST0,ST1 at 0x01017c4d"
+    },
+    {
+      "callsite": "0x0101b7cf",
+      "caller": "0x0101b670",
+      "form": "CALL",
+      "result_use": "not inspected"
+    },
+    {
+      "callsite": "0x0101ba91",
+      "caller": "0x0101ba10",
+      "form": "CALL",
+      "result_use": "FLD float ptr [ESP + 0xc] ; FXCH at 0x0101ba96"
+    },
+    {
+      "callsite": "0x0101d166",
+      "caller": "0x0101d130",
+      "form": "CALL",
+      "result_use": "FSTP float ptr [ESP + 0x44] at 0x0101d16b, consumed by FSUB at 0x0101d1ae"
+    },
+    {
+      "callsite": "0x0101d1a0",
+      "caller": "0x0101d130",
+      "form": "CALL",
+      "result_use": "FST float ptr [ESP + 0x1c] at 0x0101d1a5 - the only site that stores a non-zero-precision copy"
+    },
+    {
+      "callsite": "0x01025372",
+      "caller": "0x010251e0",
+      "form": "CALL",
+      "result_use": "not inspected"
+    },
+    {
+      "callsite": "0x0105c820",
+      "caller": "0x0105c7e0",
+      "form": "CALL",
+      "result_use": "not inspected"
+    },
+    {
+      "callsite": "0x0105d098",
+      "caller": "0x0105c9d0",
+      "form": "CALL",
+      "result_use": "not inspected"
+    },
+    {
+      "callsite": "0x0101715e",
+      "caller": "(no owning function reported by Ghidra for this xref)",
+      "form": "UNCONDITIONAL_CALL",
+      "result_use": "not inspected"
+    }
+  ],
+  "callers_note": "ghidra_get_function_xrefs(0x00c37120) reports 15 unconditional-call xrefs; the briefing's canonical ledger row records 12 caller functions. The difference is the two callsites in 0x00dc0230 plus the 0x0101715e site whose owning function Ghidra does not attribute.",
+  "callees_evidence": [],
+  "sibling_analogue": {
+    "address": "0x00c370e0",
+    "relationship": "the function body 0x40 bytes earlier in the same code region, using the same ECX-direct receiver shape",
+    "shared_evidence": "reads [ECX + 0x34] and the byte [ECX + 0x77e] and dispatches through the +0x34 sub-object's vtable slot +0xac",
+    "label": "ANALOGUE - same code block and receiver discipline, but nothing links the two to one class beyond proximity"
+  },
+  "sdk_correspondence": {
+    "status": "NONE_ESTABLISHED",
+    "observation": "No Spore-ModAPI header declares a field at +0x768 or a class of the required size. A case-insensitive search of the SDK headers for the token 0x768 returns nothing, and the smallest SDK Simulator class in the reachable headers is far below 0x780 bytes.",
+    "not_asserted": "No SDK name, type or owning class is claimed for this accessor."
+  },
+  "semantic_contract": "Return the 32-bit IEEE-754 single stored at receiver+0x768, widened onto the x87 stack in ST(0). The function is total on its receiver and total on its input: there is no branch, no callee, no global read and no null check, so a null receiver faults inside the FLD and every non-null receiver yields the same four bytes it holds. The result is a copy, not a reference: the field is read once and never written back. The observable contract is therefore exactly 'read one float out of the receiver at a fixed offset', with no state, no lifecycle and no ownership effect.",
+  "classification": "BOUNDED_SEMANTIC",
+  "classification_rationale": "Every instruction, the frame, the field offset, the return mechanism and the return width are read directly from the live disassembly and the live bytes, and seven callsite windows independently confirm the float-in-ST(0) return. It is not STRONG_SEMANTIC because two material elements stay bounded rather than established: the owning class of the receiver is not identified anywhere in the binary (0x00dc0230 even passes a sub-object at +0x68c, so the receiver type is not the same as the caller's this type), and the domain meaning of the +0x768 float is not determined by any inspected caller. It is not STRUCTURAL_ONLY because a real behavioural claim is supported beyond layout: the return is a widened copy of a specific field, and the polarity of 'no work, no side effect' is established.",
+  "semantic_findings": [
+    "The whole contract is a single 4-byte load. Everything else about the function is absence: no frame, no callee, no global, no branch, no write.",
+    "The 7-byte body and the bare RET are identical under __thiscall, __cdecl and __fastcall except for where the pointer arrives, and the body reads ECX, so ECX is where it arrives.",
+    "All 15 xref sites use the same 5-byte E8 rel32 CALL form and none of the seven inspected windows touches a GPR after the call: the result is only ever used on the x87 stack. That is consistent with a compiler-generated float accessor and rules out a float-to-int or float-to-pointer reinterpretation at any inspected site.",
+    "0x0101d130 calls the function twice in one body (0x0101d166 and 0x0101d1a0) and subtracts the first result from the second at 0x0101d1ae, which means the field is a live quantity that changes within a frame, not a compile-time constant folded into the accessor.",
+    "0x00dc0230 passes [ESI + 0x68c] as the receiver, so the receiver of this method is a sub-object of some other object in at least one call site. Any owning-class claim has to accommodate that."
+  ],
+  "unresolved_questions": [
+    "Which class owns the +0x768 float, and is the receiver in every call site the same type? 0x00dc0230 disproves the naive 'the receiver is the caller's this' assumption, and no vtable was located for the receiver in any caller.",
+    "What does the float represent? The sibling at 0x00c370e0 compares a float from a +0x34 sub-object against the constant 0x0146bb74 with COMISS, so the object participates in float comparisons, but nothing observed names the quantity.",
+    "Is the field written by any function in the binary? No writer of +0x768 was located, so the value's provenance is unestablished; it is only read here and, as far as this batch saw, at the other 14 sites.",
+    "Why does the brief's canonical record list 12 callers while Ghidra reports 15 xref sites, and who owns the 0x0101715e callsite? Ghidra attributes no function to that address.",
+    "Is 0x00c37120 reachable through a vtable slot anywhere? All 15 xrefs are direct CALLs; no dword equal to 0x00c37120 was searched for in this batch, so the accessor may also be a virtual method whose slot was not found."
+  ],
+  "runtime_gates": [
+    "No original-process trace has been captured for 0x00c37120. A differential test must confirm that the shipping build still loads the float from +0x768 and that no runtime patch retargets the address.",
+    "The domain of the returned float can only be established by observing one call site in the original process with a known receiver, which no recorded run has done."
+  ],
+  "confidence": {
+    "body_bytes": 1.0,
+    "instruction_decode": 1.0,
+    "frame_shape": 1.0,
+    "field_offset_and_width": 1.0,
+    "return_mechanism": 0.98,
+    "calling_convention": 0.9,
+    "consumer_behaviour_float": 0.95,
+    "owning_class": 0.05,
+    "field_domain_meaning": 0.05
+  },
+  "evidence": [
+    "reconstruction/evidence/00c37120/evidence.json",
+    "reconstruction/evidence/00c37120/context.json",
+    "reconstruction/staging/wave13-w1-core-b11/00c37120_float_field_getter.cpp",
+    "GhidraMCP live: ghidra_read_memory, ghidra_disassemble_function, ghidra_decompile_function, ghidra_get_function_xrefs, ghidra_disassemble_bytes at 0x00dc0320, 0x00fe1528, 0x01017c20, 0x0101d150, 0x0101ba80, 0x00c370e0"
+  ],
+  "tooling_evidence": [
+    {
+      "tool": "ghidra_read_memory",
+      "address": "0x00c37120",
+      "observation": "d98168070000c3 followed by ten cc bytes"
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x00c370e0",
+      "observation": "sibling body: CMP byte ptr [ECX + 0x77e],0 / MOV EAX,[ECX + 0x34] / MOV EDX,[EAX + 0xac] / ADD ECX,0x34 / CALL EDX / MOVSS XMM0,[0x0146bb74] / COMISS XMM0,[EAX + 0x18]"
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x00c37120",
+      "observation": "float10 __fastcall FUN_00c37120(int param_1) { return (float10)*(float *)(param_1 + 0x768); } - the decompiler's own field offset agrees with the disassembly"
+    },
+    {
+      "tool": "ghidra_disassemble_bytes",
+      "address": "0x00dc0320",
+      "observation": "0x00dc0323 MOV ECX,dword ptr [ESI + 0x68c] ; 0x00dc0329 CALL 0x00c37120 ; 0x00dc0331 FSTP float ptr [ESP]"
+    },
+    {
+      "tool": "ghidra_disassemble_bytes",
+      "address": "0x00fe1528",
+      "observation": "0x00fe1540 CALL 0x00c37120 ; 0x00fe1545 FSUB float ptr [ESP + 0x14]"
+    },
+    {
+      "tool": "ghidra_disassemble_bytes",
+      "address": "0x01017c20",
+      "observation": "0x01017c37 CALL 0x00c37120 ; 0x01017c3c FSUB float ptr [ESP + 0xc]"
+    },
+    {
+      "tool": "ghidra_disassemble_bytes",
+      "address": "0x0101d150",
+      "observation": "0x0101d166 and 0x0101d1a0 both CALL 0x00c37120 ; 0x0101d16b FSTP float ptr [ESP + 0x44] ; 0x0101d1ae FSUB float ptr [ESP + 0x44]"
+    },
+    {
+      "tool": "ghidra_disassemble_bytes",
+      "address": "0x0101ba80",
+      "observation": "0x0101ba91 CALL 0x00c37120 ; 0x0101ba96 FLD float ptr [ESP + 0xc] ; 0x0101ba9a FXCH"
+    },
+    {
+      "tool": "ghidra_get_function_xrefs",
+      "address": "0x00c37120",
+      "observation": "15 unconditional-call xrefs, all 5-byte E8 rel32 direct calls, no data references and no JMP transfer"
+    },
+    {
+      "tool": "clang++ -m32 -std=c++17 -O2 objdump",
+      "observation": "an __attribute__((thiscall)) spelling of the reconstruction emits d9 81 68 07 00 00 c3, byte-identical to the seven bytes read live at 0x00c37120"
+    }
+  ],
+  "validation": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/wave13-w1-core-b11 reconstruction/staging/wave13-w1-core-b11/*.cpp",
+    "model_test_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/wave13-w1-core-b11 reconstruction/staging/wave13-w1-core-b11/*.cpp -o /tmp/opencode/b11-model && /tmp/opencode/b11-model",
+    "syntax": "passed",
+    "model_test": "passed (0 failures, exit 0)",
+    "byte_check": "passed for the thiscall spelling: d9 81 68 07 00 00 c3 == the live bytes"
+  },
+  "provenance": {
+    "binary": "SPORE/SporeBin/SporeApp.exe",
+    "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+    "binary_version": "Spore 3.1.0.22, x86-32 PE, image base 0x00400000",
+    "worker_id": "wave13-w1-b11",
+    "batch_id": "wave13-w1-core-b11",
+    "package": "wave13-w1-core-b11",
+    "date": "2026-09-26",
+    "tooling": "headless Ghidra 12.1.2 via ghidra-mcp, program=SporeApp.exe",
+    "runtime_evidence": "none: the original Cell stage has never been entered in any recorded run, so every claim here is static"
+  }
+}

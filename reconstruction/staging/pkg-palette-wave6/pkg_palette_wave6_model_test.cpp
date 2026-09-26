@@ -1,9 +1,9 @@
-#include "pkg_palette_wave6.hpp"
-
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+
+#include "pkg_palette_wave6.hpp"
 
 struct OpaqueSwatchManager {
   std::uint32_t value;
@@ -123,6 +123,8 @@ std::uint32_t viewer_slot_a;
 std::uint32_t viewer_slot_b;
 OpaqueRenderTarget render_target{3U};
 OpaqueRenderTarget secondary_target{4U};
+int render_target_calls;
+OpaqueRenderTarget* render_target_argument;
 int post_calls;
 OpaqueRenderTarget* post_target;
 std::uint32_t post_a;
@@ -142,8 +144,8 @@ std::uint8_t item_slot_result;
 int viewer_addref_calls;
 int viewer_release_calls;
 
-std::uint8_t PKG_PALETTE_THISCALL item_slot_callback(
-    OpaqueViewerObject* receiver, void* argument) {
+std::uint8_t PKG_PALETTE_THISCALL
+item_slot_callback(OpaqueViewerObject* receiver, void* argument) {
   ++item_slot_calls;
   item_slot_receiver = receiver;
   item_slot_argument = argument;
@@ -160,9 +162,9 @@ void PKG_PALETTE_THISCALL release_callback(OpaqueViewerObject* receiver) {
   release_object = receiver;
 }
 
-void PKG_PALETTE_THISCALL producer_callback(
-    OpaqueViewerObject* receiver, OpaqueViewerItem* item, void* key,
-    OpaqueViewerObject* resource) {
+void PKG_PALETTE_THISCALL producer_callback(OpaqueViewerObject* receiver,
+                                            OpaqueViewerObject* resource,
+                                            void* key, OpaqueViewerItem* item) {
   ++producer_calls;
   producer_receiver = receiver;
   producer_item = item;
@@ -171,8 +173,7 @@ void PKG_PALETTE_THISCALL producer_callback(
 }
 
 OpaqueRenderTarget* PKG_PALETTE_THISCALL viewer_slot_callback(
-    OpaqueAdvancedItemViewer* receiver, std::uint32_t a,
-    std::uint32_t b) {
+    OpaqueAdvancedItemViewer* receiver, std::uint32_t a, std::uint32_t b) {
   ++viewer_slot_calls;
   viewer_slot_receiver = receiver;
   viewer_slot_a = a;
@@ -180,24 +181,24 @@ OpaqueRenderTarget* PKG_PALETTE_THISCALL viewer_slot_callback(
   return &render_target;
 }
 
-OpaqueGraphicsContext* PKG_PALETTE_THISCALL graphics_root_callback(
-    OpaqueGraphicsRoot* receiver) {
-  ++graphics_root_calls;
+OpaqueGraphicsContext* PKG_PALETTE_THISCALL
+graphics_root_callback(OpaqueGraphicsRoot* receiver) {
+  ++graphics_context_calls;
   assert(receiver == &graphics_root);
   return &graphics_context;
 }
 
-OpaqueRect* PKG_PALETTE_THISCALL graphics_rect_callback(
-    OpaqueGraphicsContext* receiver) {
+OpaqueRect* PKG_PALETTE_THISCALL
+graphics_rect_callback(OpaqueGraphicsContext* receiver) {
   ++graphics_rect_calls;
   assert(receiver == &graphics_context);
   return &rect;
 }
 
 void PKG_PALETTE_THISCALL app_callback(OpaqueAppSystem* receiver,
-                                      std::uint32_t a,
-                                      OpaqueCommandLine* command_line,
-                                      std::uint32_t b) {
+                                       std::uint32_t a,
+                                       OpaqueCommandLine* command_line,
+                                       std::uint32_t b) {
   ++app_calls;
   app_receiver = receiver;
   app_a = a;
@@ -257,10 +258,14 @@ void reset_observations() {
   layout_y = 0.0F;
   layout_width = 0.0F;
   layout_height = 0.0F;
+  g_palette_width_multiplier = 0.05F;
+  g_palette_height_multiplier = 0.0F;
   viewer_slot_calls = 0;
   viewer_slot_receiver = nullptr;
   viewer_slot_a = 0U;
   viewer_slot_b = 0U;
+  render_target_calls = 0;
+  render_target_argument = nullptr;
   post_calls = 0;
   post_target = nullptr;
   post_a = 0U;
@@ -279,8 +284,7 @@ void reset_observations() {
 }
 
 void set_item_callback_vtable(OpaqueViewerObject* object) {
-  static void* table[3] = {nullptr, nullptr,
-                           function_data(item_slot_callback)};
+  static void* table[3] = {nullptr, nullptr, function_data(item_slot_callback)};
   set_vtable(object, table);
 }
 
@@ -316,9 +320,9 @@ void set_app_vtable() {
   set_vtable(&app_system, table);
 }
 
-void reset_viewer(OpaqueAdvancedItemViewer& viewer,
-                  OpaqueViewerItem& item, OpaqueViewerObject& callback,
-                  OpaqueViewerObject& producer, OpaqueViewerObject& resource) {
+void reset_viewer(OpaqueAdvancedItemViewer& viewer, OpaqueViewerItem& item,
+                  OpaqueViewerObject& callback, OpaqueViewerObject& producer,
+                  OpaqueViewerObject& resource) {
   reset_observations();
   viewer = OpaqueAdvancedItemViewer{};
   item = OpaqueViewerItem{};
@@ -347,14 +351,13 @@ void reset_viewer(OpaqueAdvancedItemViewer& viewer,
 
 namespace openspore::reconstruction::pkg_palette_wave6 {
 
-extern "C" void PKG_PALETTE_THISCALL unresolved_005c5e90(
-    OpaquePaletteMain* self) {
+extern "C" void PKG_PALETTE_THISCALL
+unresolved_005c5e90(OpaquePaletteMain* self) {
   ++prepare_calls;
   prepared_object = self;
 }
 
-extern "C" void PKG_PALETTE_CDECL unresolved_00f47380(
-    OpaquePaletteMain* self) {
+extern "C" void PKG_PALETTE_CDECL unresolved_00f47380(OpaquePaletteMain* self) {
   ++release_prepare_calls;
   released_object = self;
 }
@@ -364,17 +367,17 @@ extern "C" OpaqueSwatchManager* PKG_PALETTE_CDECL unresolved_00401020() {
   return &swatch_manager;
 }
 
-extern "C" OpaqueSwatchState* PKG_PALETTE_THISCALL unresolved_0113ae10(
-    OpaqueSwatchManager* receiver) {
+extern "C" OpaqueSwatchState* PKG_PALETTE_THISCALL
+unresolved_0113ae10(OpaqueSwatchManager* receiver) {
   ++swatch_state_calls;
   selected_swatch_manager = receiver;
   selected_swatch_state = swatch_enabled ? &swatch_state : nullptr;
   return selected_swatch_state;
 }
 
-extern "C" OpaqueViewerObject* PKG_PALETTE_CDECL unresolved_00f473a0(
-    std::uint32_t a, std::uint32_t b, std::uint32_t c, std::uint32_t d,
-    std::uint32_t e, std::uint32_t f) {
+extern "C" OpaqueViewerObject* PKG_PALETTE_CDECL
+unresolved_00f473a0(std::uint32_t a, std::uint32_t b, std::uint32_t c,
+                    std::uint32_t d, std::uint32_t e, std::uint32_t f) {
   ++allocation_calls;
   allocation_arguments[0] = a;
   allocation_arguments[1] = b;
@@ -385,10 +388,10 @@ extern "C" OpaqueViewerObject* PKG_PALETTE_CDECL unresolved_00f473a0(
   return allocation_result;
 }
 
-extern "C" OpaqueViewerObject* PKG_PALETTE_THISCALL unresolved_0059f030(
-    OpaqueViewerObject* receiver, std::uint32_t a, std::uint32_t b,
-    std::uint32_t c, std::uint32_t d, std::uint32_t e, std::uint32_t f,
-    std::uint32_t g) {
+extern "C" OpaqueViewerObject* PKG_PALETTE_THISCALL
+unresolved_0059f030(OpaqueViewerObject* receiver, std::uint32_t a,
+                    std::uint32_t b, std::uint32_t c, std::uint32_t d,
+                    std::uint32_t e, std::uint32_t f, std::uint32_t g) {
   ++constructor_calls;
   constructor_receiver = receiver;
   constructor_arguments[0] = a;
@@ -401,17 +404,17 @@ extern "C" OpaqueViewerObject* PKG_PALETTE_THISCALL unresolved_0059f030(
   return constructor_returns_receiver ? receiver : constructor_result;
 }
 
-extern "C" void PKG_PALETTE_THISCALL unresolved_005ed320(
-    OpaqueSwatchManager* receiver, std::uint32_t argument) {
+extern "C" void PKG_PALETTE_THISCALL
+unresolved_005ed320(OpaqueSwatchManager* receiver, std::uint32_t argument) {
   ++manager_detail_calls;
   manager_detail_receiver = receiver;
   manager_detail_argument = argument;
 }
 
-extern "C" void PKG_PALETTE_THISCALL unresolved_005ee480(
-    OpaqueSwatchManager* receiver, OpaqueViewerObject* resource,
-    OpaqueViewerItem* item, OpaqueViewerObject* constructed,
-    std::uint32_t flag) {
+extern "C" void PKG_PALETTE_THISCALL
+unresolved_005ee480(OpaqueSwatchManager* receiver, OpaqueViewerObject* resource,
+                    OpaqueViewerItem* item, OpaqueViewerObject* constructed,
+                    std::uint32_t flag) {
   ++manager_set_calls;
   manager_set_receiver = receiver;
   manager_set_resource = resource;
@@ -425,8 +428,11 @@ extern "C" OpaqueGraphicsRoot* PKG_PALETTE_CDECL unresolved_0067caa0() {
   return &graphics_root;
 }
 
-extern "C" OpaqueRenderTarget* PKG_PALETTE_CDECL unresolved_0067cad0() {
-  return &render_target;
+extern "C" OpaqueRenderTarget* PKG_PALETTE_CDECL
+unresolved_0067cad0(OpaqueRenderTarget* target) {
+  ++render_target_calls;
+  render_target_argument = target;
+  return target;
 }
 
 extern "C" void PKG_PALETTE_STDCALL unresolved_0080d710(
@@ -437,9 +443,9 @@ extern "C" void PKG_PALETTE_STDCALL unresolved_0080d710(
   post_b = b;
 }
 
-extern "C" void PKG_PALETTE_THISCALL unresolved_008283a0(
-    OpaqueSwatchManager* receiver, float x, float y, float width,
-    float height) {
+extern "C" void PKG_PALETTE_THISCALL
+unresolved_008283a0(OpaqueSwatchManager* receiver, float x, float y,
+                    float width, float height) {
   ++layout_calls;
   layout_receiver = receiver;
   layout_x = x;
@@ -496,12 +502,16 @@ void test_viewer_state_without_tooltip() {
          reinterpret_cast<std::uint8_t*>(&viewer) + 0x4cU);
   assert(viewer_slot_calls == 1);
   assert(viewer_slot_a == 1U && viewer_slot_b == 1U);
+  assert(render_target_calls == 1);
+  assert(render_target_argument == &render_target);
   assert(post_calls == 1);
   assert(post_target == &render_target);
   assert(app_calls == 1);
   assert(app_receiver == &app_system);
   assert(app_a == 0U && app_b == 0x0522f9cdU);
   assert(app_command_line != nullptr);
+  assert(app_command_line->field00 ==
+         static_cast<std::uint32_t>(reinterpret_cast<std::uintptr_t>(&viewer)));
   assert(app_command_line->field08 == 0x0522f9cdU);
   assert(graphics_root_calls == 0);
   assert(allocation_calls == 0);
@@ -519,7 +529,7 @@ void test_viewer_unavailable_and_scale() {
   pkg_palette_005f4750(&viewer);
   assert(viewer.field16a == 0U);
   assert(viewer.field94 == 7.5F);
-  assert(viewer.field169 == 1U);
+  assert(viewer.field169 == 0U);
   assert(item_slot_calls == 1);
 
   reset_viewer(viewer, item, callback, producer, resource);
@@ -544,7 +554,7 @@ void test_viewer_unavailable_and_scale() {
   assert(layout_receiver == &swatch_manager);
   assert(layout_x == 20.0F);
   assert(layout_y == 30.0F);
-  assert(layout_width == 1.8F);
+  assert(layout_width > 0.44F && layout_width < 0.46F);
   assert(layout_height == 0.0F);
 }
 
@@ -565,6 +575,7 @@ void test_viewer_allocation_and_ownership() {
   resource.opaque[0] = 0;
   resource.opaque[1] = 0;
   resource.opaque[2] = 0;
+  std::memcpy(resource.opaque + 0x0c, "\xef\xbc\xad\xde", 4);
   std::memcpy(resource.opaque + 0x10, "\x34\x12\x00\x00", 4);
   std::memcpy(resource.opaque + 0x14, "\x78\x56\x00\x00", 4);
   viewer.field194 = &secondary_target;
@@ -574,7 +585,7 @@ void test_viewer_allocation_and_ownership() {
   assert(allocation_arguments[1] == 0x13eb430U);
   assert(constructor_calls == 1);
   assert(constructor_receiver == &allocated);
-  assert(constructor_arguments[0] == 0x12345678U);
+  assert(constructor_arguments[0] == 0xdeadbcefU);
   assert(constructor_arguments[1] == 0x1234U);
   assert(constructor_arguments[2] == 0x5678U);
   assert(constructor_arguments[3] == 0x12345678U);
@@ -586,6 +597,8 @@ void test_viewer_allocation_and_ownership() {
   assert(manager_set_constructed == &allocated);
   assert(manager_set_flag == 1U);
   assert(release_calls == 1 && release_object == &allocated);
+  assert(render_target_calls == 2);
+  assert(render_target_argument == &secondary_target);
   assert(post_calls == 2);
   assert(post_target == &secondary_target);
   assert(app_calls == 1);

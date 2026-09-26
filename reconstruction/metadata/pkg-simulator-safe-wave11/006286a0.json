@@ -1,0 +1,148 @@
+{
+  "schema": "pkg-simulator-safe-wave11.function-handoff.v1",
+  "schema_note": "This document follows the wave10 function-handoff.v1 field set and adds five keys the wave10 shape did not need: the two decompilation_defects_corrected and unresolved_questions lists that carry the corrected evidence, observed_body.instruction_count_source, ghidra_provenance.binary_sha256 and implementation.boundary_test.",
+  "package": "PKG-SIMULATOR-SAFE-WAVE11",
+  "subsystem": "Simulator",
+  "va": "0x006286a0",
+  "ghidra_name": "FUN_006286a0",
+  "normalized_symbol": "cycle_key_006286a0",
+  "semantic_label": "candidate cycle: draw from the six entry table through the random port and redraw while the drawn candidate collides with the stored state word",
+  "declaration": "TargetWord __thiscall cycle_key_006286a0(OpaqueEditor00628* subject)",
+  "abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "hidden_this_register": "ECX, an OpaqueEditor00628",
+    "receiver_register": "ECX, an OpaqueEditor00628",
+    "frame": "PUSH EDI / PUSH ESI / PUSH EBX",
+    "stack_arguments": [],
+    "stack_cleanup_bytes": 0,
+    "ret_form": "RET",
+    "return_register": "EAX",
+    "return_width_bytes": 4,
+    "return_contract": "the full unsigned candidate word in EAX, read back from the frame slot the loop stores it into",
+    "exit_count": 1
+  },
+  "observed_body": {
+    "entry": "0x006286a0",
+    "body_end_inclusive": "0x00628703",
+    "instruction_count": 31,
+    "instruction_count_source": "a linear objdump of the byte extent below; no staging handoff covered this address",
+    "byte_length": 100,
+    "raw_bytes_sha256": "854d59cb75198a1283809f7c5d77a69c14dd54e6f63f183a7a74bc1fc7bef675",
+    "raw_bytes_hex": "51568b742404578bf98da424000000006a06b960176001e8f408440083f805772fff248504876200be93df3104eb21be9adf3104eb1abe9fdf3104eb13bea6df3104eb0cbe8c794d04eb05be99794d0439b7d436000074b889b7d43600005f8bc65e59c3",
+    "instruction_list": [
+      "seed the candidate with the receiver address: 0x006286a0 pushes ECX and reads it straight back with MOV ESI,[ESP+4], so the seeded id is the receiver itself and there is no stack argument",
+      "draw from the six entry range through the random port 0x00a68fb0 with the lcg state at 0x01601760",
+      "the six way table at 0x00628704 holds 0x0431df93, 0x0431df9a, 0x0431df9f, 0x0431dfa6, 0x044d798c and 0x044d7999, and the index is the drawn value gated unsigned against the range six",
+      "compare the candidate against the stored word at subject + 0x36d4 and break out of the loop when they differ",
+      "otherwise jump back to 0x006286f0 and redraw, so a collision costs one more draw",
+      "store the accepted candidate at subject + 0x36d4 and return it"
+    ],
+    "direct_callee_calls": []
+  },
+  "mechanics": [
+    "seed the candidate with the receiver address: 0x006286a0 pushes ECX and reads it straight back with MOV ESI,[ESP+4], so the seeded id is the receiver itself and there is no stack argument",
+    "draw from the six entry range through the random port 0x00a68fb0 with the lcg state at 0x01601760",
+    "the six way table at 0x00628704 holds 0x0431df93, 0x0431df9a, 0x0431df9f, 0x0431dfa6, 0x044d798c and 0x044d7999, and the index is the drawn value gated unsigned against the range six",
+    "compare the candidate against the stored word at subject + 0x36d4 and break out of the loop when they differ",
+    "otherwise jump back to 0x006286f0 and redraw, so a collision costs one more draw",
+    "store the accepted candidate at subject + 0x36d4 and return it"
+  ],
+  "ports": [
+    "0x00a68fb0"
+  ],
+  "globals_read": [
+    "0x01601760 lcg state"
+  ],
+  "runtime_gates": [
+    "the receiver class is unresolved; the target reads and writes only the cursor word at +0x36d4",
+    "0x00a68fb0 is a dependency-only port, so the draw is unverified in this package",
+    "the lcg state at 0x01601760 is a program global and its initial value is unverified",
+    "the six candidate constants are undecoded",
+    "no original-process invocation was captured"
+  ],
+  "decompilation_defects_corrected": [
+    "the decompilation types the body as taking one stack argument; the assembly at 0x006286a0 pushes ECX and reads it back with MOV ESI,[ESP+4], so the receiver is both the ECX receiver and the seed, and there is no stack argument at all",
+    "the decompilation renders the table as a switch; the assembly indexes the six word table at 0x00628704 with an unsigned compare against the range six, so the corrected model keeps the range gate and the receiver derived seed above it",
+    "the decompilation draws once; the assembly loops back to 0x006286f0 while the candidate collides with the stored word, so the corrected model retries"
+  ],
+  "phase": "integrated",
+  "review_status": "approved_after_three_independent_review_passes_plus_repair_and_independent_reverification",
+  "runtime_validation": 0,
+  "worker_ownership": "pkg_simulator_safe_wave11-target-only",
+  "ghidra_provenance": {
+    "ghidra_program": "SporeApp.exe",
+    "ghidra_project": "SporeProject",
+    "ghidra_mutated": false,
+    "ghidra_saved": false,
+    "binary": "SPORE/SporeBin/SporeApp.exe",
+    "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+    "version": "3.1.0.22",
+    "architecture": "x86:LE:32",
+    "image_base": "0x00400000",
+    "captured_on": "2026-09-25",
+    "tools": [
+      "ghidra_get_current_program_info",
+      "ghidra_get_function_by_address"
+    ],
+    "evidence_rule": "The disassembly listed in observed_body was read back from the live Ghidra database for SporeApp.exe at the addresses shown, and the byte extent, its length and its sha256 were computed from the .text section of SPORE/SporeBin/SporeApp.exe (.text VMA 0x00401000, file offset 0x400). The sha256 below covers exactly that byte extent; ghidra_provenance.binary_sha256 records the whole file. No Ghidra symbol, structure, comment or program state was created or modified."
+  },
+  "implementation": {
+    "status": "promoted to canonical",
+    "canonical_status": "present; promoted by the sole integrator in batch-2026-09-25-wave11-clean",
+    "namespace": "openspore::reconstruction::pkg_simulator_safe_wave11",
+    "header": "src/reconstruction/pkg_simulator_safe_wave11/simulator_safe_wave11.hpp",
+    "source": "src/reconstruction/pkg_simulator_safe_wave11/simulator_safe_wave11.cpp",
+    "model_test": "src/reconstruction/pkg_simulator_safe_wave11/simulator_safe_wave11_model_test.cpp",
+    "boundary_test": "src/reconstruction/pkg_simulator_safe_wave11/simulator_safe_wave11_boundary_test.sh",
+    "staged_from": "reconstruction/staging/pkg-simulator-wave11",
+    "metadata": "reconstruction/metadata/pkg-simulator-safe-wave11/0x006286a0.json"
+  },
+  "model_test_cases": [
+    "test_cycle_default_lcg",
+    "test_cycle_candidate_table",
+    "test_cycle_out_of_range_keeps_receiver_id",
+    "test_cycle_receiver_id_retries",
+    "test_cycle_retries_on_collision"
+  ],
+  "focused_test_evidence": {
+    "command": "sh src/reconstruction/pkg_simulator_safe_wave11/simulator_safe_wave11_boundary_test.sh",
+    "configurations": [
+      "-O0",
+      "-O2",
+      "-O0 -DNDEBUG",
+      "-O2 -DNDEBUG"
+    ],
+    "normal": "passed at -O0 and at -O2",
+    "ndebug": "passed at -O0 -DNDEBUG and at -O2 -DNDEBUG",
+    "assertions_weakened": 0,
+    "assertions_removed": 0,
+    "test_count": 5,
+    "compiled_ret_form_matches_ghidra": true
+  },
+  "helper_and_data_vas_not_promoted": [
+    "0x00401030",
+    "0x00435ed0",
+    "0x00574110",
+    "0x005dbbb0",
+    "0x00628af0",
+    "0x00628ca0",
+    "0x00628d50",
+    "0x0062c340",
+    "0x0062f6c0",
+    "0x0062f7f0",
+    "0x00634e40",
+    "0x0067caa0",
+    "0x0067ddd0",
+    "0x00a206f0",
+    "0x00a68fb0",
+    "0x015f7cf4",
+    "0x01601760"
+  ],
+  "helper_and_data_va_count": 17,
+  "unresolved_questions": [
+    "What class owns the OpaqueEditor00628 receiver",
+    "What the six candidate constants denote",
+    "What the lcg state at 0x01601760 is seeded with"
+  ]
+}

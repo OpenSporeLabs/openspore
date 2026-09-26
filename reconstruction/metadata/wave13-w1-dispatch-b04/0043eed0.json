@@ -1,0 +1,395 @@
+{
+  "schema": "openspore-worker-metadata-1",
+  "package": "wave13-w1-dispatch-b04",
+  "va": "0x0043eed0",
+  "address": "0x0043eed0",
+  "function_address": "0x0043eed0",
+  "entry_address": "0x0043eed0",
+  "ghidra_name": "FUN_0043eed0",
+  "normalized_symbol": "wave13_w1_dispatch_b04_0043eed0",
+  "reconstructed_symbol": "FUN_0043eed0_get_blend_value",
+  "declaration": "extern \"C\" float __attribute__((thiscall)) FUN_0043eed0_get_blend_value(const EditorPart_0043eed0* self);",
+  "source_files": [
+    "reconstruction/staging/wave13-w1-dispatch-b04/0043eed0_editor_part_blend_getter.cpp",
+    "reconstruction/staging/wave13-w1-dispatch-b04/0043eed0_editor_part_blend_getter.hpp",
+    "reconstruction/staging/wave13-w1-dispatch-b04/wave13_w1_dispatch_b04_model_test.cpp"
+  ],
+  "subsystem": "Editor",
+  "class_type": "Editors::EditorRigblock (SDK candidate, two-offset match)",
+  "class_type_note": "The two callers read the receiver's children vector at +0x340/+0x344 and its attribute bitset at +0xDC8, both of which match the SDK's Editors::EditorRigblock. That is a two-offset correspondence, weaker than the six-offset match claimed for 0x0043cad0.",
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall (receiver in ECX), no stack arguments",
+    "calling_convention_observation": "0x0043eed4 spills ECX to [EBP-4] and 0x0043eed7 reads it back; the epilogue at 0x0043eee0..0x0043eee3 is MOV ESP,EBP / POP EBP / RET with no immediate. The 29 code references are all direct UNCONDITIONAL_CALL and the two inspected ones (0x0043f4ba, 0x0043ed5d region) move the child pointer into ECX immediately before the call with nothing pushed.",
+    "return_type": "float",
+    "return_semantics": "the float32 stored at receiver+0x1D4, unmodified",
+    "return_register": "ST(0) - the x87 stack top, NOT an XMM register",
+    "return_width_bytes": 4,
+    "return_observation": "0x0043eeda is FLD dword ptr [EAX+0x1D4] and is the only floating-point instruction in the body. There is no FSTP, FADD, FMUL or memory store, so the loaded value is still on the x87 stack when the frame is torn down and the caller reads ST(0) directly. The caller confirms this: 0x0043f4c6 is FLD1, the matching push of the 1.0f the caller substitutes when it has no child to ask.",
+    "ret_form": "RET",
+    "termination": "single RET at 0x0043eee3",
+    "stack_cleanup_bytes": 0,
+    "stack_cleanup_owner": "caller",
+    "stack_arguments": [],
+    "ordinary_stack_argument_slots": 0,
+    "saved_registers": [
+      "EBP"
+    ],
+    "frame": "PUSH EBP / MOV EBP,ESP / PUSH ECX - note the frame is established with a bare PUSH ECX rather than SUB ESP, so it is 4 bytes and the receiver is stored at [EBP-4]",
+    "receiver": true,
+    "hidden_receiver": "ECX",
+    "hidden_this_register": "ECX is read only by the spill at 0x0043eed4"
+  },
+  "layout": {
+    "entry_address": "0x0043eed0",
+    "body_start": "0x0043eed0",
+    "body_end": "0x0043eee3",
+    "body_span_bytes": 20,
+    "body_bytes_hex": "558bec51894dfc8b45fcd980d40100008be55dc3",
+    "instruction_count": 9,
+    "instructions": [
+      {
+        "address": "0x0043eed0",
+        "bytes": "55",
+        "mnemonic": "PUSH",
+        "operands": "EBP"
+      },
+      {
+        "address": "0x0043eed1",
+        "bytes": "89 e5",
+        "mnemonic": "MOV",
+        "operands": "EBP, ESP"
+      },
+      {
+        "address": "0x0043eed3",
+        "bytes": "51",
+        "mnemonic": "PUSH",
+        "operands": "ECX"
+      },
+      {
+        "address": "0x0043eed4",
+        "bytes": "89 4d fc",
+        "mnemonic": "MOV",
+        "operands": "dword ptr [EBP-0x4], ECX"
+      },
+      {
+        "address": "0x0043eed7",
+        "bytes": "8b 45 fc",
+        "mnemonic": "MOV",
+        "operands": "EAX, dword ptr [EBP-0x4]"
+      },
+      {
+        "address": "0x0043eeda",
+        "bytes": "d9 80 d4 01 00 00",
+        "mnemonic": "FLD",
+        "operands": "dword ptr [EAX + 0x1D4]"
+      },
+      {
+        "address": "0x0043eee0",
+        "bytes": "8b e5",
+        "mnemonic": "MOV",
+        "operands": "ESP, EBP"
+      },
+      {
+        "address": "0x0043eee2",
+        "bytes": "5d",
+        "mnemonic": "POP",
+        "operands": "EBP"
+      },
+      {
+        "address": "0x0043eee3",
+        "bytes": "c3",
+        "mnemonic": "RET",
+        "operands": ""
+      }
+    ],
+    "padding_after": "0x0043eee4..0x0043eef3 is cc cc cc cc cc cc cc cc cc cc cc, the standard inter-function pad",
+    "frame": "PUSH EBP / MOV EBP,ESP / PUSH ECX. A 4-byte frame; the PUSH ECX is a register spill, not a local.",
+    "reads": "one dword, the float32 at receiver+0x1D4. Nothing else in the process is read.",
+    "writes": "nothing. No register other than EAX and the x87 stack top is written, and no memory at all."
+  },
+  "observed_mechanics": [
+    "0x0043eed3: PUSH ECX is the whole frame allocation; there is no SUB ESP and no second local",
+    "0x0043eed4 / 0x0043eed7: the receiver is spilled and immediately reloaded, a spill/reload pair with no other use of the slot",
+    "0x0043eeda: FLD dword ptr [EAX+0x1D4] is the entire operation. D9 /4 with a 32-bit memory operand loads exactly four bytes and pushes them as a float, so the field is a 4-byte float and not a double or an int reinterpreted.",
+    "0x0043eee0 / 0x0043eee2: the frame is torn down without touching the x87 stack, which is what leaves the value in ST(0) for the caller",
+    "0x0043eee3: RET with no immediate, so the callee pops nothing and the x87 stack is balanced by the caller",
+    "The live read at 0x0043eed0 returns 558bec51894dfc8b45fcd980d40100008be55dc3 followed by twelve cc bytes",
+    "0x0043f4ba is called with ECX loaded from [EBP-0x24], which 0x0043f4b2 filled from [[this+0x340] + index*4] - a child of the receiver - and the caller substitutes FLD1 (0x0043f4c6) when no eligible child exists",
+    "0x0043f4a0: MOV EAX,[EDX+0x340] with EDX loaded from [EBP-0x28] proves the children array begins at +0x340 in this same receiver",
+    "FUN_0043f3f0 tests bit 31 of each child's +0xDC8 word before asking it, and returns 1.0f when no child has it, so the getter is only consulted for children that pass an attribute test",
+    "FUN_0043ecb0 calls the getter twice per candidate and keeps the child with the larger value, then clamps the result into the receiver's floats at +0x218 and +0x21C and divides by their difference",
+    "The 29 code references are all direct calls and none of them is a vtable entry, so this is a plain non-virtual accessor"
+  ],
+  "fields_and_offsets": [
+    {
+      "owner": "receiver",
+      "offset": "+0x1D4",
+      "kind": "float32, the returned value",
+      "proved_by": "0x0043eeda FLD dword ptr [EAX+0x1D4] is the only memory operand in the body",
+      "instruction": "0x0043eeda FLD dword ptr [EAX+0x1D4]",
+      "confidence": "OBSERVED",
+      "sdk_name": "not named by the SDK"
+    },
+    {
+      "owner": "receiver (read by callers, not by this body)",
+      "offset": "+0x218",
+      "kind": "float32, the low end of the clamp range",
+      "proved_by": "FUN_0043ecb0 compares and subtracts it",
+      "instruction": "0x0043ecb0 region, decompiled",
+      "confidence": "OBSERVED_BY_CALLER"
+    },
+    {
+      "owner": "receiver (read by callers)",
+      "offset": "+0x21C",
+      "kind": "float32, the high end of the clamp range",
+      "proved_by": "FUN_0043ecb0 compares and subtracts it",
+      "instruction": "0x0043ecb0 region, decompiled",
+      "confidence": "OBSERVED_BY_CALLER"
+    },
+    {
+      "owner": "receiver (read by callers)",
+      "offset": "+0x340",
+      "kind": "children array begin",
+      "proved_by": "0x0043f4a0 MOV EAX,[EDX+0x340]",
+      "instruction": "0x0043f4a0",
+      "confidence": "OBSERVED_BY_CALLER",
+      "sdk_name": "mChildren"
+    },
+    {
+      "owner": "receiver (read by callers)",
+      "offset": "+0x344",
+      "kind": "children array end",
+      "proved_by": "0x0043f491 region and the decompiled count (end-begin)>>2",
+      "instruction": "0x0043ecb0 / 0x0043f3f0 decompiled",
+      "confidence": "OBSERVED_BY_CALLER",
+      "sdk_name": "mChildren"
+    },
+    {
+      "owner": "receiver (read by callers)",
+      "offset": "+0xDC8",
+      "kind": "attribute bitset; callers test bit 31",
+      "proved_by": "FUN_0043f3f0's *(uint *)(*(int *)(*(int *)(param_1 + 0x340) + local_c * 4) + 0xdc8) & 0x80000000",
+      "instruction": "FUN_0043f3f0 decompiled",
+      "confidence": "OBSERVED_BY_CALLER",
+      "sdk_name": "mBooleanAttributes"
+    }
+  ],
+  "constants": [],
+  "constants_observation": "The body contains no immediate operand at all. The only encoded value is the displacement 0x1D4 in the FLD at 0x0043eeda, which is recorded as a field offset rather than a constant. The callers supply 0x80000000 and the x87 constant 1.0, neither of which belongs to this function.",
+  "globals": [],
+  "globals_observation": "The body contains no absolute address operand, so it reads and writes no global.",
+  "virtual_dispatch": [],
+  "virtual_dispatch_observation": "The body makes no indirect call and the live scan found 0 data references to the address, so this function is not a vtable entry and dispatches nothing.",
+  "control_flow": {
+    "switch_tables": "none",
+    "loops": "none",
+    "early_exits": "none",
+    "branches": [],
+    "note": "There is not a single branch in the body. It is straight-line: spill, reload, load, return."
+  },
+  "callers_evidence": [
+    {
+      "callsite": "0x0043ed5d",
+      "caller": "FUN_0043ecb0",
+      "form": "CALL rel32",
+      "setup": "ECX set to the current candidate child",
+      "result_use": "compared against the previous candidate's value with FCOMIP-style ordering; the decompiler shows `if (fVar5 <= fVar4) goto LAB` and keeps the larger"
+    },
+    {
+      "callsite": "0x0043ed68",
+      "caller": "FUN_0043ecb0",
+      "form": "CALL rel32",
+      "setup": "ECX set to the retained best child",
+      "result_use": "clamped into the receiver's [+0x218, +0x21C] range"
+    },
+    {
+      "callsite": "0x0043eda4",
+      "caller": "FUN_0043ecb0",
+      "form": "CALL rel32",
+      "setup": "ECX set to the retained best child",
+      "result_use": "the value that is finally normalised by (v - lo) / (hi - lo) and compared against a global at +0x180"
+    },
+    {
+      "callsite": "0x0043f3be",
+      "caller": "FUN_0043f3a0",
+      "form": "CALL rel32",
+      "setup": "not disassembled",
+      "result_use": "not inspected"
+    },
+    {
+      "callsite": "0x0043f4ba",
+      "caller": "FUN_0043f3f0",
+      "form": "CALL rel32",
+      "setup": "0x0043f4b2 MOV ECX,[EBP-0x24] where [EBP-0x24] was loaded at 0x0043f4b4 from [[this+0x340] + index*4]",
+      "result_use": "returned directly; the caller's own fallback is FLD1 at 0x0043f4c6, i.e. 1.0f"
+    },
+    {
+      "callsite": "0x0044afb9",
+      "caller": "FUN_0044ae00",
+      "form": "CALL rel32",
+      "setup": "not disassembled",
+      "result_use": "not inspected"
+    },
+    {
+      "callsite": "0x00486159",
+      "caller": "FUN_004860b0",
+      "form": "CALL rel32",
+      "setup": "not disassembled",
+      "result_use": "not inspected"
+    },
+    {
+      "callsite": "0x00486164",
+      "caller": "FUN_004860b0",
+      "form": "CALL rel32",
+      "setup": "not disassembled",
+      "result_use": "not inspected"
+    },
+    {
+      "callsite": "0x0048b6b8",
+      "caller": "FUN_0048b370",
+      "form": "CALL rel32",
+      "setup": "not disassembled",
+      "result_use": "not inspected"
+    },
+    {
+      "callsite": "0x0048b6c3",
+      "caller": "FUN_0048b370",
+      "form": "CALL rel32",
+      "setup": "not disassembled",
+      "result_use": "not inspected"
+    },
+    {
+      "callsite": "0x0048b77e",
+      "caller": "FUN_0048b370",
+      "form": "CALL rel32",
+      "setup": "not disassembled",
+      "result_use": "not inspected"
+    },
+    {
+      "callsite": "0x0048b819",
+      "caller": "FUN_0048b370",
+      "form": "CALL rel32",
+      "setup": "not disassembled",
+      "result_use": "not inspected"
+    },
+    {
+      "callsite": "0x0048b9c9",
+      "caller": "FUN_0048b370",
+      "form": "CALL rel32",
+      "setup": "not disassembled",
+      "result_use": "not inspected"
+    },
+    {
+      "callsite": "0x0043eeff",
+      "caller": "FUN_0043eef0",
+      "form": "adjacent site, belongs to 0x00409c00 in that function",
+      "setup": "n/a",
+      "result_use": "n/a",
+      "note": "the briefing lists this callsite under 0x00409c00, not under this function; recorded here only to note it was checked"
+    }
+  ],
+  "callers_evidence_note": "The briefing lists 13 callers; the live scan found 29 code references. 13 are recorded above and the remaining 16 were not individually inspected and are not characterised.",
+  "callees_evidence": [],
+  "semantic_contract": "The function returns, unchanged and without side effects, the 32-bit float stored at offset +0x1D4 of the receiver, delivered on the x87 stack top rather than in an XMM register. It reads exactly one dword, writes nothing at all, calls nothing, and contains no branch. Two of its callers treat the value as a scalar in the unit interval over a per-object population: one picks the largest value among the receiver's eligible children and normalises it through the receiver's own [+0x218, +0x21C] range, and the other returns 1.0f instead when no child is eligible. That makes the field a normalised weight, but the field is not named by the SDK and no caller reveals what it weights.",
+  "classification": "BOUNDED_SEMANTIC",
+  "classification_rationale": "The body is nine instructions with one memory operand, one branch-free path and one constant-free encoding, so its mechanics, ABI including the x87 return register, and field offset are complete and certain. STRONG_SEMANTIC is withheld because the one material element the reconstruction cannot supply is the meaning of the field: +0x1D4 is unnamed in the SDK, and the 'normalised blend weight' reading rests on the arithmetic of a single caller rather than on any statement in the binary. The owning type is additionally a two-offset correspondence rather than a proven identity.",
+  "semantic_findings": [
+    "The return is an x87 float in ST(0). That is not an inference from the decompiler's float10 spelling: the body has exactly one FLD, no store and no arithmetic, and the caller's own fallback at 0x0043f4c6 is FLD1, so both sides of the call agree that the value lives on the x87 stack.",
+    "The function is a pure field read. It writes no memory, calls nothing, and has no branch.",
+    "The frame is a single PUSH ECX with no SUB ESP, which is why the body is 20 bytes rather than the 25 the same sequence costs with a SUB ESP frame - the same shape appears at 0x004ad450 but with an 8-byte frame because that one has two slots.",
+    "The receiver is an editor part: the callers address its children at +0x340/+0x344 and its attribute bitset at +0xDC8, matching the SDK's Editors::EditorRigblock.",
+    "Callers use the value comparatively, not as a flag: they select a maximum over children and normalise it, and they substitute 1.0f rather than 0 when there is nothing to ask."
+  ],
+  "unresolved_questions": [
+    "What does the float at +0x1D4 represent? The 'normalised blend weight' reading comes from FUN_0043ecb0's arithmetic and is labelled INFERRED; the SDK does not name the field and no string or property reference ties it to a concept.",
+    "Is the value guaranteed to lie in [0,1]? The caller clamps it into [+0x218, +0x21C] before normalising, which suggests it may not, but nothing in the getter or its 29 callers establishes a range.",
+    "Why is the getter out of line at all? It is nine instructions and would inline; a shipped build that kept it out of line may indicate it is a virtual override, an address taken somewhere, or simply an unoptimised translation unit. The 0 data references argue against the vtable case but do not exclude an address being taken.",
+    "The 16 code references that were not disassembled could include a caller that treats the value as something other than a weight.",
+    "Is the +0x218/+0x21C clamp range per-object or per-class? It is read from the receiver, so per-object, but what sets it was not established."
+  ],
+  "confidence": {
+    "body_bytes": 1.0,
+    "control_flow": 1.0,
+    "field_offsets": 1.0,
+    "abi": 0.99,
+    "return_semantics": 1.0,
+    "x87_return_register": 0.97,
+    "owning_type": 0.6,
+    "field_meaning": 0.4,
+    "sdk_correspondence": 0.45
+  },
+  "runtime_gates": [
+    "No original-process trace has been captured. The value actually stored at +0x1D4 in the shipping build, and its range, are runtime facts that static analysis cannot supply.",
+    "Whether the getter is ever reached through a pointer stored in a table, which would explain its out-of-line form, needs a reference scan beyond the 29 direct calls."
+  ],
+  "blockers": [],
+  "evidence": [
+    "reconstruction/evidence/0043eed0/evidence.json",
+    "reconstruction/evidence/0043eed0/context.json",
+    "Spore-App-SDK: Spore ModAPI/Spore/Editors/EditorRigblock.h (mChildren +0x340, mBooleanAttributes +0xDC8)"
+  ],
+  "tooling_evidence": [
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x0043eed0",
+      "observation": "float10 __fastcall FUN_0043eed0(int param_1) { return (float10)*(float *)(param_1 + 0x1d4); }"
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x0043eed0",
+      "observation": "9 instructions 0x0043eed0..0x0043eee3, single FLD at 0x0043eeda, bare RET"
+    },
+    {
+      "tool": "ghidra_read_memory",
+      "address": "0x0043eed0",
+      "observation": "558bec51894dfc8b45fcd980d40100008be55dc3cccccccccccccccccccc"
+    },
+    {
+      "tool": "ghidra_run_script_inline",
+      "address": "0x0043eed0",
+      "observation": "29 code references, 0 data references, slot-offset histogram empty - a non-virtual accessor"
+    },
+    {
+      "tool": "ghidra_disassemble_bytes",
+      "address": "0x0043f490",
+      "observation": "0x0043f4a0 MOV EAX,[EDX+0x340]; 0x0043f4a6 MOV ECX,[EBP-8]; 0x0043f4a9 LEA EDX,[EAX+ECX*4]; 0x0043f4b2 MOV ECX,[EAX]; 0x0043f4b4 MOV [EBP-0x24],ECX; 0x0043f4b7 MOV ECX,[EBP-0x24]; 0x0043f4ba CALL 0x0043eed0; 0x0043f4c6 FLD1"
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x0043f3f0",
+      "observation": "scans (this+0x344 - this+0x340)>>2 children, skips any whose +0xDC8 word has bit 31 clear, and otherwise returns this getter's value; returns 1 when the loop finds nothing"
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x0043ecb0",
+      "observation": "keeps the child with the largest getter value among children whose +0x3EC is non-zero, clamps into [this+0x218, this+0x21C], normalises by (v-lo)/(hi-lo) and compares against [global+0x180]"
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x0043eef0",
+      "observation": "adjacent function; the callsite the ledger attributes to 0x00409c00 lives here"
+    }
+  ],
+  "validation": {
+    "status": "PASS",
+    "reason": "model test compiles with -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror and exits 0",
+    "byte_exactness": "Not byte-identical and not claimed to be, because the receiver is a pointer parameter rather than a thiscall member and the frame is elided: clang -m32 -O2 emits `flds (%ecx); ret` (3 bytes) against the original's 20-byte PUSH EBP / PUSH ECX / spill / reload / FLD [EAX+0x1D4] / teardown. The displacement 0x1D4 is folded into the struct member, the load is a dword load, and the value is returned in ST(0) exactly as the original does.",
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/wave13-w1-dispatch-b04 reconstruction/staging/wave13-w1-dispatch-b04/*.cpp",
+    "model_test_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/wave13-w1-dispatch-b04 reconstruction/staging/wave13-w1-dispatch-b04/*.cpp -o /tmp/opencode/b04-model && /tmp/opencode/b04-model",
+    "syntax": "passed",
+    "model_test": "passed"
+  },
+  "provenance": {
+    "binary": "SPORE/SporeBin/SporeApp.exe",
+    "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+    "binary_version": "Spore 3.1.0.22",
+    "image_base": "0x00400000",
+    "worker_id": "wave13-w1-dispatch-b04",
+    "implementer_id": "wave13-w1-dispatch-b04",
+    "batch_id": "b04",
+    "package": "wave13-w1-dispatch-b04",
+    "date": "2026-09-26",
+    "analysis": "static only; no original-process trace was captured for any target in this batch"
+  }
+}

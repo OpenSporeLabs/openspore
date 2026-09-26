@@ -1,4 +1,4 @@
-#include <cassert>
+#include <cstdlib>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
@@ -7,6 +7,18 @@
 
 namespace openspore::reconstruction::pkg_direct_property_wave6 {
 namespace {
+
+#if defined(_MSC_VER)
+#define PKG20_WAVE6_TEST_THISCALL __thiscall
+#else
+#define PKG20_WAVE6_TEST_THISCALL __attribute__((thiscall))
+#endif
+
+void check(bool condition) {
+  if (!condition) {
+    std::abort();
+  }
+}
 
 OpaqueProperty properties[8]{};
 OpaqueProperty fast_property{};
@@ -29,28 +41,35 @@ TargetWord base_insert_id = 0;
 std::size_t error_calls = 0;
 std::size_t conversion_calls = 0;
 
-OpaqueProperty* resolve_property(OpaquePropertyService*,
-                                 TargetWord property_id) {
+OpaqueProperty* missing_property() {
+  return reinterpret_cast<OpaqueProperty*>(
+      static_cast<std::uintptr_t>(0x016027d0u));
+}
+
+OpaqueProperty* PKG20_WAVE6_TEST_THISCALL resolve_property(
+    OpaquePropertyService*, TargetWord property_id) {
   return &properties[property_id];
 }
 
-OpaqueProperty* get_fast_property(OpaqueList*, TargetWord) {
+OpaqueProperty* PKG20_WAVE6_TEST_THISCALL get_fast_property(OpaqueList*,
+                                                            TargetWord) {
   return &fast_property;
 }
 
-void set_slow_property(OpaqueList*, TargetWord property_id,
-                       OpaqueProperty* value) {
+void PKG20_WAVE6_TEST_THISCALL set_slow_property(
+    OpaqueList*, TargetWord property_id, OpaqueProperty* value) {
   ++slow_set_calls;
   slow_set_id = property_id;
   slow_property = *value;
 }
 
-bool parent_has_property(OpaqueBaseObject*, TargetWord property_id) {
+bool PKG20_WAVE6_TEST_THISCALL parent_has_property(OpaqueBaseObject*,
+                                                    TargetWord property_id) {
   return property_id == 77u;
 }
 
-bool parent_get_property(OpaqueBaseObject*, TargetWord property_id,
-                         OpaqueProperty** result) {
+bool PKG20_WAVE6_TEST_THISCALL parent_get_property(
+    OpaqueBaseObject*, TargetWord property_id, OpaqueProperty** result) {
   if (property_id != 78u) {
     return false;
   }
@@ -58,13 +77,13 @@ bool parent_get_property(OpaqueBaseObject*, TargetWord property_id,
   return true;
 }
 
-OpaqueProperty* parent_get_property_object(OpaqueBaseObject*,
-                                           TargetWord property_id) {
+OpaqueProperty* PKG20_WAVE6_TEST_THISCALL parent_get_property_object(
+    OpaqueBaseObject*, TargetWord property_id) {
   return property_id == 79u ? &parent_property : nullptr;
 }
 
-void insert_base_property(OpaqueList*, TargetWord property_id,
-                          OpaqueProperty*) {
+void PKG20_WAVE6_TEST_THISCALL insert_base_property(
+    OpaqueList*, TargetWord property_id, OpaqueProperty*) {
   ++base_insert_calls;
   base_insert_id = property_id;
 }
@@ -151,12 +170,12 @@ void test_layout_and_has_property() {
   set_map_entry(map_entries[1], 20u, 1u, 0u, 1u);
   configure_map(list, map_entries, map_entries + 2);
 
-  assert(opaque_list_has_property_006a27d0(&list, 1u));
-  assert(!opaque_list_has_property_006a27d0(&list, 0u));
-  assert(opaque_list_has_property_006a27d0(&list, 10u));
-  assert(!opaque_list_has_property_006a27d0(&list, 15u));
+  check(opaque_list_has_property_006a27d0(&list, 1u));
+  check(!opaque_list_has_property_006a27d0(&list, 0u));
+  check(opaque_list_has_property_006a27d0(&list, 10u));
+  check(!opaque_list_has_property_006a27d0(&list, 15u));
   list.field_30 = &parent;
-  assert(opaque_list_has_property_006a27d0(&list, 77u));
+  check(opaque_list_has_property_006a27d0(&list, 77u));
 }
 
 void test_get_property_object_and_default() {
@@ -168,75 +187,76 @@ void test_get_property_object_and_default() {
   list_values[1] = 0u;
   set_property(properties[1], 1u, 0u, 0u);
   list.field_40 = OpaqueProperty{};
-  assert(opaque_list_get_property_object_006a2800(&list, 1u) ==
+  check(opaque_list_get_property_object_006a2800(&list, 1u) ==
          &list.field_40);
-  assert(list.field_40.field_12 == 1u);
-  assert(list.field_40.field_00_0f[0] == 0u);
+  check(list.field_40.field_12 == 1u);
+  check(list.field_40.field_00_0f[0] == 0u);
 
   set_property(properties[1], 9u, 0u, 0x12345678u);
   list_values[1] = 0x12345678u;
   list.field_40 = OpaqueProperty{};
-  assert(opaque_list_get_property_object_006a2800(&list, 1u) ==
+  check(opaque_list_get_property_object_006a2800(&list, 1u) ==
          &list.field_40);
-  assert(list.field_40.field_12 == 9u);
-  assert(list.field_40.field_00_0f[0] == 0x78u);
-  assert(list.field_40.field_00_0f[1] == 0x56u);
-  assert(list.field_40.field_00_0f[2] == 0x34u);
-  assert(list.field_40.field_00_0f[3] == 0x12u);
+  check(list.field_40.field_12 == 9u);
+  check(list.field_40.field_00_0f[0] == 0x78u);
+  check(list.field_40.field_00_0f[1] == 0x56u);
+  check(list.field_40.field_00_0f[2] == 0x34u);
+  check(list.field_40.field_00_0f[3] == 0x12u);
 
   set_float_property(properties[1], 0x0du, 0u, 2.5f);
   list.field_40 = OpaqueProperty{};
   std::memcpy(&list_values[1], properties[1].field_00_0f.data(),
               sizeof(float));
-  assert(opaque_list_get_property_object_006a2800(&list, 1u) ==
+  check(opaque_list_get_property_object_006a2800(&list, 1u) ==
          &list.field_40);
   float object_value = 0.0f;
   std::memcpy(&object_value, list.field_40.field_00_0f.data(),
               sizeof(object_value));
-  assert(object_value == 2.5f);
+  check(object_value == 2.5f);
 
   set_property(properties[1], 2u, 0u, 0x5a5a5a5au);
   list.field_40 = OpaqueProperty{};
-  assert(opaque_list_get_property_object_006a2800(&list, 1u) ==
+  check(opaque_list_get_property_object_006a2800(&list, 1u) ==
          &list.field_40);
-  assert(list.field_40.field_12 == 2u);
-  assert(list.field_40.field_00_0f[0] == 0x5au);
+  check(list.field_40.field_12 == 2u);
+  check(list.field_40.field_00_0f[0] == 0x5au);
 
   set_property(properties[1], 9u, 0x0010u, 0u);
   list.field_40 = OpaqueProperty{};
-  assert(opaque_list_get_property_object_006a2800(&list, 1u) ==
+  check(opaque_list_get_property_object_006a2800(&list, 1u) ==
          &list.field_40);
-  assert(list.field_40.field_10 == 0x0010u);
-  assert(list.field_40.field_12 == 9u);
+  check(list.field_40.field_10 == 0x0010u);
+  check(list.field_40.field_12 == 9u);
 
   list.field_18.field_00 = map_entries;
   list.field_18.field_04 = map_entries + 1;
   set_map_entry(map_entries[0], 50u, 1u, 0u, 1u);
   list.field_38 = 0u;
-  assert(opaque_list_get_property_object_006a2800(&list, 50u) ==
+  check(opaque_list_get_property_object_006a2800(&list, 50u) ==
          &map_entries[0].field_04);
-  assert(opaque_list_get_property_object_006a2800(&list, 51u) != nullptr);
+  check(opaque_list_get_property_object_006a2800(&list, 51u) ==
+         missing_property());
 }
 
 void test_get_property_paths() {
   OpaqueList list{};
   configure_list(list, 2u, list_values);
   OpaqueProperty* result = nullptr;
-  assert(opaque_list_get_property_006a28c0(&list, 1u, &result));
-  assert(result == &fast_property);
+  check(opaque_list_get_property_006a28c0(&list, 1u, &result));
+  check(result == &fast_property);
 
   set_map_entry(map_entries[0], 60u, 9u, 0u, 0x01020304u);
   configure_map(list, map_entries, map_entries + 1);
   result = nullptr;
-  assert(opaque_list_get_property_006a28c0(&list, 60u, &result));
-  assert(result == &map_entries[0].field_04);
+  check(opaque_list_get_property_006a28c0(&list, 60u, &result));
+  check(result == &map_entries[0].field_04);
 
   list.field_30 = &parent;
   result = nullptr;
-  assert(opaque_list_get_property_006a28c0(&list, 78u, &result));
-  assert(result == &parent_property);
+  check(opaque_list_get_property_006a28c0(&list, 78u, &result));
+  check(result == &parent_property);
   result = reinterpret_cast<OpaqueProperty*>(1u);
-  assert(!opaque_list_get_property_006a28c0(&list, 79u, &result));
+  check(!opaque_list_get_property_006a28c0(&list, 79u, &result));
 }
 
 void test_set_property_paths() {
@@ -247,34 +267,34 @@ void test_set_property_paths() {
 
   set_property(properties[1], 1u, 0u, 1u);
   opaque_list_set_property_006a30c0(&list, 1u, &properties[1]);
-  assert(fast_values[1] == 1u);
+  check(fast_values[1] == 1u);
 
   set_property(properties[1], 9u, 0u, 0x12345678u);
   opaque_list_set_property_006a30c0(&list, 1u, &properties[1]);
-  assert(fast_values[1] == 0x12345678u);
+  check(fast_values[1] == 0x12345678u);
 
   set_float_property(properties[1], 0x0du, 0u, 3.5f);
   opaque_list_set_property_006a30c0(&list, 1u, &properties[1]);
   float float_value = 0.0f;
   std::memcpy(&float_value, &fast_values[1], sizeof(float_value));
-  assert(float_value == 3.5f);
+  check(float_value == 3.5f);
 
   fast_values[1] = 0x55u;
   set_property(properties[1], 2u, 0u, 0u);
   opaque_list_set_property_006a30c0(&list, 1u, &properties[1]);
-  assert(fast_values[1] == 0x55u);
+  check(fast_values[1] == 0x55u);
   set_property(properties[1], 9u, 0x0010u, 0x11111111u);
   opaque_list_set_property_006a30c0(&list, 1u, &properties[1]);
-  assert(fast_values[1] == 0x55u);
+  check(fast_values[1] == 0x55u);
 
   slow_set_calls = 0;
   fast_list.field_38 = 1u;
   set_property(properties[1], 1u, 0u, 1u);
   opaque_list_set_property_006a30c0(&list, 1u, &properties[1]);
-  assert(slow_set_calls == 1u);
-  assert(slow_set_id == 1u);
-  assert(slow_property.field_12 == 1u);
-  assert(slow_property.field_00_0f[0] == 1u);
+  check(slow_set_calls == 1u);
+  check(slow_set_id == 1u);
+  check(slow_property.field_12 == 1u);
+  check(slow_property.field_00_0f[0] == 1u);
 
   fast_list.field_38 = 2u;
   set_map_entry(map_entries[0], 70u, 1u, 0u, 0u);
@@ -282,15 +302,15 @@ void test_set_property_paths() {
   OpaqueProperty value{};
   set_property(value, 9u, 0u, 0x01020304u);
   opaque_list_set_property_006a30c0(&list, 70u, &value);
-  assert(map_entries[0].field_04.field_12 == 9u);
-  assert(map_entries[0].field_04.field_00_0f[0] == 0x04u);
-  assert(list.field_34 == 1u);
+  check(map_entries[0].field_04.field_12 == 9u);
+  check(map_entries[0].field_04.field_00_0f[0] == 0x04u);
+  check(list.field_34 == 1u);
 
   base_insert_calls = 0;
   opaque_list_set_property_006a30c0(&list, 71u, &value);
-  assert(base_insert_calls == 1u);
-  assert(base_insert_id == 71u);
-  assert(list.field_34 == 2u);
+  check(base_insert_calls == 1u);
+  check(base_insert_id == 71u);
+  check(list.field_34 == 2u);
 }
 
 void test_get_property_ids() {
@@ -307,11 +327,11 @@ void test_get_property_ids() {
   auto* storage = new TargetWord[1]{99u};
   OpaqueWordVector destination{storage, storage + 1, storage + 1};
   opaque_list_get_property_ids_006a3180(&list, &destination);
-  assert(destination.field_04 - destination.field_00 == 4);
-  assert(destination.field_00[0] == 1u);
-  assert(destination.field_00[1] == 3u);
-  assert(destination.field_00[2] == 20u);
-  assert(destination.field_00[3] == 30u);
+  check(destination.field_04 - destination.field_00 == 4);
+  check(destination.field_00[0] == 1u);
+  check(destination.field_00[1] == 3u);
+  check(destination.field_00[2] == 20u);
+  check(destination.field_00[3] == 30u);
   delete[] destination.field_00;
 
   list.field_38 = 1u;
@@ -320,7 +340,7 @@ void test_get_property_ids() {
   storage = new TargetWord[1]{7u};
   destination = OpaqueWordVector{storage, storage + 1, storage + 1};
   opaque_list_get_property_ids_006a3180(&list, &destination);
-  assert(destination.field_04 == destination.field_00);
+  check(destination.field_04 == destination.field_00);
   delete[] destination.field_00;
 }
 
@@ -337,6 +357,8 @@ void run() {
   set_opaque_error_port(nullptr);
   set_opaque_type_conversion(nullptr);
 }
+
+#undef PKG20_WAVE6_TEST_THISCALL
 
 }
 

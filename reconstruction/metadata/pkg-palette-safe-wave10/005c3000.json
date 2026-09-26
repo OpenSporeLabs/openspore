@@ -1,0 +1,174 @@
+{
+  "schema": "pkg-palette-safe-wave10.function-handoff.v1",
+  "package": "PKG-PALETTE-SAFE-WAVE10",
+  "subsystem": "UI.PalettePage",
+  "va": "0x005c3000",
+  "ghidra_name": "FUN_005c3000",
+  "normalized_symbol": "palette_row_layout_005c3000",
+  "semantic_label": "palette row layout: chain the lead, feature title and body rectangles down a stacked column using the 0x01486110 row gap and the tail or host edge",
+  "declaration": "void __thiscall palette_row_layout_005c3000(OpaquePalette* self)",
+  "abi": {
+    "architecture": "x86-32",
+    "calling_convention": "thiscall, receiver only, no stack arguments",
+    "receiver_register": "ECX",
+    "receiver_type": "OpaquePalette*",
+    "frame": "SUB ESP,0x18 / PUSH EBX / PUSH ESI; the receiver is copied to ESI and no callee-saved register beyond EBX/ESI is used",
+    "stack_arguments": [],
+    "stack_cleanup_bytes": 0,
+    "ret_form": "RET",
+    "return_register": "EAX",
+    "return_width_bytes": 0,
+    "return_contract": "void; the entry never writes EAX and ends at 0x005c31b6 with a plain RET",
+    "exit_count": 1
+  },
+  "observed_body": {
+    "entry": "0x005c3000",
+    "body_end_inclusive": "0x005c31b8",
+    "instruction_count": 122,
+    "byte_length": 440,
+    "raw_bytes_sha256": "98adcf73b376d93f00b75c7ec3573d9465e7f0823b06704965d4ed7e2fd3ae59",
+    "raw_bytes_hex": "83ec1853568bf18b46782b46748b4e1083e0fc6a0183f804686bf5d3050f9dc3e88bd5240085c08b466c8b48100f9544240b2b480c83e1fc83f9047f0b80787000c644240a007405c644240a018b1518d95f018b423c83b81801000000740e8bcee83afaffff83f8017d0232dbf30f100510614801f30f1144240c84db74218b4e2085c9741a8b118b4238ffd0f30f10400cf30f580510614801f30f1144240c807c240b0074708b4e2485c974698b118b4238ffd0f30f10008b4e24f30f11442410f30f104804f30f114c2414f30f104008f30f11442418f30f10400cf30f5cc1f30f104c240cf30f58c1f30f114c2414f30f1144241c8b118b526c8d44241050ffd2f30f1044241cf30f580510614801f30f1144240c8b4e2885c90f848f0000008b018b5038ffd2807c240a00f30f1000f30f11442410f30f104004f30f11442414f30f104008f30f11442418f30f10400cf30f1144241cf30f1044240cf30f1144241474158b4e1c85c9740e8b018b5038ffd2f30f104004eb188b4e2c85c9741f8b018b5038ffd2f30f10400cf30f5c4004f30f5c0510614801f30f1144241c8b4e288b018b406c8d54241052ffd05e5b83c418c3cc",
+    "instruction_list": [
+      "0x005c3007 row_span = [ESI+0x78] - [ESI+0x74]; AND EAX,0xfffffffc; SETGE BL  (stacked when the cleared span is at least 4)",
+      "0x005c300d PUSH 0x1 / PUSH 0x5d3f56b / MOV ECX,[ESI+0x10] / CALL 0x008105b0 / SETNZ [ESP+0xb]",
+      "0x005c3027 group_span = [EAX+0x10] - [EAX+0xc]; AND ECX,0xfffffffc; CMP ECX,0x4 / CMP byte [EAX+0x70],0  (wide group)",
+      "0x005c304d MOV EDX,[0x015fd918] / MOV EAX,[EDX+0x3c] / CMP [EAX+0x118],0 / CALL 0x005c2aa0 / CMP EAX,0x1 / XOR BL,BL  (application flag clears the stacked decision)",
+      "0x005c306d MOVSS XMM0,[0x01486110] / MOVSS [ESP+0xc],XMM0  (offset seed is the row gap global)",
+      "0x005c307b TEST BL,BL / JZ 0x005c30a0 / MOV ECX,[ESI+0x20] / vtable slot +0x38 / MOVSS XMM0,[EAX+0xc] / ADDSS XMM0,[0x01486110]  (lead height raises the offset)",
+      "0x005c30a0 CMP byte [ESP+0xb],0 / JZ 0x005c3117 / MOV ECX,[ESI+0x24] / vtable slot +0x38 / build {x, offset, w, (h - y) + offset} / vtable slot +0x6c / offset = rect.h + gap",
+      "0x005c3117 MOV ECX,[ESI+0x28] / TEST ECX,ECX / JZ 0x005c31b1  (null body stops the pass)",
+      "0x005c3122 body bounds; wide and host at +0x1c gives rect.h = host.y - gap",
+      "0x005c317c otherwise tail at +0x2c gives rect.h = (tail.h - tail.y) - gap",
+      "0x005c31a2 MOV ECX,[ESI+0x28] / vtable slot +0x6c with LEA EDX,[ESP+0x10]  (apply the body rectangle)"
+    ],
+    "direct_callee_calls": [
+      "0x008105b0",
+      "0x005c2aa0"
+    ]
+  },
+  "mechanics": [
+    "compute the row span from the rows vector at +0x74/+0x78 and clear the low two bits",
+    "set the stacked decision when the cleared span is greater than or equal to 4",
+    "query the feature port 0x008105b0 with the fixed feature id 0x05d3f56b and count 1, on the feature host at +0x10",
+    "derive the wide decision from the group vector at group+0x0c/+0x10 cleared by 0xfffffffc, greater than 4, or the group byte at +0x70",
+    "clear the stacked decision when the application property flag at +0x118 is nonzero and the distinct row port 0x005c2aa0 returns below 1",
+    "seed the running offset from the row gap global 0x01486110",
+    "when stacked and the lead at +0x20 is non null, raise the offset to lead height plus the gap",
+    "when the feature is present and the title at +0x24 is non null, apply a rectangle of {x, offset, w, (h - y) + offset} and continue the chain from the applied height plus the gap",
+    "when the body at +0x28 is null, return without touching any element",
+    "when wide and the host at +0x1c is non null, take the body height from host.y minus the gap",
+    "otherwise when the tail at +0x2c is non null, take the body height from (tail.h - tail.y) minus the gap",
+    "apply the body rectangle through the element vtable slot +0x6c exactly once"
+  ],
+  "ports": [
+    {
+      "va": "0x008105b0",
+      "name": "FUN_008105b0",
+      "kind": "thiscall feature query",
+      "port_field": "unresolved_008105b0",
+      "body_defined_here": false,
+      "observed_abi": "thiscall, two stack words (PUSH 0x1 then PUSH 0x5d3f56b), pointer return",
+      "default": "test model implementation; not promoted"
+    },
+    {
+      "va": "0x005c2aa0",
+      "name": "FUN_005c2aa0",
+      "kind": "cdecl distinct row count",
+      "port_field": "unresolved_005c2aa0",
+      "body_defined_here": false,
+      "observed_abi": "cdecl, no arguments, signed return compared against 1",
+      "default": "test model implementation; not promoted"
+    }
+  ],
+  "globals_read": [
+    "0x01486110 (row gap float)",
+    "0x015fd918 (application pointer table)"
+  ],
+  "vtable_slots_read": [
+    "element +0x38 (bounds, returns a const OpaqueRect*)",
+    "element +0x6c (apply rectangle)"
+  ],
+  "runtime_gates": [
+    "runtime validation not performed; static decompilation and disassembly only",
+    "the feature query port 0x008105b0 and the distinct row port 0x005c2aa0 are opaque seams and are not promoted",
+    "the element vtable owner behind slot +0x38 and +0x6c is unattributed in the live database",
+    "the semantic identity of the feature id 0x05d3f56b is inferred from the call shape only",
+    "the row gap global at 0x01486110 is modelled as a float whose runtime value is not established",
+    "the group vector at group+0x0c/+0x10 is dereferenced without a null group check, exactly as the native body does"
+  ],
+  "phase": "integrated",
+  "review_status": "reviewed_static_semantic_abi_and_runtime_lifecycle",
+  "runtime_validation": 0,
+  "worker_ownership": "pkg-palette-safe-wave10-target-only",
+  "ghidra_provenance": {
+    "ghidra_program": "SporeApp.exe",
+    "ghidra_project": "SporeProject",
+    "ghidra_mutated": false,
+    "ghidra_saved": false,
+    "binary": "SPORE/SporeBin/SporeApp.exe",
+    "version": "3.1.0.22",
+    "architecture": "x86:LE:32",
+    "image_base": "0x00400000",
+    "captured_on": "2026-09-25",
+    "tools": [
+      "ghidra_get_function_by_address",
+      "ghidra_disassemble_function",
+      "ghidra_get_current_program_info"
+    ],
+    "evidence_rule": "The disassembly listed in observed_body was read back from the live Ghidra database for SporeApp.exe at the addresses shown, and the byte extent was read from the .text section of SPORE/SporeBin/SporeApp.exe (.text VMA 0x00401000, file offset 0x400). The sha256 below covers exactly that byte extent. No Ghidra symbol, structure, comment or program state was created or modified."
+  },
+  "implementation": {
+    "status": "promoted to canonical",
+    "canonical_status": "present; promoted by the sole integrator in batch-2026-09-25-wave10-safe-core",
+    "namespace": "openspore::reconstruction::pkg_palette_safe_wave10",
+    "header": "src/reconstruction/pkg_palette_safe_wave10/pkg_palette_safe_wave10.hpp",
+    "source": "src/reconstruction/pkg_palette_safe_wave10/pkg_palette_safe_wave10.cpp",
+    "model_test": "src/reconstruction/pkg_palette_safe_wave10/pkg_palette_safe_wave10_model_test.cpp",
+    "staged_from": "reconstruction/staging/pkg-palette-safe-wave10",
+    "metadata": "reconstruction/metadata/pkg-palette-safe-wave10/005c3000.json"
+  },
+  "model_test_cases": [
+    "test_palette_base_layout",
+    "test_palette_row_mask_selects_stacked",
+    "test_palette_feature_block_moves_the_title",
+    "test_palette_stacked_feature_block_chains_offsets",
+    "test_palette_null_title_skips_feature_block",
+    "test_palette_null_body_stops_after_feature_block",
+    "test_palette_app_flag_gates_stacked",
+    "test_palette_wide_group_uses_host_edge",
+    "test_palette_narrow_group_uses_tail_edge",
+    "test_palette_null_lead_keeps_base_offset",
+    "test_palette_null_host_falls_back_to_tail_when_wide",
+    "test_palette_row_gap_is_read_from_the_global",
+    "test_palette_stack_discipline",
+    "test_palette_row_count_port_takes_no_argument",
+    "test_palette_never_reaches_an_unmodelled_slot"
+  ],
+  "focused_test_evidence": {
+    "command": "clang++ -m32 -std=c++17 -O0/-O2 [-DNDEBUG] -Wall -Wextra -Wpedantic -Werror -I <canonical dir> <source> <model test> && <binary>",
+    "configurations": [
+      "-O0",
+      "-O2",
+      "-O0 -DNDEBUG",
+      "-O2 -DNDEBUG"
+    ],
+    "normal": "passed at -O0 and at -O2",
+    "ndebug": "passed at -O0 -DNDEBUG and at -O2 -DNDEBUG",
+    "assertions_weakened": 0,
+    "assertions_removed": 0,
+    "test_count": 15,
+    "compiled_ret_form_matches_ghidra": true
+  },
+  "helper_and_data_vas_not_promoted": [
+    "0x00571db0",
+    "0x00e30f90",
+    "0x00f47380",
+    "0x008105b0",
+    "0x005c29c0",
+    "0x005507a0",
+    "0x0067dcc0",
+    "0x00b3d240",
+    "0x00b3d3c0",
+    "0x011e0744"
+  ]
+}

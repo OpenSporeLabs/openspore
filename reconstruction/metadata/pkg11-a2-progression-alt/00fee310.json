@@ -1,0 +1,160 @@
+{
+  "schema": "pkg11-a2-progression-alt.function-handoff.v1",
+  "package": "PKG-11-A2-PROGRESSION-ALTERNATIVE",
+  "function_address": "0x00fee310",
+  "ghidra_name": "Simulator::cMissionManager::GetMissionByID",
+  "normalized_symbol": "mission_manager_operation_00fee310",
+  "source_files": [
+    "reconstruction/staging/pkg11-a2-progression-alt/progression_alt.hpp",
+    "reconstruction/staging/pkg11-a2-progression-alt/progression_alt.cpp"
+  ],
+  "ownership": {
+    "status": "unowned_before_assignment",
+    "manifest_checked": true,
+    "metadata_checked": true,
+    "integrated_handoffs_checked": true,
+    "staging_and_canonical_source_checked": true,
+    "git_status_checked": true,
+    "boundary": "This package claims only 0x00fee310, corrected function 0x00febc90, and 0x00676e90. Restored pkg11-a1 and every existing tracked path remain unmodified."
+  },
+  "imported_name_resolution": {
+    "status": "rejected_as_semantic_signature",
+    "supported_signature": "void thiscall(MissionManagerWire* manager)",
+    "reason": "The live body never reads an entry stack word and its sole direct caller pushes no argument. EAX after the projection loop is incidental and unused by the caller.",
+    "unsupported_imported_elements": ["missionID parameter", "cMission * return", "mission lookup semantics"]
+  },
+  "signature": {
+    "calling_convention": "x86-32 thiscall",
+    "receiver": "ECX MissionManagerWire pointer",
+    "ordinary_stack_arguments": [],
+    "stack_cleanup_bytes": 0,
+    "return_semantics": "void-like; all paths use POP EDI, POP ESI, RET",
+    "preserved_registers": ["ESI"]
+  },
+  "body": {
+    "entry_address": "0x00fee310",
+    "end_address": "0x00fee3c9",
+    "length_bytes": 186,
+    "instruction_count": 59,
+    "raw_bytes": "56578bf1e817f0b4ff8b108bc88b425056ffd08bcee886edffffe8411300008bc8e8aa01c4ff8d4e2051685e00b506e82c1300008bc8e8a51600008d56345268831f4d99e8171300008bc8e89016000083c6485668d66f7fa0e8021300008bc8e87b160000e8d66bc5ffe881efb4ff68da5aaa026820e5b1006810d0fe006820d4d30068107dcd008bc8e8a12fb3ff8b70048b780883c0043bf7741b8d6424008b0e85c9740a8b018b9080000000ffd283c6043bf775e95f5ec3"
+  },
+  "port_abis": [
+    {
+      "boundary": "0x00b3d330",
+      "convention": "cdecl no-argument getter",
+      "receiver": null,
+      "stack": [],
+      "cleanup": "plain RET",
+      "return": "simulator-system pointer in EAX"
+    },
+    {
+      "boundary": "simulator-system vtable +0x50",
+      "convention": "thiscall",
+      "receiver": "simulator-system pointer in ECX",
+      "stack": ["MissionManagerWire* manager"],
+      "cleanup": "callee cleanup required by the observed balanced stack",
+      "return": "void-like"
+    },
+    {
+      "boundary": "0x00fed0b0",
+      "convention": "thiscall",
+      "receiver": "MissionManagerWire* manager in ECX",
+      "stack": [],
+      "cleanup": "plain RET",
+      "return": "void"
+    },
+    {
+      "boundary": "0x00fef670",
+      "convention": "cdecl no-argument getter",
+      "receiver": null,
+      "stack": [],
+      "cleanup": "plain RET and preserves already-staged words",
+      "return": "new builder/registry receiver in EAX"
+    },
+    {
+      "boundary": "0x00c2e4e0",
+      "convention": "thiscall",
+      "receiver": "initial registry result in ECX",
+      "stack": [],
+      "cleanup": "plain RET",
+      "return": "void"
+    },
+    {
+      "boundary": "0x00fef9f0",
+      "convention": "thiscall",
+      "receiver": "fresh 0x00fef670 result in ECX for each call",
+      "stack_at_entry": ["void* field at ESP+0x04", "Word key at ESP+0x08"],
+      "push_order_at_callsite": ["field", "key"],
+      "cleanup": "RET 8",
+      "return": "void"
+    },
+    {
+      "boundary": "0x00b21340",
+      "convention": "thiscall",
+      "receiver": "noun manager in ECX",
+      "stack_at_entry": ["0x00cd7d10", "0x00d3d420", "0x00fed010", "0x00b1e520", "0x02aa5ada"],
+      "push_order_at_callsite": ["0x02aa5ada", "0x00b1e520", "0x00fed010", "0x00d3d420", "0x00cd7d10"],
+      "cleanup": "RET 0x14",
+      "return": "MissionProjectionVectorWire* in EAX; begin/end are result+0x04/result+0x08"
+    },
+    {
+      "boundary": "projection-entry vtable +0x80",
+      "convention": "thiscall",
+      "receiver": "entry pointer in ECX",
+      "stack": [],
+      "cleanup": "plain RET",
+      "return": "void-like"
+    }
+  ],
+  "mechanics": {
+    "call_order": [
+      "Obtain the simulator-system pointer, invoke vtable +0x50 with that system in ECX and the mission manager on the stack, then invoke 0x00fed0b0 with the manager in ECX.",
+      "Obtain the initial registry, pass it to 0x00c2e4e0, and do not reuse that receiver for builders.",
+      "For each manager field, push field then key, call 0x00fef670, move its fresh EAX result to ECX, and call 0x00fef9f0 with field at ESP+4 and key at ESP+8. Builder calls are (manager+0x20,0x06b5005e), (manager+0x34,0x994d1f83), and (manager+0x48,0xa07f6fd6).",
+      "Call 0x00c44f50, obtain the noun manager from 0x00b3d300, and invoke 0x00b21340 with the exact five stack words.",
+      "Iterate result+0x04 through result+0x08 in four-byte steps, skip null entries, and invoke each non-null entry's vtable +0x80 with the entry in ECX."
+    ],
+    "identity_propagation": {
+      "builder_receivers": "Each 0x00fef9f0 ECX receiver is the immediately preceding getter result and may differ from the initial prepare receiver.",
+      "noun_projection_words": ["0x00cd7d10", "0x00d3d420", "0x00fed010", "0x00b1e520", "0x02aa5ada"],
+      "projection_entries": "Non-null entry pointer words are forwarded unchanged to the +0x80 thiscall dispatch."
+    },
+    "event_boundary": "The target directly creates no mission, UI, communication, or persistence event and performs no direct field write. Callee-owned mutations remain opaque."
+  },
+  "call_graph": {
+    "direct_callers": ["0x01007430"],
+    "direct_call_sites": ["0x0100751f"],
+    "direct_callees": ["0x00b3d330", "vtable+0x50", "0x00fed0b0", "0x00fef670", "0x00c2e4e0", "0x00fef9f0", "0x00c44f50", "0x00b3d300", "0x00b21340", "projection-vtable+0x80"]
+  },
+  "evidence": [
+    {"tool": "ghidra_disassemble_function", "address": "0x00fee310", "observation": "The target has no entry stack word, calls 0x00fef670 before every builder, moves each fresh EAX to ECX, and ends with plain RET."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00fef9f0", "observation": "At entry ESP+4 is the field and ESP+8 is the key; the function ends with RET 8."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00b21340", "observation": "The function receives five stack words, returns a result pointer in EAX, and ends with RET 0x14."},
+    {"tool": "ghidra_disassemble_function", "address": "0x01007430", "observation": "The sole caller sets ECX from manager+0xb8, pushes no target argument, and does not consume EAX after return."}
+  ],
+  "verification": {
+    "commands": [
+      "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only reconstruction/staging/pkg11-a2-progression-alt/progression_alt.cpp reconstruction/staging/pkg11-a2-progression-alt/progression_alt_model_test.cpp",
+      "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror reconstruction/staging/pkg11-a2-progression-alt/progression_alt.cpp reconstruction/staging/pkg11-a2-progression-alt/progression_alt_model_test.cpp -o /tmp/opencode/pkg11-a2-progression-alt-model && /tmp/opencode/pkg11-a2-progression-alt-model",
+      "clang-format --dry-run --Werror --style='{BasedOnStyle: Google, FixNamespaceComments: false}' reconstruction/staging/pkg11-a2-progression-alt/progression_alt.hpp reconstruction/staging/pkg11-a2-progression-alt/progression_alt.cpp reconstruction/staging/pkg11-a2-progression-alt/progression_alt_model_test.cpp"
+    ],
+    "results": {
+      "x86_32_syntax": "passed",
+      "focused_model_test": "passed",
+      "focused_model_test_ndebug": "passed",
+      "clang_format_dry_run": "passed",
+      "json_validation": "passed",
+      "abi_inspection": "passed"
+    },
+    "covered_behaviors": [
+      "distinct getter results and fresh builder ECX receivers",
+      "exact field/key builder stack order",
+      "five-word noun projection ABI and result-pointer iteration",
+      "null projection skip and thiscall entry dispatch"
+    ]
+  },
+  "blockers": [
+    "No original-process mission initialization trace was run.",
+    "Simulator vtable +0x50, registry builder, noun projection callback, and projection-entry concrete types remain opaque."
+  ]
+}

@@ -1,0 +1,578 @@
+{
+  "schema": "openspore-worker-metadata-1",
+  "package": "wave13-w1-dispatch-b04",
+  "va": "0x0043cad0",
+  "address": "0x0043cad0",
+  "function_address": "0x0043cad0",
+  "entry_address": "0x0043cad0",
+  "ghidra_name": "FUN_0043cad0",
+  "normalized_symbol": "wave13_w1_dispatch_b04_0043cad0",
+  "reconstructed_symbol": "FUN_0043cad0_propagate_handle_state",
+  "declaration": "extern \"C\" void __attribute__((thiscall)) FUN_0043cad0_propagate_handle_state(RigblockHandleSweep_0043cad0* self);",
+  "source_files": [
+    "reconstruction/staging/wave13-w1-dispatch-b04/0043cad0_rigblock_handle_sweep.cpp",
+    "reconstruction/staging/wave13-w1-dispatch-b04/0043cad0_rigblock_handle_sweep.hpp",
+    "reconstruction/staging/wave13-w1-dispatch-b04/wave13_w1_dispatch_b04_model_test.cpp"
+  ],
+  "subsystem": "Editor",
+  "class_type": "Editors::EditorRigblock (SDK candidate, field-offset match)",
+  "class_type_note": "Six independent receiver offsets match the SDK declaration of Editors::EditorRigblock exactly: +0x028 mpEditorModel, +0x154 mAxisHandles[3], +0x160 mpRotationBallHandle, +0x1B0 field_1B0, +0x6CC mMorphHandles (a fixed_vector whose begin/end land on +0x6CC/+0x6D0), and +0xDC8 mBooleanAttributes declared as eastl::bitset<64> which is what the three bounds-checked bit tests read. Recorded as an SDK correspondence, not an identity recovered from the binary.",
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall (receiver in ECX), no stack arguments",
+    "calling_convention_observation": "0x0043cad6 spills ECX to [EBP-0x68] and no other source of an argument exists; the epilogue at 0x0043cdf2..0x0043cdf5 is MOV ESP,EBP / POP EBP / RET with no immediate, so the callee pops zero words. The five code references are all UNCONDITIONAL_CALL and none of them pushes anything for this function.",
+    "return_type": "void",
+    "return_semantics": "no value; EAX is never written on any path except as scratch inside the callee-setup sequences",
+    "return_register": null,
+    "return_width_bytes": 0,
+    "return_observation": "no FLD, no MOV to EAX as a result and no value is propagated out; the decompiler also gives the function a void return",
+    "ret_form": "RET",
+    "termination": "single RET at 0x0043cdf5, reached from the fallthrough of the marker block",
+    "stack_cleanup_bytes": 0,
+    "stack_cleanup_owner": "caller",
+    "stack_arguments": [],
+    "ordinary_stack_argument_slots": 0,
+    "saved_registers": [
+      "EBP"
+    ],
+    "frame": "PUSH EBP / MOV EBP,ESP / SUB ESP,0x78; 0x78 bytes of locals, the largest named being the re-entrancy copies at [EBP-0x30], [EBP-0x3c] and [EBP-0x64] that feed the three virtual calls",
+    "receiver": true,
+    "hidden_receiver": "ECX",
+    "hidden_this_register": "ECX is spilled once at 0x0043cad6 and every later access goes through [EBP-0x68]"
+  },
+  "layout": {
+    "entry_address": "0x0043cad0",
+    "body_start": "0x0043cad0",
+    "body_end": "0x0043cdf5",
+    "body_span_bytes": 806,
+    "instruction_count": 251,
+    "instructions_note": "The full 251-instruction listing was read with ghidra_disassemble_function and is reproduced field by field in observed_mechanics below rather than duplicated here; every offset, immediate and branch target quoted anywhere in this record comes from that listing.",
+    "padding_after": "not read; the body ends at 0x0043cdf5 and ghidra_get_function_by_address reports body_end 0043cdf5",
+    "frame": "PUSH EBP / MOV EBP,ESP / SUB ESP,0x78",
+    "reads": "+0x028, +0x154..+0x160, +0x1B0, +0x6CC, +0x6D0, +0xDC8; per-handle flag bytes at handle+0x92, handle+0x5D and handle+0x1D4; the sub-object flag bytes at sub+0x4C and sub+0x4D through two accessors",
+    "writes": "no field of the receiver is written. The only stores are to frame slots, plus the two stack pushes that set up the two-argument indirect calls."
+  },
+  "observed_mechanics": [
+    "0x0043cad9 and 0x0043cadd clear the two single-byte override flags at [EBP-2] and [EBP-1] to zero before anything else",
+    "0x0043cae4: CMP dword ptr [EAX+0x28],0 - the whole feature is gated on the sub-object at +0x028 being present",
+    "0x0043caf0 / 0x0043cafe: CALL 0x004adb80 and CALL 0x004adbc0 with ECX loaded from +0x028; the two callees are one-instruction getters, `return *(undefined1*)(param_1+0x4c)` and `return *(undefined1*)(param_1+0x4d)`, and the results are stored as bytes at [EBP-2] and [EBP-1]",
+    "0x0043cb06 clears the [EBP-3] latch, which is set at each of the three dispatch sites (0x0043cbef, 0x0043cc49, 0x0043cdd4)",
+    "0x0043cb0a..0x0043cb15: when the +0x4C override byte is zero, 0x0043ce40 is called on the receiver. That function walks the same handle set and calls the same slot +0x30 with the immediates 1 and 1, and only for handles whose flag byte is non-zero - the exact complement of this function's selection.",
+    "0x0043cb1a..0x0043cb5c is the first of three identical bounds-checked bit reads. The shape is: MOV ECX,index / CMP ECX,0x3c / JNC <false arm> / MOV EDX,index / SHR EDX,5 / MOV ECX,[EAX + EDX*4 + 0xdc8] / then 1 SHL by (index & 0x1f), AND, NEG, SBB, NEG to turn the bit into 0 or 1. The JNC arm writes 0 into the byte. The 0x3c bound and the word index 0xdc8 + (index>>5)*4 are what identify +0xDC8 as a 64-bit bitset and not a single dword.",
+    "0x0043cb24 / 0x0043cb29 / 0x0043cb2f: index 0x19 gives word 0 and shift 25, so the test is bit 25, mask 0x02000000. Bit 25 clear enters the four named handle slots; bit 25 set jumps to 0x0043cc4d and skips them.",
+    "0x0043cb6e..0x0043cbf3: the axis-handle loop. The index bound is the literal 3 at 0x0043cb80, the address is [ECX + EAX*4 + 0x154] at 0x0043cb8c, and the null test is at 0x0043cb96.",
+    "0x0043cbaf: MOV CL,byte ptr [EAX+0x92] - the per-handle flag byte, cached to [EBP-0x29] and re-read as a dword at 0x0043cbb8",
+    "0x0043cbbc / 0x0043cbc0: TEST EDX,EDX / JZ 0x0043cbc8 then TEST EAX,EAX / JZ 0x0043cbf3. The polarity is a disjunction of negations: dispatch happens when the flag byte is zero OR the +0x4C override is non-zero; the handle is skipped only when the byte is non-zero AND the override is clear",
+    "0x0043cbde / 0x0043cbe0: PUSH 0x1 then PUSH 0x3, so the two stack arguments in order are 3 then 1",
+    "0x0043cbe5..0x0043cbed: MOV EAX,[EDX] / MOV ECX,[EBP-0x6c] / MOV EDX,[EAX+0x30] / CALL EDX - one indirect call per selected handle, thiscall on the handle, two stack arguments, no stack cleanup by the callee",
+    "0x0043cbf5..0x0043cc49: the same test against the single pointer at +0x160, with the flag byte at handle+0x5D. Note the opposite branch shape: 0x0043cc24 jumps to 0x0043cc4d (skip) when the byte is non-zero and the override is clear, so the arm structure is inverted relative to the axis loop but the predicate is identical.",
+    "0x0043cc4d..0x0043cc8c: the second bit read, index 0x18, i.e. bit 24, mask 0x01000000. Bit 24 set jumps to 0x0043cddd and skips the morph handles entirely.",
+    "0x0043cca4 / 0x0043cab3 / 0x0043cab6 / 0x0043cab8: ADD EDX,0x6cc then (end - begin) SAR 2 is the morph-handle count, computed from the two pointers and never by dereferencing the end",
+    "0x0043ccc2..0x0043cd02: the third bit read, index 0x0b, i.e. bit 11, mask 0x00000800",
+    "0x0043cd0e..0x0043cd1f: the exclusion index is loaded from +0x1B0 only when bit 11 is set AND the +0x4D override byte is clear; 0x0043cd24 stores -1 in the other three cases",
+    "0x0043cd67..0x0043cd6f: the loop compares the index against the saved exclusion value and, on a match, jumps back to the increment without touching the element",
+    "0x0043cd8e: MOVZX EDX,byte ptr [ECX+0x1d4] - the morph handles carry their flag byte at +0x1D4, a third distinct offset from the two above",
+    "0x0043cd97..0x0043cda1: the same disjunction of negations, and the skip jumps to the loop increment rather than to a shared tail",
+    "0x0043cdd2: JMP 0x0043cd56 sends the dispatched case back to the increment, so the loop has two tails and no fallthrough into the marker",
+    "0x0043cddd..0x0043cde3: the latch is tested and 0x0043cde3 JZ 0x0043cdf2 skips the marker when nothing was dispatched",
+    "0x0043cde5: PUSH 0xD0A55625, a 32-bit constant, is the only immediate in the function that is not a small mask or an index",
+    "0x0043cdea: CALL 0x004a88d0, whose whole body is `FUN_00435ed0(param_1, FUN_00435e90())`, then ADD ESP,4 - so the callee does not pop and the marker fires at most once per call"
+  ],
+  "fields_and_offsets": [
+    {
+      "owner": "receiver",
+      "offset": "+0x028",
+      "kind": "pointer to a sub-object, only its two flag bytes used",
+      "proved_by": "0x0043cae4 tests it for null and 0x0043caed/0x0043cafb load it into ECX for the two accessors",
+      "instruction": "0x0043caed MOV ECX,dword ptr [ECX+0x28]",
+      "confidence": "OBSERVED",
+      "sdk_name": "Editors::EditorRigblock::mpEditorModel (INFERRED from the SDK field list)"
+    },
+    {
+      "owner": "sub-object at +0x028",
+      "offset": "+0x4C",
+      "kind": "uint8 flag, forces every handle to be visited",
+      "proved_by": "0x004adb80's entire body is `return *(undefined1 *)(param_1 + 0x4c)`",
+      "instruction": "0x0043caf0 CALL 0x004adb80",
+      "confidence": "OBSERVED"
+    },
+    {
+      "owner": "sub-object at +0x028",
+      "offset": "+0x4D",
+      "kind": "uint8 flag, suppresses the index exclusion",
+      "proved_by": "0x004adbc0's entire body is `return *(undefined1 *)(param_1 + 0x4d)`",
+      "instruction": "0x0043cafe CALL 0x004adbc0",
+      "confidence": "OBSERVED"
+    },
+    {
+      "owner": "receiver",
+      "offset": "+0x154",
+      "kind": "handle pointer, element 0 of a 3-element array",
+      "proved_by": "0x0043cb8c MOV EDX,[ECX + EAX*4 + 0x154] inside a loop bounded by the literal 3",
+      "instruction": "0x0043cb8c",
+      "confidence": "OBSERVED",
+      "sdk_name": "mAxisHandles[0]"
+    },
+    {
+      "owner": "receiver",
+      "offset": "+0x158",
+      "kind": "handle pointer, element 1",
+      "proved_by": "the same indexed access with EAX=1",
+      "instruction": "0x0043cb8c",
+      "confidence": "OBSERVED",
+      "sdk_name": "mAxisHandles[1]"
+    },
+    {
+      "owner": "receiver",
+      "offset": "+0x15C",
+      "kind": "handle pointer, element 2",
+      "proved_by": "the same indexed access with EAX=2",
+      "instruction": "0x0043cb8c",
+      "confidence": "OBSERVED",
+      "sdk_name": "mAxisHandles[2]"
+    },
+    {
+      "owner": "receiver",
+      "offset": "+0x160",
+      "kind": "single handle pointer, visited outside the loop",
+      "proved_by": "0x0043cbf8 MOV ECX,[EAX+0x160] and the null test at 0x0043cc01",
+      "instruction": "0x0043cbf8",
+      "confidence": "OBSERVED",
+      "sdk_name": "mpRotationBallHandle"
+    },
+    {
+      "owner": "handle objects (axis slots)",
+      "offset": "+0x92",
+      "kind": "uint8 flag, set means do not visit",
+      "proved_by": "0x0043cbaf MOV CL,byte ptr [EAX+0x92]",
+      "instruction": "0x0043cbaf",
+      "confidence": "OBSERVED"
+    },
+    {
+      "owner": "handle object (the +0x160 slot)",
+      "offset": "+0x5D",
+      "kind": "uint8 flag, same meaning, different offset",
+      "proved_by": "0x0043cc16 MOVZX EDX,byte ptr [ECX+0x5d]",
+      "instruction": "0x0043cc16",
+      "confidence": "OBSERVED"
+    },
+    {
+      "owner": "handle objects (morph array)",
+      "offset": "+0x1D4",
+      "kind": "uint8 flag, same meaning, third distinct offset",
+      "proved_by": "0x0043cd8e MOVZX EDX,byte ptr [ECX+0x1d4]",
+      "instruction": "0x0043cd8e",
+      "confidence": "OBSERVED"
+    },
+    {
+      "owner": "receiver",
+      "offset": "+0x1B0",
+      "kind": "int32 exclusion index for the morph array",
+      "proved_by": "0x0043cd19 MOV ECX,[EAX+0x1B0] into [EBP-0x74] and the compare at 0x0043cd6a",
+      "instruction": "0x0043cd19",
+      "confidence": "OBSERVED",
+      "sdk_name": "field_1B0 (unnamed in the SDK)"
+    },
+    {
+      "owner": "receiver",
+      "offset": "+0x6CC",
+      "kind": "pointer to the first morph handle",
+      "proved_by": "0x0043cd74 MOV EDX,[ECX+0x6cc] then indexed at 0x0043cd7d",
+      "instruction": "0x0043cd74",
+      "confidence": "OBSERVED",
+      "sdk_name": "mMorphHandles begin"
+    },
+    {
+      "owner": "receiver",
+      "offset": "+0x6D0",
+      "kind": "pointer one past the last morph handle",
+      "proved_by": "0x0043cd49 MOV EAX,[ECX+4] with ECX biased to +0x6CC, subtracted from the begin and shifted",
+      "instruction": "0x0043cd49",
+      "confidence": "OBSERVED",
+      "sdk_name": "mMorphHandles end"
+    },
+    {
+      "owner": "receiver",
+      "offset": "+0xDC8",
+      "kind": "64-bit attribute bitset; only bits 25, 24 and 11 are read",
+      "proved_by": "three bounds-checked bit reads whose word index is 0xdc8 + (index>>5)*4 and whose bound is 0x3c = 64",
+      "instruction": "0x0043cb2f MOV ECX,[EAX + EDX*4 + 0xdc8]",
+      "confidence": "OBSERVED",
+      "sdk_name": "mBooleanAttributes, declared eastl::bitset<64>"
+    }
+  ],
+  "constants": [
+    {
+      "address": "0x0043cb1f",
+      "value": "0x3C",
+      "meaning": "the bit-index bound of the attribute bitset; an index at or above it reads as clear instead of faulting"
+    },
+    {
+      "address": "0x0043cb24",
+      "value": "0x19",
+      "meaning": "attribute bit 25 - set disables the four named handle slots"
+    },
+    {
+      "address": "0x0043cc57",
+      "value": "0x18",
+      "meaning": "attribute bit 24 - set disables the morph-handle sweep"
+    },
+    {
+      "address": "0x0043ccc8",
+      "value": "0x0B",
+      "meaning": "attribute bit 11 - set arms the single-index exclusion"
+    },
+    {
+      "address": "0x0043cb80",
+      "value": "0x3",
+      "meaning": "the axis-handle loop bound; the array has exactly three elements"
+    },
+    {
+      "address": "0x0043cbe0",
+      "value": "0x3",
+      "meaning": "first stack argument of every handle call, i.e. the handle state"
+    },
+    {
+      "address": "0x0043cbde",
+      "value": "0x1",
+      "meaning": "second stack argument of every handle call"
+    },
+    {
+      "address": "0x0043cd24",
+      "value": "-1",
+      "meaning": "the sentinel exclusion index, which no loop index can equal because the loop counter is signed and starts at 0"
+    },
+    {
+      "address": "0x0043cde5",
+      "value": "0xD0A55625",
+      "meaning": "the single argument of the trailing marker call; the value is not a field offset, a count or a mask and its meaning is not established"
+    },
+    {
+      "address": "0x0043cb40 / 0x0043cc73 / 0x0043cce4",
+      "value": "0x20",
+      "meaning": "the divisor that turns the bit index into a shift amount, i.e. the bitset word size in bits"
+    }
+  ],
+  "globals": [],
+  "globals_observation": "The body contains no absolute address operand, so it reads and writes no global. The two accessor callees it calls are pure field reads at +0x4C and +0x4D of the object handed to them.",
+  "virtual_dispatch": [
+    {
+      "kind": "outgoing",
+      "slot_offset": "+0x30",
+      "table_address": "runtime, from the dword at each visited handle",
+      "target": "unresolved; three call sites (0x0043cbed, 0x0043cc47, 0x0043cdd2) share the slot but reach different concrete classes",
+      "resolved": false,
+      "arguments": [
+        3,
+        1
+      ],
+      "argument_order_observation": "0x0043cbde PUSH 0x1 then 0x0043cbe0 PUSH 0x3, and x86 pushes in reverse, so the first argument is 3 and the second is 1",
+      "sdk_candidate": "Editors::EditorBaseHandle::func30h(int, bool), declared at /* 30h */ in the SDK with an EditorHandleState first parameter whose enumerators are Active=0, Unselected=1, Rollover=2, Default=3 - so 3 is Default and the 1 is the bool",
+      "sdk_status": "CANDIDATE"
+    },
+    {
+      "kind": "outgoing",
+      "slot_offset": "0x00 and +0x08",
+      "table_address": "runtime",
+      "target": "reached only inside 0x004ad280, not in this body",
+      "resolved": false,
+      "note": "recorded for completeness; those two slots belong to the receiver's own vtable and are called by a different function in the same code region"
+    }
+  ],
+  "control_flow": {
+    "switch_tables": "none",
+    "loops": "two, both forward and both bounded by a value in memory rather than a compile-time count: the axis loop 0x0043cb77..0x0043cbf3 bounded by the literal 3, and the morph loop 0x0043cd56..0x0043cdd8 bounded by (end-begin)>>2",
+    "early_exits": "none; there is no early return and no path that bypasses the marker test",
+    "gates_in_order": [
+      "0x0043cb0a: the +0x4C override byte, which decides whether 0x0043ce40 runs",
+      "0x0043cb68: attribute bit 25, which decides whether the four named slots are visited",
+      "0x0043cc99: attribute bit 24, which decides whether the morph array is visited",
+      "0x0043cd0c and 0x0043cd14: attribute bit 11 together with the +0x4D override byte, which decide whether one index is excluded",
+      "0x0043cde3: the dispatch latch, which decides whether the marker fires"
+    ],
+    "branches": [
+      {
+        "address": "0x0043cae8",
+        "kind": "JZ",
+        "target": "0x0043cb06",
+        "polarity": "taken when the sub-object at +0x028 is null, which leaves both override bytes at their cleared values"
+      },
+      {
+        "address": "0x0043cb10",
+        "kind": "JNZ",
+        "target": "0x0043cb1a",
+        "polarity": "taken when the +0x4C byte is non-zero, i.e. the complementary sweep is skipped exactly when the override is active"
+      },
+      {
+        "address": "0x0043cb22 / 0x0043cc55 / 0x0043ccc6",
+        "kind": "JNC",
+        "target": "0x0043cb5e / 0x0043cc91 / 0x0043cd02",
+        "polarity": "the out-of-range arm of each bit read; it writes 0, so a bit index at or above 64 is treated as clear"
+      },
+      {
+        "address": "0x0043cb68",
+        "kind": "JNZ",
+        "target": "0x0043cc4d",
+        "polarity": "taken when bit 25 is set, skipping the four named slots"
+      },
+      {
+        "address": "0x0043cb84",
+        "kind": "JGE",
+        "target": "0x0043cbf5",
+        "polarity": "signed loop exit of the axis loop"
+      },
+      {
+        "address": "0x0043cb9a",
+        "kind": "JZ",
+        "target": "0x0043cbf3",
+        "polarity": "null slot, skipped without a call"
+      },
+      {
+        "address": "0x0043cbbc / 0x0043cbc0",
+        "kind": "JZ x2",
+        "target": "0x0043cbc8 / 0x0043cbf3",
+        "polarity": "dispatch when flag==0 OR override!=0"
+      },
+      {
+        "address": "0x0043cc05 / 0x0043cc1c / 0x0043cc24",
+        "kind": "JZ",
+        "target": "0x0043cc4d",
+        "polarity": "the +0x160 slot is skipped when it is null, or when its flag is set and the override is clear"
+      },
+      {
+        "address": "0x0043cc99",
+        "kind": "JNZ",
+        "target": "0x0043cddd",
+        "polarity": "taken when bit 24 is set, skipping the morph array"
+      },
+      {
+        "address": "0x0043cd0c / 0x0043cd14",
+        "kind": "JZ",
+        "target": "0x0043cd24",
+        "polarity": "either condition failing sends the exclusion index to -1"
+      },
+      {
+        "address": "0x0043cd65",
+        "kind": "JGE",
+        "target": "0x0043cddd",
+        "polarity": "signed loop exit of the morph loop"
+      },
+      {
+        "address": "0x0043cd6d",
+        "kind": "JNZ / JMP pair",
+        "target": "0x0043cd71 / 0x0043cd56",
+        "polarity": "the excluded index is skipped without reading the element"
+      },
+      {
+        "address": "0x0043cda1",
+        "kind": "JMP",
+        "target": "0x0043cd56",
+        "polarity": "the pinned-element skip, which jumps to the loop increment"
+      },
+      {
+        "address": "0x0043cde3",
+        "kind": "JZ",
+        "target": "0x0043cdf2",
+        "polarity": "taken when nothing was dispatched, skipping the marker"
+      }
+    ],
+    "marker_arity": "at most one marker call per invocation, regardless of how many handles were visited"
+  },
+  "callers_evidence": [
+    {
+      "callsite": "0x0043ab76",
+      "caller": "FUN_0043a9e0",
+      "form": "CALL rel32",
+      "setup": "0x0043ab73 MOV ECX,[EBP-0x24]",
+      "result_use": "void; 0x0043ab7b reloads ECX and 0x0043ab7e writes a caller byte into [ECX+0x39]"
+    },
+    {
+      "callsite": "0x005737c7",
+      "caller": "FUN_00573780",
+      "form": "CALL rel32",
+      "setup": "not disassembled",
+      "result_use": "not inspected"
+    },
+    {
+      "callsite": "0x005757bd",
+      "caller": "briefing records the caller as an editor gameplay function",
+      "form": "CALL rel32",
+      "setup": "not disassembled",
+      "result_use": "not inspected"
+    },
+    {
+      "callsite": "see briefing canonical_ledger_row for the remaining two",
+      "caller": "not disassembled",
+      "form": "CALL rel32",
+      "setup": "not disassembled",
+      "result_use": "not inspected"
+    }
+  ],
+  "callees_evidence": [
+    {
+      "callsite": "0x0043caf0",
+      "callee": "0x004adb80",
+      "form": "direct CALL rel32, __fastcall with the sub-object in ECX",
+      "arguments": [],
+      "result_use": "the AL byte is stored at [EBP-2] and becomes the all_handles override",
+      "status": "RESOLVED",
+      "note": "the callee's whole body is a single byte load from +0x4C, so its operation is known even though its name is not"
+    },
+    {
+      "callsite": "0x0043cafe",
+      "callee": "0x004adbc0",
+      "form": "direct CALL rel32, __fastcall with the sub-object in ECX",
+      "arguments": [],
+      "result_use": "the AL byte is stored at [EBP-1] and becomes the all_morphs override",
+      "status": "RESOLVED",
+      "note": "single byte load from +0x4D"
+    },
+    {
+      "callsite": "0x0043cb15",
+      "callee": "0x0043ce40",
+      "form": "direct CALL rel32, __fastcall with the receiver in ECX",
+      "arguments": [],
+      "result_use": "void",
+      "status": "RESOLVED_OPERATION",
+      "note": "decompiled in full: it re-reads the same three handle groups, but only for handles whose flag byte is non-zero, and calls the same slot +0x30 with the immediates 1 and 1. It is gated on a separate condition, FUN_00401060() != 0, which this function never consults. Together the two functions partition the handle set by the flag byte and by the mode argument."
+    },
+    {
+      "callsite": "0x0043cbed / 0x0043cc47 / 0x0043cdd2",
+      "callee": "unresolved: the target is read at run time from [[handle]+0x30]",
+      "form": "indirect CALL EDX, thiscall on the handle, two stack arguments (3, 1), caller cleans up",
+      "arguments": [
+        3,
+        1
+      ],
+      "result_use": "discarded in all three cases; the next instruction writes a byte to the latch",
+      "status": "OPAQUE_PORT"
+    },
+    {
+      "callsite": "0x0043cdea",
+      "callee": "0x004a88d0",
+      "form": "direct CALL rel32, cdecl with one stack argument, caller cleans up with ADD ESP,4",
+      "arguments": [
+        3438565413
+      ],
+      "result_use": "void",
+      "status": "RESOLVED_OPERATION",
+      "note": "0x004a88d0's whole body is FUN_00435ed0(param_1, FUN_00435e90()); what 0x00435ed0 does with the 0xD0A55625 tag was not established, so the marker is named only for its observable role as a once-per-sweep side effect"
+    }
+  ],
+  "semantic_contract": "The function walks the handle set of one editor part and pushes a handle state into the selected members. It first reads two override bytes from the part's model sub-object, but only if that sub-object exists. When the first override byte is clear it delegates the complementary half of the work - the handles whose own flag byte is set, with mode argument 1 instead of 3 - to 0x0043ce40. It then visits, in order, up to three axis handles and one rotation-ball handle, skipping null slots and skipping any handle whose own flag byte is non-zero unless the first override byte forces a full sweep; each visit is an indirect thiscall on the handle's vtable slot +0x30 with the two immediates 3 and 1. That whole group is suppressed when attribute bit 25 is set. Next, unless attribute bit 24 is set, it walks the morph-handle array, whose length is derived from its own begin and end pointers, skipping one index taken from +0x1B0 when attribute bit 11 is set and the second override byte is clear, and applying the same per-handle flag rule with the flag byte at a third offset, +0x1D4. If at least one handle was actually visited, it makes exactly one trailing call with the constant 0xD0A55625. It writes no field of the receiver and reads no global. The two override bytes, the three attribute bits and the per-handle flag bytes together form a three-level veto: a global attribute bit can switch off a whole group, an override byte can cancel the per-handle veto for a whole part, and each handle can veto itself.",
+  "classification": "BOUNDED_SEMANTIC",
+  "classification_rationale": "All 251 instructions, all fourteen field offsets, all ten constants, both loops, all fifteen branches and the argument order of all three indirect calls are read directly from the disassembly, and the two accessor callees and the complementary-sweep callee were decompiled in full, so the control and data flow are complete. STRONG_SEMANTIC is withheld on three named bounds. First, the concrete callee of slot +0x30 is never resolved: three call sites share the slot but reach different handle classes, so the operation the handles are being asked to perform is unknown. Second, the owning type is an SDK field-offset correspondence rather than something the binary states. Third, the 0xD0A55625 marker's meaning is not established, because 0x004a88d0 forwards it to 0x00435ed0, which was not analysed.",
+  "semantic_findings": [
+    "The receiver is an editor part: six offsets match the SDK's Editors::EditorRigblock, and the +0xDC8 attribute word behaves as the eastl::bitset<64> the SDK declares, down to the 0x3c bound and the index>>5 word selection.",
+    "The two override bytes are read through 0x004adb80 and 0x004adbc0, whose entire bodies are single byte loads, so their offsets are known even though the accessors are not named.",
+    "The selection predicate for every handle is a disjunction of negations - visit when the handle's flag byte is clear OR the part's override byte is set - and the same predicate appears three times with three different flag offsets (+0x92, +0x5D, +0x1D4) in two different branch shapes.",
+    "The two-argument call is (3, 1) by push order, and the SDK's EditorBaseHandle::func30h(int, bool) at slot 0x30 takes an EditorHandleState first, whose value 3 is Default. That is a candidate reading, not an established one.",
+    "0x0043ce40 is the exact complement of this function over the same handle set, with mode argument 1 instead of 3 and the flag predicate inverted, but it is additionally gated on FUN_00401060(), which this function does not consult.",
+    "The attribute bits read are 25, 24 and 11 out of a 64-bit word; the out-of-range arm of each read is present and yields clear, so a hypothetical index at or above 64 would silently disable rather than fault.",
+    "The function has no side effect on the receiver at all - it is a pure outbound dispatch - and at most one trailing marker call."
+  ],
+  "unresolved_questions": [
+    "What does slot +0x30 on a handle actually do? No concrete receiver was ever available, so the effect of pushing state 3 with the flag set is unknown. This is the single largest gap in the reconstruction.",
+    "Is 0x0043ce40 really the 'complementary' pass, or an independently scheduled one? It is called only when the +0x4C override is clear, and it consults a global that this function does not, so the two are coupled but not obviously a matched pair.",
+    "What is 0xD0A55625? It is neither an address nor a plausible field offset and is forwarded to 0x00435ed0, whose behaviour was not analysed. It may be a profiler scope id, an event id or a hash.",
+    "What are the three attribute bits 25, 24 and 11 called? The SDK's EditorRigblock lists mBooleanAttributes as an unnamed bitset with no per-bit documentation.",
+    "What do the per-handle flag bytes at +0x92, +0x5D and +0x1D4 mean? They behave as a veto but no SDK field matches, and they sit at three different offsets in three different handle classes.",
+    "Why are the +0x4C and +0x4D override bytes on the model sub-object rather than on the part itself? Their role is established only from how they are used here.",
+    "The two call sites at 0x005737c7 and 0x005757bd, and the remaining two the ledger lists, were not disassembled, so the frequency and context of this sweep are unknown."
+  ],
+  "confidence": {
+    "body_bytes": 1.0,
+    "control_flow": 0.98,
+    "field_offsets": 0.97,
+    "abi": 0.95,
+    "constants": 0.97,
+    "argument_order": 0.95,
+    "return_semantics": 0.98,
+    "accessor_callees": 0.97,
+    "complementary_callee_operation": 0.9,
+    "outgoing_slot_target": 0.1,
+    "owning_type": 0.6,
+    "sdk_correspondence": 0.7,
+    "marker_meaning": 0.15
+  },
+  "runtime_gates": [
+    "No original-process trace has been captured. A differential run must show which handle classes are actually reached through slot +0x30 and what state 3 does to them.",
+    "The three attribute bits and the per-handle flag bytes are only ever read in this build; whether any runtime path sets them, and in which order, needs a trace.",
+    "The relationship between this sweep and the globally gated 0x0043ce40 can only be settled by observing both in one run."
+  ],
+  "blockers": [],
+  "evidence": [
+    "reconstruction/evidence/0043cad0/evidence.json",
+    "reconstruction/evidence/0043cad0/context.json",
+    "Spore-App-SDK: Spore ModAPI/Spore/Editors/EditorRigblock.h (mAxisHandles +0x154, mpRotationBallHandle +0x160, field_1B0 +0x1B0, mMorphHandles +0x6CC, mBooleanAttributes +0xDC8, mpEditorModel +0x028)",
+    "Spore-App-SDK: Spore ModAPI/Spore/Editors/EditorBaseHandle.h (func30h at /* 30h */, EditorHandleState enum)"
+  ],
+  "tooling_evidence": [
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x0043cad0",
+      "observation": "pseudocode plus three unreachable-block warnings at 0x0043cc91, 0x0043cb5e and 0x0043cd02 - the three out-of-range arms of the bit reads, which the decompiler treats as unreachable because the indices are compile-time constants below 64"
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x0043cad0",
+      "observation": "251 instructions, 0x0043cad0..0x0043cdf5"
+    },
+    {
+      "tool": "ghidra_get_function_by_address",
+      "address": "0x0043cad0",
+      "observation": "body_start 0043cad0, body_end 0043cdf5, signature 'undefined FUN_0043cad0(void)'"
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x004adb80",
+      "observation": "return *(undefined1 *)(param_1 + 0x4c);"
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x004adbc0",
+      "observation": "return *(undefined1 *)(param_1 + 0x4d);"
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x0043ce40",
+      "observation": "the complementary sweep: gated on FUN_00401060() != 0, walks the same three groups, selects handles whose flag byte is non-zero, calls slot +0x30 with the immediates 1 and 1"
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x004a88d0",
+      "observation": "FUN_00435ed0(param_1, FUN_00435e90()); - the whole body"
+    },
+    {
+      "tool": "ghidra_disassemble_bytes",
+      "address": "0x0043ab50",
+      "observation": "0x0043ab73 MOV ECX,[EBP-0x24]; 0x0043ab76 CALL 0x0043cad0; 0x0043ab7b MOV ECX,[EBP-0x24]; 0x0043ab81 MOV [ECX+0x39],DL"
+    },
+    {
+      "tool": "ghidra_run_script_inline",
+      "address": "0x0043cad0",
+      "observation": "6 code references, 0 data references, slot-offset histogram empty - a non-virtual member"
+    }
+  ],
+  "validation": {
+    "status": "PASS",
+    "reason": "model test compiles with -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror and exits 0; the test exercises both gates, both override bytes, all three pin offsets, the exclusion rule and the marker latch",
+    "byte_exactness": "Not byte-identical and not claimed to be. The three bounds-checked bit reads are written as a helper over a 32-bit field pair rather than as the original's shift/mask/negate/sbb/negate sequence, and the reconstruction hoists the shared sequence; the control flow, the constants, the loop bounds, the field offsets and the branch polarity are the same.",
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/wave13-w1-dispatch-b04 reconstruction/staging/wave13-w1-dispatch-b04/*.cpp",
+    "model_test_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/wave13-w1-dispatch-b04 reconstruction/staging/wave13-w1-dispatch-b04/*.cpp -o /tmp/opencode/b04-model && /tmp/opencode/b04-model",
+    "syntax": "passed",
+    "model_test": "passed"
+  },
+  "provenance": {
+    "binary": "SPORE/SporeBin/SporeApp.exe",
+    "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+    "binary_version": "Spore 3.1.0.22",
+    "image_base": "0x00400000",
+    "worker_id": "wave13-w1-dispatch-b04",
+    "implementer_id": "wave13-w1-dispatch-b04",
+    "batch_id": "b04",
+    "package": "wave13-w1-dispatch-b04",
+    "date": "2026-09-26",
+    "analysis": "static only; no original-process trace was captured for any target in this batch"
+  }
+}

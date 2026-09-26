@@ -5,9 +5,9 @@
   "ghidra_name": "Graphics::GlobalState::SetTransform",
   "normalized_symbol": "graphics_global_state_set_transform_005291f0",
   "source_files": [
-    "reconstruction/staging/wave6-presentation/presentation_boundary.hpp",
-    "reconstruction/staging/wave6-presentation/presentation_boundary.cpp",
-    "reconstruction/staging/wave6-presentation/presentation_boundary_test.cpp"
+    "src/reconstruction/wave6_presentation/presentation_boundary.hpp",
+    "src/reconstruction/wave6_presentation/presentation_boundary.cpp",
+    "src/reconstruction/wave6_presentation/presentation_boundary_test.cpp"
   ],
   "phase": "body-reconstruction",
   "declaration": "void __cdecl graphics_global_state_set_transform_005291f0(const Matrix4* matrix, MatrixType type);",
@@ -52,10 +52,11 @@
     }
   },
   "mechanics": {
-    "dirty_order": "OR the global soft-state dirty word with 0x01 before writing the type and matrix.",
-    "type_publication": "Store the complete 32-bit type word at 0x016f96a0.",
-    "slot_publication": "Store the address of the fixed Matrix4 storage at 0x016fa380.",
-    "matrix_copy": "Copy all 16 row-major floats in four 16-byte chunks.",
+    "write_order": "Read-modify-write 0x016f9528 with bit 0x01, store type at 0x016f96a0, store 0x016fa4f0 at 0x016fa380, then copy the matrix into 0x016fa4f0.",
+    "dirty_order": "The dirty-bit write is first in raw instruction order.",
+    "type_publication": "Store the complete 32-bit type word at 0x016f96a0 second.",
+    "slot_publication": "Store the address of the fixed Matrix4 storage at 0x016fa380 third.",
+    "matrix_copy": "Copy all 16 row-major floats in four 16-byte chunks last.",
     "null_guard": "No null check protects the incoming matrix pointer; the original dereference fault behavior is preserved.",
     "gameplay_authority": "This function only publishes presentation transform state and does not read or mutate gameplay state."
   },
@@ -78,12 +79,12 @@
     {
       "tool": "ghidra_decompile_function",
       "address": "0x005291f0",
-      "observation": "The live body records the transform type, points the global transform slot at the fixed storage, copies four matrix rows, and ORs the soft-state dirty word with one."
+      "observation": "The decompiler reorders independent stores, so the metadata uses the raw instruction order: dirty word, transform type, fixed-storage pointer, then four 16-byte matrix copies."
     },
     {
       "tool": "ghidra_disassemble_function",
       "address": "0x005291f0",
-      "observation": "The 37-instruction body reads EBP+0x08 and EBP+0x0c, writes the fixed globals, performs four MOVAPS copies, and returns with plain RET."
+      "observation": "The 37-instruction body writes the dirty word first, then type, slot, four MOVAPS matrix copies, and returns with plain RET."
     },
     {
       "tool": "ghidra_get_function_callers",
@@ -107,11 +108,13 @@
     }
   ],
   "confidence": {
-    "overall": "high for ABI, dirty-bit order, fixed global writes, and 64-byte copy",
+    "overall": "high for ABI and exact dirty/type/slot/matrix publication order",
     "high": [
       "cdecl two-argument boundary",
       "plain RET",
-      "dirty bit 0x01",
+      "dirty bit 0x01 written first",
+      "type second and fixed-storage slot third",
+      "64-byte matrix copy last",
       "type and fixed storage publication",
       "four 16-byte matrix copies"
     ],
@@ -121,12 +124,14 @@
     "low": []
   },
   "verification": {
-    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only reconstruction/staging/wave6-presentation/presentation_boundary.cpp",
-    "model_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror reconstruction/staging/wave6-presentation/presentation_boundary.cpp reconstruction/staging/wave6-presentation/presentation_boundary_test.cpp -o /tmp/opencode/wave6-presentation-model-test && /tmp/opencode/wave6-presentation-model-test",
+    "syntax_command": "clang++ -m32 -std=c++17 -O0 -g -Wall -Wextra -Wpedantic -Werror -fsyntax-only src/reconstruction/wave6_presentation/presentation_boundary.cpp",
+    "debug_command": "clang++ -m32 -std=c++17 -O0 -g -Wall -Wextra -Wpedantic -Werror src/reconstruction/wave6_presentation/presentation_boundary.cpp src/reconstruction/wave6_presentation/presentation_boundary_test.cpp -o /tmp/opencode/wave6-presentation-debug-test && /tmp/opencode/wave6-presentation-debug-test",
+    "ndebug_command": "clang++ -m32 -std=c++17 -O2 -DNDEBUG -Wall -Wextra -Wpedantic -Werror src/reconstruction/wave6_presentation/presentation_boundary.cpp src/reconstruction/wave6_presentation/presentation_boundary_test.cpp -o /tmp/opencode/wave6-presentation-ndebug-test && /tmp/opencode/wave6-presentation-ndebug-test",
     "json_command": "python3 -m json.tool reconstruction/metadata/wave6-presentation/005291f0.json >/dev/null",
     "results": {
       "syntax": "passed",
-      "model": "passed",
+      "debug": "passed",
+      "ndebug": "passed",
       "json": "passed"
     }
   },

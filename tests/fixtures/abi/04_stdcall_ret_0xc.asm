@@ -1,0 +1,2 @@
+XOR AL,AL
+RET 0xc

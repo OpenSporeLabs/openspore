@@ -1,0 +1,108 @@
+{
+  "schema": "pkg11-a2-progression-alt.function-handoff.v1",
+  "package": "PKG-11-A2-PROGRESSION-ALTERNATIVE",
+  "function_address": "0x00676e90",
+  "ghidra_name": "Pollinator::cAchievementsManager::SetProgressFlags",
+  "normalized_symbol": "achievement_progress_update_00676e90",
+  "source_files": [
+    "reconstruction/staging/pkg11-a2-progression-alt/progression_alt.hpp",
+    "reconstruction/staging/pkg11-a2-progression-alt/progression_alt.cpp"
+  ],
+  "ownership": {
+    "status": "unowned_body_with_existing_unresolved_callee_reference",
+    "manifest_checked": true,
+    "metadata_checked": true,
+    "integrated_handoffs_checked": true,
+    "staging_and_canonical_source_checked": true,
+    "git_status_checked": true,
+    "boundary": "Integrated 0x0102d1b0 references 0x00676e90 only as an unresolved port with increment 1 and key 0xd3f14a26. No existing body record claims this address."
+  },
+  "imported_name_resolution": {
+    "status": "normalized_from_live_abi",
+    "supported_signature": "void thiscall(AchievementManagerWire* manager, Word increment, Word key)",
+    "reason": "All callers use two stack words and RET 8. The first word updates progress; the second is the lookup/forward key. No third bool argument is read.",
+    "unsupported_imported_elements": ["SetProgressFlags semantic name", "imported argument names", "third bool value argument"]
+  },
+  "signature": {
+    "calling_convention": "x86-32 thiscall with callee stack cleanup",
+    "receiver": "ECX AchievementManagerWire pointer",
+    "stack_arguments": [
+      {"position": 1, "entry_offset": "ESP+0x04", "type": "std::uint32_t", "observed_use": "record+0x04 increment with 32-bit wrap"},
+      {"position": 2, "entry_offset": "ESP+0x08", "type": "std::uint32_t", "observed_use": "lookup-or-create and forward key"}
+    ],
+    "stack_cleanup_bytes": 8,
+    "return_semantics": "void",
+    "preserved_registers": ["ESI"]
+  },
+  "body": {
+    "entry_address": "0x00676e90",
+    "end_address": "0x00676ec8",
+    "length_bytes": 57,
+    "instruction_count": 23,
+    "raw_bytes": "568bf1807e2400752c578b7c240c57e8bcf7ffff8b4c2410014804f600017414508bcee808e3ffff84c07408578bcee84cf8ffff5f5ec20800"
+  },
+  "port_abis": [
+    {"boundary": "0x00676660", "convention": "thiscall", "receiver": "AchievementManagerWire* manager in ECX", "stack": ["Word key at ESP+0x04"], "cleanup": "RET 4", "return": "AchievementRecordWire* in EAX; lookup may create"},
+    {"boundary": "0x006751c0", "convention": "cdecl", "receiver": null, "stack": ["const AchievementRecordWire* record at ESP+0x04"], "cleanup": "RET 4", "return": "AL threshold predicate"},
+    {"boundary": "0x00676710", "convention": "thiscall", "receiver": "AchievementManagerWire* manager in ECX", "stack": ["Word key at ESP+0x04"], "cleanup": "RET 4", "return": "AL; ignored by the target"}
+  ],
+  "mechanics": {
+    "order": [
+      "Return immediately when manager+0x24 is nonzero.",
+      "Call 0x00676660 with manager in ECX and key on the stack.",
+      "Add increment to record+0x04 with exact 32-bit wrap.",
+      "Return when record flags bit 0 is clear.",
+      "Call 0x006751c0 with record on the stack; a false predicate returns.",
+      "Call 0x00676710 with manager in ECX and key on the stack; ignore its return."
+    ],
+    "threshold_modes": [
+      {"mode": 0, "predicate": "target <= progress"},
+      {"mode": 1, "predicate": "target < progress"},
+      {"mode": 2, "predicate": "progress == target"},
+      {"mode": 3, "predicate": "progress < target"},
+      {"mode": 4, "predicate": "progress <= target"},
+      {"mode": 5, "predicate": "progress != target"},
+      {"mode": 6, "predicate": "false"},
+      {"mode": 7, "predicate": "false"}
+    ],
+    "identity_propagation": "The key stack word is forwarded unchanged to lookup-or-create and 0x00676710. Integrated 0x0102d1b0 pushes 1 then 0xd3f14a26.",
+    "container_mutation": "Missing-record creation is delegated to 0x00676660. The target directly mutates only record progress before threshold and forward gates.",
+    "event_boundary": "No event, communication object, serializer, or persistence call is made directly by 0x00676e90. Downstream 0x00676710 behavior remains separate and opaque."
+  },
+  "call_graph": {
+    "direct_caller_function_count": 39,
+    "direct_call_xref_count": 75,
+    "direct_callees": ["0x00676660", "0x006751c0", "0x00676710"]
+  },
+  "evidence": [
+    {"tool": "ghidra_disassemble_function", "address": "0x00676e90", "observation": "The target reads manager+0x24, adds stack word one, gates bit 0, calls the comparator, and forwards stack word two; RET 8."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00676660", "observation": "Manager is received in ECX, key is read from the stack, and the function ends with RET 4."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00676710", "observation": "Manager is received in ECX, key is read from the stack, and the function ends with RET 4."},
+    {"tool": "ghidra_get_assembly_context", "address": "0x0102d5b8", "observation": "The integrated caller pushes 0xd3f14a26 then 1 before the thiscall."}
+  ],
+  "verification": {
+    "commands": [
+      "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only reconstruction/staging/pkg11-a2-progression-alt/progression_alt.cpp reconstruction/staging/pkg11-a2-progression-alt/progression_alt_model_test.cpp",
+      "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror reconstruction/staging/pkg11-a2-progression-alt/progression_alt.cpp reconstruction/staging/pkg11-a2-progression-alt/progression_alt_model_test.cpp -o /tmp/opencode/pkg11-a2-progression-alt-model && /tmp/opencode/pkg11-a2-progression-alt-model",
+      "clang-format --dry-run --Werror --style='{BasedOnStyle: Google, FixNamespaceComments: false}' reconstruction/staging/pkg11-a2-progression-alt/progression_alt.hpp reconstruction/staging/pkg11-a2-progression-alt/progression_alt.cpp reconstruction/staging/pkg11-a2-progression-alt/progression_alt_model_test.cpp"
+    ],
+    "results": {
+      "x86_32_syntax": "passed",
+      "focused_model_test": "passed",
+      "focused_model_test_ndebug": "passed",
+      "clang_format_dry_run": "passed",
+      "json_validation": "passed",
+      "abi_inspection": "passed"
+    },
+    "covered_behaviors": [
+      "manager gate",
+      "thiscall lookup/forward key and RET-4 port contracts",
+      "increment wrap and key identity",
+      "flag gate, all threshold modes, and ignored forward result"
+    ]
+  },
+  "blockers": [
+    "No original-process achievement update trace was run.",
+    "Record ownership and downstream 0x00676710 effects remain opaque."
+  ]
+}

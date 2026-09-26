@@ -1,0 +1,108 @@
+{
+  "schema": "pkg14-a2-world-lifecycle-wave2-function-handoff-v1",
+  "package": "PKG-14-A2-WORLD-LIFECYCLE-WAVE2",
+  "function_address": "0x00bb5b50",
+  "ghidra_name": "Simulator::cStarManager::RecordToPlanet",
+  "normalized_symbol": "star_manager_record_to_planet_00bb5b50",
+  "source_files": [
+    "reconstruction/staging/pkg14-a2-world-lifecycle-wave2/world_lifecycle.hpp",
+    "reconstruction/staging/pkg14-a2-world-lifecycle-wave2/world_lifecycle.cpp",
+    "reconstruction/staging/pkg14-a2-world-lifecycle-wave2/world_lifecycle_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "OpaqueRecordToPlanetOutput* __thiscall star_manager_record_to_planet_00bb5b50(OpaqueStarManager* manager, OpaqueRecordToPlanetOutput* output);",
+  "abi": {
+    "calling_convention": "thiscall",
+    "hidden_this_register": "ECX",
+    "hidden_this_type": "OpaqueStarManager*",
+    "stack_arguments": [
+      {"position": 1, "entry_offset": "ESP+0x04", "name": "output", "type": "OpaqueRecordToPlanetOutput*"}
+    ],
+    "stack_cleanup_bytes": 4,
+    "return_type": "OpaqueRecordToPlanetOutput*",
+    "return_register": "EAX",
+    "termination": "RET 0x4",
+    "model_status": "one-stack-word wrapper with direct cache boundary"
+  },
+  "raw_body_hex": "8b44240483ec08508d5424045281c16c010000e8f8b9ffff83c408c20400",
+  "mechanics": {
+    "observed_boundary": [
+      "Load the sole entry stack word at ESP+0x04 into EAX.",
+      "Reserve eight local bytes.",
+      "Push the original stack word, then push the address of the local eight-byte object.",
+      "Set ECX to the receiver plus 0x16c and call 0x00bb1560.",
+      "Remove the two pushed boundary words and return through RET 0x4."
+    ],
+    "tail_boundary": "The wrapper passes the incoming stack word as the direct boundary output argument and passes the address of an uninitialized local eight-byte slot as the pending argument. It performs no copy, initialization write, or byte read. The boundary result is returned unchanged.",
+    "opaque_pending_slot": "The local eight-byte slot is represented as OpaqueUninitializedRecordSlot. Its address is forwarded to 0x00bb1560; the reconstruction code and cache mocks do not inspect its bytes, and its runtime meaning remains unresolved.",
+    "cache_subobject": "The direct callee receives the opaque receiver subobject at +0x16c. The wrapper does not access any other manager field.",
+    "output_contract": "The downstream helper writes the candidate or materialized entry pointer to output word 0 and writes byte output+4 with 0 for an exact found result or 1 for a missing-result insertion.",
+    "found_path": "The model cache port returns a selected candidate without receiving or inspecting the uninitialized pending slot. An exact-hit result is returned without materialization and receives output flag 0.",
+    "missing_path": "The model cache port returns an end or non-selected candidate without receiving or inspecting the uninitialized pending slot. The materializer result is written to output word 0 and output flag 1 is written after materialization.",
+    "ownership_boundary": "The wrapper itself has no release or cleanup call. The output flag is preserved from the helper and the wrapper returns the helper result pointer unchanged."
+  },
+  "downstream_boundary": {
+    "address": "0x00bb1560",
+    "modeled_as": "Opaque cache lookup, exact-match test, and opaque insertion/materialization port",
+    "cache_fields": ["entries_begin+0x00", "entries_end+0x04", "lookup_mode+0x14"],
+    "entry_stride": "0x10",
+    "lookup_address": "0x00ba95f0",
+    "comparison_address": "0x005e9260",
+    "insertion_address": "0x00baf820"
+  },
+  "boundary_abi": {
+    "address": "0x00bb1560",
+    "receiver": "ECX",
+    "receiver_type": "OpaqueRecordCache*",
+    "stack_arguments": ["output", "pending_record"],
+    "stack_words": 2,
+    "cleanup": "RET 8",
+    "assembly": "ECX=cache; PUSH pending; PUSH output; ... RET 8"
+  },
+  "pending_slot_model": {
+    "type": "OpaqueUninitializedRecordSlot",
+    "storage_width_bytes": 8,
+    "pointer_forwarded": true,
+    "initialization_writes": 0,
+    "byte_reads": false,
+    "key_semantics": "unresolved",
+    "runtime_decision_source": "opaque cache port state only"
+  },
+  "call_graph": {
+    "direct_callers": {
+      "ghidra_count": 2,
+      "representative_functions": [
+        "0x00c33690",
+        "0x00bba2a0 cStarRecord__ctor"
+      ]
+    },
+    "direct_callees": ["0x00bb1560"],
+    "function_xref_count_live": 2
+  },
+  "model_tests": [
+    "exact cache hit returns the candidate output identity and flag 0",
+    "missing cache result calls the materializer once and returns flag 1",
+    "output pointer identity is preserved through the wrapper",
+    "eight-byte temporary is a distinct stack-local boundary object",
+    "returned helper pointer is preserved unchanged by the tail boundary",
+    "wrapper forwards two thiscall stack words and the address of an opaque uninitialized eight-byte slot",
+    "cache hit and miss decisions do not receive or inspect pending-slot bytes",
+    "pointer forwarding is asserted without reading the indeterminate slot",
+    "assembly evidence shows no local initialization stores before the boundary call"
+  ],
+  "verification": {
+    "syntax": "passed: clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only",
+    "normal": "passed: strict x86-32 optimized model",
+    "ndebug": "passed: strict x86-32 optimized NDEBUG model",
+    "format": "passed: clang-format Google with namespace comments disabled",
+    "json": "passed: python3 -m json.tool",
+    "objdump": "passed: x86-32 model shows ECX cache receiver, two pushed boundary words, no local slot initialization stores, and RET 8 helper"
+  },
+  "unresolved_questions": [
+    "The imported SDK declaration carries a record and output parameter pair, while the live 0x00bb5b50 body reads only one stack word. The staging model preserves the live body and leaves the uninitialized local slot's runtime meaning unresolved.",
+    "No pending-slot key, terrain, planet, or record semantics are inferred; cache hit/miss is controlled only by opaque port state."
+  ],
+  "blockers": [
+    "The direct cache helper's opaque entry type and insertion allocator remain outside this worker boundary."
+  ]
+}

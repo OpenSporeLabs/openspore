@@ -1,0 +1,862 @@
+# Evidence 0x00552300
+
+- Evidence state: `LIVE`
+- Live requested: `True`
+- Content SHA-256: `c51aff10f3b62bb4f6364507a3529b07ebc211ce48a58ec39a9fa6330d9cff56`
+
+## abi
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json, GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089, GhidraMCP /disassemble_function`
+
+```json
+{
+  "abi": {
+    "architecture": "x86-32",
+    "ordinary_stack_argument_slots": [
+      "entry_ESP+0x4"
+    ],
+    "ordinary_stack_arguments": [
+      {
+        "ebp_offset": "EBP+0x8",
+        "entry_offset": "entry_ESP+0x4",
+        "observed": true,
+        "ordinal": 1,
+        "read": false,
+        "size_inferred": false,
+        "sizes": [
+          4
+        ],
+        "written": false
+      }
+    ],
+    "ret_form": "RET",
+    "return_register": "EAX",
+    "return_semantics": "integral_in_EAX",
+    "saved_registers": [
+      "EBP"
+    ],
+    "stack_arguments": [
+      {
+        "ebp_offset": "EBP+0x8",
+        "entry_offset": "entry_ESP+0x4",
+        "observed": true,
+        "ordinal": 1,
+        "read": false,
+        "size_inferred": false,
+        "sizes": [
+          4
+        ],
+        "written": false
+      }
+    ],
+    "stack_cleanup_bytes": 0,
+    "stack_cleanup_owner": "caller",
+    "termination": "RET"
+  },
+  "abstained_because": [
+    "unparsed_lines_present: 2 line(s) matched no grammar rule",
+    "receiver_not_determinable: ecx_read_without_deref",
+    "receiver_undetermined_blocks_convention: the register receiver is undetermined (ecx_read_without_deref), and the convention rule that would apply discriminates on receiver absence"
+  ],
+  "cleanup": {
+    "bytes": 0,
+    "confidence": "INFERRED",
+    "corroboration": "not_available",
+    "evidence": "ret with no immediate",
+    "side": "caller"
+  },
+  "completeness": "PARTIAL",
+  "conflicts": [],
+  "content_sha256": "1c42bf207b9b30aafa60593e76c9539dc47d23dabf8542a06660ae83db239885",
+  "conventions": {
+    "ambiguities": [
+      "receiver_undetermined"
+    ],
+    "calling_convention": null,
+    "candidate_conventions": [
+      "__cdecl",
+      "__thiscall"
+    ],
+    "confidence": "UNKNOWN",
+    "corroboration": "not_available"
+  },
+  "cross_validation": {
+    "agreement": false,
+    "ghidra": "no_information",
+    "ghidra_calling_convention": null,
+    "ghidra_parameter_count": 0,
+    "persisted": "no_information",
+    "persisted_calling_convention": null
+  },
+  "dispatch": {
+    "call_offsets": [],
+    "indirect_calls": 5,
+    "vtable_shaped_loads": 0
+  },
+  "inferences": [
+    {
+      "based_on": [
+        "obs-0070"
+      ],
+      "claim": "the caller cleans up the stack: a bare RET is compatible with caller cleanup and, for a zero-parameter __stdcall, with zero bytes of callee cleanup",
+      "confidence": "INFERRED",
+      "id": "C5",
+      "value": {
+        "bytes": 0,
+        "side": "caller"
+      }
+    },
+    {
+      "based_on": [
+        "obs-0010"
+      ],
+      "claim": "entry-relative argument slots",
+      "confidence": "INFERRED",
+      "id": "A1",
+      "value": {
+        "gaps": 0,
+        "observed_slots": 1,
+        "total_bytes": 4
+      }
+    },
+    {
+      "based_on": [
+        "obs-0012",
+        "obs-0013",
+        "obs-0014",
+        "obs-0027",
+        "obs-0028",
+        "obs-0031",
+        "obs-0034",
+        "obs-0036",
+        "obs-0038",
+        "obs-0042",
+        "obs-0051",
+        "obs-0055",
+        "obs-0059",
+        "obs-0065"
+      ],
+      "claim": "the register receiver is undetermined: ecx_read_without_deref",
+      "confidence": "UNKNOWN",
+      "id": "R0",
+      "value": {
+        "reason": "ecx_read_without_deref",
+        "register": null
+      }
+    },
+    {
+      "based_on": [
+        "obs-0012",
+        "obs-0013",
+        "obs-0014",
+        "obs-0027",
+        "obs-0028",
+        "obs-0031",
+        "obs-0034",
+        "obs-0036",
+        "obs-0038",
+        "obs-0042",
+        "obs-0051",
+        "obs-0055",
+        "obs-0059",
+        "obs-0065"
+      ],
+      "claim": "the calling convention is unknown: the receiver is undetermined (ecx_read_without_deref) and every remaining discriminator needs receiver absence",
+      "confidence": "UNKNOWN",
+      "id": "C10"
+    },
+    {
+      "based_on": [
+        "obs-0070"
+      ],
+      "claim": "entry slot 0 is not written through a pointer",
+      "confidence": "APPROXIMATION",
+      "id": "S2",
+      "value": {
+        "present": false
+      }
+    },
+    {
+      "based_on": [
+        "obs-0070"
+      ],
+      "claim": "the return value is carried in EAX",
+      "confidence": "INFERRED",
+      "id": "RT1",
+      "value": "EAX"
+    },
+    {
+      "based_on": [
+        "obs-0070"
+      ],
+      "claim": "the last value written to EAX classifies as integral",
+      "confidence": "INFERRED",
+      "id": "RT2",
+      "value": {
+        "register_class": "integral"
+      }
+    }
+  ],
+  "observations": [
+    {
+      "at": "0x00552300",
+      "count": 47,
+      "first_use": 0,
+      "first_write_index": 1,
+      "id": "obs-0001",
+      "index": 0,
+      "kind": "REG_READ",
+      "reg": "EBP"
+    },
+    {
+      "and_esp": null,
+      "at": "0x00552300",
+      "ebp_is_general_register": true,
+      "fp": true,
+      "id": "obs-0002",
+      "index": 0,
+      "kind": "FRAME",
+      "lea_esp": null,
+      "mov_ebp_esp": true,
+      "mov_ebp_esp_at": 1,
+      "push_ebp": true,
+      "push_ebp_at": 0,
+      "sub": 64
+    },
+    {
+      "at": "0x00552301",
+      "count": 1,
+      "first_use": 1,
+      "first_write_index": 2,
+      "id": "obs-0003",
+      "index": 1,
+      "kind": "REG_READ",
+      "reg": "ESP"
+    },
+    {
+      "at": "0x00552301",
+      "definite": true,
+      "id": "obs-0004",
+      "index": 1,
+      "kind": "REG_WRITE",
+      "reg": "EBP",
+      "write_kind": "reg"
+    },
+    {
+      "at": "0x00552303",
+      "definite": true,
+      "id": "obs-0005",
+      "index": 2,
+      "kind": "REG_WRITE",
+      "reg": "ESP",
+      "write_kind": "arith"
+    },
+    {
+      "at": "0x00552306",
+      "id": "obs-0006",
+      "index": 3,
+      "kind": "CALL_DIRECT",
+      "target": "0x0067cb30"
+    },
+    {
+      "at": "0x0055230b",
+      "count": 22,
+      "first_use": 4,
+      "first_write_index": 7,
+      "id": "obs-0007",
+      "index": 4,
+      "kind": "REG_READ",
+      "reg": "EAX"
+    },
+    {
+      "at": "0x0055230b",
+    
+[TRUNCATED]
+```
+
+## callees_dependencies
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## callers_dependencies
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## contradictions
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## decompilation
+
+- Availability: `available`
+- Evidence state: `LIVE`
+- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
+
+```json
+"\n/* WARNING: Enum \"ObjectTYPE\": Some values do not have unique names */\n/* WARNING: Enum \"Names\": Some values do not have unique names */\n\nundefined4 FUN_00552300(undefined4 *param_1)\n\n{\n  bool bVar1;\n  char cVar2;\n  int iVar3;\n  int *piVar4;\n  int *local_20;\n  undefined4 local_1c;\n  IGameModeManager *local_18;\n  IGameModeManager local_14;\n  undefined4 local_10;\n  undefined4 local_c;\n  int local_8;\n  \n  local_8 = FUN_0067cb30();\n  if (local_8 == 0) {\n    return 0;\n  }\n  local_14._vftable0 = (IGameModeManager__vftable *)*param_1;\n  local_c = param_1[2];\n  local_10 = 0x30bdee3;\n  local_20 = (int *)0x0;\n  local_18 = App__IGameModeManager__Get();\n  piVar4 = local_20;\n  local_1c = 0;\n  if (local_20 != (int *)0x0) {\n    local_20 = (int *)0x0;\n    (**(code **)(*piVar4 + 4))();\n  }\n  bVar1 = (*local_18->_vftable0->Initialize)(&local_14);\n  if ((bVar1) && (iVar3 = FUN_00421f60(&local_20), iVar3 != 0)) {\n    piVar4 = (int *)FUN_005507a0();\n    if ((piVar4[1] == 0) && (*piVar4 != -1)) {\n      if (local_20 == (int *)0x0) {\n        return 0;\n      }\n      (**(code **)(*local_20 + 4))();\n      return 0;\n    }\n    cVar2 = FUN_00550970();\n    if (cVar2 != '\\0') {\n      if (local_20 != (int *)0x0) {\n        (**(code **)(*local_20 + 4))();\n      }\n      return 1;\n    }\n  }\n  if (local_20 != (int *)0x0) {\n    (**(code **)(*local_20 + 4))();\n  }\n  return 2;\n}\n\n"
+```
+
+## disassembly
+
+- Availability: `available`
+- Evidence state: `LIVE`
+- Provenance: `GhidraMCP /disassemble_function`
+
+```json
+{
+  "count": 103,
+  "instructions": [
+    {
+      "address": "00552300",
+      "instruction": "PUSH EBP"
+    },
+    {
+      "address": "00552301",
+      "instruction": "MOV EBP,ESP"
+    },
+    {
+      "address": "00552303",
+      "instruction": "SUB ESP,0x40"
+    },
+    {
+      "address": "00552306",
+      "instruction": "CALL 0x0067cb30"
+    },
+    {
+      "address": "0055230b",
+      "instruction": "MOV dword ptr [EBP + -0x4],EAX"
+    },
+    {
+      "address": "0055230e",
+      "instruction": "CMP dword ptr [EBP + -0x4],0x0"
+    },
+    {
+      "address": "00552312",
+      "instruction": "JZ 0x0055243e"
+    },
+    {
+      "address": "00552318",
+      "instruction": "MOV EAX,dword ptr [EBP + 0x8]"
+    },
+    {
+      "address": "0055231b",
+      "instruction": "MOV ECX,dword ptr [EAX]"
+    },
+    {
+      "address": "0055231d",
+      "instruction": "MOV dword ptr [EBP + -0x10],ECX"
+    },
+    {
+      "address": "00552320",
+      "instruction": "MOV EDX,dword ptr [EAX + 0x4]"
+    },
+    {
+      "address": "00552323",
+      "instruction": "MOV dword ptr [EBP + -0xc],EDX"
+    },
+    {
+      "address": "00552326",
+      "instruction": "MOV EAX,dword ptr [EAX + 0x8]"
+    },
+    {
+      "address": "00552329",
+      "instruction": "MOV dword ptr [EBP + -0x8],EAX"
+    },
+    {
+      "address": "0055232c",
+      "instruction": "MOV dword ptr [EBP + -0xc],0x30bdee3"
+    },
+    {
+      "address": "00552333",
+      "instruction": "MOV dword ptr [EBP + -0x1c],0x0"
+    },
+    {
+      "address": "0055233a",
+      "instruction": "CALL 0x0067dcd0"
+    },
+    {
+      "address": "0055233f",
+      "instruction": "MOV dword ptr [EBP + -0x14],EAX"
+    },
+    {
+      "address": "00552342",
+      "instruction": "MOV dword ptr [EBP + -0x18],0x0"
+    },
+    {
+      "address": "00552349",
+      "instruction": "MOV dword ptr [EBP + -0x28],0xffffffff"
+    },
+    {
+      "address": "00552350",
+      "instruction": "MOV dword ptr [EBP + -0x24],0xffffffff"
+    },
+    {
+      "address": "00552357",
+      "instruction": "CMP dword ptr [EBP + -0x1c],0x0"
+    },
+    {
+      "address": "0055235b",
+      "instruction": "JZ 0x00552377"
+    },
+    {
+      "address": "0055235d",
+      "instruction": "MOV ECX,dword ptr [EBP + -0x1c]"
+    },
+    {
+      "address": "00552360",
+      "instruction": "MOV dword ptr [EBP + -0x3c],ECX"
+    },
+    {
+      "address": "00552363",
+      "instruction": "MOV dword ptr [EBP + -0x1c],0x0"
+    },
+    {
+      "address": "0055236a",
+      "instruction": "MOV EDX,dword ptr [EBP + -0x3c]"
+    },
+    {
+      "address": "0055236d",
+      "instruction": "MOV EAX,dword ptr [EDX]"
+    },
+    {
+      "address": "0055236f",
+      "instruction": "MOV ECX,dword ptr [EBP + -0x3c]"
+    },
+    {
+      "address": "00552372",
+      "instruction": "MOV EDX,dword ptr [EAX + 0x4]"
+    },
+    {
+      "address": "00552375",
+      "instruction": "CALL EDX"
+    },
+    {
+      "address": "00552377",
+      "instruction": "PUSH 0x0"
+    },
+    {
+      "address": "00552379",
+      "instruction": "PUSH 0x0"
+    },
+    {
+      "address": "0055237b",
+      "instruction": "PUSH 0x0"
+    },
+    {
+      "address": "0055237d",
+      "instruction": "PUSH 0x0"
+    },
+    {
+      "address": "0055237f",
+      "instruction": "LEA EAX,[EBP + -0x1c]"
+    },
+    {
+      "address": "00552382",
+      "instruction": "PUSH EAX"
+    },
+    {
+      "address": "00552383",
+      "instruction": "LEA ECX,[EBP + -0x10]"
+    },
+    {
+      "address": "00552386",
+      "instruction": "PUSH ECX"
+    },
+    {
+      "address": "00552387",
+      "instruction": "MOV EDX,dword ptr [EBP + -0x14]"
+    },
+    {
+      "address": "0055238a",
+      "instruction": "MOV EAX,dword ptr [EDX]"
+    },
+    {
+      "address": "0055238c",
+      "instruction": "MOV ECX,dword ptr [EBP + -0x14]"
+    },
+    {
+      "address": "0055238f",
+      "instruction": "MOV EDX,dword ptr [EAX + 0xc]"
+    },
+    {
+      "address": "00552392",
+      "instruction": "CALL EDX"
+    },
+    {
+      "address": "00552394",
+      "instruction": "MOVZX EAX,AL"
+    },
+    {
+      "address": "00552397",
+      "instruction": "TEST EAX,EAX"
+    },
+    {
+      "address": "00552399",
+      "instruction": "JZ 0x0055241f"
+    },
+    {
+      "address": "0055239f",
+      "instruction": "LEA ECX,[EBP + -0x1c]"
+    },
+    {
+      "address": "005523a2",
+      "instruction": "PUSH ECX"
+    },
+    {
+      "address": "005523a3",
+      "instruction": "CALL 0x00421f60"
+    },
+    {
+      "address": "005523a8",
+      "instruction": "ADD ESP,0x4"
+    },
+    {
+      "address": "005523ab",
+      "instruction": "MOV dword ptr [EBP + -0x2c],EAX"
+    },
+    {
+      "address": "005523ae",
+      "instruction": "CMP dword ptr [EBP + -0x2c],0x0"
+    },
+    {
+      "address": "005523b2",
+      "instruction": "JZ 0x0055241f"
+    },
+    {
+      "address": "005523b4",
+      "instruction": "MOV ECX,dword ptr [EBP + -0x2c]"
+    },
+    {
+      "address": "005523b7",
+      "instruction": "CALL 0x005507a0"
+    },
+    {
+      "address": "005523bc",
+      "instruction": "MOV dword ptr [EBP + -0x40],EAX"
+    },
+    {
+      "address": "005523bf",
+      "instruction": "MOV EDX,dword ptr [EBP + -0x40]"
+    },
+    {
+      "address": "005523c2",
+      "instruction": "CMP dword ptr [EDX + 0x4],0x0"
+    },
+    {
+      "address": "005523c6",
+      "instruction": "JA 0x005523f1"
+    },
+    {
+      "address": "005523c8",
+      "instruction": "JC 0x005523d2"
+    },
+    {
+      "address": "005523ca",
+      "instruction": "MOV EAX,dword ptr [EBP + -0x40]"
+    },
+    {
+      "address": "005523cd",
+      "instruction": "CMP dword ptr [EAX],-0x1"
+    },
+    {
+      "address": "005523d0",
+      "instruction": "JNC 0x005523f1"
+    },
+    {
+      "address": "005523d2",
+      "instruction": "MOV dword ptr [EBP + -0x30],0x0"
+    },
+    {
+      "address": "005523d9",
+      "instruction": "CMP dword ptr [EBP + -0x1c],0x0"
+    },
+    {
+      "address": "005523dd",
+      "instruction": "JZ 0x005523ec"
+    },
+    {
+      "address": "005523df",
+      "instruction":
+[TRUNCATED]
+```
+
+## external_callees
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## function_identity
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## ghidra_function
+
+- Availability: `available`
+- Evidence state: `LIVE`
+- Provenance: `GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089`
+
+```json
+{
+  "binary_available": true,
+  "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+  "body_end": "00552443",
+  "body_span_bytes": 324,
+  "body_start": "00552300",
+  "callees": [
+    "FUN_0067cb30",
+    "FUN_00421f60",
+    "FUN_00550970",
+    "App::IGameModeManager::Get",
+    "FUN_005507a0"
+  ],
+  "callers": [
+    "FUN_00f259b0",
+    "FUN_0058a350",
+    "FUN_00ed7060",
+    "FUN_00f2c330",
+    "FUN_0058cee0",
+    "FUN_0066daf0",
+    "FUN_0064b4b0",
+    "FUN_00610d40",
+    "FUN_00dfda50",
+    "FUN_00641490",
+    "FUN_00646370",
+    "FUN_00f3b950",
+    "FUN_00ef6700",
+    "FUN_005dc800",
+    "Editors::cEditor::HandleMessage",
+    "Editor_Save",
+    "FUN_0065a070",
+    "FUN_00f2ac30",
+    "FUN_00f27990",
+    "FUN_00dd15a0"
+  ],
+  "classification": "worker",
+  "dispatch": null,
+  "entry_point": "00552300",
+  "evidence_note": "decompiler output = evidence, not truth; no MSVC RTTI in this binary",
+  "ghidra_calling_convention": null,
+  "ghidra_calling_convention_role": "cross-validation-only",
+  "ghidra_calling_convention_signal": "no_information",
+  "ghidra_has_calling_convention": false,
+  "image_base": "0x400000",
+  "locals": [
+    {
+      "name": "bVar1",
+      "storage": "register:00000000:1",
+      "type": "bool"
+    },
+    {
+      "name": "local_c",
+      "storage": "Stack[-0xc]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "cVar2",
+      "storage": "register:00000000:1",
+      "type": "char"
+    },
+    {
+      "name": "local_8",
+      "storage": "Stack[-0x8]:4",
+      "type": "int"
+    },
+    {
+      "name": "iVar3",
+      "storage": "register:00000000:4",
+      "type": "int"
+    },
+    {
+      "name": "local_14",
+      "storage": "Stack[-0x14]:4",
+      "type": "IGameModeManager"
+    },
+    {
+      "name": "local_10",
+      "storage": "Stack[-0x10]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "piVar4",
+      "storage": "register:00000000:4",
+      "type": "int *"
+    },
+    {
+      "name": "local_1c",
+      "storage": "Stack[-0x1c]:4",
+      "type": "undefined4"
+    },
+    {
+      "name": "local_18",
+      "storage": "Stack[-0x18]:4",
+      "type": "IGameModeManager *"
+    },
+    {
+      "name": "local_20",
+      "storage": "Stack[-0x20]:4",
+      "type": "int *"
+    },
+    {
+      "name": "param_1",
+      "storage": "Stack[0x4]:4",
+      "type": "undefined4 *"
+    }
+  ],
+  "locals_count": 12,
+  "mode": "live",
+  "name": "FUN_00552300",
+  "namespace": null,
+  "namespace_source": null,
+  "parameter_count": 0,
+  "parameters": [],
+  "program": "SporeApp.exe",
+  "provenance": "GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089",
+  "return_type": "undefined",
+  "return_type_resolved": false,
+  "rva": "0x152300",
+  "sdk_name": null,
+  "sdk_type": null,
+  "signature": "undefined FUN_00552300(void)",
+  "size_bytes": 324,
+  "status": "ok",
+  "subsystem": null,
+  "tool": "ghidra_function",
+  "va": "0x00552300",
+  "vtables": {
+    "referenced_by_vtables": [],
+    "sdk_associations": [],
+    "vtable_at": []
+  },
+  "xref_count": 21,
+  "xrefs": [
+    {
+      "from": "00f27a60"
+    },
+    {
+      "from": "00610d9e"
+    },
+    {
+      "from": "005dc85f"
+    },
+    {
+      "from": "00577a2e"
+    },
+    {
+      "from": "0058cf85"
+    },
+    {
+      "from": "0064149a"
+    },
+    {
+      "from": "0064b555"
+    },
+    {
+      "from": "0065a7dd"
+    },
+    {
+      "from": "0066eb2d"
+    },
+    {
+      "from": "00dd15b5"
+    },
+    {
+      "from": "006468ef"
+    },
+    {
+      "from": "00dfdb79"
+    },
+    {
+      "from": "00f25a03"
+    },
+    {
+      "from": "00f2acad"
+    },
+    {
+      "from": "00f2c384"
+    },
+    {
+      "from": "00ed7222"
+    },
+    {
+      "from": "00f3b962"
+    },
+    {
+      "from": "00ef6b3d"
+    },
+    {
+      "from": "0058a3a8"
+    },
+    {
+      "from": "005925ca"
+    },
+    {
+      "from": "00641474"
+    }
+  ]
+}
+```
+
+## globals
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## reconstruction
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## runtime
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## runtime_metadata
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## semantic_hypotheses
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `knowledgegraph/research/semantic-decomp.json`
+
+## status
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## types
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## vtables
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## Conflicts
+
+```json
+[]
+```

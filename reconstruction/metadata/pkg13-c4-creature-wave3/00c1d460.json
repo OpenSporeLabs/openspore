@@ -1,0 +1,285 @@
+{
+  "schema": "pkg13-c4-creature-wave3.function-handoff.v1",
+  "package": "PKG-13-C4-CREATURE-WAVE3",
+  "function_address": "0x00c1d460",
+  "ghidra_name": "FUN_00c1d460",
+  "normalized_symbol": "Simulator_cCreatureBase_CreateAndStartPool2Effect_00c1d460",
+  "sdk_identity": {
+    "sdk_symbol": "unresolved cCreatureBase effect-pool entry",
+    "sdk_declared_address": "unresolved",
+    "relationship": "adjacent",
+    "evidence": "Spore-ModAPI declares the neighbouring pool helpers CreateEffectForPool1 at 0x00C1CB10, CreateAndStartEffectForPool1 at 0x00C1CCB0 and StartOrStopEffectFromPool2 at 0x00C1CE60, and none of the declared addresses covers 0x00C1D460, so no SDK symbol is asserted for this entry.",
+    "effect_service_cross_check": "The receiver at 0x00C1D488 is a global service pointer returned by 0x0067DDD0, and vtable slot +0x2C is called with the shape of a uint32 instance id, a uint32 group id and an effect out-pointer, returning a success flag. Spore-ModAPI Spore/Swarm/IEffectsManager.h declares CreateVisualEffect at offset 2Ch with exactly that shape, so the service slot is treated as an observed slot index with the SDK signature recorded as a cross-reference rather than a proven identity.",
+    "handle_cross_check": "This entry receives a handle from a service call documented by the SDK to be an IVisualEffectPtr, and then calls vtable slots +0x00, +0x04, +0x08 and +0x18 on it. Spore-ModAPI Spore/Swarm/IVisualEffect.h declares AddRef at 00h, Release at 04h, Start at 08h and SetSourceTransform at 18h. The slot indices and the observed argument shapes match, the pool replacement uses AddRef and Release, and the cleanup uses Start with argument 0 followed by Release."
+  },
+  "source_files": [
+    "reconstruction/staging/pkg13-c4-creature-wave3/creature_wave3.hpp",
+    "reconstruction/staging/pkg13-c4-creature-wave3/creature_wave3.cpp",
+    "reconstruction/staging/pkg13-c4-creature-wave3/creature_wave3_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "ownership": "pkg13-c4-creature-wave3",
+  "declaration": "OpaqueVisualEffect* PKG13_C4_THISCALL Simulator_cCreatureBase_CreateAndStartPool2Effect_00c1d460(OpaqueCreatureState* creature, uint32_t instance_id, uint32_t pool_key);",
+  "signature": {
+    "normalized_form": "void* creature_create_and_start_pool2_effect_00c1d460(OpaqueCreatureState* creature, uint32_t instance_id, uint32_t pool_key)",
+    "calling_convention": "thiscall with hidden ECX receiver and two stack words",
+    "hidden_this": true,
+    "receiver": "OpaqueCreatureState at creature+0x0000",
+    "stack_arguments": [
+      {"ordinal": 1, "name": "instance_id", "type": "uint32_t", "byte_offset": "0x04", "reads": ["forwarded as the first argument of the service create call"]},
+      {"ordinal": 2, "name": "pool_key", "type": "uint32_t", "byte_offset": "0x08", "reads": ["address taken and forwarded to the pool slot resolution"]}
+    ],
+    "stack_cleanup_bytes": 8,
+    "stack_cleanup_evidence": "RET 0x8 at 0x00c1d5d3, matching the two pushed stack words.",
+    "local_stack_bytes": 120,
+    "local_stack_evidence": "SUB ESP,0x60 plus PUSH EBX/ESI/EDI; the frame holds the handle slot at P+0x0C, the quaternion conversion output at P+0x10 through P+0x33, and the effect property block at P+0x34 through P+0x6B, which ends immediately below the return address at P+0x6C.",
+    "preserved_registers": ["EBX", "ESI", "EDI"],
+    "preserved_register_evidence": "PUSH EBX/ESI/EDI at 0x00c1d463 through 0x00c1d465 restored by POP EDI/ESI/EBX at 0x00c1d5cb through 0x00c1d5cf.",
+    "return_register": "EAX",
+    "return_width_bytes": 4,
+    "return_semantics": "Returns the full 32-bit handle address, loaded from the frame slot at P+0x0C at 0x00c1d5be and returned through MOV EAX,ESI at 0x00c1d5cc. The value is returned even when the service reported failure, and it is the post-cleanup handle, so the return is a borrowed observation rather than a retained reference."
+  },
+  "body": {
+    "status": "staged_body_reconstructed",
+    "entry_address": "0x00c1d460",
+    "body_addresses": ["0x00c1d460", "0x00c1d5d3"],
+    "instruction_count": 121,
+    "basic_block_count": 11,
+    "mechanics": [
+      "Zeroes the frame handle slot at P+0x0C with MOV dword ptr [ESP + 0xc],EDI after XOR EDI,EDI.",
+      "Calls 0x0067DDD0 to obtain the global effect service and keeps the result in ESI; the callee ignores ECX.",
+      "Reloads the handle slot and tests it against zero with CMP ECX,EDI and JZ 0x00c1d488, which is always taken because nothing between the two instructions writes the slot. On the untaken path the slot would be zeroed and then released through vtable slot +0x04. The reconstruction reproduces the guard structurally.",
+      "Loads the service vtable, reads slot +0x2C and calls it with ECX set to the service and the stack words instance_id, the constant 0 and the address of the handle slot, in that push order.",
+      "Tests the returned byte with TEST AL,AL and JZ 0x00c1d5a9, so a failed creation skips pool resolution, property construction and the transform submission while still running the shared cleanup.",
+      "On success pushes a saved EBP, takes the address of the second stack word, and calls 0x00b76460 thiscall with ECX set to creature+0xD68 and that address, receiving the pool value slot in EAX.",
+      "Reads the previous value out of the pool slot, skips the whole replacement when it already equals the new handle, otherwise calls vtable slot +0x00 on the new handle when it is non-null, stores the new handle into the slot, and then calls vtable slot +0x04 on the previous value when it is non-null.",
+      "Builds the effect property block on the stack, seeding position with the three constants at 0x0168D988, 0x0168D98C and 0x0168D990, zeroing the flag half-word and the count half-word, and storing the constant at 0x01485720 in the scale slot.",
+      "Calls 0x0041cb40 thiscall with ECX set to property_block+0x14 and the address of the 36 zero bytes at 0x0168D964, which pre-fills the rotation block.",
+      "Calls the creature+0xC0 vtable slot +0x2C with ECX set to creature+0xC0 and no stack arguments, receiving a const float* whose three components overwrite the seeded position.",
+      "Ors the constant 0x0004 into the flag half-word and adds 1 to the count half-word.",
+      "Calls the creature+0xC0 vtable slot +0x30 with ECX set to creature+0xC0 and no stack arguments, receiving a const float* quaternion.",
+      "Calls 0x0059c190 cdecl with ECX set to creature+0xC0 and the stack words frame+0x10 and the quaternion, with no callee stack cleanup, producing a nine-real matrix at frame+0x10.",
+      "Copies 36 bytes forward from frame+0x10 to property_block+0x14 with MOVSD.REP and ECX set to 9 dwords, fully overwriting the pre-fill.",
+      "Ors the constant 0x0002 into the flag half-word and adds 1 to the count half-word, giving flags 6 and count 2.",
+      "Calls vtable slot +0x18 on the handle with the property block address, which is the only consumer of the constructed properties.",
+      "The shared cleanup tests the handle slot, calls vtable slot +0x08 with the constant 0 when non-null, then reloads the handle slot because the callee may have changed it, tests it again, and calls vtable slot +0x04 when non-null."
+    ]
+  },
+  "effect_service_failure": {
+    "gate": "TEST AL,AL and JZ 0x00c1d5a9 at 0x00c1d49c",
+    "skipped_when_failing": [
+      "pool slot resolution at 0x00b76460",
+      "the pool replacement reference-count transfer",
+      "property block construction including the 0x0041cb40 pre-fill",
+      "the creature+0xC0 vtable slot +0x2C position read",
+      "the creature+0xC0 vtable slot +0x30 quaternion read",
+      "the 0x0059c190 quaternion conversion and the 36-byte rotation copy",
+      "the vtable slot +0x18 transform submission"
+    ],
+    "still_executed_when_failing": [
+      "the shared cleanup block at 0x00c1d5a9"
+    ],
+    "important_consequence": "The failure path is not an early return. Whatever the callee left in the handle slot is still passed to the cleanup, so a service that returns false while having written a non-null handle still receives a Start with argument 0 and a Release. The reconstruction reproduces this by testing the handle slot rather than the return flag in the cleanup.",
+    "return_value_when_failing": "The post-cleanup handle slot value, which is null when the callee left it null."
+  },
+  "pool_replacement_and_refcount": {
+    "pool_offset": "0x0D68",
+    "pool_sdk_name": "mEffectPool2, documented as a fixed hash map from uint32 to IVisualEffectPtr with ASSERT_SIZE 0xA0",
+    "slot_resolution": "0x00b76460 thiscall with ECX set to creature+0xD68 and a pointer to the second stack word; the callee is thiscall with one callee-cleaned stack word and returns the address of the value slot, four bytes past the node.",
+    "order_of_operations": [
+      {"order": 1, "condition": "new equals previous", "action": "skip the entire replacement, including both reference-count calls"},
+      {"order": 2, "condition": "new is non-null", "action": "vtable slot +0x00 on the new handle"},
+      {"order": 3, "action": "store the new handle into the pool slot"},
+      {"order": 4, "condition": "previous is non-null", "action": "vtable slot +0x04 on the previous value"}
+    ],
+    "note_on_teardown_order": "The new handle is reference-counted up before the slot write and the previous value is released after it, so the slot always holds a referenced object and a same-handle reassignment performs neither call.",
+    "null_created_case": "When the service reports success but leaves the handle null and the slot was non-null, the slot is cleared and the previous value is released, the property block is still built and submitted through vtable slot +0x18 with a null handle, and the cleanup performs neither Start nor Release because the handle slot is null."
+  },
+  "transform_construction": {
+    "type_identity": "opaque 56-byte POD carrying a flag half-word, a count half-word, a three-real position, a real scale and a nine-real rotation",
+    "sdk_note": "Spore-ModAPI IVisualEffect.h names the consuming slot SetSourceTransform taking a const Transform reference, but the observed 56-byte argument does not match a stock Transform layout, so the argument type is left opaque and the slot is recorded by index only.",
+    "size_bytes": 56,
+    "base_evidence": "LEA EAX,[ESP + 0x38] at 0x00c1d5a1 with ESP equal to P-4 resolves to P+0x34, the flag half-word, and that address is the argument pushed for the vtable slot +0x18 call.",
+    "fields": [
+      {"offset": "0x00", "width_bytes": 2, "name": "property_flags", "sequence": ["zero", "or 0x0004", "or 0x0002"], "final_value": 6},
+      {"offset": "0x02", "width_bytes": 2, "name": "property_count", "sequence": ["zero", "add 1", "add 1"], "final_value": 2, "signed": true},
+      {"offset": "0x04", "width_bytes": 12, "name": "world_position", "sequence": ["seeded from 0x0168D988, 0x0168D98C and 0x0168D990", "overwritten by the three components returned through the creature+0xC0 vtable slot +0x2C"]},
+      {"offset": "0x10", "width_bytes": 4, "name": "uniform_scale", "value": "constant at 0x01485720, the binary32 value 1.0f"},
+      {"offset": "0x14", "width_bytes": 36, "name": "rotation", "sequence": ["pre-filled from the 36 zero bytes at 0x0168D964 by 0x0041cb40", "fully overwritten by the 36-byte forward copy of the quaternion conversion output"]}
+    ],
+    "property_count_derivation": "The count half-word is incremented once alongside each flag or, so the final count of 2 and the final flags value of 6 are produced by the same two paired updates. The reconstruction reproduces the pairing rather than assigning the end state directly.",
+    "rotation_prefill_is_dead": "The 0x0041cb40 pre-fill at 0x00c1d52b writes 36 bytes that the MOVSD.REP copy at 0x00c1d588 fully overwrites. The reconstruction reproduces the observed store set, including the pre-fill, so the model matches the original write sequence rather than only its final state.",
+    "quaternion_to_matrix": {
+      "target": "0x0059c190",
+      "convention": "cdecl with two stack words and no callee stack cleanup, confirmed by a plain RET at 0x0059c2e6, which is why the caller discharges the eight bytes with ADD ESP,0x8 at 0x00c1d59e",
+      "component_roles": "The four inputs are treated as q0, q1, q2 and q3 in read order. The original's quaternion component semantics are not resolved, so no real-versus-vector component naming is asserted.",
+      "exact_expressions": [
+        "m[0] = 1.0f - 2.0f * (q2*q2 + q1*q1)",
+        "m[1] = 2.0f * (q2*q3 + q0*q1)",
+        "m[2] = 2.0f * (q0*q2 - q1*q3)",
+        "m[3] = 2.0f * (q0*q1 - q2*q3)",
+        "m[4] = 1.0f - 2.0f * (q2*q2 + q0*q0)",
+        "m[5] = 2.0f * (q0*q3 + q1*q2)",
+        "m[6] = 2.0f * (q1*q3 + q0*q2)",
+        "m[7] = 2.0f * (q1*q2 - q0*q3)",
+        "m[8] = 1.0f - 2.0f * (q1*q1 + q0*q0)"
+      ],
+      "constants": "The diagonal one comes from 0x01485720 and the multiplier from 0x01470F1C, the binary32 value 2.0f.",
+      "copy_helper": "0x0041cb40 is thiscall with one callee-cleaned stack word and copies exactly nine dwords, so the 36-byte payload has no trailing slack."
+    }
+  },
+  "cleanup": {
+    "steps": [
+      {"order": 1, "condition": "handle slot is non-null", "action": "vtable slot +0x08 with the constant 0"},
+      {"order": 2, "action": "reload the handle slot into ECX, because the Start callee may have changed it"},
+      {"order": 3, "condition": "reloaded handle is non-null", "action": "vtable slot +0x04"}
+    ],
+    "evidence": "MOV ECX,dword ptr [ESP + 0xc] at 0x00c1d5a9, the Start call sequence at 0x00c1d5b1 through 0x00c1d5b8, the reload MOV ECX,dword ptr [ESP + 0xc] at 0x00c1d5ba, and the Release sequence at 0x00c1d5c4 through 0x00c1d5c9.",
+    "reload_evidence_correction": "At 0x00c1d5ba ESP is P-4 because Start is a thiscall with one callee-cleaned stack word, so [ESP+0xc] resolves to P+0x0C, the same handle slot. The apparent four-byte lag is the compiler's stack bookkeeping for the callee-cleaned argument, not a read of a different field.",
+    "model_boundary": "The reconstruction holds the handle in a local it owns, so the reload is an identity and cannot observe a Start callee that overwrites the slot. That divergence is confined to the reload and is recorded as a modelling boundary."
+  },
+  "creature_field_access": [
+    {"offset": "0x0D68", "width_bytes": 160, "access": "receiver of the pool slot resolution", "sdk_name": "mEffectPool2"}
+  ],
+  "state_evidence": {
+    "service_lookup": "0x0067DDD0 is a two-instruction accessor returning the 32-bit global at 0x015FD8E8. ECX is not used, so the creature receiver does not influence the service.",
+    "pool_slot": "The resolved slot is written unconditionally on the replacement path, including when the new handle is null, so a null creation clears a populated slot.",
+    "position_source": "The position components are read through a returned pointer without a null check, so a null return faults at the first MOVSS.",
+    "quaternion_source": "The quaternion pointer is forwarded to the conversion without a null check, so a null return faults inside the conversion.",
+    "identity": "The function allocates nothing and holds no cache. Repeated invocation with identical inputs and identical port behaviour yields identical pool, handle and property state.",
+    "fault_behavior": "A null handle on the success path reaches vtable slot +0x18 with ECX set to 0, which the original dispatches through and which faults inside the callee. The reconstruction forwards null to the port rather than guarding it, preserving the observed call set."
+  },
+  "call_graph": {
+    "direct_callers_count": 4,
+    "direct_callers": ["0x00c1d5e0", "0x00d2d0b0", "0x00d512f0", "0x00e8bf20"],
+    "direct_callees": ["0x0041cb40", "0x0059c190", "0x0067ddd0", "0x00b76460"],
+    "function_xrefs_count": 9,
+    "function_xrefs": [
+      {"address": "0x00c1d618", "type": "UNCONDITIONAL_CALL", "from_function": "0x00c1d5e0"},
+      {"address": "0x00d2d1f5", "type": "UNCONDITIONAL_CALL", "from_function": "0x00d2d0b0"},
+      {"address": "0x00d5137a", "type": "UNCONDITIONAL_CALL", "from_function": "0x00d512f0"},
+      {"address": "0x00e8bf76", "type": "UNCONDITIONAL_CALL", "from_function": "0x00e8bf20"},
+      {"address": "0x00e8bff5", "type": "UNCONDITIONAL_CALL", "from_function": "0x00e8bf20"},
+      {"address": "0x00e8c016", "type": "UNCONDITIONAL_CALL", "from_function": "0x00e8bf20"},
+      {"address": "0x00e8c023", "type": "UNCONDITIONAL_CALL", "from_function": "0x00e8bf20"},
+      {"address": "0x00e8cb10", "type": "UNCONDITIONAL_CALL"},
+      {"address": "0x00dabb56", "type": "UNCONDITIONAL_CALL"}
+    ],
+    "neighbour_cross_check": "FUN_00c1d5e0 forwards its second and third stack words unchanged as instance_id and pool_key, and calls the neighbouring pool stop helper 0x00c17350 with the pool key before doing so, which is consistent with a create-and-start entry paired with a stop entry over the same key space.",
+    "virtual_call_order_success": [
+      {"order": 1, "target": "0x0067DDD0", "convention": "cdecl", "stack_args": 0, "returns": "service pointer"},
+      {"order": 2, "slot": "service vtable+0x2C", "receiver": "service", "stack_args": 3, "stack_order": ["instance_id", "0", "handle address"], "returns": "success flag"},
+      {"order": 3, "target": "0x00b76460", "receiver": "creature+0xD68", "stack_args": 1, "returns": "pool value slot"},
+      {"order": 4, "slot": "handle vtable+0x00", "condition": "new differs from previous and new is non-null", "returns": "unspecified"},
+      {"order": 5, "slot": "handle vtable+0x04", "condition": "new differs from previous and previous is non-null", "returns": "unspecified"},
+      {"order": 6, "target": "0x0041cb40", "receiver": "property_block+0x14", "stack_args": 1, "returns": "unspecified"},
+      {"order": 7, "slot": "creature+0xC0 vtable+0x2C", "receiver": "creature+0xC0", "stack_args": 0, "returns": "const float*"},
+      {"order": 8, "slot": "creature+0xC0 vtable+0x30", "receiver": "creature+0xC0", "stack_args": 0, "returns": "const float*"},
+      {"order": 9, "target": "0x0059c190", "convention": "cdecl", "stack_args": 2, "stack_order": ["frame_matrix", "quaternion"], "returns": "unspecified"},
+      {"order": 10, "slot": "handle vtable+0x18", "receiver": "handle", "stack_args": 1, "argument": "property block address"},
+      {"order": 11, "slot": "handle vtable+0x08", "condition": "handle is non-null", "stack_args": 1, "stack_value": 0},
+      {"order": 12, "slot": "handle vtable+0x04", "condition": "reloaded handle is non-null", "stack_args": 0}
+    ],
+    "virtual_call_order_failure": [
+      {"order": 1, "target": "0x0067DDD0"},
+      {"order": 2, "slot": "service vtable+0x2C"},
+      {"order": 3, "slot": "handle vtable+0x08", "condition": "handle is non-null"},
+      {"order": 4, "slot": "handle vtable+0x04", "condition": "handle is non-null"}
+    ],
+    "virtual_slot_ownership": "Slots are recorded by index. The handle's slot identities are supported by the SDK vtable layout cross-reference, but the concrete dynamic type of the handle and the identity of the property block are not claimed."
+  },
+  "dependencies": {
+    "source_dependencies": [
+      "three zero reals at 0x0168D988, 0x0168D98C and 0x0168D990 seeding the position",
+      "the binary32 value 1.0f at 0x01485720",
+      "the binary32 value 2.0f at 0x01470F1C",
+      "thirty-six zero bytes at 0x0168D964 pre-filling the rotation",
+      "the global service pointer at 0x015FD8E8"
+    ],
+    "opaque_ports": [
+      "get_effects_manager, 0x0067ddd0",
+      "create_visual_effect, service vtable+0x2C",
+      "resolve_effect_pool_slot, 0x00b76460",
+      "effect_add_ref, handle vtable+0x00",
+      "effect_release, handle vtable+0x04",
+      "effect_start, handle vtable+0x08",
+      "effect_set_source_transform, handle vtable+0x18",
+      "get_locomotive_position, creature+0xC0 vtable+0x2C",
+      "get_locomotive_quaternion, creature+0xC0 vtable+0x30",
+      "copy_matrix3, 0x0041cb40",
+      "quaternion_to_matrix3, 0x0059c190"
+    ],
+    "unresolved_external_behavior": [
+      "Concrete type and lifetime of the 56-byte property block and whether the vtable slot +0x18 callee retains it",
+      "Concrete dynamic type of the created handle and whether the reference-count slots are a general intrusive pair",
+      "Whether the vtable slot +0x08 argument 0 means a soft or hard stop in the concrete handle",
+      "Concrete key space and lookup semantics of the pool at creature+0x0D68",
+      "Runtime values of the position and quaternion returned by the creature+0xC0 slots"
+    ],
+    "ownership_boundary": "On the success path the function takes one reference on the new handle through vtable slot +0x00, publishes it in the pool slot and releases the displaced value through vtable slot +0x04, so the pool owns exactly one reference to whatever it stores. The function itself drops its own observation of the handle with Start using argument 0 and then Release, and returns the raw handle address without transferring a reference to its caller."
+  },
+  "evidence_provenance": [
+    {"tool": "ghidra_get_function_by_address", "address": "0x00c1d460", "observation": "Live function FUN_00c1d460 spans body_start 0x00c1d460 to body_end 0x00c1d5d3, confirming the exact target entry."},
+    {"tool": "ghidra_decompile_function", "address": "0x00c1d460", "observation": "Live decompilation exposes the service call, the pool replacement, the property block with flags 6 and count 2, the quaternion conversion and the Start and Release cleanup; it renders the handle as an unaff_EDI alias and the block as overlapping stack locals, which the disassembly resolves."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00c1d460", "observation": "121 instructions with RET 0x8, the three-guard replacement block, both flag and count update pairs, the MOVSD.REP 36-byte copy and the reload before the Release call."},
+    {"tool": "ghidra_read_memory", "address": "0x0168d988", "observation": "Twelve zero bytes, so the position seed is the zero vector and it is fully overwritten on the success path."},
+    {"tool": "ghidra_read_memory", "address": "0x01485720", "observation": "Bytes 00 00 80 3f decode to 0x3F800000, the binary32 value 1.0f used for the scale slot."},
+    {"tool": "ghidra_read_memory", "address": "0x01470f1c", "observation": "Bytes 00 00 00 40 decode to 0x40000000, the binary32 value 2.0f used as the conversion multiplier."},
+    {"tool": "ghidra_read_memory", "address": "0x0168d964", "observation": "Thirty-six zero bytes, confirming the rotation pre-fill is a zero matrix."},
+    {"tool": "ghidra_get_function_callers", "address": "0x00c1d460", "observation": "Four direct caller functions were reported."},
+    {"tool": "ghidra_get_function_callees", "address": "0x00c1d460", "observation": "Four direct callees, 0x0041cb40, 0x0059c190, 0x0067DDD0 and 0x00B76460, with no other direct call target."},
+    {"tool": "ghidra_get_function_xrefs", "address": "0x00c1d460", "observation": "Nine UNCONDITIONAL_CALL xrefs were reported, matching the four caller functions plus five unattributed sites."},
+    {"tool": "ghidra_decompile_function", "address": "0x00c1d5e0", "observation": "The immediate caller forwards its second and third stack words as the instance id and pool key, and invokes the neighbouring stop helper 0x00c17350 with the pool key."},
+    {"tool": "ghidra_decompile_function", "address": "0x0059c190", "observation": "The conversion reads four reals, computes nine expressions and dispatches the copy through 0x0041cb40; the component role labels in its rendering were re-derived from the byte stream."},
+    {"tool": "ghidra_disassemble_function", "address": "0x0059c190", "observation": "The nine expressions were decoded instruction by instruction from the MOVSS, MULSS, ADDSS and SUBSS stream, and the epilogue is a plain RET, confirming cdecl with no callee stack cleanup."},
+    {"tool": "ghidra_decompile_function", "address": "0x0041cb40", "observation": "A thiscall that copies exactly nine dwords, used for both the rotation pre-fill and the conversion output."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00b76460", "observation": "A thiscall with one callee-cleaned stack word returning the pool value slot at node+4, with an insert path used when the key is absent."},
+    {"tool": "ghidra_decompile_function", "address": "0x0067ddd0", "observation": "A two-instruction accessor returning the global at 0x015FD8E8."}
+  ],
+  "runtime_gates": [
+    "Observe a real service create in an original process to confirm the instance id and group id contract and whether the group id is ever non-zero.",
+    "Observe a real vtable slot +0x18 submission to learn the concrete property block layout and whether the pointer escapes.",
+    "Confirm the handle reference-count pair on a live effect, including whether Start with argument 0 can clear the out slot that the cleanup reloads.",
+    "Exercise the failure path with a service that returns false while writing a non-null handle, to confirm the Start and Release still run.",
+    "No original-process trace, differential run under Wine, or runtime validation has been performed."
+  ],
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/pkg13-c4-creature-wave3 reconstruction/staging/pkg13-c4-creature-wave3/creature_wave3.cpp reconstruction/staging/pkg13-c4-creature-wave3/creature_wave3_model_test.cpp",
+    "normal_test_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg13-c4-creature-wave3 reconstruction/staging/pkg13-c4-creature-wave3/creature_wave3.cpp reconstruction/staging/pkg13-c4-creature-wave3/creature_wave3_model_test.cpp -o /tmp/opencode/pkg13-c4-normal && /tmp/opencode/pkg13-c4-normal",
+    "ndebug_test_command": "clang++ -m32 -std=c++17 -DNDEBUG -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg13-c4-creature-wave3 reconstruction/staging/pkg13-c4-creature-wave3/creature_wave3.cpp reconstruction/staging/pkg13-c4-creature-wave3/creature_wave3_model_test.cpp -o /tmp/opencode/pkg13-c4-ndebug && /tmp/opencode/pkg13-c4-ndebug",
+    "optimization_sweep_command": "for m in -O0 -O2 -DNDEBUG and the combined -O2 -DNDEBUG and -O1 -g; do clang++ -m32 -std=c++17 $m -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg13-c4-creature-wave3 reconstruction/staging/pkg13-c4-creature-wave3/creature_wave3.cpp reconstruction/staging/pkg13-c4-creature-wave3/creature_wave3_model_test.cpp -o /tmp/opencode/c4-sweep && /tmp/opencode/c4-sweep; done",
+    "format_command": "clang-format --dry-run --Werror --style='{BasedOnStyle: Google, FixNamespaceComments: false}' reconstruction/staging/pkg13-c4-creature-wave3/creature_wave3.hpp reconstruction/staging/pkg13-c4-creature-wave3/creature_wave3.cpp reconstruction/staging/pkg13-c4-creature-wave3/creature_wave3_model_test.cpp",
+    "abi_command": "clang++ -m32 -std=c++17 -O2 -I reconstruction/staging/pkg13-c4-creature-wave3 -c reconstruction/staging/pkg13-c4-creature-wave3/creature_wave3.cpp -o /tmp/opencode/c4-abi.o && objdump -d --no-show-raw-insn /tmp/opencode/c4-abi.o",
+    "abi_expected": {
+      "Simulator_cCreatureBase_LocomotionWalkToInterior_00c1c5c0": "ret $0x14",
+      "QuaternionToMatrix3_0059c190": "ret",
+      "CopyMatrix3_0041cb40": "ret $0x4",
+      "Simulator_cCreatureBase_CreateAndStartPool2Effect_00c1d460": "ret $0x8"
+    },
+    "stack_balance_command": "a 200000-iteration loop calling both entries with instrumented ports, comparing ESP before the loop, after the first iteration and after the last",
+    "diff_command": "compare the disassembly-derived request store map against the model write map for 0x00c1c5c0 and the disassembly-derived property store map against the model for 0x00c1d460",
+    "json_check_command": "python3 -m json.tool reconstruction/metadata/pkg13-c4-creature-wave3/00c1d460.json",
+    "metadata_package_validation_command": "python3 reconstruction/staging/pkg13-c4-creature-wave3/metadata_package_validation.py",
+    "results": {
+      "x86_32_syntax": "passed",
+      "o0_focused_model_test": "passed",
+      "o2_focused_model_test": "passed",
+      "ndebug_focused_model_test": "passed",
+      "o2_ndebug_focused_model_test": "passed",
+      "o1_g_focused_model_test": "passed",
+      "clang_format_dry_run": "passed",
+      "abi_ret_14_and_ret_8": "passed",
+      "stack_balance_400k_calls": "passed",
+      "store_map_diff": "passed",
+      "json_check": "passed",
+      "metadata_package_validation": "passed"
+    },
+    "toolchain_note": "clang is the reference toolchain for these packages. GCC rejects __attribute__((thiscall)) on non-class function pointer types under -Wattributes, which is the same pre-existing behaviour as the reference package reconstruction/staging/pkg13-c3-creature-progression-wave2 and is therefore not a regression introduced here."
+  },
+  "blockers": [
+    "The concrete type, size and lifetime of the 56-byte property block remain runtime-gated.",
+    "The concrete dynamic type of the created handle and its reference-count contract remain runtime-gated.",
+    "Whether the cleanup reload can observe a handle changed by the Start callee is not modelled and remains runtime-gated.",
+    "The pool key space and the insert-versus-lookup behaviour of 0x00b76460 for absent keys remain runtime-gated."
+  ]
+}

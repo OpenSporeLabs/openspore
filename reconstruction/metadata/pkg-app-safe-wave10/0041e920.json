@@ -1,0 +1,129 @@
+{
+  "schema": "pkg-app-safe-wave10.function-handoff.v1",
+  "package": "PKG-APP-SAFE-WAVE10",
+  "subsystem": "App.PropertySlot",
+  "va": "0x0041e920",
+  "ghidra_name": "FUN_0041e920",
+  "normalized_symbol": "property_value_resolve_0041e920",
+  "semantic_label": "property slot value resolve: return the 0x015d115d sentinel for an unmodelled kind, the stored pointer for an indirect slot, the slot address for a direct slot, and null for a zero kind",
+  "declaration": "const unsigned char* __thiscall property_value_resolve_0041e920(const OpaquePropertySlot* slot)",
+  "abi": {
+    "architecture": "x86-32",
+    "calling_convention": "thiscall, receiver only, no stack arguments",
+    "receiver_register": "ECX",
+    "receiver_type": "const OpaquePropertySlot*",
+    "frame": "PUSH EBP / MOV EBP,ESP / SUB ESP,0x8; the receiver is spilled to EBP-0x8",
+    "stack_arguments": [],
+    "stack_cleanup_bytes": 0,
+    "ret_form": "RET",
+    "return_register": "EAX",
+    "return_width_bytes": 4,
+    "return_contract": "one of four values: the literal address 0x015d115d, the stored word at +0x00, the receiver itself, or zero; the branch merge lands at 0x0041e97d and exits at 0x0041e980",
+    "exit_count": 1
+  },
+  "observed_body": {
+    "entry": "0x0041e920",
+    "body_end_inclusive": "0x0041e981",
+    "instruction_count": 34,
+    "byte_length": 97,
+    "raw_bytes_sha256": "db76ac2a477dd3ef53d8dbe191d6929ad1dd8d44552f00cea54bdc1c61f5a315",
+    "raw_bytes_hex": "558bec83ec08894df88b45f80fb7481283f901740c8b55f80fb7421283f81075378b4df80fb7511083e230740c8b45f88b08894dfceb1ceb138b55f80fb7421285c074088b4df8894dfceb07c745fc000000008b45fceb05b85d115d018be55dc3",
+    "instruction_list": [
+      "0x0041e92c MOVZX ECX,word ptr [EAX+0x12] / CMP ECX,0x1 / JZ 0x0041e941  (kind 1 is modelled)",
+      "0x0041e938 MOVZX EAX,word ptr [EDX+0x12] / CMP EAX,0x10 / JNZ 0x0041e978  (any other kind takes the sentinel)",
+      "0x0041e944 MOVZX EDX,word ptr [ECX+0x10] / AND EDX,0x30  (storage mask 0x0030)",
+      "0x0041e94b JZ 0x0041e959 / MOV EAX,[EAX] / MOV [EBP-0x4],ECX  (indirect: return the stored pointer)",
+      "0x0041e959 MOVZX EAX,word ptr [EDX+0x12] / TEST EAX,EAX / JZ 0x0041e96c  (kind zero)",
+      "0x0041e964 MOV ECX,[EBP-0x8] / MOV [EBP-0x4],ECX  (direct: return the slot address)",
+      "0x0041e96c MOV [EBP-0x4],0x0  (null result)",
+      "0x0041e978 MOV EAX,0x15d115d  (sentinel immediate)"
+    ],
+    "direct_callee_calls": []
+  },
+  "mechanics": [
+    "read the kind halfword at +0x12 as a zero extended 16 bit value",
+    "treat kind 0x0001 and kind 0x0010 as modelled and every other kind as unmodelled",
+    "return the literal sentinel address 0x015d115d for any unmodelled kind",
+    "for a modelled kind read the flags halfword at +0x10 and mask it with 0x0030",
+    "when the masked storage bits are nonzero return the pointer stored at +0x00",
+    "when the masked storage bits are zero and the kind is nonzero return the receiver address itself",
+    "when the masked storage bits are zero and the kind is zero return null",
+    "no receiver field is ever written"
+  ],
+  "ports": [],
+  "globals_read": [
+    "0x015d115d (unmodelled property sentinel, returned as a literal address)"
+  ],
+  "runtime_gates": [
+    "runtime validation not performed; static decompilation and disassembly only",
+    "the sentinel address 0x015d115d is a .data address returned to the caller as a marker; its runtime identity is not established",
+    "the meaning of the storage mask 0x0030 and of the kind values 0x0001 and 0x0010 is inferred from the compare immediates only",
+    "the opaque +0x04..+0x0f region of the slot is never read, so no field evidence exists for it",
+    "no vtable or callee is involved, so no dependency port was introduced"
+  ],
+  "phase": "integrated",
+  "review_status": "reviewed_static_semantic_abi_and_runtime_lifecycle",
+  "runtime_validation": 0,
+  "worker_ownership": "pkg-app-safe-wave10-target-only",
+  "ghidra_provenance": {
+    "ghidra_program": "SporeApp.exe",
+    "ghidra_project": "SporeProject",
+    "ghidra_mutated": false,
+    "ghidra_saved": false,
+    "binary": "SPORE/SporeBin/SporeApp.exe",
+    "version": "3.1.0.22",
+    "architecture": "x86:LE:32",
+    "image_base": "0x00400000",
+    "captured_on": "2026-09-25",
+    "tools": [
+      "ghidra_get_function_by_address",
+      "ghidra_disassemble_function",
+      "ghidra_get_current_program_info"
+    ],
+    "evidence_rule": "The disassembly listed in observed_body was read back from the live Ghidra database for SporeApp.exe at the addresses shown, and the byte extent was read from the .text section of SPORE/SporeBin/SporeApp.exe (.text VMA 0x00401000, file offset 0x400). The sha256 below covers exactly that byte extent. No Ghidra symbol, structure, comment or program state was created or modified."
+  },
+  "implementation": {
+    "status": "promoted to canonical",
+    "canonical_status": "present; promoted by the sole integrator in batch-2026-09-25-wave10-safe-core",
+    "namespace": "openspore::reconstruction::pkg_app_safe_wave10",
+    "header": "src/reconstruction/pkg_app_safe_wave10/app_safe_wave10.hpp",
+    "source": "src/reconstruction/pkg_app_safe_wave10/app_safe_wave10.cpp",
+    "model_test": "src/reconstruction/pkg_app_safe_wave10/app_safe_wave10_model_test.cpp",
+    "staged_from": "reconstruction/staging/pkg-app-safe-wave10",
+    "metadata": "reconstruction/metadata/pkg-app-safe-wave10/0041e920.json"
+  },
+  "model_test_cases": [
+    "test_property_resolve_mask_edges",
+    "test_property_resolve_reads_a_half_word",
+    "test_property_resolve_self_and_sentinel",
+    "test_property_resolve_stored_values",
+    "test_property_sentinel_address"
+  ],
+  "focused_test_evidence": {
+    "command": "clang++ -m32 -std=c++17 -O0/-O2 [-DNDEBUG] -Wall -Wextra -Wpedantic -Werror -I <canonical dir> <source> <model test> && <binary>",
+    "configurations": [
+      "-O0",
+      "-O2",
+      "-O0 -DNDEBUG",
+      "-O2 -DNDEBUG"
+    ],
+    "normal": "passed at -O0 and at -O2",
+    "ndebug": "passed at -O0 -DNDEBUG and at -O2 -DNDEBUG",
+    "assertions_weakened": 0,
+    "assertions_removed": 0,
+    "test_count": 5,
+    "compiled_ret_form_matches_ghidra": true
+  },
+  "helper_and_data_vas_not_promoted": [
+    "0x00571db0",
+    "0x00e30f90",
+    "0x00f47380",
+    "0x008105b0",
+    "0x005c29c0",
+    "0x005507a0",
+    "0x0067dcc0",
+    "0x00b3d240",
+    "0x00b3d3c0",
+    "0x011e0744"
+  ]
+}

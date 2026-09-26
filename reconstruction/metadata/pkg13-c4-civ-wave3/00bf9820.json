@@ -1,0 +1,194 @@
+{
+  "schema": "pkg13-c4-civ-wave3.function-handoff.v1",
+  "package": "PKG-13-C4-CIV-WAVE3",
+  "function_address": "0x00bf9820",
+  "ghidra_name": "FUN_00bf9820",
+  "normalized_symbol": "culture_selection_00bf9820",
+  "binary": {
+    "program": "SporeApp.exe",
+    "version": "3.1.0.22",
+    "architecture": "x86:LE:32",
+    "image_base": "0x00400000"
+  },
+  "phase": "body-reconstruction",
+  "status": "implemented in worker-owned staging",
+  "staging_paths": [
+    "reconstruction/staging/pkg13-c4-civ-wave3/civ_wave3.hpp",
+    "reconstruction/staging/pkg13-c4-civ-wave3/civ_wave3.cpp",
+    "reconstruction/staging/pkg13-c4-civ-wave3/civ_wave3_model_test.cpp"
+  ],
+  "declaration": "void __thiscall culture_selection_00bf9820(OpaqueCultureSelection* selection)",
+  "abi": {
+    "architecture": "x86-32",
+    "calling_convention": "thiscall-like",
+    "hidden_this_register": "ECX",
+    "hidden_this_type": "OpaqueCultureSelection* selection",
+    "ordinary_stack_arguments": [],
+    "stack_frame_bytes": 32,
+    "return_register": "EAX",
+    "return_type": "void",
+    "termination": "plain RET",
+    "saved_registers": ["EBX", "EBP", "ESI", "EDI"]
+  },
+  "sdk_boundary": {
+    "sdk_name": "Simulator::cCultureSet::PickCreation",
+    "sdk_address": "0x00bf9840",
+    "offset_from_target": "0x20",
+    "classification": "interior",
+    "claim": "The SDK label is not the reconstructed function boundary."
+  },
+  "mechanics": {
+    "state_contract": {
+      "city_vector_begin_offset": "0x9c",
+      "city_vector_end_offset": "0xa0",
+      "city_culture_ptr_offset": "0x468",
+      "mode_offset": "0x298",
+      "wait_gate_flag_offset": "0x93",
+      "finish_context_offset": "0x1c8",
+      "culture_storage": "CultureIntrusivePtr is a separate 4-byte wrapper and is not an alias of the city vector or opaque city state."
+    },
+    "execution_order": [
+      "Read the city vector span and return when span AND 0xfffffffc is zero.",
+      "Read the first city element and return when it is null.",
+      "Obtain the current root and current player through ECX receiver ports; when the player exists, obtain phase source from root and phase score from that source, then compare current score with selection score and clear the old culture with store-null then Release when current score is less than or equal.",
+      "When the old culture is null or unavailable and flag +0x93 is zero, call the wait port with selection+0x1c8 and return when its high word is zero and its low word is at most 0x2710.",
+      "Clear +0x93 and call 0x00b21340 with ECX=root and five stack words, receiving a pointer to opaque_0/begin+0x04/end+0x08 storage through the RET14 contract.",
+      "For each candidate, skip null or unavailable candidates; for the primary filter, call candidate+0x34 vtable+0x2c(-1), obtain input manager 0x00b3d350, normalize through 0x00b88590, and pass the vector pointer plus 16-bit result to 0x00bf00a0. For the secondary filter, call candidate+0x34 vtable+0x2c(-1) again and directly call 0x00beff90 with ECX=selection, the candidate result pointer, and 0xffffffff; do not call input manager or vector normalization on this path.",
+      "Count matching city ownership and skip candidates with a count of three or more.",
+      "Score each remaining candidate with the opaque city score port, using multiplier 200 for the old culture and 100 otherwise; replace the selected candidate only when the score is strictly greater, preserving the first candidate on a tie.",
+      "When selected_culture is null, skip the city-selection loop and go directly to the final culture pointer/finish path.",
+      "Otherwise call 0x00b25ca0 with ECX=root, receive its pointer range, apply the mode-dependent current/position match ports, and select the highest strictly increasing city score.",
+      "When the final guard passes, call the candidate+0x34 vtable result with zero plus the switch mode to obtain a pointer to a three-float vector, obtain 0x00b3d350, normalize the vector pointer through 0x00b88590 to a 16-bit result, call 0x00bd81d0 on the selected city, and pass zero plus the vector pointer, normalized result, and city result to the four-stack-word try-commit port before the intrusive replacement.",
+      "At the culture commit boundary, if the selected intrusive pointer differs from the stored pointer, AddRef the new candidate, store the new pointer at +0x468, then Release the old pointer.",
+      "Call the finish port with selection+0x1c8 on every non-early path and on the current-score clear path."
+    ],
+    "scoring": {
+      "candidate_tie_rule": "strict greater-than; first candidate wins an exact tie",
+      "city_tie_rule": "strict greater-than; first city wins an exact tie",
+      "candidate_multiplier_old": 200,
+      "candidate_multiplier_new": 100,
+      "candidate_penalty": "the opaque score port receives the matching-city count",
+      "mode_one": "current-match port only",
+      "mode_two_or_higher": "current-match port, then position-match port when current match fails"
+    },
+    "early_guards": [
+      "Empty city vector and null first city return before current-root access.",
+      "Current-score clear path returns after null-store and old Release.",
+      "Low 64-bit wait values at or below 0x2710 return before candidate enumeration.",
+      "Unavailable candidates and candidates rejected by both mode-dependent filters are skipped.",
+      "Candidates with matching-city count at least three are skipped.",
+      "A selected city that fails the final mode-dependent match does not call the opaque try-commit port, but the final intrusive commit boundary is still reached.",
+      "When selected_culture is null, the city-selection loop is not entered and execution reaches the final pointer/finish path."
+    ],
+    "port_abi": {
+      "current_root": {"callee": "0x00b3d300", "receiver": null, "stack_words": 0, "return": "RET"},
+      "current_player": {"callee": "0x00b25fb0", "receiver": "root", "stack_words": 0, "return": "RET"},
+      "phase_source": {"callee": "0x00f67d90", "receiver": "root", "stack_words": 0, "return": "RET"},
+      "phase_score": {"callee": "0x00c75420", "receiver": "phase_source", "stack_words": 0, "return": "RET"},
+      "current_score": {"callee": "0x00bf7150", "receiver": "player_or_selection", "stack_words": 0, "return": "RET"},
+      "candidate_available": {"callee": "0x00bfdf80", "receiver": "candidate", "stack_words": 0, "return": "RET"},
+      "candidate_result": {
+        "callee": "candidate+0x34 vtable+0x2c",
+        "native_receiver": "candidate+0x34 in ECX",
+        "native_stack_words": "0, 1, or 2 depending on the call site",
+        "native_stack_cleanup": "caller-managed; the live candidate-result call is immediately followed by a variably sized thiscall operation without an intervening ADD ESP",
+        "native_return_type": "const CultureVectorResult*",
+        "port_adapter": "C ABI with explicit receiver, filter argument, switch mode, and include-switch flag so the nonstandard native variadic ECX convention remains representable in C++17"
+      },
+      "input_manager": {"callee": "0x00b3d350", "receiver": null, "stack_words": 0, "return": "RET"},
+      "vector_result": {"callee": "0x00b88590", "receiver": "input_manager", "stack_words": 1, "argument_type": "const CultureVectorResult*", "return_type": "uint16_t", "return": "RET4"},
+      "city_context": {"callee": "0x00bd81d0", "receiver": "selected_city", "stack_words": 0, "return": "RET"},
+      "wait": {"callee": "0x00bc3190", "receiver": "selection+0x1c8", "stack_words": 0, "return": "RET"},
+      "candidate_query": {"callee": "0x00b21340", "receiver": "root", "stack_words": 5, "return": "pointer", "callee_ret": "RET 0x14", "storage": "opaque_0, begin+0x04, end+0x08"},
+      "city_query": {"callee": "0x00b25ca0", "receiver": "root", "stack_words": 0, "return": "pointer", "storage": "begin+0x00, end+0x04"},
+      "primary_filter": {"callee": "0x00bf00a0", "receiver": "selection", "stack_words": 2, "return": "RET8", "arguments": "const CultureVectorResult* candidate result and uint16_t normalized vector result"},
+      "secondary_filter": {"callee": "0x00beff90", "receiver": "selection", "stack_words": 2, "return": "RET8", "arguments": "const CultureVectorResult* candidate result and uint32_t 0xffffffff"},
+      "try_commit": {"callee": "0x00bf0c60", "receiver": "selection", "stack_words": 4, "return": "RET 0x10", "arguments": "uint32_t zero, const CultureVectorResult* candidate result, uint16_t normalized vector result, and uint32_t bd81d0 city result"},
+      "finish": {"callee": "0x00bc3130", "receiver": "selection+0x1c8", "stack_words": 0, "return": "RET"}
+    },
+    "ownership": {
+      "city": "The opaque selection state and separate opaque culture-city records are not merged.",
+      "live_state": "No live-state object is read or written by this target.",
+      "city_data": "No city-data object is read or written by this target.",
+      "culture": "Only the separate CultureIntrusivePtr at selection+0x468 is replaced through AddRef, store, Release order."
+    }
+  },
+  "direct_callers": [
+    {"address": "0x00bfbbf0", "role": "culture selection caller"}
+  ],
+  "direct_callees": [
+    {"address": "0x00b21340", "role": "five-stack-word candidate query with pointer range return and RET14"},
+    {"address": "0x00b25ca0", "role": "pointer-returning city ownership enumeration wrapper"},
+    {"address": "0x00b25fb0", "role": "current player/civilization accessor"},
+    {"address": "0x00b3d300", "role": "current root provider"},
+    {"address": "0x00b3d350", "role": "input manager provider"},
+    {"address": "0x00b88590", "role": "three-float vector pointer to 16-bit direction-index normalizer with RET4"},
+    {"address": "0x00bc3130", "role": "finish context"},
+    {"address": "0x00bc3190", "role": "wait gate"},
+    {"address": "0x00bd81d0", "role": "selected city context result"},
+    {"address": "0x00bd8210", "role": "current candidate identity"},
+    {"address": "0x00beff90", "role": "secondary candidate filter"},
+    {"address": "0x00bf00a0", "role": "primary candidate filter"},
+    {"address": "0x00bf0c60", "role": "try-commit gate"},
+    {"address": "0x00bfdf80", "role": "candidate availability"},
+    {"address": "0x00bf7150", "role": "current score"}
+  ],
+  "evidence": [
+    {"tool": "ghidra_get_function_by_address", "address": "0x00bf9820", "observation": "Function range is 0x00bf9820 through 0x00bf9e6d; the next boundary is 0x00bf9e70."},
+    {"tool": "ghidra_decompile_function", "address": "0x00bf9820", "observation": "The ECX-only body shows the vector guard, current-score clear, wait gate, candidate and city scoring, final gate, and intrusive replacement."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00bf9820", "observation": "The prologue saves ECX in ESI, allocates 0x20 bytes, has no ordinary stack argument loads, and ends with a plain RET. The primary filter passes the normalized candidate result to 0x00bf00a0, while 0x00bf9995..0x00bf99a7 calls candidate+0x34 vtable+0x2c(-1) and then directly calls 0x00beff90 with the candidate result and 0xffffffff."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00b88590", "observation": "The ECX input manager and stack pointer are used to load three consecutive floats, EAX receives a zero-extended 16-bit lookup result, and the function ends with RET4."},
+    {"tool": "ghidra_get_function_callers", "address": "0x00bf9820", "observation": "The live query returned one direct caller at 0x00bfbbf0."},
+    {"tool": "ghidra_get_function_callees", "address": "0x00bf9820", "observation": "The live direct-callee set contains the root, player, candidate, city, filter, score, commit, and finish helpers recorded above."}
+  ],
+  "tests": {
+    "path": "reconstruction/staging/pkg13-c4-civ-wave3/civ_wave3_model_test.cpp",
+    "coverage": [
+      "empty city-vector and null-first-element guards",
+      "current-score clear with null-store and Release",
+      "low wait-value early return",
+      "mode-dependent primary filter with candidate-result adapter, input manager, and 16-bit vector-normalization port",
+      "direct secondary 0x00beff90 call with candidate result and 0xffffffff, without normalization",
+      "filter and commit candidate-result argument arity, vector pointer, 16-bit normalized result, bd81d0 city result, and four-word try-commit order",
+      "strict candidate and city tie handling",
+      "final current/position commit gate",
+      "AddRef-store-Release replacement order observed through vtable callbacks",
+      "same-candidate no-op refcount behavior",
+      "ECX selection+0x1c8 wait and finish receivers",
+      "five-stack-word candidate query with pointer range storage",
+      "pointer-returning city query storage",
+      "null selected-culture gate skips city matching",
+      "separate CultureIntrusivePtr and opaque city records"
+    ],
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/pkg13-c4-civ-wave3 reconstruction/staging/pkg13-c4-civ-wave3/civ_wave3.cpp reconstruction/staging/pkg13-c4-civ-wave3/civ_wave3_model_test.cpp",
+    "normal_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg13-c4-civ-wave3 reconstruction/staging/pkg13-c4-civ-wave3/civ_wave3.cpp reconstruction/staging/pkg13-c4-civ-wave3/civ_wave3_model_test.cpp -o /tmp/opencode/pkg13-c4-civ-wave3-o0 && /tmp/opencode/pkg13-c4-civ-wave3-o0",
+    "o2_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg13-c4-civ-wave3 reconstruction/staging/pkg13-c4-civ-wave3/civ_wave3.cpp reconstruction/staging/pkg13-c4-civ-wave3/civ_wave3_model_test.cpp -o /tmp/opencode/pkg13-c4-civ-wave3-o2 && /tmp/opencode/pkg13-c4-civ-wave3-o2",
+    "ndebug_command": "clang++ -m32 -std=c++17 -O2 -DNDEBUG -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg13-c4-civ-wave3 reconstruction/staging/pkg13-c4-civ-wave3/civ_wave3.cpp reconstruction/staging/pkg13-c4-civ-wave3/civ_wave3_model_test.cpp -o /tmp/opencode/pkg13-c4-civ-wave3-ndebug && /tmp/opencode/pkg13-c4-civ-wave3-ndebug",
+    "format_command": "clang-format --dry-run --Werror --style='{BasedOnStyle: Google, FixNamespaceComments: false}' reconstruction/staging/pkg13-c4-civ-wave3/civ_wave3.hpp reconstruction/staging/pkg13-c4-civ-wave3/civ_wave3.cpp reconstruction/staging/pkg13-c4-civ-wave3/civ_wave3_model_test.cpp",
+    "results": {
+      "syntax": "passed",
+      "o0": "passed",
+      "o2": "passed",
+      "ndebug": "passed",
+      "compiled_abi": "passed",
+      "format": "passed",
+      "json": "passed",
+      "diff": "passed"
+    },
+    "runtime_validation": 0
+  },
+  "unresolved": [
+    "The selection, culture candidate, culture city, player, score, and filter layouts remain opaque.",
+    "The SDK return type for the interior PickCreation label is not promoted to the containing function's return ABI.",
+    "Opaque score-port arithmetic and native commit side effects are outside this target."
+  ],
+  "static_vs_runtime_boundary": {
+    "static": "The exact 0x00bf9820 boundary, ECX-only ABI, guards, strict tie rules, pointer-returning candidate-result values, 16-bit vector normalization, and AddRef-store-Release order are fixed by live Ghidra evidence.",
+    "runtime": "No original-process execution or pointer-validity trace was performed.",
+    "claims_not_made": [
+      "semantic names for opaque score and filter ports",
+      "live-state or city-data ownership",
+      "runtime behavior of opaque commit helpers"
+    ]
+  }
+}

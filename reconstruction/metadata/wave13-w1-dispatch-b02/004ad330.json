@@ -1,0 +1,420 @@
+{
+ "schema": "openspore-worker-metadata-1",
+ "package": "wave13-w1-dispatch-b02",
+ "va": "0x004ad330",
+ "address": "0x004ad330",
+ "function_address": "0x004ad330",
+ "entry_address": "0x004ad330",
+ "ghidra_name": "FUN_004ad330",
+ "normalized_symbol": "teardown_004ad330",
+ "reconstructed_symbol": "FUN_004ad330_teardown",
+ "declaration": "extern \"C\" void FUN_004ad330_teardown(openspore::wave13::b02::TeardownTargetPartial* self);",
+ "source_files": [
+  "reconstruction/staging/wave13-w1-dispatch-b02/b4ad330_teardown_004ad330.cpp",
+  "reconstruction/staging/wave13-w1-dispatch-b02/b4ad330_teardown_004ad330.hpp"
+ ],
+ "observed_original_abi": {
+  "architecture": "x86-32",
+  "calling_convention": "__fastcall (register argument in ECX, no stack arguments)",
+  "calling_convention_observation": "PUSH EBP; MOV EBP,ESP; SUB ESP,0xc at 0x004ad330..0x004ad333, then MOV dword ptr [EBP - 0xc],ECX at 0x004ad336 spills the incoming ECX. The epilogue is MOV ESP,EBP; POP EBP; RET at 0x004ad365..0x004ad368, a bare C3 with no immediate, and the only PUSH in the body (0x004ad35c, the owner word for 0x004b9570) is discarded by the MOV ESP,EBP rather than popped, because 0x004b9570 ends with RET 0x4. No callsite pushes anything for this function, which is consistent with a register-only argument.",
+  "return_type": "void",
+  "return_semantics": "no value; EAX is never written on any path",
+  "return_register": "none",
+  "return_width_bytes": 0,
+  "return_observation": "the last write to EAX is 0x004ad353 MOV EAX,dword ptr [EDX + 0x30], a reload of the member that is immediately stored to [EBP - 0x8]; nothing survives to the epilogue",
+  "ret_form": "RET",
+  "termination": "two paths, both through 0x004ad365: the JZ at 0x004ad34e and the fall-through after 0x004b9570",
+  "stack_cleanup_bytes": 0,
+  "stack_cleanup_owner": "callee",
+  "stack_arguments": [],
+  "ordinary_stack_argument_slots": 0,
+  "saved_registers": [],
+  "saved_registers_observation": "no register is pushed; only EBP is saved, and it is restored by the epilogue",
+  "receiver": true,
+  "hidden_receiver": "ECX",
+  "hidden_this_register": "ECX is spilled to [EBP - 0xc] at 0x004ad336 and reloaded twice, at 0x004ad339 for the 0x004ad280 call and at 0x004ad341 for the field_30 read; it is also pushed at 0x004ad35c as 0x004b9570's second argument",
+  "frame": "SUB ESP,0xc, three 4-byte spill slots at [EBP-0x4], [EBP-0x8] and [EBP-0xc]"
+ },
+ "layout": {
+  "entry_address": "0x004ad330",
+  "body_start": "0x004ad330",
+  "body_end": "0x004ad368",
+  "body_span_bytes": 57,
+  "body_bytes_hex": null,
+  "instruction_count": 21,
+  "instructions_note": "Full listing read with ghidra_disassemble_function and reproduced instruction by instruction in observed_mechanics.",
+  "frame_shape": "0xc bytes, three spill slots, EBP only",
+  "padding_after": "0x004ad369 onward not read",
+  "reads": "ECX on entry, spilled to [EBP - 0xc]; [EAX + 0x30] at 0x004ad344 and again at 0x004ad353",
+  "writes": "three stack spill slots only: [EBP - 0x4] at 0x004ad347, [EBP - 0x8] at 0x004ad356 and [EBP - 0xc] at 0x004ad336. The target writes no field of the receiver and no global."
+ },
+ "observed_mechanics": [
+  "0x004ad330: PUSH EBP",
+  "0x004ad331: MOV EBP,ESP",
+  "0x004ad333: SUB ESP,0xc",
+  "0x004ad336: MOV dword ptr [EBP - 0xc],ECX -- the receiver arrives in ECX and is spilled because both callees need ECX",
+  "0x004ad339: MOV ECX,dword ptr [EBP - 0xc] -- first reload",
+  "0x004ad33c: CALL 0x004ad280 -- unconditional, with no null check on the receiver",
+  "0x004ad341: MOV EAX,dword ptr [EBP - 0xc] -- second reload",
+  "0x004ad344: MOV ECX,dword ptr [EAX + 0x30] -- the single member the target reads",
+  "0x004ad347: MOV dword ptr [EBP - 0x4],ECX -- spilled for the test",
+  "0x004ad34a: CMP dword ptr [EBP - 0x4],0x0",
+  "0x004ad34e: JZ 0x004ad365 -- the only branch in the body; a null member skips the finalisation and goes straight to the epilogue",
+  "0x004ad350: MOV EDX,dword ptr [EBP - 0xc]",
+  "0x004ad353: MOV EAX,dword ptr [EDX + 0x30] -- the member is re-read into a second spill slot rather than reusing [EBP - 0x4]",
+  "0x004ad356: MOV dword ptr [EBP - 0x8],EAX",
+  "0x004ad359: MOV ECX,dword ptr [EBP - 0xc]",
+  "0x004ad35c: PUSH ECX -- the receiver becomes 0x004b9570's second argument",
+  "0x004ad35d: MOV ECX,dword ptr [EBP - 0x8] -- ECX becomes the member, so 0x004b9570 is __thiscall on the member",
+  "0x004ad360: CALL 0x004b9570",
+  "0x004b95bb: 0x004b9570 ends with RET 0x4, so it pops the owner word itself; the target's MOV ESP,EBP then discards nothing",
+  "no instruction in 0x004b9570 touches [EBP + 0x8], so the owner argument is passed and never read",
+  "0x004ad365: MOV ESP,EBP; 0x004ad367: POP EBP; 0x004ad368: RET",
+  "ghidra_get_xrefs_to(0x004ad330) returns 13 references and every one is UNCONDITIONAL_CALL; there is no data reference, so this address is not a vtable entry and no owning class can be inferred from it",
+  "ghidra_disassemble_function(0x004ad280) shows the callee makes two virtual calls on the receiver, at vtable slots +0x00 (0x004ad296/0x004ad298) and +0x08 (0x004ad2a7/0x004ad2aa), each with the single stack argument 0x013ec468, then walks a pointer vector at receiver+0x18 with count ([+0x1c] - [+0x18]) >> 2 calling 0x00451400 on each element's first dword, then calls 0x00454280(begin, end, end). It never nulls the vector or field_30.",
+  "ghidra_read_memory at 0x013ec468 returns 00000000 3eaaaa9f 00000000 00000000 3d4ccccd 3e4ccccd beb33333, so the argument to both virtual calls is a pointer to a static float table (0.0, 1/3, 0.0, 0.0, 0.05, 0.2, 0.35) and NOT a type descriptor",
+  "0x00587e00..0x00587e15 (Editors::cEditor::OnExit) calls 0x004ad280 on [ESI + 0x98] and then 0x004ad330 on the same object, then performs an inline refcount decrement at object+4 and a virtual slot +0x00 call with argument 1 when the count reaches zero",
+  "0x00576d2e..0x00576d6a (Editors::cEditor::Dispose) shows the same shape on [ESI + 0x98] and then on [ESI + 0x9c]: null check, this call, store zero back into the field, DEC the dword at object+4, and on reaching zero set it to 1 and call vtable slot +0x00 with argument 1"
+ ],
+ "fields_and_offsets": [
+  {
+   "offset": "+0x00",
+   "width": 4,
+   "meaning": "vtable; read by 0x004ad280 at slots +0x00 and +0x08",
+   "proved_by": "0x004ad291/0x004ad296 and 0x004ad2a2/0x004ad2a7 inside the callee, not the target",
+   "confidence": "OBSERVED",
+   "note": "read in the callee"
+  },
+  {
+   "offset": "+0x18",
+   "width": 4,
+   "meaning": "start of a pointer vector destroyed by 0x004ad280",
+   "proved_by": "0x004ad2b6 ADD ECX,0x18 and 0x004ad2e3 MOV EDX,dword ptr [ECX + 0x18] inside the callee",
+   "confidence": "OBSERVED",
+   "note": "read in the callee"
+  },
+  {
+   "offset": "+0x1c",
+   "width": 4,
+   "meaning": "end of that vector",
+   "proved_by": "0x004ad2c2 MOV ECX,dword ptr [EDX + 0x4] with EDX = receiver + 0x18, inside the callee",
+   "confidence": "OBSERVED",
+   "note": "read in the callee"
+  },
+  {
+   "offset": "+0x30",
+   "width": 4,
+   "meaning": "a pointer member that is finalised only when non-null; the target's own null test",
+   "proved_by": "0x004ad344 MOV ECX,dword ptr [EAX + 0x30]; 0x004ad34a CMP dword ptr [EBP - 0x4],0x0; 0x004ad34e JZ 0x004ad365; 0x004ad353 MOV EAX,dword ptr [EDX + 0x30]",
+   "confidence": "OBSERVED"
+  }
+ ],
+ "constants": [
+  {
+   "value": "0x00000030",
+   "address": "0x004ad344",
+   "meaning": "the byte offset of the only member the target reads"
+  },
+  {
+   "value": "0x00000000",
+   "address": "0x004ad34a",
+   "meaning": "the null test on that member; JZ skips the finalisation"
+  },
+  {
+   "value": "0x00000000",
+   "address": "0x004ad333",
+   "meaning": "the frame size in bytes, 0xc"
+  },
+  {
+   "value": "0x013ec468",
+   "address": "0x004ad280 (callee)",
+   "meaning": "the address pushed as the single argument to both of the callee's virtual calls; it is a static float table, not a type descriptor"
+  }
+ ],
+ "globals": [
+  {
+   "address": "0x013ec468",
+   "name": "static float table",
+   "access": "read by the callee 0x004ad280, twice",
+   "observed_value": "ghidra_read_memory returns 00000000 3eaaaa9f 00000000 00000000 3d4ccccd 3e4ccccd beb33333, i.e. floats 0.0, 1/3, 0.0, 0.0, 0.05, 0.2, 0.35",
+   "note": "the target itself reads no global"
+  }
+ ],
+ "virtual_dispatch": [],
+ "virtual_dispatch_note": "The target contains no indirect call. Two virtual calls exist one level down inside 0x004ad280, at receiver vtable slots +0x00 and +0x08, each receiving the single stack argument 0x013ec468. Their concrete callees were not resolved because no vtable for the receiver's class was located.",
+ "control_flow": {
+  "shape": "a straight line with exactly one conditional branch",
+  "loops": [],
+  "early_exits": [
+   "0x004ad34e JZ 0x004ad365 -- a null field_30 skips 0x004b9570 and exits"
+  ],
+  "branch_polarity": [
+   "0x004ad34a CMP dword ptr [EBP - 0x4],0x0 / 0x004ad34e JZ 0x004ad365: zero means 'no member to finalise'",
+   "there is no null check on the receiver itself; 0x004ad280 is called unconditionally and would fault on a null receiver"
+  ],
+  "reachability": "ghidra_get_xrefs_to reports 13 references, all UNCONDITIONAL_CALL, and ghidra_get_function_callers-relevant callers all guard the call with their own null test, so the receiver is non-null at every recorded site"
+ },
+ "callers_evidence": [
+  {
+   "callsite": "0x00587e15",
+   "caller": "0x00587a20 (Editors::cEditor::OnExit)",
+   "form": "CALL, no argument pushed",
+   "receiver_setup": "0x00587e00 MOV ECX,dword ptr [ESI + 0x98]; 0x00587e06 CMP ECX,EBX with EBZ as zero; 0x00587e08 JZ skip",
+   "result_use": "void; the caller then reloads [ESI + 0x98], stores zero into it, decrements the dword at object+4 and, on reaching zero, sets it to 1 and calls vtable slot +0x00 with argument 1",
+   "significance": "the surrounding refcount protocol is the classic Release shape, and this call is the explicit teardown that precedes it"
+  },
+  {
+   "callsite": "0x00587e57",
+   "caller": "0x00587a20 (Editors::cEditor::OnExit)",
+   "form": "CALL",
+   "receiver_setup": "0x00587e42 MOV ECX,dword ptr [ESI + 0x9c]; 0x00587e48/0x00587e4a null check",
+   "result_use": "void; the same inline refcount decrement follows",
+   "significance": "the second of two adjacent refcounted members released the same way"
+  },
+  {
+   "callsite": "0x00576d38",
+   "caller": "0x00576c50 (Editors::cEditor::Dispose)",
+   "form": "CALL",
+   "receiver_setup": "0x00576d2e MOV ECX,dword ptr [ESI + 0x98]; 0x00576d34/0x00576d36 null check",
+   "result_use": "void; 0x00576d4a stores zero into [ESI + 0x98] and 0x00576d4d..0x00576d68 performs the refcount decrement and the virtual destroy on zero",
+   "significance": "Dispose and OnExit use the identical release sequence, differing only in which member"
+  },
+  {
+   "callsite": "0x00576d74",
+   "caller": "0x00576c50 (Editors::cEditor::Dispose)",
+   "form": "CALL",
+   "receiver_setup": "0x00576d6a MOV ECX,dword ptr [ESI + 0x9c]; 0x00576d70/0x00576d72 null check",
+   "result_use": "void; the same decrement follows"
+  },
+  {
+   "callsite": "0x00586bf7",
+   "caller": "0x00586b00 (Editors::cEditor::SetEditorModel)",
+   "form": "CALL",
+   "receiver_setup": "not disassembled",
+   "result_use": "not inspected"
+  },
+  {
+   "callsite": "0x0040d3b5 and 0x0040e58e",
+   "caller": "0x0040d2d0",
+   "form": "CALL",
+   "receiver_setup": "not disassembled",
+   "result_use": "not inspected"
+  },
+  {
+   "callsite": "0x0046da80",
+   "caller": "0x0046d840",
+   "form": "CALL",
+   "receiver_setup": "not disassembled",
+   "result_use": "not inspected"
+  },
+  {
+   "callsite": "0x004aba1f",
+   "caller": "0x004aba00",
+   "form": "CALL",
+   "receiver_setup": "not disassembled",
+   "result_use": "not inspected"
+  },
+  {
+   "callsite": "0x00585c40",
+   "caller": "0x00585c10",
+   "form": "CALL",
+   "receiver_setup": "not disassembled",
+   "result_use": "not inspected"
+  },
+  {
+   "callsite": "0x005f422e",
+   "caller": "0x005f40b0",
+   "form": "CALL",
+   "receiver_setup": "not disassembled",
+   "result_use": "not inspected"
+  },
+  {
+   "callsite": "0x0057f6dd",
+   "caller": "0x0057f6c0",
+   "form": "CALL",
+   "receiver_setup": "not disassembled",
+   "result_use": "not inspected"
+  },
+  {
+   "callsite": "0x0057df35",
+   "caller": "0x0057d710",
+   "form": "CALL",
+   "receiver_setup": "not disassembled",
+   "result_use": "not inspected"
+  }
+ ],
+ "callees_evidence": [
+  {
+   "va": "0x004ad280",
+   "form": "__fastcall, receiver in ECX",
+   "name": "unresolved",
+   "read_body": true,
+   "operation": "PUSH 0x13ec468; MOV EAX,[EAX]; MOV EAX,[EDX]; CALL EAX -- virtual slot +0x00 with ECX = the receiver and the address 0x013ec468 as the stack argument; then PUSH 0x13ec468; MOV EAX,[EDX + 0x8]; CALL EAX -- virtual slot +0x08 the same way; then a counted loop with index in [EBP - 0x8] and bound in [EBP - 0x4] over ([receiver + 0x1c] - [receiver + 0x18]) >> 2 elements, calling 0x00451400 on each element's first dword; then PUSH end; PUSH begin; MOV ECX,receiver + 0x18; CALL 0x00454280. The two pushed address words are never popped by this function; its MOV ESP,EBP discards them, so the two virtual callees do not pop them either.",
+   "note": "it never nulls the vector or field_30, so calling it twice is observable rather than idempotent"
+  },
+  {
+   "va": "0x004b9570",
+   "form": "__thiscall(member, owner), RET 0x4",
+   "name": "unresolved",
+   "read_body": true,
+   "operation": "reads member+0x1c twice and member+0x18 once; pushes end, &local, end, begin and calls 0x004b98b0, then ADD ESP,0xc leaving begin on the stack; pushes the result and calls 0x004b97e0 with ECX = member + 0x18. No instruction reads [EBP + 0x8], so the owner argument is discarded."
+  },
+  {
+   "va": "0x00451400",
+   "form": "nested inside 0x004ad280",
+   "name": "unresolved",
+   "read_body": false,
+   "operation": "called once per vector element on the element's first dword"
+  },
+  {
+   "va": "0x00454280",
+   "form": "nested inside 0x004ad280",
+   "name": "unresolved",
+   "read_body": false,
+   "operation": "called once with (begin, end, end) to release the vector storage"
+  },
+  {
+   "va": "0x004b98b0 and 0x004b97e0",
+   "form": "nested inside 0x004b9570",
+   "name": "unresolved",
+   "read_body": false,
+   "operation": "not read"
+  }
+ ],
+ "sdk_correspondence": {
+  "status": "UNRESOLVED",
+  "observation": "No SDK name, type or offset is claimed. The address has no data reference, so it is not a vtable entry; the binary has no MSVC RTTI; and no SDK structure carries a single pointer member at +0x30 alongside a pointer vector at +0x18 that this call sequence would fit.",
+  "sdk_candidates_not_asserted": [
+   "Editors::cEditor (the receiver is the object stored at cEditor+0x98 and cEditor+0x9c in two of the thirteen callsites, which makes an Editor-owned sub-object likely, but no cEditor field type is declared in the SDK header at these offsets and no vtable was located)"
+  ],
+  "sdk_paths_read": [
+   "/home/juanr/apps/Spore-ModAPI/SDKtoGhidra/SporeGhidra_march2017.xml",
+   "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Editors/Editor.h"
+  ]
+ },
+ "semantic_contract": "A 21-instruction register-argument teardown method taking its receiver in ECX and returning nothing. It unconditionally delegates to 0x004ad280 with the same receiver; that callee makes two virtual calls on the receiver, at vtable slots +0x00 and +0x08, each handed the single stack argument 0x013ec468 (the address of a static float table holding 0.0, 1/3, 0.0, 0.0, 0.05, 0.2 and 0.35), then destroys every element of the pointer vector at receiver+0x18 by calling 0x00451400 on each element's first dword, and finally releases the vector storage with 0x00454280. Neither the vector nor any field is nulled by that pass. Back in the target, the single member at receiver+0x30 is tested for null and, only when non-null, finalised by 0x004b9570 with the member as the thiscall receiver and the owner passed as a second argument that the callee pops and never reads; that callee works on the sub-object at member+0x18. The function writes no field of the receiver and no global, so its entire effect is delegated. It is safe to call only with a non-null receiver: there is no null check on the receiver itself, unlike the check on field_30.",
+ "classification": "STRUCTURAL_ONLY",
+ "classification_rationale": "The 21 instructions, the register-only ABI, the single field offset +0x30, the sole branch and its polarity, and the two-call structure are all read directly from the disassembly and corroborated by four disassembled callsites, so the mechanics are established rather than merely structural. It is nevertheless classified STRUCTURAL_ONLY and not BOUNDED_SEMANTIC because the function's entire observable effect is inside two callees whose semantics are only partially read: 0x004ad280 makes two virtual calls on the receiver's own vtable at slots +0x00 and +0x08 whose concrete targets were never resolved (no vtable for the receiver's class was located, and this address has no data reference from which to derive one), and 0x004b9570's two nested callees 0x004b98b0 and 0x004b97e0 were not read at all. A reader of this record can state what the function calls and in what order, but not what it accomplishes. It is not STILL_UNKNOWN because the body, ABI, field and control flow are fully known.",
+ "semantic_findings": [
+  "The function is a thin two-step teardown: an unconditional base pass, then a guarded member finalisation.",
+  "The receiver is not null-checked; only the member at +0x30 is.",
+  "The member is read twice into two different spill slots, which is a compiler artefact rather than two distinct fields.",
+  "The owner pointer pushed for 0x004b9570 is popped by that callee's RET 0x4 and never read, so the member is finalised without any back-reference to its owner.",
+  "0x013ec468 is a static float table, not a type descriptor: 0.0, 1/3, 0.0, 0.0, 0.05, 0.2, 0.35.",
+  "0x004ad280 does not null the vector it empties or any field, so the pass is not idempotent and a second call is observable.",
+  "Two of the thirteen callsites, in Editors::cEditor::OnExit, call 0x004ad280 explicitly and then this function, which calls 0x004ad280 again on the same object -- a double base pass in the shipped build, recorded as observed rather than repaired.",
+  "Every callsite guards the call with its own null test and then performs an inline refcount decrement at object+4 followed by a virtual slot +0x00 call with argument 1 when the count reaches zero, so this function is the explicit teardown half of a Release sequence.",
+  "The address has 13 references, all direct calls and no data reference, so it is not a vtable entry and cannot be used to infer an owning class."
+ ],
+ "unresolved_questions": [
+  "What class owns this method? There is no data reference at this address, so no vtable can be derived, and the binary has no MSVC RTTI.",
+  "What are the two virtual callees at receiver vtable slots +0x00 and +0x08 that 0x004ad280 invokes with the float-table address?",
+  "What is the pointer vector at receiver+0x18, and what does 0x00451400 do to each element?",
+  "What does 0x004b98b0 and 0x004b97e0 do to the sub-object at member+0x18?",
+  "What class is the member at +0x30?",
+  "Is the double 0x004ad280 pass in Editors::cEditor::OnExit intentional, or does it rely on the base pass being tolerant of an already-emptied vector?",
+  "Nine of the thirteen callsites were not disassembled, so their null-guard and refcount context is unverified."
+ ],
+ "runtime_gates": [
+  "No original-process trace has ever been captured for 0x004ad330; every claim here is static. The original Cell stage has never been entered in any recorded run.",
+  "A runtime trace is required to observe the two virtual calls in 0x004ad280 and thereby resolve the receiver's class.",
+  "A runtime trace is required to determine whether the double base pass in OnExit is benign in the shipping build."
+ ],
+ "confidence": {
+  "body_bytes": 1.0,
+  "instruction_level_structure": 1.0,
+  "control_flow": 1.0,
+  "abi_register_arg": 0.98,
+  "return_semantics": 1.0,
+  "field_offsets": 1.0,
+  "constants": 0.99,
+  "globals": 0.95,
+  "virtual_dispatch_slot_offsets": 0.9,
+  "virtual_dispatch_concrete_callees": 0.0,
+  "callee_operations": 0.45,
+  "enclosing_class_identity": 0.0,
+  "semantic_purpose": 0.3,
+  "runtime_behaviour": 0.0
+ },
+ "blockers": [],
+ "evidence": [
+  "reconstruction/evidence/004ad330/evidence.json",
+  "reconstruction/evidence/004ad330/context.json",
+  "ghidra_disassemble_function(0x004ad330, SporeApp.exe)",
+  "ghidra_disassemble_function(0x004ad280, SporeApp.exe)",
+  "ghidra_disassemble_function(0x004b9570, SporeApp.exe)",
+  "ghidra_decompile_function(0x004ad280, 0x004b9570, SporeApp.exe)",
+  "ghidra_get_xrefs_to(0x004ad330)",
+  "ghidra_disassemble_bytes(0x00576d10, 0x00576d90)",
+  "ghidra_disassemble_bytes(0x00587df0, 0x00587e70)",
+  "ghidra_read_memory(0x013ec468, 32)"
+ ],
+ "tooling_evidence": [
+  {
+   "tool": "ghidra_disassemble_function",
+   "address": "0x004ad330",
+   "observation": "21 instructions 0x004ad330..0x004ad368, matching the briefing's 57-byte body; one CALL EAX-free body with two direct calls, one conditional branch, no loop and no indirect call"
+  },
+  {
+   "tool": "ghidra_disassemble_function",
+   "address": "0x004ad280",
+   "observation": "58 instructions: virtual slot +0x00 at 0x004ad298 and slot +0x08 at 0x004ad2aa, each with PUSH 0x13ec468; a counted vector walk over ([+0x1c] - [+0x18]) >> 2; 0x00454280(begin, end, end) at 0x004ad31a; MOV ESP,EBP at 0x004ad31f discarding the two pushed words"
+  },
+  {
+   "tool": "ghidra_disassemble_function",
+   "address": "0x004b9570",
+   "observation": "30 instructions ending in RET 0x4 at 0x004b95bb, with no access to [EBP + 0x8], so the owner argument is popped and discarded; it works on member+0x18"
+  },
+  {
+   "tool": "ghidra_get_xrefs_to",
+   "address": "0x004ad330",
+   "observation": "13 references, every one UNCONDITIONAL_CALL from 0x0040d2d0 (twice), 0x0046d840, 0x004aba00, 0x00585c10, 0x00586b00, 0x00587a20 (twice), 0x005f40b0, 0x0057f6c0, 0x00576c50 (twice) and 0x0057d710; no data reference"
+  },
+  {
+   "tool": "ghidra_disassemble_bytes",
+   "address": "0x00587df0-0x00587e70",
+   "observation": "OnExit calls 0x004ad280 on [ESI+0x98] at 0x00587e0a and then 0x004ad330 on the same object at 0x00587e15, then stores zero to the field, DECs object+4, and on zero sets it to 1 and calls vtable slot +0x00 with argument 1; the same pair repeats for [ESI+0x9c]"
+  },
+  {
+   "tool": "ghidra_disassemble_bytes",
+   "address": "0x00576d10-0x00576d90",
+   "observation": "Dispose performs the identical null-check, teardown, store-zero, refcount-decrement and virtual-destroy sequence for [ESI+0x98] and then [ESI+0x9c]"
+  },
+  {
+   "tool": "ghidra_read_memory",
+   "address": "0x013ec468",
+   "observation": "00000000 3eaaaa9f 00000000 00000000 3d4ccccd 3e4ccccd beb33333 -- static floats 0.0, 1/3, 0.0, 0.0, 0.05, 0.2, 0.35; this refutes reading the argument as a type descriptor"
+  }
+ ],
+ "body_reconstruction": {
+  "source": "reconstruction/staging/wave13-w1-dispatch-b02/b4ad330_teardown_004ad330.cpp",
+  "status": "implemented",
+  "claim_scope": "The 21-instruction body is reconstructed exactly, including the two separate reads of field_30 and the unconditional base call. Two callees are modelled as declared ports. The receiver is declared with only the four offsets that are read, two of them by the callee.",
+  "preserved_semantics": [
+   "void return and a bare RET",
+   "register-only argument, with the receiver spilled and reloaded twice",
+   "the base call is unconditional and has no null guard",
+   "the member is finalised only when non-null",
+   "the owner is passed as a second argument even though the callee discards it",
+   "no field of the receiver is written and no global is touched"
+  ],
+  "validation": {
+   "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/wave13-w1-dispatch-b02 reconstruction/staging/wave13-w1-dispatch-b02/b4ad330_teardown_004ad330.cpp",
+   "syntax": "passed",
+   "model_test": "not written; two stubbed ports would assert the harness",
+   "byte_exactness": "not attempted"
+  }
+ },
+ "provenance": {
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+  "binary_version": "Spore 3.1.0.22",
+  "image_base": "0x00400000",
+  "worker_id": "wave13-w1-dispatch-b02",
+  "batch_id": "b02",
+  "package": "wave13-w1-dispatch-b02",
+  "repo_package": "PKG-10-EDITOR-DISPATCH",
+  "date": "2026-09-26",
+  "method": "live ghidra_* MCP tools against program SporeApp.exe; every claim re-verified by a tool call made in this session"
+ }
+}

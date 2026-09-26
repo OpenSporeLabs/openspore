@@ -513,7 +513,7 @@ class TestWiring(unittest.TestCase):
     }
 
     def test_names_unchanged(self):
-        self.assertEqual(len(registry.tool_names()), 21)
+        self.assertEqual(len(registry.tool_names()), 24)
         for name in self.REAL:
             self.assertIn(name, registry.tool_names())
 

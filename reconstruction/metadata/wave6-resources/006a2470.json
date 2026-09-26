@@ -1,0 +1,91 @@
+{
+  "schema": "wave6-resources-function-handoff.v1",
+  "package": "wave6-resources",
+  "function_address": "0x006a2470",
+  "ghidra_name": "App::PropertyList::HasProperty",
+  "normalized_symbol": "property_list_has_property_006a2470",
+  "source_files": [
+    "reconstruction/staging/wave6-resources/property_list_variants.hpp",
+    "reconstruction/staging/wave6-resources/property_list_variants.cpp",
+    "reconstruction/staging/wave6-resources/property_list_variants_model_test.cpp"
+  ],
+  "dependencies": ["reconstruction/staging/wave6-resources/property_list_access.hpp"],
+  "phase": "body-reconstruction",
+  "declaration": "bool __thiscall property_list_has_property_006a2470(PropertyList*, uint32_t property_id);",
+  "abi": {
+    "return_type": "bool",
+    "return_register": "AL",
+    "calling_convention": "__thiscall observed",
+    "hidden_this_register": "ECX",
+    "hidden_this_type": "PropertyList*",
+    "stack_arguments": [
+      {"position": 1, "entry_offset": "ESP+0x04", "name": "property_id", "type": "uint32_t", "width_bytes": 4}
+    ],
+    "stack_cleanup_bytes": 4,
+    "termination": "RET 0x4 at 0x006a24ab and 0x006a24c6"
+  },
+  "parent_virtual_ports": {
+    "has_property": {
+      "slot": "+0x1c",
+      "calling_convention": "__thiscall",
+      "hidden_receiver": "ECX = parent PropertyList*",
+      "stack_arguments": [
+        {"position": 1, "entry_offset": "ESP+0x04", "name": "property_id", "type": "uint32_t", "width_bytes": 4}
+      ],
+      "stack_cleanup_bytes": 4
+    }
+  },
+  "layout_evidence": {
+    "gtype": "PropertyList",
+    "size_bytes": 56,
+    "fields": [
+      {"offset": "0x08", "size_bytes": 12, "meaning": "ResourceKey conceptual name key"},
+      {"offset": "0x18", "size_bytes": 24, "meaning": "property map"},
+      {"offset": "0x30", "size_bytes": 4, "meaning": "parent PropertyList pointer"}
+    ],
+    "map": {"entries_begin": "0x18", "entries_end": "0x1c", "lookup_mode": "0x2c", "entry_stride": "0x18"},
+    "identity_boundary": "The mNameKey ResourceKey is not used to resolve the numeric property_id. The local map key and the parent list remain separate lookup identities."
+  },
+  "mechanics": {
+    "lookup": "Read the map span at list+0x18 and list+0x1c and the lookup mode at list+0x2c, then call the shared 24-byte-entry lower-bound helper 0x00612db0. The helper count is the byte distance between entries_begin and entries_end divided by 0x18 before its binary search.",
+    "hit": "Return true when the lower-bound result is not entries_end and property_id is not less than the entry key at offset 0.",
+    "miss": "On a lower-bound miss, if parent is non-null, tail-dispatch through the parent vtable slot +0x1c with the original property_id. The parent port is a one-stack-word __thiscall boundary: ECX is the parent receiver, property_id is at ESP+0x04, and the callee cleans 4 bytes. If parent is null, return false.",
+    "sentinel": "The end pointer is the map's entries_end. No ResourceKey conversion, property materialization, or cache lookup occurs."
+  },
+  "call_graph": {
+    "direct_callers": {"ghidra_count": 1, "functions": ["App::DirectPropertyList::HasProperty at 0x006a27d0"]},
+    "direct_callees": {"ghidra_functions": ["FUN_00612db0 at 0x00612db0"]},
+    "function_xrefs": [
+      {"from_address": "0x006a27de", "type": "UNCONDITIONAL_CALL", "from_function": "App::DirectPropertyList::HasProperty"},
+      {"from_address": "0x0140883c", "type": "DATA"}
+    ],
+    "shared_helper": {"address": "0x00612db0", "direct_caller_count": 29, "role": "24-byte-entry unsigned lower-bound helper"}
+  },
+  "evidence": [
+    {"tool": "ghidra_decompile_function", "address": "0x006a2470", "observation": "The body performs the shared lower-bound lookup, returns true on an exact map key, and otherwise dispatches to the parent or returns false."},
+    {"tool": "ghidra_disassemble_function", "address": "0x006a2470", "observation": "The assembly proves map offsets +0x18/+0x1c/+0x2c, the helper's byte-distance/0x18 count, end-sentinel rejection, the one-word thiscall parent port at +0x1c, and RET 0x4."},
+    {"tool": "ghidra_get_function_callers", "address": "0x006a2470", "observation": "One direct caller is reported."},
+    {"tool": "ghidra_get_function_callees", "address": "0x006a2470", "observation": "The only direct named callee is the shared lower-bound helper at 0x00612db0."},
+    {"tool": "ghidra_get_function_xrefs", "address": "0x006a2470", "observation": "The function has one direct call xref and one data xref."},
+    {"tool": "ghidra_get_struct_layout", "struct_name": "PropertyList", "observation": "The live type is 56 bytes with the map at +0x18 and parent at +0x30."},
+    {"tool": "ghidra_get_struct_layout", "struct_name": "ResourceKey", "observation": "The conceptual key is a distinct 12-byte value at list+0x08."}
+  ],
+  "confidence": {
+    "mechanics": "high",
+    "abi": "high",
+    "parent_virtual_abi": "high",
+    "parent_virtual_semantics": "medium"
+  },
+  "unresolved_questions": [
+    "Concrete parent PropertyList subtype and vtable +0x1c implementation",
+    "Whether any callers depend on property map lookup_mode values not visible in the binary search helper"
+  ],
+  "blockers": [
+    "The parent virtual dispatch is an opaque runtime boundary in the staging model.",
+    "No original runtime trace validates inherited property visibility."
+  ],
+  "verification": {
+    "command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror property_list_variants.cpp property_list_variants_model_test.cpp -o /tmp/opencode/wave6-property-list-variants-model && /tmp/opencode/wave6-property-list-variants-model",
+    "result": "passed"
+  }
+}

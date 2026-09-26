@@ -1,0 +1,220 @@
+{
+  "schema": "openspore-worker-metadata-1",
+  "package": "pkg-shared-default-true-wave12",
+  "va": "0x00b1fbf0",
+  "address": "0x00b1fbf0",
+  "function_address": "0x00b1fbf0",
+  "entry_address": "0x00b1fbf0",
+  "ghidra_name": "FUN_00b1fbf0",
+  "normalized_symbol": "pkg_shared_default_true_00b1fbf0",
+  "reconstructed_symbol": "FUN_00b1fbf0_shared_default_true",
+  "declaration": "extern \"C\" std::uint8_t FUN_00b1fbf0_shared_default_true(OpaqueB1Fbf0SlotReceiver* receiver);",
+  "source_files": [
+    "reconstruction/staging/pkg-shared-default-true-wave12/b1fbf0_default_true.cpp",
+    "reconstruction/staging/pkg-shared-default-true-wave12/b1fbf0_default_true.hpp",
+    "reconstruction/staging/pkg-shared-default-true-wave12/b1fbf0_default_true_model_test.cpp"
+  ],
+
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": null,
+    "calling_convention_observation": "The derived ABI record abstained with ABI_UNKNOWN and the reason no_discriminator: no stack-argument read and no positive receiver evidence. Inference C10 records that the body is byte-identical under __cdecl, __stdcall, __thiscall and __fastcall, which is expected for a function with no stack argument and a bare RET: the conventions differ only in what the CALLER puts in registers and pops, and this body consumes none of it. No convention is asserted here.",
+    "return_type": "std::uint8_t",
+    "return_semantics": "std::uint8_t",
+    "return_register": "EAX",
+    "return_width_bytes": 1,
+    "return_observation": "0x00b1fbf0: MOV AL,0x1 writes only the low byte of EAX, so bits 8..31 of EAX are undefined on exit rather than zero. Every consumer inspected tests the AL byte, never the full dword.",
+    "ret_form": "RET",
+    "termination": "RET",
+    "stack_cleanup_bytes": 0,
+    "stack_cleanup_owner": "caller",
+    "stack_arguments": [],
+    "ordinary_stack_argument_slots": 0,
+    "saved_registers": [],
+    "receiver": false,
+    "hidden_receiver": "unread",
+    "hidden_this_register": "ECX is never read; 0x00b1fbf0 has no instruction that mentions any register other than AL"
+  },
+
+  "layout": {
+    "entry_address": "0x00b1fbf0",
+    "body_start": "0x00b1fbf0",
+    "body_end": "0x00b1fbf2",
+    "body_span_bytes": 3,
+    "body_bytes_hex": "b001c3",
+    "instruction_count": 2,
+    "instructions": [
+      {"address": "0x00b1fbf0", "bytes": "b0 01", "mnemonic": "MOV", "operands": "AL,0x1"},
+      {"address": "0x00b1fbf2", "bytes": "c3", "mnemonic": "RET", "operands": ""}
+    ],
+    "padding_after": "0x00b1fbf3 through 0x00b1fbf9 are cc cc cc cc cc cc cc (INT3), the standard inter-function pad",
+    "frame": "none: no PUSH, no SUB ESP, no MOV EBP,ESP, no register save or restore",
+    "reads": "none: no memory operand, no global, no field access, no register read",
+    "writes": "AL only"
+  },
+
+  "observed_mechanics": [
+    "0x00b1fbf0: B0 01 - MOV AL,0x1 sets the low byte of the return register to 1",
+    "0x00b1fbf2: C3 - RET pops the return address; the absence of an immediate is what proves the callee pops zero stack words",
+    "Live memory read at 0x00b1fbf0 returns b0 01 c3 cc cc cc cc cc cc, confirming the two instructions and the INT3 pad",
+    "0x0098cc7f / 0x0098cc84: CALL 0x00b1fbf0 immediately followed by TEST AL,AL, so the answer is consumed as a byte predicate",
+    "0x0096a673 / 0x0096a678 and 0x0096b3a3 / 0x0096b3a8: the same CALL then TEST AL,AL predicate shape",
+    "0x00e7d68e / 0x00e7d693 and 0x00e7d6bf / 0x00e7d6c4 inside App::cCellModeStrategy::OnMouseWheel: CALL then TEST AL,AL with JNZ over the branch body",
+    "0x00ee8bf6 / 0x00ee8bf9 / 0x00ee8bfb: MOV EAX,dword ptr [EDX + 0x10] then CALL EAX then TEST AL,AL, an indirect virtual dispatch through slot +0x10 that reaches 0x00b1fbf0 with ECX holding the receiver",
+    "0x007f53fe is JMP 0x00b1fbf0 (E9 ED A7 32 00), a tail transfer and not a call, contradicting the recorded direct-call xref type",
+    "0x007f5403 in the same caller 0x007f53d0 is MOV AL,0x1; POP ESI; RET, an inlined duplicate of the identical body two bytes later",
+    "0x0082c27a and 0x00a43062 call the function and never read EAX or AL afterwards, so at least two sites discard the answer"
+  ],
+
+  "vtable_evidence": [
+    {
+      "table_address": "0x01485550",
+      "observation": "0x01485564 holds 0x00b1fbf0 at slot offset +0x14 of the cCellModeStrategy table; 0x01485590 holds 0x00e7d660 (OnMouseWheel) at +0x40 and 0x01485594 holds 0x00e80980 (Update) at +0x44",
+      "status": "OBSERVED"
+    },
+    {
+      "table_address": "0x013fc06c",
+      "observation": "0x013fc07c and 0x013fc080 both hold 0x00b1fbf0, at slot offsets +0x10 and +0x14 of the same table",
+      "status": "OBSERVED"
+    },
+    {
+      "table_address": "0x013f57f8",
+      "observation": "0x013f5824 holds 0x00b1fbf0 at slot offset +0x2c of this table",
+      "status": "OBSERVED"
+    }
+  ],
+
+  "slot_offset_observation": {
+    "summary": "The same address is stored at three different slot offsets in three different tables, so it is not a single identifiable interface method.",
+    "offsets_observed": ["+0x10", "+0x14", "+0x2c"],
+    "vtable_count_reported": 356,
+    "corroboration": "Ghidra lists 20 referenced-by-vtables entries; the triage queue records 356 raw dword matches of 0x00b1fbf0 in .rdata. Neither number is a proven count of distinct vtables.",
+    "consequence": "A compiler that folds identical weak COMDATs emits one shared three-byte body for many unrelated 'return true' defaults. The three offset observations prove the address is shared, so no single SDK method name can be asserted for it.",
+    "narrower_slot_identity": "For the cCellModeStrategy table at 0x01485550 only, the +8 shift that maps SDK offset 0x18 Initialize and 0x1c Dispose onto the observed 0x18 Initialize and 0x1c Dispose neighbours also maps SDK IGameMode offset 0x0c onto the observed 0x14 entry, which holds 0x00b1fbf0. That is recorded as INFERRED by reconstruction/metadata/pkg-game-input-wave8/00e7d660.json and is not generalised here."
+  },
+
+  "sdk_correspondence": {
+    "status": "UNRESOLVED",
+    "observation": "The Spore-ModAPI header at Spore/App/IGameMode.h declares '/* 0Ch */ virtual bool func0Ch() = 0;' and Spore/App/DefaultGameMode.h plus SourceCode/App/GameModes.cpp give 'bool DefaultGameMode::func0Ch() { return true; }'. The cCellModeStrategy table's +0x14 entry is consistent with that slot under the +8 shift described above.",
+    "not_asserted": "The name func0Ch, the bool type and the IGameMode ownership are NOT claimed. Three distinct slot offsets in three distinct tables show the address is shared across interface families, so the SDK correspondence is a candidate for one table, not an identity for the function.",
+    "sdk_paths_read": [
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/App/IGameMode.h",
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/App/DefaultGameMode.h",
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/App/cCellModeStrategy.h",
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/SourceCode/App/GameModes.cpp"
+    ]
+  },
+
+  "callers_evidence": [
+    {"callsite": "0x007f53fe", "caller": "0x007f53d0", "form": "JMP (tail transfer)", "result_use": "none observed, the function returns to the original caller", "recorded_by_briefing_as": "direct-call", "correction": "the instruction at 0x007f53fe is E9 ED A7 32 00, a near unconditional jump, not a call"},
+    {"callsite": "0x0082c27a", "caller": "0x0082c210", "form": "CALL", "result_use": "discarded; the next instruction reloads ECX from the stack and branches on ECX"},
+    {"callsite": "0x0096a673", "caller": "0x0096a670", "form": "CALL", "result_use": "TEST AL,AL then JZ"},
+    {"callsite": "0x0096b3a3", "caller": "0x0096b3a0", "form": "CALL", "result_use": "TEST AL,AL then JZ"},
+    {"callsite": "0x0097c6d3", "caller": "0x0097c6d0", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x0098cc7f", "caller": "0x0098cc70", "form": "CALL", "result_use": "TEST AL,AL then JZ"},
+    {"callsite": "0x0098f3dc", "caller": "0x0098f3d0", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x00993fe5", "caller": "0x00993fa0", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x00a43062", "caller": "0x00a43050", "form": "CALL", "result_use": "discarded; the next instruction reloads ECX from [ESI + 0x15bc80]"},
+    {"callsite": "0x00a51f7c", "caller": "0x00a51f40", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x00ccf3ed", "caller": "0x00ccefb0", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x00d73cd5", "caller": "0x00d73ca0", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x00e0ebc7", "caller": "0x00e0eab0", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x00e7d68e", "caller": "0x00e7d660 (App::cCellModeStrategy::OnMouseWheel)", "form": "CALL", "result_use": "TEST AL,AL then JNZ over the zoom-out branch"},
+    {"callsite": "0x00e7d6bf", "caller": "0x00e7d660 (App::cCellModeStrategy::OnMouseWheel)", "form": "CALL", "result_use": "TEST AL,AL then JNZ over the health branch"},
+    {"callsite": "0x00e81134", "caller": "0x00e81120", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x00ee8bf9", "caller": "0x00ee8860", "form": "CALL EAX through vtable slot +0x10 with ECX as receiver", "result_use": "TEST AL,AL then JNZ"}
+  ],
+
+  "body_reconstruction": {
+    "source": "reconstruction/staging/pkg-shared-default-true-wave12/b1fbf0_default_true.cpp",
+    "status": "implemented",
+    "claim_scope": "The three-byte body is reconstructed in full. No semantic name and no owning class are claimed.",
+    "confidence": {
+      "body_bytes": 1.0,
+      "control_flow": 1.0,
+      "return_semantics": 0.95,
+      "receiver_presence_in_body": 1.0,
+      "receiver_presence_in_port_contract": 0.7,
+      "semantic_identity": 0.2
+    },
+    "preserved_semantics": [
+      "the answer is the byte 1, not the dword 1: only AL is written",
+      "bits 8..31 of EAX are left as the caller left them",
+      "the receiver is never read, so any receiver including null is accepted",
+      "no callee, no global and no memory access of any kind",
+      "a bare RET, so the caller owns all stack cleanup"
+    ],
+    "byte_exactness": "clang++ 22.1.8 -m32 -O2 emits b0 01 c3 for the reconstruction, identical to the three bytes read live at 0x00b1fbf0. The thiscall spelling of the same body emits the same three bytes.",
+    "validation": {
+      "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/pkg-shared-default-true-wave12 reconstruction/staging/pkg-shared-default-true-wave12/b1fbf0_default_true.cpp reconstruction/staging/pkg-shared-default-true-wave12/b1fbf0_default_true_model_test.cpp",
+      "model_test_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg-shared-default-true-wave12 reconstruction/staging/pkg-shared-default-true-wave12/b1fbf0_default_true.cpp reconstruction/staging/pkg-shared-default-true-wave12/b1fbf0_default_true_model_test.cpp -o /tmp/opencode/b1fbf0/model-test && /tmp/opencode/b1fbf0/model-test",
+      "syntax": "passed",
+      "model_test": "passed",
+      "byte_check": "passed"
+    }
+  },
+
+  "semantic_findings": [
+    "The whole observable contract is 'return the byte 1'. There is no input, no state read and no side effect, so the function is a constant.",
+    "Because it is constant and takes nothing, the compiled bytes are identical under every x86-32 convention. The observed mixed usage, a thiscall-shaped virtual slot at 0x00ee8860 alongside fifteen direct sites that set up nothing, is exactly what a __thiscall member with no stack arguments produces.",
+    "The same address is stored at +0x10, +0x14 and +0x2c in three different tables. A single named interface method could not occupy three offsets, so this address is a shared folded default body rather than one method.",
+    "0x007f5403 carries an inlined duplicate of the identical body inside caller 0x007f53d0, two bytes after the JMP at 0x007f53fe that tail-transfers to it. A shipped header default that the compiler can inline but sometimes emits out of line is the shape that produces both.",
+    "Every inspected consumer treats the answer as a boolean predicate (TEST AL,AL), and two consumers discard it entirely, so the only role the evidence supports is 'unconditional yes'."
+  ],
+
+  "unresolved_questions": [
+    "What predicate is this? The body is a constant yes, but nothing in the observed evidence names the question it answers.",
+    "Which class or classes own the slots that point here? Three distinct slot offsets across three distinct tables are recorded above and they cannot all describe one method.",
+    "Is the address a compiler-folded COMDAT shared by many unrelated 'return true' defaults, or a single default deliberately emitted once? Both fit every observation.",
+    "Is the always-true body a shipped default, a build-configuration stub, or a patch target at runtime? No differential trace has been captured for this function, so runtime patching cannot be excluded.",
+    "Why does caller 0x00a43050 and caller 0x0082c210 call the function and discard the answer? A constant with no side effects makes those calls no-ops in the observed build.",
+    "What is the correct port spelling for a slot that is dispatched with ECX populated but implemented as a bare RET? The reconstruction keeps an unread receiver parameter, which is a modelling choice rather than an observed fact.",
+    "The 356 and 20 vtable-reference counts are raw pointer-scan totals, not proven distinct vtables. The true count is unmeasured."
+  ],
+
+  "runtime_gates": [
+    "No original-process trace has been captured for 0x00b1fbf0, so every claim here is static. A runtime differential test must confirm that the answer is still 1 in the shipping build and that no runtime patch retargets the address.",
+    "The 0x00ee8860 virtual dispatch site must be observed with a concrete receiver before the slot's owning class can be named."
+  ],
+
+  "blockers": [],
+
+  "evidence": [
+    "reconstruction/evidence/00b1fbf0/evidence.json",
+    "reconstruction/evidence/00b1fbf0/context.json",
+    "reconstruction/metadata/pkg-game-input-wave8/00e7d660.json",
+    "reconstruction/metadata/pkg11-a3-achievement-mission-wave2/00fec3c0.json",
+    "knowledgegraph/triage/queue-f0e310e0-v6.json",
+    "GhidraMCP /disassemble_function and /read_memory at 0x00b1fbf0"
+  ],
+
+  "tooling_evidence": [
+    {"tool": "ghidra_read_memory", "address": "0x00b1fbf0", "observation": "b001c3cccccccccc"},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x00b1fbf0", "observation": "MOV AL,0x1 ; RET, 3 bytes"},
+    {"tool": "ghidra_read_memory", "address": "0x01485550", "observation": "0x01485564 = 0x00b1fbf0, slot +0x14; 0x01485590 = 0x00e7d660 OnMouseWheel at +0x40; 0x01485594 = 0x00e80980 Update at +0x44"},
+    {"tool": "ghidra_read_memory", "address": "0x013fc050", "observation": "0x013fc07c = 0x00b1fbf0 and 0x013fc080 = 0x00b1fbf0, slots +0x10 and +0x14 of the table at 0x013fc06c"},
+    {"tool": "ghidra_read_memory", "address": "0x013f57d8", "observation": "0x013f5824 = 0x00b1fbf0, slot +0x2c of the table at 0x013f57f8"},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x0098cc70", "observation": "0x0098cc7f CALL 0x00b1fbf0 ; 0x0098cc84 TEST AL,AL"},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x0096a670", "observation": "0x0096a673 CALL 0x00b1fbf0 ; 0x0096a678 TEST AL,AL"},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x0096b3a0", "observation": "0x0096b3a3 CALL 0x00b1fbf0 ; 0x0096b3a8 TEST AL,AL"},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x00e7d680", "observation": "0x00e7d68e and 0x00e7d6bf CALL 0x00b1fbf0, each followed by TEST AL,AL"},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x00ee8bf0", "observation": "0x00ee8bf6 MOV EAX,dword ptr [EDX + 0x10] ; 0x00ee8bf9 CALL EAX ; 0x00ee8bfb TEST AL,AL"},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x007f53f0", "observation": "0x007f53fe JMP 0x00b1fbf0 (E9 ED A7 32 00), then 0x007f5403 MOV AL,0x1 ; 0x007f5405 POP ESI ; 0x007f5406 RET"},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x0082c26e", "observation": "0x0082c27a CALL 0x00b1fbf0, result not read; 0x0082c27f reloads ECX"},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x00a43055", "observation": "0x00a43062 CALL 0x00b1fbf0, result not read; 0x00a43067 reloads ECX"},
+    {"tool": "objdump", "observation": "clang++ -m32 -O2 emits b0 01 c3 for the reconstruction, byte-identical to the original body"}
+  ],
+
+  "validation": {
+    "status": "WARN",
+    "reason": "The derived ABI record for this target carries verdict ABI_UNKNOWN, so the validator emits ABI=WARN before it ever compares the source. No source change can lift that without an ABI discriminator the evidence does not contain, and the ABI record must not be edited to manufacture one.",
+    "notes": "RETURN SEMANTICS passes because the reconstruction returns std::uint8_t, matching the observed single-byte write to AL."
+  },
+
+  "confidence": "high for the body, low for the identity",
+
+  "related_records": [
+    "reconstruction/metadata/pkg-game-input-wave8/00e7d660.json",
+    "reconstruction/metadata/pkg13-creature-accessor/00b1fdb0.json"
+  ]
+}

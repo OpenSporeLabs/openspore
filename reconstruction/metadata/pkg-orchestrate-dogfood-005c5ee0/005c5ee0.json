@@ -1,0 +1,392 @@
+{
+  "schema": "pkg-orchestrate-dogfood-005c5ee0-function-handoff.v1",
+  "package": "PKG-ORCHESTRATE-DOGFOOD-005C5EE0",
+  "worker_ownership": "orchestrate-dogfood-005c5ee0",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "captured_on": "2026-09-25",
+  "va": "0x005c5ee0",
+  "function_address": "0x005c5ee0",
+  "ghidra_name": "Palettes::PaletteMain::GetCategory",
+  "normalized_symbol": "palettes_palette_main_get_category_005c5ee0",
+  "subsystem": "Palettes",
+  "cluster": "editor-support",
+  "phase": "body-reconstruction",
+  "review_status": "staged_static_review",
+  "integration_status": "staged",
+  "integration_note": "Candidate source lives in worker-owned staging only. Promotion to src/ is integrator-owned and is not claimed here.",
+  "runtime_validation": 0,
+  "runtime_validation_status": "not_run",
+  "source_files": [
+    "reconstruction/staging/pkg-orchestrate-dogfood-005c5ee0/dogfood_005c5ee0.hpp",
+    "reconstruction/staging/pkg-orchestrate-dogfood-005c5ee0/dogfood_005c5ee0.cpp",
+    "reconstruction/staging/pkg-orchestrate-dogfood-005c5ee0/dogfood_005c5ee0_model_test.cpp"
+  ],
+  "type_dependencies": [
+    "openspore::reconstruction::pkg_orchestrate_dogfood_005c5ee0::OpaquePaletteMain",
+    "openspore::reconstruction::pkg_orchestrate_dogfood_005c5ee0::OpaquePaletteMainVtable",
+    "openspore::reconstruction::pkg_orchestrate_dogfood_005c5ee0::OpaquePaletteMainSubobjectVtable",
+    "openspore::reconstruction::pkg_orchestrate_dogfood_005c5ee0::OpaquePaletteMainGetCategory005c5ee0",
+    "openspore::reconstruction::pkg_orchestrate_dogfood_005c5ee0::OpaquePaletteMainTeardown005c5e90",
+    "openspore::reconstruction::pkg_orchestrate_dogfood_005c5ee0::OpaquePaletteMainRelease00f47380",
+    "openspore::reconstruction::pkg_orchestrate_dogfood_005c5ee0::GetCategoryPorts"
+  ],
+  "type_scope": "package-local opaque layout types only; the Ghidra PaletteMain, PaletteCategory and ObjectTYPE types are not reproduced and no concrete class identity is proven from the machine code",
+  "declaration": "extern \"C\" OpaquePaletteMain* __thiscall palettes_palette_main_get_category_005c5ee0(OpaquePaletteMain* main, OpaqueWord stack_word);",
+  "original_native_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "thiscall",
+    "calling_convention_detail": "ECX carries the hidden receiver and the single ordinary stack word is reclaimed by the callee through RET 0x4",
+    "hidden_receiver": "ECX is the receiver word, copied to ESI at 0x005c5ee1 and returned in EAX at 0x005c5ef8",
+    "receiver_type": "OpaquePaletteMain*",
+    "ordinary_stack_argument_slots": 1,
+    "stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "ESP+0x04, read as ESP+0x08 after the PUSH ESI at 0x005c5ee0",
+        "width_bytes": 4,
+        "machine_type": "opaque_dword",
+        "normalized_name": "stack_word",
+        "native_use": "only the low byte is read, by TEST byte ptr [ESP+0x8],0x1 at 0x005c5ee8"
+      }
+    ],
+    "stack_cleanup_bytes": 4,
+    "stack_cleanup_owner": "callee",
+    "return_type": "OpaquePaletteMain*",
+    "return_register": "EAX",
+    "return_width_bytes": 4,
+    "return_semantics": "returns the receiver word itself; MOV EAX,ESI at 0x005c5ef8 runs on both the release and the skip path, and the EAX result of the 0x005c5e90 call is discarded",
+    "ret_form": "RET 0x4",
+    "saved_registers": [
+      "ESI"
+    ],
+    "derived_from": "disassembly plus live read-only Ghidra queries; the briefing abi section was empty and evidence.missing_sections listed ABI",
+    "ghidra_convention_note": "The live decompilation warns 'Unknown calling convention' and renders the body as (PaletteMain * this, uint32_t categoryID) with a return value it places in a synthetic in_ECX. The disassembly contradicts that rendering: ECX is the receiver (MOV ESI,ECX), the tested byte is the low byte of the first ordinary stack word (ESP+0x8 after PUSH ESI), and the returned EAX is the saved receiver, not a value produced by the body.",
+    "body_evidence": {
+      "entry": "0x005c5ee0",
+      "body_end_inclusive": "0x005c5efb",
+      "instruction_count": 11,
+      "raw_bytes_hex": "568bf1e8a8fffffff644240801740956e88b14980083c4048bc65ec20400",
+      "raw_bytes_note": "read live at 0x005c5ee0 length 32; these 30 bytes are exactly the eleven instructions from 0x005c5ee0 through the RET 0x4 at 0x005c5efb-0x005c5efd, and the following 0xcc is padding"
+    }
+  },
+  "observed_mechanics": [
+    "0x005c5ee0-0x005c5ee1 push ESI and copy the ECX receiver into ESI, so the receiver word survives both calls and is available for both the release and the return.",
+    "0x005c5ee3 calls 0x005c5e90 with no preceding push and with ECX still holding the receiver, so the call carries the receiver and no ordinary stack word.",
+    "the EAX result of 0x005c5e90 is discarded, because 0x005c5ef8 loads EAX from ESI before the return.",
+    "0x005c5ee8 tests bit 0 of the byte at ESP+0x8. After the PUSH ESI at 0x005c5ee0 that displacement is the low byte of the first ordinary stack word, so only bit 0 of that word is read.",
+    "0x005c5eed jumps to 0x005c5ef8 when bit 0 is clear, so the release is skipped without any other test.",
+    "0x005c5eef-0x005c5ef5 push ESI, call 0x00f47380 and add 4 back to ESP, so the release is cdecl and the caller reclaims its single argument word.",
+    "0x005c5ef8-0x005c5efb load EAX with the saved receiver, restore ESI and return with RET 0x4, so the callee reclaims exactly one four-byte stack word and the receiver word is the returned value on both paths.",
+    "the body contains no memory write of any kind: the receiver word is never dereferenced, so no receiver field is read or published by this function.",
+    "the body contains no null test, so a null receiver is forwarded unchanged to 0x005c5e90 and, on the release path, to 0x00f47380."
+  ],
+  "observed_mechanics_detail": {
+    "receiver_reads": "none",
+    "receiver_writes": "none",
+    "callee_sequence": [
+      {
+        "order": 1,
+        "target": "0x005c5e90",
+        "callsite": "0x005c5ee3",
+        "receiver_register": "ECX",
+        "ordinary_stack_arguments": [],
+        "ret_form": "plain RET at the callee",
+        "return_value_use": "discarded"
+      },
+      {
+        "order": 2,
+        "target": "0x00f47380",
+        "callsite": "0x005c5ef0",
+        "receiver_register": "none",
+        "ordinary_stack_arguments": [
+          "the receiver word, pushed by PUSH ESI at 0x005c5eef"
+        ],
+        "stack_cleanup": "caller, ADD ESP,0x4 at 0x005c5ef5",
+        "conditional_on": "bit 0 of the first ordinary stack word",
+        "return_value_use": "discarded"
+      }
+    ],
+    "callee_provenance": {
+      "0x005c5e90": "78 raw bytes, 0x005c5e90 through the RET at 0x005c5edd: PUSH EBX; PUSH EBP; MOV EBP,ECX ... MOV dword ptr [EBP+0x0],0x013ec458; MOV dword ptr [EBP+0x8],0x013eb938; POP EBP; POP EBX; RET. It stores 0x013f7fd4 and 0x013f7fc4 into the two vtable words of its receiver at entry and a second pair before returning, and it reads the words at receiver+0x04 and receiver+0x0c. The live decompilation renders it as a destructor-shaped body with a list teardown loop and a call to 0x005c2230 and to Palettes::PaletteIterator::Next. Its internal loop and the meaning of its two list words are not modeled here.",
+      "0x00f47380": "live decompilation is `void FUN_00f47380(int param_1) { if (param_1 != 0) { FUN_009276c0(param_1); } }`, so the port is a null-guarded release with a void return. The behavior inside 0x009276c0 is not modeled."
+    },
+    "branch_structure": "one conditional branch, taken on bit 0 of the first ordinary stack word; no loop, no switch and no second test in the eleven instructions",
+    "constants": [
+      "0x1, the TEST mask at 0x005c5ee8",
+      "0x4, the ADD ESP immediate at 0x005c5ef5 and the RET immediate at 0x005c5efb"
+    ],
+    "not_rewritten": "No global word and no receiver word is written by this body; the only memory side effects belong to the two callees."
+  },
+  "call_graph": {
+    "direct_callers": [],
+    "direct_callees": [
+      "0x005c5e90",
+      "0x00f47380"
+    ],
+    "indirect_calls": [],
+    "direct_callsites": [
+      {
+        "callsite": "0x005c5ee3",
+        "target": "0x005c5e90",
+        "reference_type": "direct-call"
+      },
+      {
+        "callsite": "0x005c5ef0",
+        "target": "0x00f47380",
+        "reference_type": "direct-call"
+      }
+    ],
+    "data_xrefs": [
+      {
+        "from": "0x013f7fd4",
+        "to": "0x005c5ee0",
+        "type": "DATA"
+      }
+    ],
+    "incoming_edges": [
+      {
+        "from": "0x005c5e83",
+        "to": "0x005c5ee0",
+        "type": "UNCONDITIONAL_CALL",
+        "note": "0x005c5e83 is the JMP operand of the thunk at 0x005c5e80, whose bytes are `SUB ECX,0x8` then `JMP 0x005c5ee0`. It is a tail transfer, not a call frame, and it exists in the file image at an address Ghidra has not defined as a function."
+      }
+    ],
+    "caller_evidence": "live ghidra_get_xrefs_to(0x005c5ee0) returns exactly two references: DATA from 0x013f7fd4 and UNCONDITIONAL_CALL from 0x005c5e83. No direct call from a defined function exists, so every observed entry is through a vtable word.",
+    "dispatch_chain": "0x013f7fcc holds 0x005c5e80, which is the subobject vtable slot at displacement 0x08 of the table at 0x013f7fc4, and that thunk subtracts 8 from ECX before reaching 0x005c5ee0. A dispatch through the receiver+0x08 subobject pointer therefore arrives with the receiver word pre-adjusted to the primary object."
+  },
+  "vtables": {
+    "primary_table": {
+      "address": "0x013f7fd4",
+      "function_word_address": "0x013f7fd4",
+      "function_word": "0x005c5ee0",
+      "slot_displacement": "0x00",
+      "slot_index_zero_based": 0,
+      "adjacent_word_address": "0x013f7fd8",
+      "adjacent_word": "0x00804901",
+      "adjacent_word_note": "0x00804900 is an instruction-aligned `SUB ECX,0x8; JMP 0x00804e70` thunk, so 0x00804901 is not an instruction start. The word is kept as an opaque modeled slot and no role is claimed for it.",
+      "provenance": "live ghidra_read_memory(0x013f7fc0, 32) plus the single DATA reference reported by ghidra_get_xrefs_to(0x005c5ee0)",
+      "briefing_conflict": "the briefing vtables evidence recorded vtable:0x013f7fc4 and ghidra_function.vtables.referenced_by_vtables recorded 0x013f7fc4. The live file image stores 0x005c5ee0 at 0x013f7fd4, and 0x013f7fc4 is the base of the separate subobject table below. The live value is used and the briefing value is reported as superseded, not silently dropped."
+    },
+    "subobject_table": {
+      "address": "0x013f7fc4",
+      "stored_at_receiver_offset": "0x08",
+      "stored_by": "0x005c5e90 stores 0x013f7fc4 at receiver+0x08 and 0x013f7fd4 at receiver+0x00",
+      "words": [
+        "0x013f7fc4 = 0x00ae4340",
+        "0x013f7fc8 = 0x00ae4330",
+        "0x013f7fcc = 0x005c5e80",
+        "0x013f7fd0 = 0x005c5bf0"
+      ],
+      "proven_properties": [
+        "0x00ae4340 begins with `SUB ECX,0x8` and jumps to 0x00804910",
+        "0x005c5e80 begins with `SUB ECX,0x8` and jumps to 0x005c5ee0, the entry of this package",
+        "the table extent beyond these four words is not proven"
+      ],
+      "class_identity": "unknown",
+      "limit": "The table proves function-pointer storage and the -8 receiver adjustment of the thunk. It does not prove which base subobject it belongs to, and the KG vtable lookup for PaletteMain returned nothing."
+    },
+    "class_identity": "unknown",
+    "rtti": "SporeApp.exe has no MSVC RTTI, so no hierarchy, base list, or vftable-to-class binding is claimed from type metadata."
+  },
+  "globals": [],
+  "analogues": [
+    {
+      "package": "PKG-15-EDITOR-SUPPORT",
+      "symbol": "palette_application_setup_005c53c0",
+      "match_basis": "same_subsystem",
+      "note": "score 6 subsystem-only adjacency; no shared mechanic was found and none is claimed"
+    },
+    {
+      "package": "PKG-15-EDITOR-SUPPORT",
+      "symbol": "palette_page_construct_005c9230",
+      "match_basis": "same_subsystem",
+      "note": "score 6 subsystem-only adjacency; no shared mechanic was found and none is claimed"
+    },
+    {
+      "package": "PKG-15-EDITOR-SUPPORT",
+      "symbol": "palette_select_category_005cb240",
+      "match_basis": "same_subsystem",
+      "note": "score 6 subsystem-only adjacency; a name-level 'category' similarity is not treated as evidence"
+    },
+    {
+      "package": "PKG-15-EDITOR-SUPPORT",
+      "symbol": "palette_editor_construct_loop_005cb5a0",
+      "match_basis": "same_subsystem",
+      "note": "score 6 subsystem-only adjacency; no shared mechanic was found and none is claimed"
+    }
+  ],
+  "semantic_findings": {
+    "claim": "Bounded teardown plus one conditional release of the receiver, nothing more.",
+    "statement": "The body always forwards the receiver to 0x005c5e90, releases the receiver through the cdecl null-guarded wrapper 0x00f47380 only when bit 0 of its single stack word is set, and returns the receiver word itself in EAX. It writes no memory of its own.",
+    "identity_conflict": {
+      "imported_sdk_label": "Palettes::PaletteMain::GetCategory(PaletteMain*, uint32_t categoryID) returning PaletteCategory*",
+      "machine_evidence": "The imported SDK name is the only source of the GetCategory label; no evidence in the machine code supports a category lookup. The body performs no lookup, dereferences no receiver word, and returns the receiver word rather than a distinct object, and the entry sits at slot 0 of the vtable word stored at receiver+0x00, which is the position an MSVC virtual destructor occupies.",
+      "classification": "destructor-shaped",
+      "classification_basis": [
+        "a single ordinary stack word whose bit 0 selects free-or-not is the MSVC deleting-destructor flag argument",
+        "0x005c5e90 stores two different pairs of vtable words into its receiver, which is destructor behaviour",
+        "0x00f47380 is a null-guarded one-word release",
+        "the entry occupies vtable slot 0x00 and the adjacent word 0x013f7fd8 is not a proven code pointer, so the modeled table holds one virtual entry"
+      ],
+      "classification_status": "inference, not a recovered source name; no original source identifier, parameter name, or return type is proven",
+      "treatment": "The source symbol embeds the SDK label so the validator can locate the span, and the body models only the machine mechanics. The `categoryID` formal and the `PaletteCategory*` return type of the imported label are explicitly not reproduced; the modeled return type is the receiver word, which the disassembly proves.",
+      "unresolved": "Whether the original class really was named PaletteMain, whether the argument really was named categoryID, and what the return type was in the original source."
+    },
+    "no_ledger_conflict": "No entry in knowledgegraph/research/conflicts was cited for this VA by the briefing, and none was consulted as evidence."
+  },
+  "failure_boundaries": {
+    "null_receiver": "Not guarded. The null word is forwarded to 0x005c5e90, which dereferences it at once; on the release path the null word is also forwarded to 0x00f47380, whose own null check makes that second call a no-op. The model reproduces the forwarding, not the fault.",
+    "stack_word_bit_0_clear": "0x005c5e90 has run and 0x00f47380 has not; the receiver word is still returned.",
+    "stack_word_bit_0_set": "0x005c5e90 has run, the receiver has been handed to the release wrapper, and the receiver word is still returned afterwards. Whether the original caller inspects a released pointer is not observable here.",
+    "unusual_stack_word": "Only bit 0 is consulted, so words 0x00000002 and 0xfffffffe take the same path as zero."
+  },
+  "model_boundary": {
+    "represented": [
+      "the ECX receiver and its copy into ESI",
+      "the unconditional single callee 0x005c5e90 with no ordinary stack word",
+      "the discarded EAX result of that call",
+      "the bit-0 test of the low byte of the single ordinary stack word",
+      "the conditional cdecl release through 0x00f47380 with the receiver as its only argument",
+      "the receiver word returned in EAX on both paths",
+      "the single four-byte callee-side stack cleanup and the saved ESI",
+      "the absence of any receiver read, receiver write, or global access"
+    ],
+    "not_represented": [
+      "the internals of 0x005c5e90, including its list teardown loop and the two pointer words it reads at receiver+0x04 and receiver+0x0c",
+      "the internals of 0x009276c0 behind 0x00f47380",
+      "the meaning of the four words of the subobject vtable at 0x013f7fc4 and of the 0x00ae4330 word beside the 0x00ae4340 thunk",
+      "the role of the adjacent vtable word 0x013f7fd8 = 0x00804901",
+      "the concrete class identity behind either vtable and every base subobject",
+      "the allocation size and full layout of the receiver",
+      "the original source identifier, parameter name, and return type of the imported SDK label"
+    ]
+  },
+  "not_claimed": [
+    "concrete C++ class identity for the receiver, for either vtable, or for the subobject at receiver+0x08",
+    "any RTTI-derived hierarchy, since SporeApp.exe has no MSVC RTTI",
+    "the PaletteMain, PaletteCategory, PaletteIterator or ObjectTYPE types",
+    "that the argument is a category identifier, or that the return is a category object",
+    "the behavior of any code inside 0x005c5e90 or 0x00f47380 beyond the boundary described above",
+    "runtime pointer validity of the receiver, of the two vtable words, or of the release wrapper",
+    "any global, since the eleven instructions touch no absolute address"
+  ],
+  "confidence": {
+    "body": "high",
+    "abi_and_stack_cleanup": "high",
+    "constants": "high",
+    "fields_offsets": "high",
+    "globals": "high",
+    "virtual_dispatch": "high",
+    "return_semantics": "high",
+    "runtime_ownership": "low",
+    "class_identity": "low",
+    "source_identity": "low"
+  },
+  "runtime_gates": [
+    "Observe a real virtual dispatch through the word at 0x013f7fd4 and through the subobject slot at 0x013f7fcc, and record which of the two produced the entry call and with which receiver word.",
+    "Record the receiver words at +0x00, +0x04 and +0x08 before and after the call and confirm that the entry itself leaves all three unchanged.",
+    "Observe 0x005c5e90 live: its loop, the callees it invokes, and the values of the words it reads at receiver+0x04 and receiver+0x0c.",
+    "Capture both stack-word polarities at a real call site and confirm that only bit 0 decides the release.",
+    "Confirm the returned EAX is the receiver word on the release path, where the receiver has just been handed to the release wrapper.",
+    "Determine the class and base-subobject binding of the vtables at 0x013f7fd4 and 0x013f7fc4, and the role of the word at 0x013f7fd8.",
+    "Resolve whether the original source identifier, argument name, and return type match the imported SDK label or the destructor-shaped reading of the body."
+  ],
+  "unresolved_questions": [
+    "The briefing carried no ABI section (evidence.missing_sections listed ABI), so the recorded ABI is derived from the eleven-instruction disassembly plus read-only live Ghidra queries; a repaired calling convention in Ghidra should confirm it.",
+    "The live Ghidra signature is (PaletteMain * this, uint32_t categoryID) returning PaletteCategory*, but the decompilation carries the warning 'Unknown calling convention' and renders the return as a synthetic in_ECX. The disassembly proves the return register is EAX and that EAX holds the receiver, so the recorded return type is the receiver word rather than the imported PaletteCategory*.",
+    "The briefing vtables evidence recorded vtable:0x013f7fc4 while the live file image stores 0x005c5ee0 at 0x013f7fd4. Which of the two records is authoritative for the triage ledger, and does 0x013f7fc4 need a correction?",
+    "Is the entry a deleting destructor, a hand-written release wrapper, or an accessor that the SDK symbol importer mislabeled? The machine mechanics are identical in all three cases, so the classification is unresolved.",
+    "What is the argument really named and typed in the original source, given that only its low byte is read?",
+    "What class owns the vtable at 0x013f7fd4, what does the adjacent word 0x013f7fd8 = 0x00804901 represent, and why is it one byte into the 0x00804900 thunk?",
+    "Which base subobject does the table at 0x013f7fc4 belong to, and what do its four thunk words do besides the -8 adjustment?",
+    "What do the words at receiver+0x04 and receiver+0x0c that 0x005c5e90 reads and subtracts represent, and what type do they hold?",
+    "Can the returned EAX be a released pointer in the original program, and does any caller use it after the release?",
+    "What is the receiver's full layout and allocation size, and can a null receiver ever reach this entry in the original program?"
+  ],
+  "live_evidence": {
+    "program": "SporeApp.exe",
+    "image_base": "0x400000",
+    "mode": "live, read-only",
+    "function_by_address": "Palettes::PaletteMain::GetCategory at 0x005c5ee0, 11 instructions through 0x005c5efb",
+    "briefing_decompilation": "briefing decompilation field for 0x005c5ee0, warning 'Unknown calling convention'",
+    "briefing_disassembly": "briefing disassembly field, 11 instructions 0x005c5ee0 through 0x005c5efb",
+    "disassemble_function": "0x005c5ee0 reproduced the eleven instructions exactly as recorded in the briefing",
+    "disassemble_bytes": "0x005c5e80 length 16 gave `SUB ECX,0x8` then `JMP 0x005c5ee0`; 0x00804901 length 16 gave a thunk boundary at 0x00804903, so the vtable word 0x00804901 is not an instruction start",
+    "read_memory": "0x005c5ee0 length 32, 0x005c5e90 length 80, 0x013f7f90 length 112, 0x013f7fc0 length 32, 0x00804900 length 8",
+    "get_xrefs_to": "0x005c5ee0 returns exactly two references, DATA from 0x013f7fd4 and UNCONDITIONAL_CALL from 0x005c5e83",
+    "decompile_function": "0x005c5e90 destructor-shaped body with the 0x013f7fd4 and 0x013f7fc4 stores; 0x00f47380 null-guarded one-word release calling 0x009276c0",
+    "vtable_lookup": "openspore_vtable_lookup returned nothing for class PaletteMain and nothing for address 0x013f7fd4, so no class binding is available from the KG"
+  },
+  "provenance": [
+    "briefing: decompilation, disassembly, xrefs, ghidra_function, vtables, analogues for 0x005c5ee0",
+    "ghidra_disassemble_function(0x005c5ee0)",
+    "ghidra_get_xrefs_to(0x005c5ee0)",
+    "ghidra_decompile_function(0x005c5e90)",
+    "ghidra_decompile_function(0x00f47380)",
+    "ghidra_disassemble_bytes(0x005c5e80, 16)",
+    "ghidra_disassemble_bytes(0x00ae4340, 12)",
+    "ghidra_disassemble_bytes(0x00804901, 16)",
+    "ghidra_read_memory(0x005c5e90, 80)",
+    "ghidra_read_memory(0x013f7f90, 112)",
+    "ghidra_read_memory(0x013f7fc0, 32)",
+    "ghidra_read_memory(0x00804900, 8)",
+    "openspore_vtable_lookup(PaletteMain)",
+    "openspore_vtable_lookup(0x013f7fd4)"
+  ],
+  "ghidra_mutations": 0,
+  "ghidra_saves": 0,
+  "evidence_refs": [
+    ".spore-analysis/ghidra-exports/decompiled_sdk/Palettes__PaletteMain__GetCategory.c",
+    "briefing 005c5ee0.disassembly",
+    "briefing 005c5ee0.decompilation",
+    "briefing 005c5ee0.xrefs",
+    "briefing 005c5ee0.vtables",
+    "GhidraMCP /disassemble_function 0x005c5ee0",
+    "GhidraMCP /get_xrefs_to 0x005c5ee0",
+    "GhidraMCP /disassemble_bytes 0x005c5e80, 0x00ae4340, 0x00804901",
+    "GhidraMCP /decompile_function 0x005c5e90, 0x00f47380",
+    "GhidraMCP /read_memory 0x005c5e90, 0x013f7f90, 0x013f7fc0, 0x00804900",
+    "knowledgegraph/research/source-reconstruction-manifest.json",
+    "knowledgegraph/triage/queue-f0e310e0-v6.json"
+  ],
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/pkg-orchestrate-dogfood-005c5ee0 reconstruction/staging/pkg-orchestrate-dogfood-005c5ee0/dogfood_005c5ee0.cpp",
+    "syntax_test_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/pkg-orchestrate-dogfood-005c5ee0 reconstruction/staging/pkg-orchestrate-dogfood-005c5ee0/dogfood_005c5ee0_model_test.cpp",
+    "model_command": "clang++ -m32 -std=c++17 -O0 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg-orchestrate-dogfood-005c5ee0 reconstruction/staging/pkg-orchestrate-dogfood-005c5ee0/dogfood_005c5ee0.cpp reconstruction/staging/pkg-orchestrate-dogfood-005c5ee0/dogfood_005c5ee0_model_test.cpp -o /tmp/opencode/dogfood/t_005c5ee0_o0 && /tmp/opencode/dogfood/t_005c5ee0_o0",
+    "o2_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg-orchestrate-dogfood-005c5ee0 reconstruction/staging/pkg-orchestrate-dogfood-005c5ee0/dogfood_005c5ee0.cpp reconstruction/staging/pkg-orchestrate-dogfood-005c5ee0/dogfood_005c5ee0_model_test.cpp -o /tmp/opencode/dogfood/t_005c5ee0_o2 && /tmp/opencode/dogfood/t_005c5ee0_o2",
+    "ndebug_command": "clang++ -m32 -std=c++17 -O2 -DNDEBUG -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg-orchestrate-dogfood-005c5ee0 reconstruction/staging/pkg-orchestrate-dogfood-005c5ee0/dogfood_005c5ee0.cpp reconstruction/staging/pkg-orchestrate-dogfood-005c5ee0/dogfood_005c5ee0_model_test.cpp -o /tmp/opencode/dogfood/t_005c5ee0_o2n && /tmp/opencode/dogfood/t_005c5ee0_o2n",
+    "format_command": "clang-format --dry-run --Werror --style='{BasedOnStyle: Google, FixNamespaceComments: false}' reconstruction/staging/pkg-orchestrate-dogfood-005c5ee0/dogfood_005c5ee0.hpp reconstruction/staging/pkg-orchestrate-dogfood-005c5ee0/dogfood_005c5ee0.cpp reconstruction/staging/pkg-orchestrate-dogfood-005c5ee0/dogfood_005c5ee0_model_test.cpp",
+    "json_command": "python3 -m json.tool reconstruction/metadata/pkg-orchestrate-dogfood-005c5ee0/005c5ee0.json",
+    "runtime": "not performed"
+  },
+  "verification_results": {
+    "x86_32_syntax": "passed",
+    "x86_32_syntax_model_test": "passed",
+    "o0_model_test": "passed",
+    "o2_model_test": "passed",
+    "o2_ndebug_model_test": "passed",
+    "clang_format": "passed",
+    "json": "passed",
+    "scoped_diff_check": "passed",
+    "negative_control": "an out-of-tree copy with the mask changed from 0x1 to 0x2 fails the bit-0 test case, so the tested-mask claim is load bearing",
+    "runtime_validation": "not run"
+  },
+  "focused_model_test": {
+    "path": "reconstruction/staging/pkg-orchestrate-dogfood-005c5ee0/dogfood_005c5ee0_model_test.cpp",
+    "cases": [
+      "0x005c5e90 runs first and unconditionally with the receiver",
+      "the release runs only when bit 0 of the stack word is set, over words 0x0, 0x1, 0x2 and 0x3",
+      "the release port receives the receiver word",
+      "the returned value is the receiver on both the release and the skip path",
+      "a null receiver reaches both ports unguarded",
+      "no receiver word is written by the body",
+      "the ports table defaults to null",
+      "modeled signatures match the entry, the vtable slot, the teardown port and the release port"
+    ],
+    "o0": "pass",
+    "o2": "pass",
+    "o2_ndebug": "pass",
+    "result": "pass"
+  }
+}

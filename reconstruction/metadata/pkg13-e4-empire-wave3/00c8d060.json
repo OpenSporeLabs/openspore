@@ -1,0 +1,133 @@
+{
+  "schema": "pkg13-e4-empire-wave3.function-handoff.v1",
+  "package": "PKG-13-E4-EMPIRE-WAVE3",
+  "function_address": "0x00c8d060",
+  "ghidra_name": "FUN_00c8d060",
+  "normalized_symbol": "PoliticalOwnershipScan_00c8d060",
+  "source_files": [
+    "reconstruction/staging/pkg13-e4-empire-wave3/empire_wave3.hpp",
+    "reconstruction/staging/pkg13-e4-empire-wave3/empire_wave3.cpp",
+    "reconstruction/staging/pkg13-e4-empire-wave3/empire_wave3_model_test.cpp",
+    "reconstruction/staging/pkg13-e4-empire-wave3/empire_wave3_boundary_test.sh"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "void __cdecl PoliticalOwnershipScan_00c8d060(OpaqueRecord* record);",
+  "abi": {
+    "calling_convention": "cdecl",
+    "hidden_this_register": null,
+    "stack_arguments": [
+      {"position": 1, "entry_offset": "ESP+0x04", "name": "record", "type": "OpaqueRecord*", "width_bytes": 4}
+    ],
+    "stack_cleanup_bytes": 0,
+    "termination": "plain RET on every return path",
+    "return_type": "void",
+    "frame_allocation_bytes": "0x1c",
+    "saved_registers": ["EBX", "EBP", "ESI", "EDI"]
+  },
+  "body": {
+    "status": "reconstructed",
+    "entry_address": "0x00c8d060",
+    "body_addresses": ["0x00c8d060", "0x00c8d2e1"],
+    "instruction_count": 196,
+    "mechanics": [
+      "Call 0x00bba790 on the input record and read the returned range as begin and end pointers; the element count is the unsigned pointer-byte difference shifted right by two.",
+      "For each root candidate, require 0x00b8dab0(candidate) == 5, candidate+0x28 != 1, candidate+0x28 != 0, and 0x00b8d970(candidate) == 0.",
+      "An accepted candidate with an empty range at +0x15c/+0x160 returns immediately. For each child, an empty range at +0x3c/+0x40 also returns immediately.",
+      "For each star record, read the float at +0x3c through 0x00b7e0a0. A value below 100.0 returns immediately; equality and unordered values do not take that branch.",
+      "Read the common identity through 0x00a1ad10. The first value initializes the local -1 sentinel; every later value must equal it or the function returns immediately.",
+      "If no common identity was found, return. Otherwise compare it with 0x01021090. A mismatch calls 0x00c8d000(record, common_identity), then 0x010212a0, 0x01021080, 0x00b8dab0, and 0x00b8de30 in the visible short-circuit order.",
+      "The mismatch branch requires current mode zero, current-star type five, and the reference word from 0x00b8de30 equal to the input record word. A positive count from 0x00ff5930 enters a loop that calls 0x01002bd0, 0x00b1fdb0, and 0x00ffa780 once per count before returning.",
+      "When the common identity equals the current identity, require a non-null 0x010212a0 result. Call 0x00a206f0 for the message service, use vtable +0x20 for a word, call 0x00a206f0 again, then dispatch +0x38 with 0x03475365, +0x40 with 0x3475381 and 0xef7f5479, +0x40 with 0x3475385 and the first word, and +0x58.",
+      "After the callbacks, call 0x00b3d300, retrieve state through 0x00f67d90, and query 0x00c772c0(state, 0x6627823). A true query returns; a false query calls 0x00c77bf0(state, 0x6627823), then 0x010666a0(0xee98e353) and 0x0106dcd0 with that result and 0xee98e353."
+    ]
+  },
+  "call_order": [
+    {"order": 1, "address": "0x00bba790", "condition": "always", "abi": "thiscall", "receiver": "record", "result": "root range pointer"},
+    {"order": 2, "address": "0x00b8dab0", "condition": "each root candidate", "abi": "thiscall", "receiver": "root candidate", "result": "type word"},
+    {"order": 3, "address": "0x00b8d970", "condition": "type and field-0x28 gates pass", "abi": "thiscall", "receiver": "root candidate", "result": "state byte"},
+    {"order": 4, "address": "0x00b7e0a0", "condition": "each star record", "abi": "thiscall", "receiver": "star record", "result": "float at +0x3c"},
+    {"order": 5, "address": "0x00a1ad10", "condition": "each threshold-passing star", "abi": "thiscall", "receiver": "star record", "result": "common identity candidate"},
+    {"order": 6, "address": "0x01021090", "condition": "common identity found", "abi": "cdecl", "result": "current identity"},
+    {"order": 7, "address": "0x00c8d000", "condition": "common identity differs from current identity", "abi": "cdecl", "arguments": ["record", "common identity"]},
+    {"order": 8, "address": "0x010212a0", "condition": "after identity branch selection", "abi": "cdecl", "result": "current star pointer"},
+    {"order": 9, "address": "0x01021080", "condition": "identity differs", "abi": "cdecl", "result": "current mode"},
+    {"order": 10, "address": "0x00b8dab0", "condition": "current mode is zero", "abi": "thiscall", "receiver": "current star"},
+    {"order": 11, "address": "0x00b8de30", "condition": "current star type is five", "abi": "thiscall", "receiver": "current star"},
+    {"order": 12, "address": "0x00ff5930", "condition": "current reference matches input", "abi": "cdecl", "arguments": ["current star"], "result": "cleanup count"},
+    {"order": 13, "address": "0x01002bd0", "condition": "each positive cleanup-loop iteration", "abi": "cdecl", "result": "opaque cleanup root"},
+    {"order": 14, "address": "0x00b1fdb0", "condition": "each positive cleanup-loop iteration", "abi": "thiscall", "receiver": "cleanup root"},
+    {"order": 15, "address": "0x00ffa780", "condition": "each positive cleanup-loop iteration", "abi": "thiscall", "receiver": "cleanup word"},
+    {"order": 16, "address": "0x00a206f0", "condition": "common identity equals current identity and current star is non-null", "abi": "cdecl", "result": "message service"},
+    {"order": 17, "address": "0x00a206f0", "condition": "second message-service lookup", "abi": "cdecl", "result": "message service"},
+    {"order": 18, "address": "0x00b3d300", "condition": "after message callbacks", "abi": "cdecl", "result": "message root"},
+    {"order": 19, "address": "0x00f67d90", "condition": "message root lookup", "abi": "thiscall", "receiver": "message root", "result": "message state"},
+    {"order": 20, "address": "0x00c772c0", "condition": "message state is non-null", "abi": "thiscall", "receiver": "message state", "stack_argument": "0x6627823"},
+    {"order": 21, "address": "0x00c77bf0", "condition": "message query returns false", "abi": "thiscall", "receiver": "message state", "stack_argument": "0x6627823"},
+    {"order": 22, "address": "0x010666a0", "condition": "after message insertion", "abi": "cdecl", "stack_argument": "0xee98e353", "result": "persistence target"},
+    {"order": 23, "address": "0x0106dcd0", "condition": "after persistence lookup", "abi": "thiscall", "receiver": "persistence target", "stack_argument": "0xee98e353"}
+  ],
+  "layout": {
+    "root_candidate_state": "0x28",
+    "star_identity": "0x38",
+    "star_metric": "0x3c",
+    "root_range": "0x84..0x8b",
+    "alternate_root_range": "0x98..0x9f",
+    "record_reference": "0x184",
+    "root_type": "0x194",
+    "candidate_child_range": "0x15c..0x163",
+    "child_star_range": "0x3c..0x43 on the child object"
+  },
+  "mechanics_scope": {
+    "candidate_filtering": "Type, candidate+0x28, and state gates are checked in the target order. Empty candidate and child ranges return rather than skip to the next candidate.",
+    "threshold": "The float comparison is strictly below 100.0. A value equal to 100.0 and a NaN value continue because the assembly branch is not taken for equality or unordered comparison.",
+    "common_identity": "The first star identity initializes the local -1 sentinel; every subsequent identity must match. A final -1 value returns without entering either current-player branch.",
+    "current_player_mismatch": "The ownership-apply call, current-star lookup, mode gate, type gate, reference gate, and positive cleanup loop remain separate ports and preserve short-circuit order.",
+    "current_player_match": "The two service lookups, vtable callbacks, message-state query, insertion, persistence lookup, and persistence append are kept in separate MessagePorts and PersistencePorts groups.",
+    "ownership_vs_other_domains": "Star/planet ownership, message callbacks, and persistence are not represented as one state object. Empire identity remains the raw current-identity comparison and no UI or event semantics are invented."
+  },
+  "call_graph": {
+    "direct_callers": ["0x00be9b20"],
+    "direct_call_sites": 1,
+    "direct_callees": ["0x00a1ad10", "0x00a206f0", "0x00b1fdb0", "0x00b3d300", "0x00b7e0a0", "0x00b8d970", "0x00b8dab0", "0x00b8de30", "0x00bba790", "0x00c772c0", "0x00c77bf0", "0x00c8d000", "0x00f67d90", "0x00ff5930", "0x00ffa780", "0x01002bd0", "0x01021080", "0x01021090", "0x010212a0", "0x010666a0", "0x0106dcd0"],
+    "function_xrefs": 1
+  },
+  "evidence": [
+    {"tool": "ghidra_get_function_by_address", "address": "0x00c8d060", "observation": "Live function is 0x00c8d060 through 0x00c8d2e1."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00c8d060", "observation": "Assembly proves the cdecl record argument, 0x1c frame allocation, candidate and nested loops, threshold branch, current-player split, callback order, and plain RET."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00bba790", "observation": "Root range is returned as a pointer to a begin/end range object; the alternate range is selected by bit 6 of the source record."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00b7e0a0", "observation": "Star metric is the float at receiver+0x3c and returns through x87 ST(0)."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00b8d970", "observation": "Candidate state is extracted from receiver+0x2c bits 8 through 15 and returns in AL."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00a1ad10", "observation": "Star identity is the word at receiver+0x38."},
+    {"tool": "ghidra_get_function_xrefs", "address": "0x00c8d060", "observation": "One direct call-site xref from 0x00be9c90 is reported."}
+  ],
+  "tests": [
+    "root candidate type, field-0x28, and state filtering",
+    "empty candidate range immediate return",
+    "empty child star range immediate return",
+    "threshold below, equal, and unordered float paths",
+    "first common identity and later mismatch return",
+    "no common identity return",
+    "current-player mismatch apply and cleanup-loop order",
+    "current-player mode short circuit",
+    "current-player match service lookup and vtable callback order",
+    "message contains, insert, persistence lookup, and append ordering",
+    "current-star null and message-state null paths"
+  ],
+  "confidence": {
+    "body": "high",
+    "abi_and_cleanup": "high",
+    "candidate_filtering": "high",
+    "threshold_and_identity": "high",
+    "current_player_branches": "high",
+    "message_and_persistence_runtime_semantics": "medium; concrete object meanings remain opaque"
+  },
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/pkg13-e4-empire-wave3 reconstruction/staging/pkg13-e4-empire-wave3/empire_wave3.cpp reconstruction/staging/pkg13-e4-empire-wave3/empire_wave3_model_test.cpp",
+    "model_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg13-e4-empire-wave3 reconstruction/staging/pkg13-e4-empire-wave3/empire_wave3.cpp reconstruction/staging/pkg13-e4-empire-wave3/empire_wave3_model_test.cpp -o /tmp/opencode/pkg13-e4-wave3-o2 && /tmp/opencode/pkg13-e4-wave3-o2",
+    "ndebug_command": "clang++ -m32 -std=c++17 -O2 -DNDEBUG -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg13-e4-empire-wave3 reconstruction/staging/pkg13-e4-empire-wave3/empire_wave3.cpp reconstruction/staging/pkg13-e4-empire-wave3/empire_wave3_model_test.cpp -o /tmp/opencode/pkg13-e4-wave3-ndebug && /tmp/opencode/pkg13-e4-wave3-ndebug",
+    "format_command": "clang-format --dry-run --Werror --style='{BasedOnStyle: Google, FixNamespaceComments: false}' reconstruction/staging/pkg13-e4-empire-wave3/empire_wave3.hpp reconstruction/staging/pkg13-e4-empire-wave3/empire_wave3.cpp reconstruction/staging/pkg13-e4-empire-wave3/empire_wave3_model_test.cpp",
+    "json_command": "python3 -m json.tool reconstruction/metadata/pkg13-e4-empire-wave3/00c8d060.json >/dev/null",
+    "abi_check_command": "sh reconstruction/staging/pkg13-e4-empire-wave3/empire_wave3_boundary_test.sh",
+    "results": {"syntax": "passed", "model": "passed", "ndebug": "passed", "format": "passed", "json": "passed", "abi_check": "passed"}
+  }
+}

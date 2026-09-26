@@ -1,0 +1,46 @@
+{
+  "va": "0x004bf770",
+  "body": "0x004bf770..0x004bf9e4",
+  "instructions": 226,
+  "symbol": "editor_bake_probe_004bf770",
+  "abi": {
+    "convention": "cdecl",
+    "stack_words": [
+      "OpaqueProbeOwner * owner",
+      "OpaqueBakeRow * row"
+    ],
+    "return": "byte in AL",
+    "stack_cleanup": "bare RET, the caller releases both words",
+    "saved_registers": "EBP only",
+    "frame": "SUB ESP, 0x44"
+  },
+  "block_lengths": [
+    "group = the four byte distance between row+0x9c and row+0x98, then a signed divide by 0x8c",
+    "spans = the four byte distance between row+0xb0 and row+0xac, then an arithmetic shift right by two",
+    "links = the four byte distance between row+0xec and row+0xe8, then an arithmetic shift right by two",
+    "seats = the four byte distance between row+0x118 and row+0x114, then a signed divide by 0x38"
+  ],
+  "all_four_lengths_are_computed_before_the_first_dispatch": true,
+  "gate_order": [
+    "vtable slot +0x38 with (&descriptor, 8), where descriptor is {0xabb455b7, 10}",
+    "vtable slot +0x38 with (&group, 16)",
+    "0x004bf0a0, cdecl, three words (owner, row+0x18, 0x80), caller cleans",
+    "vtable slot +0x38 with (row+0x98, group * 0x8c)",
+    "vtable slot +0x38 with (row+0xac, spans << 2)",
+    "vtable slot +0x38 with (row+0xc0, spans)",
+    "vtable slot +0x38 with (row+0xd4, links << 2)",
+    "vtable slot +0x38 with (row+0xe8, links << 2)",
+    "vtable slot +0x38 with (row+0xfc, links << 2)",
+    "vtable slot +0x38 with (row+0x110, 4)",
+    "vtable slot +0x38 with (row+0x114, seats * 0x38)"
+  ],
+  "gate_convention": "stdcall with two words, no receiver pushed; the callee releases the eight bytes, which is why the caller emits no stack adjustment after the indirect call",
+  "failure_handling": "every gate failure branches to a single site that clears AL and leaves through the shared epilogue, so the first failure in the order above decides the result",
+  "success": "MOV AL, 1 then the shared epilogue",
+  "decompilation_defects_corrected": [
+    "the decompilation reports eleven dispatches; the assembly has ten indirect probe calls plus one direct budget call",
+    "the decompilation does not show that the probe slot is stdcall, so it appears to leak its arguments"
+  ],
+  "reconstruction": "editor_bake_probe_004bf770 in editor_wave11.cpp",
+  "confidence": "high; the gate order and every size expression were read from the assembly"
+}

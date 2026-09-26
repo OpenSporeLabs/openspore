@@ -1,0 +1,14 @@
+PUSH EBP
+MOV EBP,ESP
+SUB ESP,0x2000
+MOV EAX,dword ptr [ECX + 0x8]
+MOV EAX,dword ptr [ECX + 0xc]
+MOV EAX,dword ptr [EBP + 0x8]
+MOV EDX,dword ptr [EBP + 0xc]
+PUSH EDX
+PUSH EAX
+CALL 0x00903400
+ADD ESP,0x8
+MOV ESP,EBP
+POP EBP
+RET

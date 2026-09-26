@@ -1,0 +1,123 @@
+{
+  "schema": "pkg13-e2-diplomacy-alt.function-handoff.v1",
+  "package": "PKG-13-E2-DIPLOMACY-ALT",
+  "function_address": "0x00d00d60",
+  "ghidra_name": "FUN_00d00d60",
+  "normalized_symbol": "RelationshipScoreObjects_00d00d60",
+  "source_files": [
+    "reconstruction/staging/pkg13-e2-diplomacy-alt/diplomacy_alt.hpp",
+    "reconstruction/staging/pkg13-e2-diplomacy-alt/diplomacy_alt.cpp",
+    "reconstruction/staging/pkg13-e2-diplomacy-alt/diplomacy_alt_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "float __thiscall RelationshipScoreObjects_00d00d60(OpaqueRelationshipPolicy* policy, OpaqueIdentityObject* first, OpaqueIdentityObject* second, std::uint32_t mode);",
+  "abi": {
+    "calling_convention": "thiscall",
+    "hidden_this_register": "ECX",
+    "hidden_this_type": "OpaqueRelationshipPolicy*",
+    "stack_arguments": [
+      {"position": 1, "entry_offset": "ESP+0x04", "name": "first", "type": "OpaqueIdentityObject*", "width_bytes": 4},
+      {"position": 2, "entry_offset": "ESP+0x08", "name": "second", "type": "OpaqueIdentityObject*", "width_bytes": 4},
+      {"position": 3, "entry_offset": "ESP+0x0c", "name": "mode", "type": "std::uint32_t", "width_bytes": 4}
+    ],
+    "stack_cleanup_bytes": 12,
+    "termination": "RET 0x0c on both paths",
+    "return_type": "float",
+    "return_location": "x87 ST(0)",
+    "return_width_bytes": 4,
+    "internal_raw_score_call": {
+      "address": "0x00d00a10",
+      "calling_convention": "thiscall",
+      "receiver_register": "ECX",
+      "receiver": "entry policy",
+      "stack_arguments_top_to_bottom": ["first identity", "second identity", "mode"],
+      "stack_cleanup_bytes": 12
+    }
+  },
+  "body": {
+    "status": "reconstructed",
+    "entry_address": "0x00d00d60",
+    "body_addresses": ["0x00d00d60", "0x00d00da1"],
+    "instruction_count": 32,
+    "basic_block_count": 5,
+    "raw_bytes": "538bd98b4c24085685c9742f8b74241085f674278b018b504c57ffd28bf88b068b504c8bceffd28b4c24185150578bcbe87bfcffff5f5e5bc20c00d9ee5e5bc20c00",
+    "mechanics": [
+      "Test first and then second for null; either null returns x87 positive zero and skips both virtual identity calls and 0x00d00a10.",
+      "Load first vtable, call slot +0x4c with first in ECX, and retain the returned 32-bit identity in EDI.",
+      "Load second vtable, call the same +0x4c slot with second in ECX, and retain its identity in EAX.",
+      "Call 0x00d00a10 with policy in ECX and stack words first identity, second identity, and mode, then return its x87 float unchanged.",
+      "Pop EBX, ESI, and EDI and remove 12 argument bytes on both score and null exits."
+    ]
+  },
+  "layout": {
+    "object_vtable_offset": "0x00",
+    "identity_virtual_slot_offset": "0x4c",
+    "identity_virtual_slot_index": 19,
+    "identity_virtual_signature": "std::uint32_t __thiscall(OpaqueIdentityObject*)",
+    "identity_virtual_return": "EAX",
+    "concrete_object_owner": "unresolved"
+  },
+  "mechanics_scope": {
+    "directed_identity": "The first object's identity is always the source word and the second object's identity is always the target word passed to 0x00d00a10.",
+    "same_object": "Passing the same object twice performs two virtual identity calls; no pointer or identity equality shortcut exists.",
+    "null_paths": "Null first or null second returns +0.0f. Null vtables and null vtable slots have no guard.",
+    "sentinel_and_invalid_ids": "Identity results are not validated. Zero and 0xffffffff are passed to the raw score in caller order.",
+    "null_policy": "The entry policy is not dereferenced or checked by this body and is forwarded unchanged as the hidden receiver.",
+    "raw_score_bounds": "The selected target does not clamp. Its 0x00d00a10 dependency clamps the delegated relationship result to [-10.0, 10.0].",
+    "state_events_containers": "No empire, diplomacy, relationship, UI, communication, persistence, event, or container state is written.",
+    "virtual_dispatch_order": ["first+0x4c", "second+0x4c", "0x00d00a10(source, target, mode)"]
+  },
+  "call_graph": {
+    "direct_callers": ["0x00dca100", "0x00ea8c30"],
+    "additional_call_sites_without_function_boundary": ["0x00bdf3a6"],
+    "direct_call_sites": ["0x00bdf3a6", "0x00dca3ef", "0x00ea8db8"],
+    "direct_callees": ["0x00d00a10"],
+    "function_xrefs": 3
+  },
+  "dependency_contracts": {
+    "0x00b3d2c0": "policy resolver used by callers; not called by 0x00d00d60",
+    "0x00d00a10": "raw relationship score with hidden policy receiver and three callee-cleaned identity/mode words",
+    "0x00d05a20": "relationship lookup/value dependency of 0x00d00a10; not owned by this target"
+  },
+  "evidence": [
+    {"tool": "ghidra_get_function_by_address", "address": "0x00d00d60", "observation": "Live function is 0x00d00d60 through 0x00d00da1."},
+    {"tool": "ghidra_decompile_function", "address": "0x00d00d60", "observation": "Live pseudocode proves the two null guards, ordered +0x4c identity calls, and raw score delegation."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00d00d60", "observation": "Assembly proves hidden policy ECX, three stack words, +0x4c dispatch, first/second call order, FLDZ, and RET 0x0c on both exits."},
+    {"tool": "ghidra_get_function_callers", "address": "0x00d00d60", "observation": "Two caller functions are reported."},
+    {"tool": "ghidra_get_function_callees", "address": "0x00d00d60", "observation": "0x00d00a10 is the only direct callee."},
+    {"tool": "ghidra_get_function_xrefs", "address": "0x00d00d60", "observation": "Three direct call-site xrefs are reported, including one outside a defined function body."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00d00a10", "observation": "Raw score dependency is thiscall with source, target, mode and RET 0x0c."},
+    {"tool": "ghidra_read_memory", "addresses": ["0x01478d5c", "0x01478d60"], "observation": "Dependency bounds decode to -10.0 and 10.0."}
+  ],
+  "tests": [
+    "null first, null second, and both-null short-circuit without dispatch",
+    "first/second virtual identity and raw-score ordering",
+    "directed reversal and same-object double dispatch",
+    "zero and 0xffffffff identity forwarding",
+    "unchanged relationship state, event list, and container state"
+  ],
+  "confidence": {
+    "body": "high",
+    "abi_and_cleanup": "high",
+    "virtual_slot": "high",
+    "directed_order": "high",
+    "concrete_object_owner": "low"
+  },
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/pkg13-e2-diplomacy-alt reconstruction/staging/pkg13-e2-diplomacy-alt/diplomacy_alt.cpp reconstruction/staging/pkg13-e2-diplomacy-alt/diplomacy_alt_model_test.cpp",
+    "model_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg13-e2-diplomacy-alt reconstruction/staging/pkg13-e2-diplomacy-alt/diplomacy_alt.cpp reconstruction/staging/pkg13-e2-diplomacy-alt/diplomacy_alt_model_test.cpp -o /tmp/opencode/pkg13-e2-diplomacy-alt-model && /tmp/opencode/pkg13-e2-diplomacy-alt-model",
+    "format_command": "clang-format --dry-run --Werror --style='{BasedOnStyle: Google, FixNamespaceComments: false}' reconstruction/staging/pkg13-e2-diplomacy-alt/diplomacy_alt.hpp reconstruction/staging/pkg13-e2-diplomacy-alt/diplomacy_alt.cpp reconstruction/staging/pkg13-e2-diplomacy-alt/diplomacy_alt_model_test.cpp",
+    "json_command": "python3 -m json.tool reconstruction/metadata/pkg13-e2-diplomacy-alt/00d00d60.json >/dev/null",
+    "results": {"syntax": "passed", "model": "passed", "format": "passed", "json": "passed"}
+  },
+  "unresolved_questions": [
+    "concrete first and second object owners and +0x4c implementations",
+    "relationship policy owner and runtime score availability",
+    "runtime meaning and domain of mode",
+    "runtime score values for directed identity pairs"
+  ],
+  "blockers": [
+    "No original-process object identities, policy, or relationship score was observed.",
+    "Concrete vtable implementations and relationship persistence remain opaque."
+  ]
+}

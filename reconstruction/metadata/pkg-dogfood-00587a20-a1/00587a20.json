@@ -1,0 +1,270 @@
+{
+ "behaviours_not_smoothed_over": [
+  "The allocation-failure path dereferences null twice (0x00587bdc writes through 0x0000000c; 0x00587c6f reads [EDI]). Reproduced as the machine has it rather than guarded.",
+  "The +0x294 member runs slot 0x28 then slot 0x24 with no re-test between them, so a slot 0x28 that clears the member faults. Ghidra's decompilation supplies the missing test.",
+  "The +0x5d4 group clears receiver+0x5d4 BEFORE the five-argument call, so the callee receives a stale head word as arg0 and dereferences it."
+ ],
+ "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+ "blockers": [
+  "No original-process trace exists in this repository, so nothing about this function's runtime behaviour is established. The five conflict-ledger entries that name 0x00587a20 (editor_input_routing, editor_runtime_validation, history_budget_semantics, manipulator_cancel, manipulator_types) all record that their transition contract is not established, and all five remain open: knowledgegraph/research/conflicts/track-c-state-events.json.",
+  "The canonical record associates vtable:0x013f57f8 with this target while the xref export records vtable_reference_count 0, so the two contradict each other and neither is independent of the other. No table is claimed as a dispatch target.",
+  "The xref export's edge list for this target is truncated at 30 of 78 rows (MAX_DEPENDENCY_EDGES), so the validator's CALLS check can only WARN: the machine callee set is a lower bound and cannot bound the source. The 54-target parity reported above was measured against GhidraMCP directly instead."
+ ],
+ "body": {
+  "absolute_data_addresses": [
+   "0x015fd918",
+   "0x016f6ee0",
+   "0x015eebec"
+  ],
+  "basic_blocks": 167,
+  "call_sites_total": 162,
+  "cfg_acyclic": true,
+  "cfg_note": "A full reachability walk from the entry reaches all 167 blocks and a DFS finds no cycle. The one backward JMP (0x00588225 -> 0x00587bd0) is a re-entry into a shared block, not a loop: nothing reaches 0x00588225 from 0x00587bd0.",
+  "conditional_branches": 107,
+  "direct_call_distinct_targets": 54,
+  "direct_call_sites": 77,
+  "end": "0x0058856a",
+  "indirect_call_sites": 85,
+  "instructions": 934,
+  "receiver_offset_range": "0x0078..0x05e4",
+  "receiver_offsets": 61,
+  "returns": 1,
+  "span_bytes": 2891,
+  "start": "0x00587a20",
+  "unconditional_jumps": 6
+ },
+ "call_graph": {
+  "direct_distinct": 54,
+  "direct_sites": 77,
+  "inbound_callers": 0,
+  "inbound_note": "the xref export records no caller of 0x00587a20; how the original reaches this function is not established by anything in this repository",
+  "indirect_sites": 85
+ },
+ "callee_declarations": {
+  "basis": "each declaration's convention and argument count is read off that CALLEE's own epilogue and prologue, never off this caller's call site",
+  "count": 54,
+  "tail_jumping_callees": {
+   "0x00587270": "JMP 0x005879ac -> RET 0x8 at 0x00587a10",
+   "0x0067c420": "JMP 0x0067c350 -> RET 0x8 at 0x0067c3a0",
+   "0x0067ca40": "JMP 0x0067c9b0 -> RET at 0x0067ca3a"
+  }
+ },
+ "confidence": {
+  "body": "HIGH",
+  "call_set": "HIGH",
+  "callee_argument_roles": "MEDIUM",
+  "calling_convention": "HIGH",
+  "control_flow": "HIGH",
+  "direct_callee_arities": "HIGH",
+  "field_semantics": "NONE",
+  "frame_layout": "HIGH",
+  "indirect_callee_arities": "MEDIUM",
+  "indirect_callee_arities_note": "85 sites, of which the pop amount is forced for exactly one (0x00587b21, which pops nothing). The balance constraint leaves 21 sites with ARGS>0 undetermined; the source assumes each pops its arguments, which is consistent with every merge and the exit but is not uniquely forced by them.",
+  "indirect_dispatch_slots": "HIGH",
+  "receiver_class_identity": "NONE",
+  "receiver_offsets": "HIGH",
+  "return_type": "HIGH",
+  "runtime_behaviour": "NONE"
+ },
+ "corrections_to_prior_reconstruction": [
+  {
+   "consequence": "the two arguments are swapped in the prior package, and the count is arg0, the literal 0xb, not receiver+0x450. This reconstruction calls sub_006a1880(0xb, receiver+0x450).",
+   "listing": "PUSH EAX (=receiver+0x450) then PUSH 0xb, and 0x006a1880 ends in RET 0x8, so arg0 = 0xb and arg1 = the dword at receiver+0x450. The callee's own body reads them as EDI = [ESP+0x2c] and ECX = [ESP+0x30] -- its prologue shifts ESP by 0x28, so those displacements are exactly arg0 and arg1 -- and does CMP EDI,[ESI+0x38] ; JNC out ; MOV EAX,[ESI+0x3c] ; MOV [EAX+EDI*4],ECX.",
+   "prior_claim": "sub_006a1880(receiver+0x450, 0xb), with the comment that receiver+0x450 is therefore a count and not a pointer",
+   "prior_package": "PKG-EDITOR-ONEXIT-SMOKE01",
+   "site": "0x00587a3b..0x00587a4a, CALL 0x006a1880"
+  },
+  {
+   "consequence": "the 'guard only' claim is false. The prior package's argument ORDER at this site was already correct; only its documented reading of arg0 was wrong.",
+   "listing": "0x00571db0 reads arg0 twice -- CMP dword ptr [ESP+0x18],ESI at 0x00571dba and CMP ESI,dword ptr [ESP+0x24] at 0x00571dec, the loop bound -- and dereferences it at 0x00571dd3 to reach the table it calls. The ESP displacements resolve to arg3, arg0 and arg0 respectively once the two prologue pushes are accounted for.",
+   "prior_claim": "arg0 (receiver+0x5d4) is a guard only, because 0x00571db0 'never reads arg0'",
+   "prior_package": "PKG-EDITOR-ONEXIT-SMOKE01",
+   "site": "0x005884c4..0x005884f6, CALL 0x00571db0"
+  },
+  {
+   "listing": "that much is right -- the pair IS balanced. What the prior package does not state is that the balanced word is the SAME stack word 0x007c53d0 then reads at [ESP+0x4] and pops with its own RET 0x4, which is what forces the slot +0x58 callee at 0x00587b21 to pop nothing. Reproduced here as one shared word rather than two arguments.",
+   "prior_claim": "the FLD/FSTP pair is balanced, and 0x007c53d0 is given the float as a fresh argument",
+   "prior_package": "PKG-EDITOR-ONEXIT-SMOKE01",
+   "site": "0x00587b02..0x00587b25"
+  }
+ ],
+ "declaration": "extern \"C\" void __thiscall Editors_cEditor_OnExit_00587a20(OpaqueEditor* self)",
+ "decompiler_corrections": [
+  {
+   "ghidra": "attributes the two pushed words to CALL 0x0067cac0",
+   "listing": "0x0067cac0 is `MOV EAX,[0x015fcc54] ; RET` and pops nothing, so the two words survive it and are consumed by 0x0067c420, which ends in RET 0x8. arg0 is the last push, the byte at receiver+0x144.",
+   "site": "0x00587af6 / 0x00587afd"
+  },
+  {
+   "ghidra": "prints the float operand as the register PUSH ECX left behind (unaff_ESI)",
+   "listing": "FSTP float ptr [ESP] at 0x00587b1b overwrites the dword PUSH ECX reserved at 0x00587b18, so the single stack word holds the float. One word, not two.",
+   "site": "0x00587b02..0x00587b25"
+  },
+  {
+   "ghidra": "supplies a re-test between the two table entries on the +0x294 member",
+   "listing": "0x005883dd..0x005883e2 reloads the member and runs slot 0x24 with NO comparison, so a slot 0x28 that clears the member faults there. The re-test the six +0x494-family members carry is absent on this one.",
+   "site": "0x00587b93..0x00587c78"
+  },
+  {
+   "ghidra": "folds the two 4-call blocks into one 5-call block",
+   "listing": "the two blocks differ in the second argument of the 0x40 slot: 0x1d6253c0 at 0x00587d70 and 0xb07c3bbf at 0x00587db4.",
+   "site": "0x00587d52..0x00587dd8"
+  },
+  {
+   "ghidra": "returns cleanly when the allocator yields null",
+   "listing": "the failure edge runs XOR EDI,EDI ; JMP 0x00587bd0 (0x00588223) into a path with two unconditional null dereferences: the first store writes through address 0x0000000c, and 0x00587c6f reads [EDI] before the created object is released. Reproduced, not guarded.",
+   "site": "0x00587b93 block, allocation-failure path"
+  }
+ ],
+ "dispatch": {
+  "indirect_sites": 85,
+  "no_slot_named": true,
+  "slot_displacements": [
+   "0x00",
+   "0x04",
+   "0x08",
+   "0x0c",
+   "0x14",
+   "0x18",
+   "0x1c",
+   "0x20",
+   "0x24",
+   "0x28",
+   "0x2c",
+   "0x30",
+   "0x34",
+   "0x38",
+   "0x3c",
+   "0x40",
+   "0x44",
+   "0x48",
+   "0x4c",
+   "0x50",
+   "0x58",
+   "0x98",
+   "0x134",
+   "0x140",
+   "0x16c",
+   "0x170"
+  ],
+  "unresolved_slot_reason": "these four read the table through TWO levels (MOV EAX,dword ptr [ECX] ; MOV EDX,dword ptr [EAX]) with no displacement, so the slot is +0x00 of the pointee's table",
+  "unresolved_slot_sites": [
+   "0x00587c01",
+   "0x00587e40",
+   "0x00587e82",
+   "0x0058836c"
+  ]
+ },
+ "evidence": [
+  "GhidraMCP /disassemble_function @ http://127.0.0.1:8089 for 0x00587a20 (934 instructions) and for each of the 54 direct callees",
+  "GhidraMCP /read_memory for 0x13eb430, 0x13eb844, 0x13eb90c, 0x13f5ca0",
+  ".spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnExit.c",
+  "knowledgegraph/triage/xrefs-2540f2ca.tsv",
+  "knowledgegraph/research/conflicts/track-c-state-events.json",
+  "reconstruction/staging/pkg-dogfood-00587a20-a1/editor_onexit_00587a20.hpp",
+  "reconstruction/staging/pkg-dogfood-00587a20-a1/editor_onexit_00587a20.cpp",
+  "reconstruction/staging/pkg-editor-onexit-smoke01/ (audited; two defects found, listed under corrections_to_prior_reconstruction)"
+ ],
+ "function_address": "0x00587a20",
+ "globals": [],
+ "globals_note": "the three absolute addresses the body dereferences are declared as accessors in the header (0x015fd918, 0x016f6ee0, 0x015eebec). A further thirteen global words are reached only through the two-instruction getters, whose MOV EAX,[addr] ; RET shape is what identifies them as globals rather than constants. No global is assigned a semantic name.",
+ "implementer_id": "dogfood-after-01/0x00587a20",
+ "locals": {
+  "created_object": "CreatedState, built at 0x00587bdc..0x00587c3e, freed on the same path",
+  "peer_object": "PeerState, read at receiver+0x1cc",
+  "stack_object": "LocalAppState, 0x40 bytes, six dwords written at 0x00587a6a/0x00587a72/0x00587a80/0x00587a89/0x00587a91/0x00587a97"
+ },
+ "normalized_symbol": "Editors_cEditor_OnExit_00587a20",
+ "observed_mechanics": [
+  "0x00587a20 SUB ESP,0x44 ; 0x00587a2e XOR EBX,EBX ; EBX is the constant 0 for the whole body",
+  "0x00587a26 MOV ESI,ECX ; ESI carries the receiver",
+  "0x00587aef MOV EBP,0x1 ; EBP is not a frame pointer, it holds the constant 1",
+  "0x00587b61 PUSH EDI ; 0x0058833f POP EDI ; EDI is the caller's register",
+  "0x00588567 ADD ESP,0x44 ; 0x0058856a RET ; the epilogue is bare",
+  "0x00587a3b MOV EAX,dword ptr [ESI + 0x450] ; 0x00587a48 PUSH 0xb ; 0x00587a4a CALL 0x006a1880",
+  "0x00587b10 FLD float ptr [ESI + 0x4d0] ; 0x00587b18 PUSH ECX ; 0x00587b1b FSTP float ptr [ESP]",
+  "0x00588517 SUB EAX,dword ptr [ESI + 0x438] ; 0x00588522 SBB EDX,dword ptr [ESI + 0x43c]",
+  "0x00588528 ADD dword ptr [ESI + 0x448],EAX ; 0x0058852e ADC dword ptr [ESI + 0x44c],EDX",
+  "0x006a1880 MOV EDI,dword ptr [ESP + 0x2c] ; 0x006a18a0 CMP EDI,dword ptr [ESI + 0x38]",
+  "0x00571dba CMP dword ptr [ESP + 0x18],ESI ; 0x00571dec CMP ESI,dword ptr [ESP + 0x24] in 0x00571db0",
+  "0x007c53d0 ends RET 0x4 and reads its float argument at [ESP + 0x4]"
+ ],
+ "observed_original_abi": {
+  "architecture": "x86-32",
+  "callee_cleanup": "bare RET, so the caller owns all argument cleanup",
+  "calling_convention": "__thiscall",
+  "epilogue": "POP ESI ; POP EBP ; POP EBX ; ADD ESP,0x44 ; RET",
+  "frame_reservation_bytes": 68,
+  "prologue": "SUB ESP,0x44 ; PUSH EBX ; PUSH EBP ; PUSH ESI",
+  "receiver_copied_to": "ESI at 0x00587a26",
+  "receiver_register": "ECX",
+  "return_type": "void",
+  "stack_discipline": {
+   "direct_callees": "settled by each callee's own epilogue: 9 of the 54 remove stack arguments (0x0043a9a0, 0x00573c00, 0x00573d70 and 0x006a1880 with RET 0x8; 0x005dbb60, 0x007c53d0 and 0x00801bb0 with RET 0x4; 0x00587270 and 0x0067c420 by tail-jump to a RET 0x8), and the remaining 45 end in a bare RET. All 54 are Ghidra autogen FUN_* names with no SDK name, so the arities come from their own epilogues and nothing here says what any of them does.",
+   "indirect_callees": "solved for. Treating every indirect callee as popping exactly the arguments it was handed satisfies every merge and the exit except the merge at 0x00587b2a, which is reached 4 bytes lower on the 0x00587b0b path than on the 0x00587adc path. The only single-site assignment that removes the conflict is k(0x00587b21)=0.",
+   "method": "ESP dataflow over the 167-block DAG. The single reachable exit is the bare-RET epilogue, so ESP has exactly one legal value there, and every block with more than one predecessor is a constraint on how much each callee pops.",
+   "result": "the body balances: ESP is 0x50 below the caller's ESP on entry to the epilogue block, on every path that reaches it"
+  },
+  "termination": "RET at 0x0058856a, bare, no immediate",
+  "x87": "FLD float ptr [ESI+0x4d0] at 0x00587b10 is balanced by the single FSTP float ptr [ESP] at 0x00587b1b, so nothing is left on the x87 stack and the value is a stack word, not a result"
+ },
+ "package": "PKG-DOGFOOD-00587A20-A1",
+ "phase": "candidate_source_written",
+ "receiver_layout": {
+  "assertions": "59 static_asserts, one per declared field, generated from the listing so no offset can drift from its evidence",
+  "byte_fields": 7,
+  "dword_cells": 48,
+  "field_count": 59,
+  "float_fields": 1,
+  "modelled_as": "opaque cells; no field carries a semantic name",
+  "reason": "SporeApp.exe carries no MSVC RTTI, so no class identity or field meaning is corroborated by the binary",
+  "sizeof": "0x05e8",
+  "u64_fields": 2
+ },
+ "runtime_gates": [
+  "runtime validation not run: no positive hash-pinned original-process trace reaches 0x00587a20 in the committed corpus"
+ ],
+ "schema": "openspore-reconstruction-metadata-1",
+ "source_files": [
+  "reconstruction/staging/pkg-dogfood-00587a20-a1/editor_onexit_00587a20.hpp",
+  "reconstruction/staging/pkg-dogfood-00587a20-a1/editor_onexit_00587a20.cpp"
+ ],
+ "source_sha256": {
+  "reconstruction/staging/pkg-dogfood-00587a20-a1/editor_onexit_00587a20.cpp": "2404f97ca3adcdc7bbcb2c365fed89e7f001a2aa4107e6620eb2b2f927a351eb",
+  "reconstruction/staging/pkg-dogfood-00587a20-a1/editor_onexit_00587a20.hpp": "e8bb10fc350d74c047eb97b51e5c08c13db2e85fff77e1a16450f5bf61c1e691"
+ },
+ "symbol_must_embed_va": "00587a20",
+ "unresolved_questions": [
+  "What is the arity of the table entry at +0x44 (0x00587a95)? The listing pushes no argument for this call and the stack object's address is not in a pushed register either: it sits at the callee's third stack-argument position inside this frame, which is only consistent with a variadic callee or one of three or more arguments that pops them. Not decidable from this body.",
+  "What class is the receiver? SporeApp.exe carries no MSVC RTTI, so the `cEditor` name on the Ghidra parameter is the SDK symbol and not a machine-derived type. 61 offsets are pinned; the meaning of none of them is established.",
+  "How far does the stack object extend? 0x00421cf0 can address sub-object slots past the 0x40 bytes the frame leaves above the object base, and nothing in this body distinguishes a callee that never sets a high mask bit from one that writes past this caller's frame. Modelled at 0x40, which is correct under the first reading.",
+  "How do the 85 indirect callees pop? The balance constraint forces only 0x00587b21. For the other 84 the constraint is satisfied by 'each pops its arguments' but does not uniquely force it; 21 sites with arguments are left free by the constraint system.",
+  "All 54 direct callees are Ghidra autogen FUN_* names with no SDK name and no recovered body in this repository. Their conventions and argument counts come from their own epilogues, which is enough to call them correctly but not enough to say what they do.",
+  "What do 0x347536b, 0x3475385, 0x34753a0, 0x60c874f, 0x30c11c7, 0x1d6253c0 and 0xb07c3bbf index? The listing pushes them and nothing here identifies them. 0x13eb430 and 0x13f5ca0 were read out of the binary and are the strings \"Editor\" and \"editor\".",
+  "What are the 13 globals reached through the two-instruction getters? Their MOV EAX,[addr] ; RET shape is established; their meaning is not.",
+  "Which 8 of the 85 indirect sites does the 49/20/13/2/1 arity split refer to? The split is measured by the stack dataflow; the per-site attribution is in the .cpp comments only for the sites the comments name."
+ ],
+ "va": "0x00587a20",
+ "verification": {
+  "build_command": "g++ -m32 -std=c++17 -Wall -Wextra -Werror -O2 -c reconstruction/staging/pkg-dogfood-00587a20-a1/editor_onexit_00587a20.cpp -o /tmp/onexit.o",
+  "callee_set_parity": "PASS -- the 54 distinct direct targets recovered from the -O2 object's relocation table are exactly the 54 the listing calls, with none missing and none extra",
+  "constant_parity": "PASS -- after normalising hexadecimal spelling, every literal in the source is a value the listing body contains, with the single exception of 0x0, which is the slot-0 displacement the listing writes as a bare [ECX]",
+  "emitted_indirect_call_sites": "PASS -- objdump on the -O1/-O2/-O3 objects counts 85 indirect call sites, matching the 85 the listing performs. -O0 and -Os inline the small helpers and emit fewer; the source-level site count is the one the listing is compared against.",
+  "independent_of_prior_package": "PASS -- every fact above was recomputed from GhidraMCP /disassemble_function on 0x00587a20 and on each of the 54 callees; the prior package was audited, not trusted",
+  "layout_assertions": "PASS -- 59 offsetof assertions, generated from the listing, plus 5 for the two 64-bit pairs, their high halves, the stack object and the struct extent",
+  "optimisation_levels_checked": [
+   "-O0",
+   "-O1",
+   "-O2",
+   "-O3",
+   "-Os"
+  ],
+  "stack_balance": "PASS -- the ESP dataflow finds zero merge conflicts and the exit at 0x50 with k(0x00587b21)=0",
+  "x86_32_build": "PASS -- clean under GCC with -m32 -Wall -Wextra -Werror at all five optimisation levels checked"
+ },
+ "vtable_reference_evidence": {
+  "canonical_record_associates": "vtable:0x013f57f8",
+  "resolution": "the two contradict each other and neither is independent of the other, so no table is claimed as a dispatch target",
+  "xref_export_records": 0
+ }
+}

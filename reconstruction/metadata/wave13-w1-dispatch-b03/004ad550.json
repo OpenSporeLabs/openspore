@@ -1,0 +1,319 @@
+{
+  "schema": "openspore-worker-metadata-1",
+  "package": "wave13-w1-dispatch-b03",
+  "va": "0x004ad550",
+  "address": "0x004ad550",
+  "function_address": "0x004ad550",
+  "entry_address": "0x004ad550",
+  "ghidra_name": "FUN_004ad550",
+  "normalized_symbol": "wave13_w1_dispatch_b03_004ad550",
+  "reconstructed_symbol": "editor_model_union_bounds_004ad550",
+  "declaration": "extern \"C\" BoundingBox* __thiscall editor_model_union_bounds_004ad550(OpaqueEditorModel* model, BoundingBox* out_bounds, char filter_hidden);",
+  "source_files": [
+    "reconstruction/staging/wave13-w1-dispatch-b03/editor_model_union_bounds.cpp",
+    "reconstruction/staging/wave13-w1-dispatch-b03/editor_model_union_bounds.hpp",
+    "reconstruction/staging/wave13-w1-dispatch-b03/editor_model_union_bounds_test.cpp"
+  ],
+
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "calling_convention_observation": "0x004ad559 MOV dword ptr [EBP-0xb0],ECX stores the incoming ECX and 0x004ad56f/0x004ad5a4/0x004ad616/0x004ad661/0x004ad698 reload it from that slot, so the receiver arrives in ECX. The two stack arguments are cleaned by the callee: the single exit is 0x004ad6ea RET 0x8, and the body contains no matching ADD ESP after any call other than its own epilogue.",
+    "return_type": "BoundingBox*",
+    "return_semantics": "the function returns its own first stack argument unchanged; 0x004ad6e4 MOV EAX,[EBP+0x8] copies the out-parameter pointer into EAX after the copy at 0x004ad6df. The return value carries no information beyond what the caller already passed in.",
+    "return_register": "EAX",
+    "return_width_bytes": 4,
+    "return_observation": "the last write to EAX before the epilogue is 0x004ad6e4 MOV EAX,dword ptr [EBP+0x8]. The value is the out parameter, not a status code and not a pointer to the internal accumulator.",
+    "ret_form": "RET 0x8",
+    "termination": "single exit at 0x004ad6ea",
+    "stack_cleanup_bytes": 8,
+    "stack_cleanup_owner": "callee",
+    "stack_arguments": [
+      {"slot": "[EBP+0x8]", "role": "out_bounds", "proof": "0x004ad6db PUSH EDX pushes &accumulator and 0x004ad6dc MOV ECX,[EBP+0x8] makes the same slot the thiscall receiver of the final store, so it is the destination; 0x004ad6e4 then returns it"},
+      {"slot": "[EBP+0xc]", "role": "filter_hidden", "proof": "0x004ad653 MOVZX EDX,byte ptr [EBP+0xc] is read as a one-byte flag; the caller at 0x00586ed8/0x00586ee1 pushes a register and a stack address, and the byte slot is the one tested"}
+    ],
+    "ordinary_stack_argument_slots": 2,
+    "saved_registers": ["EBP"],
+    "receiver": true,
+    "hidden_this_register": "ECX, spilled to [EBP-0xb0] at 0x004ad559 and reloaded at each use",
+    "frame": "PUSH EBP / MOV EBP,ESP / SUB ESP,0xb0, i.e. 176 bytes of locals, torn down by MOV ESP,EBP / POP EBP"
+  },
+
+  "layout": {
+    "entry_address": "0x004ad550",
+    "body_start": "0x004ad550",
+    "body_end": "0x004ad6ea",
+    "body_span_bytes": 413,
+    "instruction_count": 112,
+    "instructions": "the complete 112-instruction listing was read from ghidra_disassemble_function. Every instruction is accounted for by the phase map below plus the field and constant tables; the listing is not duplicated verbatim because each entry belongs to exactly one of those sections.",
+    "phase_map": [
+      {"phase": "prologue and double initialisation", "span": "0x004ad550 - 0x004ad56a", "detail": "frame setup, spill ECX to [EBP-0xb0], then LEA ECX,[EBP-0x1c] / CALL 0x00409c00 TWICE on the same address"},
+      {"phase": "element count", "span": "0x004ad56f - 0x004ad599", "detail": "EAX = this + 0x18; EAX = [EAX+4] - [EAX]; SAR EAX,2; CMP 0; JBE to the tail"},
+      {"phase": "seed with element 0", "span": "0x004ad59f - 0x004ad60c", "detail": "element 0 loaded, bounds port called with (mode 0, 0, 0) writing to [EBP-0x3c], then six floats copied from the returned pointer into [EBP-0x1c] in two 12-byte halves"},
+      {"phase": "loop setup", "span": "0x004ad60f - 0x004ad64d", "detail": "index := 1; recompute count from this+0x18; JMP to the test; test index < count with JGE to the tail"},
+      {"phase": "filter gate", "span": "0x004ad653 - 0x004ad690", "detail": "MOVZX byte [EBP+0xc]; TEST; JZ past the gate; else load element[index] and call 0x00435d40; TEST AL,AL; JNZ past the gate; else JMP to the increment"},
+      {"phase": "union the element", "span": "0x004ad692 - 0x004ad6d3", "detail": "load element[index], bounds port with (mode 0, 0, 0) writing to [EBP-0x54], PUSH the returned pointer, LEA ECX,[EBP-0x1c], CALL 0x0043f050, then JMP to the increment"},
+      {"phase": "loop increment", "span": "0x004ad63e - 0x004ad644", "detail": "index := index + 1; store back to [EBP-0x24]"},
+      {"phase": "epilogue and store", "span": "0x004ad6d8 - 0x004ad6ea", "detail": "PUSH &accumulator; MOV ECX,out; CALL 0x00511140; MOV EAX,out; MOV ESP,EBP; POP EBP; RET 0x8"}
+    ],
+    "frame_shape": "0xb0 bytes: two 24-byte BoundingBox scratch objects at [EBP-0x1c] (the accumulator) and [EBP-0x54] (the first port's out buffer), a third 24-byte out buffer at [EBP-0x3c] used only by the seed call, the loop index at [EBP-0x24], the count at [EBP-0x20] and [EBP-0x4], the spilled receiver at [EBP-0xb0] and a chain of register spills in the negative 0x50..0x78 range",
+    "padding_after": "0x004ad6eb onward was not disassembled; it is outside the body Ghidra reports and the briefing's body_bytes 413 already covers 0x004ad550..0x004ad6ea",
+    "reads": "the receiver's rigblock vector at +0x18 and +0x1c, re-read on every loop test; one pointer per element; the 24 bytes each bounds port writes into its out buffer",
+    "writes": "the 24-byte accumulator and the 24-byte out parameter, plus stack slots. No global, no static and no field of the receiver is written."
+  },
+
+  "observed_mechanics": [
+    "0x004ad559 MOV dword ptr [EBP-0xb0],ECX then 0x004ad56f MOV EAX,[EBP-0xb0]: the receiver is spilled once and reloaded at each of five separate use sites",
+    "0x004ad55f/0x004ad562 and 0x004ad567/0x004ad56a: the SAME address [EBP-0x1c] is passed to 0x00409c00 twice. The second call is redundant in the observed build, since 0x00409c00 writes six fixed constants. This is preserved in the reconstruction rather than collapsed.",
+    "0x004ad575 ADD EAX,0x18 with EAX = the receiver: the rigblock vector is the receiver's +0x18, and its end pointer is its +0x1c",
+    "0x004ad58a MOV EAX,[ECX+0x4] / 0x004ad58d SUB EAX,[EDX] / 0x004ad58f SAR EAX,0x2: the count is the byte difference shifted arithmetically right by 2, i.e. four bytes per element",
+    "0x004ad595 CMP dword ptr [EBP-0x4],0x0 / 0x004ad599 JBE 0x004ad6d8: an UNSIGNED less-or-equal against zero, so a count of exactly 0 skips the whole body and a negative count (which SAR can produce) does not, since its unsigned value is large",
+    "0x004ad5c1/0x004ad5c3/0x004ad5c5/0x004ad5ca/0x004ad5cb with ECX = *(this+0x18): the bounds port is called as (rigblock, &[EBP-0x3c], 0, 0, 0). The three literal zeros are the mode and the two flag arguments; 0x0044ae00's own decompiled body confirms that parameter order.",
+    "0x004ad5d6 stores the port's return value, and 0x004ad5e2 ADD EAX,0xc followed by 0x004ad5e8/0x004ad5ec/0x004ad5f2 copies floats 3, 4 and 5 to [EBP-0x10] while 0x004ad600/0x004ad603/0x004ad60c copies floats 0, 1 and 2 to [EBP-0x1c]. [EBP-0x10] is exactly [EBP-0x1c] + 0xc, so the two halves together fill one contiguous 24-byte object: this is a whole-BoundingBox copy, interleaved by the compiler.",
+    "0x004ad5f8..0x004ad60c therefore OVERWRITE the accumulator rather than merging into it, so element 0 seeds the result and is not unioned",
+    "0x004ad60f MOV dword ptr [EBP-0x24],0x1: the loop index starts at 1, not 0, because element 0 was consumed by the seed block",
+    "0x004ad616/0x004ad61c/0x004ad625/0x004ad62b/0x004ad631/0x004ad634/0x004ad636: the count is recomputed from this+0x18 inside the loop preamble and stored to [EBP-0x20]; it is not hoisted",
+    "0x004ad63c JMP 0x004ad647: the loop is a do-while shape - the increment block at 0x004ad63e is placed before the test and reached by a backward jump from the end of the body at 0x004ad6d3",
+    "0x004ad647/0x004ad64a/0x004ad64d: MOV ECX,index / CMP ECX,count / JGE tail. JGE is a SIGNED comparison, so a negative count produced by the arithmetic shift makes the loop exit immediately - which is the opposite of what the unsigned JBE at 0x004ad599 would do for the same value. The two comparisons disagree for negative counts; this is recorded rather than reconciled.",
+    "0x004ad653 MOVZX EDX,byte ptr [EBP+0xc] / 0x004ad657 TEST EDX,EDX / 0x004ad659 JZ 0x004ad692: when the flag byte is zero the filter is skipped entirely and every element is processed",
+    "0x004ad661..0x004ad67e: with the flag set, element[index] is re-derived from this+0x18 and passed to 0x00435d40 in ECX",
+    "0x004ad689 MOVZX EAX,AL / 0x004ad68c TEST EAX,EAX / 0x004ad68e JNZ 0x004ad692 / 0x004ad690 JMP 0x004ad63e: a false predicate advances the index WITHOUT touching the accumulator, and the FST-style double test means only the low byte of the predicate's return is examined",
+    "0x004ad692..0x004ad6c5: the second bounds-port call, writing to [EBP-0x54] this time, again with the three literal zeros",
+    "0x004ad6ca PUSH EAX / 0x004ad6cb LEA ECX,[EBP-0x1c] / 0x004ad6ce CALL 0x0043f050: the union, with the accumulator as the thiscall receiver and the freshly produced box as the single stack argument",
+    "0x004ad6d8 LEA EDX,[EBP-0x1c] / 0x004ad6db PUSH EDX / 0x004ad6dc MOV ECX,[EBP+0x8] / 0x004ad6df CALL 0x00511140: the final 24-byte store into the caller's out parameter, reached both from the count==0 shortcut and from the loop exit",
+    "0x004ad6e4 MOV EAX,[EBP+0x8] / 0x004ad6ea RET 0x8: the out parameter is returned and the callee pops both stack arguments",
+    "0x00409c00's body stores 0x7f7fffff into words 0, 1, 2 and 0xff7fffff into words 3, 4, 5, i.e. +FLT_MAX into the lower corner and -FLT_MAX into the upper corner. That is an INVERTED, not a zero, box, and it is what makes 0x0043f050's emptiness test work.",
+    "0x0043f050's body is `if (a.lower[0] <= a.upper[0]) { componentwise min/max merge } else { a = b }`, pairing element 0 with 3, 1 with 4 and 2 with 5. That is a BoundingBox union with an emptiness branch, and it fixes the six-float layout as lower={0,1,2}, upper={3,4,5}.",
+    "0x00511140's body copies exactly six dwords from src to dst and returns dst",
+    "0x00435d40's body walks param_1 = *(param_1 + 0x33c) for at most 100 iterations, breaking with a 1 when bits 0x80 or 0x100 of [param_1+0xdc8] or bit 0x8 of [param_1+0xdcc] are set, and returning 0 when the chain ends or the pointer is null. It is an ancestor-chain flag test, not a local one."
+  ],
+
+  "fields_and_offsets": [
+    {"owner": "receiver", "offset": "+0x18", "access": "read at 0x004ad578, 0x004ad5aa, 0x004ad61c, 0x004ad661 and 0x004ad698", "meaning": "the rigblock vector's begin pointer", "confidence": "OBSERVED", "sdk_candidate": "Spore/Editors/EditorModel.h /* 18h */ eastl::vector<EditorRigblockPtr> mRigblocks;", "corroboration": "the four-byte element stride at 0x004ad58f matches a vector of intrusive pointers, and the SDK's declared value type is exactly that"},
+    {"owner": "receiver", "offset": "+0x1c", "access": "read at 0x004ad58a and 0x004ad631", "meaning": "the rigblock vector's end pointer", "confidence": "OBSERVED", "sdk_candidate": "the second word of the same SDK-declared vector"},
+    {"owner": "receiver", "offset": "+0x20", "access": "not read", "meaning": "the vector's capacity, present in the model but unused here", "confidence": "INFERRED", "sdk_candidate": "the third word of the same SDK-declared vector"},
+    {"owner": "local accumulator (Math::BoundingBox)", "offset": "+0x00..+0x08", "access": "written by 0x00409c00 at 0x004ad562 and 0x004ad56a, overwritten at 0x004ad600/0x004ad603/0x004ad609, read and written by 0x0043f050 at 0x004ad6ce, copied out at 0x004ad6df", "meaning": "Vector3 lower, initialised to +FLT_MAX", "confidence": "CONFIRMED_STATIC", "sdk_candidate": "Spore/MathUtils.h:554 /* 00h */ Vector3 lower;"},
+    {"owner": "local accumulator", "offset": "+0x0c..+0x14", "access": "written by 0x00409c00, overwritten at 0x004ad5e8/0x004ad5ec/0x004ad5f5, merged by 0x0043f050, copied out at 0x004ad6df", "meaning": "Vector3 upper, initialised to -FLT_MAX", "confidence": "CONFIRMED_STATIC", "sdk_candidate": "Spore/MathUtils.h:554 /* 0Ch */ Vector3 upper;"},
+    {"owner": "accumulator frame slot", "offset": "[EBP-0x1c]", "access": "LEA ECX at 0x004ad55f, 0x004ad567, 0x004ad6cb", "meaning": "the 24-byte BoundingBox that the whole body accumulates into", "confidence": "OBSERVED"},
+    {"owner": "first port out buffer", "offset": "[EBP-0x3c]", "access": "LEA EDX at 0x004ad5c7", "meaning": "scratch destination for the element-0 bounds call only", "confidence": "OBSERVED"},
+    {"owner": "second port out buffer", "offset": "[EBP-0x54]", "access": "LEA ECX at 0x004ad6bb", "meaning": "scratch destination for the in-loop bounds calls", "confidence": "OBSERVED"},
+    {"owner": "loop index", "offset": "[EBP-0x24]", "access": "written 0x004ad60f and 0x004ad641, read 0x004ad647 and 0x004ad69b", "meaning": "starts at 1 and counts to count-1", "confidence": "OBSERVED"},
+    {"owner": "element count", "offset": "[EBP-0x4] and [EBP-0x20]", "access": "written 0x004ad592 and 0x004ad639, read 0x004ad595 and 0x004ad64a", "meaning": "two separate slots holding the same quantity, computed twice", "confidence": "OBSERVED"}
+  ],
+
+  "constants": [
+    {"value": "0x2", "address": "0x004ad58f", "meaning": "SAR EAX,0x2, the four-byte element stride"},
+    {"value": "0x0", "address": "0x004ad595", "meaning": "CMP count,0 for the unsigned JBE element-count shortcut"},
+    {"value": "0x0", "address": "0x004ad5c1", "meaning": "the last of the three literal zeros passed to the bounds port; together they are (mode 0, flag 0, flag 0)"},
+    {"value": "0x1", "address": "0x004ad60f", "meaning": "the loop's initial index, proving element 0 is consumed before the loop"},
+    {"value": "0x0", "address": "0x004ad653", "meaning": "TEST EDX,EDX on the widened filter byte"},
+    {"value": "0x1", "address": "0x004ad689", "meaning": "MOVZX EAX,AL, narrowing the predicate result to one byte before the test"},
+    {"value": "0x8", "address": "0x004ad6ea", "meaning": "RET 0x8, the two callee-cleaned stack-argument dwords"},
+    {"value": "0x7f7fffff", "address": "0x004ad562 (callee 0x00409c00)", "meaning": "+FLT_MAX, the lower corner of the empty-box sentinel"},
+    {"value": "0xff7fffff", "address": "0x004ad562 (callee 0x00409c00)", "meaning": "-FLT_MAX, the upper corner of the empty-box sentinel"},
+    {"value": "0x64", "address": "0x00435d40 (callee)", "meaning": "the 99-iteration ceiling on the ancestor walk, compared as `99 < local_c`"},
+    {"value": "0x80, 0x100, 0x8", "address": "0x00435d40 (callee)", "meaning": "the flag bits tested at +0xdc8 and +0xdcc on each ancestor"},
+    {"value": "0x33c", "address": "0x00435d40 (callee)", "meaning": "the parent-pointer offset walked by the filter predicate"}
+  ],
+
+  "globals": [],
+
+  "virtual_dispatch": [
+    {
+      "site": "inside 0x0044ae00, not in this body",
+      "note": "this body contains no CALL [reg] and no CALL [reg+disp]. The bounds port 0x0044ae00 does contain indirect calls, but they belong to that function's own reconstruction and are not attributed here."
+    }
+  ],
+
+  "control_flow": {
+    "shape": "one entry test, one do-while loop over the rigblock vector, an inner two-branch filter, and a shared tail. No switch table, no computed jump, no nested loop.",
+    "loop": {
+      "kind": "do-while with the increment block physically placed before the test",
+      "initial_index": 1,
+      "index_source": "[EBP-0x24], stored back at 0x004ad641",
+      "bound_source": "[EBP-0x20], recomputed from this+0x18 at 0x004ad616..0x004ad636 on each pass through the preamble",
+      "exit_condition": "0x004ad64d JGE 0x004ad6d8, a SIGNED greater-or-equal",
+      "body_branches": [
+        {"address": "0x004ad659", "condition": "the filter flag byte is zero", "taken_when": "flag == 0", "effect": "jump past the gate, so the element is always processed"},
+        {"address": "0x004ad68e", "condition": "the ancestor-chain predicate returned non-zero in its low byte", "taken_when": "predicate != 0", "effect": "jump past the skip, so the element is processed"},
+        {"address": "0x004ad690", "condition": "the predicate returned zero", "taken_when": "predicate == 0", "effect": "unconditional jump to the increment, skipping the union entirely"}
+      ]
+    },
+    "exits": [
+      {"address": "0x004ad6d8", "condition": "0x004ad599 JBE - the element count is zero as an unsigned value", "effect": "the empty-box sentinel is copied to the out parameter; no bounds port and no union ever runs"},
+      {"address": "0x004ad6d8", "condition": "0x004ad64d JGE - the loop finished", "effect": "the accumulated box is copied to the out parameter"}
+    ],
+    "branch_polarity": [
+      "0x004ad599 JBE is taken when the count is zero, so the empty list is the shortcut and not the fallthrough",
+      "0x004ad659 JZ skips the gate, so a ZERO flag means NO filtering and a non-zero flag means filtering - the sense is the opposite of a typical 'disable' flag and is worth stating explicitly",
+      "0x004ad68e JNZ proceeds to the union, so the predicate is a KEEP predicate, not a SKIP predicate: a rigblock is included when it, or one of its ancestors up to 100 levels up, carries one of the tested flag bits"
+    ],
+    "count_signedness_conflict": "0x004ad599 uses an unsigned comparison and 0x004ad64d a signed one on values produced by the same arithmetic shift. For a count of 0 the unsigned test fires and the body is skipped. For a negative count - which a SAR can produce if end precedes begin - the unsigned test does NOT fire while the signed loop test DOES exit at once, so the observable effect is: the seed block runs, then the loop body never runs, and element 0's box is the result. This is recorded from the listing; no attempt is made to decide whether it is intended."
+  },
+
+  "callers_evidence": [
+    {"callsite": "0x00586ee8", "caller": "Editors::cEditor::SetEditorModel", "form": "CALL, real, direct", "setup": "0x00586ed2 MOV ECX,dword ptr [ESI+0x98] loads the receiver, 0x00586ed9 LEA EAX,[ESP+0x2c] then 0x00586ee1 PUSH EAX is the out buffer, 0x00586ed8 PUSH EBX is the filter byte", "result_use": "discarded; 0x00586eed MOVSS XMM0,[ESP+0x3c] reads the first float out of the box that was just written, and 0x00586ef3 ADDSS adds it to another float. This is the strongest caller evidence: the 24-byte out parameter is demonstrably a BoundingBox and the receiver at cEditor+0x98 is demonstrably the object whose rigblock vector is walked."},
+    {"callsite": "0x00574bb4", "caller": "FUN_00574b40", "form": "CALL, real, direct", "setup": "not disassembled", "result_use": "not inspected"},
+    {"callsite": "0x00583e94", "caller": "FUN_00583c50", "form": "CALL, real, direct", "setup": "not disassembled", "result_use": "not inspected"},
+    {"callsite": "0x0058072b", "caller": "FUN_00580700", "form": "CALL, real, direct", "setup": "not disassembled", "result_use": "not inspected"},
+    {"callsite": "0x005addc6", "caller": "FUN_005addb0", "form": "CALL, real, direct", "setup": "not disassembled", "result_use": "not inspected"},
+    {"callsite": "0x005ae348", "caller": "FUN_005ae300", "form": "CALL, real, direct", "setup": "not disassembled", "result_use": "not inspected"},
+    {"callsite": "0x005ae35d", "caller": "FUN_005ae300", "form": "CALL, real, direct", "setup": "second of two calls in the same function, 0x15 bytes after the first", "result_use": "not inspected"},
+    {"summary": "7 UNCONDITIONAL_CALL xrefs from 6 distinct functions, one of which (cEditor::SetEditorModel) is SDK-named. No tail JMP and no DATA reference, so the address is not a vtable entry."}
+  ],
+
+  "callees_evidence": [
+    {"callee": "0x00409c00", "form": "CALL, direct, twice on the same object", "operation": "stores +FLT_MAX into the three lower floats and -FLT_MAX into the three upper floats, i.e. sets the inverted empty-box sentinel", "status": "OPAQUE PORT", "note": "body read in full; it is what defines both the six-float layout and the emptiness convention"},
+    {"callee": "0x0044ae00", "form": "CALL, direct, thiscall with callee-clean, 4 stack args, once per processed element", "operation": "computes one rigblock's own bounds and, when its last argument is non-zero, unions in the child rigblocks from the vector at rigblock+0x340. Called here with mode 0 and both flags clear, so children are NOT walked.", "status": "OPAQUE PORT", "note": "body read in full. It reads rigblock flags at +0xdc8, a sub-object at +0x10/+0x18, a bounds block at +0x48/+0x4c/+0x50, nine floats at +0x60, a float at +0x1d8, a child vector at +0x340/+0x344, and it calls into IBakeManager and two virtuals. The 'mode 0' argument selects the branch that builds a BoundingBox from +0x48/+0x4c/+0x50 plus nine floats from +0x60 and applies a transform."},
+    {"callee": "0x0043f050", "form": "CALL, direct, thiscall with callee-clean, 1 stack arg, once per merged element", "operation": "BoundingBox union: if the destination's lower[0] > upper[0] it is the empty sentinel and is overwritten, otherwise it is expanded componentwise", "status": "OPAQUE PORT", "note": "body read in full"},
+    {"callee": "0x00511140", "form": "CALL, direct, thiscall with callee-clean, 1 stack arg, once at the tail", "operation": "copies six dwords from src to dst and returns dst", "status": "OPAQUE PORT", "note": "body read in full"},
+    {"callee": "0x00435d40", "form": "CALL, direct, __fastcall, 0 stack args, once per gated element", "operation": "walks the rigblock's ancestor chain through +0x33c for at most 100 levels and returns 1 if any level has bit 0x80 or 0x100 at +0xdc8 or bit 0x8 at +0xdcc, else 0", "status": "OPAQUE PORT", "note": "body read in full. Because the flags tested are on the ANCESTORS as well as the node itself, a rigblock can be excluded because something above it is flagged."},
+    {"callee_count_reported_by_briefing": 5, "note": "matches exactly: 0x00409c00, 0x0044ae00, 0x0043f050, 0x00511140 and 0x00435d40"}
+  ],
+
+  "analogue_functions": [
+    {"address": "0x0044ae00", "relationship": "the bounds port; its own tail is `FUN_00511140(&local_20); return param_2;`, i.e. the same six-dword store followed by returning the out pointer. It also calls 0x0043f050 in its own child-walk, so the two functions are the same union idiom at two levels of the rigblock tree.", "confidence": "OBSERVED", "value": "proves the port's return value is its out parameter, which is what makes the two 12-byte copies in this body a whole-object copy"},
+    {"address": "0x004ad6f0", "relationship": "a sibling in the same code region with the same shape - iterate the array at +0x18..+0x1c, build a 24-byte box per element from +0x48/+0x4c/+0x50 plus nine floats from +0x60, read the flag word at +0xdc8 and test 0x400", "confidence": "OBSERVED", "value": "independent evidence that +0x18 is an element array of rigblock-like objects and that 24-byte boxes are the currency of this region. Note it reads a DIFFERENT object at +0x48..+0x50 (its elements are not this class, since +0x4c is a byte in the target's class), so the two are not to be conflated."},
+    {"address": "0x004ada80..0x004adbe0", "relationship": "the scalar accessor family for the same receiver, 0x930 bytes above this function, covering +0x38, +0x3c, +0x40, +0x44, +0x4c, +0x4d and +0x4e", "confidence": "OBSERVED", "value": "the same receiver type, which is why 0x004adb00 in this batch and this function are attributed to the same class candidate"}
+  ],
+
+  "sdk_correspondence": {
+    "status": "STRONG CANDIDATE, NOT ESTABLISHED",
+    "candidate_class": "Editors::EditorModel",
+    "basis": "The receiver's +0x18 is read as a {begin,end} pair with a four-byte stride, which is exactly the SDK-declared eastl::vector<EditorRigblockPtr> mRigblocks at /* 18h */ in Spore/Editors/EditorModel.h; the elements are passed to a bounds port whose body reads EditorRigblock-shaped members (+0xdc8 flag words, +0x33c parent, +0x340 child vector, +0x1d8 transform-ish float, all inside the EditorRigblock size range the SDK documents); and the scalar accessor family for the same receiver sits 0x930 bytes away in the same code region, alongside the SDK-recorded EditorModel::SetName at 0x004adc20 and EditorModel::Dispose at 0x004ad850.",
+    "why_not_established": "No vtable was located. The binary has no MSVC RTTI, and Ghidra's xref sweep over the SDK-recorded EditorModel::SetName at 0x004adc20 returns 45 references that are all UNCONDITIONAL_CALL with no DATA reference, so no EditorModel vtable is typed in this program. The class identity therefore cannot be closed from the binary and is recorded as SUPPORTED, not claimed.",
+    "payload_type": {
+      "claimed": "Math::BoundingBox, six consecutive floats",
+      "basis": "Spore/MathUtils.h:554 declares BoundingBox as {Vector3 lower at +0x00; Vector3 upper at +0x0c}, and 0x00409c00 writes exactly six dwords in that order, 0x0043f050 pairs indices (0,3), (1,4) and (2,5), and 0x00511140 copies exactly six dwords",
+      "confidence": "CONFIRMED_STATIC"
+    },
+    "method_name_claimed": null,
+    "not_asserted": [
+      "the owning class",
+      "a method name",
+      "the semantic meaning of the filter flag byte beyond 'when non-zero, elements are gated by an ancestor-chain flag test'",
+      "which of the two count comparisons is intended for a malformed vector"
+    ],
+    "sdk_paths_read": [
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Editors/EditorModel.h",
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Editors/EditorRigblock.h",
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/MathUtils.h"
+    ]
+  },
+
+  "semantic_contract": "Non-virtual member of a model-state object, ECX receiver, two callee-cleaned stack arguments, and the first argument returned unchanged in EAX. The contract is 'compute the aggregate local-space bounding box of my rigblock list and write it to the caller's box'. Invariants, in order: (1) a 24-byte accumulator is set to the inverted empty-box sentinel, lower = +FLT_MAX and upper = -FLT_MAX, and it is set twice, redundantly; (2) the element count is (end - begin) >> 2 over the vector at receiver+0x18, and a count of zero short-circuits straight to the store, so an empty rigblock list produces an EMPTY box rather than a zero box; (3) element 0's bounds, computed with mode 0 and both flags clear, OVERWRITE the accumulator - it seeds the result and is never unioned, and it is not subject to the filter flag; (4) elements 1..count-1 are folded in with a BoundingBox union that replaces the accumulator when the accumulator is still the empty sentinel and otherwise expands it componentwise; (5) when the filter flag byte is non-zero, an element is folded in only if an ancestor-chain walk of at most 100 levels, through the parent pointer at +0x33c, finds flag bit 0x80 or 0x100 at +0xdc8 or bit 0x8 at +0xdcc on the element or on any ancestor - so a clean rigblock under a flagged ancestor is excluded, and a zero flag disables the test entirely; (6) the accumulator is copied to the caller's box and the caller's box pointer is returned. The receiver is only read; no field of it is written.",
+
+  "classification": "BOUNDED_SEMANTIC",
+  "classification_rationale": "The behaviour is fully determined and heavily corroborated: all 112 instructions are read, all five callees are resolved to concrete operations from their own decompiled bodies rather than from their names, the 24-byte payload layout is confirmed three independent ways (0x00409c00's six constants, 0x0043f050's index pairing, 0x00511140's six-dword copy) and matches the SDK's BoundingBox declaration, and the loop's start index, signed/unsigned comparison mix, filter polarity and empty-list behaviour are all read from the listing. It is not STRONG_SEMANTIC for one named reason: the owning type is bounded rather than established. The receiver's +0x18 matches the SDK-declared mRigblocks vector and the surrounding code region matches EditorModel, but no vtable exists in the typed program to close the identity, and this binary has no RTTI. That is exactly the material element the batch's BOUNDED_SEMANTIC definition names, and a STRONG_SEMANTIC claim would require a located vtable or runtime evidence, neither of which exists.",
+
+  "semantic_findings": [
+    "This is an aggregate-bounds computation over a rigblock list, not a store or a query: the whole body is seed-then-union, and the union primitive is read directly out of 0x0043f050's source rather than assumed from its name.",
+    "The accumulator is seeded by OVERWRITING with element 0, not by unioning element 0 into the empty sentinel. Both give the same result when element 0 is non-empty, but they differ when element 0 is itself empty, and the body takes the overwrite path unconditionally.",
+    "The empty-list case writes the inverted sentinel to the caller's box: lower = +FLT_MAX, upper = -FLT_MAX. Any caller that treats lower <= upper as a valid box will mis-handle that, so this is a real precondition on the caller rather than a neutral default.",
+    "The filter flag's sense is inverted from the usual: a ZERO flag means no filtering, a non-zero flag means gate every element from index 1 onward. Element 0 is never gated, so the flag cannot suppress the seed.",
+    "The filter predicate is an ancestor-chain test, not a local one. It walks the parent pointer at +0x33c up to 100 levels and can therefore exclude a rigblock because of a flag set on something above it in the hierarchy.",
+    "The return value carries no information: it is the out parameter, read back out of [EBP+0x8] at 0x004ad6e4. Callers can and do ignore it, and the one inspected caller does.",
+    "The count is computed twice, once before the seed and once in the loop preamble, and the two comparisons guarding it disagree on sign: 0x004ad599 is unsigned and 0x004ad64d is signed. For a well-formed vector both agree; for end < begin the seed still runs and the loop body never does. Recorded from the listing without choosing an interpretation.",
+    "The double call to 0x00409c00 on the same address is redundant in the observed build. It is preserved in the reconstruction because removing it would be an unexplained divergence, and flagged as a codegen artefact rather than an invariant.",
+    "The 24-byte copy of element 0's box is emitted as two 12-byte halves at interleaved addresses (upper first at [EBP-0x10], then lower at [EBP-0x1c]); reconstructing it as a single block copy would be behaviourally equivalent but not structurally faithful.",
+    "The bounds port is always called with mode 0 and both flags clear, so rigblock CHILD bounds are never folded in by this function. Any caller needing a whole-hierarchy bound must get it from the port's own recursive path, which this body never enables.",
+    "0x004ad6f0, 0x930 bytes away in the same region, iterates the same +0x18 array and reads the same +0xdc8 flag word, which independently corroborates the field identification - while operating on a different element type, since its elements have a float at +0x4c where this class has a byte."
+  ],
+
+  "unresolved_questions": [
+    "The owning class. The +0x18 vector matches Spore/Editors/EditorModel.h's mRigblocks exactly and the code region matches, but no vtable was located and there is no RTTI, so the class is a candidate and not a claim.",
+    "The method name. Nothing in the binary or the SDK names it; the reconstruction's name describes the operation, not a recovered identifier.",
+    "What the filter flag byte means to a caller. Observed only as 'non-zero enables the ancestor-chain test'; no caller's intent was established, and the three uninspected callers in the 0x0057/0x0058 region were not disassembled.",
+    "Which of the two count comparisons is intended for a malformed vector, and whether a negative count can occur in practice.",
+    "Why the accumulator is default-initialised twice.",
+    "What the 24-byte box the caller at 0x00586ee8 receives is used for beyond the first float it reads at 0x00586eed; the rest of that caller's use was not followed.",
+    "Whether 0x0044ae00 with mode 0 is the right mode for every caller of this function, or whether some caller-visible behaviour depends on the mode this body hard-codes to 0.",
+    "The five uninspected call sites at 0x00574bb4, 0x00583e94, 0x0058072b, 0x005addc6 and the pair at 0x005ae348/0x005ae35d."
+  ],
+
+  "runtime_gates": [
+    "No original-process trace exists for this function. Static analysis cannot show whether the rigblock vector is ever empty in a live editor session, which is the only path that produces the inverted sentinel in a caller's box.",
+    "A trace must record the actual filter-flag values passed by callers, which is the only way to learn whether the ancestor-chain test is ever active in the shipping build.",
+    "A trace must confirm that the 100-level ceiling in 0x00435d40 is never reached, i.e. that no rigblock hierarchy in the shipping data is deeper than 100.",
+    "A differential test must confirm the box is written even when the list is empty, since that is the invariant a caller is most likely to depend on incorrectly."
+  ],
+
+  "blockers": [],
+
+  "evidence": [
+    "reconstruction/evidence/004ad550/evidence.json",
+    "reconstruction/evidence/004ad550/context.json",
+    "/tmp/opencode/wave/w1/b03/briefings.json entry for 0x004ad550",
+    "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Editors/EditorModel.h",
+    "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Editors/EditorRigblock.h",
+    "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/MathUtils.h",
+    "live ghidra_decompile_function / disassemble_function / get_function_xrefs / disassemble_bytes on SporeApp.exe"
+  ],
+
+  "tooling_evidence": [
+    {"tool": "ghidra_disassemble_function", "address": "0x004ad550", "observation": "112 instructions, 0x004ad550..0x004ad6ea, matching the briefing's body_bytes 413. SUB ESP,0xb0 frame, single RET 0x8 exit, do-while loop with the increment block at 0x004ad63e reached by a backward jump from 0x004ad6d3."},
+    {"tool": "ghidra_decompile_function", "address": "0x004ad550", "observation": "confirms the three-phase shape and that FUN_0043f050 is called once per surviving element. Its rendering of the argument lists is unreliable, so every field and constant claim was re-derived from the disassembly."},
+    {"tool": "ghidra_get_function_xrefs", "address": "0x004ad550", "observation": "7 UNCONDITIONAL_CALL references from 6 functions, no JMP and no DATA reference, so the address is not a vtable entry."},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x00586ec0", "observation": "0x00586ed2 MOV ECX,[ESI+0x98] receiver; 0x00586ed9 LEA EAX,[ESP+0x2c] / 0x00586ee1 PUSH EAX out buffer; 0x00586ee8 CALL 0x004ad550; 0x00586eed MOVSS XMM0,[ESP+0x3c] reads the box's first float; 0x00586f05 CALL 0x004adb40 then FLD/FXCH. This is the SDK-named caller cEditor::SetEditorModel and it proves the 24-byte out parameter is a box consumed as floats."},
+    {"tool": "ghidra_decompile_function", "address": "0x00409c00", "observation": "stores 0x7f7fffff into words 0,1,2 and 0xff7fffff into words 3,4,5 - the inverted empty-box sentinel, and the proof of the six-float lower/upper layout."},
+    {"tool": "ghidra_decompile_function", "address": "0x0043f050", "observation": "the union: `if (a[0] <= a[3]) { componentwise merge } else { a = b }` with pairs (0,3), (1,4), (2,5). Fixes the emptiness convention and the axis pairing."},
+    {"tool": "ghidra_decompile_function", "address": "0x00511140", "observation": "copies six dwords from param_2 to param_1 and returns param_1 - a 24-byte BoundingBox assignment."},
+    {"tool": "ghidra_decompile_function", "address": "0x00435d40", "observation": "the filter predicate: walks param_1 = *(param_1 + 0x33c) for at most 100 iterations, breaking with 1 when bits 0x80/0x100 of [param_1+0xdc8] or bit 0x8 of [param_1+0xdcc] are set, else returning 0."},
+    {"tool": "ghidra_decompile_function", "address": "0x0044ae00", "observation": "the bounds port. Confirms the (this, BoundingBox* out, int mode, char, char) signature, that it returns its out pointer, that it unions child rigblocks from the vector at +0x340 only when the last flag is set, that mode 0 builds the box from +0x48/+0x4c/+0x50 plus nine floats from +0x60 and applies a transform, and that it reads the flag word at +0xdc8 with masks 0x400, 0x800, 0x80 and 0x200000."},
+    {"tool": "ghidra_decompile_function", "address": "0x004ad6f0", "observation": "a same-region sibling that iterates the array at +0x18..+0x1c, builds a 24-byte box per element from +0x48/+0x4c/+0x50 plus nine floats from +0x60, and tests bit 0x400 of the +0xdc8 flag word - independent corroboration of the field identification, on a different element type."},
+    {"tool": "ghidra_decompile_function", "address": "0x004adb40", "observation": "returns *(float*)(param_1 + 0x44); called on the same receiver at 0x00586f05 immediately after this function, so the two are combined at one call site."}
+  ],
+
+  "validation": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/wave13-w1-dispatch-b03 reconstruction/staging/wave13-w1-dispatch-b03/editor_model_union_bounds.cpp reconstruction/staging/wave13-w1-dispatch-b03/editor_model_union_bounds_test.cpp",
+    "model_test_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/wave13-w1-dispatch-b03 reconstruction/staging/wave13-w1-dispatch-b03/editor_model_union_bounds.cpp reconstruction/staging/wave13-w1-dispatch-b03/editor_model_union_bounds_test.cpp -o /tmp/opencode/4ad550-model && /tmp/opencode/4ad550-model",
+    "syntax": "passed",
+    "model_test": "passed (exit 0). Four cases: an empty list asserting the +FLT_MAX/-FLT_MAX sentinel is written and that the accumulator is emptied twice; three elements with the filter clear asserting every bounds call and both unions and the exact merged box; the filter on asserting element 0 is read unconditionally while a rejected element is never even asked for its bounds; and a single element asserting the loop body never runs.",
+    "static_asserts": "4 assertions pin the 24-byte payload, the +0x18 vector, the +0x04 end-pointer offset and the four-byte element stride"
+  },
+
+  "body_reconstruction": {
+    "source": "reconstruction/staging/wave13-w1-dispatch-b03/editor_model_union_bounds.cpp",
+    "status": "implemented",
+    "claim_scope": "All 112 instructions are accounted for in the phase map, and the seed/filter/union/tail sequence is reconstructed in full including the loop's starting index, the empty-list shortcut, the filter polarity and the redundant double initialisation. All five callees are declared as opaque ports with the operations established from their own decompiled bodies; no rigblock, transform or bounds implementation is fabricated.",
+    "not_modelled": [
+      "the owning class name",
+      "the method name",
+      "the internals of the bounds port, the union primitive, the empty-box setter, the six-dword copy and the ancestor-chain predicate",
+      "the rigblock hierarchy beyond what the filter predicate's three offsets reveal"
+    ],
+    "confidence": {
+      "body_bytes": 1.0,
+      "control_flow": 1.0,
+      "payload_layout": 1.0,
+      "callee_operations": 0.95,
+      "calling_convention": 1.0,
+      "field_offsets": 0.9,
+      "receiver_identity": 0.7,
+      "semantic_name": 0.55
+    }
+  },
+
+  "confidence": {
+    "body_and_control_flow": "high - the complete 112-instruction listing was read and the do-while shape, the filter polarity and the empty-list shortcut are all explicit",
+    "payload_layout": "high - confirmed three independent ways and matching the SDK declaration",
+    "callee_operations": "high - every callee's decompiled body was read, so the union, the sentinel, the copy and the ancestor walk are described from source rather than from names",
+    "calling_convention": "high - ECX spill plus RET 0x8",
+    "receiver_identity": "medium - the +0x18 vector matches mRigblocks exactly and the region matches, but no vtable exists to close it",
+    "semantic_name": "medium - the aggregate-bounds reading is strong, the original identifier is unknown",
+    "runtime_behaviour": "none - no trace exists"
+  },
+
+  "provenance": {
+    "binary": "SPORE/SporeBin/SporeApp.exe",
+    "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+    "image_base": "0x00400000",
+    "worker_id": "wave13-w1-dispatch-b03",
+    "batch_id": "b03",
+    "package": "wave13-w1-dispatch-b03",
+    "subsystem": "Editor (model bounds)",
+    "package_ids": ["PKG-10-EDITOR-DISPATCH"],
+    "date": "2026-09-26",
+    "tools": "live ghidra MCP against program SporeApp.exe; Spore-ModAPI read-only"
+  }
+}

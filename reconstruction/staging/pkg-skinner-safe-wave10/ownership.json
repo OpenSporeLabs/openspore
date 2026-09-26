@@ -1,0 +1,85 @@
+{
+  "$schema": "pkg-skinner-safe-wave10.ownership.v1",
+  "package": "PKG-SKINNER-SAFE-WAVE10",
+  "captured_on": "2026-09-25",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "scope_rule": "one package owns one directory under reconstruction/staging; this package creates and edits nothing outside reconstruction/staging/pkg-skinner-safe-wave10",
+  "reinspection": {
+    "method": "grep over reconstruction/staging, reconstruction/metadata and reconstruction/integrated, plus a scan of knowledgegraph/research/source-reconstruction-manifest.json for the three virtual addresses and the Skinner subsystem",
+    "subsystem": "Skinner",
+    "manifest_skinner_records": 0,
+    "manifest_va_hits": 0,
+    "integrated_handoff_hits": 0,
+    "staging_claimants": [
+      {
+        "package": "pkg-skinner-wave10",
+        "files": [
+          "reconstruction/staging/pkg-skinner-wave10/skinner_wave10.hpp",
+          "reconstruction/staging/pkg-skinner-wave10/skinner_wave10.cpp",
+          "reconstruction/staging/pkg-skinner-wave10/skinner_wave10_model_test.cpp"
+        ],
+        "claims": ["0x00506590", "0x00517160", "0x005182f0"],
+        "metadata_handoff_present": false,
+        "action_taken": "none; the existing package is left byte for byte untouched"
+      }
+    ],
+    "shared_port_addresses_are_not_body_claims": {
+      "0x0067dd00": "referenced as a port by pkg-editor-lifecycle-wave6",
+      "0x0067dd50": "referenced as a port by pkg-app-lifecycle-wave7",
+      "0x00f473a0": "referenced as a port by pkg-palette-wave6, pkg-palette-support-wave10, pkg12-space, pkg13-c3-tribe-civ-wave2, pkg20-gameglobal, pkg-editor-wave10, pkg-game-mode-wave7 and pkg-ui-wave10",
+      "conclusion": "no overlap exists on any reconstructed body; every shared address is a callee seam owned by the other packages"
+    }
+  },
+  "owned": [
+    {
+      "va": "0x00506590",
+      "sdk_name": "Skinner::cSkinPainter::CreateTextures",
+      "role": "acquire three layer factories, create three texture painters, store the source word and five global scale floats",
+      "abi": "thiscall, one stack word, RET 0x4, void return",
+      "handoff": "reconstruction/staging/pkg-skinner-safe-wave10/00506590.json"
+    },
+    {
+      "va": "0x005182f0",
+      "sdk_name": "Skinner::cSkinPainterJobApplyBrushes::Execute",
+      "role": "dispatch the 0x44 graphics probe query and run the bounded painter step loop or the pass 0, 2, 3 chain",
+      "abi": "thiscall, no stack arguments, RET, 4 byte return",
+      "handoff": "reconstruction/staging/pkg-skinner-safe-wave10/005182f0.json"
+    }
+  ],
+  "excluded": [
+    {
+      "va": "0x00517160",
+      "sdk_name": "Skinner::cSkinPainterJob::DrawLayer",
+      "decision": "not reconstructed and not claimed by this package",
+      "defects_observed": [
+        "Ghidra types the receiver as ILightingManager* and then indexes it as param_1[3]._vftable0, which does not agree with the triage record /Spore/Skinner/cSkinPainterJob",
+        "the vtable call in the decompilation consumes in_stack_ffffffb0, an uninitialised stack slot, so the argument of the vtable dispatch cannot be recovered from the decompilation",
+        "the paint system null check writes through the same mis-typed receiver expression, so the completion flag offset is unproven",
+        "the neighbouring 0x00517240 reset port and the 0x0067dd50 submit port are also present in the same body, so a partial transcription would silently cross three more ownership boundaries"
+      ],
+      "unblock_condition": "a receiver type that makes param_1[3]._vftable0 resolve, or an assembly driven rewrite of the decompilation, before any worker claims it"
+    }
+  ],
+  "adjacent_addresses_deliberately_not_modelled": [
+    {"va": "0x00506630", "note": "repaired-contained label inside the 0x00506590 body; no separate function is claimed"},
+    {"va": "0x005171b0", "note": "repaired-contained label inside the excluded 0x00517160 body"},
+    {"va": "0x00518310", "note": "repaired-contained label inside the 0x005182f0 body"},
+    {"va": "0x00517240", "note": "callee port, owned elsewhere"},
+    {"va": "0x00517430", "note": "callee port, owned elsewhere; the model only calls it"}
+  ],
+  "validation": {
+    "command": "reconstruction/staging/pkg-skinner-safe-wave10/skinner_safe_wave10_boundary_test.sh",
+    "toolchain": "clang 22.1.8, -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror",
+    "configurations": ["-O0", "-O2", "-O0 -DNDEBUG", "-O2 -DNDEBUG"],
+    "checks": [
+      "clang-format --dry-run -Werror over the header, the source and the model test",
+      "all four configurations compile and the model test binary passes in all four",
+      "RET widths per target in the object file and in the linked image",
+      "unresolved port set identical across the four configurations",
+      "NDEBUG object byte identical to the matching non NDEBUG object",
+      "five MOVSS stores at 0x20, 0x24, 0x28, 0x2c, 0x30 sourced from the three modelled globals",
+      "0x44 vtable slot load or call present in every configuration"
+    ]
+  }
+}

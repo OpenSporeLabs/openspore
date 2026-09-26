@@ -1,0 +1,338 @@
+{
+  "schema": "openspore-worker-metadata-1",
+  "package": "wave13-w1-dispatch-b02",
+  "va": "0x00688fa0",
+  "address": "0x00688fa0",
+  "function_address": "0x00688fa0",
+  "entry_address": "0x00688fa0",
+  "ghidra_name": "FUN_00688fa0",
+  "normalized_symbol": "gge_user_data_reset_00688fa0",
+  "reconstructed_symbol": "FUN_00688fa0_gge_user_data_reset",
+  "declaration": "extern \"C\" void* FUN_00688fa0_gge_user_data_reset(const wchar_t* name);",
+  "source_files": [
+    "reconstruction/staging/wave13-w1-dispatch-b02/b688fa0_gge_user_data_reset.cpp",
+    "reconstruction/staging/wave13-w1-dispatch-b02/b688fa0_gge_user_data_reset.hpp"
+  ],
+
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__cdecl",
+    "calling_convention_observation": "The epilogue is POP EDI; POP ESI; POP EBP; MOV EAX,EBX; POP EBX; MOV dword ptr FS:[0x0],ECX; ADD ESP,0x58; RET at 0x006891d5..0x006891e5. The RET is a bare C3 with no immediate, and the caller at 0x00de4866 issues ADD ESP,0x4 after the call, so the single argument is caller-cleanup. The prologue is the MSVC SEH frame PUSH -1; PUSH 0x120c84c; MOV EAX,FS:[0x0]; PUSH EAX; MOV FS:[0x0],ESP, which accounts for the extra 12 bytes: 0x120c84c is the scope-table address, not an argument.",
+    "return_type": "void*",
+    "return_semantics": "the 0x24-byte object, or null when the second registry allocation failed",
+    "return_register": "EAX",
+    "return_width_bytes": 4,
+    "return_observation": "0x006891d8: MOV EAX,EBX immediately before the register restores, so the return value is whatever EBX held; 0x00689132 MOV EBX,EAX takes the constructor's result and 0x00689136 XOR EBX,EBX covers the failed-allocation path",
+    "ret_form": "RET",
+    "termination": "single exit at 0x006891e5; no early return exists in the 203-instruction body",
+    "stack_cleanup_bytes": 0,
+    "stack_cleanup_owner": "caller",
+    "stack_arguments": [
+      {"index": 1, "frame_offset": "[ESP + 0x5c] at 0x00688fb8 with ESP = entry - 0x58", "width": 4, "meaning": "a const wchar_t* naming a file; the caller at 0x00de4850 passes the literal 0x0147e040, which ghidra_read_memory shows is the UTF-16LE string \"GGEUserData.dat.tmp\""}
+    ],
+    "ordinary_stack_argument_slots": 1,
+    "saved_registers": ["EBX", "EBP", "ESI", "EDI"],
+    "saved_registers_observation": "PUSH EBX/EBP/ESI/EDI at 0x00688fbc..0x00688fbf; POP EDI/ESI/EBP at 0x006891d5..0x006891d7 with EBX popped at 0x006891da after the MOV EAX,EBX",
+    "receiver": false,
+    "hidden_receiver": "none",
+    "hidden_this_register": "ECX is only ever an explicit thiscall argument, loaded at 0x006890d9, 0x0068912b, 0x00689141, 0x00689150 and 0x0068915c",
+    "frame": "the SEH prologue reserves 12 bytes, SUB ESP,0x4c at 0x00688fb5 reserves 76 more, and four registers are pushed, giving a fixed 0x58-byte drop that the epilogue reverses with ADD ESP,0x58. The scope state slot is the PUSH -1 word, overwritten with 1..6 during the body."
+  },
+
+  "layout": {
+    "entry_address": "0x00688fa0",
+    "body_start": "0x00688fa0",
+    "body_end": "0x006891e5",
+    "body_span_bytes": 582,
+    "body_bytes_hex": null,
+    "instruction_count": 203,
+    "instructions_note": "Full listing read with ghidra_disassemble_function; the address-to-claim mapping is in observed_mechanics.",
+    "frame_shape": "SEH frame with an 8-byte scope record, a 0x4c-byte local area and four saved registers; the state slot at the PUSH -1 position takes the values 0,1,2,3,4,5,6",
+    "padding_after": "not read",
+    "reads": "the argument at [ESP + 0x5c]; the FS segment chain; the four intermediate string headers on the stack; the two allocated objects' vtables; the class-name pointer 0x013f09b4; the service key 0x04729a47",
+    "writes": "the SEH chain at the end; the state slot; four stack string headers; no global is written"
+  },
+
+  "observed_mechanics": [
+    "0x00688fa0/0x00688fa2: PUSH -1; PUSH 0x120c84c -- the MSVC SEH prologue, the state slot and the scope-table pointer",
+    "0x00688fa7/0x00688fad/0x00688fae: the previous FS:[0] chain value is pushed and FS:[0] is set to ESP",
+    "0x00688fb5: SUB ESP,0x4c; 0x00688fbc..0x00688fbf: four saved registers",
+    "0x00688fb8: MOV EAX,dword ptr [ESP + 0x5c] reads the single argument",
+    "0x00688fc2/0x00688fc3: the argument is pushed and ECX becomes a stack address",
+    "0x00688fc7/0x00688fcb/0x00688fcf: three dwords of that header are zeroed, giving an empty EASTL-style string",
+    "0x00688fd3: CALL 0x00579a90 assigns the argument into that header. Its body measures the source in 16-bit units, allocates length + 1, memcpy's length * 2 bytes, sets end = begin + length and writes a 16-bit NUL",
+    "0x00688fd8: PUSH 0x4729a47",
+    "0x00688fe1: CALL 0x006b1f90, whose body is a map_int_whatever_find returning local_4[5] on a hit and null otherwise",
+    "0x00688fe6/0x00688fe8/0x00688fea/0x00688ff0: virtual slot +0x28 on that entry, called with no stack argument",
+    "0x00688fed: ADD ESP,0x4 pops the key, so 0x006b1f90 leaves the stack alone",
+    "0x00688ff2..0x00688fff: a second header is zeroed",
+    "0x00689003: CALL 0x00579a90 assigns the slot +0x28 result into it",
+    "0x00689008/0x0068900c/0x00689010/0x00689012: the second header's element count, (end - begin) >> 1",
+    "0x00689014/0x00689017: count + 1 is pushed as the capacity",
+    "0x00689018/0x00689021/0x00689025/0x00689029: a third header is zeroed",
+    "0x0068902d: CALL 0x00429760, whose body installs the inline sentinel &DAT_01667bac with {base, base, base + 2} for a capacity below 2 and otherwise calls 0x00f473a0(capacity << 1, \"Editor\", 0, 0, an EASTL allocator.h source path, 0xd1)",
+    "0x00689032/0x00689036/0x00689038/0x00689039/0x0068903a: memcpy of (end - begin) >> 1 * 2 bytes from the second header's begin into the third header's begin, via 0x011e0744",
+    "0x00689040/0x00689048: end = begin + size and a 16-bit NUL is stored at the new end",
+    "0x0068904b/0x00689051: CALL 0x00932ae0 on the third header's buffer. Its body returns 0 for a null or empty path, calls GetFileAttributesW otherwise, returns 1 when the result is not -1 and the DIRECTORY bit 0x10 is set, and otherwise defers to 0x00932960. The return value is discarded at the callsite.",
+    "0x00689056..0x00689065: CALL 0x00688f00 with three stack arguments, the third being the address of a fourth header. Its body allocates ((lhs.end - lhs.begin) >> 1) + ((rhs.end - rhs.begin) >> 1) + 1 elements, writes a 16-bit NUL, then appends the second parameter and then the third through 0x00429580, so the result is working ++ argument.",
+    "0x0068906a: ADD ESP,0x1c -- seven words of cleanup",
+    "0x00689071/0x00689076/0x00689078/0x0068907a/0x0068907d/0x0068907f/0x00689081: if the returned pointer differs from the output header, 0x00423650 is called with the returned header's begin and end, i.e. an EASTL string assign",
+    "0x0068908a..0x0068909f: the first length guard, (end - begin) & 0xfffffffe compared against 2 with JLE",
+    "0x006890a1..0x006890ab: with EDI zero, a null begin is also skipped, then 0x00f47380 frees the buffer",
+    "0x006890ae/0x006890af: CALL 0x00931fd0, whose body is DeleteFileW. Its result is discarded.",
+    "0x006890b4..0x006890c2: six pushes giving 0x388, 0x013f09b4, 0, 0, 0, 0 and CALL 0x00926020. Its body calls 0x00925cb0, then the allocator's virtual slot +0x04 with (size + 8, name, a3, 4, 0), and on success stores the allocator pointer in the block header and returns block + 8.",
+    "ghidra_read_memory at 0x013f09b4 returns 53 69 6d 75 6c 61 74 6f 72 00, i.e. the NUL-terminated ASCII class name \"Simulator\"",
+    "0x006890c7: ADD ESP,0x1c -- the six arguments",
+    "0x006890ca: the allocation result is stashed",
+    "0x006890ce/0x006890d3/0x006890d5: the SEH state is set to 4 and a null result skips the constructor",
+    "0x006890d7/0x006890d8/0x006890d9/0x006890db: CALL 0x008d9f80 with two zero arguments and ECX = the new object. Its body installs vtables PTR_FUN_014367b0 at +0 and PTR_FUN_0143679c at +4, sets 0x3f733333 at +0x2dc, 0x13 at +0x334 and 0x3e19999a at +0x338, links a self-referential node at +0x1c0, calls 0x009222a0 twice, and finally calls vtable slot +0x04 of the object at +0x0c",
+    "0x006890ee/0x006890f3/0x006890f7/0x006890f9: the constructed object is tested for null",
+    "0x006890fb..0x00689103: virtual slot +0x00 of the sub-object at object + 4",
+    "0x00689105..0x00689115: six pushes giving 0x24, 0x013f09b4, 0, 0, 0, 0 and CALL 0x00926020 -- the same class, 36 bytes instead of 904",
+    "0x00689121/0x00689126/0x00689136: the state is set to 6 and a null result yields EBX = 0",
+    "0x0068912a/0x0068912b/0x0068912d: CALL 0x0069fa60 with ECX = the 0x24-byte object and the 0x388-byte object pushed. Its body installs vtable 0x014086e8 at +0, 0x01408698 at +4, 0x01408688 at +8 and 0x01408678 at +0x10, allocates a 0x68-byte \"App\" object through 0x00f473a0 and derives an 8-byte sub-object from it into +0x1c, and stores the pushed pointer into +0x18 with a virtual call on the previous occupant.",
+    "0x00689138..0x00689148: virtual slot +0x04 of the vtable at small + 4",
+    "0x0068914a..0x00689152: virtual slot +0x2c of the same vtable, with the third header's buffer as the single stack argument",
+    "ghidra_read_memory at 0x014086e8 gives the table at small + 0: +0x00 0x00f11c00, +0x04 0x00757580, +0x08 0x0069e380, +0x0c 0x0069d2d0, +0x10 0x007f30d0, +0x14 0x00985e40, +0x18 0x0069e3a0, +0x1c 0x0069d2c0, +0x20 0x0069de80, +0x24 0x0069e470, +0x28 0x0069d2c0, +0x2c 0x0069dea0, +0x30 0x0069e5d0, +0x34 0x00c06330, +0x38 0x0069d2f0, +0x3c 0x0069df20",
+    "0x00689154..0x0068915e: virtual slot +0x3c of the vtable at small + 0, with the arguments 0 and 1",
+    "0x00689160..0x00689176: the 0x388 object is tested and, if non-null, virtual slot +0x04 of its sub-object at +4 is called again -- the same slot as 0x00689103, so the big object receives two calls at slot 0x00 and one at slot 0x04",
+    "0x00689178..0x006891d1: three further frees with the identical (end - begin) & 0xfffffffe > 2 and non-null-begin guard",
+    "0x006891d8: MOV EAX,EBX",
+    "0x006891db: MOV dword ptr FS:[0x0],ECX unlinks the SEH frame",
+    "0x006891e2/0x006891e5: ADD ESP,0x58; RET",
+    "0x00de4858/0x00de485f/0x00de4866/0x00de4869/0x00de486b: the caller pushes the literal 0x0147e040, calls, cleans one word, tests the result for null and branches away on failure",
+    "ghidra_read_memory at 0x0147e040 returns the UTF-16LE encoding of \"GGEUserData.dat.tmp\""
+  ],
+
+  "fields_and_offsets": [
+    {"offset": "small+0x00", "width": 4, "meaning": "vtable 0x014086e8, installed by 0x0069fa60; slot +0x3c is called at 0x00689156", "proved_by": "0x00689154 MOV EDX,dword ptr [EBX]; 0x00689156 MOV EAX,dword ptr [EDX + 0x3c]", "confidence": "OBSERVED"},
+    {"offset": "small+0x04", "width": 4, "meaning": "a second vtable pointer 0x01408698; slots +0x00 and +0x04 are called and slot +0x2c receives the path buffer", "proved_by": "0x00689138 MOV EDX,dword ptr [EBX + 0x4]; 0x0068913e LEA ESI,[EBX + 0x4]", "confidence": "OBSERVED"},
+    {"offset": "small+0x18", "width": 4, "meaning": "receives the 0x388-byte object", "proved_by": "0x0069fa60 body: param_1[6] = param_2 with a virtual call on the previous occupant", "confidence": "OBSERVED", "note": "read in the callee"},
+    {"offset": "small+0x1c", "width": 4, "meaning": "receives an 8-byte sub-object derived from a freshly allocated 0x68-byte App object", "proved_by": "0x0069fa60 body: param_1[7] = (result of 0x0069f840) + 8", "confidence": "OBSERVED", "note": "read in the callee"},
+    {"offset": "big+0x04", "width": 4, "meaning": "the big object's own vtable pointer; slots +0x00 and +0x04 are called", "proved_by": "0x006890fb MOV EDX,dword ptr [ESI + 0x4]; 0x006890fe MOV EAX,dword ptr [EDX]; 0x0068916d MOV EDX,dword ptr [EAX + 0x4]; 0x00689173 MOV EAX,dword ptr [EDX + 0x4]", "confidence": "OBSERVED"},
+    {"offset": "big+0x2dc", "width": 4, "meaning": "set to 0x3f733333 by the constructor", "proved_by": "0x008d9f80 body", "confidence": "OBSERVED", "note": "read in the callee"},
+    {"offset": "big+0x334", "width": 4, "meaning": "set to 0x13 by the constructor", "proved_by": "0x008d9f80 body", "confidence": "OBSERVED", "note": "read in the callee"},
+    {"offset": "big+0x338", "width": 4, "meaning": "set to 0x3e19999a by the constructor", "proved_by": "0x008d9f80 body", "confidence": "OBSERVED", "note": "read in the callee"},
+    {"offset": "big+0x1c0", "width": 4, "meaning": "a self-referential list node installed by the constructor", "proved_by": "0x008d9f80 body: puVar1 = param_1 + 0xbb; *puVar1 = puVar1; param_1[0xbc] = puVar1", "confidence": "OBSERVED", "note": "read in the callee"}
+  ],
+
+  "constants": [
+    {"value": "0x0120c84c", "address": "0x00688fa2", "meaning": "the SEH scope-table address; its 8 bytes are b8 98 9e 4f 01 e9 b6 40 fd ff, i.e. MOV EAX,0x014f9e98 followed by a relative jump back into the function"},
+    {"value": "0x0000004c", "address": "0x00688fb5", "meaning": "the local-frame size in bytes"},
+    {"value": "0x00000058", "address": "0x006891e2", "meaning": "the total frame drop reversed by the epilogue: 12 SEH bytes plus 0x4c plus 16"},
+    {"value": "0x04729a47", "address": "0x00688fd8", "meaning": "the service-locator key passed to 0x006b1f90"},
+    {"value": "0x00000028", "address": "0x00688fea", "meaning": "the virtual slot offset used to obtain the base path"},
+    {"value": "0x00000001", "address": "0x00689014", "meaning": "the +1 added to the element count for the terminating NUL"},
+    {"value": "0x00000388", "address": "0x006890bd", "meaning": "the size of the first registry allocation, 904 bytes"},
+    {"value": "0x013f09b4", "address": "0x006890b8", "meaning": "the class-name pointer, the ASCII string Simulator"},
+    {"value": "0x00000024", "address": "0x0068910e", "meaning": "the size of the second registry allocation, 36 bytes"},
+    {"value": "0x00000004", "address": "0x0068913b", "meaning": "the virtual slot offset of the first call on the small object's sub-object"},
+    {"value": "0x0000002c", "address": "0x0068914c", "meaning": "the virtual slot offset of the second call, which receives the path buffer"},
+    {"value": "0x0000003c", "address": "0x00689156", "meaning": "the virtual slot offset of the third call, on the small object's own vtable"},
+    {"value": "0xfffffffe", "address": "0x00689094", "meaning": "the AND mask in each of the four free guards, appearing again at 0x0068917e, 0x0068919d and 0x006891bc"},
+    {"value": "0x00000002", "address": "0x00689097", "meaning": "the threshold in each free guard: a buffer of two bytes or less is not freed"},
+    {"value": "0x00000001", "address": "0x0068915b", "meaning": "the second argument of the slot +0x3c call; the first is zero"},
+    {"value": "0x00000010", "address": "inside 0x00932ae0", "meaning": "the FILE_ATTRIBUTE_DIRECTORY bit tested by the directory predicate"}
+  ],
+
+  "globals": [
+    {"address": "0x013f09b4", "name": "the registry class name", "access": "read as data", "observed_value": "ghidra_read_memory returns 53 69 6d 75 6c 61 74 6f 72 00, i.e. Simulator"},
+    {"address": "0x0120c84c", "name": "the SEH scope record", "access": "read as code", "observed_value": "b8 98 9e 4f 01 e9 b6 40 fd ff"},
+    {"address": "0x01667bac", "name": "the EASTL inline-string sentinel", "access": "read by 0x00429760", "observed_value": "not read directly; 0x00429760 uses it as the base pointer with capacity + 2"},
+    {"address": "FS:[0x0]", "name": "the thread exception chain", "access": "read then written", "observed_value": "not a file-backed value"}
+  ],
+
+  "virtual_dispatch": [
+    {"callsite": "0x00688ff0", "receiver": "the service-locator entry from 0x006b1f90(0x04729a47)", "slot_offset": "+0x28", "table_address": "not located", "callee": "unresolved", "resolved": false, "stack_args": 0, "result_use": "the base path, assigned into the second string header"},
+    {"callsite": "0x00689103", "receiver": "big_object + 4", "slot_offset": "+0x00", "table_address": "not located; the vtable is installed by 0x008d9f80 as PTR_FUN_0143679c", "callee": "unresolved", "resolved": false, "result_use": "discarded"},
+    {"callsite": "0x00689148", "receiver": "small + 4", "slot_offset": "+0x04", "table_address": "0x01408698", "callee": "unresolved", "resolved": false, "result_use": "discarded"},
+    {"callsite": "0x00689152", "receiver": "small + 4", "slot_offset": "+0x2c", "table_address": "0x01408698", "callee": "unresolved", "resolved": false, "stack_args": 1, "stack_arg_values": ["the working copy's buffer"], "result_use": "discarded"},
+    {"callsite": "0x0068915e", "receiver": "small + 0", "slot_offset": "+0x3c", "table_address": "0x014086e8", "callee": "0x0069df20", "resolved": true, "stack_args": 2, "stack_arg_values": ["0", "1"], "result_use": "discarded"},
+    {"callsite": "0x00689176", "receiver": "big_object + 4", "slot_offset": "+0x04", "table_address": "not located", "callee": "unresolved", "resolved": false, "result_use": "discarded"},
+    {"callsite": "inside 0x00926020", "receiver": "the allocator from 0x00925cb0", "slot_offset": "+0x04", "table_address": "not located", "callee": "unresolved", "resolved": false, "stack_args": 5, "stack_arg_values": ["size + 8", "class name", "a3", "4", "0"], "result_use": "the allocated block"},
+    {"callsite": "inside 0x0069fa60", "receiver": "the previous occupant of small + 0x18 and of small + 0x1c", "slot_offset": "+0x00 and +0x04", "table_address": "not located", "callee": "unresolved", "resolved": false, "result_use": "discarded"}
+  ],
+
+  "control_flow": {
+    "shape": "a straight-line sequence with no loop, no switch and no early exit",
+    "loops": [],
+    "early_exits": [
+      "0x00689078 JZ 0x0068908a: skipped when the concatenation helper returns the output header itself",
+      "0x0068909f JLE 0x006890ae and 0x006890a3 JZ 0x006890ae: the first free's two guards",
+      "0x006890d5 JZ 0x006890e8: a failed first allocation skips the constructor",
+      "0x006890f9 JZ 0x00689105: a null big object skips its first virtual call",
+      "0x00689126 JZ 0x00689136: a failed second allocation yields a null result",
+      "0x00689169 JZ 0x00689178: a null big object skips its second virtual call",
+      "0x00689184 JLE 0x00689193, 0x00689188 JZ 0x00689193, 0x006891a3 JLE 0x006891b2, 0x006891a7 JZ 0x006891b2, 0x006891c2 JLE 0x006891d1 and 0x006891c6 JZ 0x006891d1: the remaining three free guards"
+    ],
+    "branch_polarity": [
+      "the four free guards are (end - begin) & 0xfffffffe <= 2, or a null begin, meaning 'too small to be heap allocated, leave it alone' -- the EASTL inline-string convention",
+      "0x006890d5, 0x006890f9 and 0x00689126 all test for zero, so a failed allocation is propagated rather than dereferenced"
+    ],
+    "unrecovered_defect": "0x0068912d's result is used unconditionally at 0x00689138, 0x0068914a and 0x00689154, and 0x00689136 sets EBX to zero on the failure path. A failed second allocation therefore dereferences a null pointer; the reconstruction preserves this rather than repairing it.",
+    "seh_state_values": "the PUSH -1 slot is written 0, then 1 (0x0068901c), 2 (0x0068904c), 3 (0x00689071), 4 (0x006890ce), 5 (0x006890ee and 0x00689143) and 6 (0x00689121)"
+  },
+
+  "callers_evidence": [
+    {"callsite": "0x00de485f", "caller": "0x00de4850", "form": "CALL with one push and ADD ESP,0x4 at 0x00de4866", "receiver_setup": "PUSH 0x147e040 at 0x00de4858, i.e. the literal GGEUserData.dat.tmp; EDI is set from ECX at 0x00de485d but is not an argument", "result_use": "MOV ESI,EAX at 0x00de4864; TEST ESI,ESI; JZ 0x00de48c2 at 0x00de4869/0x00de486b, so a null result is handled", "significance": "the only caller that discloses the argument, which is what fixes the function's contract as a file-path operation"},
+    {"callsite": "0x00680d08", "caller": "0x00580cb0", "form": "not disassembled", "receiver_setup": "not inspected", "result_use": "not inspected"},
+    {"callsite": "0x00b2930b", "caller": "0x00b28ec0", "form": "not disassembled", "receiver_setup": "not inspected", "result_use": "not inspected"},
+    {"callsite": "0x00bb4cef", "caller": "0x00bb4ba0", "form": "not disassembled", "receiver_setup": "not inspected", "result_use": "not inspected"}
+  ],
+
+  "callees_evidence": [
+    {"va": "0x00579a90", "form": "__thiscall(header, const wchar_t*), RET 4", "name": "EASTL wide-string assign from a C string", "read_body": true, "operation": "counts 16-bit units to the first NUL, allocates count + 1 through 0x00429760, memcpy's count * 2 bytes, sets header[1] = begin + count and writes a 16-bit NUL there"},
+    {"va": "0x006b1f90", "form": "cdecl, one stack argument", "name": "unresolved service locator", "read_body": true, "operation": "map_int_whatever_find(&local, &arg); returns local[5] on a hit and null on a miss"},
+    {"va": "0x00429760", "form": "__thiscall(header, capacity)", "name": "EASTL string allocator", "read_body": true, "operation": "for capacity < 2 installs {&DAT_01667bac, same, same + 2}; otherwise 0x00f473a0(capacity << 1, Editor, 0, 0, an EASTL allocator.h source path, 0xd1) and sets {base, base, base + capacity * 2}"},
+    {"va": "0x011e0744", "form": "cdecl, three arguments", "name": "memcpy (Ghidra import symbol)", "read_body": false, "operation": "copies (end - begin) >> 1 * 2 bytes"},
+    {"va": "0x00932ae0", "form": "cdecl, one argument", "name": "unresolved path predicate", "read_body": true, "operation": "returns 0 for a null or empty path; GetFileAttributesW otherwise; returns 1 when the attributes are valid and FILE_ATTRIBUTE_DIRECTORY (0x10) is set; otherwise returns 0x00932960(path), which was not read"},
+    {"va": "0x00688f00", "form": "cdecl, three arguments", "name": "unresolved string concatenation", "read_body": true, "operation": "installs its own SEH frame with the scope record 0x0120c7d9, zeroes the three output dwords, allocates the combined length + 1, writes a 16-bit NUL, then appends the second and then the third parameter through 0x00429580; returns the output header"},
+    {"va": "0x00429580", "form": "nested", "name": "EASTL append", "read_body": false, "operation": "not read"},
+    {"va": "0x00423650", "form": "__thiscall(dst, src_begin, src_end)", "name": "EASTL string assign from a range", "read_body": true, "operation": "copies min(capacity, source length) elements with memcpy and then either appends the remainder through 0x00429580 or truncates through 0x0042e2f0"},
+    {"va": "0x00931fd0", "form": "cdecl, one argument", "name": "unresolved file delete", "read_body": true, "operation": "DeleteFileW(param_1), returning the result as a bool"},
+    {"va": "0x00926020", "form": "cdecl, six arguments", "name": "unresolved registry allocator", "read_body": true, "operation": "0x00925cb0 then virtual slot +0x04 with (size + 8, name, a3, 4, 0); on success writes the allocator pointer into the block header and returns block + 8, else null"},
+    {"va": "0x00925cb0", "form": "nested", "name": "allocator singleton", "read_body": false, "operation": "not read"},
+    {"va": "0x008d9f80", "form": "__thiscall(obj, 0, 0)", "name": "unresolved constructor", "read_body": true, "operation": "installs PTR_FUN_014367b0 at +0 and PTR_FUN_0143679c at +4, sets a byte at +0xc, a dword at +0x10, 0x3f733333 at +0x2dc, 0x13 at +0x334 and 0x3e19999a at +0x338, links a self-referential node at +0x1c0, calls 0x00931da0 and 0x009222a0 twice, then calls vtable slot +0x04 of the object at +0x0c and 0x008d99c0 when the second argument is non-zero"},
+    {"va": "0x0069fa60", "form": "__thiscall(small, big)", "name": "unresolved constructor", "read_body": true, "operation": "installs four vtables (0x014086e8 at +0, 0x01408698 at +4, 0x01408688 at +8, 0x01408678 at +0x10), zeroes +0x18, +0x1c and +0x20, allocates a 0x68-byte App object via 0x00f473a0(0x68, &DAT_013ebc58, 0,0,0,0) and stores (0x0069f840(small) + 8) into +0x1c, then stores the pushed big object into +0x18. Returns small."},
+    {"va": "0x0069f840", "form": "nested inside 0x0069fa60", "name": "unresolved", "read_body": false, "operation": "returns a pointer whose +8 becomes small+0x1c"},
+    {"va": "0x00f47380", "form": "CALL, four sites", "name": "unresolved deallocator", "read_body": true, "operation": "FUN_009276c0(param_1) when non-null"},
+    {"va": "0x00f473a0", "form": "nested", "name": "block allocator", "read_body": true, "operation": "takes a size, a type name, two zeros, an allocation-site path and a line number"},
+    {"va": "0x008d99c0, 0x009222a0, 0x00931da0, 0x008db8c0, 0x00932960, 0x0042e2f0, 0x009276c0", "form": "nested", "name": "unresolved", "read_body": false, "operation": "not read"}
+  ],
+
+  "sdk_correspondence": {
+    "status": "UNRESOLVED",
+    "observation": "The only strings the function passes to the allocator are the registry class name Simulator (0x013f09b4) and the EASTL type name Editor (inside 0x00429760). Neither is an SDK type name, and no SDK declaration matches a 0x388-byte object with a vtable at +0 and a second at +4 that receives two slot calls, nor a 0x24-byte object with vtables at +0, +4, +8 and +0x10. The SDK structures checked, including Spore/Graphics/cCubeMapCoord, do not match.",
+    "candidates_not_asserted": [
+      "the class behind the registry name Simulator -- NOT claimed",
+      "the 0x68-byte App object allocated inside 0x0069fa60 -- the literal App is the same type name 0x005a9200 used at 0x013ebc58, which is a hint and nothing more",
+      "the build path embedded in 0x00429760 is an EASTL allocation-site record, not a class identity"
+    ],
+    "sdk_paths_read": ["/home/juanr/apps/Spore-ModAPI/SDKtoGhidra/SporeGhidra_march2017.xml"]
+  },
+
+  "semantic_contract": "Given the wide-string name of a file, this function performs a GGE user-data reset. It copies the name into a working string, asks a service locator for the entry keyed 0x04729a47 and takes that entry's virtual slot +0x28 as a base directory path, copies the base path into a second string, tests the base path with a directory predicate built on GetFileAttributesW, concatenates the base path with the argument into a fourth string, and then calls DeleteFileW on the base path -- the return values of both the directory test and the delete are discarded. It then allocates two objects from the same class registry entry, whose name is the ASCII string Simulator: a 904-byte one constructed by 0x008d9f80, which receives a call at virtual slot +0x00 of its +4 sub-object, and a 36-byte one constructed by 0x0069fa60 with the 904-byte object as its argument, which is stored at offset +0x18 and which receives calls at slot +0x04 and slot +0x2c of its own +4 sub-object (the latter handed the working path buffer) and at slot +0x3c of its own vtable with the arguments 0 and 1. The 904-byte object then receives a second call at slot +0x04 of its sub-object. Four intermediate string buffers are released, each under the EASTL guard that a buffer whose (end - begin) & 0xfffffffe is at most 2 is left alone because it is the inline sentinel rather than a heap block. The SEH chain is restored and the 36-byte object is returned, or null if its allocation failed -- although the code then dereferences that null, so the failure path faults. The one caller that discloses its argument passes the literal GGEUserData.dat.tmp and null-checks the result.",
+
+  "classification": "BOUNDED_SEMANTIC",
+  "classification_rationale": "The complete 203-instruction body, the __cdecl ABI, the SEH frame, every constant, the whole straight-line control flow, the six dispatch sites with their slot offsets, the two allocation sizes and the class-name string were read from the disassembly and corroborated by a caller that discloses the argument, by the string allocator's EASTL source-path record, and by live reads of 0x013f09b4, 0x0147e040, 0x0120c84c and the small object's vtable. That rules out STRUCTURAL_ONLY and STILL_UNKNOWN. It is not STRONG_SEMANTIC because three material elements are bounded: (1) the class behind the registry name Simulator is not resolved -- the registry is reached only through 0x00926020, whose key space was not enumerated, and no SDK type matches either object; (2) four of the six virtual calls, including the two that receive the path buffer and the pair on the 904-byte object, have unresolved callees because their vtables (0x01408698 and PTR_FUN_0143679c) were not read; and (3) which of the four intermediate string headers each of the four length-guarded frees targets is not resolved, because the disassembly's ESP-relative slots shift between each guard and its free and the decompiler's local names are unreliable.",
+
+  "semantic_findings": [
+    "The function is a file-path operation followed by an object-pair construction, not a query.",
+    "The argument is a file name, fixed by the one caller that discloses it: the UTF-16LE literal GGEUserData.dat.tmp at 0x0147e040.",
+    "The base directory comes from a service-locator entry keyed 0x04729a47 through its virtual slot +0x28.",
+    "The path test is a directory test: 0x00932ae0 is GetFileAttributesW plus the FILE_ATTRIBUTE_DIRECTORY bit 0x10, with an unread fallback at 0x00932960.",
+    "The delete is unconditional and its result discarded: 0x00931fd0 is DeleteFileW on the base path, not on the concatenated path.",
+    "All four strings are EASTL wide strings with the three-pointer header, and the four frees use the EASTL inline-sentinel guard (end - begin) & 0xfffffffe <= 2.",
+    "The string allocator 0x00429760 embeds a BuildAgent max-spore001-spore CMBuild SporeEP1_RL EASTL allocator.h source path, which dates the build and confirms the EASTL types.",
+    "Both allocations use the same registry class name, Simulator, at sizes 0x388 and 0x24, and the 36-byte object's constructor stores the 904-byte object at +0x18.",
+    "The 904-byte object's sub-object is called at slot +0x00 before the 36-byte object is built and at slot +0x04 after it, so the pair is initialised in that order.",
+    "A failed second allocation is propagated into three unconditional dereferences, so the failure path faults; the reconstruction preserves this.",
+    "The body installs an SEH frame whose 8-byte scope record is MOV EAX,0x014f9e98 followed by a jump back into the function, and drives the state slot through the values 0 to 6 as it acquires and releases temporaries."
+  ],
+
+  "unresolved_questions": [
+    "What class is registered under the name Simulator? The registry is only reachable through 0x00926020 and no SDK type matches either object.",
+    "What are the four unresolved virtual callees at 0x01408698 slots +0x04 and +0x2c, and at PTR_FUN_0143679c slots +0x00 and +0x04?",
+    "Which of the four intermediate string headers does each of the four length-guarded frees target? The ESP-relative slots shift by four between each guard and its free.",
+    "What does the concatenated path (base ++ name) get used for? It is built, compared against the output header, freed, and never passed to a syscall at this level.",
+    "Why is the directory test's result discarded?",
+    "What are the 0x68-byte App object and its derived 8-byte sub-object created inside 0x0069fa60, and what stores them at small+0x1c?",
+    "What does 0x0069df20, the one resolved virtual callee at slot +0x3c, do with the arguments 0 and 1?",
+    "What is 0x00932960, the fallback of the directory predicate?",
+    "Three of the four callers were not disassembled, so their argument provenance is unverified."
+  ],
+
+  "runtime_gates": [
+    "No original-process trace has ever been captured for 0x00688fa0; every claim here is static. The original Cell stage has never been entered in any recorded run.",
+    "A runtime trace is required to observe what the service locator returns for the key 0x04729a47 and therefore what base directory is actually used.",
+    "A runtime trace is required to confirm the delete actually targets a removable file, since the predicate that would guard it is discarded.",
+    "A runtime trace is required to resolve the four unknown virtual callees and the identity of the Simulator class at runtime."
+  ],
+
+  "confidence": {
+    "body_bytes": 1.0,
+    "instruction_level_structure": 1.0,
+    "control_flow": 0.98,
+    "abi_cdecl": 0.99,
+    "return_semantics": 0.97,
+    "field_offsets": 0.95,
+    "constants": 0.98,
+    "globals": 0.95,
+    "virtual_dispatch_slot_offsets": 0.98,
+    "virtual_dispatch_concrete_callees": 0.25,
+    "callee_operations": 0.75,
+    "string_operations_identified": 0.9,
+    "enclosing_class_identity": 0.0,
+    "free_target_attribution": 0.4,
+    "runtime_behaviour": 0.0
+  },
+
+  "blockers": [],
+
+  "evidence": [
+    "reconstruction/evidence/00688fa0/evidence.json",
+    "reconstruction/evidence/00688fa0/context.json",
+    "ghidra_disassemble_function(0x00688fa0, SporeApp.exe)",
+    "ghidra_decompile_function(0x00688fa0, SporeApp.exe)",
+    "ghidra_decompile_function(0x00579a90, 0x00688f00, 0x00926020, 0x0069fa60, 0x008d9f80, 0x006b1f90, 0x00932ae0, 0x00931fd0, 0x00429760, 0x00423650, SporeApp.exe)",
+    "ghidra_read_memory(0x0120c84c, 64)",
+    "ghidra_read_memory(0x013f09b4, 32)",
+    "ghidra_read_memory(0x0147e040, 48)",
+    "ghidra_read_memory(0x014086e8, 64)",
+    "ghidra_disassemble_bytes(0x00de4840, 0x00de4870)",
+    "/home/juanr/apps/Spore-ModAPI/SDKtoGhidra/SporeGhidra_march2017.xml"
+  ],
+
+  "tooling_evidence": [
+    {"tool": "ghidra_disassemble_function", "address": "0x00688fa0", "observation": "203 instructions 0x00688fa0..0x006891e5, matching the briefing's 582-byte body; no loop, no switch, no early exit, six indirect calls"},
+    {"tool": "ghidra_read_memory", "address": "0x0120c84c", "observation": "b8989e4f01e9b640fdff -- the 8-byte scope record, a MOV EAX,0x014f9e98 followed by a jump back"},
+    {"tool": "ghidra_read_memory", "address": "0x013f09b4", "observation": "53696d756c61746f7200 -- the ASCII class name Simulator handed to both allocations"},
+    {"tool": "ghidra_read_memory", "address": "0x0147e040", "observation": "the UTF-16LE literal GGEUserData.dat.tmp, the argument at the only disclosing caller"},
+    {"tool": "ghidra_read_memory", "address": "0x014086e8", "observation": "the 16-entry vtable installed at small+0; slot +0x2c is 0x0069dea0 and slot +0x3c is 0x0069df20"},
+    {"tool": "ghidra_decompile_function", "functions": "0x00932ae0, 0x00931fd0", "observation": "GetFileAttributesW with a FILE_ATTRIBUTE_DIRECTORY test and a fallback, and DeleteFileW -- this is what makes the function a file operation"},
+    {"tool": "ghidra_decompile_function", "address": "0x00429760", "observation": "the EASTL string allocator, embedding a BuildAgent EASTL allocator.h source path and installing the inline sentinel &DAT_01667bac for a capacity below 2, which is the same rule the four free guards apply"},
+    {"tool": "ghidra_decompile_function", "address": "0x0069fa60", "observation": "installs vtable 0x014086e8 at +0 and 0x01408698 at +4, allocates a 0x68-byte App object, derives an 8-byte sub-object into +0x1c and stores the pushed object into +0x18 -- so the two allocations are wired together"},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x00de4840-0x00de4870", "observation": "0x00de4858 PUSH 0x147e040; 0x00de485f CALL 0x00688fa0; 0x00de4866 ADD ESP,0x4; 0x00de4869 TEST ESI,ESI; 0x00de486b JZ -- one __cdecl argument, the literal path, and a null check on the result"}
+  ],
+
+  "body_reconstruction": {
+    "source": "reconstruction/staging/wave13-w1-dispatch-b02/b688fa0_gge_user_data_reset.cpp",
+    "status": "implemented",
+    "claim_scope": "The 203-instruction body is reconstructed with every constant, slot offset, allocation size and branch preserved, including the SEH frame's observable effect on the state slot and the null dereference on the failed-allocation path. Sixteen callees are modelled as declared ports. The four string buffers are modelled as three-pointer EASTL headers.",
+    "preserved_semantics": [
+      "__cdecl with one wide-string argument and a pointer return",
+      "the SEH prologue and the state slot's progression through 0..6",
+      "the base path is fetched through the service locator's slot +0x28",
+      "the directory test and the delete both have their results discarded",
+      "the delete targets the base path, not the concatenated one",
+      "the concatenation order is working ++ argument, taken from 0x00688f00's body",
+      "both allocations use the same class name with sizes 0x388 then 0x24",
+      "the big object's sub-object is called at slot +0x00 before and slot +0x04 after the small object is built",
+      "the small object receives slot +0x04, slot +0x2c with the path buffer, and slot +0x3c with (0, 1)",
+      "all four frees use the (end - begin) & 0xfffffffe <= 2 inline-sentinel guard",
+      "a failed second allocation is returned as null and then dereferenced"
+    ],
+    "not_reproduced": [
+      "which of the four headers each guarded free targets; the reconstruction frees them in construction order and the metadata records the ambiguity"
+    ],
+    "validation": {
+      "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/wave13-w1-dispatch-b02 reconstruction/staging/wave13-w1-dispatch-b02/b688fa0_gge_user_data_reset.cpp",
+      "syntax": "passed",
+      "model_test": "not written; sixteen stubbed ports would assert the harness",
+      "byte_exactness": "not attempted"
+    }
+  },
+
+  "provenance": {
+    "binary": "SPORE/SporeBin/SporeApp.exe",
+    "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+    "binary_version": "Spore 3.1.0.22",
+    "image_base": "0x00400000",
+    "worker_id": "wave13-w1-dispatch-b02",
+    "batch_id": "b02",
+    "package": "wave13-w1-dispatch-b02",
+    "repo_package": "PKG-10-EDITOR-DISPATCH",
+    "date": "2026-09-26",
+    "method": "live ghidra_* MCP tools against program SporeApp.exe; every claim re-verified by a tool call made in this session"
+  }
+}

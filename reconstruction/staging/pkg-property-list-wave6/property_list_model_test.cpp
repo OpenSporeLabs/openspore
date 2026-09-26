@@ -280,7 +280,7 @@ void test_write_failure_short_circuit() {
   trace.fail_property_call = 0;
   assert(!app_property_list_write_006a1540(
       &list, reinterpret_cast<Wave6OpaqueStream*>(stream_bytes.data())));
-  assert(trace.events == std::vector<int>{1, 1, 2, 1});
+  assert(trace.events == std::vector<int>{1, 1, 2});
   assert(trace.properties == std::vector<Wave6Property*>{&entries[0].property});
 
   wave6_property_list_native_ports() = previous;

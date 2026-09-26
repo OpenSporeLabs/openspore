@@ -1,0 +1,304 @@
+{
+  "$schema": "pkg-editor-wave10.function-handoff.v1",
+  "package": "PKG-EDITOR-WAVE10",
+  "worker_ownership": "editor-wave10-four-unclaimed-va",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "captured_on": "2026-09-25",
+  "va": "0x004bfc40",
+  "function_address": "0x004bfc40",
+  "ghidra_name": "FUN_004bfc40",
+  "normalized_symbol": "arena_release_block_004bfc40",
+  "declaration": "Word __thiscall arena_release_block_004bfc40(OpaqueArena* self, Word payload_size, Word alignment)",
+  "phase": "body-reconstruction",
+  "review_status": "staged_static_self_review",
+  "runtime_validation": 0,
+  "ghidra_program": "SporeApp.exe",
+  "ghidra_mutated": false,
+  "implementation": {
+    "status": "implemented in worker-owned staging",
+    "canonical_status": "not present; canonical promotion is not claimed",
+    "header": "reconstruction/staging/pkg-editor-wave10/editor_wave10.hpp",
+    "source": "reconstruction/staging/pkg-editor-wave10/editor_wave10.cpp",
+    "model_test": "reconstruction/staging/pkg-editor-wave10/editor_wave10_model_test.cpp",
+    "metadata": "reconstruction/staging/pkg-editor-wave10/004bfc40.json"
+  },
+  "selection": {
+    "requested_va": "0x004bfc40",
+    "live_function": {
+      "entry": "0x004bfc40",
+      "body_end": "0x004c0018",
+      "name": "FUN_004bfc40"
+    },
+    "ownership_search": {
+      "manifest_claim": false,
+      "integrated_handoff_claim": false,
+      "worker_metadata_claim": false,
+      "src_reconstruction_claim": false,
+      "staging_function_claim": false,
+      "overlap": false
+    }
+  },
+  "original_native_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "thiscall with callee stack cleanup",
+    "receiver_register": "ECX",
+    "receiver_type": "OpaqueArena*",
+    "frame": "PUSH EBP / MOV EBP,ESP / SUB ESP,0x38; receiver spilled to EBP-0x34",
+    "stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "EBP+0x08",
+        "width_bytes": 4,
+        "normalized_name": "payload_size"
+      },
+      {
+        "position": 2,
+        "entry_offset": "EBP+0x0c",
+        "width_bytes": 4,
+        "normalized_name": "alignment",
+        "constraint": "power of two; used as (ptr + alignment + 7) & ~(alignment - 1) and as an alignment selector for the CRT fallback"
+      }
+    ],
+    "stack_cleanup_bytes": 8,
+    "return_register": "EAX",
+    "return_width_bytes": 4,
+    "return_contract": "block payload address on the in-arena path; CRT allocation result otherwise",
+    "ret_form": "RET 0x8"
+  },
+  "identification": {
+    "role": "thread-local arena block release",
+    "evidence": [
+      "the header word at payload-8 carries size in 0x3fffffff, 0x80000000 while in use and 0x40000000 marking a footer word; FUN_004bcab0 reads the same header at param_2-8 with identical masks",
+      "FUN_004c0020 is realloc-shaped: it calls this with (size, 4), memcpy's min(requested, header_size) and then releases the source through FUN_004bcab0",
+      "FUN_004bfc10 is a size-4 release wrapper",
+      "FUN_004bcab0 range-checks against base+0x10+base_offset exactly as this function does and falls through to FUN_009276c0 (CRT free) on failure"
+    ],
+    "free_list_semantics": "freelist_0c points at a block header; bit 31 clear means free, so cursor = cursor + (header & 0x3fffffff) steps to the physically next block",
+    "constant_evidence": {
+      "need_guard_below": 9,
+      "small_split_threshold": 39,
+      "in_use_bit": "0x80000000",
+      "footer_bit": "0x40000000",
+      "size_mask": "0x3fffffff",
+      "top_mask": "0xc0000000",
+      "footer_alignment_penalty": 4,
+      "header_bytes": 8,
+      "owner_slot_offset_from_payload": -12,
+      "small_alignment_threshold": 8
+    }
+  },
+  "observed_body": {
+    "entry": "0x004bfc40",
+    "body_end_inclusive": "0x004c0018",
+    "instruction_count": 205,
+    "byte_length": 985,
+    "raw_bytes_hex": "558bec83ec38894dcc8b450883c00383e0fc8b4dcc8b118b4a1081e100000040f7d91bc983e1048d5408088955fc8b45cc33c98338000f95c10fb6d185d20f844f0300008b45cc8b088b51083b55fc0f8c3e0300008b45cc8b088b55cc8b028b50048d4411108945f8837dfc080f8e160300008b4dcc8b118b420c8945f4c745f0000000008b4df43b4df80f83f60200008b55f00355fc8b45cc8b083b51080f8de20200008b55f4833a000f8cc00200008b45f48b0881e1ffffff3f034df4894de88b55e83b55f8733b8b45e88338007c338b4de88b1181e2ffffff3f0355e88955e48b45e43b45f873098b4de48b55f48951048b45f48b088b55e8030a8b45f48908eb808b4df48b1181e2ffffff3f0355f08955f08b450c8b4df48d5401078b450c83e801f7d023d083ea088955ec8b4dec034dfc8b55f48b0225ffffff3f0345f43bc80f83260200008b4dec2b4df4894de0837de0000f8e320100008b55cc8b028b481081e10000004075528b55ec8b45f48b4804894a048b55f48b0225ffffff3f2b45e08b4dec89018b55ec8b42048b0881e1000000c08b55ec8b42048b1081e2ffffff3f0355e081e2ffffff3f0bca8b45ec8b5004890ae9d00000008b45f48b48048b1181e200000040741d8b45f48b48048b1181e2ffffff3f8b45f48b48048b5411fc8955c8eb07c745c8000000008b45c88945d88b4dec8b55f48b42048941048b4df48b1181e2ffffff3f2b55e08b45ec89108b4dec8b51048b0225000000c08b4dec8b51048b0a81e1ffffff3f034de081e1ffffff3f0bc18b55ec8b4a0489018b55ec8b42048338007c108b4dcc8b1183c2108b45ec39500475138b4dcc8b118b42082b45e08b4dcc8b118942088b45ec8b48048b1181e2ffffff3f8b45ec8b48048b45d8894411fc8b4dec8b1181e2ffffff3f2b55fc8955dc837ddc287c3d8b45ec8b0881e1000000c08b55fc81e2ffffff3f0bca8b45ec89088b4dec8b1181e2ffffff3f0355ec8955d48b45d48b4ddc89088b55d48b45ec8942048b4dcc8b118b420c3b45f475168b4dec8b1181e2ffffff3f0355ec8b45cc8b0889510c8b55cc8b028b4dec8b1181e2ffffff3f8b40082bc28b4dcc8b118942088b45ec8b0881c9000000808b55ec890a8b45cc8b088b511081e20000004074258b45ec8b0881c9000000408b55ec890a8b45ec8b0881e1ffffff3f8b55ec8b45cc89440afc8b45ec83c008eb628b4df48b1181e2ffffff3f0355f48955f4e9fefcffffeb0a8b45cc8b0083c018eb40837d0c08731b6a006a006a006a006a008b4dfc518b0d448b6c01e8fe894600eb1f6a006a006a006a006a006a008b550c528b45fc508b0d448b6c01e81d8a46008be55dc20800",
+    "raw_bytes_sha256": "45df74f8639f5829696d61a6db6d4527d3a23d898cce643d4f08f78eae03c8ec",
+    "callee_calls": [
+      "FUN_009289f0",
+      "FUN_00928a30"
+    ],
+    "hardware_operations": [
+      "NEG",
+      "SBB",
+      "NOT"
+    ],
+    "padding": "0x004c0019..0x004c001f are INT3 fill after the final RET 0x8"
+  },
+  "arena_layout": {
+    "receiver_words": [
+      {
+        "offset": "0x00",
+        "name": "base_00",
+        "role": "block region pointer"
+      },
+      {
+        "offset": "0x04",
+        "name": "base_offset_04",
+        "role": "extent used to form arena_end"
+      },
+      {
+        "offset": "0x08",
+        "name": "used_08",
+        "role": "bytes currently handed out; compared as signed"
+      },
+      {
+        "offset": "0x0c",
+        "name": "freelist_0c",
+        "role": "head block header"
+      },
+      {
+        "offset": "0x10",
+        "name": "flags_10",
+        "role": "0x40000000 selects footer bookkeeping"
+      }
+    ],
+    "derived_addresses": [
+      {
+        "name": "arena_end",
+        "expression": "base_00 + 0x10 + base_offset_04"
+      },
+      {
+        "name": "sentinel",
+        "expression": "base_00 + 0x18",
+        "returned_when": "need < 9"
+      }
+    ],
+    "decompiler_note": "Ghidra renders *param_1 + N as byte offsets from base_00; this was confirmed against MOV ECX,[EDX+0x10]-style operands rather than taken on faith"
+  },
+  "path_table": [
+    {
+      "order": 1,
+      "condition": "base_00 == 0 or (int32)used_08 < (int32)need",
+      "action": "fall through to the CRT fallback"
+    },
+    {
+      "order": 2,
+      "condition": "(int32)need < 9",
+      "action": "return base_00 + 0x18 without touching the free list or used_08"
+    },
+    {
+      "order": 3,
+      "condition": "scan loop",
+      "action": "walk physical blocks accumulating (header & 0x3fffffff) while cursor < arena_end and (int32)(acc + need) < (int32)used_08"
+    },
+    {
+      "order": 4,
+      "condition": "header bit 31 set",
+      "action": "advance to the next physical block"
+    },
+    {
+      "order": 5,
+      "condition": "free block whose successor lies in arena_end or is in use",
+      "action": "attempt the take path"
+    },
+    {
+      "order": 6,
+      "condition": "free block whose successor is also free",
+      "action": "coalesce: write the predecessor link into successor+4 when in range, then header += successor header"
+    },
+    {
+      "order": 7,
+      "condition": "scan exhausted",
+      "action": "fall through to the CRT fallback"
+    }
+  ],
+  "take_path_order": [
+    "accumulated += cursor[0] & 0x3fffffff",
+    "aligned = (uintptr(cursor) + alignment + 7) & ~(alignment - 1)",
+    "header = aligned - 8",
+    "guard: continue only when (uintptr)(aligned - 8) + need < (uintptr)cursor + (cursor[0] & 0x3fffffff); otherwise advance the cursor",
+    "lead = (int32)(header - cursor); when lead > 0, split the lead away",
+    "lead split without footer: header[1] = cursor[1]; header[0] = free_size - lead; then *header[1] = (*header[1] & 0xc0000000) | (((*header[1] & 0x3fffffff) + lead) & 0x3fffffff)",
+    "lead split with footer: save *(cursor[1] - 4 + (cursor[1] & 0x3fffffff)) when cursor[1] has 0x40000000 else 0; perform the same three writes; subtract lead from used_08 when *follower is negative or follower == base_00 + 0x10; then restore the saved word at follower - 4 + (*follower & 0x3fffffff)",
+    "rest = (int32)(header[0] & 0x3fffffff) - (int32)need; when rest > 0x27 carve: header[0] = (header[0] & 0xc0000000) | (need & 0x3fffffff); tail = header + (header[0] & 0x3fffffff); tail[0] = rest; tail[1] = header",
+    "if freelist_0c == cursor then freelist_0c = header + (header[0] & 0x3fffffff)",
+    "used_08 -= (int32)(header[0] & 0x3fffffff)",
+    "header[0] |= 0x80000000",
+    "when 0x40000000 is clear, return aligned immediately",
+    "otherwise header[0] |= 0x40000000 and *(void**)(aligned - 0x0c + (header[0] & 0x3fffffff)) = self, then return aligned"
+  ],
+  "verified_against_disassembly": [
+    "0x004bfc5c..0x004bfc68 NEG/SBB/AND implements the footer penalty as 4 or 0",
+    "0x004bfd5c..0x004bfd6a LEA/NOT/AND/SUB implements the alignment and the -8 header offset",
+    "0x004bfd83 CMP ECX,EAX / JNC confirms the unsigned fit guard",
+    "0x004bfd94 CMP [EBP-0x20],0 / JLE confirms the lead > 0 gate",
+    "0x004bfda6 AND ECX,0x40000000 / JNZ selects the footer branch",
+    "0x004bfdb7, 0x004bfdca and 0x004bfdf9 confirm the three lead-split writes in order",
+    "0x004bfe08 AND EDX,0x40000000 / JZ confirms the saved-footer-word test"
+  ],
+  "owner_slot_note": "aligned - 0x0c equals header - 4, so the owner word sits immediately before the carved tail block",
+  "fallback_path": {
+    "selection": "CMP dword ptr [EBP + 0xc],8 / JNC at 0x004bffd3",
+    "alignment_below_8": {
+      "callee": "FUN_009289f0",
+      "receiver": "DAT_016c8b44",
+      "arguments": [
+        "need",
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "alignment_at_least_8": {
+      "callee": "FUN_00928a30",
+      "receiver": "DAT_016c8b44",
+      "arguments": [
+        "need",
+        "alignment",
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "return_width": "EAX, 4 bytes, in both cases"
+  },
+  "null_and_sentinel_behavior": {
+    "base_00_null": "every arena check is bypassed and the CRT fallback runs",
+    "used_08_too_small": "the same fallback path",
+    "need_below_9": "returns the sentinel at base_00 + 0x18; the free list is untouched and used_08 is unchanged",
+    "alignment_zero": "alignment - 1 underflows; native behaviour is undefined and unguarded",
+    "alignment_non_power_of_two": "masking yields an unaligned header; native behaviour is undefined and unguarded"
+  },
+  "call_graph": {
+    "direct_callers": [
+      {
+        "function": "FUN_004bfc10",
+        "va": "0x004bfc10",
+        "call_site": "0x004bfc37",
+        "note": "release at alignment 4"
+      },
+      {
+        "function": "FUN_004c0020",
+        "va": "0x004c0020",
+        "call_site": "0x004c00a4",
+        "note": "realloc: releases the old block at alignment 4"
+      },
+      {
+        "function": "FUN_00802950",
+        "va": "0x00802950",
+        "call_site": "0x008029c3"
+      },
+      {
+        "function": "FUN_00832010",
+        "va": "0x00832010",
+        "call_site": "0x0083206d"
+      }
+    ],
+    "direct_callees": [
+      {
+        "va": "0x009289f0",
+        "count": 1
+      },
+      {
+        "va": "0x00928a30",
+        "count": 1
+      }
+    ],
+    "sibling_evidence": "FUN_004bcab0 shares the header layout, the arena range test and the 0x3fffffff / 0x40000000 masks"
+  },
+  "runtime_gate": {
+    "status": "arena_release_block_004bfc40.not_runtime_validated",
+    "reason": "the model reproduces pointer arithmetic over a caller-supplied arena and does not own the arena allocation path, so end-to-end behaviour is unverified without a harness that supplies a real arena"
+  },
+  "unresolved_gates": [
+    "runtime validation not performed",
+    "the identity and ownership of DAT_016c8b44, the CRT heap receiver, is not established",
+    "FUN_009289f0 and FUN_00928a30 are treated as opaque allocation entry points; their prototypes are not reconstructed here",
+    "the coalescing successor-link store at 0x004bfd31 was confirmed by decompilation and by the surrounding branch structure but not re-verified operand by operand"
+  ],
+  "model_test_cases": [
+    "test_arena_small_request_returns_sentinel",
+    "test_arena_out_of_arena_falls_back_by_alignment",
+    "test_arena_footer_alignment_adds_four",
+    "test_arena_split_marks_in_use_and_updates_used",
+    "test_arena_no_split_when_remainder_too_small",
+    "test_arena_footer_mode_stores_owner_and_flags",
+    "test_arena_scans_past_in_use_blocks"
+  ]
+}

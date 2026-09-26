@@ -1,0 +1,232 @@
+{
+  "schema": "openspore-worker-metadata-1",
+  "package": "wave13-w1-core-b09",
+  "va": "0x00c0b7a0",
+  "address": "0x00c0b7a0",
+  "function_address": "0x00c0b7a0",
+  "entry_address": "0x00c0b7a0",
+  "ghidra_name": "FUN_00c0b7a0",
+  "normalized_symbol": "wave13_w1_core_b09_00c0b7a0",
+  "reconstructed_symbol": "SimSubFlag_00c0b7a0_reconstruct",
+  "declaration": "extern \"C\" B09_THISCALL std::uint32_t SimSubFlag_00c0b7a0_reconstruct(OpaqueSubFlagOwnerObserved* self);",
+  "source_files": [
+    "reconstruction/staging/wave13-w1-core-b09/b09_abi.hpp",
+    "reconstruction/staging/wave13-w1-core-b09/sim_subflag_00c0b7a0.hpp",
+    "reconstruction/staging/wave13-w1-core-b09/sim_subflag_00c0b7a0.cpp",
+    "reconstruction/staging/wave13-w1-core-b09/sim_subflag_00c0b7a0_model_test.cpp"
+  ],
+  "subsystem": "Simulator",
+  "package_ids": ["PKG-11-SIM-CORE"],
+
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "calling_convention_observation": "0x00c0b7a0 is 8b 81 20 0b 00 00, MOV EAX,[ECX + 0xb20]; the ModRM byte 81 is mod=10 disp32 reg=000, so the receiver is ECX. ECX is then destroyed by 0x00c0b7a6 XOR ECX,ECX, but that is the compare-against-zero half of a CMP ECX,[EAX + 0x60c] and not a receiver use, because the first instruction already consumed the receiver. The epilogue is a bare RET, so there is no stack argument and the caller owns cleanup.",
+    "return_type": "std::uint32_t (boolean, 0 or 1)",
+    "return_semantics": "A full dword in EAX that is exactly 0 or exactly 1, never an arbitrary true value and never a leftover pointer. The chain is: XOR ECX,ECX zeroes the compare operand; CMP ECX,[EAX + 0x60c] sets CF when the dword is non-zero; SBB EAX,EAX with EAX holding the sub-object pointer computes EAX - EAX - CF, i.e. 0xFFFFFFFF or 0; NEG then yields 1 or 0.",
+    "return_register": "EAX",
+    "return_width_bytes": 4,
+    "return_observation": "0x00c0b7ae SBB EAX,EAX and 0x00c0b7b0 NEG EAX together overwrite all 32 bits of EAX. Consumers agree the width is meaningful: 0x00d2c164 uses MOVZX ESI,AL, 0x00ba2835 and 0x00d2c1e6 use TEST AL,AL, and 0x00d2c156 uses SETZ CL over the AL byte. Had only AL been meaningful the compiler would have emitted SETNE AL rather than the SBB/NEG pair, so the dword width is the real contract.",
+    "ret_form": "RET",
+    "termination": "RET",
+    "stack_cleanup_bytes": 0,
+    "stack_cleanup_owner": "caller",
+    "stack_arguments": [],
+    "ordinary_stack_argument_slots": 0,
+    "saved_registers": [],
+    "frame": "none",
+    "receiver": true,
+    "hidden_receiver": "read once, at the first instruction only"
+  },
+
+  "layout": {
+    "entry_address": "0x00c0b7a0",
+    "body_start": "0x00c0b7a0",
+    "body_end": "0x00c0b7b2",
+    "body_span_bytes": 19,
+    "body_bytes_hex": "8b81200b000033c93b880c0600001bc0f7d8c3",
+    "body_bytes_verified_by": "ghidra_read_memory at 0x00c0b7a0 and ghidra_disassemble_bytes at 0x00c0b7a0",
+    "instruction_count": 6,
+    "instructions": [
+      {"address": "0x00c0b7a0", "bytes": "8b 81 20 0b 00 00", "mnemonic": "MOV", "operands": "EAX,dword ptr [ECX + 0xb20]"},
+      {"address": "0x00c0b7a6", "bytes": "33 c9", "mnemonic": "XOR", "operands": "ECX,ECX"},
+      {"address": "0x00c0b7a8", "bytes": "3b 88 0c 06 00 00", "mnemonic": "CMP", "operands": "ECX,dword ptr [EAX + 0x60c]"},
+      {"address": "0x00c0b7ae", "bytes": "1b c0", "mnemonic": "SBB", "operands": "EAX,EAX"},
+      {"address": "0x00c0b7b0", "bytes": "f7 d8", "mnemonic": "NEG", "operands": "EAX"},
+      {"address": "0x00c0b7b2", "bytes": "c3", "mnemonic": "RET", "operands": ""}
+    ],
+    "padding_after": "0x00c0b7b3 through 0x00c0b7bf are thirteen cc bytes (INT3 inter-function pad), confirmed by the 32-byte live read",
+    "frame_shape": "none: no PUSH, no SUB ESP, no MOV EBP,ESP, no register save or restore",
+    "reads": "two dwords: the pointer at receiver+0xb20 and the dword at [that pointer] + 0x60c",
+    "writes": "nothing: EAX only, no memory write anywhere in the program address space"
+  },
+
+  "observed_mechanics": [
+    "0x00c0b7a0: 8b 81 20 0b 00 00 - MOV EAX,[ECX + 0xb20] loads the first-level sub-object pointer; the disp32 is 0x00000b20.",
+    "0x00c0b7a6: 33 c9 - XOR ECX,ECX materialises the zero the next CMP compares against. It clobbers the receiver register, which is safe because the receiver was already consumed.",
+    "0x00c0b7a8: 3b 88 0c 06 00 00 - CMP ECX,[EAX + 0x60c] computes 0 - [sub + 0x60c] and therefore sets CF exactly when [sub + 0x60c] is non-zero under an UNSIGNED comparison. Because the left operand is a hard zero this is equivalent to a != 0 test, and the unsigned reading is what makes negative dwords true.",
+    "0x00c0b7ae: 1b c0 - SBB EAX,EAX computes EAX - EAX - CF, i.e. 0xFFFFFFFF when CF is set and 0 when clear. This is the standard branchless boolean materialisation and it deliberately destroys the sub-object pointer that was in EAX.",
+    "0x00c0b7b0: f7 d8 - NEG EAX turns 0xFFFFFFFF into 1 and leaves 0 alone, producing a full dword 0 or 1.",
+    "0x00c0b7b2: c3 - RET with no immediate, so the callee pops zero stack words.",
+    "Live memory read at 0x00c0b7a0 returns 8b81200b000033c93b880c0600001bc0f7d8c3 followed by thirteen cc bytes, confirming all six instructions and the pad.",
+    "0x00ba2830, 0x00ba2856 and 0x00ba2866 in caller 0x00ba27b0 each TEST AL,AL immediately after the call and each gate a return value of 1 or 2, so the answer is a decision predicate, not a count.",
+    "0x00d2c14f is followed by XOR ECX,ECX ; TEST AL,AL ; SETZ CL ; MOV ESI,ECX, which INVERTS the answer: 0x00d2c15f is the untaken path, while 0x00d2c164's MOVZX ESI,AL ; NEG ESI ; SBB ESI,ESI ; AND ESI,0x3 ; DEC ESI computes a 0..3 code from the direct answer. Both sites are in the same caller 0x00d2c000, so the same predicate is deliberately consumed both ways.",
+    "There is no null check on receiver+0xb20, none on the sub-object pointer, and none on the dword at +0x60c: a null sub-object faults at 0x00c0b7a8."
+  ],
+
+  "fields_and_offsets": [
+    {"owner": "receiver", "offset": "+0xb20", "type": "pointer to sub-object", "read_at": ["0x00c0b7a0"], "written_at": [],
+     "meaning": "the sub-object that owns the tested flag; never null-checked", "confidence": "high", "evidence": "OBSERVED",
+     "note": "the same field is read directly by 0x00ba27df and 0x00ba27e5, where two receivers are compared by sub-object identity, and by 0x00d2c018, 0x00d2c0b5 and 0x00d2c0c6, which read its +0x504"},
+    {"owner": "sub-object at receiver+0xb20", "offset": "+0x60c", "type": "dword", "read_at": ["0x00c0b7a8"], "written_at": [],
+     "meaning": "the tested flag; any non-zero value is true, including negative values", "confidence": "high for the offset and the type, low for the meaning", "evidence": "OBSERVED",
+     "note": "the sibling 0x00c0b780 tests the identical shape four bytes lower at +0x608, so the sub-object carries a cluster of such flags at +0x608 and +0x60c"}
+  ],
+
+  "constants": [
+    {"value": "0x0", "address": "0x00c0b7a6", "meaning": "the zero the flag is compared against, which is what makes the test a != 0 rather than a relational one"}
+  ],
+
+  "globals": [],
+  "virtual_dispatch": [],
+
+  "control_flow": {
+    "shape": "straight line, six instructions, no branch at all",
+    "guard": "none; there is no null check and no range check",
+    "switch_table": "none",
+    "loops": "none",
+    "early_exits": ["0x00c0b7b2, the only exit"],
+    "branchless": "the boolean is materialised without any conditional branch, via the CMP/SBB/NEG idiom, so the flag is read exactly once and there is no path divergence",
+    "exhaustiveness": "complete and trivially so"
+  },
+
+  "callers_evidence": [
+    {"callsite": "0x00ba2830", "caller": "0x00ba27b0", "form": "CALL", "receiver_setup": "0x00ba282e MOV ECX,EDI, on the path where 0x00c0b780 answered true at 0x00ba2825 for both objects", "result_use": "0x00ba2835 TEST AL,AL ; 0x00ba2837 JZ, then 0x00ba283c JG decides between returning 1 and continuing"},
+    {"callsite": "0x00ba2856", "caller": "0x00ba27b0", "form": "CALL", "receiver_setup": "0x00ba2854 MOV ECX,EBX, the OTHER object of the pair", "result_use": "0x00ba285b TEST AL,AL ; 0x00ba285d JZ, then 0x00ba2862 JL", "note": "the same function tests the predicate on both operands of a two-object comparison, which is the strongest available evidence that the answer is a symmetric per-object property"},
+    {"callsite": "0x00ba2866", "caller": "0x00ba27b0", "form": "CALL", "receiver_setup": "0x00ba2864 MOV ECX,EDI", "result_use": "0x00ba286b TEST AL,AL ; 0x00ba286d JZ"},
+    {"callsite": "0x00d2c14f", "caller": "0x00d2c000", "form": "CALL", "receiver_setup": "ECX = ESI, set at 0x00d2c13b from the return of 0x00b1fdb0 and not reloaded, so the receiver is the object itself rather than a field of it", "result_use": "0x00d2c154 XOR ECX,ECX ; 0x00d2c156 TEST AL,AL ; 0x00d2c158 SETZ CL ; 0x00d2c15b MOV ESI,ECX, i.e. the predicate is inverted here"},
+    {"callsite": "0x00d2c15f", "caller": "0x00d2c000", "form": "CALL", "result_use": "0x00d2c164 MOVZX ESI,AL ; NEG ESI ; SBB ESI,ESI ; AND ESI,0x3 ; DEC ESI, i.e. the predicate is folded into a 0..3 code"},
+    {"callsite": "0x00d2c1e1", "caller": "0x00d2c000", "form": "CALL", "receiver_setup": "0x00d2c1d8 MOV ECX,[ESP + 0x14], a different object of the same family", "result_use": "0x00d2c1e6 TEST AL,AL ; 0x00d2c1e8 JZ ; 0x00d2c1ea XOR ESI,ESI, i.e. a true answer forces the code to 0"},
+    {"callsite": "0x00c04443", "caller": "0x00c042e0", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x00d345e3", "caller": "0x00d342d0", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x00d3d07e", "caller": "0x00d3cdc0", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x00d582d7", "caller": "0x00d581b0", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x00d58f5c", "caller": "0x00d58ea0", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x00d5f842, 0x00d5fb25", "caller": "0x00d5f780", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x00d84445", "caller": "0x00d841a0", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x00d88359", "caller": "0x00d87620", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x00d8f657", "caller": "0x00d8f560", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x00e8bfdf, 0x00e8c000", "caller": "0x00e8bf20", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x00f0e47c", "caller": "0x00f0e380", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x00dbd333", "caller": "0x00dbc7a0", "form": "CALL", "result_use": "not inspected"}
+  ],
+
+  "callees_evidence": [],
+
+  "sdk_correspondence": {
+    "status": "NO_CANDIDATE",
+    "observation": "No Spore-ModAPI signature corresponds to an unconditional two-level boolean flag test at offsets +0xb20 and +0x60c. Nothing is claimed.",
+    "sdk_paths_read": []
+  },
+
+  "analogue_functions": [
+    {"va": "0x00c0b780", "relation": "IMMEDIATE SIBLING, 0x20 bytes earlier", "strength": "very strong",
+     "shared": "the identical two-level shape, the identical receiver+0xb20 first hop, the identical branchless materialisation and a sibling argument type; the only difference is the second offset, +0x608 instead of +0x60c",
+     "corroborates": "that +0xb20 is a sub-object pointer, that +0x608 and +0x60c are two independent flags on it, and that this function's answer is one flag of a small cluster rather than a computed value"},
+    {"va": "0x00c0b8e0", "relation": "SIBLING on the same receiver, different mechanism", "strength": "medium",
+     "shared": "called on the same receiver family in 0x00ba27b0 at 0x00ba27be, immediately before the 0x00c0b7a0 sites, and its result is compared against the globals 0x0156c198 and 0x0156c194",
+     "difference": "its body was not disassembled in this batch, so no structural claim is made"}
+  ],
+
+  "semantic_contract": "Return 1 in the full 32-bit EAX when the dword at byte offset +0x60c of the sub-object pointed to by receiver+0xb20 is non-zero, and 0 otherwise. The test is unsigned against a hard zero, so every non-zero bit pattern including 0x80000000 and 0xffffffff is true; there is no null check on receiver+0xb20 or on the sub-object, no clamp, no default other than the zero implied by a zero field, no callee, no global read and no side effect. The value is consumed as a decision predicate: three callsites in 0x00ba27b0 test it on both objects of a pair, and 0x00d2c000 consumes it both directly and inverted.",
+
+  "classification": "BOUNDED_SEMANTIC",
+  "classification_rationale": "Not STRONG_SEMANTIC: the body is complete and the ABI, both offsets, the branchless polarity and the full-dword return width are all OBSERVED and corroborated by an immediate structural sibling plus 20 callsites, but the owning class and the meaning of the flag at +0x60c are not established, and that is a material element. Not STRUCTURAL_ONLY: the behavioural contract is fully determined and reconstructed, and the unsigned-versus-signed distinction that the SBB/NEG chain encodes is a real semantic claim, not a structural one. The bound is named: owning type and flag meaning.",
+
+  "semantic_findings": [
+    "The answer is a raw flag read, not a comparison against a small domain: the model test pins 0x80000000 and 0xffffffff as true, which a signed greater-than-zero reading would have called false.",
+    "The sibling 0x00c0b780 tests the same sub-object four bytes lower, so +0x608 and +0x60c are two members of a flag cluster and callers routinely consult both - 0x00ba27b0 calls 0x00c0b780 and then 0x00c0b7a0 on the same two objects.",
+    "0x00ba27b0 is a decision function returning 1, 2 or 6, and it consults the predicate on BOTH operands of a two-object comparison; that symmetry is the strongest evidence that the flag is a per-object property rather than a relationship between objects.",
+    "0x00d2c000 deliberately consumes the answer twice, once inverted via SETZ and once directly folded into a 0..3 code, so the boolean is cheap enough to be re-read at two points in one function.",
+    "The function is branchless, so it is a leaf with no path divergence and no side effect; it appears 20 times without any caller needing to defend against state changes.",
+    "The SBB/NEG pair rather than SETNE proves the dword width is contractual: the compiler only emits the two-instruction form when the full register matters.",
+    "The briefing recorded 14 callers; the live xref query returns 20 UNCONDITIONAL_CALL references, so six further callsites exist. None is a DATA reference, so the function still occupies no vtable slot."
+  ],
+
+  "unresolved_questions": [
+    "What class owns this function? 20 live references, all UNCONDITIONAL_CALL, and no DATA reference, so it is not a vtable slot and no owner can be named.",
+    "What does the flag at sub-object+0x60c mean? Its use as a symmetric per-object decision predicate is established; its game meaning is not.",
+    "Who writes sub-object+0x60c, and who writes the +0xb20 pointer itself? No writer was found in this batch.",
+    "What is the relationship between the flag at +0x608 (tested by 0x00c0b780) and the one at +0x60c? They are independent as far as the observed code shows, but whether they are meant to be mutually exclusive is unknown.",
+    "What are the globals 0x0156c194 and 0x0156c198 that the sibling accessor 0x00c0b8e0 is compared against in 0x00ba27b0? They were not read in this batch, so no value is claimed.",
+    "Is the receiver's +0xb20 pointer guaranteed non-null at every one of the 20 callsites? The body does not check it, so a null there would fault; no caller's guarantee was established.",
+    "No original-process trace exists, so the runtime values of the flag cluster are unverified."
+  ],
+
+  "confidence": {
+    "body_bytes": 1.0,
+    "instruction_list": 1.0,
+    "control_flow": 1.0,
+    "field_offsets": 1.0,
+    "constants": 1.0,
+    "abi_and_return_width": 0.95,
+    "unsigned_polarity": 0.95,
+    "sibling_corroboration": 0.9,
+    "flag_meaning": 0.25,
+    "owning_class": 0.0
+  },
+
+  "evidence": [
+    "reconstruction/evidence/00c0b7a0/evidence.json",
+    "reconstruction/evidence/00c0b7a0/context.json",
+    "reconstruction/staging/wave13-w1-core-b09/sim_subflag_00c0b7a0.cpp",
+    "ghidra_read_memory 0x00c0b7a0 (32 bytes)",
+    "ghidra_disassemble_bytes 0x00c0b7a0",
+    "ghidra_decompile_function 0x00c0b7a0",
+    "ghidra_decompile_function 0x00c0b780 (immediate structural sibling)",
+    "ghidra_disassemble_bytes 0x00ba27b0 and 0x00d2c000 (the two inspected customer families)",
+    "ghidra_get_function_xrefs 0x00c0b7a0 (20 refs, all UNCONDITIONAL_CALL, no DATA ref)"
+  ],
+
+  "tooling_evidence": [
+    {"tool": "ghidra_read_memory", "address": "0x00c0b7a0", "observation": "8b81200b000033c93b880c0600001bc0f7d8c3 followed by cc x13 - 19 body bytes then the INT3 pad"},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x00c0b7a0", "observation": "MOV EAX,[ECX + 0xb20] ; XOR ECX,ECX ; CMP ECX,[EAX + 0x60c] ; SBB EAX,EAX ; NEG EAX ; RET, six instructions"},
+    {"tool": "ghidra_decompile_function", "address": "0x00c0b7a0", "observation": "bool __fastcall FUN_00c0b7a0(int param_1) returning *(int *)(*(int *)(param_1 + 0xb20) + 0x60c) != 0 - correct, and its bool return type agrees with the full-dword 0/1 the SBB/NEG pair produces"},
+    {"tool": "ghidra_decompile_function", "address": "0x00c0b780", "observation": "bool __fastcall FUN_00c0b780(int param_1) returning *(int *)(*(int *)(param_1 + 0xb20) + 0x608) != 0 - the same shape four bytes lower, which is the strongest single piece of corroboration available"},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x00ba27b0", "observation": "three CALL 0x00c0b7a0 sites at 0x00ba2830, 0x00ba2856 and 0x00ba2866, each on one of the two objects loaded at 0x00ba27b1 and 0x00ba27b7, each followed by TEST AL,AL and a conditional jump"},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x00d2c000", "observation": "0x00d2c14f CALL 0x00c0b7a0 then XOR ECX,ECX / TEST AL,AL / SETZ CL / MOV ESI,ECX; 0x00d2c15f CALL 0x00c0b7a0 then MOVZX ESI,AL / NEG ESI / SBB ESI,ESI / AND ESI,0x3 / DEC ESI; 0x00d2c1e1 CALL 0x00c0b7a0 then TEST AL,AL / JZ / XOR ESI,ESI"},
+    {"tool": "ghidra_get_function_xrefs", "address": "0x00c0b7a0", "observation": "20 UNCONDITIONAL_CALL references and zero DATA references"},
+    {"tool": "objdump", "observation": "clang++ -m32 -O2 with __attribute__((thiscall)) reproduces the same 19-byte body length, the receiver+0xb20 hop and the unsigned != 0 test against the field at +0x610 of the modelled sub-object; clang prefers CMPL/SETNE over CMP/SBB/NEG, which is an instruction-selection difference with identical semantics"}
+  ],
+
+  "runtime_gates": [
+    "No original-process trace exists for this address, so the runtime values of the +0x608 and +0x60c flag cluster are unverified.",
+    "The Cell stage has never been entered in any recorded run, so nothing here is runtime observed.",
+    "A differential fixture is cheap but needs a receiver whose +0xb20 sub-object is constructed, which static evidence does not supply."
+  ],
+
+  "body_reconstruction": {
+    "source": "reconstruction/staging/wave13-w1-core-b09/sim_subflag_00c0b7a0.cpp",
+    "status": "implemented",
+    "claim_scope": "The 19-byte body is reconstructed in full, including the unsigned != 0 polarity and the full-dword 0-or-1 return width. No class name and no flag name are claimed; the absent null checks are preserved rather than defended against.",
+    "validation": {
+      "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/wave13-w1-core-b09 reconstruction/staging/wave13-w1-core-b09/sim_subflag_00c0b7a0.cpp reconstruction/staging/wave13-w1-core-b09/sim_subflag_00c0b7a0_model_test.cpp",
+      "model_test_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/wave13-w1-core-b09 reconstruction/staging/wave13-w1-core-b09/sim_subflag_00c0b7a0.cpp reconstruction/staging/wave13-w1-core-b09/sim_subflag_00c0b7a0_model_test.cpp -o /tmp/opencode/b09/sim_subflag_00c0b7a0-model && /tmp/opencode/b09/sim_subflag_00c0b7a0-model",
+      "syntax": "passed",
+      "model_test": "passed, exit 0"
+    }
+  },
+
+  "provenance": {
+    "binary": "SPORE/SporeBin/SporeApp.exe",
+    "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+    "image_base": "0x00400000",
+    "worker_id": "wave13-w1-core-b09",
+    "batch_id": "b09",
+    "package": "wave13-w1-core-b09",
+    "date": "2026-09-26",
+    "tool": "Ghidra 12.1.2 headless via ghidra-mcp, program SporeApp.exe",
+    "all_claims_static": true,
+    "rtti_present": false
+  }
+}

@@ -1,0 +1,298 @@
+{
+  "schema": "pkg13-c4-creature-wave3.function-handoff.v1",
+  "package": "PKG-13-C4-CREATURE-WAVE3",
+  "function_address": "0x00c1c5c0",
+  "ghidra_name": "FUN_00c1c5c0",
+  "normalized_symbol": "Simulator_cCreatureBase_LocomotionWalkToInterior_00c1c5c0",
+  "sdk_identity": {
+    "sdk_symbol": "Simulator::cCreatureBase::WalkTo",
+    "sdk_declared_address": "0x00c1be40",
+    "relationship": "interior",
+    "evidence": "Spore-ModAPI SourceCode/DLL/AddressesSimulator.cpp line 245 declares DefineAddress(WalkTo, SelectAddress(0xC1BE40, 0xC1C720)) and SDKtoGhidra/additional_disk.txt line 3324 maps 0xC1BE40 to cCreatureBase_WalkTo. This entry at 0x00c1c5c0 lies inside that range and Ghidra exposes it as its own function, so it is an interior block of WalkTo and not the SDK entry point.",
+    "argument_order_cross_check": "Caller FUN_00c27dd0 at 0x00c27fda pushes the constant 2 (SDK cCreatureBase::SpeedType::kStandardSpeed), then EDX, then ECX (two Vector3 references), then two FSTP float stores. The five stack words therefore map to the SDK order of int speedState, const Vector3& dstPos, const Vector3& arg_8, float goalStopDistance, float acceptableStopDistance."
+  },
+  "source_files": [
+    "reconstruction/staging/pkg13-c4-creature-wave3/creature_wave3.hpp",
+    "reconstruction/staging/pkg13-c4-creature-wave3/creature_wave3.cpp",
+    "reconstruction/staging/pkg13-c4-creature-wave3/creature_wave3_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "ownership": "pkg13-c4-creature-wave3",
+  "declaration": "void PKG13_C4_THISCALL Simulator_cCreatureBase_LocomotionWalkToInterior_00c1c5c0(OpaqueCreatureState* creature, int32_t speed_state, const Vector3* dst_position, const Vector3* oriented_vector, float goal_stop_distance, float acceptable_stop_distance);",
+  "signature": {
+    "normalized_form": "void creature_locomotion_walk_to_interior_00c1c5c0(OpaqueCreatureState* creature, int32_t speed_state, const Vector3* dst_position, const Vector3* oriented_vector, float goal_stop_distance, float acceptable_stop_distance)",
+    "calling_convention": "thiscall with hidden ECX receiver and five stack words",
+    "hidden_this": true,
+    "receiver": "OpaqueLocomotiveObject at creature+0x00C0 for the two vtable ports; OpaqueCreatureState at creature+0x0000 for the scalar lookup port",
+    "stack_arguments": [
+      {"ordinal": 1, "name": "speed_state", "type": "int32_t", "byte_offset": "0x04", "reads": ["stored to creature+0x0F98", "forwarded as the first argument of the 0x00c0ce80 lookup"]},
+      {"ordinal": 2, "name": "dst_position", "type": "const Vector3*", "byte_offset": "0x08", "reads": ["projection basis", "copied to request+0x14"]},
+      {"ordinal": 3, "name": "oriented_vector", "type": "const Vector3*", "byte_offset": "0x0C", "reads": ["projection operand", "projected and renormalized into request+0x50"]},
+      {"ordinal": 4, "name": "goal_stop_distance", "type": "float", "byte_offset": "0x10", "reads": ["copied to request+0x20"]},
+      {"ordinal": 5, "name": "acceptable_stop_distance", "type": "float", "byte_offset": "0x14", "reads": ["copied to request+0x60"]}
+    ],
+    "stack_cleanup_bytes": 20,
+    "stack_cleanup_evidence": "RET 0x14 at 0x00c1c8db, matching the five pushed stack words.",
+    "local_stack_bytes": 176,
+    "local_stack_evidence": "SUB ESP,0x90 plus PUSH EBX/EBP/ESI/EDI; post-prologue frame slots run from P+0x0C, with the locomotion request base at P+0x2C through P+0x9F, immediately below the return address at P+0xA0.",
+    "preserved_registers": ["EBX", "EBP", "ESI", "EDI"],
+    "preserved_register_evidence": "PUSH EBX/EBP/ESI/EDI at 0x00c1c5c6 through 0x00c1c5c9 restored by POP EDI/ESI/EBP/EBX at 0x00c1c8d1 through 0x00c1c8d4.",
+    "return_register": "none",
+    "return_width_bytes": 0,
+    "return_semantics": "Returns no value; the function is a void state transition that publishes a locomotion request and updates creature fields."
+  },
+  "body": {
+    "status": "staged_body_reconstructed",
+    "entry_address": "0x00c1c5c0",
+    "body_addresses": ["0x00c1c5c0", "0x00c1c8db"],
+    "instruction_count": 196,
+    "basic_block_count": 15,
+    "mechanics": [
+      "Copies the three components of stack word 3 (oriented_vector) into the frame temporaries at P+0x14, P+0x18 and P+0x1C, and mirrors them into P+0x20, P+0x24 and P+0x28.",
+      "Loads the vtable word at creature+0xC0 and calls vtable slot +0x2C with ECX = creature+0xC0 and no stack arguments. This call is unconditional and executes at 0x00c1c604, before the creature+0x2B0 test at 0x00c1c611, and the returned const float* is parked in EDX at 0x00c1c60f. Only the component reads of that pointer, beginning at 0x00c1c61d, are gated.",
+      "Tests the 32-bit field at creature+0x2B0 with CMP and JNZ at 0x00c1c611 and 0x00c1c617; a non-zero value jumps to 0x00c1c791 and skips the component reads, the projection and the renormalization, leaving oriented_vector unchanged and the position callback result unused.",
+      "Compares the vtable+0x2C result against the twelve zero bytes at 0x0168D910 using UCOMISS, LAHF and TEST AH,0x44 with JP to the math at 0x00c1c656 and JNP to the skip at 0x00c1c791, so an unordered (NaN) component enters the math and a signed zero component compares equal.",
+      "The three component reads are short-circuited in source order: the +0x4 read is reached only when the +0x0 read compared equal, and the +0x8 read only when the +0x4 read compared equal.",
+      "Computes the reciprocal length of stack word 2 in x87 extended precision, accumulating the sum of squares as ((dx*dx + dy*dy) + dz*dz), applying FSQRT, then FDIVRP against 1.0, and narrowing once with FSTP to a single-precision frame temporary.",
+      "Scales the basis into unit components with three MULSS against the narrowed reciprocal, then accumulates the projection as (oy*uy + ox*ux) + oz*uz with MOVAPS, MULSS and ADDSS in that association order.",
+      "Subtracts the scaled basis with three MULSS and SUBSS pairs to obtain the perpendicular component, then repeats the zero-vector UCOMISS, LAHF and TEST AH,0x44 gate to decide renormalization.",
+      "On the renormalize path computes a second extended-precision reciprocal length of the perpendicular component and multiplies each component by it, storing the first component as inverse times x and the remaining two as component times inverse.",
+      "On the skip path executes FSTP ST0 at 0x00c1c78f, discarding the residual x87 register left by the earlier FSQRT and FDIVRP sequence.",
+      "Populates the locomotion request on the stack frame, submitting it by pointer through vtable slot +0xDC with ECX = creature+0xC0.",
+      "Stores stack word 1 into the 32-bit field at creature+0x0F98 after the submit call returns.",
+      "Branches on the byte at creature+0x0BB0; a non-zero byte calls the 0x00c0ce80 lookup with the constant pair 2 and 1 and adds the constant at 0x0150C900, a zero byte calls it with speed_state and 0 and adds nothing.",
+      "Narrowing the x87 result with FSTP to a frame temporary and then MOVSS to creature+0x2A0 performs a single narrowing of the sum, so the addition stays in extended precision.",
+      "Clears the 32-bit field at creature+0x330 to zero.",
+      "Loads ECX with the embedded container address creature+0xBC0 by LEA at 0x00c1c895, which persists unchanged into the container call, then reads that embedded object rather than the creature base: MOV EAX,dword ptr [ECX + 0x4] yields creature+0xBC4 and MOV EDX,dword ptr [ECX] yields creature+0xBC0, and those two values are pushed in that order.",
+      "Calls 0x00ac4570 thiscall with ECX = creature+0xBC0 and the two stack words read from creature+0xBC0 and creature+0xBC4 in that order.",
+      "Reloads request+0x00, skips the release when it is null, otherwise reads the 32-bit header word at handle-0x04 and releases through 0x00f47380 only when that word is non-zero.",
+      "The release call is cdecl and the caller removes its single stack word with ADD ESP,0x4 at 0x00c1c8ce."
+    ]
+  },
+  "vector_math": {
+    "position_callback_order": "The vtable+0x2C position and basis callback is invoked unconditionally before the creature+0x2B0 bypass test, at 0x00c1c604 against the test at 0x00c1c611. A bypass value therefore suppresses only the dereference of the returned pointer and the projection, never the callback itself, so the callback's side effects and its cost are incurred on every invocation.",
+    "phase_one_gate": {
+      "condition": "creature+0x2B0 equals zero",
+      "scope": "gates only the component reads of the already-returned position pointer, not the callback",
+      "branches": [
+        {"to": "0x00c1c791", "when": "creature+0x2B0 is non-zero", "effect": "skip the component reads, the projection and the renormalization"},
+        {"to": "0x00c1c656", "when": "a basis component is NaN, because UCOMISS sets parity and JP is taken"},
+        {"to": "0x00c1c791", "when": "the basis equals the zero triple with positive and negative zero both comparing equal"}
+      ],
+      "no_guard_on_basis_length": "The basis length is never checked. A zero basis yields 1.0/0.0 as positive infinity, then 0.0 times infinity as NaN for every unit component, so the whole result becomes NaN and the request receives NaN. The reconstruction reproduces this instead of guarding it."
+    },
+    "projection": {
+      "formula": "perp = oriented - unit(dst_position) * ((oriented.y*unit.y + oriented.x*unit.x) + oriented.z*unit.z)",
+      "association_order": "The dot product is accumulated left to right as (oy*uy + ox*ux) + oz*uz. Each product is a single-precision multiply of a component by the already-narrowed unit component, not a multiply of the two raw components followed by a scale.",
+      "reciprocal_length_model": "The original accumulates the sum of squares in x87 80-bit extended precision, applies FSQRT, divides 1.0 by it with FDIVRP, and narrows once to binary32. The reconstruction accumulates in binary64 and narrows once to binary32; the intermediate precision difference is bounded by one unit in the last place of the sum and is recorded as a fidelity boundary rather than a behavioural claim.",
+      "nan_propagation": "NaN in any unit component propagates through the dot product and both subtractions, and the renormalization then yields NaN. No NaN check short-circuits the arithmetic."
+    },
+    "renormalization_gate": {
+      "condition": "the perpendicular component differs from the zero triple, with NaN counting as different",
+      "branches": [
+        {"to": "0x00c1c730", "when": "any component is NaN, because parity is set so the component counts as unequal"},
+        {"to": "0x00c1c78f", "when": "the perpendicular component is exactly the zero triple"}
+      ],
+      "skip_consequence": "When the projection collapses to the zero vector the result is stored unnormalized, so request+0x50 can hold an exact zero triple."
+    }
+  },
+  "speed_argument": {
+    "role": "stack word 1, SDK name speedState, stored to the SDK field creature+0x0F98 mSpeedState",
+    "exact_read_sites": [
+      {"address": "0x00c1c862", "form": "MOV EAX,dword ptr [ESP + 0xa4]", "note": "ESP is at the post-prologue value because every callee in this body is callee-clean, so [ESP+0xa4] is stack word 1 and not the return address at P+0xa0. The decompiler's unaff_retaddr rendering is an artifact."},
+      {"address": "0x00c1c869", "form": "MOV dword ptr [ESI + 0xf98],EAX", "note": "publishes the raw word with no conversion"},
+      {"address": "0x00c1c88b", "form": "PUSH EAX then CALL 0x00c0ce80", "note": "reached only when creature+0x0BB0 is zero, as the first argument of the lookup"}
+    ],
+    "not_participating_in": [
+      "the projection and renormalization arithmetic",
+      "the locomotion request field set, which contains no copy of stack word 1"
+    ],
+    "replaced_when_mode_flag_set": "When the byte at creature+0x0BB0 is non-zero the lookup arguments become the constants 2 and 1, so stack word 1 influences nothing except the creature+0x0F98 store."
+  },
+  "callback_payload": {
+    "type_identity": "opaque 116-byte POD matching Simulator::cLocomotionRequest",
+    "sdk_layout_agreement": "Derived offsets agree with the SDK struct at goalStopDistance+0x20, field_5C+0x5C with SDK comment value 3, acceptableStopDistance+0x60, field_64+0x64, field_68+0x68, field_6C+0x6C and field_70+0x70.",
+    "note_on_field_64": "The SDK comment reads 0.99 and the observed constant at 0x013EF480 is 0.9900000095367432, so the observed value is used.",
+    "size_bytes": 116,
+    "base_evidence": "LEA EAX,[ESP + 0x2c] at 0x00c1c819, with the highest observed store at base+0x70 so the following dword ends at P+0x9F, immediately below the return address at P+0xA0.",
+    "written_fields": [
+      {"offset": "0x00", "width_bytes": 4, "store": "zeroed before the submit call", "read_back": "reloaded after the submit call and used for the guarded release"},
+      {"offset": "0x04", "width_bytes": 4, "store": "zero"},
+      {"offset": "0x08", "width_bytes": 4, "store": "zero"},
+      {"offset": "0x14", "width_bytes": 12, "store": "dst_position components, the three MOVSS writes at 0x00c1c79e through 0x00c1c7b4"},
+      {"offset": "0x20", "width_bytes": 4, "store": "goal_stop_distance, read from stack word 4"},
+      {"offset": "0x24", "width_bytes": 4, "store": "zero"},
+      {"offset": "0x4C", "width_bytes": 1, "store": "zero byte, written by MOV byte ptr at 0x00c1c841 after the submit pointer was pushed"},
+      {"offset": "0x50", "width_bytes": 12, "store": "perpendicular unit, the projected and possibly renormalized result"},
+      {"offset": "0x5C", "width_bytes": 4, "store": "the constant 3 written at 0x00c1c845"},
+      {"offset": "0x60", "width_bytes": 4, "store": "acceptable_stop_distance, read from stack word 5"},
+      {"offset": "0x64", "width_bytes": 4, "store": "constant from 0x013EF480, written at 0x00c1c857 after the submit pointer was pushed"},
+      {"offset": "0x68", "width_bytes": 4, "store": "constant from 0x0146A32C, the binary32 largest finite value 0x7F7FFFFF, written at 0x00c1c80d before the submit pointer was pushed"},
+      {"offset": "0x6C", "width_bytes": 4, "store": "zero, written at 0x00c1c81d"},
+      {"offset": "0x70", "width_bytes": 4, "store": "zero"}
+    ],
+    "unwritten_regions": [
+      {"range": "0x0C-0x13", "bytes": 8, "state": "indeterminate stack contents, never stored by this body"},
+      {"range": "0x28-0x4B", "bytes": 36, "state": "indeterminate stack contents, never stored by this body"},
+      {"range": "0x4D-0x4F", "bytes": 3, "state": "indeterminate stack contents, never stored by this body"}
+    ],
+    "write_set_byte_count": 69,
+    "ordering_correction": "The constant at 0x0146A32C and the constant at 0x013EF480 land in different slots. The 0x0146A32C store at 0x00c1c80d executes at ESP equal to P and therefore targets base+0x68, while the 0x013EF480 store at 0x00c1c857 executes at ESP equal to P-4 after PUSH EAX and therefore targets base+0x64. Neither overwrites the other."
+  },
+  "cleanup": {
+    "handle_source": "request+0x00, which the vtable+0xDC callee populates during the submit call",
+    "guards": [
+      {"order": 1, "condition": "handle is null", "action": "skip"},
+      {"order": 2, "condition": "the 32-bit word at handle-0x04 equals zero", "action": "skip"}
+    ],
+    "release": "0x00f47380 with the handle as its single cdecl stack word, released by the caller with ADD ESP,0x4",
+    "field_evidence": "CMP EAX,EBX and JZ at 0x00c1c8bf through 0x00c1c8c1, and CMP dword ptr [EAX + -0x4],EBX and JZ at 0x00c1c8c3 through 0x00c1c8c6.",
+    "model_boundary": "The reconstruction reads the header word with a byte copy from handle-0x04 rather than dereferencing it directly, which preserves the observed read set and its null and zero guards while keeping the test hermetic. The original's fault behaviour on an unreadable handle-0x04 page remains runtime-gated."
+  },
+  "creature_field_writes": [
+    {"offset": "0x0F98", "width_bytes": 4, "value": "stack word 1", "sdk_name": "mSpeedState", "order": 2},
+    {"offset": "0x02A0", "width_bytes": 4, "value": "the narrowed scalar", "sdk_name": "unresolved cLocomotiveObject field", "order": 3},
+    {"offset": "0x0330", "width_bytes": 4, "value": "zero", "sdk_name": "unresolved cLocomotiveObject field", "order": 4}
+  ],
+    "creature_field_reads": [
+      {"offset": "0x02B0", "width_bytes": 4, "use": "projection bypass test, evaluated after the position callback returns", "container_relative": false},
+      {"offset": "0x0BB0", "width_bytes": 1, "use": "speed mode flag, selects the constant lookup pair", "sdk_name": "field_BB0", "container_relative": false},
+      {"offset": "0x0BC0", "width_bytes": 4, "use": "embedded container word read as begin_word and forwarded to 0x00ac4570", "sdk_name": "field_BC0", "container_relative": "+0x00 of the embedded container"},
+      {"offset": "0x0BC4", "width_bytes": 4, "use": "embedded container word read as end_word and forwarded to 0x00ac4570", "sdk_name": "field_BC4", "container_relative": "+0x04 of the embedded container"}
+    ],
+    "embedded_container": {
+      "offset": "0xBC0",
+      "receiver_evidence": "LEA ECX,[ESI + 0xbc0] at 0x00c1c895 sets ECX to the embedded address and no instruction between there and CALL 0x00ac4570 at 0x00c1c8b6 rewrites ECX, so the thiscall receiver is creature+0xBC0 rather than the creature base.",
+      "observed_extent": "unresolved; only the dwords at +0x00 and +0x04 relative to the embedded object are read",
+      "staged_model": "OpaqueEmbeddedContainer models the embedded object as begin_word at +0x00 and end_word at +0x04 and sizes itself to the remaining creature window tail so the address arithmetic stays in bounds without asserting a real extent."
+  },
+  "state_evidence": {
+    "projection_bypass_field": "A non-zero 32-bit value at creature+0x2B0 bypasses the component reads of the position pointer, the projection and the renormalization. The position and basis callback still runs on every invocation, so the bypass suppresses arithmetic and dereference of the callback result but not the callback itself. The concrete field is not named by the SDK.",
+    "speed_mode_flag": "A non-zero byte at creature+0x0BB0 replaces the lookup key and mode with the constants 2 and 1 and adds the constant 10.0f, isolating the speed scalar from stack word 1 while still publishing stack word 1 to creature+0x0F98.",
+    "container_call_receiver": "The 0x00ac4570 receiver is the embedded object at creature+0xBC0, established by LEA ECX,[ESI + 0xbc0] at 0x00c1c895 which is not overwritten before the call. The two stack words are then read relative to that embedded receiver at its +0x00 and +0x04, which coincide with creature+0xBC0 and creature+0xBC4. The reconstruction forwards the embedded address and the two container-relative words; it does not forward the creature base.",
+    "container_call": "0x00ac4570 is a thiscall with ECX = creature+0xBC0 and two stack words. Its body copies 60-byte elements from the end word toward the begin word while the begin word differs from the container end, then advances the container end by the signed element count derived from begin minus end divided by 60. The reconstruction forwards the observed receiver and the two words without claiming the container type or its extent; only offsets +0x00 and +0x04 of the embedded object are observed.",
+    "identity": "The function has no allocator and no cache, so repeated invocation with identical inputs and identical port behaviour yields identical field and request state.",
+    "fault_behavior": "The vtable+0x2C result is dereferenced without a null check, but only when creature+0x2B0 is zero, so a null return faults at the first component read on the projecting path and is never dereferenced on the bypass path. Reads of later components are short-circuited, so a pointer exposing only the first real does not fault when that real compares equal to zero and the next is not read. The release handle is null-checked and its header word is read without a page guarantee."
+  },
+  "call_graph": {
+    "direct_callers_count": 62,
+    "direct_callers": [
+      "0x00bc4900", "0x00c27dd0", "0x00d31a70", "0x00d32fd0", "0x00d62d90",
+      "0x00d62f60", "0x00d630c0", "0x00d63560", "0x00d64a90", "0x00d6ce10",
+      "0x00d6e3a0", "0x00d6e910", "0x00d6f800", "0x00d70c70", "0x00d71060",
+      "0x00d71780", "0x00d71fa0", "0x00d74060", "0x00d7e6e0", "0x00d7ee90",
+      "0x00d7f790", "0x00d7ff20", "0x00d80a50", "0x00d81220", "0x00d841a0",
+      "0x00d84ec0", "0x00d86690", "0x00d86a30", "0x00d87620", "0x00d89c50",
+      "0x00d89fb0", "0x00d8a2a0", "0x00d8dcc0", "0x00d92560", "0x00d92660",
+      "0x00d92880", "0x00d932e0", "0x00d93670", "0x00d93880", "0x00d93fd0",
+      "0x00d94260", "0x00d952e0", "0x00d97d93", "0x00d9c6f0", "0x00d9d100",
+      "0x00d9d1e0", "0x00d9d5b0", "0x00d9e570", "0x00da2360", "0x00da2fd0",
+      "0x00dab1f0", "0x00dabc30", "0x00dabdf0", "0x00dace20", "0x00dad390",
+      "0x00dadbc0", "0x00db1790", "0x00db33d0", "0x00dba649", "0x00dbb840",
+      "0x00ec1830", "0x00ec2a70"
+    ],
+    "direct_callees": ["0x00ac4570", "0x00c0ce80", "0x00f47380"],
+    "function_xrefs_count": 88,
+    "function_xrefs_note": "All 88 xrefs are UNCONDITIONAL_CALL. 77 are attributed to a containing function and 11 have no attributed containing function; the unattributed sites were not used to infer ownership.",
+    "virtual_call_order": [
+      {"order": 1, "slot": "vtable+0x2C", "receiver": "creature+0xC0", "stack_args": 0, "returns": "const float*", "conditional": false, "note": "unconditional and ordered before the creature+0x2B0 test"},
+      {"order": 2, "slot": "vtable+0xDC", "receiver": "creature+0xC0", "stack_args": 1, "returns": "unspecified", "argument": "address of the locomotion request", "conditional": false},
+      {"order": 3, "target": "0x00c0ce80", "receiver": "creature", "stack_args": 2, "returns": "x87 extended-precision real narrowed once by the caller", "conditional": false},
+      {"order": 4, "target": "0x00ac4570", "receiver": "creature+0xBC0", "stack_args": 2, "returns": "unspecified", "conditional": false, "note": "receiver is the embedded container, not the creature base"},
+      {"order": 5, "target": "0x00f47380", "receiver": "none", "stack_args": 1, "convention": "cdecl", "conditional": true, "note": "guarded by handle non-null and by the header word at handle-0x04 being non-zero"}
+    ],
+    "virtual_slot_ownership": "The two vtable slots are indexed but not named. The concrete receiver class of creature+0xC0 and the identities behind slots +0x2C and +0xDC are unresolved, so no SDK method name is asserted for them."
+  },
+  "dependencies": {
+    "source_dependencies": [
+      "twelve zero bytes at 0x0168D910 used as the zero-vector comparison constant",
+      "0.9900000095367432 at 0x013EF480",
+      "0x7F7FFFFF at 0x0146A32C",
+      "10.0f at 0x0150C900"
+    ],
+    "opaque_ports": [
+      "get_locomotive_position, vtable+0x2C on creature+0xC0",
+      "submit_locomotion_request, vtable+0xDC on creature+0xC0",
+      "lookup_speed_scalar, 0x00c0ce80",
+      "release_request_handle, 0x00f47380",
+      "commit_container_growth, 0x00ac4570, receiver is the embedded object at creature+0xBC0"
+    ],
+    "unresolved_external_behavior": [
+      "Concrete type of the locomotion request submitted through vtable+0xDC and whether it retains the pointer past return",
+      "Ownership contract of the handle stored at request+0x00 and the meaning of the header word at handle-0x04",
+      "Concrete container type at creature+0xBC0, its real extent beyond the observed +0x00 and +0x04 words, and the element semantics of its 60-byte stride",
+      "Concrete type of the 32-bit fields at creature+0x2A0, creature+0x2B0 and creature+0x330",
+      "Runtime values of the lookup arguments accepted by 0x00c0ce80"
+    ],
+    "ownership_boundary": "The target claims no ownership of the creature, of the request payload, or of the handle produced by the submit port. It stores the handle into the request, and the request storage is frame-local, so the release of the handle is the only lifetime operation it performs and that release is delegated to 0x00f47380."
+  },
+  "evidence_provenance": [
+    {"tool": "ghidra_get_function_by_address", "address": "0x00c1c5c0", "observation": "Live function FUN_00c1c5c0 spans body_start 0x00c1c5c0 to body_end 0x00c1c8db, confirming the exact target entry."},
+    {"tool": "ghidra_decompile_function", "address": "0x00c1c5c0", "observation": "Live decompilation exposes the reciprocal-length, dot-product and subtraction structure plus the creature+0x2A0, +0x330 and +0x0F98 stores; it renders stack word 1 as unaff_retaddr and the request base as an aliased local, which the disassembly resolves."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00c1c5c0", "observation": "196 instructions with RET 0x14, the SUB ESP,0x90 and four-register prologue, both virtual call sites, the UCOMISS and LAHF and TEST AH,0x44 comparison gates, the SSE dot-product association order, the x87 FSQRT and FDIVRP and FSTP sequence, the sixteen request stores and the two-guard release. Re-inspected to confirm the call ordering: CALL EDX at 0x00c1c604 and MOV EDX,EAX at 0x00c1c60f both precede CMP dword ptr [ESI + 0x2b0],EBX at 0x00c1c611 and JNZ 0x00c1c791 at 0x00c1c617, and LEA ECX,[ESI + 0xbc0] at 0x00c1c895 precedes the container reads and CALL 0x00ac4570 at 0x00c1c8b6 with no intervening write to ECX."},
+    {"tool": "ghidra_read_memory", "address": "0x00c1c656", "observation": "Raw bytes f30f1019 d94108 d94104 through def2 d9c9 confirm the MOVSS loads, the FLD, FMUL, FADD, FSQRT, FLD1, FDIVRP, FXCH and FSTP reciprocal-length sequence and the FDIVRP at 0x00c1c699."},
+    {"tool": "ghidra_read_memory", "address": "0x00c1c730", "observation": "Raw bytes ending de f9 d9 5c 24 10 confirm the second reciprocal-length sequence and its single FSTP narrowing."},
+    {"tool": "ghidra_read_memory", "address": "0x0168d910", "observation": "Twelve zero bytes, so the comparison constant is the zero vector and both signed zeros compare equal to it under UCOMISS."},
+    {"tool": "ghidra_read_memory", "address": "0x013ef480", "observation": "Bytes a4 70 7d 3f decode to 0x3F7D70A4, the binary32 value 0.9900000095367432."},
+    {"tool": "ghidra_read_memory", "address": "0x0146a32c", "observation": "Bytes ff ff 7f 7f decode to 0x7F7FFFFF, the largest finite binary32."},
+    {"tool": "ghidra_read_memory", "address": "0x0150c900", "observation": "Bytes 00 00 20 41 decode to 0x41200000, the binary32 value 10.0f."},
+    {"tool": "ghidra_get_function_callers", "address": "0x00c1c5c0", "observation": "62 direct caller functions were reported."},
+    {"tool": "ghidra_get_function_callees", "address": "0x00c1c5c0", "observation": "Exactly three direct callees, 0x00ac4570, 0x00c0ce80 and 0x00f47380, with no other direct call target."},
+    {"tool": "ghidra_get_function_xrefs", "address": "0x00c1c5c0", "observation": "88 UNCONDITIONAL_CALL xrefs were reported, matching the caller-function total plus 11 unattributed sites."},
+    {"tool": "ghidra_get_assembly_context", "address": "0x00c27fda", "observation": "Caller FUN_00c27dd0 pushes the constant 2, then EDX, then ECX, and two FSTP float stores before the call, which fixes the five stack arguments and cross-validates the SDK parameter order and the kStandardSpeed value 2."},
+    {"tool": "ghidra_decompile_function", "address": "0x00c0ce80", "observation": "The lookup takes this plus two stack words, returns 0.0 immediately when the first word is zero, otherwise indexes a float table and can interpolate between adjacent entries."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00c0ce80", "observation": "The first stack word is tested with TEST EAX,EAX as an integer key, and the epilogue is RET 0x8, so the function is callee-clean and stack word 1 is read as the raw 32-bit value."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00ac4570", "observation": "thiscall with two callee-cleaned stack words, a 60-byte in-place element copy from the end word toward the begin word, and a container end advanced by a signed multiple of 60."},
+    {"tool": "ghidra_decompile_function", "address": "0x00f47380", "observation": "A null-tolerant single-argument release helper, matching the caller's ADD ESP,0x4."}
+  ],
+  "runtime_gates": [
+    "Observe the concrete creature+0x2B0, +0x2A0 and +0x330 field semantics in an original process.",
+    "Observe a real vtable+0xDC submission to learn whether the request pointer escapes and whether the handle header word at handle-0x04 is a reference count.",
+    "Observe the 0x00ac4570 container at creature+0xBC0 to confirm the 60-byte element semantics.",
+    "Exercise a NaN basis and a zero-length basis in the original to confirm the recorded NaN propagation and the absence of a length guard.",
+    "No original-process trace, differential run under Wine, or runtime validation has been performed."
+  ],
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/pkg13-c4-creature-wave3 reconstruction/staging/pkg13-c4-creature-wave3/creature_wave3.cpp reconstruction/staging/pkg13-c4-creature-wave3/creature_wave3_model_test.cpp",
+    "normal_test_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg13-c4-creature-wave3 reconstruction/staging/pkg13-c4-creature-wave3/creature_wave3.cpp reconstruction/staging/pkg13-c4-creature-wave3/creature_wave3_model_test.cpp -o /tmp/opencode/pkg13-c4-normal && /tmp/opencode/pkg13-c4-normal",
+    "ndebug_test_command": "clang++ -m32 -std=c++17 -DNDEBUG -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg13-c4-creature-wave3 reconstruction/staging/pkg13-c4-creature-wave3/creature_wave3.cpp reconstruction/staging/pkg13-c4-creature-wave3/creature_wave3_model_test.cpp -o /tmp/opencode/pkg13-c4-ndebug && /tmp/opencode/pkg13-c4-ndebug",
+    "optimization_sweep_command": "for m in -O0 -O2 -DNDEBUG and the combined -O2 -DNDEBUG and -O1 -g; do clang++ -m32 -std=c++17 $m -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg13-c4-creature-wave3 reconstruction/staging/pkg13-c4-creature-wave3/creature_wave3.cpp reconstruction/staging/pkg13-c4-creature-wave3/creature_wave3_model_test.cpp -o /tmp/opencode/c4-sweep && /tmp/opencode/c4-sweep; done",
+    "format_command": "clang-format --dry-run --Werror --style='{BasedOnStyle: Google, FixNamespaceComments: false}' reconstruction/staging/pkg13-c4-creature-wave3/creature_wave3.hpp reconstruction/staging/pkg13-c4-creature-wave3/creature_wave3.cpp reconstruction/staging/pkg13-c4-creature-wave3/creature_wave3_model_test.cpp",
+    "abi_command": "clang++ -m32 -std=c++17 -O2 -I reconstruction/staging/pkg13-c4-creature-wave3 -c reconstruction/staging/pkg13-c4-creature-wave3/creature_wave3.cpp -o /tmp/opencode/c4-abi.o && objdump -d --no-show-raw-insn /tmp/opencode/c4-abi.o",
+    "abi_expected": {
+      "Simulator_cCreatureBase_LocomotionWalkToInterior_00c1c5c0": "ret $0x14",
+      "QuaternionToMatrix3_0059c190": "ret",
+      "CopyMatrix3_0041cb40": "ret $0x4",
+      "Simulator_cCreatureBase_CreateAndStartPool2Effect_00c1d460": "ret $0x8"
+    },
+    "stack_balance_command": "a 200000-iteration loop calling both entries with instrumented ports, comparing ESP before the loop, after the first iteration and after the last",
+    "negative_control_command": "rebuild the model with each defect reintroduced in a scratch copy and confirm the matching regression fails: restoring the conditional position call must fail bypass_position_callback_regression, and forwarding the creature base instead of the embedded container must fail embedded_container_receiver_regression",
+    "diff_command": "compare the disassembly-derived request store map against the model write map for 0x00c1c5c0 and the disassembly-derived property store map against the model for 0x00c1d460",
+    "json_check_command": "python3 -m json.tool reconstruction/metadata/pkg13-c4-creature-wave3/00c1c5c0.json",
+    "metadata_package_validation_command": "python3 reconstruction/staging/pkg13-c4-creature-wave3/metadata_package_validation.py",
+    "results": {
+      "x86_32_syntax": "passed",
+      "o0_focused_model_test": "passed",
+      "o2_focused_model_test": "passed",
+      "ndebug_focused_model_test": "passed",
+      "o2_ndebug_focused_model_test": "passed",
+      "o1_g_focused_model_test": "passed",
+      "bypass_position_callback_regression": "passed",
+      "embedded_container_receiver_regression": "passed",
+      "clang_format_dry_run": "passed",
+      "abi_ret_14_and_ret_8": "passed",
+      "stack_balance_400k_calls": "passed",
+      "store_map_diff": "passed",
+      "json_check": "passed",
+      "metadata_package_validation": "passed"
+    },
+    "toolchain_note": "clang is the reference toolchain for these packages. GCC rejects __attribute__((thiscall)) on non-class function pointer types under -Wattributes, which is the same pre-existing behaviour as the reference package reconstruction/staging/pkg13-c3-creature-progression-wave2 and is therefore not a regression introduced here."
+  },
+  "blockers": [
+    "The concrete type and lifetime of the request submitted through vtable+0xDC remain runtime-gated.",
+    "The meaning of the handle header word at handle-0x04 remains runtime-gated.",
+    "The concrete container at creature+0xBC0, including its real extent, and the semantics of the creature+0x2A0, +0x2B0 and +0x330 fields remain runtime-gated.",
+    "Whether the unconditional position and basis callback has observable side effects beyond its return value, and what the creature+0x2B0 field suppresses at the caller level, remain runtime-gated.",
+    "The intermediate reciprocal-length accumulation is modelled in binary64 while the original uses x87 80-bit extended precision; the difference is bounded by one unit in the last place of the sum and is not claimed as bit-exact at the original's internal precision."
+  ]
+}

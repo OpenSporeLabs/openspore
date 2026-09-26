@@ -1,0 +1,129 @@
+{
+  "schema": "pkg11-a2-progression-alt.function-handoff.v1",
+  "package": "PKG-11-A2-PROGRESSION-ALTERNATIVE",
+  "function_address": "0x00febc90",
+  "candidate_address": "0x00febce0",
+  "ghidra_name": "FUN_00febc90",
+  "normalized_symbol": "mission_track_predicate_00febc90",
+  "source_files": [
+    "reconstruction/staging/pkg11-a2-progression-alt/progression_alt.hpp",
+    "reconstruction/staging/pkg11-a2-progression-alt/progression_alt.cpp"
+  ],
+  "ownership": {
+    "status": "unowned_before_assignment",
+    "manifest_checked": true,
+    "metadata_checked": true,
+    "integrated_handoffs_checked": true,
+    "staging_and_canonical_source_checked": true,
+    "git_status_checked": true,
+    "boundary": "The actual function entry is 0x00febc90. Candidate 0x00febce0 is an imported SDK symbol on an interior loop continuation."
+  },
+  "boundary_correction": {
+    "imported_symbol_at_candidate": "Simulator::cMissionManager::GetMissionTrackColor",
+    "live_function_entry": "0x00febc90",
+    "next_function_start": "0x00febd30",
+    "supported_signature": "bool thiscall(MissionManagerWire* manager, std::int32_t index, Opaque identity)",
+    "rejection_reasons": [
+      "No Color output pointer is read or written.",
+      "The signed index selects a 0x38-stride record.",
+      "The second machine stack word is the opaque identity used for null/current checks and passed as ECX to 0x00c317a0.",
+      "The record supplies only the inner identity bounds and the threshold at record+0x04."
+    ]
+  },
+  "signature": {
+    "calling_convention": "x86-32 thiscall with callee stack cleanup",
+    "receiver": "ECX MissionManagerWire pointer",
+    "stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "ESP+0x04",
+        "type": "std::int32_t",
+        "observed_use": "signed outer-count comparison and record address base + index*0x38"
+      },
+      {
+        "position": 2,
+        "entry_offset": "ESP+0x08",
+        "type": "opaque 32-bit identity/borrowed target",
+        "observed_use": "null test, current-identity comparison, and ECX receiver for 0x00c317a0"
+      }
+    ],
+    "stack_cleanup_bytes": 8,
+    "return_register": "AL",
+    "return_width_bytes": 1,
+    "return_semantics": "exact 0/1 predicate",
+    "preserved_registers": ["ESI", "EBX", "EDI on loop path"]
+  },
+  "body": {
+    "entry_address": "0x00febc90",
+    "end_address": "0x00febd2d",
+    "length_bytes": 160,
+    "candidate_interior_address": "0x00febce0",
+    "instruction_count": 62,
+    "raw_bytes": "568b71382b7134b893244992f7ee8b44240c03d6c1fa058bf2c1ee1f03f23bc67c0632c05ec208008d14c5000000002bd08b41348b74d00c2b74d00853578d3cd0c1fe0233db85f67e298d9b000000008b4f088b049950e8e46e01008bc8e8fd08c1ff8bc8e88684ffff84c07422433bde7cdd8b74241085f6741de8f05503003bf074148bcee8855ac4ff3b47047d085f5b32c05ec208005f5bb0015ec20800"
+  },
+  "port_abis": [
+    {"boundary": "0x01002bd0", "convention": "cdecl no-argument getter", "receiver": null, "stack": [], "cleanup": "plain RET while preserving the staged item identity", "return": "noun carrier in EAX"},
+    {"boundary": "0x00bfc5f0", "convention": "thiscall", "receiver": "noun carrier in ECX", "stack": [], "cleanup": "plain RET", "return": "command word from receiver+0x70 in EAX"},
+    {"boundary": "0x00fe4180", "convention": "thiscall", "receiver": "command word in ECX", "stack": ["Word item identity at ESP+0x04"], "cleanup": "RET 4", "return": "AL predicate"},
+    {"boundary": "0x01021300", "convention": "cdecl no-argument getter", "receiver": null, "stack": [], "cleanup": "plain RET", "return": "current identity in EAX"},
+    {"boundary": "0x00c317a0", "convention": "thiscall", "receiver": "borrowed identity in ECX", "stack": [], "cleanup": "plain RET", "return": "signed score in EAX; receiver may be mutated"}
+  ],
+  "mechanics": {
+    "record_selection": [
+      "Compute signed outer count from (manager+0x38)-(manager+0x34) divided by 0x38.",
+      "Reject signed index greater than or equal to count before reading record or identity helpers.",
+      "Compute record as manager+0x34 base plus signed index multiplied by 0x38. Record 1 therefore begins exactly 0x38 bytes after record 0."
+    ],
+    "record_identity_bounds": [
+      "Read record+0x08 and record+0x0c as the inner four-byte identity range and compute signed (end-begin)>>2.",
+      "For every item, stage its identity, call 0x01002bd0, call 0x00bfc5f0 with the returned carrier in ECX, then call 0x00fe4180 with command in ECX and item identity on the stack.",
+      "Return false immediately on the first invalid item; later items, current lookup, and score update do not run."
+    ],
+    "identity_score_comparison": [
+      "A null identity stack word returns true after all record identities validate.",
+      "Call 0x01021300 and return true when its result equals the identity stack word.",
+      "Otherwise call 0x00c317a0 with the identity in ECX. This borrowed receiver may be updated; 0x00febc90 performs no release.",
+      "Compare signed score EAX against signed record+0x04. JGE returns true."
+    ],
+    "writes_and_events": "The target directly writes no field and creates no event. Score mutation belongs exclusively to the opaque 0x00c317a0 borrowed-receiver boundary."
+  },
+  "call_graph": {
+    "direct_callers": ["0x00feed30"],
+    "direct_call_sites": ["0x00feefc2"],
+    "direct_callees": ["0x01002bd0", "0x00bfc5f0", "0x00fe4180", "0x01021300", "0x00c317a0"],
+    "caller_observation": "0x00feed30 pushes identity EAX, then index EDI, sets ECX to the manager, calls the target, and observes AL."
+  },
+  "evidence": [
+    {"tool": "ghidra_disassemble_bytes", "address": "0x00febc90-0x00febd2f", "observation": "LEA EDX,[EAX*8] followed by SUB EDX,EAX and [base+EDX*8] proves 0x38-stride records; the saved stack identity is loaded at 0x00febd03."},
+    {"tool": "ghidra_get_assembly_context", "address": "0x00feefc2", "observation": "The sole caller pushes EAX identity, then EDI index, before the thiscall."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00bfc5f0", "observation": "ECX-only plain RET reads receiver+0x70."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00fe4180", "observation": "ECX command receiver plus one stack identity, RET 4."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00c317a0", "observation": "ECX-only plain RET mutates fields including receiver+0xd8 and returns receiver+0xd8."}
+  ],
+  "verification": {
+    "commands": [
+      "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only reconstruction/staging/pkg11-a2-progression-alt/progression_alt.cpp reconstruction/staging/pkg11-a2-progression-alt/progression_alt_model_test.cpp",
+      "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror reconstruction/staging/pkg11-a2-progression-alt/progression_alt.cpp reconstruction/staging/pkg11-a2-progression-alt/progression_alt_model_test.cpp -o /tmp/opencode/pkg11-a2-progression-alt-model && /tmp/opencode/pkg11-a2-progression-alt-model",
+      "clang-format --dry-run --Werror --style='{BasedOnStyle: Google, FixNamespaceComments: false}' reconstruction/staging/pkg11-a2-progression-alt/progression_alt.hpp reconstruction/staging/pkg11-a2-progression-alt/progression_alt.cpp reconstruction/staging/pkg11-a2-progression-alt/progression_alt_model_test.cpp"
+    ],
+    "results": {
+      "x86_32_syntax": "passed",
+      "focused_model_test": "passed",
+      "focused_model_test_ndebug": "passed",
+      "clang_format_dry_run": "passed",
+      "json_validation": "passed",
+      "abi_inspection": "passed"
+    },
+    "covered_behaviors": [
+      "record-1 0x38 stride and field selection",
+      "distinct record threshold and identity bounds",
+      "null identity, current identity, and distinct borrowed target",
+      "score computation/update mutation and call order",
+      "signed count boundary, negative index, and invalid item short circuit"
+    ]
+  },
+  "blockers": [
+    "No original-process identity/score trace was run.",
+    "The identity concrete type and 0x00c317a0 score semantics remain opaque; no release is claimed."
+  ]
+}

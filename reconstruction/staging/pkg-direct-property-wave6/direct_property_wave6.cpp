@@ -10,7 +10,6 @@ OpaqueList* opaque_fast_list = nullptr;
 OpaqueBaseInsert opaque_base_insert = nullptr;
 OpaqueErrorPort opaque_error_port = nullptr;
 OpaqueTypeConversion opaque_type_conversion = nullptr;
-OpaqueProperty opaque_default_property{};
 
 void no_error_port(TargetWord) {}
 
@@ -176,7 +175,8 @@ OpaqueProperty* base_get_property_object(OpaqueList* list,
   if (list->field_30 != nullptr) {
     return list->field_30->field_00->field_28(list->field_30, property_id);
   }
-  return &opaque_default_property;
+  return reinterpret_cast<OpaqueProperty*>(
+      static_cast<std::uintptr_t>(0x016027d0u));
 }
 
 bool base_get_property(OpaqueList* list, TargetWord property_id,

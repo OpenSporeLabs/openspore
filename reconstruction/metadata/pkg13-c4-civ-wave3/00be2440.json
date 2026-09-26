@@ -1,0 +1,181 @@
+{
+  "schema": "pkg13-c4-civ-wave3.function-handoff.v1",
+  "package": "PKG-13-C4-CIV-WAVE3",
+  "function_address": "0x00be2440",
+  "ghidra_name": "FUN_00be2440",
+  "normalized_symbol": "city_building_economy_update_00be2440",
+  "binary": {
+    "program": "SporeApp.exe",
+    "version": "3.1.0.22",
+    "architecture": "x86:LE:32",
+    "image_base": "0x00400000"
+  },
+  "phase": "body-reconstruction",
+  "status": "implemented in worker-owned staging",
+  "staging_paths": [
+    "reconstruction/staging/pkg13-c4-civ-wave3/civ_wave3.hpp",
+    "reconstruction/staging/pkg13-c4-civ-wave3/civ_wave3.cpp",
+    "reconstruction/staging/pkg13-c4-civ-wave3/civ_wave3_model_test.cpp"
+  ],
+  "declaration": "void __cdecl city_building_economy_update_00be2440(OpaqueCity* city, OpaqueLiveStateContext* live_state, uint32_t update_word)",
+  "abi": {
+    "architecture": "x86-32",
+    "calling_convention": "cdecl",
+    "hidden_this_register": null,
+    "ordinary_stack_arguments": [
+      {"name": "city", "offset": 4, "width_bytes": 4, "type": "OpaqueCity*"},
+      {"name": "live_state", "offset": 8, "width_bytes": 4, "type": "OpaqueLiveStateContext*"},
+      {"name": "update_word", "offset": 12, "width_bytes": 4, "type": "uint32_t"}
+    ],
+    "stack_frame_bytes": 528,
+    "return_register": "EAX",
+    "return_type": "void",
+    "termination": "plain RET",
+    "saved_registers": ["EBX", "EBP", "ESI", "EDI"]
+  },
+  "sdk_boundary": {
+    "sdk_name": "Simulator::cCity::ProcessBuildingUpdate",
+    "sdk_address": "0x00be2590",
+    "offset_from_target": "0x150",
+    "classification": "interior",
+    "claim": "The SDK label is not the reconstructed function boundary."
+  },
+  "mechanics": {
+    "local_model": {
+      "slot_count": 14,
+      "type_table": "14 32-bit type words",
+      "active_table": "14 bytes",
+      "adjacency_table": "196 bytes in row-major 14 by 14 order",
+      "effect_groups": "four 14-word groups represented separately from city, live state, and city data"
+    },
+    "execution_order": [
+      "Zero the local type, active, adjacency, and effect tables.",
+      "If city is non-null, call the city-root port once and return immediately when it is null.",
+      "For each of 14 city-building indices, obtain the opaque building and its separate city-data object, apply the data-state, positive-290, and filter guards, store the opaque building ID, and fill the city adjacency row through the city-root port.",
+      "If city is null, return when the live-state context is null; otherwise obtain 14 separate live-state entries, apply state and positive-count guards, store the slot ID, and fill the live adjacency row.",
+      "Seed active slot 0x018ea1eb, then repeatedly activate non-seed slots that have an adjacent active slot using pairwise row checks until no change remains.",
+      "For each active slot, count type 0x01a56aba in the positive group, count type 0x018ea2cc in the negative group, add 400 for a negative slot adjacent to type 0x018ea1eb or 0x018eb106, add one for a positive slot adjacent to either common type, and add one for a negative slot adjacent to a positive type.",
+      "Compute effectiveness as positive-total minus negative-total plus five, multiply by 10.0, clamp below zero to zero, and clamp at or above 100.0 to 100.0.",
+      "For non-null city, revisit all 14 city-building/data pairs, mark each data object with its active byte, and write live, adjacency, positive, and negative words at +0x28c, +0x294, +0x298, and +0x29c.",
+      "For non-null live state context, revisit all 14 live entries and write the active byte at +0x24 and the live word at +0x28.",
+      "For non-null city, write effectiveness at city+0x304, adjacency/positive/negative totals at city+0x664, +0x668, and +0x66c, repeat adjacency total at +0x678, and call the city commit port.",
+      "For non-null live state context, call the live notification port with effectiveness and update_word, then store adjacency total at context+0x2c."
+    ],
+    "constants": {
+      "seed_type": "0x018ea1eb",
+      "positive_type": "0x01a56aba",
+      "negative_type": "0x018ea2cc",
+      "alternative_common_type": "0x018eb106",
+      "adjacency_bonus": 400,
+      "effectiveness_step": 10.0,
+      "effectiveness_min": 0.0,
+      "effectiveness_max": 100.0
+    },
+    "port_abi": {
+      "city_building_lookup": {"callee": "0x00af9ff0", "receiver": "city+0x3ec", "stack_words": 1, "return": "RET4"},
+      "city_data_lookup": {"callee": "0x00fcc210", "receiver": "building", "stack_words": 0, "return": "RET"},
+      "city_data_state": {"callee": "0x008e7f80", "receiver": "data+0x120", "stack_words": 0, "return": "RET"},
+      "city_data_filter": {"callee": "0x00bfc600", "receiver": "data+0x120", "stack_words": 0, "return": "RET"},
+      "city_data_mark": {"callee": "0x00bcc6e0", "receiver": "data", "stack_words": 1, "return": "RET4"},
+      "city_adjacency": {"callee": "0x00be26e0", "receiver": "root", "stack_words": 2, "return": "RET8"},
+      "city_commit": {"callee": "0x00be0020", "receiver": "city", "stack_words": 0, "return": "RET"},
+      "live_state_lookup": {"callee": "0x00ff07a0", "receiver": "live_state_context", "stack_words": 1, "return": "RET4"},
+      "live_adjacency": {"callee": "0x00ff0330", "receiver": "live_state_context", "stack_words": 2, "return": "RET8"},
+      "live_notify": {"callee": "0x00ff08b0", "receiver": "live_state_context", "stack_words": 2, "return": "RET8"}
+    },
+    "opaque_extents": {"OpaqueLiveState": "0x38"},
+    "ownership": {
+      "city": "Only the opaque city byte storage is written by this target.",
+      "city_data": "Only separate opaque city-data objects returned by the port are written by this target.",
+      "live_state": "Only separate opaque live-state entries and the live-state context are written by this target.",
+      "culture": "No culture intrusive pointer is read or written by this target."
+    },
+    "early_guards": [
+      "A null city with a null live-state context returns without port work.",
+      "A non-null city whose city-root port returns null returns without city data or city writes.",
+      "Missing city buildings, city data, live entries, and invalid live state records are skipped in their respective collection loops.",
+      "The model does not invent a graceful failure path for a missing opaque port implementation."
+    ]
+  },
+  "direct_callers": [
+    {"address": "0x00bcc760", "role": "city update caller"},
+    {"address": "0x00bcece0", "role": "city update caller"},
+    {"address": "0x00be3350", "role": "city update caller"},
+    {"address": "0x00be3500", "role": "city update caller"},
+    {"address": "0x00be3de0", "role": "city update caller"},
+    {"address": "0x00be5180", "role": "city update caller"},
+    {"address": "0x00be5dd0", "role": "city update caller"},
+    {"address": "0x00be92e0", "role": "city update caller"},
+    {"address": "0x00d0e170", "role": "city update caller"},
+    {"address": "0x00d10840", "role": "city update caller"},
+    {"address": "0x00d10f90", "role": "city update caller"},
+    {"address": "0x00ff1da0", "role": "city update caller"}
+  ],
+  "direct_callees": [
+    {"address": "0x00af9ff0", "role": "city-building lookup"},
+    {"address": "0x00fcc210", "role": "city-data materialization"},
+    {"address": "0x008e7f80", "role": "city-data state receiver at data+0x120"},
+    {"address": "0x00bfc600", "role": "city-data filter receiver at data+0x120"},
+    {"address": "0x00bcc6e0", "role": "city-data active marker"},
+    {"address": "0x00be26e0", "role": "city adjacency thiscall"},
+    {"address": "0x00be0020", "role": "city commit"},
+    {"address": "0x00ff07a0", "role": "live-state lookup"},
+    {"address": "0x00ff0330", "role": "live adjacency lookup"},
+    {"address": "0x00ff08b0", "role": "live-state notification"},
+    {"address": "0x011e073e", "role": "local zeroing"}
+  ],
+  "evidence": [
+    {"tool": "ghidra_get_function_by_address", "address": "0x00be2440", "observation": "Function range is 0x00be2440 through 0x00be2b0b; the next boundary is 0x00be2b10."},
+    {"tool": "ghidra_decompile_function", "address": "0x00be2440", "observation": "The three-word cdecl body contains the 14-slot collection, propagation, scoring, clamp, city-data writes, live-state writes, city totals, and live notification."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00be2440", "observation": "The prologue, saved registers, 0x210 local frame, argument loads, call order, offsets, and plain RET are fixed."},
+    {"tool": "ghidra_get_function_callees", "address": "0x00be2440", "observation": "The live direct-callee set contains the city, city-data, live-state, notification, and zeroing helpers recorded above."},
+    {"tool": "ghidra_get_function_callers", "address": "0x00be2440", "observation": "The live query returned 12 direct callers."}
+  ],
+  "tests": {
+    "path": "reconstruction/staging/pkg13-c4-civ-wave3/civ_wave3_model_test.cpp",
+    "coverage": [
+      "null city-root guard",
+      "separate live-state and city-data writes",
+      "14-slot pairwise adjacency propagation",
+      "positive, negative, and 400-point adjacency accounting",
+      "effectiveness calculation and lower and upper clamps",
+      "city +0x304 and +0x664/+0x668/+0x66c/+0x678 totals",
+      "live +0x24/+0x28 and context +0x2c writes",
+      "ECX receiver offsets for city+0x3ec, data+0x120, and live state ports",
+      "0x00be26e0 city adjacency thiscall with root in ECX and RET8",
+      "RET4, RET8, and zero-stack callee port contracts",
+      "OpaqueLiveState extent of 0x38",
+      "exact x86-32 cdecl declaration and opaque port separation"
+    ],
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/pkg13-c4-civ-wave3 reconstruction/staging/pkg13-c4-civ-wave3/civ_wave3.cpp reconstruction/staging/pkg13-c4-civ-wave3/civ_wave3_model_test.cpp",
+    "normal_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg13-c4-civ-wave3 reconstruction/staging/pkg13-c4-civ-wave3/civ_wave3.cpp reconstruction/staging/pkg13-c4-civ-wave3/civ_wave3_model_test.cpp -o /tmp/opencode/pkg13-c4-civ-wave3-o0 && /tmp/opencode/pkg13-c4-civ-wave3-o0",
+    "o2_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg13-c4-civ-wave3 reconstruction/staging/pkg13-c4-civ-wave3/civ_wave3.cpp reconstruction/staging/pkg13-c4-civ-wave3/civ_wave3_model_test.cpp -o /tmp/opencode/pkg13-c4-civ-wave3-o2 && /tmp/opencode/pkg13-c4-civ-wave3-o2",
+    "ndebug_command": "clang++ -m32 -std=c++17 -O2 -DNDEBUG -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg13-c4-civ-wave3 reconstruction/staging/pkg13-c4-civ-wave3/civ_wave3.cpp reconstruction/staging/pkg13-c4-civ-wave3/civ_wave3_model_test.cpp -o /tmp/opencode/pkg13-c4-civ-wave3-ndebug && /tmp/opencode/pkg13-c4-civ-wave3-ndebug",
+    "format_command": "clang-format --dry-run --Werror --style='{BasedOnStyle: Google, FixNamespaceComments: false}' reconstruction/staging/pkg13-c4-civ-wave3/civ_wave3.hpp reconstruction/staging/pkg13-c4-civ-wave3/civ_wave3.cpp reconstruction/staging/pkg13-c4-civ-wave3/civ_wave3_model_test.cpp",
+    "results": {
+      "syntax": "passed",
+      "o0": "passed",
+      "o2": "passed",
+      "ndebug": "passed",
+      "compiled_abi": "passed",
+      "format": "passed",
+      "json": "passed",
+      "diff": "passed"
+    },
+    "runtime_validation": 0
+  },
+  "unresolved": [
+    "The city root, city building, city data, live state, and helper return layouts remain opaque.",
+    "The four effect groups are kept separate and only the statically observed writes are claimed.",
+    "The native port implementations and their runtime refcount behavior are outside this target."
+  ],
+  "static_vs_runtime_boundary": {
+    "static": "The exact 0x00be2440 boundary, cdecl ABI, 14-slot mechanics, offsets, guards, and call order are fixed by live Ghidra evidence.",
+    "runtime": "No original-process execution or pointer-validity trace was performed.",
+    "claims_not_made": [
+      "semantic names for opaque city or live-state fields",
+      "culture ownership",
+      "runtime behavior of native ports"
+    ]
+  }
+}

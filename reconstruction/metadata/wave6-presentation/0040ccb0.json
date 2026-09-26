@@ -5,9 +5,9 @@
   "ghidra_name": "Transform::PreTransformBy",
   "normalized_symbol": "transform_pre_transform_by_0040ccb0",
   "source_files": [
-    "reconstruction/staging/wave6-presentation/presentation_boundary.hpp",
-    "reconstruction/staging/wave6-presentation/presentation_boundary.cpp",
-    "reconstruction/staging/wave6-presentation/presentation_boundary_test.cpp"
+    "src/reconstruction/wave6_presentation/presentation_boundary.hpp",
+    "src/reconstruction/wave6_presentation/presentation_boundary.cpp",
+    "src/reconstruction/wave6_presentation/presentation_boundary_test.cpp"
   ],
   "phase": "body-reconstruction",
   "declaration": "Transform* __thiscall transform_pre_transform_by_0040ccb0(Transform* receiver, Transform* other);",
@@ -43,16 +43,18 @@
       "source": "Ghidra Transform layout"
     },
     "helper_contracts": {
-      "0x0041dca0": "Three-float componentwise multiply helper.",
-      "0x0041ddb0": "Three-float in-place add helper.",
-      "0x0041daf0": "Opaque offset transform wrapper with unresolved helper payload.",
-      "0x0041de20": "Opaque rotation transform wrapper with unresolved helper payload."
+      "0x0041dca0": "Cdecl float* helper with three words: destination, source Vector3, scalar pointer.",
+      "0x0041ddb0": "Cdecl float* helper with two words: destination and source Vector3.",
+      "0x0041daf0": "Cdecl float* wrapper with three words: destination, scaled-offset Vector3, receiver Matrix3.",
+      "0x0041de20": "Cdecl float* wrapper with three words: destination, other Matrix3, receiver Matrix3."
     }
   },
   "mechanics": {
     "scaled_offset": "Multiply the other transform offset by the receiver scale before the unresolved offset transform boundary.",
+    "offset_transform_call": "Call the three-word cdecl port as (destination, scaled-offset Vector3, receiver Matrix3).",
     "offset_accumulation": "Add the returned offset to receiver+0x04 using the observed three-float add helper contract.",
-    "rotation_copy": "Call the unresolved rotation transform boundary, then copy the returned 36-byte Matrix3 to receiver+0x14.",
+    "rotation_transform_call": "Call the three-word cdecl port as (destination, other Matrix3, receiver Matrix3).",
+    "rotation_copy": "Copy the returned 36-byte Matrix3 to receiver+0x14.",
     "scale_product": "Multiply receiver+0x10 by other+0x10.",
     "flags": "OR the signed 16-bit flags words at receiver+0x00 and other+0x00.",
     "transform_count": "Increment the signed 16-bit receiver count at +0x02 by one.",
@@ -85,12 +87,12 @@
     {
       "tool": "ghidra_decompile_function",
       "address": "0x0040ccb0",
-      "observation": "The live body composes the offset, copies the rotation result, multiplies scale, ORs flags, increments the count, and returns the receiver."
+      "observation": "The body composes the offset, copies the rotation result, multiplies scale, ORs flags, increments the count, and returns the receiver; unresolved helper calling conventions are taken from raw assembly rather than the conflicted decompiler signatures."
     },
     {
       "tool": "ghidra_disassemble_function",
       "address": "0x0040ccb0",
-      "observation": "The 71-instruction body preserves ECX as receiver, EBP+0x08 as other, the 36-byte MOVSD.REP copy, 16-bit flag/count operations, and RET 0x4."
+      "observation": "The 71-instruction body preserves ECX as receiver and EBP+0x08 as other; wrappers 0x0041daf0 and 0x0041de20 read three cdecl words at EBP+0x08/0x0c/0x10. The body performs the 36-byte MOVSD.REP copy, 16-bit flag/count operations, and RET 0x4."
     },
     {
       "tool": "ghidra_get_function_callers",
@@ -114,9 +116,11 @@
     }
   ],
   "confidence": {
-    "overall": "high for ABI, field offsets, call order, scale/flags/count writes, and return value",
+    "overall": "high for ABI, three-word cdecl helper ports, field offsets, call order, scale/flags/count writes, and return value",
     "high": [
       "thiscall receiver and one stack argument",
+      "offset port order: destination, scaled offset, receiver Matrix3",
+      "rotation port order: destination, other Matrix3, receiver Matrix3",
       "Transform layout offsets",
       "36-byte rotation copy",
       "scale multiplication",
@@ -129,12 +133,14 @@
     "low": []
   },
   "verification": {
-    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only reconstruction/staging/wave6-presentation/presentation_boundary.cpp",
-    "model_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror reconstruction/staging/wave6-presentation/presentation_boundary.cpp reconstruction/staging/wave6-presentation/presentation_boundary_test.cpp -o /tmp/opencode/wave6-presentation-model-test && /tmp/opencode/wave6-presentation-model-test",
+    "syntax_command": "clang++ -m32 -std=c++17 -O0 -g -Wall -Wextra -Wpedantic -Werror -fsyntax-only src/reconstruction/wave6_presentation/presentation_boundary.cpp",
+    "debug_command": "clang++ -m32 -std=c++17 -O0 -g -Wall -Wextra -Wpedantic -Werror src/reconstruction/wave6_presentation/presentation_boundary.cpp src/reconstruction/wave6_presentation/presentation_boundary_test.cpp -o /tmp/opencode/wave6-presentation-debug-test && /tmp/opencode/wave6-presentation-debug-test",
+    "ndebug_command": "clang++ -m32 -std=c++17 -O2 -DNDEBUG -Wall -Wextra -Wpedantic -Werror src/reconstruction/wave6_presentation/presentation_boundary.cpp src/reconstruction/wave6_presentation/presentation_boundary_test.cpp -o /tmp/opencode/wave6-presentation-ndebug-test && /tmp/opencode/wave6-presentation-ndebug-test",
     "json_command": "python3 -m json.tool reconstruction/metadata/wave6-presentation/0040ccb0.json >/dev/null",
     "results": {
       "syntax": "passed",
-      "model": "passed",
+      "debug": "passed",
+      "ndebug": "passed",
       "json": "passed"
     }
   },

@@ -1,0 +1,251 @@
+{
+  "schema": "pkg-editor-adc40-smoke01.function-handoff.v1",
+  "package": "PKG-EDITOR-ADC40-SMOKE01",
+  "implementer_id": "smoke-01/0x004adc40",
+  "va": "0x004adc40",
+  "function_address": "0x004adc40",
+  "ghidra_name": "FUN_004adc40",
+  "normalized_symbol": "FUN_004adc40",
+  "normalized_symbol_note": "The reconstructed C++ symbol is the Ghidra name verbatim, which is also what lets the validator bind the source span to this VA: the name embeds the 8-hex target VA 004adc40 and the index keys its record on 0x004adc40.",
+  "subsystem": "Editor",
+  "source_files": [
+    "reconstruction/staging/pkg-editor-adc40-smoke01/adc40_smoke01.hpp",
+    "reconstruction/staging/pkg-editor-adc40-smoke01/adc40_smoke01.cpp",
+    "reconstruction/staging/pkg-editor-adc40-smoke01/adc40_smoke01_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "extern \"C\" Byte PKG_EDITOR_ADC40_SMOKE01_THISCALL FUN_004adc40(OpaqueEditorFlag* self);",
+  "prior_package_note": "An independent package for this same VA already exists at reconstruction/staging/pkg-editor-adc40-flag with metadata at reconstruction/metadata/pkg-editor-adc40-flag/004adc40.json. It was not modified. This package is a separate, independently verified candidate. Because the knowledge-graph index unions the source_files of every sidecar for a VA and the validator takes the first candidate in sorted order, this package is named so that it sorts after pkg-editor-adc40-flag and therefore does not displace that package as the resolved source for this VA. See unresolved_questions for the promotion question this leaves open.",
+  "abi": {
+    "target": "x86:LE:32:windows",
+    "calling_convention": "thiscall-compatible ECX-only machine ABI",
+    "ghidra_convention_label": "__fastcall",
+    "ghidra_convention_discrepancy": "Ghidra decompiles the single register parameter as __fastcall int param_1. The body consumes ECX only: EDX is never read, no stack slot is read, and the body ends in a bare RET. The machine ABI is therefore identical to __thiscall with no parameters, and this package declares thiscall.",
+    "hidden_this": "OpaqueEditorFlag* receiver in ECX",
+    "stack_arguments": [],
+    "stack_cleanup_bytes": 0,
+    "stack_cleanup_owner": "caller",
+    "return_register": "EAX",
+    "return_type": "Byte",
+    "return_type_note": "Byte is this package's std::uint8_t alias, declared in adc40_smoke01.hpp. The 1-byte width is machine-derived from the byte-wide load MOV AL,byte ptr [EAX+0x4f] and corroborated by three call sites that consume AL alone.",
+    "return_width_bytes": 1,
+    "return_semantics": "Returns the unsigned byte stored at receiver+0x4F. In the original only AL is written, so the upper 24 bits of EAX are NOT zero-extended: they retain receiver address bits 8..31 because EAX was reloaded from the spilled ECX immediately before the byte load. Consumers must read AL only; all three sampled call sites do. The reconstructed source returns a std::uint8_t and therefore zero-extends, which is a strictly stronger guarantee.",
+    "return_register_upper_bits": "indeterminate-by-construction, equal to receiver address bits 8..31",
+    "ret_shape": "plain RET (0xc3), no immediate",
+    "frame": "Original encoding only: PUSH EBP / MOV EBP,ESP / PUSH ECX / MOV [EBP-0x4],ECX prologue with MOV ESP,EBP / POP EBP / RET epilogue. The PUSH ECX spill to [EBP-0x4] and the reload from it are redundant; no instruction in the body ever reads that slot other than the reload itself. The reconstruction does not reproduce the frame."
+  },
+  "source_fidelity": {
+    "summary": "The reconstruction claims the machine-observable semantics of the body, not its instruction encoding. The original is 17 bytes in 9 instructions; the reconstruction emits 5 bytes in 2 instructions.",
+    "reproduced": [
+      "Receiver in ECX, no stack argument, bare RET, callee pops nothing.",
+      "Exactly one byte-wide load from receiver+0x4f.",
+      "No write to the receiver, no call, no branch, no allocation, no guard."
+    ],
+    "not_reproduced": [
+      "The PUSH EBP / MOV EBP,ESP / PUSH ECX / spill / reload prologue and its symmetric epilogue. A compiler emits no frame for a function this small.",
+      "The un-zero-extended upper 24 bits of EAX. A C++ function returning std::uint8_t zero-extends, and the emitted MOVZBL does. This is a stronger guarantee than the original made, not a weaker one, and no sampled consumer depends on the difference.",
+      "The 17-byte length and the specific opcode encodings, which are assembler choices.",
+      "Caller-side encoding. The original's own callers load the receiver into ECX and perform no stack adjustment after the call. A GCC-compiled caller of this declaration additionally brackets the call with a net-zero `sub $0x8,%esp` / `add $0x8,%esp` pair around it. The net stack effect is identical and the callee is caller-cleanup, so the two caller forms interoperate, but the instruction sequences are not byte-identical."
+    ],
+    "why_not_a_hand_written_body": "Reproducing the epilogue with a hand-written body was considered and measured on this toolchain (GCC 16.2.1, -m32, -O2) rather than rejected on assumption. Two results decided it. First, the stack does balance: GCC's i386 thiscall caller reserves 8 bytes around the call and reclaims them itself (`sub $0x8,%esp` ... `call` ... `add $0x8,%esp`), so a callee ending in a bare `ret` leaves ESP exactly where the caller expects it; a runtime canary test over a call made through this declaration returned the correct value with no frame or stack damage. Second, the real hazard is caller-visible convention mismatch, not stack balance: a `naked` body whose caller-visible declaration does not carry `thiscall` makes GCC pass the receiver on the stack and never load ECX, and the measured result was 0x00 for a receiver holding 0x5a, while the identical body returned 0x5a once the declaration carried `thiscall`. The plain form below emits `movzbl 0x4f(%ecx),%eax ; ret`, which is machine-equivalent to the hand-written body and carries no such footgun.",
+    "correction_to_prior_package": "reconstruction/metadata/pkg-editor-adc40-flag/004adc40.json gives the reason for not using inline assembly as a GCC i386 callee-popped argument area that a bare RET never consumes, so that callers return through a corrupted stack. That reason is not supported. The measured GCC i386 thiscall caller performs a symmetric sub/add pair and a bare-RET callee does balance, and the reproduced failure mode in a hand-written body is caller-visible convention mismatch, not stack imbalance. The prior package's conclusion, to ship the plain C++ thiscall form, is correct and is independently confirmed here; only its stated justification is wrong."
+  },
+  "body": {
+    "status": "reconstructed",
+    "describes": "the original body at 0x004adc40, read from the live Ghidra bridge; not the encoding the reconstruction emits",
+    "entry_address": "0x004adc40",
+    "body_addresses": [
+      "0x004adc40",
+      "0x004adc41",
+      "0x004adc43",
+      "0x004adc44",
+      "0x004adc47",
+      "0x004adc4a",
+      "0x004adc4d",
+      "0x004adc4f",
+      "0x004adc50"
+    ],
+    "instruction_count": 9,
+    "basic_block_count": 1,
+    "raw_bytes_hex": "558bec51894dfc8b45fc8a404f8be55dc3",
+    "assembly": [
+      "004adc40: PUSH EBP",
+      "004adc41: MOV EBP,ESP",
+      "004adc43: PUSH ECX",
+      "004adc44: MOV dword ptr [EBP + -0x4],ECX",
+      "004adc47: MOV EAX,dword ptr [EBP + -0x4]",
+      "004adc4a: MOV AL,byte ptr [EAX + 0x4f]",
+      "004adc4d: MOV ESP,EBP",
+      "004adc4f: POP EBP",
+      "004adc50: RET"
+    ],
+    "mechanics": [
+      "ECX supplies the receiver and is spilled to the EBP-0x4 local, then reloaded into EAX.",
+      "The body performs exactly one byte-wide load from receiver+0x4F into AL.",
+      "No byte of the receiver is written; the function is a pure read.",
+      "The body contains no branch, no call, no allocation, no reference-count operation, no ownership transfer and no guard."
+    ]
+  },
+  "receiver_layout": {
+    "source_type": "OpaqueEditorFlag",
+    "declared_in": "reconstruction/staging/pkg-editor-adc40-smoke01/adc40_smoke01.hpp",
+    "declaration": "struct alignas(4) OpaqueEditorFlag { Byte opaque_000[0x4f]; Byte byte_04f; };",
+    "offset_assertion": "static_assert(offsetof(OpaqueEditorFlag, byte_04f) == 0x4f)",
+    "field_offset": "0x4f",
+    "field_width_bytes": 1,
+    "minimum_receiver_extent_bytes": "0x50",
+    "field_semantics": "opaque",
+    "receiver_type_semantics": "opaque",
+    "type_identity_note": "The briefing assigns subsystem Editor and Ghidra names two of the 64 direct callers Editors::cEditor::sub_581F70 and Editors::cEditor::OnMouseDown. Two sampled call sites load the receiver from a +0x28 member of the caller's own object, but a third samples it from a stack local, so the receiver is a general opaque object pointer and no concrete SDK type is promoted here. The declared layout models the 0x4f byte and the padding below it only; it asserts nothing about any byte at or above 0x50."
+  },
+  "consumer_contract": {
+    "sampled_call_sites": [
+      {
+        "callsite": "0x00435aa5",
+        "caller": "0x00435a10",
+        "receiver_setup": "MOV ECX, dword ptr [ECX + 0x28]",
+        "result_use": "MOVZX EDX, AL; TEST EDX, EDX; JZ",
+        "caller_side_null_check": "present: CMP dword ptr [EAX + 0x28], 0x0 at 0x00435a95 with JZ 0x00435b51, immediately before the receiver is loaded"
+      },
+      {
+        "callsite": "0x0043ffd2",
+        "caller": "0x0043ffa0",
+        "receiver_setup": "MOV ECX, dword ptr [EDX + 0x28]",
+        "result_use": "MOVZX EAX, AL; TEST EAX, EAX; JZ",
+        "caller_side_null_check": "present: CMP dword ptr [ECX + 0x28], 0x0 at 0x0043ffc6 with JZ 0x00440018, immediately before the receiver is loaded"
+      },
+      {
+        "callsite": "0x00588ba6",
+        "caller": "Editors::cEditor::OnMouseDown @ 0x00588570",
+        "receiver_setup": "MOV ECX, dword ptr [EBP + 0x98]",
+        "result_use": "TEST AL, AL; JZ",
+        "caller_side_null_check": "absent in the sampled window; the receiver comes from a stack local and is not null-compared before the call"
+      }
+    ],
+    "agreement": "All three sampled sites consume only AL and then test it for zero, which independently corroborates the one-byte return width and the non-zero-extended upper EAX bits.",
+    "caller_null_check_finding": "Two of the three sampled call sites null-check the receiver themselves immediately before loading it, and both JZ to the same block they would have reached had the accessor returned zero. The callee carries no guard, so the absence of one is consistent with the guarding being done by the caller rather than being an oversight. The third sampled site, inside Editors::cEditor::OnMouseDown, does not visibly null-check its stack-local receiver, so the guarding is not universal across the 64 callers. This is a bounded observation over three sampled sites, not a claim about every caller.",
+    "caller_stack_arguments_observed": 0
+  },
+  "null_and_mutation_behavior": {
+    "null_receiver": "No guard exists; a null receiver performs an unchecked byte load at address 0x4F and faults.",
+    "near_null_receiver": "No range or alignment guard exists; a near-null receiver faults when receiver+0x4F is inaccessible.",
+    "null_field_value": "A stored zero byte returns zero in AL.",
+    "high_field_value": "A stored 0xFF byte returns 0xFF in AL; the load is not masked or narrowed.",
+    "mutation": "No receiver or field byte is written."
+  },
+  "call_graph": {
+    "direct_callees": [],
+    "unique_direct_caller_functions": 64,
+    "function_code_xrefs": 76,
+    "representative_consumers": [
+      "0x00435a10",
+      "0x0043ffa0",
+      "Editors::cEditor::OnMouseDown @ 0x00588570"
+    ],
+    "consumer_boundary": "The high fan-in and the Editor/creature, diplomacy and model clusters in the caller set indicate a broadly used predicate byte, but fan-in alone does not prove that every caller passes the same concrete receiver type."
+  },
+  "evidence": [
+    {
+      "tool": "ghidra_read_memory",
+      "address": "0x004adc40",
+      "observation": "Seventeen raw bytes are 558bec51894dfc8b45fc8a404f8be55dc3."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x004adc40",
+      "observation": "Nine instructions matching the raw bytes; MOV AL,byte ptr [EAX + 0x4f] establishes a one-byte field read at offset 0x4F."
+    },
+    {
+      "tool": "openspore_ghidra_decompile",
+      "address": "0x004adc40",
+      "observation": "Live decompilation is return *(undefined1 *)(param_1 + 0x4f) under an __fastcall int param_1 label."
+    },
+    {
+      "tool": "ghidra_disassemble_bytes",
+      "address": "0x00435a90",
+      "observation": "Call site 0x00435aa5 is preceded by a null compare on the +0x28 member, loads ECX from [ECX+0x28], and consumes the result as MOVZX EDX,AL; TEST EDX,EDX; JZ."
+    },
+    {
+      "tool": "ghidra_disassemble_bytes",
+      "address": "0x0043ffb8",
+      "observation": "Call site 0x0043ffd2 is preceded by a null compare on the +0x28 member, loads ECX from [EDX+0x28], and consumes the result as MOVZX EAX,AL; TEST EAX,EAX; JZ."
+    },
+    {
+      "tool": "ghidra_disassemble_bytes",
+      "address": "0x00588b90",
+      "observation": "Call site 0x00588ba6 loads ECX from a stack local at [EBP+0x98] and consumes the result as TEST AL,AL; JZ, with no preceding null compare in the window."
+    },
+    {
+      "tool": "ghidra_get_function_by_address",
+      "address": "0x00588ba6",
+      "observation": "The sampled call site 0x00588ba6 lies inside Editors::cEditor::OnMouseDown, signature bool Editors::cEditor::OnMouseDown(cEditor * this, MouseButton, float, float, MouseState), spanning 0x00588570 to 0x00589cd4. This is the direct_xref_neighbour analogue named in the briefing."
+    },
+    {
+      "tool": "g++ -m32 -O2 + objdump (local measurement)",
+      "observation": "A thiscall declaration of the one-statement body emits `movzbl 0x4f(%ecx),%eax ; ret`, 5 bytes, receiver in ECX, bare ret."
+    },
+    {
+      "tool": "g++ -m32 -O2 + objdump (local measurement)",
+      "observation": "A GCC caller of that declaration emits `sub $0x8,%esp` ... `mov 0x10(%esp),%ecx` ... `call` ... `add $0x8,%esp`, a net-zero pair, proving a bare-RET callee balances and that the callee pops nothing."
+    },
+    {
+      "tool": "g++ -m32 -O2 runtime canary (local measurement)",
+      "observation": "A noinline wrapper calling the body through this declaration, with stack canaries and a local-integrity check, returned the correct value with no frame or stack damage."
+    },
+    {
+      "tool": "g++ -m32 -O2 runtime probe (local measurement)",
+      "observation": "A naked body whose caller-visible declaration omitted thiscall made GCC pass the receiver on the stack and never load ECX, returning 0x00 for a receiver holding 0x5a; the identical body returned 0x5a once the declaration carried thiscall."
+    }
+  ],
+  "confidence": {
+    "body": "high",
+    "field_offset": "high",
+    "field_width": "high",
+    "return_width": "high",
+    "return_register_upper_bits": "high",
+    "thiscall_and_ret_shape": "high",
+    "no_mutation": "high",
+    "callee_pops_nothing": "high",
+    "gcc_thiscall_caller_balance": "high",
+    "receiver_concrete_type": "unknown",
+    "field_semantics": "opaque",
+    "runtime_availability": "not observed"
+  },
+  "verification": {
+    "build_command": "g++ -m32 -std=c++17 -Wall -Wextra -Werror -O2 -I reconstruction/staging/pkg-editor-adc40-smoke01 reconstruction/staging/pkg-editor-adc40-smoke01/adc40_smoke01.cpp reconstruction/staging/pkg-editor-adc40-smoke01/adc40_smoke01_model_test.cpp -o /tmp/opencode/adc40-smoke01-test",
+    "model_test_command": "/tmp/opencode/adc40-smoke01-test",
+    "optimisation_levels_checked": ["-O0", "-O1", "-O2", "-Os"],
+    "emitted_code_command": "g++ -m32 -std=c++17 -O2 -c reconstruction/staging/pkg-editor-adc40-smoke01/adc40_smoke01.cpp -o /tmp/opencode/adc40-smoke01.o && objdump -d /tmp/opencode/adc40-smoke01.o",
+    "caller_probe_command": "g++ -m32 -std=c++17 -O2 -I reconstruction/staging/pkg-editor-adc40-smoke01 -c /tmp/opencode/callerprobe.cpp -o /tmp/opencode/callerprobe.o && objdump -d /tmp/opencode/callerprobe.o",
+    "runtime_validation": "not run"
+  },
+  "verification_results": {
+    "x86_32_build": "passed; g++ -m32 -std=c++17 -Wall -Wextra -Werror builds clean with no warnings at -O0, -O1, -O2 and -Os",
+    "focused_model_test": "passed at all four optimisation levels; 7 of 7 checks green",
+    "exhaustive_byte_sweep": "passed; all 256 stored byte values round-trip exactly, including 0x80 and 0xff which a signed or narrowed reading would get wrong",
+    "read_only": "passed; the receiver is compared byte-for-byte before and after the call and is unchanged",
+    "byte_width_isolation": "passed; with every byte below 0x4f set to 0xff and the field to 0x00 the call returns 0x00, and with a 0x200-byte arena whose bytes past the declared extent are 0xff the result still tracks only byte_04f",
+    "null_receiver_fault_test": "passed in a forked child process; the child died on a signal, confirming there is no guard",
+    "emitted_code": "movzbl 0x4f(%ecx),%eax ; ret -- receiver in ECX, byte-wide load at 0x4f, bare ret, 5 bytes",
+    "caller_abi": "passed; a GCC caller loads the receiver into ECX and brackets the call with a net-zero sub/add pair; the callee pops nothing, matching the original's caller-cleanup contract",
+    "offset_assertion": "passed; static_assert(offsetof(OpaqueEditorFlag, byte_04f) == 0x4f)",
+    "instruction_parity": "not claimed; the reconstruction emits 2 instructions against the original's 9. The semantics are reproduced, the encoding is not. See source_fidelity.",
+    "byte_encoding_parity": "not claimed; the reconstruction emits 5 bytes against the original's 17. See source_fidelity.",
+    "return_register_upper_bits": "not asserted by the model test; a C++ uint8_t return zero-extends, so the test pins the low byte and deliberately does not pin bits 8..31",
+    "openspore_validate_own_package": "WARN overall, no FAIL. ABI PASS ('calling convention is present in the target source span and canonical metadata'). FIELDS/OFFSETS WARN: one source field-offset declaration (field byte_04f) with no machine-derived struct layout to corroborate it. CALLS, CONSTANTS, CONTROL FLOW, GLOBALS and VIRTUAL DISPATCH are NOT_AVAILABLE because the offline evidence pack collects no independent oracle for them; that is an absence of evidence, not a defect. Measured by resolving this package's source in memory without writing to the shared index.",
+    "return_semantics_warn_is_a_cross_package_artifact": "With both sidecars present the merged canonical abi.return_type is 'Field', taken from pkg-editor-adc40-flag, while this package's source span returns 'Byte', so RETURN SEMANTICS reports WARN. Both names denote the same underlying std::uint8_t, so this is an alias-name artifact of two packages existing for one VA, not a semantic disagreement. Verified: with this package as the sole sidecar the canonical value would be 'Byte', the span's return type is 'Byte', and the comparison the validator performs would match. The alias was not renamed to 'Field' to silence the warning, because doing so would trade an accurate name for a cosmetic pass and would invert if this package became the sole one.",
+    "runtime_validation": "not run"
+  },
+  "unresolved_questions": [
+    "What concrete class is the receiver, and does its +0x4F byte carry a name in the Spore ModAPI SDK?",
+    "Is the +0x4F byte a bool, a small enum, or a bitfield-style flags byte? Callers only ever test it for zero, so the evidence cannot separate these.",
+    "Do all 64 direct callers pass the same concrete receiver type, given the +0x28-member and stack-local receiver provenances already observed?",
+    "Which owner constructs and publishes receivers for this accessor?",
+    "What values are observed at receiver+0x4F in the original process?",
+    "Which of the two independent packages for this VA, pkg-editor-adc40-flag or pkg-editor-adc40-smoke01, should the integrator promote? They agree on every machine-derived fact and differ only in the justification for not using a hand-written body, where this package's justification is the measured one. The index currently resolves this VA to pkg-editor-adc40-flag because that path sorts first."
+  ],
+  "blockers": [
+    "Receiver identity and the +0x4F field name remain unknown; the SDK layout could not be tied to this receiver by the two-instruction body.",
+    "Observed field values and receiver availability in the original process remain runtime-gated."
+  ]
+}

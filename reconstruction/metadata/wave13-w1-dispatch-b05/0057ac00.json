@@ -1,0 +1,338 @@
+{
+  "schema": "openspore-worker-metadata-1",
+  "package": "wave13-w1-dispatch-b05",
+  "va": "0x0057ac00",
+  "address": "0x0057ac00",
+  "function_address": "0x0057ac00",
+  "entry_address": "0x0057ac00",
+  "ghidra_name": "FUN_0057ac00",
+  "normalized_symbol": "editor_0057ac00",
+  "reconstructed_symbol": "Editor_0057ac00_ComputeGrantedEditMask",
+  "declaration": "extern \"C\" EditMask0057ac00* Editor_0057ac00_ComputeGrantedEditMask(CEditor0057ac00* self, EditMask0057ac00* out, EditHistoryRecord0057ac00* record, const char16_t* part_name, std::uint32_t early_out_flag);",
+  "source_files": [
+    "reconstruction/staging/wave13-w1-dispatch-b05/editor_0057ac00.hpp",
+    "reconstruction/staging/wave13-w1-dispatch-b05/editor_0057ac00.cpp",
+    "reconstruction/staging/wave13-w1-dispatch-b05/editor_0057ac00_model_test.cpp"
+  ],
+
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall with a hidden pointer return",
+    "calling_convention_observation": "0x0057ac07 MOV ESI,ECX holds the receiver in ESI and every field access is [ESI + ...]; all six call sites precede the CALL with MOV ECX,ESI. 0x0057ae01 is `RET 0x10`, which proves the callee pops SIXTEEN bytes, i.e. FOUR stack dwords, while the body reads only three of them ([ESP + 0x5c], [ESP + 0x60], [ESP + 0x64] with ESP at ESP0 - 0x58). Ghidra's inferred prototype `void __thiscall FUN_0057ac00(int param_1, uint *param_2, undefined4 param_3, undefined4 param_4)` therefore UNDER-COUNTS the stack arguments by one; the fourth is confirmed by the RET immediate and by four PUSHes at every call site, and is never read.",
+    "return_type": "EditMask0057ac00* (a pointer to a 16-byte four-dword structure)",
+    "return_semantics": "returns the same pointer that was passed as argument 1; all six callers immediately dereference EAX as [EAX], [EAX + 4], [EAX + 8] and [EAX + 0xc]",
+    "return_register": "EAX",
+    "return_width_bytes": 4,
+    "return_observation": "0x0057add8 MOV EAX,dword ptr [ESP + 0x64] loads argument 1 into EAX after the last helper call, and 0x0057ade8/0x0057adee/0x0057adf7/0x0057adfa write the four dwords through EAX. EAX is never otherwise written between 0x0057add8 and the RET. The early path agrees: 0x0057ac1d MOV EAX,dword ptr [ESP + 0x5c] then four stores through EAX then 0x0057ac35 RET 0x10.",
+    "ret_form": "RET 0x10",
+    "termination": "RET 0x10 via two exits: 0x0057ac35 (the global kill-switch path) and 0x0057ae01 (the normal path)",
+    "stack_cleanup_bytes": 16,
+    "stack_cleanup_owner": "callee",
+    "stack_arguments": [
+      {"slot": 1, "frame_offset": "[ESP + 0x5c]", "role": "pointer to the 16-byte output buffer; also the return value", "read_at": ["0x0057ac1d", "0x0057add8"], "written_at": ["0x0057ac23", "0x0057ac25", "0x0057ac28", "0x0057ac2b", "0x0057ade8", "0x0057adee", "0x0057adf7", "0x0057adfa"]},
+      {"slot": 2, "frame_offset": "[ESP + 0x60]", "role": "the edit-history record; becomes the `this` of 0x004bac30 at 0x0057ac83 and the first argument of 0x004efb20 / 0x004ef880", "read_at": ["0x0057ac6b", "0x0057ac83", "0x0057ad38", "0x0057ad8c"]},
+      {"slot": 3, "frame_offset": "[ESP + 0x64]", "role": "the part name; the single argument of 0x004edf40 at 0x0057add2", "read_at": ["0x0057adc9", "0x0057add2"]},
+      {"slot": 4, "frame_offset": "[ESP + 0x68]", "role": "unused; pushed as the constant 1 at five call sites (0x0058a75d, 0x0058aae8, 0x0057f794, 0x0057f7cd, 0x0058d2f0) and as the caller's EBP register at 0x0058662b, and never read by the body", "read_at": []}
+    ],
+    "ordinary_stack_argument_slots": 4,
+    "saved_registers": ["EBX", "EBP", "ESI", "EDI"],
+    "receiver": true,
+    "hidden_receiver": "read",
+    "hidden_this_register": "ECX, spilled to ESI at 0x0057ac07; the body reads [ESI + 0x24], [ESI + 0x48], [ESI + 0x98], [ESI + 0x2a8], [ESI + 0x4b1] and [ESI + 0x4b2] and, through 0x0057a960 and 0x0057a9e0, [ESI + 0x1cc]"
+  },
+
+  "layout": {
+    "entry_address": "0x0057ac00",
+    "body_start": "0x0057ac00",
+    "body_end": "0x0057ae01",
+    "body_span_bytes": 516,
+    "instruction_count": 166,
+    "frame": "SUB ESP,0x48 plus PUSH EBX/EBP/ESI/EDI: 0x48 (72) bytes of locals plus 16 bytes of saved registers, 0x5c bytes total below the return address. Local map with ESP at ESP0 - 0x58: [ESP + 0x10..0x18] a 12-byte ResourceKey for the 0x7A926123 lookup, [ESP + 0x1c..0x24] a second 12-byte ResourceKey for the 0xF5CBE065 lookup, [ESP + 0x28..0x34] the four-dword granted mask, [ESP + 0x38..0x44] mask A from 0x0057a960, [ESP + 0x48..0x54] mask B from 0x0057a9e0. A further 0x1c bytes are pushed for the by-value 16-byte struct plus a trailing dword at 0x0057ac6f-0x0057ac85.",
+    "padding_after": "the body ends at 0x0057ae01; the next function begins after the standard INT3 run",
+    "reads": "[ESI + 0x24], [ESI + 0x48] (by address, twice), [ESI + 0x98], [ESI + 0x2a8], byte [ESI + 0x4b1], byte [ESI + 0x4b2], the global pointer [0x015fd918], and, indirectly through 0x0057a960 / 0x0057a9e0, [ESI + 0x1cc] and the sub-object fields +0x24..+0x30 plus the globals at 0x015da7ec, 0x015da7f0, 0x015da7f4, 0x015da7f8, 0x015daa40, 0x015daa44, 0x015daa48, 0x015daa4c",
+    "writes": "the caller's 16-byte output buffer (four 32-bit stores at 0x0057ade8, 0x0057adee, 0x0057adf7, 0x0057adfa, or four zero stores on the kill-switch path at 0x0057ac23..0x0057ac2b); the local granted mask at [ESP + 0x28] via OR/AND at 0x0057acf1, 0x0057acfb, 0x0057ad45, 0x0057ad4f, 0x0057ad99, 0x0057ada0, 0x0057adb7, 0x0057adc1; and, INDIRECTLY, [ESI + 0x48], which is passed by address to 0x004efb20 (0x0057ad36) and 0x004ef880 (0x0057ad87) and is read-modify-written by both. Nothing else in memory is written."
+  },
+
+  "observed_mechanics": [
+    "0x0057ac09: MOV ECX,dword ptr [0x015fd918] then 0x0057ac0f PUSH 0x55d7ca1 then 0x0057ac14 CALL 0x006a25a0 - the global property read is a thiscall on a runtime-initialised singleton",
+    "0x0057ac19/0x0057ac1b: TEST AL,AL / JZ 0x0057ac38 - the kill switch is the FIRST thing evaluated, before any receiver field is read",
+    "0x0057ac1d..0x0057ac2b: XOR ECX,ECX then four MOV dword ptr [EAX + k],ECX - the kill-switch path zeroes all sixteen output bytes as plain stores and returns, leaving every other receiver field untouched",
+    "0x0057ac38/0x0057ac44: LEA ECX,[ESP + 0x38] and LEA ECX,[ESP + 0x48] address the two 16-byte mask temporaries; both are filled by a thiscall on ESI",
+    "0x0057ac50..0x0057ac68: four dword ORs combine mask A and mask B pairwise into ECX, EDX, EDI, EBP",
+    "0x0057ac6b: MOV EBX,dword ptr [ESP + 0x60] - the record argument is moved out of the frame into EBX and reused as the `this` of 0x004bac30 and as the first argument of the two later checks",
+    "0x0057ac6f..0x0057ac88: PUSH 0x0 / SUB ESP,0x10 / four stores into [ESP] / PUSH EDX where EDX = LEA [ESP + 0x3c] = &local_30 / CALL 0x004bac30. The 16-byte structure is passed BY VALUE on the stack; the destination pointer for the result is the same address the later OR/AND instructions operate on.",
+    "0x0057ac8d/0x0057ac93/0x0057ac9a: the save extension is compared against two literals, and 0x0057ac9f JNZ 0x0057ad03 skips the entire mouth scan when it matches neither",
+    "0x0057aca1: MOV ECX,dword ptr [ESI + 0x98] loads mpEditorModel; 0x0057aca9 CALL 0x004accf0 is the rigblock count and 0x0057acb2 JLE 0x0057acf1 falls through to the SET path when the model has no rigblocks at all - an empty model therefore reports the mouthless condition",
+    "0x0057acb4..0x0057acef: the loop queries each rigblock twice, once per capability literal, and 0x0057acce/0x0057acea JNZ 0x0057acfb break out to the CLEAR path on the first non-zero answer; 0x0057acec/0x0057acef are the index increment and the loop bound",
+    "0x0057acfb AND ... 0xfffffbff clears bit 0x400; 0x0057acf1 OR ... 0x400 sets it. The two are mutually exclusive and both converge on 0x0057ad03.",
+    "0x0057ad03..0x0057ad4f: the first property block. Three dwords are zeroed (0x0057ad08, 0x0057ad0c, 0x0057ad10) forming a 12-byte ResourceKey; 0x0057ad14 JZ skips when mpPropList is null; 0x0057ad23 CALL 0x006a1250 is a cdecl three-argument lookup; 0x0057ad2b JZ skips when the lookup fails; 0x0057ad33 LEA EDX,[ESI + 0x48] takes the address of a receiver field and 0x0057ad39 CALL 0x004efb20 receives it; the predicate result selects OR 0x40000 (0x0057ad45) against AND 0xfffbffff (0x0057ad4f).",
+    "0x0057ad57..0x0057ada0: the second property block is structurally identical with the literals 0xf5cbe065 and 0x20 and the callee 0x004ef880. All three failure paths - null property list (0x0057ad6a), failed lookup (0x0057ad7f) and a true predicate (0x0057ad95) - converge on 0x0057ada0, which CLEARS the bit. There is no path that leaves bit 0x20 stale.",
+    "0x0057ada5..0x0057adc9: the boolean pair. Bit 0x800 is set only when byte [+0x4b1] is non-zero AND byte [+0x4b2] is zero; the JZ at 0x0057ada5 tests +0x4b1 and the JNZ at 0x0057adb5 tests +0x4b2, both jumping to the clearing path at 0x0057adc1.",
+    "0x0057adc9..0x0057add3: 0x004edf40 is called with the part name as argument 1 and &local_30 as argument 2. Its return value is never read: the next instruction reloads argument 1 from [ESP + 0x64].",
+    "0x0057add8..0x0057adfa: the four-dword copy to the caller, in order, followed by 0x0057adfd POP EBX, 0x0057adfe ADD ESP,0x48 and 0x0057ae01 RET 0x10. The four reload addresses were resolved against the post-`ADD ESP,0x8` / `POP EDI` stack, giving [ESP + 0x30] = local_30, [ESP + 0x34] = local_2c, [ESP + 0x2c] = local_28 and [ESP + 0x30] after the second pop = local_24, i.e. a plain in-order word0..word3 copy."
+  ],
+
+  "fields_and_offsets": [
+    {"owner": "cEditor (receiver)", "offset": "+0x24", "instruction": "0x0057ad03: MOV EAX,dword ptr [ESI + 0x24]", "meaning": "PropertyList pointer; null short-circuits both property blocks", "sdk": "Spore/Editors/Editor.h /* 24h */ PropertyListPtr mpPropList", "confidence": "high"},
+    {"owner": "cEditor", "offset": "+0x48", "instruction": "0x0057ad33: LEA EDX,[ESI + 0x48] and 0x0057ad87: LEA EDX,[ESI + 0x48]", "meaning": "a 32-bit field whose ADDRESS is handed to 0x004efb20 and 0x004ef880 as an in/out mask; both callees read-modify-write it (0x004efb20 does `*param_3 |= 0x40000` or `*= 0xfffbffff`; 0x004ef880 does `|= 0x20` or `& 0xffffffdf`). All six callers then OVERWRITE [ESI + 0x48..0x54] with the value this function returns, so these mutations are transient within the observed call sequences.", "sdk": "Spore/Editors/Editor.h /* 48h */ int field_48", "confidence": "high for the offset, the address-of use and the SDK name field_48; the runtime role is unresolved"},
+    {"owner": "cEditor", "offset": "+0x98", "instruction": "0x0057aca1: MOV ECX,dword ptr [ESI + 0x98]", "meaning": "EditorModel pointer; its rigblock list is walked for the mouth capabilities", "sdk": "Spore/Editors/Editor.h /* 98h */ EditorModel* mpEditorModel", "confidence": "high"},
+    {"owner": "cEditor", "offset": "+0x1cc", "instruction": "0x0057a960: MOV EAX,dword ptr [ECX + 0x1cc]", "meaning": "sub-object pointer; when null both mask collectors return all-zero, so the requested set collapses to the global half only", "sdk": "Spore/Editors/Editor.h has no documented field at 0x1cc in the committed header", "confidence": "high for the offset and the null effect; the type is unknown"},
+    {"owner": "object at cEditor + 0x1cc", "offset": "+0x24, +0x28, +0x2c, +0x30", "instruction": "0x0057a97c/0x0057a980/0x0057a98b/0x0057a98e", "meaning": "four dwords copied out and masked with the complements of the globals at 0x015da7ec, 0x015da7f0, 0x015da7f4 and 0x015da7f8 respectively", "confidence": "high for the offsets; the type is unknown"},
+    {"owner": "cEditor", "offset": "+0x2a8", "instruction": "0x0057ac8d: MOV EAX,dword ptr [ESI + 0x2a8]", "meaning": "asset type id; only the values 0x2B978C46 and 0x3D97A8E4 enable the mouth scan", "sdk": "Spore/Editors/Editor.h /* 2A8h */ uint32_t mSaveExtension, documented as \"The save extension key which will be parsed both into a key and a three letter extension\"; the two compared values are CommonIDs.h crt and cll", "confidence": "high"},
+    {"owner": "cEditor", "offset": "+0x4b1", "instruction": "0x0057ada5: CMP byte ptr [ESI + 0x4b1],0x0", "meaning": "first byte of the bit-0x800 condition; must be non-zero for the bit to be set", "sdk": "Spore/Editors/Editor.h /* 4B1h */ bool field_4B1 (default comment: true)", "confidence": "high for the offset and the polarity; the field name is not resolved"},
+    {"owner": "cEditor", "offset": "+0x4b2", "instruction": "0x0057adae: CMP byte ptr [ESI + 0x4b2],0x0", "meaning": "second byte of the bit-0x800 condition; must be ZERO for the bit to be set", "sdk": "Spore/Editors/Editor.h /* 4B2h */ bool field_4B2", "confidence": "high for the offset and the polarity"},
+    {"owner": "cEditor (cross-referenced, not read here)", "offset": "+0x178", "instruction": "callers read [ESI + 0x178] then [EDX - 4] (0x0058a740, 0x0057eb69, 0x0058d2e8)", "meaning": "the edit-history vector whose final element is passed as argument 2", "confidence": "high for the role; the element type is unresolved"},
+    {"owner": "EditorModel", "offset": "+0x18, +0x1c", "instruction": "inside 0x004accf0 / 0x004accb0", "meaning": "eastl::vector<EditorRigblockPtr> begin/end, walked by index", "sdk": "Spore/Editors/EditorModel.h /* 18h */ eastl::vector<EditorRigblockPtr> mRigblocks", "confidence": "high"},
+    {"owner": "rigblock", "offset": "+0xc0c, +0xc10", "instruction": "inside 0x00435b60", "meaning": "begin/end of a 0x14-byte-stride capability record array searched by its first dword", "confidence": "high for the offsets; the record layout beyond the first and third dwords is unknown"}
+  ],
+
+  "constants": [
+    {"value": "0x48", "address": "0x0057ac00", "instruction": "SUB ESP,0x48", "meaning": "local frame size in bytes"},
+    {"value": "0x55d7ca1", "address": "0x0057ac0f", "instruction": "PUSH 0x55d7ca1", "meaning": "global bool property id; when set the whole result is zero. The SAME id is the first thing 0x004f3de0 checks, so it is a global 'editing is disabled' switch rather than anything local to this function."},
+    {"value": "0x2b978c46", "address": "0x0057ac93", "instruction": "CMP EAX,0x2b978c46", "meaning": "asset type crt (creatures) per Spore/CommonIDs.h; enables the mouth scan"},
+    {"value": "0x3d97a8e4", "address": "0x0057ac9a", "instruction": "CMP EAX,0x3d97a8e4", "meaning": "asset type cll (cells) per Spore/CommonIDs.h; enables the mouth scan"},
+    {"value": "0xb00f0fec", "address": "0x0057acba", "instruction": "PUSH 0xb00f0fec", "meaning": "EditorRigblock.h kModelCapabilityMouth"},
+    {"value": "0x11b79301", "address": "0x0057acd6", "instruction": "PUSH 0x11b79301", "meaning": "EditorRigblock.h kModelCapabilityCellMouth"},
+    {"value": "0x400", "address": "0x0057acf1 and 0x0057acfb", "instruction": "OR dword ptr [ESP + 0x28],0x400 / AND dword ptr [ESP + 0x28],0xfffffbff", "meaning": "capability bit set when NO rigblock carries a mouth capability (or the model has no rigblocks at all), cleared as soon as one does"},
+    {"value": "0x7a926123", "address": "0x0057ad1d", "instruction": "PUSH 0x7a926123", "meaning": "property id resolved through App::Property::GetKey; correlated with bit 0x40000. The same id is used inside 0x004f3de0 in the 0x40000 branch."},
+    {"value": "0x40000", "address": "0x0057ad45 and 0x0057ad4f", "instruction": "OR dword ptr [ESP + 0x28],0x40000 / AND dword ptr [ESP + 0x28],0xfffbffff", "meaning": "capability bit driven by the 0x7A926123 property and the 0x004efb20 predicate"},
+    {"value": "0xf5cbe065", "address": "0x0057ad71", "instruction": "PUSH 0xf5cbe065", "meaning": "property id resolved through App::Property::GetKey; correlated with bit 0x20. The same id is used inside 0x004f3de0 in the 0x20 branch."},
+    {"value": "0x20", "address": "0x0057ad99 and 0x0057ada0", "instruction": "OR dword ptr [ESP + 0x28],0x20 / AND dword ptr [ESP + 0x28],0xffffffdf", "meaning": "capability bit driven by the 0xF5CBE065 property and the 0x004ef880 predicate; cleared on all three failure paths"},
+    {"value": "0x800", "address": "0x0057adb7 and 0x0057adc1", "instruction": "OR dword ptr [ESP + 0x28],0x800 / AND dword ptr [ESP + 0x28],0xfffff7ff", "meaning": "capability bit equal to (field_4B1 != 0 AND field_4B2 == 0)"},
+    {"value": "0x10", "address": "0x0057ac6f", "instruction": "PUSH 0x0", "meaning": "the trailing dword of the 0x004bac30 call, a literal zero and not a copy of any argument"},
+    {"value": "0x1d8", "address": "0x004efb20 / 0x004ef880", "instruction": "(*(int *)(param_1 + 0x9c) - *(int *)(param_1 + 0x98)) / 0x1d8", "meaning": "stride of the record array those two helpers walk on argument 2; 0x1d8 = 472 bytes"}
+  ],
+
+  "globals": [
+    {"address": "0x015fd918", "kind": "runtime-initialised singleton pointer", "accessed_at": ["0x0057ac09"], "observed_value": "ghidra_read_memory at 0x015fd918 for 8 bytes returns 0000000000000000: zero in the static image, assigned at run time", "meaning": "receiver of the 0x006a25a0 property read (ECX = [0x015fd918])", "not_claimed": "the concrete type of this singleton is not established; Ghidra names 0x006a25a0 Prop_GetPropValueBool"},
+    {"address": "0x015da7ec", "kind": "runtime-initialised mask word", "accessed_at": ["0x0057a995"], "observed_value": "zero in the static image (ghidra_read_memory at 0x015da7e0 for 32 bytes returns all zeros)", "meaning": "complemented and used to clear word 0 of the local mask"},
+    {"address": "0x015da7f0", "kind": "runtime-initialised mask word", "accessed_at": ["0x0057a96f"], "observed_value": "zero in the static image", "meaning": "complemented and used to clear word 1 of the local mask"},
+    {"address": "0x015da7f4", "kind": "runtime-initialised mask word", "accessed_at": ["0x0057a975"], "observed_value": "zero in the static image", "meaning": "complemented and used to clear word 2 of the local mask"},
+    {"address": "0x015da7f8", "kind": "runtime-initialised mask word", "accessed_at": ["0x0057a984"], "observed_value": "zero in the static image", "meaning": "complemented and used to clear word 3 of the local mask"},
+    {"address": "0x015daa40", "kind": "runtime-initialised mask word", "accessed_at": ["0x0057a9a0 in 0x0057a9e0"], "observed_value": "zero in the static image (ghidra_read_memory at 0x015daa40 for 24 bytes returns all zeros)", "meaning": "seed word 0 of the global half of the requested mask"},
+    {"address": "0x015daa44", "accessed_at": ["0x0057a9e0"], "observed_value": "zero in the static image", "meaning": "seed word 1 of the global half"},
+    {"address": "0x015daa48", "accessed_at": ["0x0057a9e0"], "observed_value": "zero in the static image", "meaning": "seed word 2 of the global half"},
+    {"address": "0x015daa4c", "accessed_at": ["0x0057a9e0"], "observed_value": "zero in the static image", "meaning": "seed word 3 of the global half"},
+    {"address": "0x013ec468", "kind": "read-only wide-string table", "accessed_at": ["0x004edf40 only, not by this function"], "observed_value": "ghidra_read_memory at 0x013ec468 for 96 bytes starts with float padding 0x3eaaaa9f, 0x3d4ccccd, 0x3e4ccccd, 0x3eb33333, 0x3e8efa34 then the UTF-16LE literals L\"creature_rotate\" and L\"creature_size\"", "meaning": "the name table 0x004edf40 searches; it is reached only through that callee"}
+  ],
+  "globals_note": "All eight mask words and the property-manager pointer read zero in the static image. That is a hard limit on this reconstruction: the SET of requested capability bits is assembled from runtime-initialised globals whose values are not observable statically. The shape of the computation is established; the specific bits requested in the shipping build are not.",
+
+  "virtual_dispatch": [],
+  "virtual_dispatch_note": "This function contains no CALL [reg], no CALL [reg + disp] and no indirect jump. It makes only direct calls. It does, however, hand &cEditor::field_48 to two callees that read-modify-write it, which is an indirect write to receiver memory and is recorded in fields_and_offsets. A dword scan of .text, .rdata and .data for 0x0057ac00 returned zero hits, so the function is in no vtable: it is a non-virtual member reached only by direct CALL, even though its three Ghidra-named callers (Undo, Redo, CommitEditHistory) are themselves interface methods.",
+  "indirect_dispatch_in_reach": {
+    "note": "The virtual dispatches observed at the call sites are in the CALLERS, not here, and are recorded so the boundary is explicit.",
+    "observations": [
+      {"callsite": "0x0058a756 / 0x0058a75b", "form": "MOV EDX,dword ptr [ECX]; MOV EAX,dword ptr [EDX + 0x4]; CALL EAX with ECX = [ESI + 0x98]", "meaning": "vtable slot +0x4 of the EditorModel, called immediately before 0x0057ac00 and its result passed as argument 3"},
+      {"callsite": "0x0058aae1", "form": "identical shape at the Redo site: MOV ECX,[ESI + 0x98] then MOV EDX,[ECX] then MOV EAX,[EDX + 0x4] then CALL EAX, result in EAX"},
+      {"callsite": "0x0057f78d, 0x0057f7c8, 0x0058d2e6, 0x00586621", "form": "the same slot +0x4 call at the remaining four call sites"},
+      {"callsite": "0x0058a750", "form": "MOV EAX,dword ptr [EDX + 0x4]; CALL EAX with ECX = EDI", "meaning": "a second virtual call on the record object, whose result is pushed as argument 2 of 0x0057ac00"}
+    ]
+  },
+
+  "control_flow": {
+    "switch_tables": "none; no jump table and no indirect jump. The two comparisons at 0x0057ac93 and 0x0057ac9a are a hand-rolled two-way dispatch on a single dword, not a switch.",
+    "loops": [
+      {"header": "0x0057acb4", "kind": "forward counted loop over EditorModel::mRigblocks", "initialiser": "0x0057aca7 XOR EDI,EDI (index 0)", "bound": "0x0057aced CMP EDI,EBP against the count from 0x004accf0", "increment": "0x0057acec INC EDI", "back_edge": "0x0057acef JL 0x0057acb4", "exits": ["0x0057acce JNZ 0x0057acfb (first capability hit, clear the bit)", "0x0057acea JNZ 0x0057acfb (second capability hit, clear the bit)", "0x0057acf1 fall-through after the last element (set the bit)"], "note": "the loop has no separate empty-range branch; an empty rigblock list falls straight through the JLE at 0x0057acb2 into the same set-the-bit path"}
+    ],
+    "early_exits": [
+      {"address": "0x0057ac1b", "instruction": "JZ 0x0057ac38", "condition": "global property 0x55D7CA1 is non-zero", "effect": "zeroes the whole 16-byte output and returns at 0x0057ac35, skipping the record evaluation, the mouth scan, both property blocks, the boolean pair and the name refinement"},
+      {"address": "0x0057ac9f", "instruction": "JNZ 0x0057ad03", "condition": "mSaveExtension is neither crt nor cll", "effect": "skips the entire mouth scan, so bit 0x400 is left exactly as the evaluator produced it"},
+      {"address": "0x0057acb2", "instruction": "JLE 0x0057acf1", "condition": "the model has zero rigblocks", "effect": "sets bit 0x400 without any capability query"},
+      {"address": "0x0057acce", "instruction": "JNZ 0x0057acfb", "condition": "FUN_00435b60(rigblock, 0xB00F0FEC) returned non-zero", "effect": "clears bit 0x400 and leaves the loop"},
+      {"address": "0x0057acea", "instruction": "JNZ 0x0057acfb", "condition": "FUN_00435b60(rigblock, 0x11B79301) returned non-zero", "effect": "clears bit 0x400 and leaves the loop"},
+      {"address": "0x0057ad14", "instruction": "JZ 0x0057ad4f", "condition": "mpPropList is null", "effect": "clears bit 0x40000"},
+      {"address": "0x0057ad2b", "instruction": "JZ 0x0057ad4f", "condition": "App::Property::GetKey failed for 0x7A926123", "effect": "clears bit 0x40000"},
+      {"address": "0x0057ad43", "instruction": "JNZ 0x0057ad4f", "condition": "the 0x004efb20 predicate returned true", "effect": "clears bit 0x40000"},
+      {"address": "0x0057ad6a", "instruction": "JZ 0x0057ada0", "condition": "mpPropList is null", "effect": "clears bit 0x20"},
+      {"address": "0x0057ad7f", "instruction": "JZ 0x0057ada0", "condition": "App::Property::GetKey failed for 0xF5CBE065", "effect": "clears bit 0x20"},
+      {"address": "0x0057ad95", "instruction": "JNZ 0x0057ada0", "condition": "the 0x004ef880 predicate returned true", "effect": "clears bit 0x20"},
+      {"address": "0x0057ada5", "instruction": "JZ 0x0057adc1", "condition": "byte [+0x4b1] is zero", "effect": "clears bit 0x800"},
+      {"address": "0x0057adb5", "instruction": "JNZ 0x0057adc1", "condition": "byte [+0x4b2] is non-zero", "effect": "clears bit 0x800"}
+    ],
+    "branch_polarity_summary": "Every capability bit in this function is a SET-ON-FAILURE bit: the function ORs the bit in when a check fails or is skipped and ANDs it out when the check succeeds. Bit 0x800 is the exception in form only - it is computed from a boolean pair - but it follows the same clear-by-default discipline. There is no read-modify-write of the caller's buffer; the buffer is written once, in order, at 0x0057ade8..0x0057adfa.",
+    "dominators": "0x0057ac1d dominates every write; 0x0057ad03 dominates both property blocks; 0x0057adc9 dominates the name refinement and the final copy. There is no path that reaches 0x0057ae01 without executing 0x0057ade8."
+  },
+
+  "callers_evidence": [
+    {"callsite": "0x00586635", "caller": "0x00586410 (Ghidra: Editors::cEditor::CommitEditHistory)", "form": "CALL, ECX preloaded by 0x00586633 MOV ECX,ESI", "arguments": "arg1 = LEA EAX,[ESP + 0x20] (a 16-byte caller-local buffer); arg2 = EDI, loaded at 0x00586623 as [ESI + 0x178] - 4, i.e. the last element of the edit-history vector; arg3 = EAX, the result of the slot +0x4 virtual call at 0x00586629 on [ESI + 0x98]; arg4 = EBP", "result_use": "0x0058663a..0x00586651 copies [EAX], [EAX + 4], [EAX + 8], [EAX + 0xc] into [ESI + 0x48], [ESI + 0x4c], [ESI + 0x50], [ESI + 0x54], then 0x00586654 calls 0x005dd7a0", "note": "the EAX dereference at 0x0058663a is direct proof that the return value is the pointer to the four dwords"},
+    {"callsite": "0x0058a768", "caller": "0x0058a5a0 (Ghidra: Editors::cEditor::Undo)", "form": "CALL, ECX preloaded by 0x0058a766 MOV ECX,ESI", "arguments": "arg1 = LEA ECX,[ESP + 0x58]; arg2 = EDI from 0x0058a740 MOV EDI,dword ptr [EAX + EDX*0x4 + -0x4]; arg3 = EAX from the slot +0x4 call at 0x0058a75b; arg4 = the literal 1 pushed at 0x0058a75d", "result_use": "copied into [ESI + 0x48..0x54] at 0x0058a76f..0x0058a784, then 0x0058a787 calls 0x005dd7a0. Before the call, 0x0058a748-0x0058a74e invokes slot +0x0 on the record, and 0x0058a750-0x0058a75b invokes slot +0x4 on [ESI + 0x98]."},
+    {"callsite": "0x0058aaf3", "caller": "0x0058a950 (Ghidra: Editors::cEditor::Redo)", "form": "CALL, ECX preloaded by 0x0058aaf1 MOV ECX,ESI", "arguments": "identical shape to Undo: arg1 = LEA EAX,[ESP + 0x58] at 0x0058aaec, arg2 = EDI, arg3 = the slot +0x4 result at 0x0058aae6, arg4 = the literal 1 at 0x0058aae8", "result_use": "copied into [ESI + 0x48..0x54] at 0x0058aaf8..0x0058ab0f"},
+    {"callsite": "0x0057eb7c", "caller": "0x0057ea30", "form": "CALL, ECX preloaded by 0x0057eb7a MOV ECX,ESI", "arguments": "arg1 = LEA EAX,[ESP + 0x24] at 0x0057eb75; arg2 = EDI from 0x0057eb69 [EDX - 4] with EDX = [ESI + 0x178]; arg3 = the slot +0x4 result at 0x0057eb6f; arg4 = the literal 1 at 0x0057eb71", "result_use": "copied into [ESI + 0x48..0x54] at 0x0057eb81..0x0057eb98, then 0x0057eb9b calls 0x005dd7a0. Note 0x0057eb60 writes byte [ESI + 0x4b2] = 1 two instructions before the call, which forces bit 0x800 to be CLEARLED for this call."},
+    {"callsite": "0x0057f79e", "caller": "0x0057f6c0", "form": "CALL, ECX preloaded by 0x0057f79c MOV ECX,ESI", "arguments": "arg1 = LEA EAX,[ESP + 0x4c] at 0x0057f797; arg2 = EDI; arg3 = the slot +0x4 result at 0x0057f792; arg4 = EBX pushed at 0x0057f794", "result_use": "copied into [ESI + 0x48..0x54] at 0x0057f7a3..0x0057f7b7, then 0x0057f7bd calls 0x005dd7a0. Preceding writes at 0x0057f779-0x0057f787 clear [ESI + 0x4b3] and [ESI + 0x4b4] and set [ESI + 0x4b2] from BL."},
+    {"callsite": "0x0057f7d9", "caller": "0x0057f6c0", "form": "CALL, ECX preloaded by 0x0057f7d7 MOV ECX,ESI", "arguments": "arg1 = LEA EAX,[ESP + 0x4c] at 0x0057f7d2; arg2 = EDI; arg3 = the slot +0x4 result at 0x0057f7ce; arg4 = EBP pushed at 0x0057f7cd", "result_use": "the result goes to a DIFFERENT destination: [ESI + 0x58], [ESI + 0x5c], [ESI + 0x60] at 0x0057f7de..0x0057f7f0, and the fourth dword is read from [EAX + 0xc] at 0x0057f7f3. So this caller keeps a second, separate four-dword snapshot."},
+    {"callsite": "0x0058d2fb", "caller": "0x0058d1c0", "form": "CALL, ECX preloaded by 0x0058d2f9 MOV ECX,ESI", "arguments": "arg1 = LEA EAX,[ESP + 0x18] at 0x0058d2f4; arg2 = EDI from 0x0058d2e8 [EDX - 4]; arg3 = the slot +0x4 result at 0x0058d2ee; arg4 = the literal 1 at 0x0058d2f0", "result_use": "copied into [ESI + 0x48..0x54] at 0x0058d300..0x0058d317, then 0x0058d31a calls 0x005dd7a0"},
+    {"callsite_count": 6, "xref_concordance": "ghidra_get_function_xrefs on 0x0057ac00 is not needed to establish the count: the six call sites above were each read directly out of a disassembled window and every one is a real CALL rel32. The briefing records 6 callers and 7 callsites, and this worker observed 7 callsites across 6 functions - the seventh being the second call inside 0x0057f6c0, which the briefing's callsite list also contains (0x0057f79e and 0x0057f7d9). The briefing lists 0x0057eb7c, 0x0057f79e, 0x0057f7d9, 0x00586635, 0x0058a768, 0x0058aaf3, 0x0058d2fb = 7 callsites over 6 callers, which matches exactly."}
+  ],
+
+  "callees_evidence": [
+    {"callsite": "0x0057ac14", "callee": "0x006a25a0", "form": "CALL, __thiscall with ECX = [0x015fd918] and one stack dword", "identified_operation": "binary-searches / linearly scans a property table on the receiver for the id and returns whether the stored value is non-zero; has a fast path at [this + 0x38] and an out-of-line path through 0x00612db0 and 0x006a19b0 that also inspects the value kind at +0x12", "naming": "Ghidra symbol Prop_GetPropValueBool", "confidence": "high"},
+    {"callsite": "0x0057ac3f", "callee": "0x0057a960", "form": "CALL, __thiscall with one stack dword (RET 0x4 at 0x0057a9c4)", "identified_operation": "reads receiver->[+0x1cc]; if null writes four zero dwords, otherwise writes the four dwords at [+0x24], [+0x28], [+0x2c], [+0x30] of that sub-object each ANDed with the complement of the corresponding global at 0x015da7ec/f0/f4/f8", "confidence": "high"},
+    {"callsite": "0x0057ac4b", "callee": "0x0057a9e0", "form": "CALL, __thiscall with one stack dword", "identified_operation": "seeds the four dwords from the globals 0x015daa40/44/48/4c, clears the 0x015da7eX bits from all four, and then, when receiver->[+0x1cc] != 0, calls 0x0057a960 internally and clears everything that call would have produced. Returns its out pointer, which 0x0057ac50 consumes as EAX", "confidence": "high"},
+    {"callsite": "0x0057ac88", "callee": "0x004bac30", "form": "CALL, __thiscall with ECX = argument 2 and six stack dwords (RET 0x18): the destination pointer, a 16-byte struct BY VALUE, and one trailing dword", "identified_operation": "copies its incoming 16-byte struct into its own frame and forwards to 0x004f3de0, returning [EBP + 0x8]", "naming": "a thin by-value wrapper", "confidence": "high for the body, but the argument marshalling is UNRESOLVED: 0x004bac5c pushes dword ptr [EBP + 0x8], which in that frame is the wrapper's own return address. The exact hand-off to 0x004f3de0 is therefore recorded as unknown."},
+    {"callsite": "0x0057aca9 and 0x0057acc0, 0x0057acdc", "callee": "0x004accf0 / 0x004accb0", "form": "CALL, __thiscall on the EditorModel at [ESI + 0x98]", "identified_operation": "rigblock count and bounds-checked rigblock access", "naming": "matches EditorModel::GetRigblocksCount() and EditorModel::GetRigblock(int) in Spore/Editors/EditorModel.h", "confidence": "high for the operation, candidate for the names"},
+    {"callsite": "0x0057acc7 and 0x0057ace3", "callee": "0x00435b60", "form": "CALL, __thiscall on the rigblock with one stack dword (the capability id)", "identified_operation": "linear search of a 0x14-byte-stride array at [this + 0xc0c, this + 0xc10) comparing the first dword of each record to the id, returning the record's third dword on a hit and 0 on a miss", "confidence": "high for the operation; the record layout is unknown"},
+    {"callsite": "0x0057ad23 and 0x0057ad77", "callee": "0x006a1250", "form": "CALL, cdecl with three stack dwords (property list, property id, out key) followed by ADD ESP,0xc", "identified_operation": "if the property list is null return false; otherwise look the id up and, on success, copy the property's 12-byte ResourceKey into the out parameter and return true", "naming": "Ghidra symbol App::Property::GetKey", "confidence": "high for the operation; the Ghidra body is mis-parameterised but the call shape is unambiguous from the three pushes and the ADD ESP,0xc"},
+    {"callsite": "0x0057ad39", "callee": "0x004efb20", "form": "CALL, cdecl with three stack dwords (record, key instanceID, &cEditor::field_48) followed by ADD ESP,0xc", "identified_operation": "owns capability bit 0x40000; reads a 0x1d8-stride record array on its first argument at [+0x98] and either three int slots at [+0x20], [+0x24], [+0x28] or a list at [+0xf8] with a count at [+0xd4], and read-modify-writes bit 0x40000 of its third argument on every path", "confidence": "high for the bit ownership and the mutation; the traversal semantics are only partly read"},
+    {"callsite": "0x0057ad8d", "callee": "0x004ef880", "form": "CALL, cdecl with three stack dwords followed by ADD ESP,0xc", "identified_operation": "owns capability bit 0x20; walks the same 0x1d8-stride array and read-modify-writes bit 0x20 of its third argument on every path", "confidence": "high for the bit ownership and the mutation"},
+    {"callsite": "0x0057add3", "callee": "0x004edf40", "form": "CALL, cdecl with two stack dwords and a bare RET (0x004ee3ad), so the caller owns the cleanup via the explicit ADD ESP,0x8 at 0x0057ade4", "identified_operation": "compares the wide name against the table at 0x013ec468 (first entries L\"creature_rotate\", L\"creature_size\"), then scans its characters with 0x004f6ab0; sets bit 0x100000 when the name is not in the table, sets bit 0x200000 when a character lookup hits, and otherwise clears both and forces bit 0x10. Also performs a redundant `|= 0x10` in its not-found path.", "confidence": "high for the bit effects; the return value is discarded by the caller"},
+    {"callsite": "0x0057ac88 (transitively)", "callee": "0x004f3de0", "form": "reached through 0x004bac30", "identified_operation": "the capability evaluator. Starts from an all-zero result, re-checks the same global property 0x055d7ca1, and for every bit set in the requested mask runs one predicate (0x004edeb0 for 0x10000, 0x004ee3b0 for 0x4000, 0x004ecec0 for 0x8, 0x004ed7f0 for 0x8000, 0x004ed320 for 0x40, 0x004ee9b0 for 0x8000000, 0x004ee560 for 0x80, 0x004f1350 for 0x1, 0x004ef190 for 0x100, 0x004f01f0 for 0x200, 0x004f2610 for 0x1000, 0x004f2210 for 0x2, 0x004f3650 for 0x2000, 0x004f31c0 for 0x80000, plus inline handling of 0x20, 0x40000, 0x20000, 0x4 and 0x10) and keeps the bit only when the predicate also produced it. An early-out flag short-circuits the sequence after the first granted bit.", "confidence": "high for the bit list and the short-circuit shape; the individual predicates remain opaque ports"},
+    {"unresolved": "0x004f6ab0, called only from 0x004edf40, and 0x005dd7a0, called by five of the six callers immediately after the copy, were not analysed; neither is reachable from inside this function."}
+  ],
+
+  "sibling_analogue_functions": [
+    {"address": "0x004f3de0", "relation": "the evaluator this function delegates to", "evidence": "same global property gate 0x055d7ca1, same two property ids 0x7A926123 and 0xF5CBE065 correlated with the same bits 0x40000 and 0x20, same helpers 0x004efb20 and 0x004ef880, same 0x004edf40 name refinement, and the same four-dword in / four-dword out shape. This function is the caller-side wrapper that re-derives two specific bits locally and adds the mouthless and boolean-pair bits the evaluator does not handle.", "status": "OBSERVED, labelled as analogue evidence"},
+    {"address": "0x004efb20 / 0x004ef880", "relation": "the two bit owners", "evidence": "each owns exactly one capability bit (0x40000 and 0x20) and each is also invoked from 0x004f3de0 in the matching branch, so this function and the evaluator agree on which check owns which bit", "status": "OBSERVED"},
+    {"address": "0x0057a960 / 0x0057a9e0", "relation": "the two mask collectors", "evidence": "adjacent, 0x80 bytes apart, both __thiscall on cEditor with one stack argument, both reading receiver->[+0x1cc] and the same two global quartets, and 0x0057a9e0 internally calls 0x0057a960. Together they are the only source of the requested bit set.", "status": "OBSERVED"}
+  ],
+
+  "sdk_correspondence": {
+    "status": "CLASS_ASSERTED_METHOD_NAME_WITHHELD",
+    "class": "Editors::cEditor",
+    "class_confidence": "high",
+    "class_evidence": "Six receiver offsets are documented in Spore/Editors/Editor.h at exactly the observed positions: /* 24h */ PropertyListPtr mpPropList, /* 48h */ int field_48, /* 98h */ EditorModel* mpEditorModel, /* 2A8h */ uint32_t mSaveExtension, /* 4B1h */ bool field_4B1 and /* 4B2h */ bool field_4B2. The three Ghidra-named direct callers are Editors::cEditor::CommitEditHistory (0x00586410), ::Undo (0x0058a5a0) and ::Redo (0x0058a950), and the SDK DeclareAddress comments for those three (0x586410, 0x58A5A0, 0x58A950) match the Ghidra symbols exactly, so the receiver really is the SDK's cEditor. The two compared literals at +0x2A8 are Spore/CommonIDs.h crt and cll, consistent with mSaveExtension being a save-format extension key. The nested rigblock query callees match Editors::EditorModel::GetRigblocksCount() and GetRigblock(int) and the two capability literals match Editors::EditorRigblock::kModelCapabilityMouth and kModelCapabilityCellMouth.",
+    "method_name": "WITHHELD. The SDK declares no address for any method at 0x0057ac00, and a dword scan of .text, .rdata and .data found no reference to the address, so the function is not a vtable entry and no name is asserted. The reconstructed symbol names only the observed operation.",
+    "field_names": "field_48, field_4B1 and field_4B2 are cited as SDK field names because the SDK and the binary agree on offset, width and polarity. mpPropList, mpEditorModel and mSaveExtension likewise. No name is asserted for +0x1cc, for the sub-object fields at +0x24..+0x30, for the +0x178 vector or for its element type.",
+    "not_asserted": "No method name, no meaning for any individual capability bit beyond the four this function actually touches, no type for the global mask quartets, and no identity for the eight runtime predicate callees inside 0x004f3de0.",
+    "sdk_paths_read": [
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Editors/Editor.h",
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Editors/EditorModel.h",
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Editors/EditorRigblock.h",
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/CommonIDs.h"
+    ]
+  },
+
+  "semantic_contract": "Computes a 128-bit capability mask describing what the editor currently permits, and returns it through a caller-supplied 16-byte buffer whose pointer is also the return value. Invariants, in evaluation order. (1) A global bool property, id 0x055D7CA1, read through a runtime singleton, is the master switch: when it is set the buffer is zeroed and the function returns immediately, having touched nothing else - the edit record, the model, the property list and the boolean flags are all left unread. (2) Otherwise the set of capabilities to be resolved is the bitwise OR of two four-dword masks, one derived from the receiver's sub-object at +0x1CC with the global masks at 0x015DA7EC..0x015DA7F8 removed, and one seeded from the globals 0x015DAA40..0x015DAA4C with both that mask set and the first mask removed. When +0x1CC is null the first half is all zero. (3) That request is handed to the capability evaluator 0x004BAC30/0x004F3DE0 together with the current edit-history record, and the evaluator writes the granted subset into the local mask. (4) If the receiver's save extension is crt (0x2B978C46) or cll (0x3D97A8E4), every rigblock of the receiver's EditorModel is queried for a Mouth (0xB00F0FEC) and a CellMouth (0x11B79301) capability; bit 0x400 is CLEARED as soon as any rigblock answers non-zero and SET when no rigblock does, including when the model has no rigblocks at all. For any other save extension the bit is left exactly as the evaluator produced it. (5) If the property list is non-null, property 0x7A926123 resolves to a ResourceKey and the predicate 0x004EFB20 is asked whether the record already covers it; bit 0x40000 is set when the predicate fails and cleared when it succeeds, and it is also cleared when the property list is null or the key does not resolve. (6) The same shape for property 0xF5CBE065 and bit 0x20, with all three failure paths clearing. (7) Bit 0x800 is set exactly when byte +0x4B1 is non-zero and byte +0x4B2 is zero, and cleared otherwise. (8) The part name is finally passed to 0x004EDF40, which may additionally set bits 0x10, 0x100000 and 0x200000 in the first word; its return value is discarded. (9) The four dwords are copied to the caller's buffer in order and its pointer is returned. Additional invariants: the function is not virtual and is in no vtable; it takes four callee-cleaned stack dwords but reads only three; the output buffer is written exactly once, in order, and never read back; two of the callees read-modify-write the receiver's +0x48 field as a side effect, which every observed caller then overwrites; and every capability bit in this function is a set-on-failure bit.",
+
+  "subsystem_context": "PKG-10-EDITOR-DISPATCH, cluster editor-core, subsystem Editor, triage GAMEPLAY_LOGIC, priority P3, fan-in 6 / fan-out 11. The function is the single point at which the Creature Editor decides what may currently be edited, and it is snapshotted by the three edit-history operations (Commit, Undo, Redo) into cEditor::field_48..0x54, which is why it runs on every history transition rather than only on user edits. Its dependency on the rigblock capability list and on two configuration properties ties it to the Paint/Parts configuration of the loaded model.",
+
+  "classification": "BOUNDED_SEMANTIC",
+  "classification_rationale": "The body, ABI including the four-versus-three stack argument discrepancy, every field offset, every immediate, the single loop with its exact exit conditions, all thirteen early exits with their polarity, the indirect write through &cEditor::field_48 and the whole order of evaluation are read directly from the disassembly and corroborated by seven call sites in six functions, three of which carry SDK symbols. STRONG_SEMANTIC is withheld for three named bounds. First, the requested bit set is unrecoverable: the eight mask globals and the property-manager pointer all read zero in the static image, so which capabilities are actually requested in the shipping build is unknown - the shape of the computation is established, its input is not. Second, the marshalling between 0x004BAC30 and its own callee 0x004F3DE0 is unresolved, because 0x004BAC5c pushes dword ptr [EBP + 0x8] which in that frame is the wrapper's own return address; the net effect on the output buffer is observed but the hand-off is not understood. Third, no SDK name exists for this method and none is asserted, and the eight individual capability predicates inside 0x004F3DE0 remain opaque ports.",
+
+  "semantic_findings": [
+    "The Ghidra-inferred prototype is wrong about the stack: RET 0x10 pops four dwords and all six call sites push four, but the body reads only three. The fourth argument is dead in this build.",
+    "The function's return value is the same pointer as its first argument, and every caller treats it that way, dereferencing EAX immediately.",
+    "The master switch is a global bool property, not a receiver field, and it is the same property the evaluator 0x004F3DE0 checks first, so the early return and the evaluator agree on the kill condition.",
+    "Bit 0x400 is the mouthless bit: crt and cll are the two asset types that can have mouths, and the two capability literals are the documented Mouth and CellMouth model capabilities. An empty rigblock list produces the same bit as a full one with no mouth.",
+    "Bit 0x800 is a boolean pair, not a property check: field_4B1 must be set AND field_4B2 must be clear. 0x0057eb60 sets field_4B2 immediately before one call, which is how a caller suppresses this bit.",
+    "Every capability bit in this function is set on failure. There is no path on which bit 0x20 or bit 0x40000 is left stale, because all three failure paths of each converge on the clearing instruction.",
+    "Two callees mutate the receiver's +0x48 field through a pointer, and all six callers then overwrite +0x48..0x54 from the returned buffer, so those mutations are transient in every observed call sequence.",
+    "The mask collectors are complementary by construction: 0x0057a9e0 internally calls 0x0057a960 and clears its result, so the OR at 0x0057ac50..0x0057ac68 is belt-and-braces rather than load-bearing.",
+    "The function is not in any vtable despite its callers being interface methods, so it is an ordinary non-virtual member; a dword scan of .text, .rdata and .data found no reference to 0x0057ac00.",
+    "0x004edf40 is called with the caller's own stack cleanup (bare RET plus ADD ESP,0x8), and its return value is discarded, so its only effect is the three mask bits."
+  ],
+
+  "unresolved_questions": [
+    "Which capability bits are actually requested in the shipping build? All eight mask globals (0x015DA7EC, 0x015DA7F0, 0x015DA7F4, 0x015DA7F8, 0x015DAA40, 0x015DAA44, 0x015DAA48, 0x015DAA4C) read zero in the static image and are runtime-initialised, and no writer was identified, so the requested set cannot be determined statically.",
+    "What is the type of the object at cEditor + 0x1CC and what do its +0x24..+0x30 dwords mean? They are the only per-editor contribution to the requested set and nothing in the SDK documents that offset.",
+    "What does 0x004BAC30 actually hand to 0x004F3DE0? 0x004bac5c pushes dword ptr [EBP + 0x8], which in that frame is the wrapper's own return address, so the hand-off is not understood even though the net effect on the output buffer is observed.",
+    "What is the concrete type of the edit-history record at cEditor + 0x178 and of its last element, and what do the two 0x1d8-stride arrays that 0x004EFB20 and 0x004EF880 walk actually contain? The traversal was read but not semantically resolved.",
+    "What are the 0x14-byte records at rigblock + 0xC0C that 0x00435b60 searches, and what is the meaning of the third dword it returns? Only the stride, the key offset and the result offset are established.",
+    "What do the individual capability bits mean? For bits 0x400, 0x800, 0x40000 and 0x20 the semantics are pinned by the code; for the other fifteen observed inside 0x004F3DE0 nothing beyond their bit positions is known, and this function's own request for them is unobservable for the reason above.",
+    "What is argument 4 for? It is pushed as 1 at five call sites and as a caller register at one, is never read, and may be a removed or defaulted parameter.",
+    "Is the SDK's /* 48h */ int field_48 really the same storage this function passes by address to two mutating helpers, or is the SDK's declaration of that offset stale? The address-taken use is observed; the SDK's intent is not confirmed.",
+    "What is 0x006a1250's exact contract when the property exists but has an unexpected value kind? Its Ghidra body is mis-parameterised and only the null-list and success/failure shape was relied upon here."
+  ],
+
+  "runtime_gates": [
+    "No original-process trace has been captured for 0x0057ac00. Every claim in this record is static.",
+    "A runtime trace is required to read the eight mask globals after initialisation, to observe the actual property values behind ids 0x055D7CA1, 0x7A926123 and 0xF5CBE065, to see which capability bits the evaluator grants in practice, and to confirm the runtime class of the object at cEditor + 0x1CC.",
+    "A differential trace that mutates a model with and without a mouth part would be required to confirm the bit-0x400 polarity end to end.",
+    "The Cell stage has never been entered in any recorded run, so the cll branch of the mouth scan has no runtime oracle."
+  ],
+
+  "confidence": {
+    "body_bytes": 1.0,
+    "instruction_transcription": 1.0,
+    "abi_stack_arguments_and_cleanup": 0.95,
+    "field_offsets": 0.97,
+    "constants_and_immediates": 1.0,
+    "control_flow_and_branch_polarity": 1.0,
+    "loop_shape_and_exits": 1.0,
+    "global_addresses_and_static_values": 1.0,
+    "requested_bit_set_at_runtime": 0.0,
+    "indirect_write_through_field_48": 0.95,
+    "virtual_dispatch": 1.0,
+    "callee_identities": 0.85,
+    "receiver_class_identity": 0.95,
+    "method_name": 0.0,
+    "capability_bit_semantics_beyond_the_four_touched": 0.15,
+    "0x004bac30_to_0x004f3de0_marshalling": 0.2,
+    "runtime_behaviour": 0.0
+  },
+
+  "evidence": [
+    "/tmp/opencode/wave/w1/b05/briefings.json (canonical record for va=0057ac00)",
+    "reconstruction/evidence/0057ac00/evidence.json",
+    "reconstruction/evidence/0057ac00/context.json",
+    "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Editors/Editor.h",
+    "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Editors/EditorModel.h",
+    "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Editors/EditorRigblock.h",
+    "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/CommonIDs.h"
+  ],
+
+  "tooling_evidence": [
+    {"tool": "ghidra_disassemble_function", "address": "0x0057ac00", "observation": "166 instructions, 0x0057ac00..0x0057ae01, matching function_body_size_bytes=516 in the canonical ledger row. This listing, not the pseudocode, is the source for every offset, immediate and branch in this record."},
+    {"tool": "ghidra_decompile_function", "address": "0x0057ac00", "observation": "renders the signature as `void __thiscall FUN_0057ac00(int param_1, uint *param_2, undefined4 param_3, undefined4 param_4)`, which misses the fourth stack argument that RET 0x10 and the seven call sites both prove. The pseudocode also folds the 0x40000 and 0x20 blocks into labels that make the bit-0x20 clearing look conditional on a successful key lookup; the disassembly shows all three failure paths converge on 0x0057ada0."},
+    {"tool": "ghidra_disassemble_function", "address": "0x0057a960", "observation": "45 instructions; reads [ECX + 0x1cc], null-checks it, and on the non-null path copies [+0x24], [+0x28], [+0x2c], [+0x30] each ANDed with the complement of 0x015da7ec/f0/f4/f8; ends in RET 0x4. Establishes the __thiscall signature and the four-dword out parameter."},
+    {"tool": "ghidra_decompile_function", "address": "0x0057a9e0", "observation": "seeds from 0x015daa40/44/48/4c, clears the 0x015da7eX bits, and on a non-null [this + 0x1cc] additionally calls 0x0057a960 and clears its result; returns its out pointer."},
+    {"tool": "ghidra_disassemble_function", "address": "0x004bac30", "observation": "26 instructions; builds a 16-byte copy of its incoming struct on its own stack, pushes a byte from [EBP + 0x1c], pushes ECX, pushes dword ptr [EBP + 0x8], calls 0x004f3de0, then ADD ESP,0x1c and RET 0x18. [EBP + 0x8] is the wrapper's own return address, which is why the hand-off is recorded as unresolved."},
+    {"tool": "ghidra_decompile_function", "address": "0x004f3de0", "observation": "the capability evaluator: re-checks 0x055d7ca1, then a cascade of per-bit predicates (0x004edeb0, 0x004ee3b0, 0x004ecec0, 0x004ed7f0, 0x004ed320, 0x004ee9b0, 0x004ee560, 0x004f1350, 0x004ef190, 0x004f01f0, 0x004f2610, 0x004f2210, 0x004f3650, 0x004f31c0) plus inline handling of bits 0x20, 0x40000, 0x20000, 0x4 and 0x10, short-circuiting on an in_stack boolean. Thirty-five unreachable-block warnings are present; only the bit positions and the control shape were used."},
+    {"tool": "ghidra_decompile_function", "address": "0x00435b60", "observation": "linear search of the 0x14-stride array at [+0xc0c, +0xc10) on the first dword, returning the third dword of the match or 0."},
+    {"tool": "ghidra_decompile_function", "address": "0x004accf0", "observation": "(*(int *)(this + 0x1c) - *(int *)(this + 0x18)) >> 2."},
+    {"tool": "ghidra_decompile_function", "address": "0x004accb0", "observation": "bounds-checked [*(this + 0x18) + index * 4] else 0."},
+    {"tool": "ghidra_decompile_function", "address": "0x006a1250", "observation": "Ghidra symbol App::Property::GetKey; body checks the property list for null, looks the id up through a vtable slot, and on success copies a ResourceKey into the out parameter. The parameter naming is garbled but the three-push plus ADD ESP,0xc call shape is unambiguous."},
+    {"tool": "ghidra_decompile_function", "address": "0x004efb20", "observation": "owns bit 0x40000 and read-modify-writes `*param_3` on every path; walks a 0x1d8-stride array at [param_1 + 0x98] and, depending on a mode flag, either a list at [+0xf8] with count [+0xd4] or three int slots at [+0x20], [+0x24], [+0x28]. Seventeen unreachable-block warnings present."},
+    {"tool": "ghidra_decompile_function", "address": "0x004ef880", "observation": "owns bit 0x20 and read-modify-writes `*param_3` on every path; walks the same 0x1d8-stride array and compares a two-dword key per element."},
+    {"tool": "ghidra_get_function_by_address", "address": "0x004edf40", "observation": "body 0x004edf40..0x004ee3ad."},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x004ee380..0x004ee3af", "observation": "0x004ee3aa MOV ESP,EBP / 0x004ee3ac POP EBP / 0x004ee3ad RET - a bare RET, proving 0x004edf40 is cdecl and that the ADD ESP,0x8 at 0x0057ade4 in the caller is the matching cleanup. This is what fixed the stack model for the final four-dword copy."},
+    {"tool": "ghidra_decompile_function", "address": "0x004edf40", "observation": "compares the wide name against the table at 0x013ec468, scans characters with 0x004f6ab0, and sets/clears bits 0x100000, 0x200000 and 0x10; twenty-nine unreachable-block warnings present."},
+    {"tool": "ghidra_read_memory", "address": "0x013ec468", "length": 96, "observation": "float padding 0x3eaaaa9f 0x3d4ccccd 0x3e4ccccd 0x3eb33333 0x3e8efa34 then the UTF-16LE literals L\"creature_rotate\" and L\"creature_size\". This is the concrete content of the name table 0x004edf40 searches."},
+    {"tool": "ghidra_decompile_function", "address": "0x006a25a0", "observation": "Ghidra symbol Prop_GetPropValueBool; __thiscall on a receiver with a fast array path at [this + 0x38] and a slow path through 0x00612db0 / 0x006a19b0 that also inspects the value kind at +0x12."},
+    {"tool": "ghidra_read_memory", "address": "0x015fd918", "length": 8, "observation": "0000000000000000 - runtime-initialised singleton, no static initialiser."},
+    {"tool": "ghidra_read_memory", "address": "0x015da7e0", "length": 32, "observation": "32 zero bytes, covering 0x015da7ec, 0x015da7f0, 0x015da7f4 and 0x015da7f8."},
+    {"tool": "ghidra_read_memory", "address": "0x015daa40", "length": 24, "observation": "24 zero bytes, covering 0x015daa40, 0x015daa44, 0x015daa48 and 0x015daa4c. These eight zeros are why the requested capability set is not recoverable statically."},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x00586610..0x0058665f", "observation": "0x00586615 MOV ECX,[ESI + 0x98]; 0x0058661b MOV EDX,[ESI + 0x178]; 0x00586623 MOV EDI,[EDX - 4]; 0x00586626/0x00586629 slot +0x4 virtual call; 0x0058662b/0x0058662c/0x0058662d three pushes; 0x0058662e LEA EAX,[ESP + 0x20]; 0x00586632 PUSH EAX; 0x00586633 MOV ECX,ESI; 0x00586635 CALL 0x0057ac00; then the four-dword copy into [ESI + 0x48..0x54]."},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x0058a740..0x0058a78f", "observation": "the Undo call site: slot +0x0 call on the record at 0x0058a74e, slot +0x4 call on [ESI + 0x98] at 0x0058a75b, four pushes ending in PUSH 0x1 at 0x0058a75d, MOV ECX,ESI at 0x0058a766, CALL at 0x0058a768, and the four-dword copy into [ESI + 0x48..0x54]."},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x0058aad0..0x0058ab0f", "observation": "the Redo call site at 0x0058aaf3, structurally identical to Undo."},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x0057eb50..0x0057eb9f", "observation": "the 0x0057ea30 call site; note 0x0057eb60 MOV byte ptr [ESI + 0x4b2],0x1 two instructions before the call, which forces bit 0x800 clear for that invocation, and 0x0057eb59 clearing byte [ESI + 0x4b4]."},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x0057f770..0x0057f7f4", "observation": "both 0x0057f6c0 call sites. The second, at 0x0057f7d9, stores the result into a DIFFERENT destination - [ESI + 0x58], [ESI + 0x5c], [ESI + 0x60] - so this caller keeps a second independent four-dword snapshot. Also shows 0x0057f779-0x0057f787 clearing [ESI + 0x4b3] and [ESI + 0x4b4] and loading [ESI + 0x4b2] from BL."},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x0058d2c0..0x0058d31f", "observation": "the 0x0058d1c0 call site at 0x0058d2fb, with the same four-push shape and the same copy into [ESI + 0x48..0x54]."},
+    {"tool": "ghidra_run_script_inline", "observation": "dword scan of .rdata and .data for 0x0062f540, 0x00451e50, 0x0057ac00, 0x0051e90, 0x0062e600, 0x0062e6c0, 0x0062e7e0, 0x0057a9e0 and 0x0057a960 returned NONE for every target: 0x0057ac00 is in no vtable and has no data reference."},
+    {"tool": "ghidra_list_segments", "observation": "confirms .text 0x00401000-0x013CBFFF, .rdata 0x013CC000-0x0150B5FF, .data 0x0150C000-0x0171E763, so 0x015da7ec, 0x015daa40 and 0x015fd918 all lie in the writable .data block and are legitimately runtime-initialised rather than unmapped."}
+  ],
+
+  "validation": {
+    "status": "PASS",
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/wave13-w1-dispatch-b05 reconstruction/staging/wave13-w1-dispatch-b05/editor_0057ac00.cpp reconstruction/staging/wave13-w1-dispatch-b05/editor_0057ac00_model_test.cpp",
+    "syntax": "passed",
+    "model_test_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/wave13-w1-dispatch-b05 reconstruction/staging/wave13-w1-dispatch-b05/editor_0057ac00.cpp reconstruction/staging/wave13-w1-dispatch-b05/editor_0057ac00_model_test.cpp -o /tmp/opencode/0057ac00-model && /tmp/opencode/0057ac00-model",
+    "model_test": "passed, exit 0, prints \"0057ac00 model test OK\"",
+    "assertions_covered": [
+      "the return value is the same pointer as argument 1, on both the kill-switch path and the normal path",
+      "the kill switch zeroes all four words and short-circuits before the record evaluation, before any rigblock access and before any property lookup",
+      "the two mask collectors are ORed word by word and handed to the evaluator by value with the literal trailing zero",
+      "the mouth scan runs only for crt and cll, queries Mouth before CellMouth per rigblock, stops on the first non-zero answer, and sets bit 0x400 for both a mouthless model and an empty rigblock list",
+      "the two property ids are pushed in the observed order 0x7A926123 then 0xF5CBE065",
+      "bits 0x40000 and 0x20 are set on predicate failure and cleared on predicate success, on a missing property list and on a failed key lookup",
+      "bit 0x800 requires field_4B1 non-zero AND field_4B2 zero, and is cleared in all three other combinations",
+      "the two predicate helpers really do write through &cEditor::field_48"
+    ]
+  },
+
+  "provenance": {
+    "binary": "SPORE/SporeBin/SporeApp.exe",
+    "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+    "image_base": "0x00400000",
+    "worker_id": "wave13-w1-dispatch-b05",
+    "batch_id": "b05",
+    "package": "wave13-w1-dispatch-b05",
+    "upstream_package": "PKG-10-EDITOR-DISPATCH",
+    "date": "2026-09-26",
+    "tooling": "Ghidra 12.1.2 headless via the ghidra MCP bridge, program SporeApp.exe",
+    "writes_confined_to": [
+      "reconstruction/staging/wave13-w1-dispatch-b05/",
+      "reconstruction/metadata/wave13-w1-dispatch-b05/",
+      "/tmp/opencode/wave/w1/b05/"
+    ]
+  }
+}

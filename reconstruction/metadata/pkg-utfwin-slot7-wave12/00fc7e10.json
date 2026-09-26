@@ -1,0 +1,532 @@
+{
+ "address": "0x00fc7e10",
+ "binary": "SPORE/SporeBin/SporeApp.exe",
+ "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+ "canonical_files": [
+  "reconstruction/staging/pkg-utfwin-slot7-wave12/utfwin_slot7_wave12.cpp",
+  "reconstruction/staging/pkg-utfwin-slot7-wave12/utfwin_slot7_wave12.hpp",
+  "reconstruction/staging/pkg-utfwin-slot7-wave12/utfwin_slot7_wave12_model_test.cpp",
+  "reconstruction/staging/pkg-utfwin-slot7-wave12/.clang-format"
+ ],
+ "captured_on": "2026-09-26",
+ "class_type": null,
+ "codegen_equivalence": {
+  "instruction_for_instruction_O2": [
+   "mov 0x8(%esp),%edx      vs original: MOV EDX,dword ptr [ESP + 0x8]",
+   "mov 0x4(%esp),%eax      vs original: MOV EAX,dword ptr [ESP + 0x4]",
+   "mov %eax,0x8(%ecx)      vs original: MOV dword ptr [ECX + 0x8], EAX",
+   "mov %edx,0x10(%ecx)     vs original: MOV dword ptr [ECX + 0x10], EDX",
+   "ret $0x8                vs original: RET 0x8"
+  ],
+  "method": "clang++ -m32 -std=c++17 -O2 -c, then objdump -d of the emitted .text body compared instruction by instruction against the original bytes read from SporeApp.exe",
+  "original_bytes": "8b4424048b542408894108895110c20800",
+  "release_o2_byte_identical": false,
+  "release_o2_difference": "the two independent argument loads are emitted in the opposite order; both stores and the RET 0x8 are byte-identical, and the exit register and memory state are identical",
+  "release_o2_length_bytes": 17,
+  "release_o2_model_bytes": "8b5424088b442404894108895110c20800",
+  "release_o2_same_length": true
+ },
+ "confidence_note": "Mechanics are CONFIRMED from the machine body and are byte-exact. Field-meaning attribution remains partial: the +0x08 consumer is now proven to CALL the stored word and the +0x10 consumer is proven to pass it to that call, but the owning class, the interface, the declared field types and the return intent are all still open.",
+ "contradictions": [
+  {
+   "id": "sdk-prototype-vs-body",
+   "kind": "live_body_vs_imported_prototype",
+   "resolution": "unresolved",
+   "resolution_status": "open",
+   "summary": "The Spore-ModAPI import declares ImageTiling UTFWin::ImageDrawable::GetTiling with no parameters. The live body at 0x00fc7e10 reads two incoming stack words and terminates with RET 0x8, so the machine contract is a two-argument callee-cleanup method. The imported prototype is not the machine contract."
+  },
+  {
+   "id": "slot7-is-setter-shaped",
+   "kind": "name_vs_observed_behaviour",
+   "resolution": "unresolved",
+   "resolution_status": "open",
+   "summary": "The behaviour at slot +0x1c is a two-store setter, not a getter. The adjacent slot +0x20 at 0x0093b6c0 (MOV EAX,dword ptr [ECX + 0x8]; RET) is the zero-argument dword read of the word that slot +0x1c publishes, and is structurally what a Get accessor looks like, yet it carries no SDK import name. Which of the two the SDK means by GetTiling is not established."
+  },
+  {
+   "id": "rejected-analogue-0x00641770",
+   "kind": "analogue_rejected",
+   "resolution": "unresolved",
+   "resolution_status": "open",
+   "summary": "The briefing offered 0x00641770 (PKG-16-SPOREPEDIA-ONLINE) as an analogue on the basis of shared_vtable:vtable:0x01492140. A byte scan places 0x00641770 at 0x01492170, which is slot +0x30 (index 12) of that vtable, not slot +0x1c. It is a different interface slot of the same table and carries no semantic evidence for this target; the match is rejected."
+  },
+  {
+   "id": "constructors-skip-0x10-and-0x14",
+   "kind": "field_map_tension",
+   "possible_readings": [
+    "The constructors simply do not zero those words because every instance sets them before use, or the object is created in already-zeroed storage.",
+    "The words belong to a sub-object at a different base than the one these constructors initialise, which would mean single-inheritance offset reasoning does not hold for +0x10 and +0x14."
+   ],
+   "resolution": "unresolved",
+   "resolution_status": "open",
+   "summary": "The constructor of the 0x01491730 class zeroes +0x04, +0x08, +0x0c, +0x18 and +0x1c; the 0x01492140 constructor additionally zeroes +0x20 through +0x38; the 0x01493990 constructor calls the 0x01491730 constructor and then installs its own vtable. None of the three writes +0x10 or +0x14, although this target writes +0x10 and sibling slot +0x14 writes +0x14, and although 0x00fc7ec0 reads both."
+  }
+ ],
+ "corrections_to_prior_record": [
+  {
+   "corrected_finding": "0x00fc7ec0 reads receiver +0x10 and passes it as the third of three stack words to an indirect call through the word stored at receiver +0x08.",
+   "evidence": "ghidra_disassemble_bytes 0x00fc7ec0..0x00fc7f22",
+   "id": "withdrawn-no-reader-claim-for-0x10",
+   "impact": "The +0x10 word is no longer an unread output. It is consumed by a sibling virtual, which makes the setter/getter pairing coherent.",
+   "previously_claimed": "No function in the three observed vtables reads receiver +0x10, so the intended use of the word published there is unknown.",
+   "why_withdrawn": "The claim was never tested against the whole slot family. Ghidra has no Function defined for 23 of the 51 distinct code slots reachable from the three tables, including 0x00fc7ec0, and the earlier check covered only the 28 defined slots. Disassembling 0x00fc7ec0 directly shows it reads [ESI + 0x10]."
+  },
+  {
+   "corrected_finding": "0x0093b6c0 reads it as a dword and returns it, and 0x00fc7ec0 loads it into ECX and CALLs it. 0x00c6a960 and 0x007b86e0 also reference +0x08.",
+   "id": "corrected-0x08-reader-set",
+   "impact": "+0x08 is used as a code address by at least one consumer, which is why no field name is asserted for it.",
+   "previously_claimed": "receiver +0x08 is published by this target and read by 0x0093b6c0."
+  },
+  {
+   "corrected_finding": "It also differs at +0x08 (0x00fcdaa0) and +0x0c (0x00fcdb10), where 0x01491730 and 0x01493990 both hold 0x00c2e4e0, a bare RET. It is also longer: 22 code slots to +0x58, a 0xffffffff marker at +0x5c, two further code slots at +0x60 and +0x64, then ASCII data.",
+   "id": "corrected-vtable-0x01492140-divergence",
+   "impact": "0x01492140 is a wider interface, not a two-slot variant of the same one.",
+   "previously_claimed": "vtable 0x01492140 differs from the other two tables only at slots +0x00 and +0x04."
+  },
+  {
+   "corrected_finding": "A .clang-format matching the sibling staging packages was added, and clang-format --dry-run -Werror is now clean over all three sources.",
+   "id": "unverifiable-format-claim",
+   "previously_claimed": "clang-format --dry-run -Werror is clean over the package.",
+   "why_retracted": "This package contained no .clang-format, so the claim was not reproducible as written. Under the sibling config the files did violate it."
+  }
+ ],
+ "evidence_level": "OBSERVED",
+ "focused_test_evidence": {
+  "command": "clang++ -m32 -std=c++17 -O0/-O2 [-DNDEBUG] -Wall -Wextra -Wpedantic -Werror reconstruction/staging/pkg-utfwin-slot7-wave12/utfwin_slot7_wave12.cpp reconstruction/staging/pkg-utfwin-slot7-wave12/utfwin_slot7_wave12_model_test.cpp && <binary>",
+  "compile_time_abi_assertions": [
+   "sizeof(void*) == 4",
+   "sizeof(OpaqueWord) == 4",
+   "offsetof(OpaqueSlot7ReceiverWire, dispatch_00) == 0x00",
+   "offsetof(OpaqueSlot7ReceiverWire, unproven_04) == 0x04",
+   "offsetof(OpaqueSlot7ReceiverWire, word_08) == 0x08",
+   "offsetof(OpaqueSlot7ReceiverWire, word_0c) == 0x0c",
+   "offsetof(OpaqueSlot7ReceiverWire, word_10) == 0x10",
+   "offsetof(OpaqueSlot7ReceiverWire, word_14) == 0x14",
+   "offsetof(OpaqueSlot7ReceiverWire, word_18) == 0x18",
+   "offsetof(OpaqueSlot7ReceiverWire, word_1c) == 0x1c",
+   "sizeof(OpaqueSlot7ReceiverWire) == 0x20"
+  ],
+  "ndebug": "passed at -O0 -DNDEBUG and -O2 -DNDEBUG",
+  "normal": "passed at -O0 and -O2",
+  "notes": [
+   "Each test seeds every receiver word with a distinct sentinel and asserts that only word_08 and word_10 change.",
+   "test_only_the_two_published_offsets_change runs 64 argument pairs and memcmp-compares the whole receiver with the two published words masked out, so any third write would abort.",
+   "test_first_word_round_trips_as_a_callable_address encodes the 0x00fc7ec0 usage: a real code address passed as the first word must come back out of receiver +0x08 bit-exact, and the second word must come back out of +0x10, across a memcpy reload.",
+   "Codegen was re-derived this attempt: at -O2 the model emits a 17-byte body, the same length as the original, with byte-identical stores and RET 0x8 and only the emission order of the two independent argument loads differing. At -O0 clang emits an unoptimized frame, so byte correspondence is claimed for -O2 only.",
+   "clang-format --dry-run -Werror is clean over the package against the .clang-format added this attempt."
+  ],
+  "test_count": 6,
+  "tests": [
+   "test_stores_both_words_to_proven_offsets",
+   "test_argument_order_is_not_swapped",
+   "test_repeated_invocation_overwrites_stale_words",
+   "test_zero_words_are_written",
+   "test_first_word_round_trips_as_a_callable_address",
+   "test_only_the_two_published_offsets_change"
+  ]
+ },
+ "function_extent": {
+  "body_end_inclusive": "0x00fc7e1e",
+  "ghidra_entry": "0x00fc7e10",
+  "instruction_count": 5,
+  "return_site": "0x00fc7e1e: RET 0x8"
+ },
+ "globals": [],
+ "implementation": {
+  "canonical_path": "reconstruction/staging/pkg-utfwin-slot7-wave12",
+  "canonical_status": "staged",
+  "clang_format_config": "reconstruction/staging/pkg-utfwin-slot7-wave12/.clang-format",
+  "header": "reconstruction/staging/pkg-utfwin-slot7-wave12/utfwin_slot7_wave12.hpp",
+  "model_test": "reconstruction/staging/pkg-utfwin-slot7-wave12/utfwin_slot7_wave12_model_test.cpp",
+  "namespace": "openspore::reconstruction::pkg_utfwin_slot7_wave12",
+  "port_policy": "No port was needed: the body makes no call and touches no global. No global, service, or type record was created.",
+  "source": "reconstruction/staging/pkg-utfwin-slot7-wave12/utfwin_slot7_wave12.cpp",
+  "state_policy": "The only state written is the two receiver words at +0x08 and +0x10.",
+  "status": "staged"
+ },
+ "intended_paths": {
+  "canonical_reconstruction": [
+   "reconstruction/staging/pkg-utfwin-slot7-wave12/utfwin_slot7_wave12.cpp",
+   "reconstruction/staging/pkg-utfwin-slot7-wave12/utfwin_slot7_wave12.hpp",
+   "reconstruction/staging/pkg-utfwin-slot7-wave12/utfwin_slot7_wave12_model_test.cpp"
+  ],
+  "metadata": "reconstruction/metadata/pkg-utfwin-slot7-wave12/00fc7e10.json"
+ },
+ "independent_reverification_2026_09_26": {
+  "attempt": "second lease on identical content_sha256; every load-bearing claim in this record was re-derived from scratch rather than trusted from the prior attempt",
+  "body_bytes_reread": "ghidra_read_memory at 0x00fc7e10 length 17 returned 8b4424048b542408894108895110c20800, byte-identical to the prior capture; ghidra_disassemble_function returned the same 5 instructions in the same order",
+  "binary_identity": "sha256 of SPORE/SporeBin/SporeApp.exe recomputed this attempt = 25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e, matching this record",
+  "slot_index_reread": "Whole-image scan of the little-endian pointer 0x00fc7e10 found exactly 3 occurrences, all in .rdata, at file offsets 0x1090b4c, 0x109155c and 0x1092dac. Mapping through the PE section table (.rdata VA 0xfcc000, raw 0xfcb400) these are VAs 0x0149174c, 0x0149215c and 0x014939ac, i.e. exactly vtable base +0x1c in each of the three tables. Confirms the slot index claim and the absence of any direct caller.",
+  "vtable_slots_reread": "All three tables were re-dumped slot by slot. Confirmed: +0x14 = 0x00fc7e30, +0x18 = 0x00fc7e50, +0x1c = 0x00fc7e10, +0x20 = 0x0093b6c0 in every table; +0x48 = 0x00fc7ec0 in 0x01493990 only, while 0x01491730 holds 0x011e06d0 there; +0x08/+0x0c/+0x10 = 0x00c2e4e0 in 0x01491730 and 0x01493990, while 0x01492140 holds 0x00fcdaa0, 0x00fcdb10, 0x00c2e4e0; 0x01493990 +0x4c = 0x69766f6d, the ASCII bytes 'movie'. The 0x0093b6c0 pointer occurs 39 times image-wide, so slot +0x20 is a widely inherited base slot. All confirmed.",
+  "constructors_reread": "Each of the three vtable addresses occurs exactly once in .text as an immediate, at VAs 0x00fc7f36, 0x00fcde89 and 0x00fd92b3, which located the three constructors. Disassembly confirms 0x00fc7f30 installs 0x01491730 and zeroes +0x04, +0x08, +0x0c, +0x18, +0x1c; 0x00fcde83 installs 0x01492140 and additionally zeroes +0x20, +0x24, +0x28, +0x30, +0x34, +0x38 with +0x2c written by MOVSS; 0x00fd92aa does MOV ECX,EDI / CALL 0x00fc7f30 / MOV dword ptr [EDI],0x01493990, so the 0x01493990 class provably derives from the 0x01491730 class. None writes +0x10 or +0x14, which re-confirms that recorded tension rather than resolving it.",
+  "consumers_reread": "0x0093b6c0 disassembles to MOV EAX,dword ptr [ECX + 0x8]; RET and 0x00fc7e50 to MOV EAX,dword ptr [ECX + 0xc]; RET, both confirmed. 0x00fc7e30 and 0x00fc7ec0 have no Ghidra Function object and were read with ghidra_disassemble_bytes. 0x00fc7e30 confirmed to publish the first stack word at +0x0c and the second at +0x14, then RET 0x8. 0x00fc7ec0 confirmed to compare its argument word against +0x18 and +0x1c in turn, then at 0x00fc7eee load [ESI + 0x8] into ECX, TEST ECX,ECX with a JZ null guard, load [ESI + 0x10] into EDX and PUSH it, PUSH the shifted product, PUSH a word from its own argument structure, CALL ECX, and ADD ESP,0xc. That makes the +0x08 word a CALL target and the +0x10 word the third of three stack words, as this record states. On the fall-through path 0x00fc7f0b loads [ESI + 0xc] and [ESI + 0x14], confirming the sibling pair readers.",
+  "tests_rerun": "clang++ -m32 -std=c++17 at -O0 and -O2, each with and without -DNDEBUG, with -Wall -Wextra -Wpedantic -Werror: all four binaries built and all six tests passed. clang-format --dry-run -Werror is clean over the three sources against the package .clang-format.",
+  "codegen_reread": "clang++ -m32 -std=c++17 -O2 -c then objdump of re_00fc7e10_UTFWin_ImageDrawable_GetTiling gives an 8b5424088b442404894108895110c20800 body: 17 bytes, same length as the original, with both stores and RET 0x8 byte-identical and only the emission order of the two independent argument loads differing. Same difference as the prior attempt recorded, so release_o2_byte_identical stays false and is not restated as identical.",
+  "ghidra_mutations": 0,
+  "ghidra_saves": 0,
+  "nothing_claimed_beyond_the_body": "Re-verification did not resolve any of the four recorded runtime gates or the three open contradictions. No field name, declared type, class identity, interface identity or return intent was added, because the evidence that would justify one was not found."
+ },
+ "orchestrator_validate_probe": {
+  "command": "python3 tools/openspore.py validate --no-write --format json 0x00fc7e10",
+  "note": "Read-only probe of the same gate the orchestrator runs, executed this attempt with --no-write so nothing in reconstruction/knowledge/ or reconstruction/evidence/ was modified. Recorded as evidence of what the validator can and cannot decide, not as a target for making checks pass.",
+  "status": "WARN",
+  "coverage": {
+   "attempted": 7,
+   "not_available": 2,
+   "pass": 2,
+   "warn": 5,
+   "total": 9,
+   "ratio": 0.222
+  },
+  "pass": [
+   "ABI",
+   "RETURN SEMANTICS"
+  ],
+  "warn": [
+   "CALLS",
+   "CONSTANTS",
+   "CONTROL FLOW",
+   "EVIDENCE COVERAGE",
+   "FIELDS/OFFSETS"
+  ],
+  "not_available": [
+   "GLOBALS",
+   "VIRTUAL DISPATCH"
+  ],
+  "interpretation": "The two NOT_AVAILABLE categories are absences of evidence in the persisted pack, not findings: the body contains no absolute address and therefore references no global, which is why GLOBALS has nothing to match, and the three vtable slot occurrences are held in this record and in the binary rather than in the persisted evidence pack the validator reads. The WARN categories are the validator's stated limits (it does not prove physical offsets, binary constant context or a binary CFG, and it saw 7 of 17 evidence categories). The briefing records baseline_status WARN for this target, so this probe reproduces the baseline and does not clear it; no claim of PASS is made.",
+  "live_flag": "--live is rejected by the validate subcommand, so the probe ran in persisted mode"
+ },
+ "live_provenance": {
+  "analysis_basis": "Read-only live Ghidra MCP queries plus a direct byte scan of SPORE/SporeBin/SporeApp.exe, language x86:LE:32:default, compiler windows, image base 0x00400000. No Ghidra mutation or save was performed this attempt.",
+  "analysis_basis_note": "The SDK import name is a candidate label only. Every offset, register, width and RET form below was read from the machine body; the vtable slot index was confirmed by scanning the whole binary for the little-endian pointer 0x00fc7e10, which occurs exactly three times.",
+  "binary_scan": {
+   "observation": "The 4-byte little-endian pattern of 0x00fc7e10 occurs exactly three times in the whole image, all in .rdata, at 0x0149174c, 0x0149215c and 0x014939ac. Each address is vtable base +0x1c, so the function has no direct caller in the binary and is reached only through virtual dispatch. The same scan shows 0x00fc7e30 also at exactly three +0x14 slots, and 0x0093b6c0 at 39 slots, so slot +0x20 is a widely inherited base slot.",
+   "tool": "python3 PE section map + bytes.find over SPORE/SporeBin/SporeApp.exe"
+  },
+  "callees": {
+   "address": "0x00fc7e10",
+   "direct_callees": [],
+   "observation": "The body contains no CALL instruction.",
+   "tool": "ghidra_disassemble_function"
+  },
+  "callers": {
+   "address": "0x00fc7e10",
+   "direct_count": 0,
+   "interpretation": "No direct caller xref exists. The three references are vtable data, so reachability is virtual-dispatch mediated and any concrete caller is a runtime gate.",
+   "tool": "ghidra_get_function_by_address xrefs plus whole-binary byte scan"
+  },
+  "constructor_scan": {
+   "constructors": [
+    {
+     "installs_vtable": "0x01491730",
+     "va": "0x00fc7f30",
+     "zeroes": [
+      "+0x04",
+      "+0x08",
+      "+0x0c",
+      "+0x18",
+      "+0x1c"
+     ]
+    },
+    {
+     "also_writes": "+0x2c as a float via MOVSS from a zeroed XMM0",
+     "installs_vtable": "0x01492140",
+     "va": "0x00fcde83",
+     "zeroes": [
+      "+0x04",
+      "+0x08",
+      "+0x0c",
+      "+0x18",
+      "+0x1c",
+      "+0x20",
+      "+0x24",
+      "+0x28",
+      "+0x30",
+      "+0x34",
+      "+0x38"
+     ]
+    },
+    {
+     "installs_vtable": "0x01493990",
+     "observation": "Calls 0x00fc7f30 with MOV ECX,EDI and then overwrites the vtable word with 0x01493990, so the 0x01493990 class derives from the 0x01491730 class.",
+     "va": "0x00fd92aa"
+    }
+   ],
+   "observation": "Each of the three vtable addresses occurs exactly once in .text, as an immediate in a MOV that installs it into [EAX] or [EDI], which located the unique constructor of each class.",
+   "tool": "python3 whole-binary immediate scan + ghidra_disassemble_bytes"
+  },
+  "disassembly": {
+   "address": "0x00fc7e10",
+   "instruction_count": 5,
+   "observation": "Exact instruction stream for the two stack-argument reads, the two dword stores and the RET 0x8 return form. Raw bytes 8b4424048b542408894108895110c20800.",
+   "tool": "ghidra_disassemble_function + ghidra_read_memory"
+  },
+  "function_query": {
+   "address": "0x00fc7e10",
+   "observation": "Import name UTFWin::ImageDrawable::GetTiling; entry 0x00fc7e10; body 0x00fc7e10..0x00fc7e20; 17 bytes; ghidra reports no calling convention and a prototype whose single 'this' parameter is typed at Stack[0x4].",
+   "tool": "ghidra_get_function_by_address"
+  },
+  "ghidra_mutations": 0,
+  "ghidra_saves": 0,
+  "program": "SporeApp.exe",
+  "tools_used": [
+   "ghidra_disassemble_function",
+   "ghidra_disassemble_bytes",
+   "ghidra_get_function_by_address",
+   "ghidra_read_memory",
+   "ghidra_run_script_inline (read-only slot-family scan; no mutation)",
+   "python3 whole-binary pointer and immediate scan of SPORE/SporeBin/SporeApp.exe"
+  ]
+ },
+ "normalized_symbol": "re_00fc7e10_UTFWin_ImageDrawable_GetTiling",
+ "observed_mechanics": [
+  "MOV EAX, dword ptr [ESP + 0x4]: read the first incoming stack word into EAX.",
+  "MOV EDX, dword ptr [ESP + 0x8]: read the second incoming stack word into EDX.",
+  "MOV dword ptr [ECX + 0x8], EAX: publish the first word at receiver +0x08.",
+  "MOV dword ptr [ECX + 0x10], EDX: publish the second word at receiver +0x10.",
+  "RET 0x8: the callee pops both 4-byte stack words, so stack cleanup is 8 bytes owned by the callee.",
+  "No CALL, no branch, no absolute address: the function is a leaf with a single-block CFG and no global reference.",
+  "The receiver is used only as a store base; it is never read, and no word other than +0x08 and +0x10 is written.",
+  "EAX is never loaded with a produced result. It exits holding the first stack word because that word was loaded for the store at +0x08 and the register was then never reused.",
+  "Raw bytes at 0x00fc7e10..0x00fc7e20 are 8b4424048b542408894108895110c20800, and the same bytes were read from SPORE/SporeBin/SporeApp.exe whose sha256 is 25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e."
+ ],
+ "observed_original_abi": {
+  "architecture": "x86-32",
+  "argument_semantics_caveat": "The two argument words are published verbatim at receiver +0x08 and +0x10. No comparison, mask, conversion or range check is present, so the values are stored as received. Neither is transformed, so the observed consumers constrain the types but do not establish them.",
+  "calling_convention": "__thiscall",
+  "convention": "__thiscall",
+  "convention_confidence": "OBSERVED",
+  "hidden_this": true,
+  "hidden_this_register": "ECX",
+  "ordinary_stack_argument_slots": [
+   "entry_ESP+0x4",
+   "entry_ESP+0x8"
+  ],
+  "ordinary_stack_arguments": [
+   {
+    "entry_offset": "entry_ESP+0x4",
+    "name": "first_word",
+    "observed": true,
+    "ordinal": 1,
+    "size_inferred": false,
+    "sizes": [
+     4
+    ],
+    "type": "opaque 32-bit word"
+   },
+   {
+    "entry_offset": "entry_ESP+0x8",
+    "name": "second_word",
+    "observed": true,
+    "ordinal": 2,
+    "size_inferred": false,
+    "sizes": [
+     4
+    ],
+    "type": "opaque 32-bit word"
+   }
+  ],
+  "receiver": true,
+  "receiver_register": "ECX",
+  "ret_form": "RET 0x8",
+  "return_observation": "EAX exits holding the first stack word. No instruction produces a result in EAX, so the machine level fact is a 4-byte value in EAX whose value equals the first argument; whether the original source produced it deliberately is NOT established by this evidence.",
+  "return_register": "EAX",
+  "return_semantics": "opaque 32-bit word in EAX, equal to the first stack argument; intended-return semantics unresolved",
+  "return_type": "OpaqueWord",
+  "return_width_bytes": 4,
+  "saved_registers": "none; no register is pushed and no callee-saved register is written",
+  "signature_caveat": "The imported prototype ImageTiling UTFWin::ImageDrawable::GetTiling(IImageDrawable*) implies zero stack words and a plain RET. The live body reads two stack words and emits RET 0x8. The imported prototype is a label, not the machine contract.",
+  "stack_cleanup_bytes": 8,
+  "stack_cleanup_owner": "callee",
+  "termination": "RET 0x8"
+ },
+ "observed_state_contract": {
+  "flow": [
+   "Read the first incoming stack word into EAX.",
+   "Read the second incoming stack word into EDX.",
+   "Publish the first word at receiver +0x08.",
+   "Publish the second word at receiver +0x10.",
+   "Return with RET 0x8."
+  ],
+  "no_reference_operations": true,
+  "published_words": {
+   "this+0x10": "second incoming stack word, stored verbatim; read by 0x00fc7ec0 and passed to the +0x08 call as the third stack word",
+   "this+0x8": "first incoming stack word, stored verbatim; read back by 0x0093b6c0 as a dword and executed as a code address by 0x00fc7ec0"
+  },
+  "receiver_reads": [],
+  "receiver_writes": [
+   "this+0x8",
+   "this+0x10"
+  ],
+  "state_writes": [
+   "this+0x8",
+   "this+0x10"
+  ],
+  "words_proven_untouched": [
+   "this+0x0",
+   "this+0x4",
+   "this+0xc",
+   "this+0x14",
+   "this+0x18",
+   "this+0x1c"
+  ]
+ },
+ "package": "PKG-UTFWIN-SLOT7-WAVE12",
+ "phase": "live Ghidra machine-contract reconstruction, clean-room model, focused x86-32 model verification, and re-verification of the vtable slot family including the class constructors",
+ "ports_and_runtime_gates": {
+  "dependency_only_ports_not_promoted": [],
+  "indirect_dispatch_ports": [
+   {
+    "shape": "vtable slot +0x1c, __thiscall, two 4-byte stack words, callee pops 8 bytes, 4-byte result in EAX",
+    "status": "runtime_gate",
+    "va": "vtable+0x1c"
+   }
+  ],
+  "runtime_gates": [
+   "No original-process invocation or indirect-caller trace was captured, so no concrete caller is known and the argument values a real caller passes cannot be observed.",
+   "The owning C++ class name and the interface identity of slot +0x1c are not established. SporeApp.exe carries no MSVC RTTI, so class identity cannot be read from the binary; the 0x01493990 class is known only to derive from the 0x01491730 class because its constructor calls the latter's constructor.",
+   "The declared types of the words at receiver +0x08 and +0x10 are not established. Their observed uses are a CALL target and a call argument respectively, which constrains but does not prove them.",
+   "Whether the +0x10 and +0x14 words belong to the same sub-object as the constructor-initialised words is unresolved; none of the three constructors initialises them."
+  ]
+ },
+ "reconstruction_confidence": 0.97,
+ "runtime_gates": [
+  "No original-process invocation or indirect-caller trace was captured, so no concrete caller is known and the argument values a real caller passes cannot be observed.",
+  "The owning C++ class name and the interface identity of slot +0x1c are not established. SporeApp.exe carries no MSVC RTTI, so class identity cannot be read from the binary; the 0x01493990 class is known only to derive from the 0x01491730 class because its constructor calls the latter's constructor.",
+  "The declared types of the words at receiver +0x08 and +0x10 are not established. Their observed uses are a CALL target and a call argument respectively, which constrains but does not prove them.",
+  "Whether the +0x10 and +0x14 words belong to the same sub-object as the constructor-initialised words is unresolved; none of the three constructors initialises them."
+ ],
+ "runtime_validation": {
+  "reason": "Original-process experiment requires human approval and the machine lock; none was performed for this target.",
+  "runtime_validated": 0,
+  "status": "not_run"
+ },
+ "schema": "pkg-utfwin-slot7-wave12.function-handoff.v1",
+ "scope": {
+  "integration_batch": null,
+  "not_promoted_file_kinds": [],
+  "owned_vas": [
+   "0x00fc7e10"
+  ],
+  "package_scope": "The single unowned VA assigned to staging package reconstruction/staging/pkg-utfwin-slot7-wave12. Sibling vtable functions 0x00fc7e30, 0x00fc7e50, 0x0093b6c0, 0x00fc7e60, 0x00fc7e80, 0x00fc7e90, 0x00fc7eb0, 0x00fc7ec0 and the three constructors 0x00fc7f30, 0x00fcde83, 0x00fd92aa were read as layout evidence only and were NOT promoted to records.",
+  "promoted_file_kinds": [
+   ".hpp",
+   ".cpp",
+   "model_test.cpp",
+   ".clang-format"
+  ],
+  "source_manifest_modified": false,
+  "src_modified": false,
+  "staging_package": "reconstruction/staging/pkg-utfwin-slot7-wave12"
+ },
+ "semantic_label": "OBSERVED",
+ "source_files": [
+  "reconstruction/staging/pkg-utfwin-slot7-wave12/utfwin_slot7_wave12.cpp",
+  "reconstruction/staging/pkg-utfwin-slot7-wave12/utfwin_slot7_wave12.hpp",
+  "reconstruction/staging/pkg-utfwin-slot7-wave12/utfwin_slot7_wave12_model_test.cpp",
+  "reconstruction/staging/pkg-utfwin-slot7-wave12/.clang-format"
+ ],
+ "source_path": {
+  "declaration": "reconstruction/staging/pkg-utfwin-slot7-wave12/utfwin_slot7_wave12.hpp",
+  "focused_test": "reconstruction/staging/pkg-utfwin-slot7-wave12/utfwin_slot7_wave12_model_test.cpp",
+  "implementation": "reconstruction/staging/pkg-utfwin-slot7-wave12/utfwin_slot7_wave12.cpp",
+  "staging_origin": "reconstruction/staging/pkg-utfwin-slot7-wave12/"
+ },
+ "subsystem": "UTFWin",
+ "symbol": "UTFWin::ImageDrawable::GetTiling",
+ "target_state": "staged candidate source; runtime validation gated",
+ "unresolved_questions": [
+  "Is the return register value intentional? No instruction produces a result in EAX, so the source level return type is unknown; the SDK label says ImageTiling but the body is setter shaped.",
+  "Which function does the SDK mean by GetTiling, this setter shaped slot +0x1c or the zero-argument dword read of receiver +0x08 at 0x0093b6c0 in slot +0x20?",
+  "What is the declared type of the word at receiver +0x08? It is executed as a code address by 0x00fc7ec0 and returned as a dword by 0x0093b6c0, but no declared type is proven.",
+  "What is the declared type and role of the word at receiver +0x10? 0x00fc7ec0 passes it as the third stack word to the +0x08 call, so its role is a call argument, but its type is not proven.",
+  "Which C++ class owns vtables 0x01491730, 0x01492140 and 0x01493990, and what interface is slot +0x1c of? The 0x01493990 class provably derives from the 0x01491730 class, but no name is recoverable without RTTI.",
+  "Why do none of the three constructors initialise +0x10 or +0x14 while this target writes +0x10 and 0x00fc7ec0 reads both? Either the constructors rely on zeroed storage, or those words sit in a different sub-object.",
+  "Do the two arguments form a related pair, such as a callback and its context? 0x00fc7ec0 consumes them together as a call target and a call argument, which is consistent with that reading, but no arithmetic or relation is applied between them in this function."
+ ],
+ "va": "0x00fc7e10",
+ "version": "3.1.0.22",
+ "vtable_family_layout_evidence": {
+  "consumer_evidence": [
+   {
+    "observation": "Loads receiver +0x08 into ECX, then loads receiver +0x10 into EDX, pushes EDX, pushes a shifted size word, pushes a type word from its argument structure, and calls ECX, with ADD ESP,0xc afterwards. The word at +0x08 is therefore a call target and the word at +0x10 is its third stack argument. It also compares its argument against +0x18 and +0x1c, and reads +0x0c and +0x14 on the other path.",
+    "role": "vtable slot +0x48 of 0x01493990",
+    "va": "0x00fc7ec0"
+   },
+   {
+    "observation": "MOV EAX,dword ptr [ECX + 0x8]; RET. Returns the word published by this target unchanged.",
+    "role": "vtable slot +0x20, present in 39 vtables across the image",
+    "va": "0x0093b6c0"
+   }
+  ],
+  "field_map_evidence": {
+   "initialised_by_0x01492140_only": [
+    "+0x20",
+    "+0x24",
+    "+0x28",
+    "+0x2c",
+    "+0x30",
+    "+0x34",
+    "+0x38"
+   ],
+   "initialised_by_all_three": [
+    "+0x04",
+    "+0x08",
+    "+0x0c",
+    "+0x18",
+    "+0x1c"
+   ],
+   "never_initialised_by_any_constructor": [
+    "+0x10",
+    "+0x14"
+   ],
+   "note": "Each vtable address occurs exactly once in .text as an immediate, which located one constructor per class and therefore the initialised field set."
+  },
+  "note": "Read from the machine bodies of the same vtable slot family and from the three class constructors. Used only to justify receiver offsets and the setter/getter pairing. These siblings and constructors were not promoted to records.",
+  "slot_neighbours": {
+   "+0x08": "0x00c2e4e0, a bare RET, three times at +0x08, +0x0c and +0x10",
+   "+0x14": "0x00fc7e30, two stack words published at receiver +0x0c and +0x14, RET 0x8",
+   "+0x18": "0x00fc7e50, zero-argument dword read of receiver +0x0c, RET",
+   "+0x1c": "0x00fc7e10, this target",
+   "+0x20": "0x0093b6c0, zero-argument dword read of receiver +0x08, RET",
+   "+0x34": "0x00fc7e60, dispatches through the receiver vtable, then multiplies +0x1c by +0x18",
+   "+0x40": "0x00fc7e90, dispatches through the receiver vtable, then multiplies +0x1c and shifts right by 3",
+   "+0x48": "0x00fc7ec0, in 0x01493990 only; calls the word at +0x08 with the word at +0x10 as an argument"
+  }
+ },
+ "vtable_slot_observations": [
+  {
+   "observation": "slot +0x1c (index 7) holds a pointer to 0x00fc7e10. Slots 0x00..0x1c match 0x01493990 exactly except slot 0x00. Nineteen code slots, then float constants 0x40490fdb and 0x3f800000.",
+   "role": "vtable slot +0x1c (index 7)",
+   "vtable_address": "0x01491730"
+  },
+  {
+   "observation": "slot +0x1c (index 7) holds a pointer to 0x00fc7e10. This table differs from the other two at +0x00, +0x04, +0x08 and +0x0c, and is wider: 22 code slots to +0x58, a 0xffffffff marker at +0x5c, two further code slots at +0x60 and +0x64, then ASCII data.",
+   "role": "vtable slot +0x1c (index 7)",
+   "vtable_address": "0x01492140"
+  },
+  {
+   "observation": "slot +0x1c (index 7) holds a pointer to 0x00fc7e10. Nineteen code slots to +0x48, then the ASCII string \"movie\" at +0x4c. Its class constructor calls the 0x01491730 constructor, so this is a derived class of that one.",
+   "role": "vtable slot +0x1c (index 7)",
+   "vtable_address": "0x01493990"
+  }
+ ],
+ "vtables": [
+  "vtable:0x01491730",
+  "vtable:0x01492140",
+  "vtable:0x01493990"
+ ],
+ "independent_reverification_2026_09_26_attempt3": {
+  "attempt": "third lease on the same content_sha256 (8b00eb5dc18dcac5c7092b8967f9aac6479bbed6d25ec2adf0bb3601ad7ebe44); every load-bearing claim was re-derived from live tools rather than trusted from either prior attempt. No prior block was edited or removed.",
+  "body_bytes_reread": "ghidra_read_memory at 0x00fc7e10 length 17 returned hex 8b4424048b542408894108895110c20800, byte-identical to the bytes recorded in this record. ghidra_disassemble_function at the same address independently returned the same 5 instructions: MOV EAX,[ESP+0x4]; MOV EDX,[ESP+0x8]; MOV [ECX+0x8],EAX; MOV [ECX+0x10],EDX; RET 0x8.",
+  "binary_identity": "sha256sum of SPORE/SporeBin/SporeApp.exe recomputed this attempt = 25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e, matching this record and the briefing lease.",
+  "reachability_reread": "Whole-image byte scan re-run this attempt over the raw PE: the 4-byte little-endian pattern of 0x00fc7e10 occurs exactly 3 times, and PE section mapping resolves all three to .rdata at VAs 0x0149174c, 0x0149215c and 0x014939ac. Image base re-derived from the PE optional header = 0x400000. This reproduces the recorded 3-occurrence result and confirms there is no direct caller; reachability is virtual only.",
+  "vtable_slots_reread": "ghidra_read_memory at each of the three slot addresses returned 107efc00, i.e. the LE pointer 0x00fc7e10, in all three cases. Each slot address is exactly vtable_base+0x1c for its table (0x0149174c-0x01491730, 0x0149215c-0x01492140, 0x014939ac-0x01493990), confirming the +0x1c slot index this record asserts.",
+  "consumers_reread": "Sibling and consumer claims re-verified by direct disassembly this attempt. 0x00fc7e30 = MOV EAX,[ESP+0x4]; MOV EDX,[ESP+0x8]; MOV [ECX+0xc],EAX; MOV [ECX+0x14],EDX; RET 0x8. 0x00fc7e50 = MOV EAX,[ECX+0xc]; RET. 0x0093b6c0 = MOV EAX,[ECX+0x8]; RET. 0x00fc7e60 loads [ESI] then [EAX+0x3c], CALL EDX, IMUL [ESI+0x1c], IMUL [ESI+0x18]. 0x00fc7e90 loads [ESI] then [EAX+0x3c], CALL EDX, IMUL [ESI+0x1c], SHR EAX,3. 0x00fc7eb0 loads [ECX] then [EAX+0x34]. 0x00fc7ec0 at 0x00fc7eee loads ECX=[ESI+0x8], at 0x00fc7ef8 loads EDX=[ESI+0x10] and PUSHes it, then PUSHes EAX, then PUSHes [EDI+0x10], then CALL ECX at 0x00fc7f01, then ADD ESP,0xc; its fallback at 0x00fc7f0b reads [ESI+0xc] and at 0x00fc7f12 reads [ESI+0x14]. Every consumer claim in the header and in this record is therefore confirmed against live disassembly.",
+  "tests_rerun": "clang++ -m32 -std=c++17 with -Wall -Wextra -Wpedantic -Werror over utfwin_slot7_wave12.cpp + utfwin_slot7_wave12_model_test.cpp, run at -O0, -O0 -DNDEBUG, -O2 and -O2 -DNDEBUG. All four configurations compiled with zero diagnostics and all 6 focused tests passed (verified by process exit status; check() aborts on failure).",
+  "codegen_reread": "clang++ -m32 -std=c++17 -O2 -c then objdump -d -M intel of the emitted body: mov edx,[esp+0x8]; mov eax,[esp+0x4]; mov [ecx+0x8],eax; mov [ecx+0x10],edx; ret 0x8 = 8b5424088b442404894108895110c20800. This reproduces the recorded model bytes exactly: same 17-byte length, both stores and the RET form byte-identical to the original, and the sole difference is that the two independent argument loads are emitted in the opposite order.",
+  "validate_probe_rerun": "python3 tools/openspore.py validate --no-write --format json 0x00fc7e10 re-run this attempt: status WARN, unchanged. Per-category: ABI PASS, RETURN SEMANTICS PASS, CALLS/CONSTANTS/CONTROL FLOW/FIELDS-OFFSETS/EVIDENCE COVERAGE WARN, GLOBALS and VIRTUAL DISPATCH NOT_AVAILABLE. The two NOT_AVAILABLE results and the WARNs are absences in the persisted pack read by the validator, not defects in the candidate; this equals the briefing baseline_status WARN. Per the rules, reconstruction/knowledge/index.json was not modified to influence any check.",
+  "ghidra_mutations": 0,
+  "ghidra_saves": 0,
+  "nothing_claimed_beyond_the_body": "Re-verification resolved none of the four recorded runtime gates and none of the open contradictions. The mechanics remain CONFIRMED at OBSERVED evidence level; field-meaning attribution, the class/interface identity, the declared types of the two argument words, and the intended return semantics all remain unresolved and are still reported as such."
+ }
+}

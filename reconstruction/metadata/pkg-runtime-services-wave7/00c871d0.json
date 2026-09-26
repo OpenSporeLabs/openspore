@@ -1,0 +1,119 @@
+{
+  "schema": "pkg-runtime-services-wave7-function-handoff.v1",
+  "package": "PKG-RUNTIME-SERVICES-WAVE7",
+  "worker_ownership": "runtime-services-wave7",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "va": "0x00c871d0",
+  "function_address": "0x00c871d0",
+  "ghidra_name": "App::Canvas::GetMessageServer",
+  "normalized_symbol": "app_canvas_get_message_server_00c871d0",
+  "source_files": [
+    "src/reconstruction/pkg_runtime_services_wave7/runtime_services_wave7.hpp",
+    "src/reconstruction/pkg_runtime_services_wave7/runtime_services_wave7.cpp",
+    "src/reconstruction/pkg_runtime_services_wave7/runtime_services_wave7_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "review_status": "staged_static_review",
+  "body_implementation": true,
+  "declaration": "CanvasMessageServerResult *RUNTIME_SERVICES_THISCALL app_canvas_get_message_server_00c871d0(OpaqueCanvas *, CanvasMessageServerResult *)",
+  "original_native_abi": {
+    "architecture": "x86:LE:32",
+    "calling_convention": "thiscall",
+    "hidden_receiver": "ECX = OpaqueCanvas*",
+    "ordinary_stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "ESP+0x04",
+        "name": "result",
+        "type": "CanvasMessageServerResult*",
+        "width_bytes": 4
+      }
+    ],
+    "stack_cleanup_bytes": 4,
+    "return_register": "EAX",
+    "return_width_bytes": 4,
+    "return_type": "same result pointer",
+    "termination": "RET 0x4",
+    "ghidra_convention_note": "The decompiler prototype displays an IMessageManager return; the raw PUSH ESI, RET 0x4 sequence proves the returned EAX is the stack result pointer."
+  },
+  "body": {
+    "entry": "0x00c871d0",
+    "body_end_inclusive": "0x00c87235",
+    "instruction_count": 37,
+    "raw_bytes_hex": "568b74240833c0578bf989068946048946088b078b5020ffd284c07420a1b09e57018906b0db49e5701894e048b15b89e57015f8956088bc65ec204008b7f305668c47fa3a657e834a0a1ff83c40c84c0740ec7460404b1b100c74608e7d5f4055f8bc65ec20400cccccccccccccccc",
+    "mechanics": [
+      "zero result words at offsets 0x00, 0x04, and 0x08",
+      "call the receiver vtable slot at +0x20 with ECX still equal to the Canvas receiver",
+      "on a true probe, copy the three words from 0x01579eb0, 0x01579eb4, and 0x01579eb8",
+      "on a false probe, read the property-list pointer at receiver+0x30 and call 0x006a1250 with property id 0xa6a37fc4 and the result as the destination",
+      "on a successful fallback lookup, write 0x00b1b104 to result+0x04 and 0x05f4d5e7 to result+0x08",
+      "return the result pointer in EAX"
+    ],
+    "receiver_probe": {
+      "vtable_offset": "0x20",
+      "return_width": "AL",
+      "return_policy": "TEST AL,AL"
+    },
+    "fallback_destination": "result pointer is the third stack argument to 0x006a1250; its first word remains the successful property-key instance value"
+  },
+  "live_evidence": {
+    "program": "SporeApp.exe",
+    "function_by_address": "App::Canvas::GetMessageServer; body 0x00c871d0-0x00c87235",
+    "decompile_function": "0x00c871d0",
+    "disassemble_function": "0x00c871d0",
+    "read_memory": "0x00c871d0 length 128",
+    "direct_callee": "App::Property::GetKey at 0x006a1250",
+    "function_xrefs": "five DATA references",
+    "global_xrefs": "0x01579eb0, 0x01579eb4, and 0x01579eb8 each have one read reference from this body"
+  },
+  "model_boundary": {
+    "represented": "Canvas result initialization, vtable +0x20 probe, property-key destination, active global words, and fallback constants",
+    "not_represented": [
+      "concrete Canvas subtype",
+      "the concrete implementation behind 0x006a1250",
+      "the meaning of the global result words",
+      "the property list owner and its lifetime"
+    ]
+  },
+  "allocation_release": "No allocation or release call is present; property lookup remains behind the 0x006a1250 boundary.",
+  "dispatch_boundary": "Receiver vtable +0x20 and direct call 0x006a1250 are retained as separate ports; no persistence or presentation side effect is added.",
+  "tests": [
+    "active probe installs all three global words",
+    "fallback passes property list, id, and result destination",
+    "successful fallback preserves the destination instance word and installs constants",
+    "failed fallback leaves the zeroed result unchanged"
+  ],
+  "runtime_gate": {
+    "status": "required",
+    "runtime_validation": 0,
+    "conditions": [
+      "observe Canvas receiver and vtable validity",
+      "record the 0x01579eb0, 0x01579eb4, and 0x01579eb8 publication values",
+      "observe 0x006a1250 success and the property-key destination"
+    ],
+    "promotion_status": "not_promoted"
+  },
+  "unresolved_questions": [
+    "What concrete Canvas receiver and vtable are used at runtime?",
+    "What do the three global words represent?",
+    "What property-key result is returned by 0x006a1250?",
+    "What owns the property list at receiver+0x30?"
+  ],
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only src/reconstruction/pkg_runtime_services_wave7/runtime_services_wave7.cpp src/reconstruction/pkg_runtime_services_wave7/runtime_services_wave7_model_test.cpp",
+    "model_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror src/reconstruction/pkg_runtime_services_wave7/runtime_services_wave7.cpp src/reconstruction/pkg_runtime_services_wave7/runtime_services_wave7_model_test.cpp -o /tmp/opencode/pkg-runtime-services-wave7-test && /tmp/opencode/pkg-runtime-services-wave7-test",
+    "ndebug_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -DNDEBUG src/reconstruction/pkg_runtime_services_wave7/runtime_services_wave7.cpp src/reconstruction/pkg_runtime_services_wave7/runtime_services_wave7_model_test.cpp -o /tmp/opencode/pkg-runtime-services-wave7-test-ndebug && /tmp/opencode/pkg-runtime-services-wave7-test-ndebug",
+    "format_command": "clang-format --dry-run --Werror -style='{BasedOnStyle: Google, FixNamespaceComments: false}' src/reconstruction/pkg_runtime_services_wave7/runtime_services_wave7.hpp src/reconstruction/pkg_runtime_services_wave7/runtime_services_wave7.cpp src/reconstruction/pkg_runtime_services_wave7/runtime_services_wave7_model_test.cpp",
+    "runtime": "not performed"
+  },
+  "ghidra_mutations": 0,
+  "ghidra_saves": 0,
+  "target_state": "integrated canonical source; runtime validation gated",
+  "integration_status": "integrated",
+  "canonical_files": [
+    "src/reconstruction/pkg_runtime_services_wave7/runtime_services_wave7.hpp",
+    "src/reconstruction/pkg_runtime_services_wave7/runtime_services_wave7.cpp",
+    "src/reconstruction/pkg_runtime_services_wave7/runtime_services_wave7_model_test.cpp"
+  ]
+}

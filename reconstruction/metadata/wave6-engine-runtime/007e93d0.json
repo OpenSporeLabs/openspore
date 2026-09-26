@@ -28,13 +28,21 @@
         "name": "command_line",
         "type": "const std::uint16_t*",
         "entry_offset": "ESP+0x04",
-        "width_bytes": 4
+        "width_bytes": 4,
+        "role": "first UTF-16 source scanned for receiver+0x138"
+      },
+      {
+        "name": "second_command_line",
+        "type": "const std::uint16_t*",
+        "entry_offset": "ESP+0x08",
+        "width_bytes": 4,
+        "role": "second UTF-16 source scanned for receiver+0x148; semantic identity remains unresolved"
       }
     ],
-    "stack_cleanup_bytes": 4,
+    "stack_cleanup_bytes": 8,
     "termination": "RET 0x8",
     "return_contract": "No stable EAX return is established. The imported bool label is not promoted; staging models the body as void-like.",
-    "decompiler_note": "Live Ghidra labels the convention unknown; ECX use, one pointer argument, and RET 8 establish the thiscall-shaped x86-32 frame."
+    "decompiler_note": "Live Ghidra labels the convention unknown; direct disassembly reads two stack pointers through ESP+0x04 and ESP+0x08, uses ECX as the receiver, and ends with RET 8."
   },
   "body": {
     "entry": "0x007e93d0",
@@ -42,16 +50,16 @@
     "body_end_exclusive": "0x007e9440",
     "instruction_count": 42,
     "observed_order": [
-      "scan the incoming pointer two bytes at a time until a zero uint16 and compute the end pointer",
-      "call 0x00423650 with ECX=receiver+0x138, source pointer, and end pointer",
+      "scan the first incoming pointer two bytes at a time until a zero uint16 and compute the end pointer",
+      "call 0x00423650 with ECX=receiver+0x138, first source pointer, and end pointer",
       "call 0x004f6510 with ECX=receiver+0x138 and uint16 value 0x005c",
-      "reload the incoming pointer and rescan for its zero uint16",
-      "call 0x00423650 with ECX=receiver+0x148, source pointer, and second end pointer",
+      "load the second incoming pointer from the original ESP+0x08 stack word and scan it two bytes at a time until a zero uint16",
+      "call 0x00423650 with ECX=receiver+0x148, second source pointer, and second end pointer",
       "call 0x004f6510 with ECX=receiver+0x148 and uint16 value 0x005c",
-      "return while removing the original four-byte argument"
+      "return while removing the original eight bytes of stack arguments"
     ],
-    "null_policy": "No guard exists for the incoming pointer; a null source faults on the first 16-bit read.",
-    "sentinel": "The scan stops only on uint16 zero. No length, maximum, or encoding validation is present."
+    "null_policy": "No guard exists for either incoming pointer; a null source faults on its first 16-bit read.",
+    "sentinel": "Each scan stops only on uint16 zero. No length, maximum, or encoding validation is present."
   },
   "layout_observations": {
     "wide_string_helpers": {
@@ -59,7 +67,7 @@
       "word_width_bytes": 4,
       "terminator_width_bytes": 2,
       "append_value": "0x005c",
-      "status": "Three-pointer carrier and helper pointer arithmetic are observed; allocator and string ownership remain unresolved."
+      "status": "Three-pointer carrier and helper pointer arithmetic are observed; 0x00423650 appends or concatenates a source span and 0x004f6510 appends one uint16; allocator and string ownership remain unresolved."
     },
     "receiver_windows": [
       {
@@ -79,7 +87,7 @@
       "address": "0x00423650",
       "call_count": 2,
       "raw_abi": "thiscall ECX destination plus source/end stack pointers; RET 8",
-      "observed_role": "replace or assign a pointer-bounded UTF-16 span"
+      "observed_role": "append or concatenate a pointer-bounded UTF-16 span"
     },
     {
       "address": "0x004f6510",
@@ -103,37 +111,38 @@
   },
   "implementation_boundary": {
     "ports_type": "Wave6WideStringPorts",
-    "assign_port": "assign_00423650 preserves the exact destination, source, and end-pointer call shape",
-    "append_port": "append_004f6510 preserves the exact destination and uint16 0x005c call shape",
-    "rescan_rule": "The second end pointer is recomputed after the first helper pair rather than cached.",
+    "span_append_port": "append_00423650 preserves the exact destination, source, and end-pointer call shape for the append or concatenation operation",
+    "unit_append_port": "append_004f6510 preserves the exact destination and uint16 0x005c call shape",
+    "rescan_rule": "The second source end pointer is recomputed from the second stack pointer after the first helper pair rather than cached.",
     "return_limit": "Helper EAX residue is not promoted to a reconstructed return value.",
     "ownership": "No destination storage or command-line ownership is claimed."
   },
   "model_tests": [
-    "three-unit and empty UTF-16 scans",
-    "first assign then append order at receiver+0x138",
-    "second assign then append order at receiver+0x148",
+    "first and second UTF-16 scans with distinct source pointers",
+    "first append-span then append-unit order at receiver+0x138",
+    "second append-span then append-unit order at receiver+0x148",
     "both end pointers include the terminating uint16 and exclude it by address",
-    "both append calls use exact uint16 value 0x005c",
-    "second scan is issued against the reloaded incoming pointer"
+    "both unit appends use exact uint16 value 0x005c",
+    "second scan is issued against the second incoming stack pointer after the first pair"
   ],
   "unresolved_questions": [
     "What concrete semantic values are stored at receiver+0x138 and receiver+0x148?",
-    "Does the imported CommandLine label accurately describe the UTF-16 input across every caller?",
+    "What concrete relationship exists between the two incoming UTF-16 stack pointers across every caller?",
+    "Does the imported CommandLine label accurately describe either UTF-16 input across every caller?",
     "What allocation, growth, and destruction behavior do the two helper ports retain in the original?",
-    "Can either helper mutate or invalidate the incoming source pointer before the second scan?",
+    "Can either helper mutate or invalidate either incoming source pointer before its scan or append?",
     "What stable EAX value, if any, do callers consume after this wrapper?"
   ],
   "runtime_gate": {
     "status": "required",
     "runtime_validation": 0,
     "conditions": [
-      "The incoming UTF-16 pointer is live and contains a reachable uint16 zero sentinel.",
+      "Both incoming UTF-16 stack pointers are live and contain reachable uint16 zero sentinels.",
       "The receiver has valid initialized string carriers at +0x138 and +0x148.",
       "The original helper implementations 0x00423650 and 0x004f6510 are available for correlated tracing.",
-      "The trace captures both destination spans, both end pointers, both appended 0x005c units, and the return-site EAX value."
+      "The trace captures both source spans, both end pointers, both appended 0x005c units, and the return-site EAX value."
     ],
-    "minimum_positive_claim": "An original-process trace reaches 0x007e93d0 and records the exact four-helper sequence for both destinations.",
+    "minimum_positive_claim": "An original-process trace reaches 0x007e93d0 and records the exact four-helper sequence for both destinations with both source pointers.",
     "promotion_status": "not_promoted"
   },
   "provenance": [

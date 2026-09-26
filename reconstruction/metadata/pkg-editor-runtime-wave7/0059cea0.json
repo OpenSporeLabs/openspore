@@ -1,0 +1,153 @@
+{
+  "schema": "pkg-editor-runtime-wave7.function-handoff.v1",
+  "package": "PKG-EDITOR-RUNTIME-WAVE7",
+  "scope": {
+    "package_scope": "Six animation and controller VAs only. 0x00591fa0 was removed from this package after pkg-editor-lifecycle-wave6 claimed it; its source file editor_runtime_wave7.cpp, its declarations, its tests and its metadata handoff were deleted.",
+    "owned_vas": [
+      "0x0059b0f0",
+      "0x0059b4b0",
+      "0x0059cac0",
+      "0x0059cb10",
+      "0x0059cea0",
+      "0x0059cf00"
+    ],
+    "removed_vas": [
+      {
+        "va": "0x00591fa0",
+        "owner": "pkg-editor-lifecycle-wave6",
+        "artefacts_removed": [
+          "src/reconstruction/pkg_editor_runtime_wave7/editor_runtime_wave7.cpp",
+          "OpaqueEditor / EditorDispatchPorts / message-id constants in editor_runtime_wave7.hpp",
+          "editor_handle_message_00591fa0 and its model tests",
+          "reconstruction/metadata/pkg-editor-runtime-wave7/00591fa0.json"
+        ]
+      }
+    ]
+  },
+  "function_address": "0x0059cea0",
+  "ghidra_name": "Editors::cEditorAnimWorld::SetTargetAngle",
+  "normalized_symbol": "EditorAnimWorld_SetTargetAngle_0059cea0",
+  "source_files": [
+    "src/reconstruction/pkg_editor_runtime_wave7/editor_runtime_wave7.hpp",
+    "src/reconstruction/pkg_editor_runtime_wave7/editor_runtime_wave7.cpp",
+    "src/reconstruction/pkg_editor_runtime_wave7/editor_runtime_wave7_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "void __thiscall EditorAnimWorld_SetTargetAngle_0059cea0(cEditorAnimWorld *this, int creatureID, float angle, bool applyNow);",
+  "abi": {
+    "calling_convention": "thiscall",
+    "hidden_this": "OpaqueAnimWorld * in ECX",
+    "stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "ESP+0x04",
+        "name": "creatureID",
+        "type": "std::int32_t",
+        "width_bytes": 4
+      },
+      {
+        "position": 2,
+        "entry_offset": "ESP+0x08",
+        "name": "angle",
+        "type": "float",
+        "width_bytes": 4
+      },
+      {
+        "position": 3,
+        "entry_offset": "ESP+0x0c",
+        "name": "applyNow",
+        "type": "bool",
+        "width_bytes": 4
+      }
+    ],
+    "stack_cleanup_bytes": 12,
+    "stack_cleanup_owner": "caller",
+    "return_type": "void",
+    "return_register": null,
+    "return_width_bytes": 0
+  },
+  "body": {
+    "status": "reconstructed",
+    "entry_address": "0x0059cea0",
+    "body_addresses": [
+      "0x0059cea0",
+      "0x0059cef7"
+    ],
+    "instruction_count": 35,
+    "mechanics": [
+      "Spill argument 1 and check the map gate this+0x38; a zero gate returns without any map call.",
+      "lower_bound against this+0x0c through a valid local cursor out pointer, then find, then TEST ECX,ECX on the mapped controller: a null controller is an additional early return that the lookup miss path produces.",
+      "On success load applyNow from [ESP+0x18] and angle from [ESP+0x14], then FSTP the angle onto the outgoing stack so the forwarded call is (controller, angle, applyNow) in that order.",
+      "Forward to 0x0059b2f0, which stores the angle at controller+0x44 and, when applyNow is set, also stores it at controller+0x48 and rebuilds the creature orientation row at creature+0x10..0x1c.",
+      "Epilogue is POP ESI/EDI/ECX, RET 0xc."
+    ],
+    "forward_order": [
+      "controller",
+      "angle",
+      "applyNow"
+    ]
+  },
+  "call_graph": {
+    "direct_callees": [
+      "0x00e5c780",
+      "0x0059c740",
+      "0x0059b2f0"
+    ],
+    "direct_callers": [
+      "0x00587670",
+      "0x005836b0",
+      "0x00639350",
+      "0x00577e10"
+    ],
+    "direct_call_site_count": 6
+  },
+  "evidence": [
+    {
+      "tool": "ghidra_get_function_by_address",
+      "address": "0x0059cea0",
+      "observation": "Live function spans 0x0059cea0..0x0059cef7."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x0059cea0",
+      "observation": "Listing proves the 0x38 gate, the two LEA/PUSH pairs that give 0x00e5c780 a real key pointer and out pointer, the TEST ECX,ECX null-controller exit, the [ESP+0x18]/[ESP+0x14] argument loads, the FSTP stack push and the RET 0xc epilogue."
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x0059b2f0",
+      "observation": "The forwarded target writes controller+0x44 always and controller+0x48 plus the creature orientation row only when applyNow is non-zero, fixing the argument order."
+    },
+    {
+      "tool": "ghidra_get_function_xrefs",
+      "address": "0x0059cea0",
+      "observation": "Six direct call sites."
+    },
+    "0x00e5c780 stores the found node through [ESP+0x8] and dereferences [ESP+0xc] as the search key, so the native stack order after the receiver is (out, key). The port declaration and both call sites use (map, out, key) with a non-null out pointer and the cursor is read back from that slot."
+  ],
+  "tests": [
+    "hit path forwards (controller, angle, applyNow) in that order after lower_bound and find",
+    "the lower-bound port receives a non-null out pointer on the hit path",
+    "key past the last node forwards nothing",
+    "this+0x38 == 0 skips the lookup and the forward",
+    "lower_bound hit but find miss forwards nothing",
+    "lower-bound port receives (out, key) with a non-null out pointer"
+  ],
+  "runtime_gates": [
+    "Angle units and wrap domain of controller+0x44/+0x48",
+    "Injected at runtime through g_fixed_basis (OpaqueFixedBasis). The file image holds zeros at every one of these addresses, so the reconstruction never promotes a compiled-in value: normalize_epsilon models 0x015e590c/0x015e5910/0x015e5914, orientation models 0x015e5a0c/0x015e5a10/0x015e5a14 and projection models 0x015e5a88/0x015e5a8c/0x015e5a90. Every consumer is a gate until those words are observed at runtime.",
+    "Which editor command sites drive SetTargetAngle at runtime"
+  ],
+  "confidence": {
+    "body": "high",
+    "abi_and_cleanup": "high",
+    "forward_order": "high"
+  },
+  "verification": "self-consistent: 29 focused x86-32 model tests pass in normal and NDEBUG builds; -Wall -Wextra -Wpedantic -Werror clean; clang-format clean",
+  "target_state": "integrated canonical source; runtime validation gated",
+  "integration_status": "integrated",
+  "canonical_files": [
+    "src/reconstruction/pkg_editor_runtime_wave7/editor_runtime_wave7.hpp",
+    "src/reconstruction/pkg_editor_runtime_wave7/editor_runtime_wave7.cpp",
+    "src/reconstruction/pkg_editor_runtime_wave7/editor_runtime_wave7_model_test.cpp"
+  ]
+}

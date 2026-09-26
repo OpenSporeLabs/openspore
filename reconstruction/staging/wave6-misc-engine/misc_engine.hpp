@@ -56,16 +56,17 @@ struct OpaqueDestructible {
 };
 
 struct MessageQueuePorts {
-  using Prepare = void (*)(OpaqueMessageService*, TargetWord, TargetWord);
-  using Query = TargetWord (*)(OpaqueMessageService*);
+  using Prepare = void(WAVE6_THISCALL*)(OpaqueMessageService*, TargetWord,
+                                        TargetWord);
+  using Query = TargetWord(WAVE6_THISCALL*)(OpaqueMessageService*);
 
   Prepare prepare_7c = nullptr;
   Query query_90 = nullptr;
 };
 
 struct DeletingDestructorPorts {
-  using BaseDestroy = void (*)(OpaqueDestructible*);
-  using GlobalDelete = void (*)(OpaqueDestructible*);
+  using BaseDestroy = void(WAVE6_THISCALL*)(OpaqueDestructible*);
+  using GlobalDelete = void(WAVE6_CDECL*)(OpaqueDestructible*);
 
   BaseDestroy base_destroy_005725a0 = nullptr;
   GlobalDelete global_delete_00f47380 = nullptr;
@@ -80,8 +81,7 @@ OpaqueIAppSystem* WAVE6_CDECL app_iapp_system_get_0067dcc0();
 OpaqueGameTimeManager* WAVE6_CDECL game_time_manager_get_00b3d480();
 TargetWord WAVE6_THISCALL message_manager_get_queue_0098f4d0(
     OpaqueMessageManager* manager, TargetWord queue_index, void* queue);
-OpaqueDestructible* WAVE6_THISCALL
-time_start_frame_deleting_destructor_00b63980(OpaqueDestructible* receiver,
-                                              TargetWord deleting_flag);
+OpaqueDestructible* WAVE6_THISCALL destructible_lifecycle_thunk_00b63980(
+    OpaqueDestructible* receiver, TargetWord deleting_flag);
 
 }

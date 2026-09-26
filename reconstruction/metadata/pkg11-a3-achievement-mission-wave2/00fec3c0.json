@@ -1,0 +1,157 @@
+{
+  "schema": "pkg11-a3-achievement-mission-wave2.function-handoff.v1",
+  "package": "PKG-11-A3-ACHIEVEMENT-MISSION-WAVE2",
+  "function_address": "0x00fec3c0",
+  "ghidra_name": "FUN_00fec3c0",
+  "normalized_symbol": "mission_manager_record_init_00fec3c0",
+  "source_files": [
+    "reconstruction/staging/pkg11-a3-achievement-mission-wave2/achievement_mission_wave2.hpp",
+    "reconstruction/staging/pkg11-a3-achievement-mission-wave2/achievement_mission_wave2.cpp"
+  ],
+  "ownership": {
+    "status": "unowned_body_reached_only_through_a_vtable_forwarding_stub",
+    "manifest_checked": true,
+    "metadata_checked": true,
+    "integrated_handoffs_checked": true,
+    "staging_and_canonical_source_checked": true,
+    "git_status_checked": true,
+    "boundary": "No existing body record, staging source, integrated source, or test claims 0x00fec3c0. The forwarding stub at 0x00feca60 has no function in the database and is stored into a runtime-built virtual table at 0x01396a32, so the entry reconstructed here is the implementation body and not the table entry. Nothing in this package claims the stub or the table."
+  },
+  "imported_name_resolution": {
+    "status": "normalized_from_live_abi_with_receiver_classification_unverified",
+    "supported_signature": "MissionManagerWire* cdecl(MissionManagerWire* manager, const std::uint8_t* flag)",
+    "reason": "The body opens with PUSH EBX and PUSH ESI and reads the first stack word from ESP+0x0c, so both operands arrive on the stack. ECX is never read on entry and is explicitly reloaded with the manager before each virtual call at 0x00fec3cb and 0x00fec3fd. The body ends with a bare RET at 0x00fec42a and the only caller cleans eight bytes with ADD ESP,0x8 at 0x00feca6f.",
+    "unsupported_imported_elements": [
+      "any SDK symbol name for this address",
+      "any SDK symbol name for the forwarding stub at 0x00feca60",
+      "record and mission semantics beyond the observed flag byte and record writes"
+    ],
+    "note": "The mission-manager classification is carried from the wave brief and is not confirmed by the analysis database: Ghidra holds no symbol here and SDKtoGhidra/SporeGhidra_march2017.xml binds no address for any FUNCTION_DEF. The receiver-shaped calling pattern is real, but the measured convention is cdecl with the receiver as the first stack word, so the model uses a cdecl prototype with the receiver first and returns that word unchanged. The model does not claim ECX binding."
+  },
+  "signature": {
+    "calling_convention": "x86-32 cdecl, caller stack cleanup of eight bytes",
+    "receiver": "first stack word at ESP+0x04, loaded into ESI at 0x00fec3c2 and returned at 0x00fec42a",
+    "stack_arguments": [
+      {"position": 1, "entry_offset": "ESP+0x04", "type": "Opaque", "observed_use": "dereferenced as a virtual object; also reused as the four-byte payload word, written with 1 at 0x00fec3d6 and with the flag bit at 0x00fec41a"},
+      {"position": 2, "entry_offset": "ESP+0x08", "type": "const std::uint8_t*", "observed_use": "read as one byte at 0x00fec3f3; only bit 0 is used, applied with AND BL,0x1 at 0x00fec3ff"}
+    ],
+    "stack_cleanup_bytes": 8,
+    "stack_cleanup_owner": "caller",
+    "callee_return_form": "bare ret with no immediate operand",
+    "stack_cleanup_evidence": "The body terminator at 0x00fec42a is the single byte 0xc3 with no immediate, so the callee pops nothing and all eight incoming argument bytes belong to the caller. The only caller is the forwarding stub at 0x00feca60, which executes ADD ESP,0x8 at 0x00feca6f immediately after CALL 0x00fec3c0 at 0x00feca6a. The two ADD ESP instructions inside the body, 0x10 at 0x00fec3fa and 0xc at 0x00fec423, balance the target's own argument pushes for 0x0093aa70 and 0x0093a9a0 and are unrelated to the incoming words.",
+    "return_semantics": "the first stack word unchanged, moved back into EAX at 0x00fec42a",
+    "preserved_registers": ["EBX", "ESI"],
+    "receiver_reads": [
+      {"offset": "0x00", "type": "const void* vftable", "observed_use": "MOV EAX,[ESI] at 0x00fec3c6 and 0x00fec3f5"}
+    ],
+    "virtual_offsets": [
+      {"vtable_offset": "0x20", "role": "manager target getter", "observed_use": "MOV EDX,[EAX+0x20]; MOV ECX,ESI; CALL EDX at 0x00fec3c8 to 0x00fec3cd, repeated at 0x00fec3f7 to 0x00fec402", "result_use": "receiver of the second-stage call, never null-checked"},
+      {"vtable_offset": "0x18", "role": "write stream getter", "observed_use": "MOV EAX,[EDX+0x18]; MOV ECX,EAX; CALL EAX at 0x00fec3d1 to 0x00fec3de, repeated at 0x00fec404 to 0x00fec40b", "result_use": "first argument of the two record writes, never null-checked"}
+    ]
+  },
+  "body": {
+    "entry_address": "0x00fec3c0",
+    "end_address": "0x00fec42b",
+    "length_bytes": 107,
+    "instruction_count": 43,
+    "raw_bytes": "53568b74240c8b068b50208bceffd28b108bc88b4218c744240c01000000ffd06a006a018d4c24145150e881e694ff8b5424208a1a8b068b502083c4108bce80e301ffd28b108bc88b4218ffd06a018d54241084db520f95c150884c2418e87de594ff83c40c8bc65e5bc3"
+  },
+  "port_abis": [
+    {"boundary": "manager virtual getter", "convention": "thiscall", "receiver": "ECX = manager", "stack": [], "cleanup": "RET", "return": "Opaque in EAX, unconditionally dereferenced; no null guard exists in the body"},
+    {"boundary": "write stream getter", "convention": "thiscall", "receiver": "ECX = object from the manager virtual getter", "stack": [], "cleanup": "RET", "return": "Opaque in EAX, passed to both record writes; no null guard exists in the body"},
+    {"boundary": "0x0093aa70", "convention": "thiscall", "receiver": "ECX = write stream", "stack": ["const Word* payload", "std::int32_t count", "Word mode"], "cleanup": "caller ADD ESP,0x10 at 0x00fec3fa; callee RET", "return": "byte in AL, discarded by the target"},
+    {"boundary": "0x0093a9a0", "convention": "thiscall", "receiver": "ECX = write stream", "stack": ["const std::uint8_t* payload", "Word size"], "cleanup": "caller ADD ESP,0xc at 0x00fec423; callee RET", "return": "Word in EAX, discarded by the target"}
+  ],
+  "mechanics": {
+    "order": [
+      "Load the first stack word into ESI and read its vtable.",
+      "Call manager vtable slot +0x20 with ECX set to the manager, then call vtable slot +0x18 on the returned object; this is the first write stream.",
+      "Overwrite the first stack word with the dword 1 at 0x00fec3d6, so the payload word and the receiver word share one location.",
+      "Call 0x0093aa70 with the stream in ECX, the payload address, count 1 and mode 0. Mode 0 byte-swaps each element before the stream byte call, so the first write is a single four-byte big-endian word holding 1.",
+      "Read the second stack word as one byte and reduce it to bit 0 with AND BL,0x1.",
+      "Call manager vtable slot +0x20 again and vtable slot +0x18 on the result; this is the second write stream, obtained fresh rather than reused.",
+      "Test the masked bit and store SETNZ CL into the low byte of the payload word at 0x00fec41a, so the payload becomes exactly 0 or 1.",
+      "Call 0x0093a9a0 with the stream in ECX, the payload address and size 1, writing that single low byte.",
+      "Return the manager word unchanged in EAX."
+    ],
+    "write_order": "The four-byte word write always precedes the single-byte write, and both address the same payload location. Reversing them would erase the flag bit, so the order is behaviourally load bearing and is asserted by the model test.",
+    "flag_bit_propagation": "Only bit 0 of the flag byte reaches the record. The upper seven bits are discarded by AND BL,0x1 before the TEST. The resulting value is encoded as 1 when the bit is set and 0 when it is clear, written into the low byte of a word whose remaining three bytes stay 0 from the first write.",
+    "payload_state": "The payload dword is 1 for the first write and 0 or 1 for the second, so the second write leaves a word of 0x00000001 or 0x00000000 in memory. The receiver word is the same storage, which is why the model keeps a local payload and documents the aliasing instead of writing through the argument slot.",
+    "write_modes": "The first write uses mode 0 of 0x0093aa70, which byte-swaps every element; count is 1, so exactly one four-byte store is issued. The second write uses the byte-oriented 0x0093a9a0 with size 1.",
+    "reacquisition": "Both write streams are produced by a fresh two-stage virtual chain. A test that returns a different stream per call confirms the target does not cache the first result.",
+    "receiver_return": "The function is a chainable record initializer: the returned value is bit-identical to the manager word, so the pattern is call-then-assign. The model returns the same pointer it received and the test asserts pointer identity.",
+    "no_null_guard": "Neither virtual call result is tested. A null from either getter would fault in the original exactly as the unguarded dereference in the model would, and no defensive branch exists to observe.",
+    "domain_separation": "This is a persistence record initializer. It shares no state, no port and no type with the achievement manager paths in the sibling records 00676710.json and 00676ed0.json; the only overlap is the generic Opaque word and the thiscall calling convention."
+  },
+  "stack_cleanup_regression": {
+    "purpose": "Pin the caller-owned eight-byte cleanup so a future edit cannot silently convert 0x00fec3c0 into a callee-cleaned convention.",
+    "checks": [
+      {"id": "R1", "kind": "compiled_disassembly", "target": "mission_manager_record_init_00fec3c0", "assertion": "the function terminator is a bare ret with no immediate operand", "observed": "365: ret", "status": "passed"},
+      {"id": "R2", "kind": "compiled_disassembly", "target": "mission_manager_record_init_00fec3c0", "assertion": "the body contains no ret with an immediate operand, which would steal the caller's cleanup", "observed": "no ret $0x.. anywhere in the body", "status": "passed"},
+      {"id": "R3", "kind": "compiled_disassembly", "target": "mission_manager_record_init_00fec3c0", "assertion": "the body never adjusts ESP for the incoming eight argument bytes", "observed": "the only ESP adjustments are add $0x4, add $0x8 and add $0xc, each balancing the target's own port-argument pushes; none occurs in the epilogue before the bare ret", "status": "passed"},
+      {"id": "R4", "kind": "source_declaration", "target": "achievement_mission_wave2.hpp MissionRecordInitAbi", "assertion": "the prototype is cdecl with exactly two stack words and no thiscall attribute", "observed": "using MissionRecordInitAbi = MissionManagerWire* (*)(MissionManagerWire *manager, const std::uint8_t* flag);", "status": "passed"},
+      {"id": "R5", "kind": "metadata_self_check", "target": "this file", "assertion": "stack_cleanup_bytes equals 8, stack_cleanup_owner equals caller, and callee_return_form records the bare ret", "observed": "8 / caller / bare ret with no immediate operand", "status": "passed"},
+      {"id": "L1", "kind": "live_disassembly", "target": "0x00fec3c0", "assertion": "the body terminator is a bare ret", "observed": "0x00fec42a: RET, length 1, bytes c3, no operands", "status": "passed"},
+      {"id": "L2", "kind": "live_disassembly", "target": "0x00feca60", "assertion": "the forwarding stub owns the eight-byte cleanup", "observed": "0x00feca6f: ADD ESP,0x8, length 3, bytes 83c408, immediately after CALL 0x00fec3c0 at 0x00feca6a", "status": "passed"}
+    ],
+    "replay": "Re-run the objdump-based R1 through R4 commands below, or re-read 0x00fec3c0 and 0x00feca60 with the disassembly tool; the bare ret and the stub ADD ESP,0x8 are the two invariants."
+  },
+  "call_graph": {
+    "direct_caller_function_count": 0,
+    "direct_call_xref_count": 1,
+    "fan_in_note": "The single call reference is 0x00feca6a, a four-instruction forwarding stub with no function in the database that loads ESP+0x8 into EAX, loads ESP+0x4 into ECX, pushes both, calls this function, adds eight to ESP and returns AL set to 1.",
+    "vtable_evidence": "0x00feca60 is stored by MOV dword ptr [ESP+0x30],0xfeca60 at 0x01396a32 inside a routine that fills a 0xc0-byte table with 0x30 dwords via REP MOVSD. Neighbouring entries are 0xfebfb0 before it and 0xc2e4e0, 0x692fb0, 0xb1fbf0, 0xac8050 after it, so 0x00feca60 is a virtual table entry and 0x00fec3c0 is the body behind it.",
+    "direct_callees": ["0x0093aa70", "0x0093a9a0"],
+    "indirect_callees": ["manager vtable slot +0x20", "vtable slot +0x18 of the returned object"]
+  },
+  "evidence": [
+    {"tool": "ghidra_disassemble_function", "address": "0x00fec3c0", "observation": "PUSH EBX, PUSH ESI, MOV ESI,[ESP+0xc], two virtual chains, MOV [ESP+0xc],1, CALL 0x0093aa70 with four pushes, MOV BL,[EDX] with EDX from [ESP+0x20], ADD ESP,0x10, the second virtual chain, AND BL,0x1, SETNZ CL, MOV [ESP+0x18],CL, CALL 0x0093a9a0, ADD ESP,0xc, MOV EAX,ESI, POP ESI, POP EBX, RET."},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x00fec423", "observation": "0x00fec423 ADD ESP,0xc; 0x00fec426 MOV EAX,ESI; 0x00fec428 POP ESI; 0x00fec429 POP EBX; 0x00fec42a RET with length 1 and bytes c3 and no operands, which is the bare terminator that leaves the incoming eight argument bytes to the caller."},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x00feca60", "observation": "0x00feca6a CALL 0x00fec3c0 is immediately followed by 0x00feca6f ADD ESP,0x8 with length 3 and bytes 83c408, so the forwarding stub and not the body owns the eight-byte cleanup."},
+    {"tool": "ghidra_get_function_by_address", "address": "0x00feca60", "observation": "No function is defined at the forwarding stub, confirming it is an unclaimed code island between two INT3 runs."},
+    {"tool": "ghidra_get_xrefs_to", "address": "0x00fec3c0", "observation": "Exactly one UNCONDITIONAL_CALL reference, from 0x00feca6a, so the body has no direct fan-in."},
+    {"tool": "ghidra_get_xrefs_to", "address": "0x00feca60", "observation": "Exactly one DATA reference, from 0x01396a32, which is the runtime virtual table store."},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x00feca60", "observation": "The stub forwards both stack words, cleans eight bytes and returns AL set to 1, proving the eight-byte caller cleanup and the two-word operand shape."},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x01396a2a", "observation": "MOV dword ptr [ESP+0x2c],0xfebfb0; MOV dword ptr [ESP+0x30],0xfeca60; MOV dword ptr [ESP+0x34],0xc2e4e0; MOV dword ptr [ESP+0x38],0x692fb0; MOV dword ptr [ESP+0x3c],0xb1fbf0; MOV dword ptr [ESP+0x40],0xac8050; MOV dword ptr [ESP+0x10],0x30; REP MOVSD, so the stub is one entry of a 0xc0-byte virtual table."},
+    {"tool": "ghidra_disassemble_function", "address": "0x0093aa70", "observation": "thiscall stream with three stack arguments; mode 1 issues one stream call of count times four bytes, any other mode byte-swaps each element into a four-byte scratch and issues one call per element."},
+    {"tool": "ghidra_disassemble_function", "address": "0x0093a9a0", "observation": "thiscall stream with two stack arguments, forwarded unchanged to the stream byte call at vtable offset +0x38."}
+  ],
+  "verification": {
+    "commands": [
+      "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only reconstruction/staging/pkg11-a3-achievement-mission-wave2/achievement_mission_wave2.cpp reconstruction/staging/pkg11-a3-achievement-mission-wave2/achievement_mission_wave2_model_test.cpp",
+      "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror reconstruction/staging/pkg11-a3-achievement-mission-wave2/achievement_mission_wave2.cpp reconstruction/staging/pkg11-a3-achievement-mission-wave2/achievement_mission_wave2_model_test.cpp -o /tmp/opencode/pkg11-a3-model && /tmp/opencode/pkg11-a3-model",
+      "clang++ -m32 -std=c++17 -O2 -DNDEBUG -Wall -Wextra -Wpedantic -Werror reconstruction/staging/pkg11-a3-achievement-mission-wave2/achievement_mission_wave2.cpp reconstruction/staging/pkg11-a3-achievement-mission-wave2/achievement_mission_wave2_model_test.cpp -o /tmp/opencode/pkg11-a3-model-ndebug && /tmp/opencode/pkg11-a3-model-ndebug",
+      "clang++ -m32 -std=c++17 -O0 -Wall -Wextra -Wpedantic -Werror reconstruction/staging/pkg11-a3-achievement-mission-wave2/achievement_mission_wave2.cpp reconstruction/staging/pkg11-a3-achievement-mission-wave2/achievement_mission_wave2_model_test.cpp -o /tmp/opencode/pkg11-a3-model-o0 && /tmp/opencode/pkg11-a3-model-o0",
+      "clang-format --dry-run --Werror --style='{BasedOnStyle: Google, FixNamespaceComments: false}' reconstruction/staging/pkg11-a3-achievement-mission-wave2/achievement_mission_wave2.hpp reconstruction/staging/pkg11-a3-achievement-mission-wave2/achievement_mission_wave2.cpp reconstruction/staging/pkg11-a3-achievement-mission-wave2/achievement_mission_wave2_model_test.cpp",
+      "python3 -m json.tool reconstruction/metadata/pkg11-a3-achievement-mission-wave2/00fec3c0.json",
+      "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -c reconstruction/staging/pkg11-a3-achievement-mission-wave2/achievement_mission_wave2.cpp -Ireconstruction/staging/pkg11-a3-achievement-mission-wave2 -o /tmp/opencode/pkg11-a3-cleanup-check.o && objdump -d --no-show-raw-insn /tmp/opencode/pkg11-a3-cleanup-check.o | awk '/mission_manager_record_init_00fec3c0>:/{f=1} f{print} f&&/ret/{exit}' | tail -1 | grep -qE '^[[:space:]]*[0-9a-f]+:[[:space:]]+ret$'",
+      "objdump -d --no-show-raw-insn /tmp/opencode/pkg11-a3-cleanup-check.o | awk '/mission_manager_record_init_00fec3c0>:/{f=1;next} /^$/{f=0} f' | grep -qvE 'ret[[:space:]]+\\$0x'"
+    ],
+    "results": {
+      "x86_32_syntax": "passed",
+      "focused_model_test": "passed",
+      "focused_model_test_ndebug": "passed",
+      "focused_model_test_o0": "passed",
+      "clang_format_dry_run": "passed",
+      "json_validation": "passed",
+      "abi_inspection": "passed: mission_manager_record_init_00fec3c0 compiles to a cdecl body ending in a bare RET",
+      "stack_cleanup_regression": "passed: R1 through R5 and live checks L1 and L2 all pass; the body terminator is a bare ret, the body contains no ret with an immediate, the body never adjusts ESP for the incoming eight bytes, the prototype is cdecl with two stack words, the metadata self-check reports 8 caller-owned bytes, the live body ends in the single byte 0xc3 at 0x00fec42a, and the live stub owns ADD ESP,0x8 at 0x00feca6f"
+    },
+    "covered_behaviors": [
+      "manager virtual getter called through vtable offset +0x20",
+      "write stream getter called through vtable offset +0x18 of the returned object",
+      "write order, word write strictly before the byte write",
+      "first write payload 1 with count 1 and mode 0",
+      "flag bit propagation for 0x00, 0x01, 0x02, 0x03, 0x80 and 0xff",
+      "flag masking to bit 0 only",
+      "write target reacquired per write rather than cached",
+      "returned receiver identity"
+    ]
+  },
+  "blockers": [
+    "No original-process record write trace was run.",
+    "The mission-manager attribution is carried from the wave brief and is not confirmed by any SDK or database symbol.",
+    "The virtual table at 0x01396a32 is built at runtime and its owning class is unresolved, so the slot index of 0x00feca60 is unknown.",
+    "The record byte read from the second stack word is a single opaque byte; the structure behind that pointer is unresolved."
+  ]
+}

@@ -1,0 +1,431 @@
+{
+  "schema": "pkg-editor-runtime-wave7.function-handoff.v1",
+  "package": "PKG-EDITOR-RUNTIME-WAVE7",
+  "scope": {
+    "package_scope": "Six animation and controller VAs only. 0x00591fa0 was removed from this package after pkg-editor-lifecycle-wave6 claimed it; its source file editor_runtime_wave7.cpp, its declarations, its tests and its metadata handoff were deleted.",
+    "owned_vas": [
+      "0x0059b0f0",
+      "0x0059b4b0",
+      "0x0059cac0",
+      "0x0059cb10",
+      "0x0059cea0",
+      "0x0059cf00"
+    ],
+    "removed_vas": [
+      {
+        "va": "0x00591fa0",
+        "owner": "pkg-editor-lifecycle-wave6",
+        "artefacts_removed": [
+          "src/reconstruction/pkg_editor_runtime_wave7/editor_runtime_wave7.cpp",
+          "OpaqueEditor / EditorDispatchPorts / message-id constants in editor_runtime_wave7.hpp",
+          "editor_handle_message_00591fa0 and its model tests",
+          "reconstruction/metadata/pkg-editor-runtime-wave7/00591fa0.json"
+        ]
+      }
+    ],
+    "no_action_items": [
+      "0x090e08f60 common tail: the only consumer of that message id was 0x00591fa0, so removing the dispatch removes the tail and no other function in this package references it."
+    ]
+  },
+  "function_address": "0x0059b4b0",
+  "ghidra_name": "Editors::EditorCreatureController::Update",
+  "normalized_symbol": "EditorCreatureController_Update_0059b4b0",
+  "source_files": [
+    "src/reconstruction/pkg_editor_runtime_wave7/editor_runtime_wave7.hpp",
+    "src/reconstruction/pkg_editor_runtime_wave7/editor_runtime_wave7.cpp",
+    "src/reconstruction/pkg_editor_runtime_wave7/editor_runtime_wave7_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "void __thiscall EditorCreatureController_Update_0059b4b0(EditorCreatureController *this, int dt);",
+  "abi": {
+    "calling_convention": "thiscall",
+    "hidden_this": "OpaqueController * in ECX",
+    "stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "ESP+0x04",
+        "name": "dt",
+        "type": "std::int32_t",
+        "width_bytes": 4
+      }
+    ],
+    "stack_cleanup_bytes": 4,
+    "stack_cleanup_owner": "caller",
+    "return_type": "void",
+    "return_register": null,
+    "return_width_bytes": 0,
+    "frame": "PUSH EBP; MOV EBP,ESP; AND ESP,-16; SUB ESP,0x84; three callee-saved pushes. Every exit is POP EDI/ESI/EBX, MOV ESP,EBP, POP EBP, RET 0x4."
+  },
+  "body": {
+    "status": "reconstructed",
+    "entry_address": "0x0059b4b0",
+    "body_addresses": [
+      "0x0059b4b0",
+      "0x0059c00e"
+    ],
+    "instruction_count": 721,
+    "field_layout_used": {
+      "0x1c": "published animation id",
+      "0x08": "AnimatedCreature *creature",
+      "0x0c": "IShadowWorld *shadow",
+      "0x20/0x24": "look-at reference point",
+      "0x2c/0x30/0x34": "target offset",
+      "0x38/0x3c/0x40": "current offset (same 5.0f guard as 0x0059b0f0)",
+      "0x44/0x48": "target angle / current angle",
+      "0x4c/0x50": "position rate / angle rate",
+      "0x54": "ground-follow flag (inverted: non-zero returns early)",
+      "0x55": "facing-snap flag",
+      "0x58/0x5c/0x60": "previous world position",
+      "0x64/0x68/0x6c": "world position",
+      "0x74/0x78": "creep low / creep high",
+      "0x7c": "creep remaining",
+      "0x80": "creep rate",
+      "0x84": "angle-limited flag",
+      "creature+0x10/0x14/0x18/0x1c": "four-float orientation row",
+      "creature+0x164/0x168/0x16c": "smoothing position",
+      "creature+0x17c": "model pointer, +0x2d4 byte gates smoothing"
+    },
+    "mechanics": [
+      "Dual early return when creature at +0x08 or shadow world at +0x0c is null; nothing else runs.",
+      "dt scaling is FILD of the raw argument plus 0x4f800000 (2^32) when the raw word is negative, then FMUL by 0x013f9428 (0.001f), so the observable result is float(uint32(dt)) * 0.001f.",
+      "Call the creature vtable slot 0x58 with four native stack arguments. The listing at 0x0059b4f5..0x0059b51a pushes a stack-local address, then zero, then another stack-local address, then zero, giving argument order (out_handle, 0, 0, out_extra). Both out slots are zeroed before the call and the handle is read back from the first. The reconstruction preserves all four arguments and both output slots rather than collapsing them into a single pointer.",
+      "Then call 0x0067cb20 and that object's vtable slot 0x40 to obtain an owner from the handle.",
+      "When the owner is non-null and its byte at +0x1d is zero, zero the blend interval, the second weight and the blend speed, then call the publication port for 0x0059b390 with (controller, 0). The angle lerp and the direction lerp still run afterwards with a zero scalar.",
+      "0x00a02710(handle) gates the blend query. On success the vtable slot 0x5c call yields a blend value which is divided by the blend interval and clamped to [0,1] with MAXSS/MINSS; a NaN quotient collapses to 0.0f because MAXSS with a zero operand returns the operand for NaN inputs. A failed query sets the blend speed to zero.",
+      "The position interpolation callback 0x00699600 is UNCONDITIONAL. All three exits of the query-blend if/else converge on 0x0059b5ef before the call at 0x0059b611: the success path at 0x0059b5dc jumps there, the failed-query path at 0x0059b5e7 jumps there, and the query-gate-false path at 0x0059b5e9 falls through to it. The scalar is position_rate(0x4c) * blend_speed * seconds. The result is then written to the 0x38 triple. An earlier revision nested this callback inside the successful query-blend branch and has hoisted it.",
+      "The 0x38 triple passes through the same guard as 0x0059b0f0: FXCH then FCOMIP with JBE, so the rescale runs only when 5.0f < length, scaling long vectors down to 5 and leaving short ones alone.",
+      "The angle lerp 0x0069b840 receives target_angle(0x44), current angle(0x48) and angle_rate(0x50) * blend_speed * second_weight * seconds.",
+      "Two direction vectors are built as previous(0x58) - current(0x38) and world(0x64) - current(0x38). Each is normalized only when at least one component compares unordered-or-equal against the injected normalize-epsilon words; the three UCOMISS comparisons test 0x015e590c, 0x015e5910 and 0x015e5914 respectively, so the three thresholds are independent runtime words rather than a compiled-in zero.",
+      "Angle-limited branch (byte 0x84 non-zero): the two projections are 0x0069b760(look, &0x015e5a0c, &0x015e5a88) and 0x0069b760(target, &0x015e5a88, &0x015e5a0c). The vector order is look then target and the two fixed basis operands are SWAPPED between the calls; the reconstruction passes distinct basis objects and never aliases the direction vector into the basis slots. The first result is committed through an FSTP store and the second stays live in the x87 register and becomes the sweep's from-operand, so the sweep is lerp_angle(look_projection, target_projection, 5.0f * second_weight).",
+      "Free branch: 0x00699600 mixes the two directions with the scalar 2.0f * blend_speed * seconds, then world = current + mixed * 10.0f componentwise.",
+      "Facing-snap branch (byte 0x55 non-zero): 0x0069b760(target, &negated(0x015e5a88..0x015e5a90), &0x015e5a0c..0x015e5a14), wrap both the current angle and the negated projection with 0x0059ac00, subtract, and only when the absolute value exceeds the constant at 0x0150de50 (pi/4, 0.7853981634f) rotate with 0x00576b00 by wrapped - sign * (pi/4). The sign selection is COMISS 0.0, wrapped followed by JBE to the 1.0f load, so a NON-NEGATIVE wrapped angle yields +1.0f and a negative one yields -1.0f (0x013eb1bc is -1.0f). An earlier revision had the two arms swapped.",
+      "The rotated direction is then reconciled onto the creature position with the injected 0.5f, 1.0f and 1.5f factors.",
+      "Write the current offset into creature+0x04/0x08/0x0c.",
+      "Orientation row: half = angle * 0.5f, row = (sin * 0x015e5a0c, sin * 0x015e5a10, sin * 0x015e5a14) written to creature+0x10/0x14/0x18 and cos written to creature+0x1c. The three multipliers are injected runtime words, not compiled-in constants; the four-float row at creature+0x10 is the canonical orientation row and is what the look-at callback later receives.",
+      "Smoothing: gated by 0x00a027a0(handle) and by the byte at model+0x2d4. The angle-limited case copies world straight into the smoothing triple. The free case computes a steering direction, forms lead = current + steer * 10.0f, blends with retain 0.85 and take 0.15, snaps the z to zero when |z| is below 0x013f6480 (1.5258789e-05f) and mirrors the result into both world(0x64) and previous(0x58). When the look-at radius test passes, the callback 0x0059aed0 is invoked with the NEGATED 0x015e5a88 basis as the first operand, the toward vector as the second and the four-float orientation row at creature+0x10 as the THIRD operand; an earlier revision passed the creature position there. A blocked result falls back to the negated basis.",
+      "Ground follow is inverted: a non-zero byte at 0x54 returns immediately, so the raycast only runs when the flag is clear.",
+      "The ground raycast mirrors 0x0059b0f0: same 0x026f3933 picker argument, same mask seeding below 0x40, same -500.0f drop origin, hit.x written into creature+0x0c plus the creep low value.",
+      "Creep gate: when creep remaining at 0x7c is above zero it is decremented by the seconds value and the function returns without touching the creep bounds.",
+      "Creep bounds: if creep high is above creep low, creep low increases by creep_rate * seconds and is snapped back to creep high when it overshoots; if creep low is above creep high, creep low decreases by the same step and is snapped to creep high when it undershoots; equal bounds are left alone.",
+      "Every early exit inside the body is POP EDI/ESI/EBX, MOV ESP,EBP, POP EBP, RET 0x4."
+    ],
+    "bounds_callback_contract": {
+      "stack_arguments": 4,
+      "argument_1": "address of a stack-local slot, zeroed before the call, receives the handle and is read back afterwards",
+      "argument_2": "literal 0",
+      "argument_3": "literal 0",
+      "argument_4": "address of a second stack-local slot, zeroed before the call",
+      "repaired_finding": "an earlier revision modelled a single pointer argument and dropped three stack slots"
+    },
+    "interpolation_hoist": {
+      "callback": "0x00699600 position interpolation",
+      "convergence_addresses": [
+        "0x0059b5dc",
+        "0x0059b5e7",
+        "0x0059b5e9"
+      ],
+      "call_address": "0x0059b611",
+      "repaired_finding": "an earlier revision nested the callback inside the successful query-blend branch"
+    },
+    "limited_angle_projection": {
+      "first_call": "0x0069b760(look, &basis.orientation, &basis.projection)",
+      "second_call": "0x0069b760(target, &basis.projection, &basis.orientation)",
+      "vector_order": [
+        "look",
+        "target"
+      ],
+      "basis_addresses": {
+        "orientation": [
+          "0x015e5a0c",
+          "0x015e5a10",
+          "0x015e5a14"
+        ],
+        "projection": [
+          "0x015e5a88",
+          "0x015e5a8c",
+          "0x015e5a90"
+        ]
+      },
+      "result_handling": "the first x87 result is committed with FSTP, the second stays live and is consumed as the sweep's from-operand",
+      "repaired_finding": "an earlier revision aliased the same direction vector into all three operand slots and hardcoded zero basis words"
+    },
+    "quarter_turn_sign": {
+      "non_negative_wrapped": "+1.0f",
+      "negative_wrapped": "-1.0f",
+      "adjustment": "wrapped - sign * 0.7853981634f",
+      "repaired_finding": "an earlier revision had the two arms swapped"
+    },
+    "magnitude_guard": {
+      "condition": "5.0f < length",
+      "rescale_target": "5.0f",
+      "short_vectors": "unchanged",
+      "long_vectors": "scaled down to length 5",
+      "repaired_finding": "an earlier revision stretched short vectors up to length 5"
+    },
+    "runtime_injected_basis": {
+      "interface": "g_fixed_basis (OpaqueFixedBasis)",
+      "normalize_epsilon": [
+        "0x015e590c",
+        "0x015e5910",
+        "0x015e5914"
+      ],
+      "orientation": [
+        "0x015e5a0c",
+        "0x015e5a10",
+        "0x015e5a14"
+      ],
+      "projection": [
+        "0x015e5a88",
+        "0x015e5a8c",
+        "0x015e5a90"
+      ],
+      "policy": "The file image holds zeros at every one of these addresses, so the reconstruction injects them as runtime-gated words and never promotes a fixed value. All three groups remain runtime gates.",
+      "repaired_finding": "an earlier revision compiled in 0.0f and a (0,1,0) row for these consumers"
+    },
+    "constants": [
+      {
+        "address": "0x013f4fd0",
+        "value": "4294967296.0f",
+        "use": "unsigned dt correction for negative arguments"
+      },
+      {
+        "address": "0x013f9428",
+        "value": "0.001f",
+        "use": "milliseconds to seconds"
+      },
+      {
+        "address": "0x01485720",
+        "value": "1.0f",
+        "use": "clamp ceiling, blend interval, quarter-turn positive sign"
+      },
+      {
+        "address": "0x013f64b0",
+        "value": "5.0f",
+        "use": "current-offset magnitude guard"
+      },
+      {
+        "address": "0x0150dfe4",
+        "value": "10.0f",
+        "use": "target lead distance"
+      },
+      {
+        "address": "0x0150dfdc",
+        "value": "0.85f",
+        "use": "smoothing retention"
+      },
+      {
+        "address": "0x0150dfe0",
+        "value": "0.1f",
+        "use": "look-at radius"
+      },
+      {
+        "address": "0x0150dfe8",
+        "value": "5.0f",
+        "use": "angle-limited sweep factor"
+      },
+      {
+        "address": "0x0150de50",
+        "value": "0.7853981634f",
+        "use": "facing-snap quarter turn"
+      },
+      {
+        "address": "0x013eb8b0",
+        "value": "0x80000000",
+        "use": "sign-bit flips that negate the injected basis"
+      },
+      {
+        "address": "0x013f6480",
+        "value": "1.5258789e-05f",
+        "use": "smoothing z snap threshold"
+      },
+      {
+        "address": "0x013eb1bc",
+        "value": "-1.0f",
+        "use": "quarter-turn negative sign"
+      },
+      {
+        "address": "0x01471064",
+        "value": "0.5f",
+        "use": "half-angle and the facing-snap reconcile factor"
+      },
+      {
+        "address": "0x01470f1c",
+        "value": "2.0f",
+        "use": "direction mix step"
+      },
+      {
+        "address": "0x01485548",
+        "value": "1.5f",
+        "use": "facing-snap reconcile bias"
+      },
+      {
+        "address": "0x01465544",
+        "value": "500.0f",
+        "use": "ray origin height"
+      },
+      {
+        "address": "0x013ec5b4",
+        "value": "1000.0f",
+        "use": "ray origin drop"
+      }
+    ]
+  },
+  "call_graph": {
+    "direct_callees": [
+      "0x0059b390",
+      "0x0067cb20",
+      "0x00a02710",
+      "0x00a027a0",
+      "0x00699600",
+      "0x0069b840",
+      "0x0069b760",
+      "0x0059ac00",
+      "0x0059aed0",
+      "0x0059ab70",
+      "0x00436ce0",
+      "0x00576b00",
+      "0x0067dd80"
+    ],
+    "virtual_callees": [
+      "AnimatedCreature vtable+0x58",
+      "AnimatedCreature vtable+0x5c",
+      "IShadowWorld vtable+0x24",
+      "picker vtable+0x28"
+    ],
+    "direct_callers": [
+      "0x0059d610"
+    ],
+    "direct_call_site_count": 1
+  },
+  "evidence": [
+    {
+      "tool": "ghidra_get_function_by_address",
+      "address": "0x0059b4b0",
+      "observation": "Live function spans 0x0059b4b0..0x0059c00e."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x0059b4b0",
+      "observation": "0x0059b4f5..0x0059b51a shows four pushes before CALL EDX through vtable+0x58: a stack-local address, zero, a second stack-local address, zero, with MOV [ESP+0x44],EBX and MOV [ESP+0x40],0x0f initialising the two output slots; 0x0059b521 and 0x0059b54e read the first slot back."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x0059b4b0",
+      "observation": "0x0059b5dc, 0x0059b5e7 and 0x0059b5e9 all reach 0x0059b5ef, which computes the scalar and reaches CALL 0x00699600 at 0x0059b611, proving the position interpolation is unconditional."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x0059b4b0",
+      "observation": "0x0059b895..0x0059b8bc shows PUSH 0x15e5a0c, LEA EAX,[ESP+0x58], PUSH 0x15e5a88, PUSH EAX, CALL 0x0069b760 followed by the mirrored PUSH 0x15e5a0c, LEA ECX,[ESP+0x70], PUSH 0x15e5a88, PUSH ECX, CALL 0x0069b760; decoding the push order gives (look, &0x015e5a0c, &0x015e5a88) then (target, &0x015e5a88, &0x015e5a0c)."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x0059b4b0",
+      "observation": "0x0059ba5e COMISS XMM0,[ESP+0xc] with 0x013eb1bc (-1.0f) on the not-taken arm and 0x01485720 (1.0f) on the JBE arm fixes the quarter-turn sign as +1 for non-negative and -1 for negative wrapped values."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x0059b4b0",
+      "observation": "0x0059bcdf LEA ECX,[EBX+0x10] with EBX holding the creature pointer, pushed as the deepest argument to 0x0059aed0, proves the look-at callback's third operand is the four-float orientation row at creature+0x10."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x0059b4b0",
+      "observation": "0x0059b626..0x0059b64d FXCH then FCOMIP ST0,ST1 and JBE over the 5.0f constant fixes the guard as 5.0f < length, and UCOMISS against 0x015e590c/0x015e5910/0x015e5914 confirms three independent normalize thresholds."
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x0059b4b0",
+      "observation": "Pseudocode confirmed the overall block structure but types the helper functions as unknown and aliases several stack floats; the listing was authoritative for every constant, ordering and operand decision."
+    },
+    {
+      "tool": "ghidra_read_memory",
+      "addresses": [
+        "0x013f4fd0",
+        "0x013f9428",
+        "0x01485720",
+        "0x013f64b0",
+        "0x0150dfe4",
+        "0x0150dfdc",
+        "0x0150dfe0",
+        "0x0150dfe8",
+        "0x0150de50",
+        "0x013eb8b0",
+        "0x013f6480",
+        "0x013eb1bc",
+        "0x01471064",
+        "0x01470f1c",
+        "0x01485548"
+      ],
+      "observation": "All float constants decoded; 0x015e590c/0x015e5910/0x015e5914, 0x015e5a88/0x8c/0x90 and 0x015e5a0c/0x10/0x14 read as zero in the file image and are injected as runtime-gated words."
+    },
+    {
+      "tool": "ghidra_get_function_xrefs",
+      "address": "0x0059b4b0",
+      "observation": "One direct caller, 0x0059d610."
+    },
+    "FCOMIP ST0,ST1 at 0x0059b13e compares the x87 magnitude against 5.0 and JBE at 0x0059b142 skips the rescale. FCOMIP sets CF/ZF/PF on an unordered compare, so a NaN magnitude takes the JBE branch and the value is left unchanged. The guard is therefore an ORDERED 5.0 < length test; C++ >= is unordered-false for NaN and would rescale it, so the body uses !(5.0f < length).",
+    "COMISS XMM0,[ESP+0xc] at 0x0059ba5e compares 0.0 against the wrapped angle and JBE selects the +1.0f arm. COMISS sets CF/ZF/PF on an unordered compare, so NaN also takes the +1.0f arm. The sign is therefore wrapped < 0.0f ? -1.0f : +1.0f; C++ 0.0f <= wrapped is unordered-false for NaN and would wrongly yield -1.0f.",
+    "The slot +0x24 call site pushes eight stack words (0x0059b2bc and 0x0059bf76): 0, 0, pointer, 0, pointer, 0, pointer, out, giving the declared order (out, origin, word, query, word, aux, word, word). Both call sites pass all eight and both output records are read.",
+    "0x0059b58b tests AL directly after the slot +0x5c call, so the slot returns a byte in AL. get_blend_5c is typed bool and invoked through the creature vtable; the redundant QueryBlend port is gone.",
+    "The ray-query record base is the ESP-relative slot 0x6c. Five zeroed words are stored at record +0x00, +0x04, +0x08, +0x0c and +0x10 (0x0059bed6-0x0059bee6) and the collision bit is OR'd through LEA EDX,[ESP+ECX*0x4+0x6c] at 0x0059bf18, so the collision words start at record offset 0x00, not 0x10. Read in forward address order the two flag stores are 0x0059bef2 writing byte 4 to [ESP+0x80] (record +0x14) and 0x0059beea writing byte 0 to [ESP+0x81] (record +0x15), giving flag_14=4 and flag_15=0. OpaqueRayQuery is therefore five collision words at 0x00 with flag_14 and flag_15, giving a 0x18-byte record. 0x0059b0f0 uses base 0x2c and stores byte 4 to +0x14 (0x0059b240) and 0 to +0x15 (0x0059b23c), so both bodies share one flag pair."
+  ],
+  "tests": [
+    "null creature or null shadow world returns before any helper call",
+    "the creature bounds callback receives exactly four arguments, two of them distinct non-null out pointers, the other two literal zero, and both out slots carry the values the callback wrote",
+    "the position interpolation callback runs exactly once on the query-gate-false path, once on the failed query path and once on the successful path, with scalars 0, 0 and blend*0.016f respectively",
+    "a successful blend with a value above one clamps the scalar to 1.0f times the rate and seconds",
+    "the blend speed is the blend value divided by the blend interval and clamped to [0,1]",
+    "the current offset is scaled down to length 5 only when its length exceeds 5, and a length-1 result is left untouched",
+    "owner byte +0x1d == 0 zeroes the weights, calls the 0x0059b390 publication port with argument 0, and still runs both lerps with a zero scalar",
+    "owner byte +0x1d != 0 skips that port",
+    "the limited-angle branch issues two projections with distinct basis operands, look before target, and the basis pair is swapped between the two calls",
+    "the quarter-turn correction is +1 for a non-negative wrapped angle and -1 for a negative one, and no rotation happens below the pi/4 threshold",
+    "the orientation row is written from the injected orientation words times sin(angle*0.5) with cos in the w slot, and non-default injected values change it",
+    "the three normalize thresholds are injected independently: matching them normalizes, non-matching them leaves the difference vectors raw",
+    "the look-at callback receives the creature orientation row rather than the creature position, and is skipped when the look-at radius test fails",
+    "the ground raycast is skipped when the 0x54 flag is set and runs otherwise with the -500.0f origin",
+    "a positive creep remaining decrements the counter and returns without touching the bounds",
+    "creep high above creep low steps up and clamps to creep high",
+    "creep low above creep high steps down and clamps to creep high",
+    "equal creep bounds are left untouched",
+    "negative dt wraps through the 2^32 add and produces a very large scalar",
+    "the smoothing gate is off by default and copies the world position into creature+0x164",
+    "offset rescale uses an ordered comparison so a NaN magnitude is returned unchanged",
+    "quarter-turn sign yields +1.0f for a NaN wrapped angle (COMISS/JBE unordered)",
+    "raycast slot +0x24 receives all eight native stack words and both out records are read",
+    "creature vtable slot +0x5c is typed bool and returns via AL",
+    "ray-query record is five collision words at offset 0x00 with flag_14=4 and flag_15=0"
+  ],
+  "runtime_gates": [
+    "Semantics of the 0x00699600, 0x0069b840 and 0x0069b760 helpers (lerp, angle lerp and projection are inferred from usage, not owned)",
+    "Runtime values of the injected basis words 0x015e5a0c/0x10/0x14, 0x015e5a88/0x8c/0x90 and 0x015e590c/0x015e5910/0x015e5914, which read as zero in the file image",
+    "The four-argument contract of the creature bounds callback beyond the two output slots and two literal zeros",
+    "The AnimatedCreature vtable at controller+0x08 and its slots 0x58 and 0x5c",
+    "The eight-slot IShadowWorld raycast argument record",
+    "The picking helper 0x0067dd80 and its vtable slot 0x28 return value",
+    "The meaning of controller+0x1c and of the 0x0059b390 publication port",
+    "Whether a zero-length current offset is reachable; the binary produces 1.0f/0.0f = +inf and then 0.0f*inf = NaN, which this reconstruction reproduces but does not test numerically"
+  ],
+  "confidence": {
+    "body": "high",
+    "abi_and_cleanup": "high",
+    "ordering": "high",
+    "constants": "high",
+    "bounds_callback_contract": "high",
+    "interpolation_hoist": "high",
+    "limited_angle_projection": "high",
+    "quarter_turn_sign": "high",
+    "magnitude_guard": "high",
+    "runtime_injected_basis": "high",
+    "temporary_aliasing": "medium"
+  },
+  "verification": "self-consistent: 30 focused x86-32 model tests pass in normal and NDEBUG builds; -Wall -Wextra -Wpedantic -Werror clean; clang-format clean",
+  "target_state": "integrated canonical source; runtime validation gated",
+  "integration_status": "integrated",
+  "canonical_files": [
+    "src/reconstruction/pkg_editor_runtime_wave7/editor_runtime_wave7.hpp",
+    "src/reconstruction/pkg_editor_runtime_wave7/editor_runtime_wave7.cpp",
+    "src/reconstruction/pkg_editor_runtime_wave7/editor_runtime_wave7_model_test.cpp"
+  ]
+}

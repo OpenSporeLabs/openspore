@@ -1,0 +1,180 @@
+{
+  "schema": "pkg11-a4-progression-wave3.function-handoff.v1",
+  "package": "PKG-11-A4-PROGRESSION-WAVE3",
+  "function_address": "0x00596e10",
+  "ghidra_name": "FUN_00596e10",
+  "sdk_name": "Simulator::cCollectableItems::LockPart",
+  "normalized_symbol": "collectable_lock_00596e10",
+  "source_files": [
+    "reconstruction/staging/pkg11-a4-progression-wave3/progression_wave3.hpp",
+    "reconstruction/staging/pkg11-a4-progression-wave3/progression_wave3.cpp"
+  ],
+  "ownership": {
+    "status": "unowned_body_with_read_only_research_claims",
+    "manifest_checked": true,
+    "metadata_checked": true,
+    "integrated_handoffs_checked": true,
+    "staging_and_canonical_source_checked": true,
+    "git_status_checked": true,
+    "boundary": "No existing reconstruction metadata, staging body, canonical source body, integrated handoff, or source-reconstruction manifest entry claims 0x00596e10. The existing economy and progression research files contain read-only static mechanics and SDK layout claims only. This package claims the body and keeps status/list containers behind opaque ports."
+  },
+  "imported_name_resolution": {
+    "status": "normalized_from_live_abi",
+    "supported_signature": "bool thiscall(ProgressionManagerWire* manager, Word instance_id, Word group_id)",
+    "reason": "The live body receives ECX as the manager, reads two stack words, and returns through RET 8 with AL set to one on every path.",
+    "unsupported_imported_elements": [
+      "editor visibility synchronization",
+      "concrete collectable list and status container types"
+    ]
+  },
+  "signature": {
+    "calling_convention": "x86-32 thiscall with callee stack cleanup",
+    "receiver": "ECX ProgressionManagerWire pointer copied to ESI",
+    "stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "ESP+0x04",
+        "type": "std::uint32_t",
+        "name": "instance_id"
+      },
+      {
+        "position": 2,
+        "entry_offset": "ESP+0x08",
+        "type": "std::uint32_t",
+        "name": "group_id"
+      }
+    ],
+    "stack_cleanup_bytes": 8,
+    "stack_cleanup_owner": "callee",
+    "return_semantics": "bool in AL; true is unconditional after status clearing and list removal",
+    "preserved_registers": ["ESI"]
+  },
+  "body": {
+    "entry_address": "0x00596e10",
+    "end_address": "0x00596e3b",
+    "length_bytes": 44,
+    "instruction_count": 14,
+    "raw_bytes": "568bf18d442408508d8e004d0000e88df0ffff8020fc8d4c2408518d8e806d0000e87ad7ffffb0015ec20800"
+  },
+  "layout": {
+    "manager_extent": "0x6dac",
+    "status_container": {
+      "offset": "0x4d00",
+      "use": "opaque mItemStatusInfos lookup and status operator[]"
+    },
+    "points": {
+      "offset": "0x6d70",
+      "type": "std::int32_t",
+      "use": "not read or written by LockPart"
+    },
+    "unlocked_list": {
+      "offset": "0x6d80",
+      "use": "opaque unlocked-key list remove"
+    }
+  },
+  "port_abis": [
+    {
+      "boundary": "0x00595eb0",
+      "convention": "x86-32 thiscall",
+      "receiver": "ECX status container at manager+0x4d00",
+      "stack": ["const OpaqueKey* key"],
+      "cleanup": "RET 4",
+      "return": "pointer to the status byte; a missing key creates a zero status entry"
+    },
+    {
+      "boundary": "0x005945b0",
+      "convention": "x86-32 thiscall",
+      "receiver": "ECX unlocked-list container at manager+0x6d80",
+      "stack": ["const OpaqueKey* key"],
+      "cleanup": "RET 4",
+      "return": "void; removes every node whose two-word key equals the input"
+    }
+  ],
+  "mechanics": {
+    "order": [
+      "Call status operator[] on manager+0x4d00; create a missing status entry with a zero byte.",
+      "AND the status byte with 0xfc, clearing only bits 0x01 and 0x02.",
+      "Call the unlocked-list remove port on manager+0x6d80 with the unchanged instance/group key.",
+      "Return true unconditionally."
+    ],
+    "status_bits": [
+      "Unlocked bit 0x01 is cleared",
+      "Highlighted bit 0x02 is cleared",
+      "SDK NotUnlockable bit 0x04 and all other bits are preserved"
+    ],
+    "list_removal": "The live callee walks the complete circular list and removes every matching node, not just the first match.",
+    "no_refund": "The points word at manager+0x6d70 is neither read nor written, so LockPart performs no refund.",
+    "unconditional_true": "Missing entries, absent list nodes, and repeated locks all return true after the two opaque mutations."
+  },
+  "call_graph": {
+    "direct_caller_function_count": 7,
+    "direct_call_xref_count": 7,
+    "direct_callees": ["0x005945b0", "0x00595eb0"]
+  },
+  "evidence": [
+    {
+      "tool": "ghidra_get_function_by_address",
+      "address": "0x00596e10",
+      "observation": "Ghidra reports FUN_00596e10 with an undefined signature and body range 0x00596e10 through 0x00596e3b."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x00596e10",
+      "observation": "The target calls 0x00595eb0 on manager+0x4d00, executes AND byte 0xfc, calls 0x005945b0 on manager+0x6d80, sets AL to one, and returns through RET 8."
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x00595eb0",
+      "observation": "The status container helper searches for the two-word key and calls the missing-entry creation path before returning the status byte address."
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x005945b0",
+      "observation": "The list helper loops through every node, compares both key words, removes every matching node, and continues traversal after a match."
+    },
+    {
+      "tool": "ghidra_get_function_callees",
+      "address": "0x00596e10",
+      "observation": "Direct callees are 0x005945b0 and 0x00595eb0."
+    },
+    {
+      "tool": "ghidra_get_function_xrefs",
+      "address": "0x00596e10",
+      "observation": "Seven direct unconditional call references are present in the live program."
+    }
+  ],
+  "verification": {
+    "commands": [
+      "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only reconstruction/staging/pkg11-a4-progression-wave3/progression_wave3.cpp reconstruction/staging/pkg11-a4-progression-wave3/progression_wave3_model_test.cpp",
+      "clang++ -m32 -std=c++17 -O0 -Wall -Wextra -Wpedantic -Werror reconstruction/staging/pkg11-a4-progression-wave3/progression_wave3.cpp reconstruction/staging/pkg11-a4-progression-wave3/progression_wave3_model_test.cpp -o /tmp/opencode/pkg11-a4-model-o0 && /tmp/opencode/pkg11-a4-model-o0",
+      "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror reconstruction/staging/pkg11-a4-progression-wave3/progression_wave3.cpp reconstruction/staging/pkg11-a4-progression-wave3/progression_wave3_model_test.cpp -o /tmp/opencode/pkg11-a4-model-o2 && /tmp/opencode/pkg11-a4-model-o2",
+      "clang++ -m32 -std=c++17 -O2 -DNDEBUG -Wall -Wextra -Wpedantic -Werror reconstruction/staging/pkg11-a4-progression-wave3/progression_wave3.cpp reconstruction/staging/pkg11-a4-progression-wave3/progression_wave3_model_test.cpp -o /tmp/opencode/pkg11-a4-model-ndebug && /tmp/opencode/pkg11-a4-model-ndebug",
+      "clang-format --dry-run --Werror --style='{BasedOnStyle: Google, FixNamespaceComments: false}' reconstruction/staging/pkg11-a4-progression-wave3/progression_wave3.hpp reconstruction/staging/pkg11-a4-progression-wave3/progression_wave3.cpp reconstruction/staging/pkg11-a4-progression-wave3/progression_wave3_model_test.cpp",
+      "git diff --no-index --check /dev/null reconstruction/staging/pkg11-a4-progression-wave3/progression_wave3.hpp; git diff --no-index --check /dev/null reconstruction/staging/pkg11-a4-progression-wave3/progression_wave3.cpp; git diff --no-index --check /dev/null reconstruction/staging/pkg11-a4-progression-wave3/progression_wave3_model_test.cpp; git diff --no-index --check /dev/null reconstruction/metadata/pkg11-a4-progression-wave3/00596e10.json",
+      "clang++ -m32 -std=c++17 -O2 -fno-pic -c reconstruction/staging/pkg11-a4-progression-wave3/progression_wave3.cpp -o /tmp/opencode/pkg11-a4-progression-wave3.o && nm -C /tmp/opencode/pkg11-a4-progression-wave3.o && objdump -dr /tmp/opencode/pkg11-a4-progression-wave3.o",
+      "python3 -m json.tool reconstruction/metadata/pkg11-a4-progression-wave3/00596e10.json"
+    ],
+    "results": {
+      "x86_32_syntax": "passed",
+      "focused_model_test_o0": "passed",
+      "focused_model_test_o2": "passed",
+      "focused_model_test_ndebug": "passed",
+      "clang_format_dry_run": "passed",
+      "json_validation": "passed",
+      "abi_inspection": "passed: elf32-i386 object uses ECX thiscall and ret 0x8"
+    },
+    "covered_behaviors": [
+      "missing status entry creation",
+      "clearing only status bits 0x01 and 0x02",
+      "preservation of NotUnlockable bit 0x04 and other bits",
+      "removing every matching unlocked-list node",
+      "no points debit or refund",
+      "unconditional true and repeated lock behavior"
+    ]
+  },
+  "blockers": [
+    "No original-process collectable lock trace was run.",
+    "Container node allocation, hash layout, and the concrete list/status map implementations remain opaque ports.",
+    "Editor visibility synchronization is outside this target and remains with its callers."
+  ]
+}

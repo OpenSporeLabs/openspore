@@ -1,0 +1,393 @@
+{
+  "schema": "openspore-worker-metadata-1",
+  "package": "wave13-w1-dispatch-b04",
+  "va": "0x00409c00",
+  "address": "0x00409c00",
+  "function_address": "0x00409c00",
+  "entry_address": "0x00409c00",
+  "ghidra_name": "FUN_00409c00",
+  "normalized_symbol": "wave13_w1_dispatch_b04_00409c00",
+  "reconstructed_symbol": "FUN_00409c00_bounding_box_ctor",
+  "declaration": "extern \"C\" void __attribute__((thiscall)) FUN_00409c00_bounding_box_ctor(BoundingBox_00409c00* self);",
+  "source_files": [
+    "reconstruction/staging/wave13-w1-dispatch-b04/00409c00_bounding_box_ctor.cpp",
+    "reconstruction/staging/wave13-w1-dispatch-b04/00409c00_bounding_box_ctor.hpp",
+    "reconstruction/staging/wave13-w1-dispatch-b04/wave13_w1_dispatch_b04_model_test.cpp"
+  ],
+  "subsystem": "Editor",
+  "class_type": "Math::BoundingBox (SDK candidate, exact layout match)",
+  "class_type_note": "The destination is 24 bytes and the second group of three floats starts at +0x0C, which is only natural for two consecutive 12-byte Vector3 values. The SDK declares exactly that, `struct BoundingBox { Vector3 lower; Vector3 upper; }` with /* 00h */ and /* 0Ch */, and its own comments record the default-construct-then-pass-as-out-parameter pattern that the 22 callsites use. The SDK's declared default values (-1/+1) contradict the observed constants, so the SDK body is a placeholder and the binary is the authority.",
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall (receiver in ECX), no stack arguments",
+    "calling_convention_observation": "0x00409c06 spills ECX to [EBP-0x34] and every later access to the destination goes through that slot; the epilogue at 0x00409cd3..0x00409cd6 is MOV ESP,EBP / POP EBP / RET with no immediate, so the callee pops zero words. The 28 code references are all direct and every inspected one forms the destination address with LEA into ECX immediately before the call, with nothing pushed.",
+    "return_type": "void",
+    "return_semantics": "no value; the constructor communicates entirely through the 24 bytes at the receiver",
+    "return_register": null,
+    "return_width_bytes": 0,
+    "return_observation": "no value is produced for the caller; the decompiler also gives the function a void return, and no instruction writes a result register",
+    "ret_form": "RET",
+    "termination": "single RET at 0x00409cd6",
+    "stack_cleanup_bytes": 0,
+    "stack_cleanup_owner": "caller",
+    "stack_arguments": [],
+    "ordinary_stack_argument_slots": 0,
+    "saved_registers": [
+      "EBP"
+    ],
+    "frame": "PUSH EBP / MOV EBP,ESP / SUB ESP,0x34; six 4-byte staging slots at [EBP-0x30]..[EBP-0x18] plus four at [EBP-0x0C]..[EBP-0x04] hold the constants before they are copied out, and [EBP-0x34] holds the receiver",
+    "receiver": true,
+    "hidden_receiver": "ECX",
+    "hidden_this_register": "ECX is read only by the spill at 0x00409c06"
+  },
+  "layout": {
+    "entry_address": "0x00409c00",
+    "body_start": "0x00409c00",
+    "body_end": "0x00409cd6",
+    "body_span_bytes": 215,
+    "instruction_count": 49,
+    "instructions_note": "The full 49-instruction listing was read with ghidra_disassemble_function and every store, load and constant it contains is recorded under constants, globals and observed_mechanics below.",
+    "padding_after": "0x00409cd7..0x00409ce5 is cc cc cc cc cc cc cc cc cc, followed by the next function at 0x00409ce6 which begins 55 8b ec 51 89 4d fc 33",
+    "frame": "PUSH EBP / MOV EBP,ESP / SUB ESP,0x34",
+    "reads": "two globals: the dword at 0x013eb258 three times and the 16-byte xmm constant at 0x013eb8b0 three times. It reads NOTHING from the destination, which is what makes it safe to run on uninitialised storage.",
+    "writes": "exactly six dwords: receiver+0x00, +0x04, +0x08 get the constant; receiver+0x0C, +0x10, +0x14 get its sign-flipped form. There is no read-modify-write and no partial store."
+  },
+  "observed_mechanics": [
+    "0x00409c09 / 0x00409c16 / 0x00409c23: MOVSS XMM0,dword ptr [0x013eb258] three times, storing into [EBP-0x24], [EBP-0x20] and [EBP-0x1c] - the same constant is materialised three times rather than kept in a register",
+    "0x00409c30..0x00409c49: those three staging slots are reloaded into XMM0 and written to [EBP-0x0c], [EBP-0x08] and [EBP-0x04], a pure copy that exists only because the frame is built before the destination is written",
+    "0x00409c4e..0x00409c5f: the receiver is reloaded and the three values are written to [EAX], [EAX+4] and [EAX+8]. The offsets are 0, 4 and 8, so the first group is three consecutive floats with no padding.",
+    "0x00409c62 / 0x00409c8a / 0x00409c9e: MOVSS from 0x013eb258 again, this time each followed by XORPS XMM0,xmmword ptr [0x013eb8b0] at 0x00409c6a, 0x00409c7e and 0x00409c92",
+    "0x00409cbc: ADD EDX,0xc biases the receiver by 12 before the second group is written, which is the single instruction that fixes the 0x0C offset of the upper bound",
+    "0x00409cc5 / 0x00409cca / 0x00409cd0: the three negated values are written to [EDX], [EDX+4] and [EDX+8], i.e. receiver+0x0C, +0x10 and +0x14",
+    "0x00409cd3..0x00409cd6: the frame is torn down and the function returns; the x87 and MMX state are untouched because the whole body is SSE",
+    "The live read at 0x013eb250 shows the four bytes at 0x013eb258 are ff ff 7f 7f, i.e. the little-endian dword 0x7f7fffff, which is the IEEE-754 single-precision bit pattern for FLT_MAX",
+    "The live read at 0x013eb8b0 shows sixteen bytes 00 00 00 80 repeated four times, i.e. four lanes of 0x80000000 - a pure sign mask with no magnitude bits, so XORPS can only flip signs",
+    "XORPS operates on 16 bytes but each result is consumed by a following MOVSS into a dword, so only the low lane survives and the upper three lanes are discarded. The effect per store is exactly a sign-bit flip, not a 16-byte operation.",
+    "The body contains no branch other than the return, no callee and no loop: 49 instructions, all of them loads, XORs and stores",
+    "0x0041ab83 / 0x0041ab89 in FUN_0041aaa0: LEA ECX,[EBP-0x364] then CALL 0x00409c00, immediately followed at 0x0041ab9b by a call that takes the address of that same 24-byte object as an argument - the default-construct-then-pass-as-out-parameter pattern",
+    "0x0043eef0 and 0x004ad550 both call it twice in a row on two different 24-byte locals and then pass those locals to matrix and transform helpers, so the inverted box is the identity element those helpers start from",
+    "The live scan reports 28 code references and 0 data references, so the address is an out-of-line non-virtual constructor rather than a shared folded body"
+  ],
+  "fields_and_offsets": [
+    {
+      "owner": "receiver (the 24-byte object)",
+      "offset": "+0x00",
+      "kind": "float32, set to the constant at 0x013eb258",
+      "proved_by": "0x00409c54 MOV [EAX],ECX with EAX = the receiver",
+      "instruction": "0x00409c54",
+      "confidence": "OBSERVED",
+      "sdk_name": "Math::BoundingBox::lower.x"
+    },
+    {
+      "owner": "receiver",
+      "offset": "+0x04",
+      "kind": "float32, same constant",
+      "proved_by": "0x00409c59 MOV [EAX+4],EDX",
+      "instruction": "0x00409c59",
+      "confidence": "OBSERVED",
+      "sdk_name": "lower.y"
+    },
+    {
+      "owner": "receiver",
+      "offset": "+0x08",
+      "kind": "float32, same constant",
+      "proved_by": "0x00409c5f MOV [EAX+8],ECX",
+      "instruction": "0x00409c5f",
+      "confidence": "OBSERVED",
+      "sdk_name": "lower.z"
+    },
+    {
+      "owner": "receiver",
+      "offset": "+0x0C",
+      "kind": "float32, set to the constant sign-flipped",
+      "proved_by": "0x00409cbf ADD EDX,0xc then 0x00409cc5 MOV [EDX],EAX",
+      "instruction": "0x00409cc5",
+      "confidence": "OBSERVED",
+      "sdk_name": "Math::BoundingBox::upper.x"
+    },
+    {
+      "owner": "receiver",
+      "offset": "+0x10",
+      "kind": "float32, sign-flipped",
+      "proved_by": "0x00409cca MOV [EDX+4],ECX",
+      "instruction": "0x00409cca",
+      "confidence": "OBSERVED",
+      "sdk_name": "upper.y"
+    },
+    {
+      "owner": "receiver",
+      "offset": "+0x14",
+      "kind": "float32, sign-flipped",
+      "proved_by": "0x00409cd0 MOV [EDX+8],EAX",
+      "instruction": "0x00409cd0",
+      "confidence": "OBSERVED",
+      "sdk_name": "upper.z"
+    }
+  ],
+  "constants": [
+    {
+      "address": "0x013eb258",
+      "value": "0x7F7FFFFF as a float32, i.e. +FLT_MAX",
+      "meaning": "the value written to the first three floats; read live as the four bytes ff ff 7f 7f",
+      "instruction": "0x00409c09, 0x00409c16, 0x00409c23, 0x00409c62, 0x00409c76, 0x00409c8a"
+    },
+    {
+      "address": "0x013eb8b0",
+      "value": "four lanes of 0x80000000 (16 bytes of 00 00 00 80)",
+      "meaning": "the sign mask XORed into the constant to produce its negation; it has no magnitude bits, so the XOR can only flip the sign of the low lane",
+      "instruction": "0x00409c6a, 0x00409c7e, 0x00409c92"
+    },
+    {
+      "address": "0x00409cbf",
+      "value": "0x0C",
+      "meaning": "the bias applied to the receiver before the second group of stores, i.e. the offset of the upper bound inside a 24-byte object"
+    },
+    {
+      "address": "0x00409cb7",
+      "value": "0x8",
+      "meaning": "the displacement of the third store of each group, confirming three consecutive floats with no padding"
+    }
+  ],
+  "globals": [
+    {
+      "address": "0x013eb258",
+      "size_bytes": 4,
+      "observed_value": "0x7F7FFFFF read as a float32 = +3.4028234663852886e+38",
+      "read_at": [
+        "0x00409c09",
+        "0x00409c16",
+        "0x00409c23",
+        "0x00409c62",
+        "0x00409c76",
+        "0x00409c8a"
+      ],
+      "kind": "read-only float constant",
+      "status": "OBSERVED"
+    },
+    {
+      "address": "0x013eb8b0",
+      "size_bytes": 16,
+      "observed_value": "00 00 00 80 00 00 00 80 00 00 00 80 00 00 00 80",
+      "read_at": [
+        "0x00409c6a",
+        "0x00409c7e",
+        "0x00409c92"
+      ],
+      "kind": "read-only 16-byte SSE sign mask",
+      "status": "OBSERVED"
+    },
+    {
+      "address": "0x013eb254",
+      "size_bytes": 4,
+      "observed_value": "00 00 80 00",
+      "read_at": [],
+      "kind": "neighbouring constant, not touched by this function",
+      "status": "CONTEXT_ONLY",
+      "note": "read while locating 0x013eb258; recorded so the constant's neighbourhood is not mistaken for part of the body"
+    },
+    {
+      "address": "0x013eb260",
+      "size_bytes": 4,
+      "observed_value": "ff ff ff 7f",
+      "read_at": [],
+      "kind": "neighbouring constant, not touched by this function",
+      "status": "CONTEXT_ONLY"
+    }
+  ],
+  "virtual_dispatch": [],
+  "virtual_dispatch_observation": "The body makes no indirect call and the live scan found 0 data references to the address, so this constructor is not a vtable entry and dispatches nothing.",
+  "control_flow": {
+    "switch_tables": "none",
+    "loops": "none",
+    "early_exits": "none",
+    "branches": [],
+    "note": "No conditional branch exists. The body is 49 straight-line instructions ending in the frame teardown; the only jumps are the unconditional fallthroughs."
+  },
+  "callers_evidence": [
+    {
+      "callsite": "0x0041ab89",
+      "caller": "FUN_0041aaa0 (subsystem Math per the ledger)",
+      "form": "CALL rel32",
+      "setup": "0x0041ab83 LEA ECX,[EBP-0x364]",
+      "result_use": "void; the address of the same 24-byte object is then passed to 0x00540470 at 0x0041ab9b"
+    },
+    {
+      "callsite": "0x0041affd",
+      "caller": "FUN_0041aaa0",
+      "form": "CALL rel32",
+      "setup": "not disassembled",
+      "result_use": "not inspected"
+    },
+    {
+      "callsite": "0x0043eeff",
+      "caller": "FUN_0043eef0",
+      "form": "CALL rel32",
+      "setup": "the decompiled body shows `FUN_00409c00()` with the destination implicit",
+      "result_use": "void; the initialised local is then negated and passed to 0x0041bd50"
+    },
+    {
+      "callsite": "0x00446936",
+      "caller": "FUN_00441440 (subsystem App per the ledger)",
+      "form": "CALL rel32",
+      "setup": "not disassembled",
+      "result_use": "not inspected"
+    },
+    {
+      "callsite": "0x00446a86",
+      "caller": "FUN_00441440",
+      "form": "CALL rel32",
+      "setup": "not disassembled",
+      "result_use": "not inspected"
+    },
+    {
+      "callsite": "0x00449d52",
+      "caller": "FUN_00449d40",
+      "form": "CALL rel32",
+      "setup": "not disassembled",
+      "result_use": "not inspected"
+    },
+    {
+      "callsite": "0x0044a0a5",
+      "caller": "FUN_0044a070",
+      "form": "CALL rel32",
+      "setup": "not disassembled",
+      "result_use": "not inspected"
+    },
+    {
+      "callsite": "0x004ad562",
+      "caller": "FUN_004ad550",
+      "form": "CALL rel32",
+      "setup": "0x004ad55f LEA ECX,[EBP-0x1c]",
+      "result_use": "void; a second identical call follows at 0x004ad56a on [EBP-0x1c] again, and 0x004ad6d8 later passes that object to 0x00511140"
+    },
+    {
+      "callsite": "0x004ad56a",
+      "caller": "FUN_004ad550",
+      "form": "CALL rel32",
+      "setup": "0x004ad567 LEA ECX,[EBP-0x1c]",
+      "result_use": "void; the immediate re-initialisation shows the object is reset between two uses, which is only meaningful because the constructor does not read the old contents"
+    },
+    {
+      "callsite": "see briefing canonical_ledger_row",
+      "caller": "the remaining 18 code references across FUN_00407280, FUN_0041aaa0, FUN_0043eef0, FUN_00441440, FUN_00449d40, FUN_0044a070 and others",
+      "form": "CALL rel32",
+      "setup": "not disassembled",
+      "result_use": "not inspected",
+      "note": "18 sites, not individually characterised"
+    }
+  ],
+  "callers_evidence_note": "The briefing lists 22 callers; the live scan found 28 code references. The four inspected sites are given above; the remaining 24 are listed as a group and are not characterised.",
+  "callees_evidence": [],
+  "semantic_contract": "The function initialises a 24-byte object in place and returns nothing. It writes six consecutive floats: the first three at offsets +0x00, +0x04 and +0x08 receive the float constant stored at 0x013eb258, whose bit pattern read live is 0x7F7FFFFF, i.e. +FLT_MAX; the last three at +0x0C, +0x10 and +0x14 receive that same constant XORed with the 16-byte sign mask at 0x013eb8b0, i.e. -FLT_MAX. It reads nothing from the destination, so it is idempotent and safe on uninitialised storage, it calls nothing, it touches no other memory and it has no branch. The resulting object has a lower bound above its upper bound on every axis, which is the inverted or empty state that a union or intersection accumulator must start from in order for the first real operand to replace it entirely.",
+  "classification": "STRONG_SEMANTIC",
+  "classification_rationale": "The complete 49-instruction body, the frame, the six destination offsets, both global constants with their live-read values, the single 0x0C bias instruction and the absence of any branch, callee or destination read are all established directly from the disassembly and from live memory reads, and the resulting state - a lower bound above the upper bound on all three axes - pins the semantics as the identity element of a bounding-volume accumulator rather than leaving it to interpretation. The type identification is an SDK correspondence, but it is corroborated by a layout that is hard to explain any other way: a 24-byte object whose second vector starts at the unaligned offset 0x0C is two consecutive 12-byte vectors and nothing else, and the SDK's own comment records the same default-construct-then-pass-as-out-parameter callsite pattern. The one divergence found - the SDK declaring -1/+1 where the binary stores FLT_MAX and -FLT_MAX - is a defect in the SDK's inline body, is recorded, and does not weaken the reconstruction of the binary.",
+  "semantic_findings": [
+    "Both constants were read out of the image rather than inferred: 0x013eb258 holds the bytes ff ff 7f 7f and 0x013eb8b0 holds four lanes of 0x80000000.",
+    "The second group is produced by XORPS against a sign-only mask and consumed by MOVSS, so each of the three negations is a single sign-bit flip; the 16-byte width of the mask is an SSE artefact and not a wider operation.",
+    "The function reads nothing from its destination, so it is idempotent and needs no initialised storage - a property the reconstruction preserves and the model test checks by running it twice.",
+    "The 0x0C bias at 0x00409cbf is the only instruction that establishes where the second group starts, and it is what identifies the object as two consecutive 12-byte vectors.",
+    "The state it writes, lower above upper on every axis, is the identity for a union or intersection, and the callsites use it that way: construct, then hand the object to an out-parameter helper.",
+    "0x004ad550 constructs the same object twice in a row, which is only meaningful because the constructor does not read the old contents.",
+    "The body is entirely SSE with no x87 and no MMX state, so it has no hidden floating-point register obligation."
+  ],
+  "unresolved_questions": [
+    "Is the type really Math::BoundingBox? The 24-byte size and the 0x0C second-vector offset match the SDK declaration exactly, but any other 24-byte aggregate of two unaligned 12-byte vectors would match equally well, and the binary names it nowhere.",
+    "Why is the constructor out of line? Six constant stores would normally be inlined; the 28 direct callsites and 0 vtable references argue against a virtual override, so an unoptimised translation unit or an address taken somewhere is the likely explanation, and neither was checked.",
+    "Do all 24 uninspected callsites pass the result as an out-parameter, or do some keep it as a member? The four inspected ones all do.",
+    "Is the inverted state read back anywhere as a sentinel - for example a containment test that relies on it - or is it only ever an initial value? No reader was identified.",
+    "The neighbouring constants at 0x013eb254 (00 00 80 00) and 0x013eb260 (ff ff ff 7f) were read while locating the real one and are recorded as context only. Whether they belong to the same table of float constants, and what else references them, was not investigated."
+  ],
+  "confidence": {
+    "body_bytes": 1.0,
+    "control_flow": 1.0,
+    "field_offsets": 1.0,
+    "abi": 0.96,
+    "constants": 1.0,
+    "globals": 1.0,
+    "return_semantics": 1.0,
+    "idempotence": 0.95,
+    "type_identification": 0.75,
+    "semantic_identity": 0.85
+  },
+  "runtime_gates": [
+    "No original-process trace has been captured. Whether any of the 28 callsites actually passes the constructed object on to a union or intersection without overwriting it first is a runtime fact.",
+    "Runtime patching of either global constant cannot be excluded statically; both were read from the on-disk image only."
+  ],
+  "blockers": [],
+  "evidence": [
+    "reconstruction/evidence/00409c00/evidence.json",
+    "reconstruction/evidence/00409c00/context.json",
+    "Spore-App-SDK: Spore ModAPI/Spore/MathUtils.h (struct BoundingBox { Vector3 lower /* 00h */; Vector3 upper /* 0Ch */; } and its declared default ctor, which this record contradicts)"
+  ],
+  "tooling_evidence": [
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x00409c00",
+      "observation": "void __fastcall FUN_00409c00(undefined4 *param_1) { *param_1 = 0x7f7fffff; param_1[1] = 0x7f7fffff; param_1[2] = 0x7f7fffff; param_1[3] = 0xff7fffff; param_1[4] = 0xff7fffff; param_1[5] = 0xff7fffff; }"
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x00409c00",
+      "observation": "49 instructions 0x00409c00..0x00409cd6, no branch, six MOVSS stores to the destination, two global reads"
+    },
+    {
+      "tool": "ghidra_read_memory",
+      "address": "0x00409c00",
+      "length": 232,
+      "observation": "558bec83ec34894dcc ... 8be55dc3cccccccccc - the frame prologue and the two global addresses 0x013eb258 and 0x013eb8b0 appear verbatim in the operand bytes"
+    },
+    {
+      "tool": "ghidra_read_memory",
+      "address": "0x013eb250",
+      "length": 24,
+      "observation": "00007f43 00008000 ffff7f7f ffffffff 0000003f 6f12833a - so 0x013eb258 = ff ff 7f 7f, the float constant 0x7f7fffff"
+    },
+    {
+      "tool": "ghidra_read_memory",
+      "address": "0x013eb8b0",
+      "length": 16,
+      "observation": "00000080000000800000008000000080 - four lanes of 0x80000000"
+    },
+    {
+      "tool": "ghidra_run_script_inline",
+      "address": "0x00409c00",
+      "observation": "28 code references, 0 data references, slot-offset histogram empty - a non-virtual constructor"
+    },
+    {
+      "tool": "ghidra_disassemble_bytes",
+      "address": "0x0041ab70",
+      "observation": "0x0041ab83 LEA ECX,[EBP-0x364]; 0x0041ab89 CALL 0x00409c00; 0x0041ab8e LEA EDX,[EBP-0x109]; 0x0041ab94 PUSH EDX; 0x0041ab95 LEA ECX,[EBP-0x284]; 0x0041ab9b CALL 0x00540470"
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x0043eef0",
+      "observation": "constructs two 24-byte locals, negates one and passes both to 0x0041bd50 and 0x00511140"
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x004ad550",
+      "observation": "0x004ad55f LEA ECX,[EBP-0x1c]; 0x004ad562 CALL 0x00409c00; 0x004ad567 LEA ECX,[EBP-0x1c]; 0x004ad56a CALL 0x00409c00 - the same object is re-initialised between two uses"
+    }
+  ],
+  "validation": {
+    "status": "PASS",
+    "reason": "model test compiles with -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror and exits 0; it asserts all six written values, the 0x0C offset of the second group, the 24-byte size and idempotence over storage pre-filled with 0xA5",
+    "byte_exactness": "Not byte-identical and not claimed to be. clang -m32 -O2 folds the six stores into a 16-byte movups plus an 8-byte movsd from its own constant pool, and does not materialise the sign mask at run time because the negated constant is already known. The six values, their offsets, the 0x0C bias and the absence of any destination read all match.",
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/wave13-w1-dispatch-b04 reconstruction/staging/wave13-w1-dispatch-b04/*.cpp",
+    "model_test_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/wave13-w1-dispatch-b04 reconstruction/staging/wave13-w1-dispatch-b04/*.cpp -o /tmp/opencode/b04-model && /tmp/opencode/b04-model",
+    "syntax": "passed",
+    "model_test": "passed"
+  },
+  "provenance": {
+    "binary": "SPORE/SporeBin/SporeApp.exe",
+    "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+    "binary_version": "Spore 3.1.0.22",
+    "image_base": "0x00400000",
+    "worker_id": "wave13-w1-dispatch-b04",
+    "implementer_id": "wave13-w1-dispatch-b04",
+    "batch_id": "b04",
+    "package": "wave13-w1-dispatch-b04",
+    "date": "2026-09-26",
+    "analysis": "static only; no original-process trace was captured for any target in this batch"
+  }
+}

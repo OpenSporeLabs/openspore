@@ -1,0 +1,315 @@
+{
+  "schema": "pkg-frame-runtime-wave7.function-handoff.v1",
+  "package": "PKG-FRAME-RUNTIME-WAVE7",
+  "worker_ownership": "frame-update-timing-wave7",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "captured_on": "2026-09-25",
+  "va": "0x00f47930",
+  "function_address": "0x00f47930",
+  "ghidra_name": "FUN_00f47930",
+  "normalized_symbol": "app_frame_update_00f47930",
+  "declaration": "void app_frame_update_00f47930(OpaqueSporeApp* receiver)",
+  "phase": "body-reconstruction",
+  "review_status": "staged_static_self_review",
+  "runtime_validation": 0,
+  "selection": {
+    "requested_fallback_va": "0x00b31da0",
+    "requested_fallback_result": "rejected as a distinct function",
+    "live_function_at_requested_fallback": {
+      "entry": "0x00b31cc0",
+      "body_end": "0x00b31e98",
+      "relationship": "0x00b31da0 is an interior address in FUN_00b31cc0, not a function entry"
+    },
+    "selected_replacement_va": "0x00f47930",
+    "reason": "0x00f47930 is a distinct instruction-aligned frame timing and update body, has one direct caller, has no manifest, integrated-handoff, worker-metadata, canonical-source, or staging function-record claim, and directly orders QPC measurement, optional pacing, baseline publication, and update callbacks.",
+    "ownership_search": {
+      "manifest_claim": false,
+      "integrated_handoff_claim": false,
+      "worker_metadata_claim": false,
+      "src_reconstruction_claim": false,
+      "staging_function_claim": false,
+      "research_reference_only": true
+    }
+  },
+  "implementation": {
+    "status": "implemented in worker-owned staging",
+    "canonical_status": "not present; canonical promotion is not claimed",
+    "header": "reconstruction/staging/pkg-frame-runtime-wave7/frame_runtime_wave7.hpp",
+    "source": "reconstruction/staging/pkg-frame-runtime-wave7/frame_runtime_wave7.cpp",
+    "model_test": "reconstruction/staging/pkg-frame-runtime-wave7/frame_runtime_wave7_model_test.cpp",
+    "metadata": "reconstruction/staging/pkg-frame-runtime-wave7/00f47930.json"
+  },
+  "original_native_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "thiscall with no ordinary stack arguments",
+    "receiver_register": "ECX",
+    "receiver_type": "OpaqueSporeApp*",
+    "ordinary_stack_arguments": [],
+    "stack_cleanup_bytes": 0,
+    "return_register": "EAX",
+    "return_width_bytes": 0,
+    "return_contract": "void-like; EAX is not normalized",
+    "ret_form": "plain RET"
+  },
+  "observed_body": {
+    "entry": "0x00f47930",
+    "body_end_inclusive": "0x00f47ae3",
+    "instruction_count": 158,
+    "internal_jump_target_count": 27,
+    "raw_bytes_length": 439,
+    "saved_registers": ["EBX", "ESI", "EDI", "EBP"],
+    "inactive_path": "If byte receiver+0x0c is zero, return before QPC, baseline mutation, global reads, or callbacks."
+  },
+  "timing_state": {
+    "active_gate": {
+      "offset": "0x0c",
+      "width_bytes": 1,
+      "rule": "nonzero enters the frame body"
+    },
+    "counter_sample": {
+      "iat_address": "0x013cc2b8",
+      "symbol": "QueryPerformanceCounter",
+      "native_call": "cdecl output-pointer call",
+      "output_type": "uint64_t*",
+      "output_width_bytes": 8
+    },
+    "baseline": {
+      "offset": "0x10",
+      "width_bytes": 8,
+      "role": "64-bit counter baseline"
+    },
+    "tick_conversion": {
+      "offset": "0x18",
+      "width_bytes": 4,
+      "machine_type": "float",
+      "operation": "signed 64-bit counter difference converted to float, multiplied by this field, then truncated to signed int32 by CVTTSS2SI"
+    },
+    "baseline_scale": {
+      "offset": "0x1c",
+      "width_bytes": 4,
+      "machine_type": "float",
+      "operation": "final integer delta converted to float and multiplied by this field"
+    },
+    "baseline_publication": "FISTP QWORD PTR converts the scaled float to signed int64 under the active x87 rounding mode. The resulting signed 64-bit increment is added once to receiver+0x10 with low-word ADD and high-word ADC.",
+    "publication_count": 1,
+    "fixed_step_accumulator": false,
+    "catch_up_loop": false,
+    "numeric_frame_counter_read": false,
+    "frame_identity": "The target has no independent frame ID. Observable identity is one initial QPC sample, zero or more QPC-derived recomputations through 0x00f475b0 after pacing operations, the final integer delta, and the single baseline publication."
+  },
+  "pacing": {
+    "target_global_chain": [
+      "0x015fd918",
+      "DWORD PTR [0x015fd918]+0x3c",
+      "DWORD PTR [DWORD PTR [0x015fd918]+0x3c]+0xb0"
+    ],
+    "gate_slot": "0x44",
+    "gate_receiver": "receiver+0x20",
+    "normalization": [
+      "When the gate returns false, the raw target is unchanged.",
+      "When the gate returns true and target is ordered signed 0 through 44, target becomes 45.",
+      "When the gate returns true and target is negative, target becomes its signed absolute value with INT_MIN remaining INT_MIN under machine wrap.",
+      "Targets 45 and above remain unchanged."
+    ],
+    "positive_target_path": [
+      "Call 0x0068f4d0 and invoke the returned vtable at +0x34 with argument -1.",
+      "If that call returns nonzero and target-delta is below 3, replace target with delta+3.",
+      "If delta is below target-1, call receiver+0x20 vtable +0x84 with target-delta-1.",
+      "After a pacing request, recompute delta through 0x00f475b0.",
+      "If target-delta remains positive, materialize the signed difference as a DWORD and call 0x00921df0 with a pointer to that DWORD.",
+      "After the wait, recompute delta through 0x00f475b0."
+    ],
+    "recompute_helper": {
+      "va": "0x00f475b0",
+      "behavior": "Samples QueryPerformanceCounter again, subtracts receiver+0x10, multiplies by receiver+0x18, and truncates to signed int32 without publishing the baseline."
+    },
+    "no_target_positive_path": "Targets at or below zero skip service acquisition, request, wait, and recomputation."
+  },
+  "callback_order": [
+    {
+      "order": 1,
+      "target": "0x0067dcc0",
+      "role": "obtain AppSystem service"
+    },
+    {
+      "order": 2,
+      "target": "AppSystem vtable+0x38",
+      "arguments": []
+    },
+    {
+      "order": 3,
+      "target": "0x00812d30",
+      "calling_convention": "thiscall",
+      "receiver": "owner->direct_service_28",
+      "stack_cleanup_bytes": 4,
+      "guard": "receiver+0x28 != 0",
+      "arguments": ["final delta"]
+    },
+    {
+      "order": 4,
+      "target": "receiver+0x34 vtable+0x20",
+      "guard": "receiver+0x34 != 0",
+      "arguments": ["final delta"]
+    },
+    {
+      "order": 5,
+      "target": "receiver+0x38 vtable+0x1c",
+      "guard": "receiver+0x38 != 0",
+      "arguments": ["final delta"]
+    },
+    {
+      "order": 6,
+      "target": "receiver+0x3c vtable+0x28",
+      "guard": "receiver+0x3c != 0",
+      "arguments": ["final delta"]
+    },
+    {
+      "order": 7,
+      "target": "receiver+0x30 vtable+0x0c",
+      "guard": "receiver+0x30 != 0",
+      "arguments": ["final delta"]
+    },
+    {
+      "order": 8,
+      "target": "receiver+0x20 vtable+0x78",
+      "guard": null,
+      "arguments": ["final delta"]
+    },
+    {
+      "order": 9,
+      "target": "receiver+0x2c vtable+0x18",
+      "guard": "receiver+0x2c != 0",
+      "arguments": ["float(final delta) * 0.001f"]
+    },
+    {
+      "order": 10,
+      "target": "receiver+0x20 vtable+0x7c",
+      "guard": null,
+      "arguments": []
+    }
+  ],
+  "post_update_boundary": {
+    "inside_target": false,
+    "caller": "0x00f47b10",
+    "caller_call_site": "0x00f47bb8",
+    "order": [
+      "0x00f47930 returns",
+      "caller invokes receiver+0x20 vtable+0x80"
+    ],
+    "reason": "The +0x80 PostUpdate callback is caller-owned and is not reconstructed or invoked by this target."
+  },
+  "call_graph": {
+    "unique_direct_caller_functions": 1,
+    "direct_caller": {
+      "va": "0x00f47b10",
+      "call_site": "0x00f47bb8"
+    },
+    "function_xrefs": [
+      {
+        "address": "0x00f47bb8",
+        "type": "UNCONDITIONAL_CALL"
+      }
+    ],
+    "direct_callees": [
+      "0x0067dcc0",
+      "0x0068f4d0",
+      "0x00812d30",
+      "0x00921df0",
+      "0x00f475b0",
+      "QueryPerformanceCounter"
+    ],
+    "indirect_calls": [
+      "AppSystem vtable+0x38",
+      "AppSystem vtable+0x44",
+      "AppSystem vtable+0x78",
+      "AppSystem vtable+0x7c",
+      "AppSystem vtable+0x84",
+      "pacing-service vtable+0x34",
+      "receiver+0x34 vtable+0x20",
+      "receiver+0x38 vtable+0x1c",
+      "receiver+0x3c vtable+0x28",
+      "receiver+0x30 vtable+0x0c",
+      "receiver+0x2c vtable+0x18"
+    ]
+  },
+  "model_boundary": {
+    "represented": [
+      "active gate",
+      "cdecl QPC output-pointer call",
+      "single initial QPC sample",
+      "64-bit baseline subtraction",
+      "float scaling and truncation",
+      "target gate and 45 millisecond normalization",
+      "three-millisecond target floor",
+      "request and wait recomputations",
+      "single rounded baseline publication",
+      "exact callback order and optional gates",
+      "seconds conversion by 0.001f",
+      "plain void-like return"
+    ],
+    "ports": "FrameRuntimePorts keeps unresolved native and global reads explicit while retaining x86-32 stack cleanup at direct stdcall and thiscall boundaries.",
+    "rounding": "round_x87_to_i64 uses llrint so the model follows the active floating-point rounding mode, matching FISTP QWORD under the default runtime environment.",
+    "not_represented": [
+      "fixed-step or catch-up semantics",
+      "a numeric frame counter",
+      "semantic identities of stage pointers",
+      "concrete dynamic callback targets",
+      "runtime QPC and callback values"
+    ]
+  },
+  "model_tests": [
+    "inactive zero-call and zero-publication path",
+    "cdecl QPC output-pointer call",
+    "normal callback order",
+    "single AppSystem Update callback",
+    "seconds callback conversion",
+    "pacing target clamp and service selector -1",
+    "pacing request and wait argument order",
+    "two elapsed recomputations",
+    "three-millisecond target floor",
+    "unavailable pacing service common wait",
+    "default x87 nearest-even baseline publication",
+    "optional direct and stage callback gates",
+    "caller-owned PostUpdate exclusion"
+  ],
+  "runtime_gate": {
+    "status": "required",
+    "runtime_validation": 0,
+    "conditions": [
+      "The initialized cSporeApp reaches 0x00f47930 through 0x00f47b10 and message 0x01ee100a.",
+      "QPC, receiver baseline and scale fields, and the pacing target chain are valid.",
+      "Every dynamic callback target and all optional stage receivers are live.",
+      "One trace records initial and recomputed QPC samples, raw/final deltas, target mutations, request and wait calls, baseline before/after, callback order, and the following +0x80 callback.",
+      "Long-frame and below-target cases are observed separately to distinguish pacing from fixed-step catch-up."
+    ],
+    "minimum_positive_claim": "An original-process trace pairs one app-update message with one target entry, one baseline publication, the exact internal callback sequence, and the caller-owned PostUpdate callback."
+  },
+  "verification": {
+    "x86_32_syntax": "passed with -O2 -Wall -Wextra -Wpedantic -Werror",
+    "focused_model_normal": "passed",
+    "focused_model_ndebug": "passed",
+    "clang_format": "passed",
+    "json": "passed",
+    "emitted_outer_abi": "x86-32 thiscall entry with no stack arguments and plain RET",
+    "runtime_validation": "not run"
+  },
+  "provenance": [
+    "ghidra_get_function_by_address(0x00f47930)",
+    "ghidra_decompile_function(0x00f47930)",
+    "ghidra_disassemble_function(0x00f47930)",
+    "ghidra_get_function_callers(0x00f47930)",
+    "ghidra_get_function_callees(0x00f47930)",
+    "ghidra_get_function_xrefs(0x00f47930)",
+    "ghidra_get_function_jump_targets(0x00f47930)",
+    "ghidra_read_memory(0x00f47930)",
+    "ghidra_disassemble_function(0x00f475b0)",
+    "ghidra_decompile_function(0x00f47b10)",
+    "ghidra_disassemble_function(0x00f47b10)",
+    "ghidra_read_memory(0x013f9428)",
+    "ghidra_read_memory(0x013cc2b8)",
+    "knowledgegraph/research/state-machines/temporal-semantics.json"
+  ],
+  "ghidra_mutations": 0,
+  "ghidra_saves": 0
+}

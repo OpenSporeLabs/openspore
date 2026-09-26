@@ -1,0 +1,232 @@
+{
+  "schema": "pkg-editor-runtime-wave7.function-handoff.v1",
+  "package": "PKG-EDITOR-RUNTIME-WAVE7",
+  "scope": {
+    "package_scope": "Six animation and controller VAs only. 0x00591fa0 was removed from this package after pkg-editor-lifecycle-wave6 claimed it; its source file editor_runtime_wave7.cpp, its declarations, its tests and its metadata handoff were deleted.",
+    "owned_vas": [
+      "0x0059b0f0",
+      "0x0059b4b0",
+      "0x0059cac0",
+      "0x0059cb10",
+      "0x0059cea0",
+      "0x0059cf00"
+    ],
+    "removed_vas": [
+      {
+        "va": "0x00591fa0",
+        "owner": "pkg-editor-lifecycle-wave6",
+        "artefacts_removed": [
+          "src/reconstruction/pkg_editor_runtime_wave7/editor_runtime_wave7.cpp",
+          "OpaqueEditor / EditorDispatchPorts / message-id constants in editor_runtime_wave7.hpp",
+          "editor_handle_message_00591fa0 and its model tests",
+          "reconstruction/metadata/pkg-editor-runtime-wave7/00591fa0.json"
+        ]
+      }
+    ]
+  },
+  "function_address": "0x0059b0f0",
+  "ghidra_name": "Editors::EditorCreatureController::SetTargetPosition",
+  "normalized_symbol": "EditorCreatureController_SetTargetPosition_0059b0f0",
+  "source_files": [
+    "src/reconstruction/pkg_editor_runtime_wave7/editor_runtime_wave7.hpp",
+    "src/reconstruction/pkg_editor_runtime_wave7/editor_runtime_wave7.cpp",
+    "src/reconstruction/pkg_editor_runtime_wave7/editor_runtime_wave7_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "void __thiscall EditorCreatureController_SetTargetPosition_0059b0f0(EditorCreatureController *this, Vector3 *position, bool applyNow, bool ignoreZ);",
+  "abi": {
+    "calling_convention": "thiscall",
+    "hidden_this": "OpaqueController * in ECX",
+    "stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "ESP+0x04",
+        "name": "position",
+        "type": "const Vector3 *",
+        "width_bytes": 4
+      },
+      {
+        "position": 2,
+        "entry_offset": "ESP+0x08",
+        "name": "applyNow",
+        "type": "bool",
+        "width_bytes": 4
+      },
+      {
+        "position": 3,
+        "entry_offset": "ESP+0x0c",
+        "name": "ignoreZ",
+        "type": "bool",
+        "width_bytes": 4
+      }
+    ],
+    "stack_cleanup_bytes": 12,
+    "stack_cleanup_owner": "caller",
+    "return_type": "void",
+    "return_register": null,
+    "return_width_bytes": 0
+  },
+  "body": {
+    "status": "reconstructed",
+    "entry_address": "0x0059b0f0",
+    "body_addresses": [
+      "0x0059b0f0",
+      "0x0059b2e6"
+    ],
+    "instruction_count": 153,
+    "field_layout_used": {
+      "0x08": "AnimatedCreature *",
+      "0x0c": "IShadowWorld *",
+      "0x20/0x24/0x28": "raw target position",
+      "0x2c/0x30/0x34": "target offset",
+      "0x38/0x3c/0x40": "current offset"
+    },
+    "mechanics": [
+      "Copy position->x/y/z into controller+0x20, controller+0x24 and controller+0x28, then repeat the same three words into controller+0x2c, controller+0x30 and controller+0x34.",
+      "Magnitude guard on the 0x2c triple: FSQRT of the summed squares, then FLD of the constant at 0x013f64b0 (5.0f), then FXCH so ST0 is the length and ST1 is 5.0. FCOMIP ST0,ST1 sets CF when length < 5.0, and JBE additionally covers equality, so the JBE at 0x0059b1b3 skips the rescale whenever length <= 5.0. The rescale therefore runs only when 5.0f < length: long vectors are scaled DOWN to length 5 and short vectors are left untouched. An earlier revision had the comparison inverted and stretched short vectors instead.",
+      "Rescale form is (component * (1/length)) * 5.0f, matching the three chained MULSS rather than a single fused multiply.",
+      "When ignoreZ is non-zero, store 0.0f into controller+0x34; this happens after the magnitude guard.",
+      "When applyNow is zero, return immediately: no creature write, no raycast, no notification.",
+      "Otherwise copy the 0x2c triple into creature+0x04, creature+0x08 and creature+0x0c, then copy the same triple into controller+0x38, controller+0x3c and controller+0x40.",
+      "When ignoreZ is non-zero the downward raycast is skipped entirely.",
+      "Otherwise build the query: 0x0067dd80 returns the picker world, its vtable slot 0x28 is called with (0x026f3933, false), and the returned index seeds a bit in a zeroed 64-bit mask only when it is below 0x40. The query flag byte is 4.",
+      "The ray origin is (creature+0x04, creature+0x08, 0x01465544 - 0x013ec5b4) = (x, y, 500.0f - 1000.0f) = z of -500.0f, giving a fixed top-down drop.",
+      "Call shadow->vtable[0x24] with eight arguments; a non-zero result writes hit.x into creature+0x0c, so the ground contact only ever touches the z component.",
+      "Finally call 0x00a047d0 on the creature with the constant 1.",
+      "Epilogue is POP ESI/EBX, ADD ESP,0x3c, RET 0xc; the frame is a fixed 0x3c because the raycast arguments are all stack-resident."
+    ],
+    "ordering": [
+      "copy 0x20 triple",
+      "copy 0x2c triple",
+      "magnitude rescale (long vectors only)",
+      "ignoreZ zeroing of 0x34",
+      "applyNow gate",
+      "creature position write",
+      "current offset write",
+      "ignoreZ gate on the raycast",
+      "picker collision-class lookup and mask seed",
+      "raycast and conditional creature z write",
+      "notification with argument 1"
+    ],
+    "magnitude_guard": {
+      "condition": "5.0f < length",
+      "rescale_target": "5.0f",
+      "short_vectors": "unchanged",
+      "long_vectors": "scaled down to length 5",
+      "exact_boundary": "length exactly 5.0f is not rescaled because JBE also fires on equality"
+    },
+    "constants": [
+      {
+        "address": "0x013f64b0",
+        "value": "5.0f",
+        "use": "magnitude guard and rescale target length"
+      },
+      {
+        "address": "0x01465544",
+        "value": "500.0f",
+        "use": "ray origin height before the drop"
+      },
+      {
+        "address": "0x013ec5b4",
+        "value": "1000.0f",
+        "use": "subtracted from 500.0f to form the -500.0f ray origin z"
+      },
+      {
+        "address": "0x026f3933",
+        "value": "collision class",
+        "use": "argument to the picker vtable slot 0x28"
+      },
+      {
+        "address": "0x40",
+        "value": "mask bit bound",
+        "use": "indices at or above this are discarded"
+      }
+    ]
+  },
+  "call_graph": {
+    "direct_callees": [
+      "0x00a047d0"
+    ],
+    "virtual_callees": [
+      "0x0067dd80 vtable+0x28",
+      "IShadowWorld vtable+0x24"
+    ],
+    "direct_callers": [
+      "0x0059cf00",
+      "0x00629de0",
+      "0x0062d0f0",
+      "0x0062cc20"
+    ],
+    "direct_call_site_count": 9
+  },
+  "evidence": [
+    {
+      "tool": "ghidra_get_function_by_address",
+      "address": "0x0059b0f0",
+      "observation": "Live function spans 0x0059b0f0..0x0059b2e6."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x0059b0f0",
+      "observation": "FSQRT; FLD [0x013f64b0]; FXCH; FCOMIP ST0,ST1; FSTP ST0; JBE 0x0059b1b3 settles the guard: FXCH puts the length in ST0 and 5.0 in ST1, and JBE is taken when length <= 5.0."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x0059b0f0",
+      "observation": "Listing also fixes the two triple copies, the [ESP+0x50] ignoreZ and [ESP+0x4c] applyNow loads, the eight-argument raycast and the RET 0xc epilogue."
+    },
+    {
+      "tool": "ghidra_read_memory",
+      "addresses": [
+        "0x013f64b0",
+        "0x01465544",
+        "0x013ec5b4"
+      ],
+      "observation": "Constants are 5.0f, 500.0f and 1000.0f, confirming the -500.0f ray origin."
+    },
+    {
+      "tool": "ghidra_get_function_xrefs",
+      "address": "0x0059b0f0",
+      "observation": "Nine direct call sites; the only in-module caller is 0x0059cf00."
+    },
+    "FCOMIP ST0,ST1 at 0x0059b13e compares the x87 magnitude against 5.0 and JBE at 0x0059b142 skips the rescale. FCOMIP sets CF/ZF/PF on an unordered compare, so a NaN magnitude takes the JBE branch and the value is left unchanged. The guard is therefore an ORDERED 5.0 < length test; C++ >= is unordered-false for NaN and would rescale it, so the body uses !(5.0f < length).",
+    "The slot +0x24 call site pushes eight stack words (0x0059b2bc and 0x0059bf76): 0, 0, pointer, 0, pointer, 0, pointer, out, giving the declared order (out, origin, word, query, word, aux, word, word). Both call sites pass all eight and both output records are read.",
+    "The ray-query record base is the ESP-relative slot 0x6c. Five zeroed words are stored at record +0x00, +0x04, +0x08, +0x0c and +0x10 (0x0059bed6-0x0059bee6) and the collision bit is OR'd through LEA EDX,[ESP+ECX*0x4+0x6c] at 0x0059bf18, so the collision words start at record offset 0x00, not 0x10. Read in forward address order the two flag stores are 0x0059bef2 writing byte 4 to [ESP+0x80] (record +0x14) and 0x0059beea writing byte 0 to [ESP+0x81] (record +0x15), giving flag_14=4 and flag_15=0. OpaqueRayQuery is therefore five collision words at 0x00 with flag_14 and flag_15, giving a 0x18-byte record. 0x0059b0f0 uses base 0x2c and stores byte 4 to +0x14 (0x0059b240) and 0 to +0x15 (0x0059b23c), so both bodies share one flag pair."
+  ],
+  "tests": [
+    "long offset (length 13) is scaled down to length 5 componentwise with the (x*(1/len))*5 form",
+    "short offset (length 0.5) is left untouched",
+    "the exact 5.0 boundary is not rescaled",
+    "ignoreZ zeroes 0x34 after the magnitude guard and leaves the raw 0x20 copy unclamped",
+    "applyNow false performs no creature write, no raycast and no notification",
+    "applyNow true writes the creature position and the 0x38 triple in that order",
+    "ignoreZ true skips the raycast entirely and still notifies",
+    "ray origin is (creature.x, creature.y, -500.0f) and the query flag byte is 4",
+    "a collision index below 0x40 seeds the matching mask bit; an index of 0x40 or above seeds nothing",
+    "a non-zero raycast result writes the hit x into creature+0x0c and the notification argument is 1",
+    "offset rescale uses an ordered comparison so a NaN magnitude is returned unchanged",
+    "raycast slot +0x24 receives all eight native stack words and both out records are read",
+    "ray-query record is five collision words at offset 0x00 with the flag byte at 0x14 (value 4)"
+  ],
+  "runtime_gates": [
+    "The picker world returned by 0x0067dd80 and the meaning of its vtable slot 0x28 return value",
+    "The IShadowWorld raycast argument record at 0x0059b294..0x0059b2c0 (eight stack slots) is not owned by this package",
+    "Whether the hit x really is a ground height",
+    "Creature layout beyond 0x0c and the AnimatedCreature at controller+0x08"
+  ],
+  "confidence": {
+    "body": "high",
+    "abi_and_cleanup": "high",
+    "ordering": "high",
+    "magnitude_guard": "high",
+    "ray_origin": "high"
+  },
+  "verification": "self-consistent: 30 focused x86-32 model tests pass in normal and NDEBUG builds; -Wall -Wextra -Wpedantic -Werror clean; clang-format clean",
+  "target_state": "integrated canonical source; runtime validation gated",
+  "integration_status": "integrated",
+  "canonical_files": [
+    "src/reconstruction/pkg_editor_runtime_wave7/editor_runtime_wave7.hpp",
+    "src/reconstruction/pkg_editor_runtime_wave7/editor_runtime_wave7.cpp",
+    "src/reconstruction/pkg_editor_runtime_wave7/editor_runtime_wave7_model_test.cpp"
+  ]
+}

@@ -1,0 +1,159 @@
+{
+  "schema": "pkg11-h3-helper-wave2-metadata.v1",
+  "package": "PKG-11-H3-HELPER-WAVE2",
+  "worker_ownership": "pkg11-h3-helper-wave2",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "captured_on": "2026-09-25",
+  "va": "0x00b225d0",
+  "function_address": "0x00b225d0",
+  "ghidra_name": "FUN_00b225d0",
+  "normalized_symbol": "noun_manager_logical_destroy_00b225d0",
+  "phase": "body-reconstruction",
+  "review_status": "staged_static_review",
+  "runtime_validation": 0,
+  "test_results": {
+    "x86_32_strict": {
+      "o0": {"compile": "pass", "run": "pass"},
+      "o0_ndebug": {"compile": "pass", "run": "pass"},
+      "o2": {"compile": "pass", "run": "pass"},
+      "o2_ndebug": {"compile": "pass", "run": "pass"}
+    },
+    "syntax": {"o0": "pass", "o2": "pass"},
+    "middle_insertion": {"event_count": 5, "sequence": ["add_ref", "add_ref", "release", "add_ref", "release"], "first_final_ref_count": 1, "run": "pass"},
+    "spare_capacity_append": {"guard_neighbors": "pass", "release_count": 0, "run": "pass"},
+    "format": "pass",
+    "json": "pass",
+    "diff": "pass"
+  },
+  "implementation": {
+    "status": "implemented in worker-owned staging",
+    "staging_status": "header, source, and focused model test are present",
+    "canonical_status": "not present; canonical promotion is not claimed",
+    "staging_symbol": "noun_manager_logical_destroy_00b225d0",
+    "header": "reconstruction/staging/pkg11-h3-helper-wave2/helper_wave2.hpp",
+    "source": "reconstruction/staging/pkg11-h3-helper-wave2/helper_wave2.cpp",
+    "model_test": "reconstruction/staging/pkg11-h3-helper-wave2/helper_wave2_model_test.cpp",
+    "types": "OpaqueNoun, OpaqueNounManager, PendingVectorWire, and the two-slot noun vtable access window model only the offsets read by this body; no concrete noun or manager class is claimed.",
+    "binding": "The target body is emitted as x86-32 extended assembly. The supporting 0x00aea5d0 insert path is a C++17 model with allocator seams for the observed reverse per-element shift, vtable AddRef/store/Release order, guarded deallocation, and vector publication order.",
+    "test_binding": "The focused test uses real thiscall vtable slots, high-bit allocation headers, in-place and growth vectors, seeded existing-entry refcounts, a five-event middle insertion trace, direct spare-capacity append guard checks, event ordering, and child-process fault checks."
+  },
+  "selection": {
+    "reason": "Unowned noun-manager helper with exact thiscall state writes, dynamic reference slots, and a direct pending-vector growth edge.",
+    "ownership_refresh": "The assigned staging and metadata paths were absent before editing. Repository searches found no prior handoff, manifest entry, integrated claim, source implementation, or metadata handoff for 0x00b225d0. Existing unrelated work and all non-owned paths remain untouched.",
+    "skip_claims": [
+      "No concrete C++ noun, manager, vector, or inheritance hierarchy is claimed.",
+      "No ownership transfer beyond the observed reference-slot calls is claimed.",
+      "No behavior of 0x00b20d30 or 0x00b201a0 is reimplemented or assigned to this function."
+    ]
+  },
+  "original_native_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "thiscall",
+    "hidden_receiver": "ECX is OpaqueNounManager*",
+    "ordinary_stack_argument_slots": 1,
+    "stack_argument_0": "OpaqueNoun* noun",
+    "stack_cleanup_bytes": 4,
+    "return_type": "void",
+    "ret_form": "RET 4"
+  },
+  "observed_mechanics": {
+    "instruction_count": 47,
+    "state_write_0x20": "BYTE PTR [noun+0x20] = 1 before the first vtable call",
+    "manager_vector_offsets": {
+      "0x80": "begin",
+      "0x84": "end",
+      "0x88": "capacity"
+    },
+    "in_place_path": "When end is unsigned-less-than capacity, end is advanced by four before the old-end zero test. A nonzero old end receives noun, then noun vtable slot 0 is called. A zero old end is not stored and receives no stored-slot AddRef.",
+    "growth_path": "When end is unsigned-greater-than-or-equal capacity, 0x00aea5d0 is called with the pending vector, old end, and address of the local noun pointer.",
+    "temporary_release": "After either append path, nonzero noun vtable slot 4 is called exactly once.",
+    "post_release_calls": [
+      "0x00b20d30 with manager in ECX and noun on the stack",
+      "0x00b201a0 with manager in ECX and noun on the stack"
+    ],
+    "dynamic_reference_slots": {
+      "0x00": "initial source AddRef before vector append; growth path calls it again after storing the new slot",
+      "0x04": "temporary/source Release after append publication"
+    },
+    "return_path": "Return occurs only after both fixed post-release calls."
+  },
+  "pending_vector_growth": {
+    "helper": "0x00aea5d0",
+    "capacity_rule": "The full-path element count is (end-begin)>>2. Count zero selects one element; a nonzero count is doubled.",
+    "allocation_size": "new_count * 4 in 32-bit arithmetic",
+    "copy_order": [
+      "copy old prefix before insertion",
+      "store noun in the new insertion slot",
+      "call noun vtable slot 0",
+      "copy old suffix after insertion",
+      "deallocate old begin only when begin is nonzero and the preceding allocation marker is nonzero",
+      "publish end",
+      "publish begin",
+      "publish capacity"
+    ],
+    "in_place_shift_order": [
+      "when position equals end and spare capacity exists, store the inserted noun and AddRef it without reading or releasing an old value",
+      "otherwise, with position before end and a populated predecessor, duplicate the old last element into the new end slot and AddRef it",
+      "walk backward from the old last element toward the insertion position",
+      "for each unequal source and destination, AddRef the source, store it, then Release the old destination",
+      "AddRef the inserted noun, store it, then Release the replaced noun",
+      "advance end by four without changing begin or capacity"
+    ],
+    "growth_order": "The stored-slot AddRef occurs after the noun pointer store and before the suffix copy and old-buffer deallocation.",
+    "empty_buffer_behavior": "A null begin with null end and null capacity allocates one slot, stores noun, retains the stored noun, and does not deallocate an old buffer.",
+    "zero_marker_behavior": "A nonzero old begin whose preceding marker is zero is not passed to the deallocation port."
+  },
+  "failure_boundaries": {
+    "null_manager": "No guard precedes manager+0x84 access after the initial noun vtable call.",
+    "null_noun": "The first write to noun+0x20 faults before any vtable access.",
+    "invalid_vtable": "The first slot-zero call faults without rollback of noun+0x20.",
+    "allocation_failure": "No null-allocation guard precedes the new-buffer store; the function has no recovery path.",
+    "in_place_zero_end": "A null begin, null end, nonzero capacity advances the raw end word to four but skips the slot store and stored-slot AddRef because the old end word was zero."
+  },
+  "ownership_and_order": {
+    "claim": "The body writes the noun pending byte, retains the source, publishes one pending reference, releases the source reference, and only then enters the two fixed noun helpers.",
+    "net_reference_delta": "One retained pending reference remains when both the source and stored paths execute their reference calls.",
+    "teardown_before_later_invalidation": "The focused test observes release then 0x00b20d30 then 0x00b201a0 while the noun and appended vector entry remain readable. Sample caller 0x00b22650 later releases and removes entries from its separate global pending vector after this function returns.",
+    "not_claimed": "The test does not infer concrete destruction, ownership, or C++ object identity from those call positions."
+  },
+  "live_evidence": {
+    "program": "SporeApp.exe",
+    "decompile_function": "0x00b225d0",
+    "disassemble_function": "0x00b225d0",
+    "function_by_address": "body 0x00b225d0-0x00b22646",
+    "callers": "get_function_callers; total 157",
+    "callees": "get_function_callees; total 3 fixed callees; dynamic vtable calls are additional",
+    "function_xrefs": "get_function_xrefs; total 227",
+    "growth_helper": "decompile_function and disassemble_function at 0x00aea5d0",
+    "reverse_shift_helper": "decompile_function, disassemble_function, callers, callees, and xrefs at 0x00ac97a0; 19 direct callers, 21 xrefs, 0 fixed callees",
+    "sample_caller": "decompile_function and disassemble_function at 0x00b22650; call to target at 0x00b22748 and later global pending-vector release/erase"
+  },
+  "not_claimed": [
+    "concrete noun or manager C++ type",
+    "C++ inheritance or vector class identity",
+    "behavior inside 0x00b20d30 or 0x00b201a0",
+    "allocator implementation behind 0x00f473a0 or 0x00f47380",
+    "runtime pointer validity beyond the modeled no-guard fault boundaries"
+  ],
+  "provenance": [
+    "ghidra_get_current_program_info(SporeApp.exe)",
+    "ghidra_get_function_by_address(0x00b225d0)",
+    "ghidra_decompile_function(0x00b225d0)",
+    "ghidra_disassemble_function(0x00b225d0)",
+    "ghidra_get_function_callers(0x00b225d0)",
+    "ghidra_get_function_callees(0x00b225d0)",
+    "ghidra_get_function_xrefs(0x00b225d0)",
+    "ghidra_decompile_function(0x00aea5d0)",
+    "ghidra_disassemble_function(0x00aea5d0)",
+    "ghidra_decompile_function(0x00ac97a0)",
+    "ghidra_disassemble_function(0x00ac97a0)",
+    "ghidra_get_function_callers(0x00ac97a0)",
+    "ghidra_get_function_callees(0x00ac97a0)",
+    "ghidra_get_function_xrefs(0x00ac97a0)",
+    "ghidra_decompile_function(0x00b22650)",
+    "ghidra_disassemble_function(0x00b22650)"
+  ],
+  "ghidra_mutations": 0,
+  "ghidra_saves": 0
+}

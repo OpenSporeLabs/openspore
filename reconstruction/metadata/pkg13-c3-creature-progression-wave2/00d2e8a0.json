@@ -1,0 +1,202 @@
+{
+  "schema": "pkg13-c3-creature-progression-wave2.function-handoff.v1",
+  "package": "PKG-13-C3-CREATURE-PROGRESSION-WAVE2",
+  "function_address": "0x00d2e8a0",
+  "ghidra_name": "Simulator::cCreatureGameData::AddEvolutionPoints",
+  "normalized_symbol": "Simulator_cCreatureGameData_AddEvolutionPoints_raw_00d2e8a0",
+  "source_files": [
+    "reconstruction/staging/pkg13-c3-creature-progression-wave2/creature_progression_wave2.hpp",
+    "reconstruction/staging/pkg13-c3-creature-progression-wave2/creature_progression_wave2.cpp",
+    "reconstruction/staging/pkg13-c3-creature-progression-wave2/creature_progression_wave2_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "ownership": "pkg13-c3-creature-progression-wave2",
+  "declaration": "void PKG13_C3_CDECL Simulator_cCreatureGameData_AddEvolutionPoints_raw_00d2e8a0(float points);",
+  "signature": {
+    "normalized_form": "void add_evolution_points_raw_00d2e8a0(float points)",
+    "calling_convention": "cdecl-compatible one-float stack ABI",
+    "hidden_this": false,
+    "receiver": "none",
+    "stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "ESP+0x04",
+        "type": "float",
+        "width_bytes": 4,
+        "observed_use": "MOVSS XMM1,dword ptr [ESP+0x4]"
+      }
+    ],
+    "stack_cleanup_bytes": 0,
+    "local_stack_bytes": 28,
+    "preserved_registers": ["ESI"],
+    "return_register": "none",
+    "return_width_bytes": 0,
+    "return_semantics": "void-like; no return value is produced"
+  },
+  "body": {
+    "status": "staged_body_reconstructed",
+    "entry_address": "0x00d2e8a0",
+    "body_addresses": ["0x00d2e8a0", "0x00d2e970"],
+    "instruction_count": 51,
+    "basic_block_count": 7,
+    "raw_bytes_hex": "f30f104c240483ec1c0f2e0d785348019ff6c4440f8bb3000000f30f100598e36901f30f58c1f30f100d542e58010f2fc8f30f1104248d04247705b8542e5801f30f1000f30f110598e36901e80feae0ff8bc8e898942300f30f1080f0100000f30f5844242005f0100000f30f1100e8eccee2ff3d104c6501745256e81f9f00008bf085f67445d9442424518b4e68d91c24e8a9f9ffffe8c4e9e0ff8bc8e86d14dffff30f10442424894424088d44240850686eb95a048bcec744241400000000f30f11442418e8f4a900005e83c41c",
+    "mechanics": [
+      "The function compares the incoming float with the zero-valued float at 0x01485378 using UCOMISS and returns without any port call for positive or negative zero.",
+      "For a nonzero or NaN input, it computes DAT_0169e398 + points in single precision.",
+      "It compares the cap DAT_01582e54 with the candidate using COMISS and stores the cap only when the ordered comparison is cap > candidate; there is no lower clamp.",
+      "It writes the selected four-byte result to DAT_0169e398 before resolving the player through 0x00b3d300 and 0x00f67d90.",
+      "It independently reads and writes the player float at +0x10f0 with the original points value, without applying the global cap.",
+      "It resolves the event gate through 0x00b5b800 and returns when the result equals the address of DAT_01654c10.",
+      "It resolves the action strategy through 0x00d38840 and returns when the strategy pointer is null.",
+      "For an active gate, it calls 0x00d2e2e0 on the strategy +0x68 receiver with the original float, resolves the noun manager and +0x54 avatar accessor again, and builds a 12-byte payload containing avatar, zero, and points.",
+      "It calls 0x00d39360 with action id 0x045ab96e and the payload pointer after the transition call; the return path restores ESI and deallocates the 0x1c local frame."
+    ]
+  },
+  "state_evidence": {
+    "zero_sentinel": {
+      "address": "0x01485378",
+      "width_bytes": 4,
+      "initial_bytes": "00000000",
+      "behavior": "The target compares against exact zero, so +0.0 and -0.0 bypass all writes and calls; NaN is not equal to zero and follows the additive path."
+    },
+    "global_state": {
+      "global": "DAT_0169e398",
+      "global_address": "0x0169e398",
+      "global_width_bytes": 4,
+      "global_type": "float",
+      "initial_bytes": "00000000",
+      "writers": ["0x00d2e486", "0x00d2e8e4"],
+      "readers": ["0x00d2e350", "0x00d2e8ba"],
+      "cap_global": "DAT_01582e54",
+      "cap_address": "0x01582e54",
+      "cap_initial_bytes": "003c1c46",
+      "cap_initial_float": 10000.0,
+      "cap_behavior": "Only an upper cap is applied after addition; negative totals, positive and negative infinity, and unordered NaN comparisons are not clamped.",
+      "write_order": "DAT_0169e398 is written before the manager/player lookup and before event gating."
+    },
+    "player_state": {
+      "accessor_chain": ["0x00b3d300", "0x00f67d90"],
+      "field_path": "returned player + 0x10f0",
+      "field_width_bytes": 4,
+      "field_type": "float",
+      "access": "read once and add the original points once",
+      "cap_behavior": "The player field is independent of DAT_0169e398 and is not capped."
+    },
+    "event_state": {
+      "gate_accessor": "0x00b5b800",
+      "suppression_marker": "DAT_01654c10",
+      "strategy_accessor": "0x00d38840",
+      "transition_receiver": "strategy + 0x68",
+      "avatar_accessor": "0x00b1fdb0",
+      "action_id": "0x045ab96e",
+      "payload_layout": [
+        {"offset": 0, "width_bytes": 4, "type": "opaque avatar pointer"},
+        {"offset": 4, "width_bytes": 4, "type": "zero word"},
+        {"offset": 8, "width_bytes": 4, "type": "float points"}
+      ],
+      "order": [
+        "get noun manager",
+        "get player",
+        "update player +0x10f0",
+        "get event gate",
+        "get action strategy",
+        "transition strategy +0x68",
+        "get noun manager",
+        "get avatar",
+        "execute action"
+      ],
+      "gating": "The marker comparison precedes strategy resolution; a null strategy suppresses both the transition and action call."
+    }
+  },
+  "call_graph": {
+    "direct_callers": [
+      "0x00c07480",
+      "0x00c2ed20",
+      "0x00d35190",
+      "0x00d46c30",
+      "0x00d71060",
+      "0x00d71780",
+      "0x00d85ad0",
+      "0x00d87620",
+      "0x00d9bc70"
+    ],
+    "direct_callees": [
+      "0x00b3d300",
+      "0x00f67d90",
+      "0x00b5b800",
+      "0x00d38840",
+      "0x00d2e2e0",
+      "0x00b1fdb0",
+      "0x00d39360"
+    ],
+    "function_xrefs": [
+      {"address": "0x00c07a8c", "type": "UNCONDITIONAL_CALL", "from_function": "0x00c07480"},
+      {"address": "0x00c2ee69", "type": "UNCONDITIONAL_CALL", "from_function": "0x00c2ed20"},
+      {"address": "0x00c2ef72", "type": "UNCONDITIONAL_CALL", "from_function": "0x00c2ed20"},
+      {"address": "0x00d85be6", "type": "UNCONDITIONAL_CALL", "from_function": "0x00d85ad0"},
+      {"address": "0x00d9bdb6", "type": "UNCONDITIONAL_CALL", "from_function": "0x00d9bc70"},
+      {"address": "0x00d35533", "type": "UNCONDITIONAL_CALL", "from_function": "0x00d35190"},
+      {"address": "0x00d363f6", "type": "UNCONDITIONAL_CALL", "from_function": "0x00d35190"},
+      {"address": "0x00d7143d", "type": "UNCONDITIONAL_CALL", "from_function": "0x00d71060"},
+      {"address": "0x00d883ff", "type": "UNCONDITIONAL_CALL", "from_function": "0x00d87620"},
+      {"address": "0x00d71cc5", "type": "UNCONDITIONAL_CALL", "from_function": "0x00d71780"},
+      {"address": "0x00c2e98e", "type": "UNCONDITIONAL_CALL"},
+      {"address": "0x00d46d1e", "type": "UNCONDITIONAL_CALL", "from_function": "0x00d46c30"}
+    ]
+  },
+  "dependencies": {
+    "source_dependencies": ["DAT_0169e398", "DAT_01582e54", "DAT_01654c10", "zero sentinel at 0x01485378"],
+    "opaque_ports": [
+      "get_noun_manager models 0x00b3d300",
+      "get_progression_player models ECX-only 0x00f67d90",
+      "get_event_gate models 0x00b5b800",
+      "get_action_strategy models 0x00d38840",
+      "transition_avatar models 0x00d2e2e0 with the strategy +0x68 receiver",
+      "get_avatar models 0x00b1fdb0",
+      "execute_action models 0x00d39360"
+    ],
+    "unresolved_external_behavior": [
+      "Concrete noun-manager, progression-player, avatar, strategy, event, and action types",
+      "Runtime values and ownership of the global and marker objects",
+      "Concrete behavior of 0x00d2e2e0 and 0x00d39360"
+    ],
+    "ownership_boundary": "All manager, player, strategy, avatar, event, and action objects are externally owned; this target passes opaque pointers and never allocates, releases, or retains them."
+  },
+  "evidence_provenance": [
+    {"tool": "ghidra_get_function_by_address", "address": "0x00d2e8a0", "observation": "Live function range is 0x00d2e8a0 through 0x00d2e970 and is labeled Simulator::cCreatureGameData::AddEvolutionPoints."},
+    {"tool": "ghidra_decompile_function", "address": "0x00d2e8a0", "observation": "Live decompilation shows the nonzero guard, capped global assignment, player +0x10f0 update, marker/strategy event gates, transition, avatar payload, and action call."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00d2e8a0", "observation": "Exact assembly confirms UCOMISS, ADDSS, COMISS, the marker comparison, the strategy +0x68 receiver, payload stores, action id 0x045ab96e, and plain RET after frame cleanup."},
+    {"tool": "ghidra_read_memory", "address": "0x00d2e8a0", "observation": "The 208 raw bytes match the 51-instruction body and its seven jump-target blocks."},
+    {"tool": "ghidra_read_memory", "address": "0x01485378", "observation": "The comparison sentinel is four zero bytes."},
+    {"tool": "ghidra_read_memory", "address": "0x01582e54", "observation": "The cap contains bytes 00 3c 1c 46, the float 10000.0."},
+    {"tool": "ghidra_get_function_callers", "address": "0x00d2e8a0", "observation": "Nine direct caller functions were reported."},
+    {"tool": "ghidra_get_function_callees", "address": "0x00d2e8a0", "observation": "Seven direct callees were reported in the reconstructed order."},
+    {"tool": "ghidra_get_xrefs_to", "address": "0x00d2e8a0", "observation": "Twelve unconditional call xrefs were reported."},
+    {"tool": "ghidra_get_xrefs_to", "address": "0x0169e398", "observation": "Global xrefs include this target's read/write and the existing setter/getter accesses."},
+    {"tool": "ghidra_get_xrefs_to", "address": "0x01582e54", "observation": "Cap xrefs include the two reads and pointer data reference in this target."},
+    {"tool": "ghidra_get_xrefs_to", "address": "0x01654c10", "observation": "The marker has broad unrelated data xrefs; this target's identity comparison is retained as a gate only."}
+  ],
+  "runtime_gates": [
+    "Observe 0x0169e398, 0x01582e54, 0x01654c10, the returned player, the strategy +0x68 receiver, and the +0x54 avatar word in an original process.",
+    "Resolve concrete manager, player, avatar, strategy, event, and action ownership before assigning semantic names beyond the raw offsets.",
+    "No original-process event trace or runtime validation has been run."
+  ],
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/pkg13-c3-creature-progression-wave2 reconstruction/staging/pkg13-c3-creature-progression-wave2/creature_progression_wave2.cpp reconstruction/staging/pkg13-c3-creature-progression-wave2/creature_progression_wave2_model_test.cpp",
+    "normal_test_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg13-c3-creature-progression-wave2 reconstruction/staging/pkg13-c3-creature-progression-wave2/creature_progression_wave2.cpp reconstruction/staging/pkg13-c3-creature-progression-wave2/creature_progression_wave2_model_test.cpp -o /tmp/opencode/pkg13-c3-creature-progression-wave2-normal && /tmp/opencode/pkg13-c3-creature-progression-wave2-normal",
+    "ndebug_test_command": "clang++ -m32 -std=c++17 -DNDEBUG -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg13-c3-creature-progression-wave2 reconstruction/staging/pkg13-c3-creature-progression-wave2/creature_progression_wave2.cpp reconstruction/staging/pkg13-c3-creature-progression-wave2/creature_progression_wave2_model_test.cpp -o /tmp/opencode/pkg13-c3-creature-progression-wave2-ndebug && /tmp/opencode/pkg13-c3-creature-progression-wave2-ndebug",
+    "format_command": "clang-format --dry-run --Werror --style='{BasedOnStyle: Google, FixNamespaceComments: false}' reconstruction/staging/pkg13-c3-creature-progression-wave2/creature_progression_wave2.hpp reconstruction/staging/pkg13-c3-creature-progression-wave2/creature_progression_wave2.cpp reconstruction/staging/pkg13-c3-creature-progression-wave2/creature_progression_wave2_model_test.cpp",
+    "metadata_package_validation_command": "python3 reconstruction/staging/pkg13-c3-creature-progression-wave2/metadata_package_validation.py",
+    "results": {
+      "x86_32_syntax": "passed",
+      "normal_focused_model_test": "passed",
+      "ndebug_focused_model_test": "passed",
+      "clang_format_dry_run": "passed",
+      "json_check": "passed",
+      "metadata_package_validation": "passed"
+    }
+  },
+  "blockers": [
+    "Runtime object validity, global ownership, and unresolved event/action behavior remain gated."
+  ]
+}

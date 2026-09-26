@@ -110,7 +110,7 @@ enum class NativeOp : std::uint16_t {
   update_mode,
   update_play,
   update_finish,
-  message_route,
+  message_service,
   message_object_000c,
   message_commit,
   message_release,

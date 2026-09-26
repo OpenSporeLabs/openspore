@@ -1,0 +1,50 @@
+{
+  "schema": "pkg-game-mode-wave7.function-handoff.v1",
+  "package": "PKG-GAME-MODE-WAVE7",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "va": "0x00b5b840",
+  "normalized_symbol": "strategy_request_ready_00b5b840",
+  "implementation_status": "implemented in staging; canonical promotion not performed",
+  "staging_files": [
+    "reconstruction/staging/pkg-game-mode-wave7/game_mode_wave7.hpp",
+    "reconstruction/staging/pkg-game-mode-wave7/game_mode_wave7.cpp",
+    "reconstruction/staging/pkg-game-mode-wave7/game_mode_wave7_model_test.cpp"
+  ],
+  "function_extent": {
+    "entry": "0x00b5b840",
+    "body_end_inclusive": "0x00b5b876",
+    "last_instruction": "0x00b5b874: RET 0x4",
+    "instruction_count": 25
+  },
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "receiver": "strategy state in ECX",
+    "ordinary_stack_arguments": ["uint32 requested_value"],
+    "return": "EAX/AL boolean; 1 only when both axis reads equal requested and pending is 0xffffffff",
+    "ret_form": "RET 0x4"
+  },
+  "observed_contract": {
+    "axis_order": "First calls strategy vtable +0x1c and compares its result. Only a match calls vtable +0x20 and compares that result.",
+    "pending_gate": "Returns 0 immediately on either axis mismatch; after both matches returns 1 only when receiver +0x14 equals 0xffffffff.",
+    "mutation": "No receiver field is written."
+  },
+  "live_provenance": {
+    "program": "SporeApp.exe",
+    "analysis_basis": "Read-only live Ghidra queries.",
+    "ghidra_mutations": 0,
+    "ghidra_saves": 0,
+    "tools": ["ghidra_get_function_by_address", "ghidra_decompile_function", "ghidra_disassemble_function", "ghidra_get_function_callers", "ghidra_get_function_callees", "ghidra_get_bulk_xrefs", "ghidra_get_xrefs_to", "ghidra_read_memory"],
+    "function": "FUN_00b5b840 at 0x00b5b840, body through 0x00b5b874.",
+    "decompile": "Live pseudocode reads vtable slots +0x1c and +0x20, compares the stack value, then tests receiver +0x14 against -1.",
+    "disassembly": "Live instructions preserve thiscall receiver save, the two ordered virtual calls, the pending sentinel compare, and RET 4.",
+    "callers": {"addresses": ["0x00b1fbb0"], "count": 1},
+    "callees": {"addresses": [], "indirect": ["strategy vtable +0x1c", "strategy vtable +0x20"]},
+    "xrefs": {"data_count": 33, "call_sites": ["0x00b1fbb9", "0x00ba2780"]},
+    "vtable_memory": {"table_base": "0x01461580", "slot_displacement": "0x24", "slot_index_zero_based": 9, "resolved_function_word": "0x00b5b840"}
+  },
+  "dependencies": ["strategy vtable +0x1c", "strategy vtable +0x20", "strategy pending field +0x14"],
+  "runtime_gate": "Observe the concrete strategy owner, axis virtual implementations, and pending sentinel state; runtime validation is not run.",
+  "listener_timing": "No synchronous listener timing is claimed; only the two direct virtual reads and comparison order are represented."
+}

@@ -1,0 +1,450 @@
+{
+  "schema": "openspore-worker-metadata-1",
+  "package": "wave13-pilot-core-b01",
+  "va": "0x00bbaa60",
+  "address": "0x00bbaa60",
+  "function_address": "0x00bbaa60",
+  "entry_address": "0x00bbaa60",
+  "ghidra_name": "FUN_00bbaa60",
+  "normalized_symbol": "sim_star_record_00bbaa60",
+  "reconstructed_symbol": "StarRecord_00bbaa60_getPlanetRecordByIndex",
+  "declaration": "void* __thiscall StarRecord_00bbaa60_getPlanetRecordByIndex(OpaqueStarRecord* self, std::uint32_t index);",
+  "source_files": [
+    "reconstruction/staging/wave13-pilot-core-b01/bbaa60_star_record_planet.cpp",
+    "reconstruction/staging/wave13-pilot-core-b01/wave13_pilot_core_b01_types.hpp",
+    "reconstruction/staging/wave13-pilot-core-b01/wave13_pilot_core_b01_model_test.cpp"
+  ],
+  "subsystem": "Simulator",
+  "cluster": "sim-core-systems",
+  "sdk_candidate": {
+    "class": "Simulator::cStarRecord",
+    "status": "CANDIDATE_STRONGLY_CORROBORATED",
+    "method": "cStarRecord::GetPlanetRecord(size_t planetIndex)",
+    "why_not_claimed_as_identity": "The function is non-virtual and appears in no vtable (scan total=0), so the owner is not vtable-proven. The class and the method name are both recorded as candidates on the strength of five independent agreements plus one SDK declaration.",
+    "agreements": [
+      "0x00bbaa68 reads a pointer at +0x84 and indexes it with a scale of 4; cStarRecord.h:111 documents /* 84h */ eastl::vector<cPlanetRecordPtr> mPlanets, and the observed end and capacity are at +0x88 and +0x8c, which is the eastl::vector layout the callee 0x00bba640 also uses.",
+      "0x00bbaa63 calls 0x00bba640, whose body compares ((this+0x88)-(this+0x84))>>2 against the byte at +0x0ac; cStarRecord.h:114 documents /* ACh */ char mPlanetCount, so the callee resizes the vector to exactly mPlanetCount entries.",
+      "0x00bba640 reads the dword at +0x70 and advances it by 0x1000000 per iteration; cStarRecord.h:110 documents /* 70h */ StarID mKey, and StarID.h:20-34 defines StarID as a single packed uint32 whose ctor places the sector index in the high bits - adding 0x1000000 advances the sector field.",
+      "0x00bba640 calls App__IGameModeManager__Get() (a name Ghidra already carries from the SDK import) and then a vtable slot whose pushed literal 0x3e434e1 equals cPlanetRecord::TYPE in cPlanetRecord.h:175.",
+      "The code region 0x00bb9c20..0x00bba900 is named in the SDK symbol table: cStarRecord_SetPosition 0x00BB9C20, cStarRecord_SetTechLevel 0x00BB9C40, cStarRecord_SetFlag 0x00BB9C70, cStarRecord_GetName 0x00BB9F50, cStarRecord__ctor 0x00BBA2A0, cStarRecord_GetSpeciesProfile 0x00BBA670, Simulator::cStarRecord::GetPlanetRecords 0x00BBA900. 0x00bbaa60 sits 0x160 bytes past the last of these.",
+      "cStarRecord.h:88 declares 'cPlanetRecord* GetPlanetRecord(size_t planetIndex);' with the comment 'Returns the planet record information at the given orbit index', and cStarRecord.h:120 gives it a DeclareAddress entry with no address comment, unlike its sibling GetPlanetRecords."
+    ],
+    "method_name_status": "GetPlanetRecord is an SDK name and the observed arity and behaviour match it (one index in, one planet-record pointer out, after a lazy load). The name is nonetheless recorded as a candidate because the SDK supplies no address for it and because the one fully inspected callsite passes the literal 0 rather than a variable orbit index.",
+    "sdk_paths_read": [
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cStarRecord.h",
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/StarID.h",
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cPlanetRecord.h",
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cCombatant.h",
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Palettes/ItemViewer.h"
+    ],
+    "contradiction_found": "cStarRecord.h:121 writes 'DeclareAddress(GetPlanetRecords);  // 0xBB9870   0xBBA900'. The body at 0x00bba900 is six instructions that return (mFlags>>12)&1 when mPlanetCount is zero, i.e. a boolean predicate, and it is not an accessor returning a vector reference. That pairing is therefore contradicted by the observed body and is NOT adopted here. 0x00bba900 is left unclassified."
+  },
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall with one callee-popped stack word",
+    "calling_convention_observation": "0x00bbaa61 MOV ESI,ECX captures the receiver; the index is read from the stack at 0x00bbaa6e as [ESP+0x8], which is the first slot above the saved ESI; and the exit is 0x00bbaa76 RET 0x4, which pops that word. A thiscall that also cleans its own stack argument, i.e. the MSVC __thiscall convention.",
+    "return_type": "void*",
+    "return_semantics": "one element of the receiver's planet vector, as loaded at 0x00bbaa72; the callee's return value is discarded and never reaches EAX",
+    "return_register": "EAX",
+    "return_width_bytes": 4,
+    "return_observation": "0x00bbaa72 MOV EAX,dword ptr [EAX + ECX*0x4] is the last write to EAX before the pops, so the returned register holds exactly the loaded element and no callee residue.",
+    "ret_form": "RET 0x4",
+    "termination": "RET 0x4 at 0x00bbaa76",
+    "stack_cleanup_bytes": 4,
+    "stack_cleanup_owner": "callee",
+    "stack_arguments": [
+      {
+        "slot": "[ESP+0x8] at entry",
+        "width": 4,
+        "use": "element index, used as a raw scale-of-4 offset with no sign extension and no bounds check"
+      }
+    ],
+    "ordinary_stack_argument_slots": 1,
+    "saved_registers": [
+      {
+        "register": "ESI",
+        "push": "0x00bbaa60",
+        "pop": "0x00bbaa75"
+      }
+    ],
+    "frame": "one saved register, no SUB ESP, no locals",
+    "receiver": true,
+    "hidden_this_register": "ECX, read at 0x00bbaa61 and never written"
+  },
+  "layout": {
+    "entry_address": "0x00bbaa60",
+    "body_start": "0x00bbaa60",
+    "body_end": "0x00bbaa78",
+    "body_span_bytes": 25,
+    "body_bytes_hex": "568bf1e8d8fbffff8b86840000008b4c24088b04885ec20400",
+    "body_bytes_live_read": "ghidra_read_memory at 0x00bbaa60 length 30 returned 568bf1e8d8fbffff8b86840000008b4c24088b04885ec20400 cccccccccc - 25 body bytes then a five-byte INT3 pad",
+    "instruction_count": 8,
+    "instructions": [
+      {
+        "address": "0x00bbaa60",
+        "mnemonic": "PUSH",
+        "operands": "ESI"
+      },
+      {
+        "address": "0x00bbaa61",
+        "mnemonic": "MOV",
+        "operands": "ESI,ECX"
+      },
+      {
+        "address": "0x00bbaa63",
+        "mnemonic": "CALL",
+        "operands": "0x00bba640"
+      },
+      {
+        "address": "0x00bbaa68",
+        "mnemonic": "MOV",
+        "operands": "EAX,dword ptr [ESI + 0x84]"
+      },
+      {
+        "address": "0x00bbaa6e",
+        "mnemonic": "MOV",
+        "operands": "ECX,dword ptr [ESP + 0x8]"
+      },
+      {
+        "address": "0x00bbaa72",
+        "mnemonic": "MOV",
+        "operands": "EAX,dword ptr [EAX + ECX*0x4]"
+      },
+      {
+        "address": "0x00bbaa75",
+        "mnemonic": "POP",
+        "operands": "ESI"
+      },
+      {
+        "address": "0x00bbaa76",
+        "mnemonic": "RET",
+        "operands": "0x4"
+      }
+    ],
+    "padding_after": "0x00bbaa79..0x00bbaa7d are cc cc cc cc cc, the standard inter-function pad",
+    "reads": "the receiver's vector begin pointer at +0x84 (re-read AFTER the callee) and the index from [ESP+0x8]",
+    "writes": "nothing; the sync port may write the vector, but this function itself stores nothing"
+  },
+  "observed_mechanics": [
+    "0x00bbaa60/0x00bbaa75 PUSH/POP ESI is the only frame work; the function has no locals and cannot spill.",
+    "0x00bbaa63 CALL 0x00bba640 is issued before anything is read, and its return value is never consumed. 0x00bbaa68 then re-reads the vector base, so the callee is a lazy-populate step that can reallocate and whose effect the caller must observe through the field, not through EAX.",
+    "0x00bbaa640's live body is 116 instructions ending in a bare RET; it compares ((this+0x88)-(this+0x84))>>2 against the zero-extended byte at +0x0ac and returns immediately when they are equal, so the sync is idempotent and costs nothing once the vector is the right size.",
+    "When the sizes differ, 0x00bba640 calls 0x00e25bd0 to clear the vector, then loops mPlanetCount times; per iteration it forms a StarID by adding i*0x1000000 to the dword at +0x70, builds a four-word request {star_id, 0x5220cb8, 1, 0}, calls 0x0067dcd0 and then the game-mode manager's vtable slot +0x0c, and type-checks the result against 0x3e434e1 through vtable slot +0xc before appending it.",
+    "0x00bbaa68 reads only the begin pointer at +0x84; the end and capacity at +0x88 and +0x8c are not read here, so the function has no way to know the vector's size.",
+    "0x00bbaa6e MOV ECX,[ESP+0x8] loads the index as a full 32-bit dword with no sign extension, truncation to 16 or 32 bits, or masking.",
+    "0x00bbaa72 MOV EAX,[EAX+ECX*0x4] is the only bounds-relevant instruction in the body and there is no compare against the end pointer anywhere, so an out-of-range index is an unchecked read. This is a real invariant of the observed code, not an omission in the reconstruction.",
+    "0x00bbaa76 RET 0x4 pops the index word, so a caller may pass the argument in a register or push it and leave the stack to the callee; either spelling is consistent with the observed bytes.",
+    "0x00bbaa60 appears nowhere in .rdata or .data as a dword (scan total=0), so it is a non-virtual member and its class is not vtable-proven."
+  ],
+  "fields_and_offsets": [
+    {
+      "receiver": "this",
+      "offset": "+0x84",
+      "use": "vector begin pointer, re-read after the sync",
+      "proving_instruction": "0x00bbaa68 MOV EAX,dword ptr [ESI + 0x84]",
+      "confidence": "OBSERVED"
+    },
+    {
+      "receiver": "this",
+      "offset": "+0x88",
+      "use": "vector end pointer, used by the sync port to compute the element count",
+      "proving_instruction": "0x00bbaa646 MOV EAX,[EBX + 0x88] (callee 0x00bba640)",
+      "confidence": "OBSERVED (callee)"
+    },
+    {
+      "receiver": "this",
+      "offset": "+0x8c",
+      "use": "vector capacity, passed to 0x00aea5d0 by the sync port on growth",
+      "proving_instruction": "0x00bbaa71b CMP EAX,[EBP + 0x8] with EBP = this+0x84 (callee 0x00bba640)",
+      "confidence": "OBSERVED (callee)"
+    },
+    {
+      "receiver": "this",
+      "offset": "+0x70",
+      "use": "StarID used by the sync port as the base of the per-iteration id",
+      "proving_instruction": "0x00bbaa696 MOV ESI,[EBX + 0x70] (callee 0x00bba640)",
+      "confidence": "OBSERVED (callee)"
+    },
+    {
+      "receiver": "this",
+      "offset": "+0xac",
+      "use": "element count the sync port resizes the vector to",
+      "proving_instruction": "0x00bbaa652 MOVZX ECX,byte ptr [EBX + 0xac] (callee 0x00bba640)",
+      "confidence": "OBSERVED (callee)"
+    },
+    {
+      "receiver": "this",
+      "offset": "+0x5c",
+      "use": "a dword bitfield read by the neighbouring 0x00bba900, not by this function",
+      "proving_instruction": "0x00bba909 MOV EAX,[ECX + 0x5c]",
+      "confidence": "OBSERVED (neighbour)"
+    }
+  ],
+  "constants": [
+    {
+      "value": "0x84",
+      "address": "0x00bbaa68",
+      "meaning": "offset of the planet vector's begin pointer"
+    },
+    {
+      "value": "0x4",
+      "address": "0x00bbaa72",
+      "meaning": "element stride of the vector, and the scale of the index"
+    },
+    {
+      "value": "0x4",
+      "address": "0x00bbaa76",
+      "meaning": "RET imm16: the callee pops exactly one stack word"
+    },
+    {
+      "value": "0x1000000",
+      "address": "0x00bbaa772 (callee 0x00bba640)",
+      "meaning": "per-iteration increment applied to the StarID; with StarID.h's packing this advances the sector field by one"
+    },
+    {
+      "value": "0x2",
+      "address": "0x00bbaa663 (callee 0x00bba640)",
+      "meaning": "CMP EAX,ECX after SAR EAX,2 - the element-count comparison"
+    },
+    {
+      "value": "0x5220cb8",
+      "address": "0x00bbaa6cf (callee 0x00bba640)",
+      "meaning": "a hash literal pushed into the per-iteration request word 1; no SDK name was found for it"
+    },
+    {
+      "value": "0x3e434e1",
+      "address": "0x00bbaa6fb (callee 0x00bba640)",
+      "meaning": "cPlanetRecord::TYPE, used as the type filter on the per-iteration result"
+    },
+    {
+      "value": "0x1",
+      "address": "0x00bbaa6d7 (callee 0x00bba640)",
+      "meaning": "request word 2, a constant 1 in every iteration"
+    },
+    {
+      "value": "0xbb9ae0 / 0xbb9af0 / 0xbb9808",
+      "address": "0x00bb233d, 0x00bb2354, 0x00bb98.. (caller 0x00bb2330)",
+      "meaning": "sibling cStarRecord predicates the inspected caller consults before this function; recorded as caller context, not as part of this contract"
+    }
+  ],
+  "globals": [
+    {
+      "address": "none",
+      "access": "none",
+      "observation": "0x00bbaa60 contains no absolute address operand. Every load is relative to the receiver, the stack, or a vtable. This function reads and writes no global."
+    }
+  ],
+  "virtual_dispatch": [
+    {
+      "note": "0x00bbaa60 itself performs no virtual call. The virtual calls observed in this record all belong to the sync port 0x00bba640: the game-mode manager's slots +0x0c and +0x0c-type-check path, and the per-element object's vtable slots +0x0, +0x04 and +0x0c. None of those is dispatched by the reconstructed function, so the reconstruction's virtual_dispatch set is empty by observation."
+    }
+  ],
+  "control_flow": {
+    "shape": "straight-line, no branches in the function body",
+    "early_exits": [],
+    "loops": [],
+    "switch_tables": [],
+    "branches": [],
+    "return_paths": [
+      "0x00bbaa76 RET 0x4 (single exit)"
+    ],
+    "note": "all conditional logic lives in the sync port: 0x00bbaa665 JZ 0x00bbaa789 is the idempotence early-out and 0x00bbaa781 JL 0x00bbaa694 closes the per-element loop"
+  },
+  "callers_evidence": [
+    {
+      "callsite": "0x00bb23ba",
+      "caller": "0x00bb2330",
+      "form": "CALL, with PUSH 0x0 at 0x00bb23b6 and MOV ECX,ESI at 0x00bb23b8",
+      "result_use": "PUSH EAX at 0x00bb23bf, i.e. the returned pointer is passed straight on as a stack argument to 0x00b3d430; the result of that is then chained into 0x00bbc670 at 0x00bb23c7 and compared against the literal 3 at 0x00bb23cc",
+      "receiver_setup": "ESI is the caller's own ECX-received object, not the cStarRecord. The cStarRecord arrives as this function's first stack argument: 0x00bb2332 MOV ESI,[ESP+0xc] and every call in the body is made with ECX = ESI. So 0x00bbaa60 is invoked with a cStarRecord that the caller received as a parameter, and the index it passes is the literal 0.",
+      "context": "before the call the caller checks 0x00bb9ae0(ESI) > 1, then 0x00bb9af0(ESI,1) only when a flag argument is zero, then 0x00b1fdb0(ESI) != -1, then ESI != [EDI+0x148]; it null-checks the byte at +0xac (0x00bb2397) and requires the second vector's size to be exactly 5 (0x00bb23a7-0x00bb23af: SUB ECX,[EAX+4]; SUB ECX,[EAX]; AND ECX,0xfffffffc; CMP ECX,0x14). This is a heavily guarded first-planet check, and the literal index 0 means the inspected site only ever asks for orbit 0."
+    },
+    {
+      "callsite": "0x00ba6df6",
+      "caller": "0x00ba6dc0",
+      "form": "CALL (not disassembled)",
+      "result_use": "not inspected",
+      "context": "classified ENGINE_IMPLEMENTATION by the canonical record"
+    },
+    {
+      "callsite": "0x00bad9d2",
+      "caller": "0x00bad940",
+      "form": "CALL (not disassembled)",
+      "result_use": "not inspected",
+      "context": "the same caller also calls 0x00bb9b00 at 0x00bad9c9, three bytes earlier, so 0x00bad940 reads the star's flags and then asks for a planet record"
+    },
+    {
+      "callsite": "0x00bafbeb and 0x00bb0b0e",
+      "caller": "0x00bafae0",
+      "form": "CALL (two callsites in one function)",
+      "result_use": "not inspected",
+      "context": "one of only two canonical callers with two callsites, so its fan-in counts it once"
+    },
+    {
+      "callsite": "0x00de6f55",
+      "caller": "0x00de6f20",
+      "form": "CALL (not disassembled)",
+      "result_use": "not inspected",
+      "context": "classified GAMEPLAY_SUPPORT by the canonical record and far outside the galaxy code region, which is why no single receiver type is claimed for the callee"
+    },
+    {
+      "callsite": "0x0102d315",
+      "caller": "0x0102d1b0",
+      "form": "CALL (not disassembled)",
+      "result_use": "not inspected",
+      "context": "the highest-addressed canonical caller, in PKG-12-SIM-SPACE territory"
+    }
+  ],
+  "sibling_analysis": {
+    "question": "what surrounds 0x00bbaa60?",
+    "answer": "0x00bbaa60 is the last function of the cStarRecord method cluster. 0x00bba640, the sync port it calls, sits 0x20 bytes earlier and is itself a cStarRecord member with no vtable presence (scan total=0 for the whole 0x00bb9000-0x00bbaa80 window apart from 0x00bb9ae0, 0x00bb9b80 and 0x00bba280, which have one hit each).",
+    "named_neighbours_from_the_sdk_symbol_table": [
+      "0x00BB9C20 cStarRecord_SetPosition",
+      "0x00BB9C40 cStarRecord_SetTechLevel",
+      "0x00BB9C70 cStarRecord_SetFlag",
+      "0x00BB9F50 cStarRecord_GetName",
+      "0x00BBA2A0 cStarRecord__ctor",
+      "0x00BBA670 cStarRecord_GetSpeciesProfile",
+      "0x00BBA900 Simulator::cStarRecord::GetPlanetRecords"
+    ],
+    "explicitly_not_claimed": "0x00bba900 is named GetPlanetRecords by the SDK but its observed body returns (mFlags>>12)&1 when mPlanetCount is zero, a boolean, and its JNZ at 0x00bba907 targets 0x00bba913 which is the entry of a different function. It is therefore NOT treated as GetPlanetRecords in this record, and 0x00bbaa60 is not identified by proximity to it.",
+    "analogue_evidence_label": "the symbol-table names are OBSERVED from SDKtoGhidra/SporeGhidra_march2017.xml; the class attribution of 0x00bbaa60 is INFERRED from five offset agreements"
+  },
+  "callees_evidence": [
+    {
+      "callsite": "0x00bbaa63",
+      "callee": "0x00bba640",
+      "form": "CALL, ECX = receiver, no stack words, bare RET in the callee",
+      "identified_operation": "lazy planet-vector synchronisation. Guard: if ((end-begin)>>2) == (uint8)mPlanetCount, return. Otherwise clear the vector through 0x00e25bd0 and, mPlanetCount times, derive a StarID from the dword at +0x70 plus i*0x1000000, build the request {star_id, 0x5220cb8, 1, 0}, invoke the game-mode manager, type-check the result against cPlanetRecord::TYPE 0x3e434e1, addref it through vtable slot 0 and append it, growing through 0x00aea5d0 when the capacity is exhausted, then release the transient holder through vtable slot +0x04.",
+      "identified": "yes, structurally. The game-level meaning of 0x5220cb8 and of the per-iteration StarID arithmetic is not established."
+    }
+  ],
+  "semantic_contract": "Given a star record, this function returns the planet record at a given orbit index, materialising the record's planet list on first use. 1. It calls 0x00bba640 on the receiver with no arguments and discards the result (0x00bbaa63). That port is idempotent: it returns immediately when the receiver's planet vector already holds exactly as many elements as the receiver's mPlanetCount byte, and otherwise clears and rebuilds the vector. 2. Only after that does it read the vector's begin pointer from the receiver at +0x84 (0x00bbaa68), so a reallocation performed by step 1 is observed. 3. It loads the index from its single stack argument as a full 32-bit value with no masking or sign extension, and returns vector[index] (0x00bbaa6e, 0x00bbaa72). Invariants: the function never writes to the receiver itself; the index is completely unchecked, since the end pointer at +0x88 is never read here, so an index outside the populated range is an out-of-bounds read; the callee owns the cleanup of the one stack word, proven by RET 0x4; and the whole observable result depends on the sync port having run first, which is why the two functions must not be separated.",
+  "classification": "BOUNDED_SEMANTIC",
+  "classification_rationale": "The complete 25-byte body, the ABI including the callee-popped argument, the single field offset, the constants, the single direct callee and the absence of any branch were all read from the disassembly, and the callee was disassembled in full plus decompiled so the lazy-load contract is established rather than assumed. The one fully inspected caller confirms the receiver is a star record and the argument is an orbit index. It is not STRONG_SEMANTIC because: (a) OWNING CLASS AND METHOD NAME - the function is non-virtual and appears in no vtable, so cStarRecord and GetPlanetRecord are candidates resting on five offset agreements and one SDK declaration, not on vtable proof; (b) the bounds contract of the index is not merely unknown, it is absent: nothing in the function or its callee validates it, so the reconstruction cannot state what a caller must guarantee; (c) the sync port's per-iteration request literal 0x5220cb8 and the meaning of advancing the StarID by 0x1000000 per element are unestablished, so the population rule is known mechanically but not semantically; and (d) only one of the 20 canonical callers was disassembled, and it passes the literal index 0, so the general orbit-index contract rests on a single narrow observation.",
+  "semantic_findings": [
+    "The function is a lazy accessor with an explicit load step, and the load is ordered before the field read on purpose: re-reading the base pointer after the call is what makes a reallocating load safe.",
+    "The index is used raw. There is no compare against the vector's end pointer anywhere in the function or in the sync port, so the out-of-range case is undefined behaviour in the original, not an error return.",
+    "The sync port is idempotent and cheap when already populated, so the accessor is cheap in steady state and expensive only on the first call after the planet list is invalidated.",
+    "The sync port's per-iteration StarID arithmetic adds 0x1000000 to the base id, which with Spore-ModAPI's StarID packing advances the sector field; that is why one star's record can hold planets belonging to more than one sector index, and it is a load-bearing detail of the population rule rather than a loop counter.",
+    "The sync port type-checks each fetched object against cPlanetRecord::TYPE (0x3e434e1) through a vtable call, so a null or wrong-typed fetch is skipped rather than appended; the vector therefore only ever contains cPlanetRecord pointers.",
+    "The Ghidra decompilation of this function is faithful here (unlike its sibling at 0x00c472e0): the argument order and the discard of the callee's result are both correct in the pseudocode."
+  ],
+  "unresolved_questions": [
+    "Which class and method is this, strictly? The evidence supports cStarRecord::GetPlanetRecord(size_t), but the SDK gives no address for that declaration and the function is in no vtable.",
+    "What are the valid index bounds, and who guarantees them? Nothing here checks, so the contract is entirely on the callers; the 19 other canonical callers were not disassembled and might not all be well-behaved.",
+    "What does the literal 0x5220cb8 in the per-iteration request mean? It has no SDK name and appears as a constant in the request word adjacent to the StarID.",
+    "Why does the sync advance the StarID by 0x1000000 per element instead of populating from a list? mPlanetCount is a plain byte with no accompanying table of ids in the object, so the ids must be derived. The derivation rule is observed but its intent is not.",
+    "Is 0x00bbaa60 ever called with the intent to trigger the load only, ignoring the result? The 20 canonical callers include several whose names suggest other subsystems, and none of the uninspected ones was checked for result use.",
+    "What is 0x00bba900 really? The SDK calls it GetPlanetRecords but the body is a boolean predicate over mPlanetCount and mFlags bit 12, and its JNZ leaves the function. Left unclassified; resolving it would sharpen the naming of this whole cluster."
+  ],
+  "runtime_gates": [
+    "No original-process trace exists for 0x00bbaa60; every claim is static.",
+    "A runtime trace would be needed to observe the actual StarIDs the sync requests, to confirm that the vector is repopulated rather than merely reallocated on the second call, and to see whether any caller ever passes an out-of-range index.",
+    "The runtime value of mPlanetCount and of the vector's capacity for a real star is not recoverable statically."
+  ],
+  "blockers": [],
+  "validation": {
+    "status": "PASS",
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/wave13-pilot-core-b01 reconstruction/staging/wave13-pilot-core-b01/*.cpp",
+    "model_test_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/wave13-pilot-core-b01 reconstruction/staging/wave13-pilot-core-b01/*.cpp -o /tmp/opencode/b01-model && /tmp/opencode/b01-model",
+    "syntax": "passed",
+    "model_test": "passed (exit 0; the model test asserts the sync runs before the read and that indices 0 and 2 both return the expected element)",
+    "byte_check": "clang++ -O2 emits a PIC call/pop/add preamble, so object bytes are not comparable to the MSVC original; the body was compared instruction by instruction instead."
+  },
+  "confidence": {
+    "body_bytes": 1.0,
+    "instruction_list": 1.0,
+    "calling_convention": 0.95,
+    "frame_and_cleanup": 1.0,
+    "field_offsets": 1.0,
+    "constants": 1.0,
+    "globals": 1.0,
+    "control_flow": 1.0,
+    "virtual_dispatch": 1.0,
+    "callee_contract": 0.9,
+    "owning_class_identity": 0.65,
+    "method_name": 0.6,
+    "index_bounds_contract": 0.1,
+    "population_rule_semantics": 0.35
+  },
+  "evidence": [
+    "reconstruction/evidence/00bbaa60/evidence.json",
+    "reconstruction/evidence/00bbaa60/context.json",
+    "/tmp/opencode/wave/pilot/b01/briefs.json",
+    "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cStarRecord.h",
+    "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/StarID.h",
+    "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cPlanetRecord.h",
+    "/home/juanr/apps/Spore-ModAPI/SDKtoGhidra/SporeGhidra_march2017.xml",
+    "ghidra_* MCP calls listed in tooling_evidence"
+  ],
+  "tooling_evidence": [
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x00bbaa60",
+      "observation": "FUN_00bba640(); return *(undefined4 *)(*(int *)(param_1 + 0x84) + param_2 * 4); - the pseudocode matches the disassembly exactly, including the discarded callee result"
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x00bbaa60",
+      "observation": "8 instructions 0x00bbaa60..0x00bbaa78"
+    },
+    {
+      "tool": "ghidra_read_memory",
+      "address": "0x00bbaa60",
+      "observation": "30 bytes: 568bf1e8d8fbffff8b86840000008b4c24088b04885ec20400 cccccccccc"
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x00bba640",
+      "observation": "shows the ((+0x88)-(+0x84))>>2 versus (uint)(byte)(+0xac) guard, the 0x00e25bd0 clear, the loop, the 0x5220cb8/1 request words, App__IGameModeManager__Get(), the 0x3e434e1 type check and the eastl push_back path"
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x00bba640",
+      "observation": "116 instructions 0x00bba640..0x00bbaa78's predecessor, ending POP EDI / POP ESI / POP EBP / POP EBX / ADD ESP,0x1c / RET; 0x00bbaa663 CMP EAX,ECX / 0x00bbaa665 JZ 0x00bbaa789 is the idempotence early-out and 0x00bbaa772 ADD dword ptr [ESP+0x14],0x1000000 is the StarID stride"
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x00bb2330",
+      "observation": "65 instructions; 0x00bb23b6 PUSH 0x0 / 0x00bb23ba CALL 0x00bbaa60 / 0x00bb23bf PUSH EAX / 0x00bb23c0 CALL 0x00b3d430, with the guarded prelude at 0x00bb233d-0x00bb23af"
+    },
+    {
+      "tool": "ghidra_disassemble_bytes",
+      "address": "0x00bba900",
+      "observation": "6 instructions: CMP byte [ECX+0xac],0 / JNZ 0x00bba913 / MOV EAX,[ECX+0x5c] / SHR EAX,0xc / AND EAX,1 / RET. The JNZ leaves the function, so 0x00bba900 does not match the SDK's GetPlanetRecords attribution and is not adopted."
+    },
+    {
+      "tool": "ghidra_disassemble_bytes",
+      "address": "0x00bb9c70",
+      "observation": "the SDK-named cStarRecord_SetFlag: CMP ECX,0x3e4353b / JZ / XOR EDX,EDX / CMP ECX,0x179c807 / SETNZ DL / DEC EDX / AND EAX,EDX / RET 0x4, with 0x3e4353b equal to cStarRecord::TYPE - a different function from this batch's 0x00bb9b00"
+    },
+    {
+      "tool": "ghidra_run_script_inline",
+      "address": "0x00bb9000-0x00bbaa80",
+      "observation": "dword scan: 0x00bbaa60 total=0, 0x00bba640 total=0; only 0x00bb9ae0, 0x00bb9b80 and 0x00bba280 have one hit each. The whole cluster is essentially non-virtual."
+    },
+    {
+      "tool": "bash",
+      "observation": "read-only greps of ~/apps/Spore-ModAPI headers and of the SDK Ghidra XML symbol table; the XML supplies seven cStarRecord names in 0x00BB9C20..0x00BBA900 and none at 0x00bbaa60 or 0x00bba640"
+    }
+  ],
+  "provenance": {
+    "binary": "SPORE/SporeBin/SporeApp.exe",
+    "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+    "binary_version": "Spore 3.1.0.22",
+    "image_base": "0x00400000",
+    "worker_id": "wave13-pilot-b01",
+    "batch_id": "b01",
+    "package": "wave13-pilot-core-b01",
+    "upstream_package_id": "PKG-11-SIM-CORE",
+    "date": "2026-09-26",
+    "method": "static only; live headless Ghidra via the ghidra_* MCP tools with program=SporeApp.exe",
+    "runtime_evidence": "none. No original-process trace exists for any target in this batch; every claim is static."
+  },
+  "vtable_membership_scan": "ghidra_run_script_inline scanned every 4-byte-aligned dword of the initialised .rdata (0x013cc000-0x014ffffffff) and .data blocks and matched each target address. Every one of 0x00c472e0, 0x00c471c0, 0x00bfc490, 0x00bbaa60, 0x00bb9b00 and 0x00b3d850 returned total=0. None of the six is a vtable entry, so none of the six has vtable-proven class identity. The same scan found 27-31 tables for the sibling virtuals of 0x00bfc490 (0x00bfc3d0, 0x00bfc5f0, 0x00bfc7a0, 0x00bfc860, 0x00bfc8a0, 0x00bfcac0, 0x00bfcdd0, 0x00bfd0d0) and 1-4 for the 0x00bb9xxx/0x00bbaxxx/0x00b3d7xx neighbourhoods, which is what makes the negative result meaningful rather than an artefact of a broken scan.",
+  "related_records": [
+    "reconstruction/evidence/00bbaa60/evidence.json",
+    "reconstruction/metadata/wave13-pilot-core-b01/bb9b00.json"
+  ]
+}

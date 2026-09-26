@@ -1,0 +1,318 @@
+{
+  "schema": "openspore-worker-metadata-1",
+  "package": "wave13-w1-dispatch-b01",
+  "batch_id": "b01",
+  "va": "0x004adc20",
+  "address": "0x004adc20",
+  "function_address": "0x004adc20",
+  "entry_address": "0x004adc20",
+  "ghidra_name": "FUN_004adc20",
+  "normalized_symbol": "editor_004adc20_set_flag_4f",
+  "reconstructed_symbol": "FUN_004adc20_SetFlag4F",
+  "declaration": "extern \"C\" __attribute__((thiscall)) void FUN_004adc20_SetFlag4F(OpaqueEditorBlockSettings* self, std::uint8_t value);",
+  "source_files": [
+    "reconstruction/staging/wave13-w1-dispatch-b01/004adc20_set_flag4f.hpp",
+    "reconstruction/staging/wave13-w1-dispatch-b01/004adc20_set_flag4f.cpp",
+    "reconstruction/staging/wave13-w1-dispatch-b01/opaque_types.hpp",
+    "reconstruction/staging/wave13-w1-dispatch-b01/wave13_b01_model_test.cpp"
+  ],
+
+  "observed_original_abi": {
+    "architecture": "x86-32 (x86:LE:32:windows, image base 0x00400000)",
+    "calling_convention": "__thiscall",
+    "calling_convention_observation": "0x004adc24 MOV dword ptr [EBP-0x4],ECX spills ECX and 0x004adc27 MOV EAX,dword ptr [EBP-0x4] reloads it, so ECX is the receiver. EDX is never read, ruling out __fastcall. 0x004adc33 RET 0x4 rules out cdecl. Ghidra's decompilation labels it __thiscall and, notably, already narrows the second parameter to `undefined1`.",
+    "return_type": "void",
+    "return_semantics": "No value is returned. EAX is used only as scratch; on the only path through the function the last write to EAX is the reload of the spilled receiver at 0x004adc27.",
+    "return_register": "none (void)",
+    "return_width_bytes": 0,
+    "return_observation": "0x004adc30: MOV ESP,EBP / 0x004adc32: POP EBP / 0x004adc33: RET 0x4 with no meaningful EAX. No sampled caller reads a result.",
+    "ret_form": "RET 0x4",
+    "termination": "single exit at 0x004adc33",
+    "stack_cleanup_bytes": 4,
+    "stack_cleanup_owner": "callee",
+    "stack_arguments": [
+      {"name": "value", "type": "std::uint8_t in a 4-byte ABI word", "entry_offset": "EBP+0x8", "width_bytes": 4,
+       "read_evidence": "0x004adc2a: MOV CL,byte ptr [EBP + 0x8]",
+       "narrowing_note": "The body reads only the low byte of the incoming word. Bits 8..31 of the caller's stack word are discarded, so a caller passing 0x00000101 stores 0x01. The reconstruction makes this explicit by typing the parameter std::uint8_t rather than relying on an implicit truncation."}
+    ],
+    "ordinary_stack_argument_slots": 1,
+    "saved_registers": ["EBP"],
+    "frame": "PUSH EBP / MOV EBP,ESP / PUSH ECX / MOV [EBP-4],ECX / ... / MOV ESP,EBP / POP EBP. The spill at 0x004adc24 is dead: no instruction other than the reload at 0x004adc27 reads EBP-0x4. The same redundant shape appears in all ten siblings of the accessor family.",
+    "receiver_presence": true,
+    "receiver_register": "ECX",
+    "receiver_note": "The receiver is a sub-object, not the rigblock. The paired getter 0x004adc40 is called on a rigblock's +0x28 member at 0x00438728, and the +0x44 float getter 0x004adb40 is called on cEditor+0x98 at 0x00586f05. The +0x4c..+0x4f flag block therefore belongs to a sub-object shared by both proven parent contexts. No vtable was located for it, so no owning class is named."
+  },
+
+  "layout": {
+    "entry_address": "0x004adc20",
+    "body_start": "0x004adc20",
+    "body_end": "0x004adc33",
+    "body_span_bytes": 22,
+    "instruction_count": 10,
+    "basic_block_count": 1,
+    "frame_shape": "standard EBP frame with a single unused 4-byte spill slot, one callee-cleaned stack word, bare-body store",
+    "padding_after": "0x004adc34 onward is INT3 pad",
+    "instructions": [
+      {"address": "0x004adc20", "mnemonic": "PUSH", "operands": "EBP", "bytes": "55"},
+      {"address": "0x004adc21", "mnemonic": "MOV", "operands": "EBP,ESP", "bytes": "8bec"},
+      {"address": "0x004adc23", "mnemonic": "PUSH", "operands": "ECX", "bytes": "51"},
+      {"address": "0x004adc24", "mnemonic": "MOV", "operands": "dword ptr [EBP + -0x4],ECX", "bytes": "894dfc"},
+      {"address": "0x004adc27", "mnemonic": "MOV", "operands": "EAX,dword ptr [EBP + -0x4]", "bytes": "8b45fc"},
+      {"address": "0x004adc2a", "mnemonic": "MOV", "operands": "CL,byte ptr [EBP + 0x8]", "bytes": "8a4d08"},
+      {"address": "0x004adc2d", "mnemonic": "MOV", "operands": "byte ptr [EAX + 0x4f],CL", "bytes": "88484f"},
+      {"address": "0x004adc30", "mnemonic": "MOV", "operands": "ESP,EBP", "bytes": "8be5"},
+      {"address": "0x004adc32", "mnemonic": "POP", "operands": "EBP", "bytes": "5d"},
+      {"address": "0x004adc33", "mnemonic": "RET", "operands": "0x4", "bytes": "c20400"}
+    ],
+    "reads": "the low byte of the incoming stack word at EBP+8. No other memory operand, no global, no callee.",
+    "writes": "exactly one byte, at receiver+0x4f"
+  },
+
+  "observed_mechanics": [
+    "0x004adc20: PUSH EBP / 0x004adc21: MOV EBP,ESP / 0x004adc23: PUSH ECX open a frame with a four-byte spill slot",
+    "0x004adc24: MOV dword ptr [EBP-0x4],ECX spills the receiver to EBP-0x4",
+    "0x004adc27: MOV EAX,dword ptr [EBP-0x4] reloads that spill; no other instruction in the function reads EBP-0x4, so the spill is dead weight the compiler emitted anyway",
+    "0x004adc2a: MOV CL,byte ptr [EBP + 0x8] narrows the incoming 32-bit stack word to its low byte, which is the whole of the argument contract",
+    "0x004adc2d: MOV byte ptr [EAX + 0x4f],CL is the only write in the function and it is exactly one byte wide",
+    "0x004adc30: MOV ESP,EBP / 0x004adc32: POP EBP unwind the frame",
+    "0x004adc33: RET 0x4 pops the return address and the four argument bytes, proving the value word is callee-cleaned and that there is exactly one stack argument",
+    "0x004adc20 and 0x004adc40 are a matched pair thirty-two bytes apart in the binary: identical prologue, identical spill, the same +0x4f displacement, one storing and one loading, one ending in RET 0x4 and the other in a bare RET",
+    "the family at 0x004adb60 (+0x4e setter), 0x004adb80 (+0x4c getter), 0x004adba0 (+0x4c setter), 0x004adbc0 (+0x4d getter) and 0x004adbe0 (+0x4d setter) all use the identical MOV CL,byte ptr [EBP+8] then MOV byte ptr [EAX+disp],CL shape with RET 0x4, which is what establishes the +0x4c..+0x4f block as one four-flag group"
+  ],
+
+  "fields_and_offsets": [
+    {"offset": "+0x4f", "width_bytes": 1, "kind": "opaque flag byte",
+     "proving_instruction": "0x004adc2d: MOV byte ptr [EAX + 0x4f],CL",
+     "meaning": "the only field this function touches; paired with the 0x004adc40 read",
+     "confidence": "high for the offset and the width, 0.05 for the meaning"},
+    {"offset": "+0x4c", "width_bytes": 1, "kind": "opaque flag byte",
+     "proving_instruction": "0x004adba0: MOV byte ptr [EAX + 0x4c],CL",
+     "meaning": "neighbouring byte with the same setter shape and a matching getter at 0x004adb80",
+     "confidence": "high for the offset"},
+    {"offset": "+0x4d", "width_bytes": 1, "kind": "opaque flag byte",
+     "proving_instruction": "0x004adbe0: MOV byte ptr [EAX + 0x4d],CL",
+     "meaning": "neighbouring byte with the same setter shape and a matching getter at 0x004adbc0",
+     "confidence": "high for the offset"},
+    {"offset": "+0x4e", "width_bytes": 1, "kind": "opaque flag byte",
+     "proving_instruction": "0x004adb60: MOV byte ptr [EAX + 0x4e],CL",
+     "meaning": "neighbouring byte with a setter but no getter in this family",
+     "confidence": "high for the offset"}
+  ],
+
+  "constants": [
+    {"value": "0x4f", "address": "0x004adc2d: MOV byte ptr [EAX + 0x4f],CL", "meaning": "the only displacement in the body"},
+    {"value": "0x4", "address": "0x004adc33: RET 0x4", "meaning": "the value word is callee-cleaned"},
+    {"value": "0x4", "address": "0x004adc23: PUSH ECX", "meaning": "spill width"}
+  ],
+
+  "globals": [],
+
+  "virtual_dispatch": [],
+
+  "control_flow": {
+    "shape": "one basic block: load, narrow, store, epilogue",
+    "branches": [],
+    "early_exits": "none",
+    "loops": "none",
+    "switch_tables": "none",
+    "branch_polarity": "Not applicable: the ten-instruction body contains no CMP, no TEST and no conditional instruction. The absence of a guard is a positive observation, not an omission in the analysis."
+  },
+
+  "callers_evidence": [
+    {"callsite": "0x0048f96e", "caller": "FUN_0048f790", "form": "CALL", "setup": "not disassembled window", "result_use": "not inspected"},
+    {"callsite": "0x0048f9a5", "caller": "FUN_0048f790", "form": "CALL", "setup": "second of four sites in the same function", "use": "not inspected"},
+    {"callsite": "0x0048fc90", "caller": "FUN_0048f790", "form": "CALL", "setup": "third of four sites in the same function", "result_use": "not inspected"},
+    {"callsite": "0x0048fd27", "caller": "FUN_0048f790", "form": "CALL", "setup": "fourth of four sites in the same function", "result_use": "not inspected"},
+    {"callsite": "0x0049350c", "caller": "FUN_004934d0", "form": "CALL", "setup": "not disassembled window", "result_use": "not inspected"},
+    {"callsite": "0x004935db", "caller": "FUN_004934d0", "form": "CALL", "setup": "second of two sites in the same function", "result_use": "not inspected"},
+    {"callsite": "0x0049d8bd", "caller": "FUN_0049d6b0", "form": "CALL", "setup": "not disassembled window", "result_use": "not inspected"},
+    {"callsite": "0x0049d98e", "caller": "FUN_0049d6b0", "form": "CALL", "setup": "second of three sites in the same function", "result_use": "not inspected"},
+    {"callsite": "0x0049da08", "caller": "FUN_0049d6b0", "form": "CALL", "setup": "third of three sites in the same function", "result_use": "not inspected"},
+    {"callsite": "0x004a6cb6", "caller": "FUN_004a6ca0", "form": "CALL", "setup": "not disassembled window", "result_use": "not inspected"},
+    {"callsite": "0x004a6d13", "caller": "FUN_004a6ca0", "form": "CALL", "setup": "second of two sites in the same function", "result_use": "not inspected"},
+    {"callsite": "0x004a6d7f", "caller": "FUN_004a6d20", "form": "CALL", "setup": "not disassembled window", "result_use": "not inspected"},
+    {"callsite": "0x004a6eeb", "caller": "FUN_004a6d20", "form": "CALL", "setup": "second of two sites in the same function", "result_use": "not inspected"},
+    {"callsite": "0x004a6f8d", "caller": "FUN_004a6f10", "form": "CALL", "setup": "not disassembled window", "result_use": "not inspected"},
+    {"callsite": "0x004a7556", "caller": "FUN_004a6f10", "form": "CALL", "setup": "second of three sites in the same function", "result_use": "not inspected"},
+    {"callsite": "0x004a7c05", "caller": "FUN_004a6f10", "form": "CALL", "setup": "third of three sites in the same function", "result_use": "not inspected"},
+    {"callsite": "0x00582898", "caller": "Editors::cEditor::sub_581F70 @ 0x00582250", "form": "CALL", "setup": "not disassembled window",
+     "result_use": "not inspected. Notable only because the SDK declares this method as `bool sub_581F70(EditorRigblock* part, void* activeHandle, int value); // MorphPart?` in Spore/Editors/Editor.h, so it is one of the few sites where an SDK signature is available for a caller rather than for this function."},
+    {"callsite": "0x0058290e", "caller": "Editors::cEditor::sub_581F70 @ 0x00582250", "form": "CALL", "setup": "second site in the same function", "result_use": "not inspected"},
+    {"callsite": "0x00586a20", "caller": "FUN_00586960", "form": "CALL", "setup": "not disassembled window", "result_use": "not inspected"},
+    {"callsite": "0x00586aa5", "caller": "FUN_00586960", "form": "CALL", "setup": "second of two sites in the same function", "result_use": "not inspected"},
+    {"callsite": "0x005871f0", "caller": "Editors::cEditor::SetEditorModel", "form": "CALL", "setup": "not disassembled window", "result_use": "not inspected"},
+    {"callsite": "0x005b4e72", "caller": "FUN_005b4bf0", "form": "CALL", "setup": "not disassembled window", "result_use": "not inspected"},
+    {"callsite": "0x005b4ec5", "caller": "FUN_005b4bf0", "form": "CALL", "setup": "second of two sites in the same function", "result_use": "not inspected"},
+    {"callsite": "0x005b75cf", "caller": "FUN_005b74f0", "form": "CALL", "setup": "not disassembled window", "result_use": "not inspected"},
+    {"callsite": "0x005b7606", "caller": "FUN_005b75e0", "form": "CALL", "setup": "not disassembled window", "result_use": "not inspected"},
+    {"callsite": "0x005b93d5", "caller": "FUN_005b8fb0", "form": "CALL", "setup": "not disassembled window", "result_use": "not inspected"},
+    {"callsite": "0x005b9418", "caller": "FUN_005b8fb0", "form": "CALL", "setup": "second of two sites in the same function", "result_use": "not inspected"},
+    {"callsite": "0x005be886", "caller": "FUN_005be500", "form": "CALL", "setup": "not disassembled window", "result_use": "not inspected"},
+    {"callsite": "0x005bea13", "caller": "FUN_005be500", "form": "CALL", "setup": "second of two sites in the same function", "result_use": "not inspected"},
+    {"callsite": "0x005d030f", "caller": "FUN_005d02d0", "form": "CALL", "setup": "not disassembled window", "result_use": "not inspected"},
+    {"callsite": "0x005d07e2", "caller": "FUN_005d02d0", "form": "CALL", "setup": "second of two sites in the same function", "result_use": "not inspected"},
+    {"callsite": "0x005d0c5d", "caller": "FUN_005d07f0", "form": "CALL", "setup": "not disassembled window", "result_use": "not inspected"},
+    {"callsite": "0x005d0cab", "caller": "FUN_005d07f0", "form": "CALL", "setup": "second of two sites in the same function", "result_use": "not inspected"},
+    {"callsite": "0x0043fc88", "caller": "FUN_0043fc20", "form": "CALL", "setup": "reported by the briefing", "result_use": "not inspected"},
+    {"callsite": "0x0043ff6e", "caller": "FUN_0043fc20", "form": "CALL", "setup": "second of two sites in the same function", "result_use": "not inspected"},
+    {"callsite": "0x00586f05-region sibling", "caller": "Editors::cEditor::SetEditorModel", "form": "n/a", "setup": "n/a",
+     "result_use": "recorded to note that the +0x44 float getter 0x004adb40 and this setter share the same sub-object, which cEditor reaches at +0x98"}
+  ],
+
+  "callees_evidence": [],
+
+  "sibling_and_analogue_functions": [
+    {"address": "0x004adc40", "relationship": "the matched getter for the same byte",
+     "observation": "0x004adc40 is `MOV AL,byte ptr [EAX + 0x4f]` with a bare RET, thirty-two bytes after this function. Already reconstructed by an earlier package as the +0x4F flag accessor. Together the two are the only read/write pair established for this flag, and they are the basis for the pairing claim."},
+    {"address": "0x004adb60", "relationship": "byte setter for +0x4e",
+     "observation": "MOV CL,byte ptr [EBP+8] then MOV byte ptr [EAX+0x4e],CL, RET 0x4 -- the identical shape, one accessor slot earlier. It is the only member of the family with a setter and no getter."},
+    {"address": "0x004adb80", "relationship": "byte getter for +0x4c",
+     "observation": "MOV AL,byte ptr [EAX+0x4c] with a bare RET"},
+    {"address": "0x004adba0", "relationship": "byte setter for +0x4c",
+     "observation": "MOV CL,byte ptr [EBP+8] then MOV byte ptr [EAX+0x4c],CL, RET 0x4"},
+    {"address": "0x004adbc0", "relationship": "byte getter for +0x4d",
+     "observation": "MOV AL,byte ptr [EAX+0x4d] with a bare RET"},
+    {"address": "0x004adbe0", "relationship": "byte setter for +0x4d",
+     "observation": "MOV CL,byte ptr [EBP+8] then MOV byte ptr [EAX+0x4d],CL, RET 0x4"},
+    {"address": "0x004adaa0", "relationship": "float getter for +0x38",
+     "observation": "FLD float ptr [EAX + 0x38] with a bare RET -- the first member of the float run that precedes the flag block"},
+    {"address": "0x004adb00", "relationship": "float getter for +0x40",
+     "observation": "FLD float ptr [EAX + 0x40] with a bare RET"},
+    {"address": "0x004adb40", "relationship": "float getter for +0x44",
+     "observation": "FLD float ptr [EAX + 0x44] with a bare RET; reconstructed separately in this same package as FUN_004adb40_GetField44"},
+    {"address": "0x004adc00", "relationship": "float setter for +0x48",
+     "observation": "MOVSS dword ptr [EAX + 0x48],XMM0 with the value arriving via MOVSS dword ptr [EBP+8], and RET 0x4. The only family member that uses SSE rather than x87 for the transfer, and the only float with a setter and no getter."}
+  ],
+
+  "sdk_candidates": {
+    "status": "UNRESOLVED",
+    "observation": "Spore/Editors/Editor.h was read and declares cEditor::sub_581F70(EditorRigblock*, void*, int) and cEditor::RemovePart(EditorRigblock*) as the two Editor methods that take a part pointer. Neither has a signature or a body shape matching a one-byte setter on a sub-object, and neither the receiver sub-object nor the flag block appears in any header read. Spore/Editors/EditorRigblock.h was read and its UnkEditorRigblockStruct1 layout (0x38 bytes, ending at +0x34) is far too small to be this sub-object, so it is explicitly NOT the match.",
+    "not_asserted": "No SDK class, method name, field name or field meaning is claimed for this function, for the +0x4f byte, or for the +0x4c..+0x4f block. The accessor family is an observed layout fact, not an SDK identity.",
+    "sdk_paths_read": [
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Editors/Editor.h",
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Editors/EditorRigblock.h"
+    ]
+  },
+
+  "semantic_contract": "Given a receiver R for which R+0x4f is writable, the function stores ((uint8_t)(incoming_stack_word)) at R+0x4f and modifies nothing else. Bits 8 through 31 of the incoming word are discarded at 0x004adc2a, so a caller that passes 0x00000101 stores 0x01, not 0x00 and not 0x101. Because the store is a single MOV byte, every one of the 256 stored values round-trips exactly, including 0x80 and 0xff, which a narrowed or signed reading would get wrong. The function is idempotent for a fixed argument, writes no other receiver byte, makes no call, touches no global, and contains no guard of any kind. A null receiver is not checked and faults. It is the write half of a matched pair with 0x004adc40, which loads the same byte with a byte-wide MOV AL thirty-two bytes earlier in the binary. The receiver is a sub-object rather than the rigblock: the paired getter is called on a rigblock's +0x28 member at 0x00438728 and the +0x44 float getter on cEditor+0x98 at 0x00586f05, and the four bytes at +0x4c, +0x4d, +0x4e and +0x4f each have a matched setter or getter in the 0x004adb60..0x004adc40 range, so they form one four-flag block on that sub-object. The accessors are asymmetric: +0x4c, +0x4d and +0x4f have both a setter and a getter, while +0x4e has a setter only.",
+
+  "classification": "BOUNDED_SEMANTIC",
+  "classification_rationale": "The complete ten-instruction body, the field offset, the one-byte write width, the incoming-word narrowing at 0x004adc2a and the callee-cleaned RET 0x4 were all read directly, and the matched getter 0x004adc40 plus the eight sibling accessors read in the same disassembly window corroborate both the field identity and the flag-block grouping. Seventeen distinct caller functions were confirmed against the recorded xrefs. The behavioural contract -- store the low byte of the incoming word at receiver+0x4f and touch nothing else -- is therefore established, not merely the layout. The material element that stays bounded is the meaning of the byte and of the four-byte block it belongs to: the receiver has two proven provenances (cEditor+0x98 and rigblock+0x28) that do not converge on a named type, no vtable was located, and not one of the seventeen call sites was found to interpret the value, so whether it is a bool, a small enum or a bitfield-style flag cannot be decided. STRONG_SEMANTIC is withheld for that reason and not for the body. STRUCTURAL_ONLY would understate the evidence, since a behavioural claim is made and is fully read from the binary.",
+
+  "semantic_findings": [
+    "The function is the exact dual of 0x004adc40, which reads the same byte twenty bytes earlier in the binary with a byte-wide load and a bare RET. Together they are the only read/write pair established for the +0x4f flag.",
+    "The argument is narrowed at 0x004adc2a with MOV CL,byte ptr [EBP+8] before the store, so the function's parameter type is one byte wide even though the ABI word is four. The reconstruction keeps the uint8_t parameter, which makes the narrowing explicit rather than implicit, and Ghidra's own decompilation already shows `undefined1 param_2`.",
+    "The four bytes at +0x4c, +0x4d, +0x4e and +0x4f each have a matched setter/getter pair in the 0x004adb60..0x004adc40 range, so they form one four-flag block rather than four unrelated fields. Only +0x4c, +0x4d and +0x4f have a getter; +0x4e has a setter only.",
+    "The float at +0x48 has a setter at 0x004adc00 (MOVSS from the stack) and no getter in the family, which is the mirror image of the +0x4e case. The accessor set is not symmetric, which is a real layout fact and not a gap in the analysis: the window 0x004adb50..0x004adc20 was disassembled exhaustively at 140 instructions with no truncation.",
+    "The receiver is the same sub-object as the +0x44 float getter's, and 0x00438700 reaches it as a rigblock's +0x28 member, so the flag block is a property of a sub-object rather than of the rigblock. The SDK's UnkEditorRigblockStruct1 is 0x38 bytes and therefore cannot be this sub-object.",
+    "Not one of the seventeen caller functions was found to interpret the stored value, and the paired getter is only ever tested for zero in the sampled uses. A bool, a small enum and a bitfield-style flags byte all fit every observation, so no type is asserted.",
+    "clang++ 22.1.8 -m32 -O2 emits `movzbl 0x4(%esp),%eax ; mov %al,0x4f(%ecx) ; ret $0x4` for the reconstruction: 9 bytes against the original's 22, same byte-wide store, same receiver register, same callee-cleaned epilogue."
+  ],
+
+  "unresolved_questions": [
+    "What does the byte at +0x4f mean, and what are the other three flags in the block for? Seventeen call sites were found and none of them was interpreted, so the value's role is unestablished.",
+    "What class owns this sub-object? Two proven provenances (cEditor+0x98 through the +0x44 getter's callers, and rigblock+0x28 through 0x00438700) do not converge on a named type, and no vtable was located.",
+    "Is the byte a bool, a small enum or a bitfield-style flag? Callers only ever store whole bytes and the paired getter is only ever tested for zero, so the evidence cannot separate these.",
+    "Do all seventeen callers pass the same concrete receiver type? Their receiver provenances were not disassembled window-by-window in this batch, so only the fan-in of 17 is independently confirmed.",
+    "Why does +0x4e have a setter but no getter in this family, and why does +0x48 have a setter but no float getter? Either they are read by inlined code elsewhere or the getters were never emitted out of line. Not resolved.",
+    "Is the redundant spill in all ten family members an artefact of a specific build configuration? It affects no semantics and is not worth further investigation, but it is unexplained."
+  ],
+
+  "runtime_gates": [
+    "No original-process trace exists, so the claim that this flag is written and later read with a meaning is static only.",
+    "A runtime pass would need to set the flag through a known call site and observe the paired 0x004adc40 read, to confirm the pairing and to see which values are stored.",
+    "The original Cell stage has never been entered in any recorded run, so no stage-level reachability claim is made."
+  ],
+
+  "confidence": {
+    "body_bytes": 1.0,
+    "control_flow": 1.0,
+    "field_offset": 1.0,
+    "field_width": 1.0,
+    "argument_narrowing": 1.0,
+    "abi_thiscall_and_ret4": 0.98,
+    "single_byte_write": 1.0,
+    "pairing_with_0x004adc40": 0.9,
+    "receiver_concrete_type": 0.2,
+    "field_semantics": 0.05,
+    "runtime_behaviour": 0.0
+  },
+
+  "evidence": [
+    "reconstruction/evidence/004adc20/evidence.json",
+    "reconstruction/evidence/004adc20/context.json",
+    "reconstruction/metadata/pkg-editor-adc40-flag/004adc40.json",
+    "/tmp/opencode/wave/w1/b01/briefs.json",
+    "knowledgegraph/research/21-decompilation-coverage.json (canonical ledger row, read via the briefing)"
+  ],
+
+  "tooling_evidence": [
+    {"tool": "ghidra_decompile_function", "functions": "0x004adb40,0x004adc20",
+     "observation": "0x004adb40 as a float10 return of *(float *)(param_1+0x44); 0x004adc20 as `void __thiscall FUN_004adc20(int param_1, undefined1 param_2) { *(undefined1 *)(param_1 + 0x4f) = param_2; }` -- the decompiler already narrows the second parameter to one byte"},
+    {"tool": "ghidra_disassemble_function", "address": "0x004adc20",
+     "observation": "10 instructions 0x004adc20..0x004adc33: MOV CL,byte ptr [EBP+8] at 0x004adc2a, MOV byte ptr [EAX+0x4f],CL at 0x004adc2d, RET 0x4 at 0x004adc33"},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x004adb50", "end_address": "0x004adc20", "max_instructions": 200,
+     "observation": "the whole setter/getter family in one exhaustive window (140 instructions, instructions_total 140, truncated false): 0x004adb60 sets +0x4e, 0x004adb80 gets +0x4c, 0x004adba0 sets +0x4c, 0x004adbc0 gets +0x4d, 0x004adbe0 sets +0x4d, 0x004adc00 sets the float at +0x48 with MOVSS dword ptr [EAX+0x48],XMM0"},
+    {"tool": "ghidra_disassemble_function", "address": "0x004adb00",
+     "observation": "the +0x40 float getter, same prologue shape, FLD float ptr [EAX + 0x40]"},
+    {"tool": "ghidra_disassemble_function", "address": "0x004adaa0",
+     "observation": "the +0x38 float getter, same prologue shape, FLD float ptr [EAX + 0x38]"},
+    {"tool": "ghidra_decompile_function", "address": "0x00438700",
+     "observation": "its 0x00438728 call to the paired getter 0x004adc40 on self->+0x28 shows the owning sub-object is reached from the rigblock"},
+    {"tool": "ghidra_get_function_xrefs", "address": "0x004adc20",
+     "observation": "17 distinct caller functions, consistent with the briefing's fan-in of 17; two of the named callers are Editors::cEditor::sub_581F70 and Editors::cEditor::SetEditorModel"},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x00586ee0",
+     "observation": "0x00586ef9 MOV ECX,dword ptr [ESI+0x98] followed by CALL 0x004adb40, establishing cEditor+0x98 as the second proven parent context of the same sub-object"},
+    {"tool": "objdump", "observation": "clang++ -m32 -O2 emits movzbl 0x4(%esp),%eax ; mov %al,0x4f(%ecx) ; ret $0x4 for the reconstruction, against the original's 22 bytes with a redundant spill"}
+  ],
+
+  "body_reconstruction": {
+    "source": "reconstruction/staging/wave13-w1-dispatch-b01/004adc20_set_flag4f.cpp",
+    "status": "implemented",
+    "claim_scope": "The ten-instruction body is reconstructed in full as machine-observable semantics, including the one-byte narrowing of the incoming word. No class, no field name and no field meaning is claimed.",
+    "confidence": {
+      "body_bytes": 1.0, "control_flow": 1.0, "return_semantics": 1.0,
+      "argument_narrowing": 1.0, "receiver_presence_in_body": 1.0,
+      "field_semantics": 0.05
+    },
+    "preserved_semantics": [
+      "only the low byte of the incoming stack word is stored, so 0x101 lands as 0x01",
+      "exactly one byte of the receiver is written, at +0x4f, and nothing else",
+      "no call, no global, no allocation, no guard",
+      "a null receiver faults",
+      "all 256 stored values round-trip, including 0x80 and 0xff",
+      "the argument word is callee-cleaned (RET 0x4), modelled with __attribute__((thiscall))"
+    ],
+    "not_reproduced": [
+      "the PUSH EBP / PUSH ECX / spill / reload prologue and its symmetric epilogue; the compiler emits no frame for a function this small",
+      "the 22-byte length and the specific opcode encodings, which are assembler choices"
+    ],
+    "byte_exactness": "not claimed. clang++ 22.1.8 -m32 -O2 emits a 9-byte form against the original's 22. The observable behaviour, the byte-wide store, the one-byte narrowing and the callee-cleaned epilogue all match; the frame, the spill and the encoding do not.",
+    "validation": {
+      "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/wave13-w1-dispatch-b01 reconstruction/staging/wave13-w1-dispatch-b01/*.cpp",
+      "syntax": "passed",
+      "model_test_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/wave13-w1-dispatch-b01 reconstruction/staging/wave13-w1-dispatch-b01/*.cpp -o /tmp/opencode/wave13-b01-model && /tmp/opencode/wave13-b01-model",
+      "model_test": "passed at -O0, -O1, -O2 and -Os; exit 0",
+      "model_test_coverage": "stores of 0x01, 0xff and 0x00; a whole-receiver byte-for-byte comparison before and after the call proving exactly one byte changed and that it is the byte at +0x4f. The comparison is what rules out a stray write anywhere else in the object."
+    }
+  },
+
+  "blockers": [],
+
+  "provenance": {
+    "binary": "SPORE/SporeBin/SporeApp.exe",
+    "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+    "binary_version": "Spore 3.1.0.22, x86-32 PE, image base 0x00400000",
+    "worker_id": "wave13-w1-dispatch-b01",
+    "implementer_id": "wave13-w1-dispatch-b01",
+    "batch_id": "b01",
+    "campaign": "wave-13 semantic decompilation, wave 1, package PKG-10-EDITOR-DISPATCH",
+    "date": "2026-09-26",
+    "analysis_mode": "static only; no original-process trace was captured and none is claimed",
+    "rtti_note": "SporeApp.exe carries no MSVC RTTI. No class statement in this record rests on typeinfo; the receiver type is left explicitly opaque because the two proven parent contexts do not converge and no vtable was located."
+  },
+
+  "related_records": [
+    "reconstruction/metadata/pkg-editor-adc40-flag/004adc40.json"
+  ]
+}

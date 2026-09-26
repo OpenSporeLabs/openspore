@@ -1,0 +1,398 @@
+{
+  "schema": "openspore-worker-metadata-1",
+  "package": "wave13-w1-core-b07",
+  "va": "0x00c30c80",
+  "address": "0x00c30c80",
+  "function_address": "0x00c30c80",
+  "entry_address": "0x00c30c80",
+  "ghidra_name": "FUN_00c30c80",
+  "normalized_symbol": "sim_core_00c30c80",
+  "reconstructed_symbol": "sim_core_00c30c80",
+  "declaration": "extern \"C\" std::uint32_t FUN_00c30c80_resolve_record_by_field(openspore::b07::RecordIdOwner* self);",
+  "source_files": [
+    "reconstruction/staging/wave13-w1-core-b07/00c30c80_resolve_record_by_field.cpp",
+    "reconstruction/staging/wave13-w1-core-b07/b07_opaque_types.hpp",
+    "reconstruction/staging/wave13-w1-core-b07/b07_model_test.cpp"
+  ],
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "calling_convention_observation": "ECX is dereferenced immediately at 0x00c30c80 MOV EAX,dword ptr [ECX + 0xb0]; no instruction reads the stack, and both exits are a bare RET (0x00c30ca5, no immediate), so the callee pops nothing.",
+    "return_type": "std::uint32_t",
+    "return_semantics": "pointer to the resolved record, or 0 when the id is unset or unresolvable; otherwise the tail callee's result",
+    "return_register": "EAX",
+    "return_width_bytes": 4,
+    "return_observation": "0x00c30ca3 XOR EAX,EAX is the only zero return; the other path is 0x00c30c9e JMP 0x00bba500, a tail transfer, so EAX comes straight from that function.",
+    "ret_form": "RET",
+    "termination": "0x00c30ca5 RET",
+    "stack_cleanup_bytes": 0,
+    "stack_cleanup_owner": "caller (nothing is pushed at entry)",
+    "stack_arguments": [],
+    "ordinary_stack_argument_slots": 0,
+    "saved_registers": [],
+    "receiver": true,
+    "hidden_receiver": "owner of the record id at +0xb0",
+    "hidden_this_register": "ECX, read at 0x00c30c80",
+    "frame": "PUSH ESI / POP ESI only; the pushed register is used as the surviving sub-object pointer across the two calls"
+  },
+  "layout": {
+    "entry_address": "0x00c30c80",
+    "body_start": "0x00c30c80",
+    "body_end": "0x00c30ca5",
+    "body_span_bytes": 38,
+    "body_bytes_hex": "8b81b000000083f8ff741850e80fc6f0ff8bc8e860f7ff85c074078bc8e95d98f8ff33c0c3",
+    "instruction_count": 13,
+    "instructions": [
+      {
+        "address": "0x00c30c80",
+        "mnemonic": "MOV",
+        "operands": "EAX,dword ptr [ECX + 0xb0]"
+      },
+      {
+        "address": "0x00c30c86",
+        "mnemonic": "CMP",
+        "operands": "EAX,-0x1"
+      },
+      {
+        "address": "0x00c30c89",
+        "mnemonic": "JZ",
+        "operands": "0x00c30ca3"
+      },
+      {
+        "address": "0x00c30c8b",
+        "mnemonic": "PUSH",
+        "operands": "EAX"
+      },
+      {
+        "address": "0x00c30c8c",
+        "mnemonic": "CALL",
+        "operands": "0x00b3d2a0"
+      },
+      {
+        "address": "0x00c30c91",
+        "mnemonic": "MOV",
+        "operands": "ECX,EAX"
+      },
+      {
+        "address": "0x00c30c93",
+        "mnemonic": "CALL",
+        "operands": "0x00ba6d80"
+      },
+      {
+        "address": "0x00c30c98",
+        "mnemonic": "TEST",
+        "operands": "EAX,EAX"
+      },
+      {
+        "address": "0x00c30c9a",
+        "mnemonic": "JZ",
+        "operands": "0x00c30ca3"
+      },
+      {
+        "address": "0x00c30c9c",
+        "mnemonic": "MOV",
+        "operands": "ECX,EAX"
+      },
+      {
+        "address": "0x00c30c9e",
+        "mnemonic": "JMP",
+        "operands": "0x00bba500"
+      },
+      {
+        "address": "0x00c30ca3",
+        "mnemonic": "XOR",
+        "operands": "EAX,EAX"
+      },
+      {
+        "address": "0x00c30ca5",
+        "mnemonic": "RET",
+        "operands": ""
+      }
+    ],
+    "padding_after": "0x00c30ca6 onwards is cc cc cc cc cc cc cc cc cc cc cc",
+    "frame_shape": "no stack frame; ESI is saved and restored around the calls",
+    "reads": [
+      "[ECX + 0xb0] the record id"
+    ],
+    "writes": "none; the function mutates no memory of its own"
+  },
+  "observed_mechanics": [
+    "0x00c30c80: MOV EAX,dword ptr [ECX + 0xb0] is the only field read; the whole function is a projection of that one 32-bit id.",
+    "0x00c30c86/0x00c30c89: CMP EAX,-0x1 / JZ -1 is an explicit invalid-id sentinel: it short-circuits to the zero return without touching any global.",
+    "0x00c30c8b/0x00c30c8c: the id is pushed and 0x00b3d2a0 is called. That callee is exactly MOV EAX,dword ptr [0x0167eae4] / RET, so it ignores the pushed word and returns the global handle table; because its RET is bare the pushed id stays on the stack.",
+    "0x00c30c91/0x00c30c93: the pushed id is therefore the stack argument of 0x00ba6d80, which is __thiscall with one 4-byte argument (RET 0x4) and resolves it: handle 0 returns [table + 0x14c], handle -1 returns 0, and any other handle is looked up in the two-level table at [table + 0xc8] with page = handle >> 12 and slot = handle & 0xfff.",
+    "0x00c30c98/0x00c30c9a: an unresolved handle yields the zero return.",
+    "0x00c30c9c/0x00c30c9e: the resolved handle is passed in ECX and control is tail-transferred with JMP, not CALL, so 0x00bba500's return value is this function's return value and no cleanup is inserted.",
+    "0x00bba500 is itself a lazy accessor with a cache: [owner + 0x80] is reused only when [cached + 0x504] == [owner + 0x74], otherwise 0x00401090 and 0x004df550 re-resolve it; a zero id returns the cache directly and a failed re-resolve calls 0x00bba2a0 first."
+  ],
+  "fields_and_offsets": [
+    {
+      "offset": "+0xb0",
+      "field": "32-bit record id, -1 when unset",
+      "proved_by": "0x00c30c80 MOV EAX,dword ptr [ECX + 0xb0] and 0x00c30c86 CMP EAX,-0x1",
+      "confidence": "high"
+    },
+    {
+      "offset": "+0x14c",
+      "field": "handle-table slot for handle 0",
+      "proved_by": "0x00ba6d88 MOV EAX,dword ptr [ECX + 0x14c]",
+      "confidence": "high"
+    },
+    {
+      "offset": "+0xc8",
+      "field": "page table pointer of the handle table",
+      "proved_by": "0x00ba6d9b MOV ECX,dword ptr [ECX + 0xc8]",
+      "confidence": "high"
+    },
+    {
+      "offset": "+0x74",
+      "field": "id validated against the cached record",
+      "proved_by": "0x00bba503 MOV ECX,dword ptr [ESI + 0x74] and 0x00bba531 CMP dword ptr [EDX + 0x504],ECX",
+      "confidence": "high"
+    },
+    {
+      "offset": "+0x80",
+      "field": "cached record pointer",
+      "proved_by": "0x00bba51f MOV EAX,dword ptr [ESI + 0x80] and 0x00bba546 MOV dword ptr [ESI + 0x80],EAX",
+      "confidence": "high"
+    },
+    {
+      "offset": "+0x4c",
+      "field": "flag compared against 1 in the zero-id path",
+      "proved_by": "0x00bba50d CMP dword ptr [ESI + 0x4c],0x1",
+      "confidence": "high"
+    }
+  ],
+  "constants": [
+    {
+      "value": "0xffffffff",
+      "at": "0x00c30c86",
+      "meaning": "invalid/unset id sentinel"
+    },
+    {
+      "value": "0xc",
+      "at": "0x00ba6da3",
+      "meaning": "handle page shift (4096 handles per page)"
+    },
+    {
+      "value": "0xfff",
+      "at": "0x00ba6dac",
+      "meaning": "handle slot mask"
+    },
+    {
+      "value": "0x14",
+      "at": "0x00ba6da6 LEA EAX,[EAX + EAX*0x4]",
+      "meaning": "page stride of 20 bytes in the outer handle table"
+    },
+    {
+      "value": "0x504",
+      "at": "0x00bba531",
+      "meaning": "id field inside a cached record, used to validate the cache"
+    },
+    {
+      "value": "0x4ec",
+      "at": "0x00c32f2f (caller)",
+      "meaning": "a 3-float vector read from the returned record by 0x00c32cd0"
+    }
+  ],
+  "globals": [
+    {
+      "address": "0x0167eae4",
+      "role": "global handle table pointer read by 0x00b3d2a0",
+      "observed_value": "0x00000000 in the file image (uninitialised .data); the value is only set at runtime"
+    }
+  ],
+  "virtual_dispatch": [],
+  "control_flow": {
+    "switch_tables": [],
+    "loops": [],
+    "early_exits": [
+      {
+        "at": "0x00c30c89",
+        "condition": "id == -1",
+        "effect": "return 0"
+      },
+      {
+        "at": "0x00c30c9a",
+        "condition": "resolved handle == 0",
+        "effect": "return 0"
+      }
+    ],
+    "tail_transfer": {
+      "at": "0x00c30c9e",
+      "target": "0x00bba500",
+      "note": "JMP, so the callee's result is returned verbatim"
+    },
+    "branch_polarity": [
+      "0x00c30c89 JZ fires on the invalid id, not on a valid one",
+      "0x00c30c9a JZ fires when the resolution failed"
+    ]
+  },
+  "callers_evidence": [
+    {
+      "callsite": "0x00c32f2a",
+      "caller": "0x00c32cd0",
+      "form": "CALL with ECX = EBP",
+      "result_use": "0x00c32f2f FLD float ptr [EAX + 0x4ec] then EAX += 0x4ec and three floats are copied out, so the result is a record pointer whose +0x4ec holds a 3-float vector"
+    },
+    {
+      "callsite": "0x00c4914e, 0x00c4918e, 0x0102ceb3, 0x00e39ae4, 0x00e39b43, 0x00d066be",
+      "caller": "6 further callers in gameplay logic",
+      "form": "CALL",
+      "result_use": "not inspected"
+    },
+    {
+      "callsite": "0x00aec21b, 0x00ba5c59, 0x00c738d5, 0x00cbc8c2, 0x00e1bfeb, 0x00fdea37, 0x00fe08e3, 0x01005d92, 0x010161ac",
+      "caller": "9 further callers",
+      "form": "CALL",
+      "result_use": "not inspected"
+    }
+  ],
+  "callees_evidence": [
+    {
+      "callsite": "0x00c30c8c",
+      "callee": "0x00b3d2a0",
+      "form": "CALL",
+      "args": "cdecl, the pushed id is ignored by the callee",
+      "result_use": "MOV ECX,EAX - the global handle table becomes the receiver of the next call",
+      "identity": "two-instruction global getter: MOV EAX,dword ptr [0x0167eae4] / RET"
+    },
+    {
+      "callsite": "0x00c30c93",
+      "callee": "0x00ba6d80",
+      "form": "CALL",
+      "args": "ECX = handle table, stack = the id pushed at 0x00c30c8b",
+      "result_use": "TEST EAX,EAX - a zero result short-circuits to the zero return",
+      "identity": "handle resolver: 0 -> [this + 0x14c], -1 -> 0, otherwise a two-level page/slot lookup through [this + 0xc8]"
+    },
+    {
+      "callsite": "0x00c30c9e",
+      "callee": "0x00bba500",
+      "form": "JMP (tail transfer)",
+      "args": "ECX = the resolved handle",
+      "result_use": "its EAX becomes this function's return value",
+      "identity": "lazy record accessor with a cache at owner+0x80 validated by [cached + 0x504] == [owner + 0x74]"
+    }
+  ],
+  "analogue_functions": [
+    {
+      "va": "0x00bba500",
+      "relation": "the tail callee; a cached record accessor whose cache validity check is a field compare"
+    },
+    {
+      "va": "0x00c04750",
+      "relation": "same subsystem and the same 0x4e0-stride record objects (see 00c04750 metadata)"
+    },
+    {
+      "va": "0x00ba6d80 / 0x00b3d2a0",
+      "relation": "the two-step global handle resolution the body performs"
+    }
+  ],
+  "sdk_correspondence": {
+    "status": "UNRESOLVED",
+    "observation": "0x00f3c0e0, one hop further down the same chain, dereferences the SDK global App::sScenarioMode (Spore/App/ScenarioMode.h declares cScenarioMode* sScenarioMode) and branches on [sScenarioMode + 0xcc] == 2. That is the only SDK anchor in this chain and it is two calls away, so no SDK name is claimed for this function.",
+    "sdk_paths_read": [
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/App/ScenarioMode.h"
+    ],
+    "not_asserted": "No class, method or field name from the SDK is claimed."
+  },
+  "semantic_contract": "Resolve the 32-bit record id stored at this+0xb0 to a record pointer. An id of -1 is the unset sentinel and returns 0 without touching any global. Otherwise the id is pushed, the global handle table at 0x0167eae4 is fetched by a two-instruction getter, and the handle is resolved through that table (handle 0 is a dedicated field at +0x14c, handle -1 resolves to 0, anything else is a page/slot lookup). A zero resolution returns 0. A non-zero resolution is tail-transferred to 0x00bba500 and that function's result is returned unchanged, with no post-processing in this body.",
+  "subsystem": "Resolves the 32-bit record id at this+0xb0 through the global handle table at 0x0167eae4 and tail-transfers the result to the cached record accessor 0x00bba500, returning 0 for the -1 sentinel or an unresolved handle.",
+  "classification": "BOUNDED_SEMANTIC",
+  "classification_rationale": "Every instruction, field offset, constant, global and branch polarity is read directly from the 13-instruction body, and the three callees are read directly as well (one of them, 0x00ba6d80, resolves the handle table layout). It is not STRONG_SEMANTIC because two material elements stay bounded: the owning class of the +0xb0 field is not identified in any of the 15 callers, and the domain meaning of the id, of the handle table and of the returned record is not established - the 0x4e0-stride record shape is shared with 0x00c04750, but nothing in the binary names the record type.",
+  "semantic_findings": [
+    "The function is a two-level indirection: an id field on the receiver is resolved through a global handle table before any record is touched.",
+    "The -1 sentinel is checked on the receiver's own field, so an uninitialised owner costs one compare and never reaches the global.",
+    "The final call is a tail transfer, so the record accessor's cache-validation logic is the only place where the record is obtained and this function adds no semantics of its own beyond the two guards.",
+    "0x00bba500's cache is validated by comparing an id field inside the cached record, so a stale cache is detected by data comparison rather than by any generation counter."
+  ],
+  "unresolved_questions": [
+    "Which class owns the +0xb0 id? All 15 callers pass a different receiver and none of them identifies the owner in a way that can be checked statically.",
+    "What does the id denote, and what is the record type? The returned record is read at +0x4ec as a 3-float vector by one caller and at +0x504 as an id by 0x00bba500, but no name for it is established.",
+    "What are the semantics of the 0x00bba2a0 call in the zero-id and failed-lookup paths? Its body was not decompiled in this batch.",
+    "The handle table's page stride of 20 bytes for 4096-entry pages is unusual (five pointers per outer entry); whether the outer table is really indexed by page was not cross-checked against a writer of that table.",
+    "Whether the value at 0x0167eae4 is a singleton or is re-assigned during play is unobserved: the file image holds zero."
+  ],
+  "confidence": {
+    "body_bytes": 1.0,
+    "instruction_list": 1.0,
+    "abi": 1.0,
+    "control_flow": 1.0,
+    "field_offsets": 0.95,
+    "callee_identities": 0.9,
+    "global_semantics": 0.5,
+    "domain_identity": 0.2
+  },
+  "runtime_gates": [
+    "No original-process trace exists for this address.",
+    "The record type, the handle table and the meaning of the +0xb0 id can only be settled with a runtime trace that shows the resolved record in use."
+  ],
+  "evidence": [
+    "reconstruction/evidence/00c30c80/evidence.json",
+    "reconstruction/evidence/00c30c80/context.json",
+    "GhidraMCP decompile/disassemble of 0x00c30c80, 0x00b3d2a0, 0x00ba6d80, 0x00bba500, 0x00f3c0e0 and a disassembly window at 0x00c32f10"
+  ],
+  "tooling_evidence": [
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x00c30c80",
+      "observation": "13 instructions, RET with no immediate, JMP tail transfer to 0x00bba500"
+    },
+    {
+      "tool": "ghidra_read_memory",
+      "address": "0x00c30c80",
+      "observation": "38 bytes then cc padding, matching layout.body_bytes_hex"
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x00b3d2a0",
+      "observation": "MOV EAX,dword ptr [0x0167eae4] ; RET - two instructions, bare RET"
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x00ba6d80",
+      "observation": "MOV EDX,dword ptr [ESP + 0x4] ... RET 0x4 with the 0/0xffffffff/two-level-page cases"
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x00bba500",
+      "observation": "cache at +0x80 validated by CMP dword ptr [EDX + 0x504],ECX, 0x00401090 and 0x004df550 on a miss"
+    },
+    {
+      "tool": "ghidra_read_memory",
+      "address": "0x0167eae4",
+      "observation": "16 zero bytes - the global is uninitialised in the file image"
+    },
+    {
+      "tool": "ghidra_disassemble_bytes",
+      "address": "0x00c32f10",
+      "observation": "0x00c32f2a CALL 0x00c30c80 then FLD dword ptr [EAX + 0x4ec] and a 3-float copy"
+    }
+  ],
+  "body_reconstruction": "Simulator",
+  "result_summary": {
+    "status": "implemented",
+    "source": "reconstruction/staging/wave13-w1-core-b07/00c30c80_resolve_record_by_field.cpp",
+    "claim_scope": "The 13-instruction body and all three callees are reconstructed as opaque ports. No semantic name and no owning class is claimed.",
+    "byte_exactness": "Not attempted: the body forwards two calls and a tail transfer, and the ports are function pointers in the model, so the emitted code differs while preserving the order of operations, the offsets and the branch polarity."
+  },
+  "provenance": {
+    "binary": "SPORE/SporeBin/SporeApp.exe",
+    "binary_version": "Spore 3.1.0.22",
+    "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+    "image_base": "0x00400000",
+    "worker_id": "wave13-w1-core-b07",
+    "implementer_id": "wave13-w1-b07",
+    "batch_id": "b07",
+    "package": "wave13-w1-core-b07",
+    "date": "2026-09-26",
+    "tooling": "Ghidra 12.1.2 headless via ghidra-mcp, program SporeApp.exe",
+    "runtime_evidence": "none; no original-process trace was captured"
+  },
+  "validation": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/wave13-w1-core-b07 reconstruction/staging/wave13-w1-core-b07/*.cpp",
+    "model_test_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/wave13-w1-core-b07 reconstruction/staging/wave13-w1-core-b07/*.cpp -o /tmp/opencode/wave13-w1-core-b07-model && /tmp/opencode/wave13-w1-core-b07-model",
+    "syntax": "passed",
+    "model_test": "passed"
+  }
+}

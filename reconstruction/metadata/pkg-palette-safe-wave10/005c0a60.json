@@ -1,0 +1,196 @@
+{
+  "schema": "pkg-palette-safe-wave10.function-handoff.v1",
+  "package": "PKG-PALETTE-SAFE-WAVE10",
+  "subsystem": "UI.PalettePage",
+  "va": "0x005c0a60",
+  "ghidra_name": "FUN_005c0a60",
+  "normalized_symbol": "page_visible_slots_refresh_005c0a60",
+  "semantic_label": "page navigation refresh: count visible category slots, enable or disable the nav control, and reformat the '<n>/<total>' label when the cached pair changed",
+  "declaration": "void __thiscall page_visible_slots_refresh_005c0a60(OpaquePage* self, std::uint32_t argument)",
+  "abi": {
+    "architecture": "x86-32",
+    "calling_convention": "thiscall with callee stack cleanup",
+    "receiver_register": "ECX",
+    "receiver_type": "OpaquePage*",
+    "frame": "SUB ESP,0x14 / PUSH EBX / PUSH EDI / PUSH EBP / PUSH ESI; the receiver is copied to EDI and the category pointer is reloaded from EDI+0x14 on every loop iteration",
+    "stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "ESP+0x04",
+        "width_bytes": 4,
+        "machine_type": "std::uint32_t",
+        "normalized_name": "argument",
+        "native_reads": [],
+        "note": "the entry accepts one stack word but never reads it; the body only tests byte ptr [ESP+0x8],0x1 against the deleting-destructor idiom position, so the argument is an unused formal"
+      }
+    ],
+    "stack_cleanup_bytes": 4,
+    "ret_form": "RET 0x4",
+    "return_register": "EAX",
+    "return_width_bytes": 0,
+    "return_contract": "void; the body never writes EAX and every exit ends at RET 0x4",
+    "exit_count": 4
+  },
+  "observed_body": {
+    "entry": "0x005c0a60",
+    "body_end_inclusive": "0x005c0b75",
+    "instruction_count": 101,
+    "byte_length": 280,
+    "raw_bytes_sha256": "e5505d22109284101751702c1f32cabd3b87ef545c36a24864b85936baa0fe6d",
+    "raw_bytes_hex": "83ec1453578bf98b471433db3bc30f84fa000000395f180f84f100000055568bb08c0000002bb08800000033edc1fe033bf3895c24107e2feb068d9b000000008b4f1453e8171f000084c074108b47143b98a00000007504896c241045433bde7cde83fd027d228b7f1c85ff0f849a0000008b178b427c6a006a018bcfffd05e5d5f5b83c414c204008b4f1c85c9740b8b118b427c6a016a01ffd08b7424103977207505396f247463558d4e0151b8ac7b66018d54241c68307c3f01528944242489442428c744242cae7b6601e81ed5e5ff8b4f188b018b5424248b808000000083c41052ffd08b4c241c8b4424142bc883e1fe83f902897720896f247e0d85c0740950e81768980083c4045e5d5f5b83c414c20400cccc",
+    "instruction_list": [
+      "0x005c0a60 SUB ESP,0x14 / PUSH EBX / PUSH EDI / MOV EDI,ECX",
+      "0x005c0a67 MOV EAX,[EDI+0x14] / XOR EBX,EBX / CMP EAX,EBX / JZ 0x005c0b6e  (null category is inert)",
+      "0x005c0a74 CMP [EDI+0x18],EBX / JZ 0x005c0b6e  (null text object is inert)",
+      "0x005c0a7f MOV ESI,[EAX+0x8c] / SUB ESI,[EAX+0x88] / SAR ESI,0x3  (slot count from the eight byte stride)",
+      "0x005c0aa0 loop: MOV ECX,[EDI+0x14] / PUSH EBX / CALL 0x005c29c0 / TEST AL,AL",
+      "0x005c0aad MOV EAX,[EDI+0x14] / CMP EBX,[EAX+0xa0] / MOV [ESP+0x10],EBP  (selected = visible count before the current slot)",
+      "0x005c0ac2 CMP EBP,0x2 / JGE 0x005c0ae9  (two or more visible slots reformat the label)",
+      "0x005c0ac7 MOV EDI,[EDI+0x1c] / TEST EDI,EDI / JZ 0x005c0b6c / MOV EDX,[EDI] / MOV EAX,[EDX+0x7c] / PUSH 0x0 / PUSH 0x1 / CALL EAX  (nav mode off)",
+      "0x005c0ae9 MOV ECX,[EDI+0x1c] / vtable slot +0x7c with PUSH 0x1 / PUSH 0x1  (nav mode on)",
+      "0x005c0afb MOV ESI,[ESP+0x10] / CMP [EDI+0x20],ESI / JNZ 0x005c0b09 / CMP [EDI+0x24],EBP / JZ 0x005c0b6c  (cached pair short circuit)",
+      "0x005c0b09 PUSH EBP / LEA ECX,[ESI+0x1] / PUSH ECX / PUSH 0x13f7c30 / LEA EDX,[ESP+0x1c] / CALL 0x0041e050  (format '<n>/<total>')",
+      "0x005c0b32 MOV ECX,[EDI+0x18] / vtable slot +0x80 with PUSH EDX  (text set)",
+      "0x005c0b47 span = buffer.end - buffer.begin; AND ECX,0xfffffffe; CMP ECX,0x2",
+      "0x005c0b57 MOV [EDI+0x20],ESI / MOV [EDI+0x24],EBP  (cache written before the span gate)",
+      "0x005c0b5d JLE 0x005c0b6c / TEST EAX,EAX / JZ 0x005c0b6c / PUSH EAX / CALL 0x00f47380 / ADD ESP,0x4  (commit the buffer when the span is wide enough)"
+    ],
+    "direct_callee_calls": [
+      "0x005c29c0",
+      "0x0041e050",
+      "0x00f47380"
+    ]
+  },
+  "mechanics": [
+    "return immediately and untouched when the category at +0x14 is null",
+    "return immediately and untouched when the text object at +0x18 is null",
+    "derive the slot count as ((end_8c - begin_88) >> 3), the eight byte category slot stride",
+    "call the visibility port 0x005c29c0 once per slot with the freshly reloaded category pointer",
+    "count visible slots into total and record selected as the running count when index == current_a0",
+    "when total < 2 call the nav vtable slot +0x7c with (1, 0) and return",
+    "when total >= 2 call the nav vtable slot +0x7c with (1, 1) before the label work",
+    "short circuit and return when the cached pair at +0x20/+0x24 already matches",
+    "format into a stack OpaqueTextBuffer initialised to the 0x01667bac scratch pair with end 0x01667bae",
+    "hand the formatted begin pointer to the text vtable slot +0x80",
+    "write the cached pair at +0x20 and +0x24 before the span gate",
+    "release the buffer through 0x00f47380 only when (end - begin) & 0xfffffffe exceeds 2 and begin is non null"
+  ],
+  "ports": [
+    {
+      "va": "0x005c29c0",
+      "name": "FUN_005c29c0",
+      "kind": "thiscall bool visibility probe",
+      "port_field": "unresolved_005c29c0",
+      "body_defined_here": false,
+      "observed_abi": "thiscall, one stack word, AL return, TEST AL,AL at the call site",
+      "default": "test model implementation; not promoted"
+    },
+    {
+      "va": "0x0041e050",
+      "name": "FUN_0041e050",
+      "kind": "cdecl text formatter",
+      "port_field": "unresolved_0041e050",
+      "body_defined_here": false,
+      "observed_abi": "cdecl, four stack words, caller cleanup ADD ESP,0x10",
+      "default": "test model implementation; not promoted"
+    },
+    {
+      "va": "0x00f47380",
+      "name": "FUN_00f47380",
+      "kind": "cdecl buffer release",
+      "port_field": "unresolved_00f47380",
+      "body_defined_here": false,
+      "observed_abi": "cdecl, one stack word, caller cleanup ADD ESP,0x4",
+      "default": "test model implementation; not promoted"
+    }
+  ],
+  "globals_read": [
+    "0x013f7c30 (format literal)",
+    "0x01667bac (scratch buffer base)",
+    "0x01667bae (scratch buffer end)"
+  ],
+  "runtime_gates": [
+    "runtime validation not performed; static decompilation and disassembly only",
+    "the visibility port 0x005c29c0 is modelled as an opaque bool seam and is not promoted",
+    "the text formatter 0x0041e050 and the release port 0x00f47380 remain dependency-only",
+    "the nav and text vtable owners at slot +0x7c and +0x80 are unattributed in the live database",
+    "the decoded meaning of the format literal at 0x013f7c30 is inferred as '<n>/<total>' and is not confirmed by a runtime render",
+    "the unused formal argument is retained in the signature to keep the RET 0x4 cleanup width exact"
+  ],
+  "phase": "integrated",
+  "review_status": "reviewed_static_semantic_abi_and_runtime_lifecycle",
+  "runtime_validation": 0,
+  "worker_ownership": "pkg-palette-safe-wave10-target-only",
+  "ghidra_provenance": {
+    "ghidra_program": "SporeApp.exe",
+    "ghidra_project": "SporeProject",
+    "ghidra_mutated": false,
+    "ghidra_saved": false,
+    "binary": "SPORE/SporeBin/SporeApp.exe",
+    "version": "3.1.0.22",
+    "architecture": "x86:LE:32",
+    "image_base": "0x00400000",
+    "captured_on": "2026-09-25",
+    "tools": [
+      "ghidra_get_function_by_address",
+      "ghidra_disassemble_function",
+      "ghidra_get_current_program_info"
+    ],
+    "evidence_rule": "The disassembly listed in observed_body was read back from the live Ghidra database for SporeApp.exe at the addresses shown, and the byte extent was read from the .text section of SPORE/SporeBin/SporeApp.exe (.text VMA 0x00401000, file offset 0x400). The sha256 below covers exactly that byte extent. No Ghidra symbol, structure, comment or program state was created or modified."
+  },
+  "implementation": {
+    "status": "promoted to canonical",
+    "canonical_status": "present; promoted by the sole integrator in batch-2026-09-25-wave10-safe-core",
+    "namespace": "openspore::reconstruction::pkg_palette_safe_wave10",
+    "header": "src/reconstruction/pkg_palette_safe_wave10/pkg_palette_safe_wave10.hpp",
+    "source": "src/reconstruction/pkg_palette_safe_wave10/pkg_palette_safe_wave10.cpp",
+    "model_test": "src/reconstruction/pkg_palette_safe_wave10/pkg_palette_safe_wave10_model_test.cpp",
+    "staged_from": "reconstruction/staging/pkg-palette-safe-wave10",
+    "metadata": "reconstruction/metadata/pkg-palette-safe-wave10/005c0a60.json"
+  },
+  "model_test_cases": [
+    "test_page_null_category_is_inert",
+    "test_page_null_text_is_inert",
+    "test_page_empty_category_disables_nav",
+    "test_page_one_visible_slot_disables_nav",
+    "test_page_two_visible_slots_format_label",
+    "test_page_hidden_current_slot_falls_back_to_zero",
+    "test_page_current_slot_before_first_visible_keeps_zero",
+    "test_page_cached_pair_short_circuits_label",
+    "test_page_cached_total_mismatch_still_formats",
+    "test_page_null_nav_still_updates_label",
+    "test_page_label_span_gate_skips_commit",
+    "test_page_null_label_pointer_skips_commit",
+    "test_page_slot_span_uses_eight_byte_stride",
+    "test_page_category_pointer_is_reloaded_each_iteration",
+    "test_page_writes_only_the_cached_pair",
+    "test_page_stack_discipline"
+  ],
+  "focused_test_evidence": {
+    "command": "clang++ -m32 -std=c++17 -O0/-O2 [-DNDEBUG] -Wall -Wextra -Wpedantic -Werror -I <canonical dir> <source> <model test> && <binary>",
+    "configurations": [
+      "-O0",
+      "-O2",
+      "-O0 -DNDEBUG",
+      "-O2 -DNDEBUG"
+    ],
+    "normal": "passed at -O0 and at -O2",
+    "ndebug": "passed at -O0 -DNDEBUG and at -O2 -DNDEBUG",
+    "assertions_weakened": 0,
+    "assertions_removed": 0,
+    "test_count": 16,
+    "compiled_ret_form_matches_ghidra": true
+  },
+  "helper_and_data_vas_not_promoted": [
+    "0x00571db0",
+    "0x00e30f90",
+    "0x00f47380",
+    "0x008105b0",
+    "0x005c29c0",
+    "0x005507a0",
+    "0x0067dcc0",
+    "0x00b3d240",
+    "0x00b3d3c0",
+    "0x011e0744"
+  ]
+}

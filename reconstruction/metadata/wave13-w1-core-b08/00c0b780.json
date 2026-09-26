@@ -1,0 +1,406 @@
+{
+  "schema": "openspore-worker-metadata-1",
+  "package": "wave13-w1-core-b08",
+  "va": "0x00c0b780",
+  "address": "0x00c0b780",
+  "function_address": "0x00c0b780",
+  "entry_address": "0x00c0b780",
+  "ghidra_name": "FUN_00c0b780",
+  "normalized_symbol": "sim_core_00c0b780_sub_object_flag_608",
+  "reconstructed_symbol": "SimCore_00c0b780_sub_object_flag_608",
+  "declaration": "extern \"C\" std::uint32_t SimCore_00c0b780_sub_object_flag_608(OpaqueC0b780Owner* self);",
+  "source_files": [
+    "reconstruction/staging/wave13-w1-core-b08/wave13_w1_core_b08.hpp",
+    "reconstruction/staging/wave13-w1-core-b08/wave13_w1_core_b08_reconstructed.hpp",
+    "reconstruction/staging/wave13-w1-core-b08/wave13_w1_core_b08_test_stubs.hpp",
+    "reconstruction/staging/wave13-w1-core-b08/wave13_w1_core_b08_test_stubs.cpp",
+    "reconstruction/staging/wave13-w1-core-b08/c0b780_sub_object_flag_608.cpp",
+    "reconstruction/staging/wave13-w1-core-b08/wave13_w1_core_b08_model_test.cpp"
+  ],
+  "subsystem": "Simulator",
+  "cluster": "sim-core-systems",
+  "triage_category": "GAMEPLAY_LOGIC",
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "calling_convention_observation": "The receiver is read from ECX at 0x00c0b780 and the stack is never touched. All 18 recorded callsites load ECX immediately before the CALL: 0x00ba27f8 MOV ECX,EDI / 0x00ba27fa CALL; 0x00ba2813 MOV ECX,EBX / 0x00ba2815 CALL; 0x00e8bfd0 MOV ECX,dword ptr [ESI + 0xC] / 0x00e8bfd3 CALL. Ghidra spells the decompilation __fastcall with one parameter for exactly this reason.",
+    "return_type": "std::uint32_t",
+    "return_semantics": "A full dword 0 or 1, never a byte. XOR ECX,ECX / CMP ECX,[EAX + 0x608] sets CF iff the memory dword is unsigned-greater than zero; SBB EAX,EAX yields 0 or 0xFFFFFFFF; NEG EAX maps 0xFFFFFFFF to 1. Both EAX writes are 32-bit, so bits 8..31 of the answer are written rather than left as the caller had them. Every inspected consumer tests AL, which is consistent but does not narrow the width.",
+    "return_register": "EAX",
+    "return_width_bytes": 4,
+    "ret_form": "RET",
+    "termination": "single RET at 0x00c0b792",
+    "stack_cleanup_bytes": 0,
+    "stack_cleanup_owner": "caller",
+    "stack_arguments": [],
+    "ordinary_stack_argument_slots": 0,
+    "saved_registers": [],
+    "receiver": true,
+    "hidden_receiver": "ECX, read at 0x00c0b780",
+    "hidden_this_register": "ECX is read once and then zeroed at 0x00c0b786. The zeroing is part of the idiom, not evidence that ECX is unused."
+  },
+  "layout": {
+    "entry_address": "0x00c0b780",
+    "body_start": "0x00c0b780",
+    "body_end": "0x00c0b792",
+    "body_span_bytes": 19,
+    "body_bytes_hex": "8b81200b000033c93b88080600001bc0f7d8c3",
+    "instruction_count": 6,
+    "instructions": [
+      {
+        "address": "0x00c0b780",
+        "bytes": "8B 81 20 0B 00 00",
+        "mnemonic": "MOV",
+        "operands": "EAX,dword ptr [ECX + 0xB20]"
+      },
+      {
+        "address": "0x00c0b786",
+        "bytes": "33 C9",
+        "mnemonic": "XOR",
+        "operands": "ECX,ECX"
+      },
+      {
+        "address": "0x00c0b788",
+        "bytes": "3B 88 08 06 00 00",
+        "mnemonic": "CMP",
+        "operands": "ECX,dword ptr [EAX + 0x608]"
+      },
+      {
+        "address": "0x00c0b78E",
+        "bytes": "1B C0",
+        "mnemonic": "SBB",
+        "operands": "EAX,EAX"
+      },
+      {
+        "address": "0x00c0b790",
+        "bytes": "F7 D8",
+        "mnemonic": "NEG",
+        "operands": "EAX"
+      },
+      {
+        "address": "0x00c0b792",
+        "bytes": "C3",
+        "mnemonic": "RET",
+        "operands": ""
+      }
+    ],
+    "padding_after": "0x00c0b793..0x00c0b79F are 13 bytes of 0xCC (INT3), the standard inter-function pad, ending exactly where 0x00c0b7a0 begins.",
+    "frame": "none: no PUSH, no SUB ESP, no MOV EBP,ESP, no register save or restore",
+    "reads": "receiver+0xB20 (one dword), then [that pointer + 0x608] (one dword). No global, no stack read.",
+    "writes": "EAX only. No memory write of any kind."
+  },
+  "observed_mechanics": [
+    "0x00c0b780: MOV EAX,dword ptr [ECX + 0xB20] loads a POINTER from the receiver. The next instruction dereferences EAX, so receiver+0xB20 is a sub-object pointer and the value stored there must itself be readable.",
+    "0x00c0b786: XOR ECX,ECX materialises the constant 0 so the following CMP can be a memory-versus-zero compare without a spare register. It destroys the receiver, which is safe because the receiver was consumed one instruction earlier.",
+    "0x00c0b788: CMP ECX,dword ptr [EAX + 0x608] is the only sub-object read. The displacement 0x608 is a signed disp32 (opcode bytes 3B 88 08 06 00 00, mod=10).",
+    "0x00c0b78E: SBB EAX,EAX computes EAX = -CF using no flag beyond CF.",
+    "0x00c0b790: NEG EAX turns 0xFFFFFFFF into 1, completing the branchless != 0.",
+    "0x00c0b792: RET carries no immediate, which is what proves the callee pops zero stack words.",
+    "Live read_memory at 0x00c0b780 returns 8b81200b000033c93b88080600001bc0f7d8c3 followed by 13 bytes of 0xCC, confirming all six instructions and the pad.",
+    "There is NO null check on receiver+0xB20. A null sub-object is dereferenced at 0x00c0b788 and faults. The non-null invariant is a caller obligation, not a guard.",
+    "The predicate is != 0, not == 1: 0x80000000 and 0xFFFFFFFF both answer 1, because the CMP is an unsigned compare against 0.",
+    "ghidra_run_script_inline dword scan of all initialised readable non-executable blocks: 0 hits for this VA; the positive control 0x00e7d660 was found once at 0x01485590"
+  ],
+  "fields_and_offsets": [
+    {
+      "offset": "+0xB20",
+      "access": "read",
+      "width_bytes": 4,
+      "instruction": "0x00c0b780: MOV EAX,dword ptr [ECX + 0xB20]",
+      "meaning": "pointer to a sub-object; the target of the 0x608 read",
+      "confidence": "OBSERVED"
+    },
+    {
+      "offset": "+0x608",
+      "access": "read",
+      "width_bytes": 4,
+      "instruction": "0x00c0b788: CMP ECX,dword ptr [EAX + 0x608]",
+      "meaning": "the dword flag this function tests for non-zero",
+      "confidence": "OBSERVED"
+    },
+    {
+      "offset": "+0xB88",
+      "access": "not touched by this body",
+      "width_bytes": 4,
+      "instruction": "no instruction in 0x00c0b780 mentions 0xB88",
+      "meaning": "an ordering key on the receiver, read by the sibling 0x00c0b8e0; recorded here only to mark it as NOT read by this target",
+      "confidence": "OBSERVED (absence)"
+    }
+  ],
+  "constants": [],
+  "globals": [],
+  "virtual_dispatch": [],
+  "control_flow": {
+    "switch_tables": [],
+    "loops": [],
+    "early_exits": [],
+    "branch_polarity": "There is not a single branch instruction. The whole function is the XOR/CMP/SBB/NEG idiom, which is a branchless != 0. There is therefore no early exit, no fall-through ordering to preserve and no conditional that could be got backwards.",
+    "terminations": [
+      {
+        "address": "0x00c0b792",
+        "form": "RET",
+        "condition": "unconditional"
+      }
+    ],
+    "basic_blocks": 1,
+    "note": "CFG is a single basic block of six instructions."
+  },
+  "callers_evidence": [
+    {
+      "callsite": "0x00ba27fa",
+      "caller": "0x00ba27b0",
+      "form": "CALL",
+      "receiver_setup": "0x00ba27f8 MOV ECX,EDI",
+      "result_use": "TEST AL,AL then JZ"
+    },
+    {
+      "callsite": "0x00ba2815",
+      "caller": "0x00ba27b0",
+      "form": "CALL",
+      "receiver_setup": "0x00ba2813 MOV ECX,EBX",
+      "result_use": "TEST AL,AL then JZ"
+    },
+    {
+      "callsite": "0x00ba2820",
+      "caller": "0x00ba27b0",
+      "form": "CALL",
+      "receiver_setup": "0x00ba281e MOV ECX,EDI",
+      "result_use": "TEST AL,AL then JZ"
+    },
+    {
+      "callsite": "0x00ba284b",
+      "caller": "0x00ba27b0",
+      "form": "CALL",
+      "receiver_setup": "0x00ba2849 MOV ECX,EDI",
+      "result_use": "TEST AL,AL then JZ"
+    },
+    {
+      "callsite": "0x00ba2871",
+      "caller": "0x00ba27b0",
+      "form": "CALL",
+      "receiver_setup": "0x00ba286f MOV ECX,EBX",
+      "result_use": "TEST AL,AL then JZ"
+    },
+    {
+      "callsite": "0x00e8bfd3",
+      "caller": "0x00e8bf20",
+      "form": "CALL",
+      "receiver_setup": "0x00e8bfd0 MOV ECX,dword ptr [ESI + 0xC]",
+      "result_use": "TEST AL,AL then JZ over a two-predicate branch body, then a CALL 0x00c1d460 with PUSH 0x062EDBA6 / PUSH 0xBDE1A55D"
+    },
+    {
+      "callsite": "0x00e8ce34 region",
+      "caller": "0x00e8cd30",
+      "form": "CALL",
+      "receiver_setup": "not disassembled",
+      "result_use": "not inspected"
+    },
+    {
+      "callsite": "0x00c02eb3 / 0x00c04426 / 0x00c24f40 / 0x00d2c144 / 0x00d3d073 / 0x00d3d0a2 / 0x00d582cc / 0x00d5f85a / 0x00d5fb1a / 0x00d71419 / 0x00d714ef / 0x00d71590 / 0x00d74a40 / 0x00d752a1 / 0x00d8cb3e / 0x00d8de7c / 0x00d8f66a / 0x00da8a76 / 0x00dbd315 / 0x010315f7",
+      "caller": "16 further recorded callsites",
+      "form": "CALL",
+      "receiver_setup": "not individually disassembled",
+      "result_use": "not individually inspected; all are recorded as direct-call xrefs in the canonical ledger"
+    }
+  ],
+  "callees_evidence": [],
+  "sibling_and_analogue_evidence": [
+    {
+      "address": "0x00c0b7a0",
+      "name": "FUN_00c0b7a0",
+      "bytes": "8b81200b000033c93b880c0600001bc0f7d8c3",
+      "reading": "identical six-instruction shape, differing only in the flag displacement 0x60C instead of 0x608. Returns (receiver->f_B20->f_60C != 0).",
+      "status": "OBSERVED, read from raw bytes and decompilation"
+    },
+    {
+      "address": "0x00c0b7b8",
+      "name": "FUN_00c0b7b8",
+      "reading": "third member of the same INT3-delimited block. Live bytes at 0x00c0b7b8 begin 56 8B F1 8B 86 20 0B 00 00 83 B8 0C 06 00 00 00 57 8B 7C 24 0C, i.e. PUSH ESI / MOV ESI,ECX / MOV EAX,[ESI + 0xB20] / CMP dword ptr [EAX + 0x60C],0 / PUSH EDI / MOV EDI,[ESP + 0xC] -- it dispatches on the 0x60C slot of the same sub-object.",
+      "status": "OBSERVED from raw bytes"
+    },
+    {
+      "address": "0x00c0b8e0",
+      "name": "FUN_00c0b8e0",
+      "reading": "returns *(int *)(a + 0xB88) - *(int *)(b + 0xB88), an ordering key on the receiver itself. Confirms the receiver is a comparison operand, not a manager.",
+      "status": "OBSERVED"
+    }
+  ],
+  "caller_semantics": [
+    {
+      "caller": "0x00ba27b0",
+      "name": "FUN_00ba27b0",
+      "observation": "The dominant consumer, five of the 18 call sites. It computes delta = FUN_00c0b8e0(b) - FUN_00c0b8e0(a), folds it into a three-way class using DAT_0156C194 (file image 1) and DAT_0156C198 (file image 2): class = delta < 2 ? (1 <= delta ? 1 : 0) : 2. It then returns 6 when a->f_B20 == b->f_B20; 2 when (a->f_B20->f_608 && class != 0); 1 when (b->f_B20->f_608 && ((a->f_B20->f_608 && class == 0) || (a->f_B20->f_60C && class < 2))); 3 when ((a->f_B20->f_608 && b->f_B20->f_60C && class == 0) || (a->f_B20->f_60C && b->f_B20->f_608 && class > 1)); otherwise 4.",
+      "reading": "0x00ba27b0 is a six-valued relation classifier over two simulator objects. 0x00c0b780 supplies one of its two boolean axes. The mapping from the return codes to a named ordering is NOT established.",
+      "status": "OBSERVED body, INFERRED role"
+    },
+    {
+      "caller": "0x00e8bf20",
+      "name": "FUN_00e8bf20",
+      "observation": "Guards EDI in [2,3] (0x00e8bfc6 CMP EDI,0x2 / JL; 0x00e8bfcb CMP EDI,0x3 / JG), then calls this predicate and the +0x60C sibling on [ESI + 0xC] and, if both hold, calls 0x00c1d460 with the immediates 0x062EDBA6 and 0xBDE1A55D.",
+      "status": "OBSERVED"
+    }
+  ],
+  "shared_batch_finding": {
+    "tool": "ghidra_run_script_inline",
+    "observation": "A dword scan of every initialised, readable, NON-EXECUTABLE memory block for each of the six target VAs returned 0 hits. The same scan was validated with a positive control in the same run: 0x00e7d660 was found exactly once, at 0x01485590 in .rdata, which matches the table already recorded in reconstruction/metadata/pkg-shared-default-true-wave12/00b1fbf0.json.",
+    "conclusion": "None of the six targets appears as a dword in any data block, so none of them is a vtable entry or a function-pointer-table entry. All six are reached only by direct CALL. Virtual dispatch INTO these six is excluded by a direct memory read, not inferred from call-graph absence."
+  },
+  "sdk_correspondence": {
+    "caveat": "Spore-ModAPI is a third-party clean-room reconstruction, not original EA source and not EA documentation. Where it is cited below it supplies CANDIDATE NAMES only. The binary is the sole authority for every offset, constant, branch polarity and call shape asserted in this record.",
+    "candidates": []
+  },
+  "semantic_contract": "Reads a sub-object pointer from receiver+0xB20, then reads the dword at +0x608 of that sub-object, and returns the full dword 1 if it is non-zero and 0 otherwise. No branch, no callee, no global, no memory write, no stack argument, no saved register, no virtual dispatch. The sub-object at receiver+0xB20 must be non-null; the body does not check. The predicate is one boolean axis of a six-valued relation classifier in 0x00ba27b0, where it is always consumed as AL after TEST AL,AL.",
+  "classification": "BOUNDED_SEMANTIC",
+  "classification_rationale": "Not STRONG_SEMANTIC. The body, the ABI, both field offsets and the complete control flow are read directly from the disassembly and corroborated by eighteen callsites, but the owning type of the receiver and of the sub-object at +0xB20 are unlocated, so the predicate cannot be named and its role inside the 0x00ba27b0 relation is only partially characterised. The bound is an owning type, which is the BOUNDED_SEMANTIC case. Not STRUCTURAL_ONLY, because the behavioural claims (which dword is tested, what the answer means, that it is a dword and not a byte) are fully established rather than merely structural.",
+  "semantic_findings": [
+    "The body is a branchless != 0 over a two-level indirection: receiver+0xB20, then +0x608 of the result.",
+    "The answer is a full dword 0/1, not a byte in AL, because SBB and NEG both write EAX.",
+    "There is no null guard on the sub-object at +0xB20; a null there faults at 0x00c0b788.",
+    "The predicate is != 0, not == 1: 0x80000000 answers 1.",
+    "A sibling at 0x00c0b7a0 has the identical shape over the flag at +0x60C of the same sub-object, and a third function at 0x00c0b7b8 dispatches on that same 0x60C slot, so +0x608 and +0x60C form a two-slot flag pair inside one sub-object.",
+    "0x00c0cdb0 reaches the same receiver+0xB20 sub-object and reads +0x544, bounding the sub-object's readable extent below by 0x544 and above by 0x610.",
+    "0x00ba27b0 is the semantic anchor: it alternates this predicate with the +0x60C sibling and an ordering key at receiver+0xB88 to return one of 1, 2, 3, 4, 6.",
+    "The address appears in no data block, so it is not a virtual override."
+  ],
+  "unresolved_questions": [
+    "What is the owning type of the receiver? No vtable for it was located and this binary has no RTTI, so nothing beyond the offsets +0xB20 and +0xB88 can be claimed.",
+    "What is the owning type of the sub-object at receiver+0xB20? Only the offsets 0x544, 0x608 and 0x60C inside it are observed.",
+    "What predicate does the dword at +0x608 express? The body proves it is a non-zero test and nothing more.",
+    "What do the return codes 1, 2, 3, 4 and 6 of 0x00ba27b0 mean? Code 5 is never produced by the observed body, which suggests an enumeration this worker cannot name.",
+    "Are +0x608 and +0x60C two independent dwords, a bitfield, or two slots of a small dispatch array? Only their offsets and non-zero-ness are observed.",
+    "Why does 0x00c0b7b8 exist, and what does it do with the 0x60C slot? Its body was read only far enough to establish the flag offset.",
+    "Is the sub-object at +0xB20 ever null in the shipping build? If it can be, this body faults and the caller-side invariant is unverified without a runtime trace.",
+    "Twelve of the eighteen recorded callsites were not individually disassembled, so their receiver setup and result use are recorded from the canonical xref list only."
+  ],
+  "runtime_gates": [
+    "No original-process trace exists for 0x00c0b780. A differential run must confirm the answer is still 0/1 in the shipping build and that no runtime patch retargets it.",
+    "The non-null invariant on receiver+0xB20 must be observed at a concrete callsite before any caller-side guard can be claimed.",
+    "The value of the dword at +0x608, and of the sibling at +0x60C, at the moment 0x00ba27b0 reads them, can only be established at runtime."
+  ],
+  "blockers": [],
+  "evidence": [
+    "reconstruction/evidence/wave13-w1-core-b08/evidence.json",
+    "/tmp/opencode/wave/w1/b08/batch.json",
+    "/tmp/opencode/wave/w1/b08/briefings.json",
+    "knowledgegraph/research/21-decompilation-coverage.json",
+    "knowledgegraph/research/semantic-blueprint.json",
+    "Spore-ModAPI headers listed per target under sdk_candidates",
+    "reconstruction/staging/wave13-w1-core-b08/c0b780_sub_object_flag_608.cpp"
+  ],
+  "tooling_evidence": [
+    {
+      "tool": "ghidra_read_memory",
+      "address_or_argument": "0x00c0b780, length 32",
+      "observation": "8b81200b000033c93b88080600001bc0f7d8c3 then 13 bytes of cc"
+    },
+    {
+      "tool": "ghidra_get_function_by_address",
+      "address_or_argument": "0x00c0b780",
+      "observation": "FUN_00c0b780, body 0x00c0b780..0x00c0b792, 19 bytes"
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address_or_argument": "0x00c0b780",
+      "observation": "bool __fastcall FUN_00c0b780(int param_1) { return *(int *)(*(int *)(param_1 + 0xb20) + 0x608) != 0; }"
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address_or_argument": "0x00c0b780",
+      "observation": "6 instructions, listed in layout"
+    },
+    {
+      "tool": "ghidra_read_memory",
+      "address_or_argument": "0x00c0b780, length 112",
+      "observation": "also yields the sibling body at 0x00c0b7a0 and the head of 0x00c0b7b8"
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address_or_argument": "0x00c0b7a0",
+      "observation": "same shape over the flag at +0x60C"
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address_or_argument": "0x00c0b8e0",
+      "observation": "returns *(int *)(a + 0xB88) - *(int *)(b + 0xB88)"
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address_or_argument": "0x00ba27b0",
+      "observation": "the six-valued relation classifier that consumes this predicate five times"
+    },
+    {
+      "tool": "ghidra_disassemble_bytes",
+      "address_or_argument": "0x00ba27e0..0x00ba2890",
+      "observation": "five CALL 0x00c0b780 sites each preceded by MOV ECX,EDI or MOV ECX,EBX and followed by TEST AL,AL; interleaved CALL 0x00c0b7a0 at 0x00ba2830, 0x00ba2856, 0x00ba2866; returns EAX in {6,2,1,3,4}"
+    },
+    {
+      "tool": "ghidra_disassemble_bytes",
+      "address_or_argument": "0x00e8bfc0..0x00e8bfff",
+      "observation": "0x00e8bfd0 MOV ECX,[ESI + 0xC] / 0x00e8bfd3 CALL 0x00c0b780 / TEST AL,AL / JZ, then the same shape for 0x00c0b7a0, then PUSH 0x062EDBA6 / PUSH 0xBDE1A55D / CALL 0x00c1d460"
+    },
+    {
+      "tool": "ghidra_read_memory",
+      "address_or_argument": "0x0156c190, length 16",
+      "observation": "0x0156C194 = 1 and 0x0156C198 = 2, the two globals 0x00ba27b0 folds the ordering delta with"
+    },
+    {
+      "tool": "ghidra_run_script_inline",
+      "address_or_argument": "ghidra_run_script_inline dword scan of all initialised readable non-executable blocks: 0 hits for this VA; the positive control 0x00e7d660 was found once at 0x01485590",
+      "observation": "0 hits; control 0x00e7d660 found at 0x01485590"
+    }
+  ],
+  "confidence": {
+    "body_bytes": 1.0,
+    "control_flow": 1.0,
+    "abi": 0.95,
+    "field_offsets": 1.0,
+    "return_width": 0.95,
+    "absence_of_null_guard": 1.0,
+    "absence_of_virtual_dispatch": 1.0,
+    "receiver_owning_type": 0.0,
+    "subobject_owning_type": 0.0,
+    "predicate_semantics": 0.15,
+    "role_in_00ba27b0": 0.55,
+    "caller_coverage": 0.4
+  },
+  "body_reconstruction": {
+    "source": "reconstruction/staging/wave13-w1-core-b08/c0b780_sub_object_flag_608.cpp",
+    "status": "implemented",
+    "claim_scope": "The 19-byte body is reconstructed in full and byte-count identical. No semantic name and no owning class are claimed for it.",
+    "preserved_semantics": [
+      "two-level indirection receiver+0xB20 then +0x608",
+      "the answer is the dword 0 or 1, with all 32 bits of EAX written",
+      "the predicate is != 0, so 0x80000000 answers 1",
+      "no null guard on the sub-object, matching the original's crash-on-null behaviour",
+      "no branch, no callee, no global, no memory write",
+      "a bare RET, so the caller owns all stack cleanup"
+    ],
+    "byte_check": "clang++ -m32 -O2 emits MOV EAX,[ECX + 0xB20] / XOR EAX,EAX / CMP dword [ECX + 0x608],0 / SETNE AL / RET for an equivalent source: 19 bytes, the same length and the same semantics, but clang picks SETNE AL where the original uses XOR/CMP/SBB/NEG. The reconstruction keeps the original idiom explicitly, so the divergence is a codegen choice and not a modelling difference. Verified in /tmp/opencode/b08bytes/probe.cpp.",
+    "validation": {
+      "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/wave13-w1-core-b08 reconstruction/staging/wave13-w1-core-b08/*.cpp",
+      "model_test_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/wave13-w1-core-b08 reconstruction/staging/wave13-w1-core-b08/*.cpp -o /tmp/opencode/b08-model && /tmp/opencode/b08-model",
+      "syntax": "passed",
+      "model_test": "passed, exit 0",
+      "byte_check": "documented divergence above"
+    }
+  },
+  "provenance": {
+    "binary": "SPORE/SporeBin/SporeApp.exe",
+    "binary_version": "Spore 3.1.0.22, GOG digital build, no DRM",
+    "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+    "image_base": "0x00400000",
+    "architecture": "x86-32 PE",
+    "worker_id": "wave13-w1-core-b08",
+    "implementer_id": "wave13-w1-core-b08",
+    "batch_id": "b08",
+    "package": "wave13-w1-core-b08",
+    "package_ids": [
+      "PKG-11-SIM-CORE"
+    ],
+    "date": "2026-09-26",
+    "analysis_tool": "Ghidra 12.1.2 headless via GhidraMCP, program SporeApp.exe",
+    "rtti_note": "SporeApp.exe carries no MSVC RTTI. No class identity is asserted for any receiver in this batch unless an owning vtable or a literal type-name string was located by this worker.",
+    "runtime_evidence": "none. The original Cell stage has never been entered in any recorded run. Every claim in this record is static.",
+    "evidence_boundary": "Static reads only: live ghidra_* tool calls against SporeApp.exe and read-only inspection of Spore-ModAPI headers. No original-process execution, no trace, no differential fixture."
+  }
+}

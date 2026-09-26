@@ -1,0 +1,168 @@
+{
+  "schema": "pkg-editor-runtime-wave7.function-handoff.v1",
+  "package": "PKG-EDITOR-RUNTIME-WAVE7",
+  "scope": {
+    "package_scope": "Six animation and controller VAs only. 0x00591fa0 was removed from this package after pkg-editor-lifecycle-wave6 claimed it; its source file editor_runtime_wave7.cpp, its declarations, its tests and its metadata handoff were deleted.",
+    "owned_vas": [
+      "0x0059b0f0",
+      "0x0059b4b0",
+      "0x0059cac0",
+      "0x0059cb10",
+      "0x0059cea0",
+      "0x0059cf00"
+    ],
+    "removed_vas": [
+      {
+        "va": "0x00591fa0",
+        "owner": "pkg-editor-lifecycle-wave6",
+        "artefacts_removed": [
+          "src/reconstruction/pkg_editor_runtime_wave7/editor_runtime_wave7.cpp",
+          "OpaqueEditor / EditorDispatchPorts / message-id constants in editor_runtime_wave7.hpp",
+          "editor_handle_message_00591fa0 and its model tests",
+          "reconstruction/metadata/pkg-editor-runtime-wave7/00591fa0.json"
+        ]
+      }
+    ]
+  },
+  "function_address": "0x0059cac0",
+  "ghidra_name": "Editors::cEditorAnimWorld::GetCreatureController",
+  "normalized_symbol": "EditorAnimWorld_GetCreatureController_0059cac0",
+  "source_files": [
+    "src/reconstruction/pkg_editor_runtime_wave7/editor_runtime_wave7.hpp",
+    "src/reconstruction/pkg_editor_runtime_wave7/editor_runtime_wave7.cpp",
+    "src/reconstruction/pkg_editor_runtime_wave7/editor_runtime_wave7_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "EditorCreatureController *__thiscall EditorAnimWorld_GetCreatureController_0059cac0(cEditorAnimWorld *this, int creatureID);",
+  "abi": {
+    "calling_convention": "thiscall",
+    "hidden_this": "OpaqueAnimWorld * in ECX",
+    "stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "ESP+0x04",
+        "name": "creatureID",
+        "type": "std::int32_t",
+        "width_bytes": 4
+      }
+    ],
+    "stack_cleanup_bytes": 4,
+    "stack_cleanup_owner": "caller",
+    "return_type": "OpaqueController *",
+    "return_register": "EAX",
+    "return_width_bytes": 4
+  },
+  "body": {
+    "status": "reconstructed",
+    "entry_address": "0x0059cac0",
+    "body_addresses": [
+      "0x0059cac0",
+      "0x0059cb01"
+    ],
+    "instruction_count": 30,
+    "mechanics": [
+      "Read the map gate at this+0x38; when it is zero return EAX=0 immediately without touching the map.",
+      "Allocate a stack-local cursor initialised to null, then call 0x00e5c780 with the map at this+0x08, the address of the local key holder and the address of that cursor. The port receives a valid, non-null out pointer; nothing is inferred from the call's return register.",
+      "Compare the cursor written through the out pointer against the end sentinel at this+0x0c. An end result returns EAX=0 and never calls 0x0059c740.",
+      "Otherwise call 0x0059c740 (map find/get) and return the single word stored at the returned slot, so an absent key yields the zero-initialised default value and therefore a null controller.",
+      "Epilogue is POP EDI/ESI/ECX, RET 0x4 in both paths."
+    ],
+    "lower_bound_contract": {
+      "out_parameter": "third stack argument, always a valid address of a caller-owned cursor",
+      "cursor_source": "the cursor is read back from that out slot, never from the call's return value",
+      "repaired_finding": "an earlier revision passed a null out pointer and consumed the incidental return register; both are gone"
+    },
+    "lookup_null_behaviour": {
+      "gate_zero": "this+0x38 == 0 short-circuits to null without any map call",
+      "lower_bound_end": "cursor == this+0x0c returns null and skips the find call",
+      "find_miss": "0x0059c740 yields a zeroed default pair, so the returned controller pointer is null"
+    }
+  },
+  "call_graph": {
+    "direct_callees": [
+      "0x00e5c780",
+      "0x0059c740"
+    ],
+    "direct_callers": [
+      "0x00572cf0",
+      "0x00628a40",
+      "0x00587370",
+      "0x00587380",
+      "0x00587730",
+      "0x00583310",
+      "0x0062a550",
+      "0x0062bb40",
+      "0x00628ca0",
+      "0x00628f10",
+      "0x006296e0",
+      "0x00629c50",
+      "0x0062c7e0",
+      "0x00638810",
+      "0x00577e10",
+      "0x0059cdb0",
+      "0x0062e2f5",
+      "0x0063a41b",
+      "0x0063a78a",
+      "0x00629a90",
+      "0x00629b30"
+    ],
+    "direct_call_site_count": 30
+  },
+  "evidence": [
+    {
+      "tool": "ghidra_get_function_by_address",
+      "address": "0x0059cac0",
+      "observation": "Live function spans 0x0059cac0..0x0059cb01."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x0059cac0",
+      "observation": "LEA EAX,[ESP+0x10] then PUSH EAX, followed by a second PUSH of the key address, proves 0x00e5c780 receives two real stack arguments; the out slot is at [ESP+0x10] and is compared at CMP dword ptr [EAX],EDI."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x00e5c780",
+      "observation": "The routine ends with MOV EAX,[ESP+0x8]; MOV dword ptr [EAX],ECX; RET 0x8, so it returns the out pointer and writes the node through it. The reconstruction therefore reads the cursor back from the out slot."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x0059c740",
+      "observation": "find returns node+0x14 on a hit and the address of a zeroed default pair on a miss, so the caller's single-word deref is the null path."
+    },
+    {
+      "tool": "ghidra_get_function_xrefs",
+      "address": "0x0059cac0",
+      "observation": "30 direct call sites across editor, placement and world helpers."
+    },
+    "0x00e5c780 stores the found node through [ESP+0x8] and dereferences [ESP+0xc] as the search key, so the native stack order after the receiver is (out, key). The port declaration and both call sites use (map, out, key) with a non-null out pointer and the cursor is read back from that slot."
+  ],
+  "tests": [
+    "the lower-bound port receives a non-null out pointer on every path that performs a lookup",
+    "the port rejects a null out pointer, so a regression to the null argument aborts the test",
+    "hit on the low key and on the high key both return the mapped controller after lower_bound then find",
+    "key past the last node returns null after lower_bound only, with zero find calls",
+    "lower_bound hit but find miss returns null",
+    "this+0x38 == 0 returns null with no map calls at all",
+    "lower-bound port receives (out, key) with a non-null out pointer"
+  ],
+  "runtime_gates": [
+    "Concrete std::map comparator and key domain of the this+0x08 container",
+    "Whether the 0x38 and 0x3c gates are counts, flags or handles",
+    "Lifetime of the stored controller pointers and the owning cEditorAnimWorld",
+    "Runtime creature-id values that reach this lookup"
+  ],
+  "confidence": {
+    "body": "high",
+    "abi_and_cleanup": "high",
+    "lower_bound_contract": "high",
+    "lookup_null_behaviour": "high"
+  },
+  "verification": "self-consistent: 29 focused x86-32 model tests pass in normal and NDEBUG builds; -Wall -Wextra -Wpedantic -Werror clean; clang-format clean",
+  "target_state": "integrated canonical source; runtime validation gated",
+  "integration_status": "integrated",
+  "canonical_files": [
+    "src/reconstruction/pkg_editor_runtime_wave7/editor_runtime_wave7.hpp",
+    "src/reconstruction/pkg_editor_runtime_wave7/editor_runtime_wave7.cpp",
+    "src/reconstruction/pkg_editor_runtime_wave7/editor_runtime_wave7_model_test.cpp"
+  ]
+}

@@ -1,0 +1,229 @@
+{
+  "schema": "pkg-editor-adc40-flag.function-handoff.v1",
+  "package": "PKG-EDITOR-ADC40-FLAG",
+  "function_address": "0x004adc40",
+  "ghidra_name": "FUN_004adc40",
+  "normalized_symbol": "FUN_004adc40",
+  "normalized_symbol_note": "The reconstructed C++ symbol is the Ghidra name verbatim. Nothing descriptive is appended: the record name and the source symbol are the same token, which is also what lets the validator bind the source span to this VA deterministically. The name embeds the 8-hex target VA 004adc40.",
+  "source_files": [
+    "reconstruction/staging/pkg-editor-adc40-flag/adc40_flag.hpp",
+    "reconstruction/staging/pkg-editor-adc40-flag/adc40_flag.cpp",
+    "reconstruction/staging/pkg-editor-adc40-flag/adc40_flag_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "extern \"C\" Field PKG_EDITOR_ADC40_THISCALL FUN_004adc40(OpaqueEditorFlag* self);",
+  "abi": {
+    "target": "x86:LE:32:windows",
+    "calling_convention": "thiscall-compatible ECX-only machine ABI",
+    "ghidra_convention_label": "__fastcall",
+    "ghidra_convention_discrepancy": "Ghidra decompiles the single register parameter as __fastcall int param_1. The body consumes ECX only: EDX is never read, no stack slot is read, and the body ends in a bare RET. The machine ABI is therefore identical to __thiscall with no parameters, and staging declares __thiscall.",
+    "hidden_this": "OpaqueEditorFlag* receiver in ECX",
+    "stack_arguments": [],
+    "stack_cleanup_bytes": 0,
+    "stack_cleanup_owner": "caller",
+    "return_register": "EAX",
+    "return_type": "Field",
+    "return_type_note": "Field is this package's std::uint8_t alias, declared in adc40_flag.hpp. The 1-byte width is machine-derived from the byte-wide load MOV AL,byte ptr [EAX+0x4f] and corroborated by three call sites that consume AL alone.",
+    "return_width_bytes": 1,
+    "return_semantics": "Returns the unsigned byte stored at receiver+0x4F. In the original only AL is written, so the upper 24 bits of EAX are NOT zero-extended: they retain receiver address bits 8..31 because EAX was reloaded from the spilled ECX immediately before the byte load. Consumers must read AL only; all three sampled call sites do. The reconstructed source returns a std::uint8_t and therefore zero-extends, which is a strictly stronger guarantee; see source_fidelity.",
+    "return_register_upper_bits": "indeterminate-by-construction, equal to receiver address bits 8..31",
+    "ret_shape": "plain RET, no immediate",
+    "frame": "Original encoding only: PUSH EBP / MOV EBP,ESP / PUSH ECX / MOV [EBP-0x4],ECX prologue with MOV ESP,EBP / POP EBP / RET epilogue. The PUSH ECX spill to [EBP-0x4] and the reload from it are redundant; no instruction in the body ever reads that slot other than the reload itself. The reconstruction does not reproduce the frame; see source_fidelity."
+  },
+  "source_fidelity": {
+    "summary": "The reconstruction claims the machine-observable semantics of the body, not its instruction encoding. The original is 17 bytes in 9 instructions; the reconstruction emits 5 bytes in 2 instructions.",
+    "reproduced": [
+      "Receiver in ECX, no stack argument, bare RET, caller owns stack cleanup.",
+      "Exactly one byte-wide load from receiver+0x4f.",
+      "No write to the receiver, no call, no branch, no allocation, no guard."
+    ],
+    "not_reproduced": [
+      "The PUSH EBP / MOV EBP,ESP / PUSH ECX / spill / reload prologue and its symmetric epilogue. The compiler emits no frame for a function this small.",
+      "The un-zero-extended upper 24 bits of EAX. A C++ function returning std::uint8_t is free to zero-extend, and the emitted MOVZBL does. This is a stronger guarantee than the original made, not a weaker one, and no sampled consumer depends on the difference.",
+      "The 17-byte length and the specific opcode encodings, which are assembler choices."
+    ],
+    "why_not_inline_asm": "A naked inline-assembly body was built and rejected. GCC models i386 __attribute__((thiscall)) with a callee-popped argument area: at -O2 the call site emits a compensating 'sub $0x8,%esp' after the call, which a naked body ending in a bare RET (c3) never consumes, so every caller returned through a corrupted stack. Reproducing the encoding exactly would have meant shipping a function that cannot be called. The plain form builds warning-free under -Wall -Wextra -Werror and its model test passes at -O0, -O1, -O2 and -Os."
+  },
+  "body": {
+    "status": "reconstructed",
+    "describes": "the original body at 0x004adc40, read from the live Ghidra bridge; not the encoding the reconstruction emits",
+    "entry_address": "0x004adc40",
+    "body_addresses": [
+      "0x004adc40",
+      "0x004adc41",
+      "0x004adc43",
+      "0x004adc44",
+      "0x004adc47",
+      "0x004adc4a",
+      "0x004adc4d",
+      "0x004adc4f",
+      "0x004adc50"
+    ],
+    "instruction_count": 9,
+    "basic_block_count": 1,
+    "raw_bytes_hex": "558bec51894dfc8b45fc8a404f8be55dc3",
+    "assembly": [
+      "004adc40: PUSH EBP",
+      "004adc41: MOV EBP,ESP",
+      "004adc43: PUSH ECX",
+      "004adc44: MOV dword ptr [EBP + -0x4],ECX",
+      "004adc47: MOV EAX,dword ptr [EBP + -0x4]",
+      "004adc4a: MOV AL,byte ptr [EAX + 0x4f]",
+      "004adc4d: MOV ESP,EBP",
+      "004adc4f: POP EBP",
+      "004adc50: RET"
+    ],
+    "mechanics": [
+      "ECX supplies the receiver and is spilled to the EBP-0x4 local, then reloaded into EAX.",
+      "The body performs exactly one byte-wide load from receiver+0x4F into AL.",
+      "No byte of the receiver is written; the function is a pure read.",
+      "The body contains no branch, no call, no allocation, no reference-count operation, no ownership transfer and no guard."
+    ]
+  },
+  "receiver_layout": {
+    "source_type": "OpaqueEditorFlag",
+    "declared_in": "reconstruction/staging/pkg-editor-adc40-flag/adc40_flag.hpp",
+    "declaration": "struct alignas(4) OpaqueEditorFlag { Byte opaque_000[0x4f]; Byte byte_04f; };",
+    "offset_assertion": "static_assert(offsetof(OpaqueEditorFlag, byte_04f) == 0x4f)",
+    "field_offset": "0x4f",
+    "field_width_bytes": 1,
+    "minimum_receiver_extent_bytes": "0x50",
+    "field_semantics": "opaque",
+    "receiver_type_semantics": "opaque",
+    "type_identity_note": "The briefing assigns subsystem Editor and Ghidra names two of the 64 direct callers Editors::cEditor::sub_581F70 and Editors::cEditor::OnMouseDown. Two sampled call sites load the receiver from a +0x28 member of the caller's own object, but a third samples it from a stack local, so the receiver is a general opaque object pointer and no concrete SDK type is promoted here. The declared layout models the 0x4f byte and the padding below it only; it asserts nothing about any byte at or above 0x50."
+  },
+  "consumer_contract": {
+    "sampled_call_sites": [
+      {
+        "callsite": "0x00435aa5",
+        "caller": "0x00435a10",
+        "receiver_setup": "MOV ECX, dword ptr [ECX + 0x28]",
+        "result_use": "MOVZX EDX, AL; TEST EDX, EDX; JZ"
+      },
+      {
+        "callsite": "0x0043ffd2",
+        "caller": "0x0043ffa0",
+        "receiver_setup": "MOV ECX, dword ptr [EDX + 0x28]",
+        "result_use": "MOVZX EAX, AL; TEST EAX, EAX; JZ"
+      },
+      {
+        "callsite": "0x00588ba6",
+        "caller": "Editors::cEditor::OnMouseDown @ 0x00588570",
+        "receiver_setup": "MOV ECX, dword ptr [EBP + 0x98]",
+        "result_use": "TEST AL, AL; JZ"
+      }
+    ],
+    "agreement": "All three sampled sites consume only AL and then test it for zero, which independently corroborates the one-byte return width and the non-zero-extended upper EAX bits.",
+    "caller_stack_arguments_observed": 0
+  },
+  "null_and_mutation_behavior": {
+    "null_receiver": "No guard exists; a null receiver performs an unchecked byte load at address 0x4F and faults.",
+    "near_null_receiver": "No range or alignment guard exists; a near-null receiver faults when receiver+0x4F is inaccessible.",
+    "null_field_value": "A stored zero byte returns zero in AL.",
+    "high_field_value": "A stored 0xFF byte returns 0xFF in AL; the load is not masked or narrowed.",
+    "mutation": "No receiver or field byte is written."
+  },
+  "call_graph": {
+    "direct_callees": [],
+    "unique_direct_caller_functions": 64,
+    "function_code_xrefs": 76,
+    "representative_consumers": [
+      "0x00435a10",
+      "0x0043ffa0",
+      "Editors::cEditor::OnMouseDown @ 0x00588570"
+    ],
+    "consumer_boundary": "The high fan-in and the Editor/creature, diplomacy and model clusters in the caller set indicate a broadly used predicate byte, but fan-in alone does not prove that every caller passes the same concrete receiver type."
+  },
+  "evidence": [
+    {
+      "tool": "ghidra_get_function_by_address",
+      "address": "0x004adc40",
+      "observation": "Live function range is 0x004adc40 through 0x004adc50, size 17 bytes."
+    },
+    {
+      "tool": "ghidra_read_memory",
+      "address": "0x004adc40",
+      "observation": "Seventeen raw bytes are 558bec51894dfc8b45fc8a404f8be55dc3."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x004adc40",
+      "observation": "Nine instructions matching the raw bytes; MOV AL,byte ptr [EAX + 0x4f] establishes a one-byte field read at offset 0x4F."
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x004adc40",
+      "observation": "Live decompilation is return *(undefined1 *)(param_1 + 0x4f) under an __fastcall int param_1 label."
+    },
+    {
+      "tool": "ghidra_disassemble_bytes",
+      "address": "0x00435a90",
+      "observation": "Call site 0x00435aa5 loads ECX from [ECX+0x28] and consumes the result as MOVZX EDX,AL; TEST EDX,EDX."
+    },
+    {
+      "tool": "ghidra_disassemble_bytes",
+      "address": "0x0043ffb0",
+      "observation": "Call site 0x0043ffd2 loads ECX from [EDX+0x28] and consumes the result as MOVZX EAX,AL; TEST EAX,EAX."
+    },
+    {
+      "tool": "ghidra_disassemble_bytes",
+      "address": "0x00588b90",
+      "observation": "Call site 0x00588ba6 inside Editors::cEditor::OnMouseDown loads ECX from a stack local and consumes the result as TEST AL,AL."
+    },
+    {
+      "tool": "ghidra_search_functions",
+      "observation": "Two direct callers carry SDK-derived names, Editors::cEditor::sub_581F70 @ 0x00582250 and Editors::cEditor::OnMouseDown @ 0x00588570, supporting the Editor subsystem label without fixing the receiver type."
+    },
+    {
+      "tool": "ghidra_get_function_by_address",
+      "address": "0x004adc40",
+      "observation": "Ghidra reports no callees, no referenced vtables and 76 function code xrefs."
+    }
+  ],
+  "confidence": {
+    "body": "high",
+    "field_offset": "high",
+    "field_width": "high",
+    "return_width": "high",
+    "return_register_upper_bits": "high",
+    "thiscall_and_ret_shape": "high",
+    "no_mutation": "high",
+    "receiver_concrete_type": "unknown",
+    "field_semantics": "opaque",
+    "runtime_availability": "not observed"
+  },
+  "verification": {
+    "build_command": "g++ -m32 -std=c++17 -Wall -Wextra -Werror -O2 -I reconstruction/staging/pkg-editor-adc40-flag reconstruction/staging/pkg-editor-adc40-flag/adc40_flag.cpp reconstruction/staging/pkg-editor-adc40-flag/adc40_flag_model_test.cpp -o /tmp/opencode/pkg-editor-adc40-flag-test",
+    "model_test_command": "/tmp/opencode/pkg-editor-adc40-flag-test",
+    "optimisation_levels_checked": ["-O0", "-O1", "-O2", "-Os"],
+    "emitted_code_command": "g++ -m32 -std=c++17 -O2 -c reconstruction/staging/pkg-editor-adc40-flag/adc40_flag.cpp -o /tmp/opencode/adc40.o && objdump -d /tmp/opencode/adc40.o",
+    "json_command": "python3 -m json.tool reconstruction/metadata/pkg-editor-adc40-flag/004adc40.json",
+    "runtime_validation": "not run"
+  },
+  "verification_results": {
+    "x86_32_build": "passed; g++ -m32 -std=c++17 -Wall -Wextra -Werror builds clean with no warnings at -O0, -O1, -O2 and -Os",
+    "focused_model_test": "passed at all four optimisation levels",
+    "exhaustive_byte_sweep": "passed; all 256 stored byte values round-trip exactly, including 0x80 and 0xff which a signed or narrowed reading would get wrong",
+    "read_only": "passed; the receiver is compared byte-for-byte before and after the call and is unchanged",
+    "byte_width_isolation": "passed; with every byte below 0x4f set to 0xff and the field to 0x00 the call returns 0x00, and with a larger arena whose bytes past the declared extent are 0xff the result still tracks only byte_04f",
+    "null_and_near_null_fault_tests": "passed in forked child processes; both die with SIGSEGV, confirming there is no guard",
+    "emitted_code": "movzbl 0x4f(%ecx),%eax ; ret -- receiver in ECX, byte-wide load at 0x4f, bare ret, 5 bytes",
+    "caller_abi": "passed; call sites load the receiver into ECX and perform no stack adjustment after the call, matching the original's caller-cleanup contract",
+    "offset_assertion": "passed; static_assert(offsetof(OpaqueEditorFlag, byte_04f) == 0x4f)",
+    "instruction_parity": "not claimed; the reconstruction emits 2 instructions against the original's 9. The semantics are reproduced, the encoding is not. See source_fidelity.",
+    "byte_encoding_parity": "not claimed; the reconstruction emits 5 bytes against the original's 17. See source_fidelity.",
+    "return_register_upper_bits": "not asserted by the model test; a C++ uint8_t return zero-extends, so the test pins the low byte and deliberately does not pin bits 8..31",
+    "runtime_validation": "not run"
+  },
+  "unresolved_questions": [
+    "What concrete class is the receiver, and does its +0x4F byte carry a name in the Spore ModAPI SDK?",
+    "Is the +0x4F byte a bool, a small enum, or a bitfield-style flags byte? Callers only ever test it for zero, so the evidence cannot separate these.",
+    "Do all 64 direct callers pass the same concrete receiver type, given the +0x28-member and stack-local receiver provenances already observed?",
+    "Which owner constructs and publishes receivers for this accessor?",
+    "What values are observed at receiver+0x4F in the original process?"
+  ],
+  "blockers": [
+    "Receiver identity and the +0x4F field name remain unknown; the SDK layout could not be tied to this receiver by the two-instruction body.",
+    "Observed field values and receiver availability in the original process remain runtime-gated."
+  ]
+}

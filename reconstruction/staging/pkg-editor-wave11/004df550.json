@@ -1,0 +1,42 @@
+{
+  "va": "0x004df550",
+  "body": "0x004df550..0x004df6c4",
+  "instructions": 108,
+  "symbol": "editor_species_resolve_004df550",
+  "abi": {
+    "convention": "thiscall",
+    "receiver": "ECX, an OpaqueLinkRoot",
+    "stack_words": [
+      "const OpaqueSpeciesKey * key"
+    ],
+    "return": "dword in EAX",
+    "stack_cleanup": "RET 0x4",
+    "saved_registers": "EBP only",
+    "frame": "SUB ESP, 0x8c"
+  },
+  "key_shape": "twelve bytes, three words; word zero is the identity that decides whether the fallback substitution happens",
+  "order": [
+    "if key word zero is zero and this+0xa4 word zero is zero, return zero without any port call",
+    "probe one: 0x004df6d0 with the anchor field at this+0x04 and the caller key; a non zero result is returned unchanged",
+    "copy the caller key to a local; if the local word zero is zero, substitute the whole twelve bytes at this+0xa4 and probe again, returning a non zero result unchanged",
+    "call 0x004da3a0 on the local key with a cdecl one word call; a false result returns the zero already held in the result slot",
+    "probe three: a non zero result is returned unchanged",
+    "acquire with 0x00f473a0, cdecl, six words (0x0a18, 0x013f0e00, 0, 0, 0, 0)",
+    "when the acquisition is not null, call 0x004d3dd0 with ECX = the handle and stack arguments (the local key, zero), and keep the returned word",
+    "call 0x004e0560 with ECX = the anchor field and the local key, and store the built word into the returned link cell at offset zero; when the acquisition was null a zero is stored instead",
+    "probe four and return its result"
+  ],
+  "ports": [
+    "0x00f473a0 cdecl, six words",
+    "0x004df6d0 stdcall, two words, dword result in EAX; the anchor is passed as an ordinary first argument and the receiver register the assembly loads is dead",
+    "0x004da3a0 cdecl, one word, boolean result in AL",
+    "0x004d3dd0 thiscall, two stack words, dword result in EAX",
+    "0x004e0560 thiscall, one stack word, pointer result in EAX"
+  ],
+  "decompilation_defects_corrected": [
+    "the decompilation describes 0x004df6d0 as taking this plus four as its receiver; the assembly pushes two words and no receiver, so it is a two argument stdcall function and this plus four is its first argument",
+    "the decompilation hides that the fallback substitution replaces all twelve bytes of the key, not just the zero word"
+  ],
+  "reconstruction": "editor_species_resolve_004df550 in editor_wave11.cpp",
+  "confidence": "high; the four probe sites, the substitution, the build gate and the store were read from the assembly"
+}

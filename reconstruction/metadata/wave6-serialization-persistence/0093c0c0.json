@@ -1,0 +1,107 @@
+{
+  "schema": "wave6-serialization-persistence.function-reconstruction.v1",
+  "package": "wave6-serialization-persistence",
+  "address": "0x0093c0c0",
+  "normalized_name": "memory_stream_set_position_0093c0c0",
+  "imported_name": "IO::MemoryStream::Write",
+  "status": "integrated_static_ready_with_imported_name_conflict_and_opaque_growth_port",
+  "implementation": {
+    "language": "C++17",
+    "header": "src/reconstruction/wave6_serialization_persistence/stream_lifecycle.hpp",
+    "source": "src/reconstruction/wave6_serialization_persistence/stream_lifecycle.cpp",
+    "model_test": "src/reconstruction/wave6_serialization_persistence/stream_lifecycle_model_test.cpp"
+  },
+  "binary": {
+    "program": "SporeApp.exe",
+    "version": "3.1.0.22",
+    "architecture": "x86:LE:32",
+    "image_base": "0x00400000"
+  },
+  "abi": {
+    "calling_convention": "__thiscall",
+    "receiver_register": "ECX",
+    "receiver_type": "MemoryStream*",
+    "stack_arguments": [
+      {"name": "operation", "type": "uint32_t", "entry_offset": "ESP+0x04", "width_bytes": 4},
+      {"name": "amount", "type": "uint32_t", "entry_offset": "ESP+0x08", "width_bytes": 4}
+    ],
+    "return_type": "bool",
+    "return_register": "AL",
+    "stack_cleanup_bytes": 8,
+    "termination": "RET 0x8"
+  },
+  "symbol_normalization": {
+    "imported_name": "IO::MemoryStream::Write",
+    "observed_vtable_address": "0x0143eba0",
+    "memory_stream_vtable_base": "0x0143eb78",
+    "slot_offset": "0x28",
+    "live_IStream_layout_slot": "SetPosition",
+    "mechanics": "two stack words select absolute, current-relative, or end-relative positioning and return a byte predicate",
+    "claim": "The function is normalized as SetPosition; no byte-buffer write is claimed."
+  },
+  "control_contract": {
+    "argument_order": "operation is read from ESP+0x04 before amount from ESP+0x08",
+    "operation_0": "target = amount",
+    "operation_1": "target = current_position + amount with uint32 wrap",
+    "operation_2": "target = size_at_0x0c + amount with uint32 wrap",
+    "other_operation": "target = current_position",
+    "comparison_field": "unsigned target is compared against size at +0x0c, never capacity at +0x10",
+    "publication_order": "store target to position before unsigned target <= size comparison",
+    "in_range": "return true without calling the growth helper",
+    "out_of_range_resize_disabled": "clamp position to size at +0x0c and return false",
+    "out_of_range_resize_enabled": "push target, load the stream into ECX, and call 0x0093c000 thiscall",
+    "growth_success": "retain the proposed position; the delegated helper may update capacity and shared storage but does not update size",
+    "growth_failure": "restore the original position and return false",
+    "untouched_fields": "the wrapper changes only position; the delegated helper may update capacity and shared storage, while size is not updated by the live helper"
+  },
+  "fan_in": {
+    "direct_caller_functions": 2,
+    "function_xrefs": 6,
+    "direct_callers": ["0x0041c1d0", "0x00902d40"],
+    "additional_call_site": "0x00811d32",
+    "vtable_xref": "0x0143eba0"
+  },
+  "delegated_growth": {
+    "address": "0x0093c000",
+    "calling_convention": "__thiscall",
+    "receiver": "stream in ECX",
+    "requested_size": "target position on the stack, popped by callee RET 0x4",
+    "live_mechanics": "it can allocate or replace the shared storage, copy old bytes, release old storage, and update capacity while leaving size unchanged",
+    "model_boundary": "MemoryStreamResize thiscall callback",
+    "unresolved": [
+      "allocator identity and failure policy",
+      "capacity and clear-new-memory use",
+      "old-buffer release implementation",
+      "maximum size and overflow policy"
+    ]
+  },
+  "model_tests": [
+    "operation and amount are consumed in ESP+0x04 then ESP+0x08 order",
+    "absolute operation uses amount",
+    "current-relative operation adds amount to position",
+    "end-relative operation adds amount to size at +0x0c while capacity differs",
+    "unknown operation preserves current position",
+    "uint32 absolute overflow clamps to size at +0x0c when growth is disabled",
+    "thiscall growth port receives the target position",
+    "growth success leaves proposed position and size unchanged",
+    "growth failure restores original position"
+  ],
+  "unresolved_evidence": [
+    "The imported Write label conflicts with the live vtable slot and exact machine body.",
+    "Only AL is semantically consumed as the boolean result; upper EAX residue is not assigned a contract.",
+    "The internal 0x0093c000 growth implementation is not reconstructed in this package.",
+    "No original runtime position or allocation trace is claimed."
+  ],
+  "source_provenance": [
+    "ghidra:get_function_by_address(0x0093c0c0)",
+    "ghidra:decompile_function(0x0093c0c0)",
+    "ghidra:disassemble_function(0x0093c0c0)",
+    "ghidra:get_function_callers(0x0093c0c0)",
+    "ghidra:get_function_xrefs(0x0093c0c0)",
+    "ghidra:get_function_callees(0x0093c0c0)",
+    "ghidra:decompile_function(0x0093c000)",
+    "ghidra:disassemble_function(0x0093c000)",
+    "ghidra:get_struct_layout(IStream__vftable)",
+    "ghidra:get_assembly_context(0x0041c81b,0x00811d32,0x00902f04)"
+  ]
+}

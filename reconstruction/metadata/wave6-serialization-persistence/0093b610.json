@@ -1,0 +1,87 @@
+{
+  "schema": "wave6-serialization-persistence.function-reconstruction.v1",
+  "package": "wave6-serialization-persistence",
+  "address": "0x0093b610",
+  "normalized_name": "stream_child_close_and_maybe_delete_0093b610",
+  "imported_name": "StreamChild_Close",
+  "status": "integrated_static_ready_with_opaque_object_delete_port",
+  "implementation": {
+    "language": "C++17",
+    "header": "src/reconstruction/wave6_serialization_persistence/stream_lifecycle.hpp",
+    "source": "src/reconstruction/wave6_serialization_persistence/stream_lifecycle.cpp",
+    "model_test": "src/reconstruction/wave6_serialization_persistence/stream_lifecycle_model_test.cpp"
+  },
+  "binary": {
+    "program": "SporeApp.exe",
+    "version": "3.1.0.22",
+    "architecture": "x86:LE:32",
+    "image_base": "0x00400000"
+  },
+  "abi": {
+    "calling_convention": "__thiscall",
+    "receiver_register": "ECX",
+    "receiver_type": "StreamChild*",
+    "stack_arguments": [
+      {"name": "delete_flags", "type": "uint32_t", "entry_offset": "ESP+0x04", "width_bytes": 4}
+    ],
+    "return_type": "StreamChild*",
+    "return_register": "EAX",
+    "stack_cleanup_bytes": 4,
+    "termination": "RET 0x4"
+  },
+  "name_normalization": {
+    "imported_name": "StreamChild_Close",
+    "normalized_name": "stream_child_close_and_maybe_delete_0093b610",
+    "basis": "the machine body performs full child teardown first, then conditionally deletes the receiver and returns its pre-delete pointer",
+    "constraint": "no stronger imported API or object-lifecycle contract is adopted"
+  },
+  "vtable_evidence": {
+    "active_vtable_base": "0x0143eaac",
+    "active_slot": "0x00",
+    "active_slot_value": "0x0093b610",
+    "xref": "0x0143eaac -> 0x0093b610",
+    "interpretation": "virtual destructor or close entry for the active child subtype"
+  },
+  "observed_order": [
+    {"order": 1, "address": "0x0093b610", "operation": "save ECX receiver in ESI"},
+    {"order": 2, "address": "0x0093b613", "operation": "call 0x0093b5a0 with the same ECX receiver and no stack arguments"},
+    {"order": 3, "address": "0x0093b618", "operation": "test only bit 0 of the original stack word"},
+    {"order": 4, "guard": "delete_flags & 0x1 is nonzero", "addresses": ["0x0093b61f", "0x0093b620", "0x0093b625"], "operation": "call global object delete 0x00f47380 with the receiver and clean its one pushed word"},
+    {"order": 5, "address": "0x0093b628", "operation": "copy the original receiver to EAX even on the delete path"},
+    {"order": 6, "address": "0x0093b62b", "operation": "return EAX and pop the original four-byte delete_flags word"}
+  ],
+  "control_contract": {
+    "teardown": "always performed before delete-flag evaluation",
+    "delete_bit": "only bit 0 selects receiver deletion; every other bit is ignored",
+    "return_after_delete": "the pre-delete receiver value is returned in EAX",
+    "no_local_reuse_after_delete": true
+  },
+  "delegated_boundaries": [
+    {"address": "0x0093b5a0", "role": "complete teardown, reconstructed separately in this package", "order": "always completed before delete-bit evaluation"},
+    {"address": "0x00f47380", "role": "global object delete", "receiver": "original child pointer passed on the stack", "caller_cleanup": "ADD ESP, 0x4", "model_boundary": "StreamChildFreeObject"}
+  ],
+  "model_tests": [
+    "bit zero clear with other bits set does not delete",
+    "bit zero set performs flush, parent release, both block releases, and object deletion in that order",
+    "delete callback observes final vtable and cleared parent before invalidating its observed child pointer",
+    "receiver pointer is returned after teardown and also on the delete path without dereferencing the receiver after the callback",
+    "owned block words are not reused or changed by the delete wrapper"
+  ],
+  "unresolved_evidence": [
+    "The concrete allocation and destructor pairing behind 0x00f47380 is not reconstructed.",
+    "The complete active child vtable beyond slot zero and the final secondary vtable are unresolved.",
+    "The semantic names of delete_flags bits 1 through 31 are not established.",
+    "No original runtime virtual deletion trace is claimed."
+  ],
+  "source_provenance": [
+    "ghidra:get_function_by_address(0x0093b610)",
+    "ghidra:decompile_function(0x0093b610)",
+    "ghidra:disassemble_function(0x0093b610)",
+    "ghidra:get_function_callers(0x0093b610)",
+    "ghidra:get_function_xrefs(0x0093b610)",
+    "ghidra:get_function_callees(0x0093b610)",
+    "ghidra:get_xrefs_to(0x0093b610)",
+    "ghidra:read_memory(0x0143eaac)",
+    "ghidra:get_assembly_context(0x0093b613)"
+  ]
+}

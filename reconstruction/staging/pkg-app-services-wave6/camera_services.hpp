@@ -24,9 +24,12 @@ struct OpaqueCamera {
   std::uint32_t opaque[4]{};
 };
 
+struct OpaqueCameraManager;
+
 struct OpaqueCameraManagerVTable {
   void* slots_00[21]{};
-  bool(PKG_CAM_THISCALL* set_active_by_id_54)(void*, OpaqueWord) = nullptr;
+  bool(PKG_CAM_THISCALL* set_active_by_id_54)(OpaqueCameraManager*,
+                                              OpaqueWord) = nullptr;
 };
 
 struct OpaqueMessageNode {
@@ -40,11 +43,6 @@ struct OpaqueMessageRegistry {
   OpaqueMessageNode** buckets_004 = nullptr;
   OpaqueWord bucket_count_008 = 0;
   OpaqueWord opaque_00c[5]{};
-};
-
-struct OpaqueMessageRecord {
-  OpaqueWord key = 0;
-  OpaqueWord value = 0;
 };
 
 struct OpaqueCameraManager {
@@ -72,11 +70,11 @@ static_assert(offsetof(OpaqueCameraManager, cameras_080) == 0x80,
 static_assert(offsetof(OpaqueCameraManager, active_index_0a8) == 0xa8,
               "active camera index offset");
 
-extern "C" OpaqueCamera* PKG_CAM_THISCALL service_007c61a0(
-    OpaqueCameraManager* manager);
+extern "C" OpaqueCamera* PKG_CAM_THISCALL
+service_007c61a0(OpaqueCameraManager* manager);
 
-extern "C" bool PKG_CAM_THISCALL service_007c66b0(
-    OpaqueCameraManager* manager, OpaqueMessageRecord* message);
+extern "C" bool PKG_CAM_THISCALL service_007c66b0(OpaqueCameraManager* manager,
+                                                  OpaqueWord message_id);
 
 struct OpaqueCommandEntry {
   void* first = nullptr;
@@ -85,9 +83,11 @@ struct OpaqueCommandEntry {
   OpaqueWord opaque_00c = 0;
 };
 
+struct OpaqueCommandCamera;
+
 struct OpaqueCommandCameraVTable {
   void* slots_00[19]{};
-  void*(PKG_CAM_THISCALL* get_property_list_4c)(void*) = nullptr;
+  void*(PKG_CAM_THISCALL* get_property_list_4c)(OpaqueCommandCamera*) = nullptr;
 };
 
 struct OpaqueCommandCamera {
@@ -95,10 +95,12 @@ struct OpaqueCommandCamera {
   std::uint32_t opaque[4]{};
 };
 
+struct OpaquePropertyList;
+
 struct OpaquePropertyListVTable {
   void* slots_00[7]{};
-  bool(PKG_CAM_THISCALL* has_1c)(void*, OpaqueWord) = nullptr;
-  void*(PKG_CAM_THISCALL* get_28)(void*, OpaqueWord) = nullptr;
+  bool(PKG_CAM_THISCALL* has_1c)(OpaquePropertyList*, OpaqueWord) = nullptr;
+  void*(PKG_CAM_THISCALL* get_28)(OpaquePropertyList*, OpaqueWord) = nullptr;
 };
 
 struct OpaquePropertyList {
@@ -115,16 +117,20 @@ struct OpaquePropertyValue {
   std::uint8_t opaque_014[2]{};
 };
 
+struct OpaqueCommandCollection;
+
 struct OpaqueCommandCollectionVTable {
   void* slots_00[13]{};
-  void(PKG_CAM_THISCALL* activate_34)(void*, OpaqueWord) = nullptr;
+  void(PKG_CAM_THISCALL* activate_34)(OpaqueCommandCollection*,
+                                      OpaqueWord) = nullptr;
   void* slots_38[4]{};
-  int(PKG_CAM_THISCALL* count_48)(void*) = nullptr;
-  OpaqueCommandCamera*(PKG_CAM_THISCALL* camera_at_4c)(void*, int) = nullptr;
-  OpaqueWord(PKG_CAM_THISCALL* describe_50)(void*, int, OpaqueWord,
-                                            OpaqueWord) = nullptr;
-  void(PKG_CAM_THISCALL* set_active_54)(void*, int) = nullptr;
-  int(PKG_CAM_THISCALL* active_58)(void*) = nullptr;
+  int(PKG_CAM_THISCALL* count_48)(OpaqueCommandCollection*) = nullptr;
+  OpaqueCommandCamera*(PKG_CAM_THISCALL* camera_at_4c)(OpaqueCommandCollection*,
+                                                       int) = nullptr;
+  OpaqueWord(PKG_CAM_CDECL* describe_50)(int, OpaqueWord) = nullptr;
+  void(PKG_CAM_THISCALL* set_active_54)(OpaqueCommandCollection*,
+                                        int) = nullptr;
+  int(PKG_CAM_THISCALL* active_58)(OpaqueCommandCollection*) = nullptr;
 };
 
 struct OpaqueCommandCollection {
@@ -157,7 +163,8 @@ struct OpaqueRendererLayer {
 };
 
 struct OpaqueRendererVTable {
-  OpaqueRendererLayer layer_00{};
+  void* slots_00[22]{};
+  OpaqueRendererLayer layer_58{};
 };
 
 struct OpaqueRenderer {
@@ -165,16 +172,19 @@ struct OpaqueRenderer {
   std::uint32_t opaque[4]{};
 };
 
+struct OpaqueCommandSecondary;
+
 struct OpaqueCommandSecondaryVTable {
   void* slots_00[13]{};
   void* slot_34 = nullptr;
   void* slots_38[25]{};
-  OpaqueViewer*(PKG_CAM_THISCALL* resolve_render_type_9c)(void*,
-                                                          OpaqueWord) = nullptr;
-  OpaqueWord(PKG_CAM_THISCALL* resolve_digit_a0)(void*, const char*) = nullptr;
+  OpaqueViewer*(PKG_CAM_THISCALL* resolve_render_type_9c)(
+      OpaqueCommandSecondary*, OpaqueWord) = nullptr;
+  OpaqueWord(PKG_CAM_THISCALL* resolve_digit_a0)(OpaqueCommandSecondary*,
+                                                 const char*) = nullptr;
   void* slots_a4[4]{};
-  const OpaqueRect*(PKG_CAM_THISCALL* resolve_target_b4)(void*, OpaqueRect*,
-                                                          OpaqueWord) = nullptr;
+  const OpaqueRect*(PKG_CAM_THISCALL* resolve_target_b4)(
+      OpaqueCommandSecondary*, OpaqueRect*, OpaqueWord) = nullptr;
 };
 
 struct OpaqueCommandSecondary {
@@ -199,6 +209,8 @@ static_assert(offsetof(OpaqueCommandSecondaryVTable, resolve_render_type_9c) ==
               "render-type resolver slot");
 static_assert(offsetof(OpaqueCommandSecondaryVTable, resolve_target_b4) == 0xb4,
               "target resolver slot");
+static_assert(offsetof(OpaqueRendererVTable, layer_58) == 0x58,
+              "renderer layer slot");
 
 struct OpaqueWideRange {
   OpaqueWide* begin = nullptr;
@@ -206,26 +218,32 @@ struct OpaqueWideRange {
 };
 
 struct CameraCommandPorts {
-  using ParseMode = int(PKG_CAM_CDECL*)(OpaqueWord);
-  using LogCurrent = bool(PKG_CAM_CDECL*)(OpaqueCommandSecondary*, void*);
-  using ParseDefault = const char**(PKG_CAM_CDECL*)(OpaqueWord, OpaqueWord*,
-                                                    OpaqueWord);
-  using LookupSwitch = const char**(PKG_CAM_THISCALL*)(OpaqueWord, OpaqueWord);
+  using ParseMode = int(PKG_CAM_THISCALL*)(OpaqueWord);
+  using LogCurrent = OpaqueWord(PKG_CAM_CDECL*)(OpaqueCommandSecondary*,
+                                                const char*, const OpaqueWide*);
+  using ParseDefault = const char**(PKG_CAM_THISCALL*)(OpaqueWord, OpaqueWord*,
+                                                       OpaqueWord, OpaqueWord);
+  using LookupSwitch = const char**(PKG_CAM_CDECL*)(OpaqueWord, OpaqueWord);
   using IsDigit = int(PKG_CAM_CDECL*)(unsigned char);
-  using Widen = void(PKG_CAM_CDECL*)(const char*, int, OpaqueWideRange*);
+  using Widen = void(PKG_CAM_CDECL*)(OpaqueWideRange*, const char*, OpaqueWord);
   using WideCompare = int(PKG_CAM_CDECL*)(const OpaqueWide*, const OpaqueWide*);
   using FreeValue = bool(PKG_CAM_CDECL*)(void*);
-  using ListEnabled = bool(PKG_CAM_THISCALL*)(OpaqueWord);
-  using LogList = void(PKG_CAM_CDECL*)(OpaqueCommandSecondary*, int, OpaqueWord,
-                                       OpaqueWord, OpaqueWord);
-  using LookupTarget = const char**(PKG_CAM_THISCALL*)(OpaqueWord);
-  using LookupRenderType = const char**(PKG_CAM_THISCALL*)(OpaqueWord);
+  using ListEnabled = bool(PKG_CAM_THISCALL*)(OpaqueWord, OpaqueWord);
+  using LogNamed = OpaqueWord(PKG_CAM_CDECL*)(OpaqueCommandSecondary*,
+                                              const char*, const char*,
+                                              const OpaqueWide*, OpaqueWord);
+  using LogDescribed = OpaqueWord(PKG_CAM_CDECL*)(OpaqueCommandSecondary*,
+                                                  const char*, OpaqueWord,
+                                                  OpaqueWord, OpaqueWord,
+                                                  OpaqueWord);
+  using LookupTarget = const char**(PKG_CAM_CDECL*)(OpaqueWord, OpaqueWord);
+  using LookupRenderType = const char**(PKG_CAM_CDECL*)(OpaqueWord, OpaqueWord);
   using RendererGet = OpaqueRenderer*(PKG_CAM_CDECL*)();
-  using ViewerUpdate = void(PKG_CAM_CDECL*)(OpaqueWord);
+  using ViewerUpdate = void(PKG_CAM_THISCALL*)(OpaqueViewer*,
+                                               const OpaqueRect*);
   using DefaultCategory = const OpaqueWide*(PKG_CAM_CDECL*)();
-  using ActiveCategory = const OpaqueWide*(PKG_CAM_CDECL*)();
-  using InactiveCategory = const OpaqueWide*(PKG_CAM_CDECL*)();
-  using EndUpdate = bool(PKG_CAM_THISCALL*)(OpaqueViewer*);
+  using EndUpdate = bool(PKG_CAM_THISCALL*)(OpaqueViewer*, OpaqueWord,
+                                            OpaqueWord);
 
   ParseMode parse_mode_00837f30 = nullptr;
   LogCurrent log_current_00841000 = nullptr;
@@ -236,14 +254,13 @@ struct CameraCommandPorts {
   WideCompare wide_compare = nullptr;
   FreeValue free_00f47380 = nullptr;
   ListEnabled list_enabled_008380b0 = nullptr;
-  LogList log_list_00841000 = nullptr;
+  LogNamed log_named_00841000 = nullptr;
+  LogDescribed log_described_00841000 = nullptr;
   LookupTarget lookup_target_00838330 = nullptr;
   LookupRenderType lookup_render_type_00838330 = nullptr;
   RendererGet renderer_get_0067dd10 = nullptr;
   ViewerUpdate viewer_update_007c3c20 = nullptr;
   DefaultCategory default_category_007c65a0 = nullptr;
-  ActiveCategory active_category_013ec468 = nullptr;
-  InactiveCategory inactive_category_013ed024 = nullptr;
   EndUpdate end_update_007c3ce0 = nullptr;
 };
 
@@ -251,8 +268,8 @@ extern CameraCommandPorts* g_camera_command_ports;
 
 struct OpaqueCameraCommandError {};
 
-extern "C" bool PKG_CAM_THISCALL service_007c6750(
-    OpaqueCameraCommandOwner* owner, OpaqueWord argument);
+extern "C" bool PKG_CAM_THISCALL
+service_007c6750(OpaqueCameraCommandOwner* owner, OpaqueWord argument);
 
 }
 

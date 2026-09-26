@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Tool registry for the OpenSpore MCP server (stdlib only).
 
-Holds the 21 tool schemas plus the handler dispatch table. The KG-spine
+Holds the 24 tool schemas plus the handler dispatch table. The KG-spine
 tools (``pipeline_state``, ``target_select``, ``kg_query``,
 ``kg_neighbors``, ``kg_record``, ``queue_op``) are real implementations
 in kg_tools.py, the Ghidra/dossier tools (``ghidra_decompile``,
@@ -24,6 +24,7 @@ from typing import Any, Callable, Dict, List
 from tools.mcp import asset_tools
 from tools.mcp import ghidra_tools
 from tools.mcp import kg_tools
+from tools.mcp import reconstruction_tools
 from tools.mcp import runtime_tools
 
 # Provisional note carried by every stub result so callers can tell
@@ -87,7 +88,7 @@ def _schema(name, description, properties, required=None,
     return entry
 
 
-# The 21 tools (exact names). Properties document the real handler
+# The 24 tools (exact names). Properties document the real handler
 # params, including every accepted alias (e.g. pattern/query,
 # topic/path, function/address/rva/name); conjunctive requirements
 # live in inputSchema.required while conditional one-of requirements
@@ -103,6 +104,27 @@ TOOL_SCHEMAS = [
             {"target": {"type": "string"},
               "limit": {"type": "integer"},
               "status": {"type": "string"}}),
+    _schema("function_context",
+            "Return bounded reconstruction context for one VA: status, "
+            "source, callers, callees, types, globals, ABI, runtime gates, "
+            "semantic findings, contradictions, and reconstructed analogues.",
+            {"va": {"type": "string"},
+             "address": {"type": "string"},
+             "limit": {"type": "integer"}},
+            required_one_of=[["va", "address"]]),
+    _schema("frontier_context",
+            "Return the current bounded reconstruction frontier with triage "
+            "priority, dependency signals, exact inspect paths, and active "
+            "coordination claims when the KG sidecar is available.",
+            {"package": {"type": "string"},
+             "subsystem": {"type": "string"},
+             "status": {"type": "string"},
+             "limit": {"type": "integer"}}),
+    _schema("reconstruction_status",
+            "Return the compact authoritative reconstruction status for one VA.",
+            {"va": {"type": "string"},
+             "address": {"type": "string"}},
+            required_one_of=[["va", "address"]]),
     _schema("kg_query",
             "Query the knowledge-graph sidecar for nodes by label/name.",
             {"query": {"type": "string"},
@@ -287,7 +309,12 @@ TOOL_SCHEMAS = [
              "rebuild": {"type": "boolean"},
              "fixtures_path": {"type": "string"}}),
     _schema("queue_op",
-            "Enqueue a gated/background operation for later approval.",
+            "Coordinate queue operations. op=claim atomically leases an open "
+            "investigation, refuses duplicate active owners, preserves "
+            "terminal rows, and requires explicit stale/blocked overrides. "
+            "op=release ends a lease without ending the investigation. Every "
+            "write to a leased row requires implementer_id to match the lease "
+            "holder. op=get accepts either id or va.",
              {"op": {"type": "string"},
               "payload": {"type": "object"},
               "id": {"type": "string"},
@@ -300,6 +327,8 @@ TOOL_SCHEMAS = [
               "stage": {"type": "string"},
               "status": {"type": "string"},
               "disposition": {"type": "string"},
+              "to": {"type": "string"},
+              "reason": {"type": "string"},
               "block_reason": {"type": "string"},
               "prerequisites": {"type": "string"},
               "attempts": {"type": "string"},
@@ -308,6 +337,9 @@ TOOL_SCHEMAS = [
               "implementer_id": {"type": "string"},
               "adjudicator_id": {"type": "string"},
               "binary_sha256": {"type": "string"},
+              "stale_after_seconds": {"type": "integer"},
+              "allow_stale": {"type": "boolean"},
+              "allow_blocked": {"type": "boolean"},
               "limit": {"type": "integer"}},
             required=["op"]),
 ]
@@ -324,6 +356,9 @@ HANDLERS = {
 _REAL_HANDLERS = {
     "pipeline_state": kg_tools.pipeline_state,
     "target_select": kg_tools.target_select,
+    "function_context": reconstruction_tools.function_context,
+    "frontier_context": reconstruction_tools.frontier_context,
+    "reconstruction_status": reconstruction_tools.reconstruction_status,
     "kg_query": kg_tools.kg_query,
     "kg_neighbors": kg_tools.kg_neighbors,
     "kg_record": kg_tools.kg_record,

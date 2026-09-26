@@ -1,0 +1,2827 @@
+{
+  "$schema": "openspore-reconstruction-coverage-1",
+  "artifact": "openspore-reconstruction-coverage",
+  "blind_spots": [
+    "call-graph, field, and type knowledge depends solely on a gitignored, stale (classifier triage-v4) SQLite database: 0% of the caller/callee, has_type_association and evidence_calls dimensions survives a fresh clone.",
+    "the 478 persisted decompilation bodies live under gitignored .spore-analysis/; the tracked decompiler .c output does not account for them.",
+    "a second decompiler cache under tools/mcp/cache/decompiled/ holds further bodies and is gitignored and self-described as disposable; this reporter does not count it, because counting it would mean trusting a cache its own author calls throwaway",
+    "0 runtime-validated functions and 0 negative runtime observations exist; the original Cell stage was never entered in any Wine run recorded by knowledgegraph/research/runtime-oracle.json.",
+    "ledger semantic_understanding is the constant 'not_established' on all 58757 rows: zero information, a disclaimer rather than a classification.",
+    "96.0% of the universe (56413 functions) has no package or cluster membership claim at all.",
+    "reconstruction/ is roughly 66% untracked; only 101 of 328 metadata VAs survive a fresh clone.",
+    "4 reconstructed VAs (00b5b880, 00b5b8a0, 00b5b8c0, 00b5b8e0) lie outside the 58757-row universe and are also absent from metrics.accounting_exclusions.",
+    "182 of 300 manifest records reference a runtime gate token absent from the canonical runtime_gates[] list.",
+    "packages[].functions covers only 154 of 300 records; 21 record package ids are missing from packages[]; packages_complete+packages_in_progress (65) does not equal the 65 declared packages.",
+    "3 of the 368 triage-queue rows lie outside the canonical universe and have no function or xref data; they are preserved separately rather than forced into the ledger.",
+    "the live-only decompilation dimension is clone-reproducible because it is derived from the git-tracked decomp-gap/*.json partitions; the 142MB synthesis output decomp-gap-excavation.json is gitignored and is neither read nor regenerated here."
+  ],
+  "cannot_determine": [
+    {
+      "metric": "functions_with_caller",
+      "reason": "source is the gitignored, stale (triage-v4) SQLite database; a fresh clone has no xref table, so this dimension is not reproducible. Marked machine_local."
+    },
+    {
+      "metric": "functions_with_callee",
+      "reason": "source is the gitignored, stale (triage-v4) SQLite database; a fresh clone has no xref table, so this dimension is not reproducible. Marked machine_local."
+    },
+    {
+      "metric": "functions_with_any_call_role",
+      "reason": "source is the gitignored, stale (triage-v4) SQLite database; a fresh clone has no xref table, so this dimension is not reproducible. Marked machine_local."
+    },
+    {
+      "metric": "runtime_unavailable",
+      "reason": "no record in the repository carries a `runtime_unavailable` field; NOT_AVAILABLE is a capability/verdict token, so a VA count would require inventing the category. Emitted available=false with the capability status instead."
+    },
+    {
+      "metric": "withheld_va",
+      "reason": "'withheld' is not a canonical term in this repository: no field, enum, or status carries that name. The two closest sourced quantities (handoff excluded_addresses, deferred_full_package_claims.withheld_body_count) are reported by name; the latter has no VA list, so no VA count is derivable."
+    },
+    {
+      "metric": "withheld_va_from_deferred_full_package_claims",
+      "reason": "deferred_full_package_claims.withheld_body_count is a bare integer (10) with no VA list, so it cannot be resolved to addresses."
+    },
+    {
+      "metric": "a single overall completion percentage",
+      "reason": "the dimensions are defined over different universes, provenances, and evidence ladders; any weighted composite would be a fabrication. Deliberately absent."
+    }
+  ],
+  "caveats": [
+    "There is deliberately NO single overall completion percentage. These dimensions are defined over different universes (%s vs %s), different provenance classes (tracked / untracked / machine-local), and different evidence ladders; any weighted composite would be a fabrication, not a measurement.",
+    "Provenance is part of every number: a 'tracked' dimension survives a fresh clone, an 'untracked' one does not, and a 'machine_local' one is not reproducible at all.",
+    "NOT_RUN, UNKNOWN, UNCLASSIFIED, and RUNTIME-GATED are all absences of evidence. None of them is a claim that something is wrong.",
+    "'available' and 'sufficient' are different claims about an evidence class. A class whose field merely exists is available, not sufficient.",
+    "metrics.accounting_exclusions is a preservation list, not a subtraction; all of its VAs are integrated records.",
+    "The binary sha256, version, and image base are copied from the manifest's own binary block. The reporter does not hash SPORE/SporeBin/SporeApp.exe itself, because doing so would make a report depend on a directory that is git-ignored and absent in a fresh clone.",
+    "The 3 queue rows outside the canonical universe and the 4 manifest VAs outside it are preserved and reported, never discarded and never merged.",
+    "Untracked inputs change under concurrent agents. The report fingerprints every input before and after reading and refuses to publish on a torn read, but a rebuild after a concurrent edit can legitimately report different untracked counts."
+  ],
+  "classifications": {
+    "blueprint_claim_kind": {
+      "counts": {
+        "INFERRED": 484,
+        "SEMANTIC": 411,
+        "UNKNOWN": 1254
+      },
+      "gameplay_universe": 2149,
+      "note": "blueprint axis; denominator is the 2149 gameplay set, NOT 58,757",
+      "source_of_truth": "knowledgegraph/research/semantic-blueprint.json#functions[].evidence.claim_kind"
+    },
+    "blueprint_contract_state": {
+      "counts": {
+        "body_partial": 171,
+        "dossier_partial": 2,
+        "identity_graph_partial": 388,
+        "unresolved": 1588
+      },
+      "gameplay_universe": 2149,
+      "source_of_truth": "knowledgegraph/research/semantic-blueprint.json#functions[].contract_status.state"
+    },
+    "blueprint_semantic_understanding": {
+      "counts": {
+        "not_established": 1976,
+        "partial": 173
+      },
+      "gameplay_universe": 2149,
+      "note": "this is the only gameplay axis with real variance; the ledger's own semantic_understanding is the constant not_established everywhere",
+      "source_of_truth": "knowledgegraph/research/semantic-blueprint.json#functions[].contract_status.semantic_understanding"
+    },
+    "body_quality": {
+      "counts": {
+        "annotated_decompiler_capture": 1,
+        "decompiler_pseudocode_with_warnings": 477,
+        "snapshot_role_only": 1,
+        "snapshot_snippet_only": 1,
+        "unavailable": 58277
+      },
+      "source_of_truth": "knowledgegraph/research/21-decompilation-coverage.json#ledger[].body_quality",
+      "universe": 58757
+    },
+    "body_status": {
+      "counts": {
+        "ABSENT": 12,
+        "integrated": 285,
+        "runtime_gated": 3
+      },
+      "source_of_truth": "knowledgegraph/research/source-reconstruction-manifest.json#functions[].body_status",
+      "universe": 300
+    },
+    "decomp_state": {
+      "counts": {
+        "annotated_decompiler_capture": 1,
+        "decompiler_export": 477,
+        "snapshot_only": 2,
+        "unavailable": 58277
+      },
+      "gameplay_counts": {
+        "decompiler_export": 172,
+        "snapshot_only": 1,
+        "unavailable": 1976
+      },
+      "gameplay_universe": 2149,
+      "source_of_truth": "knowledgegraph/research/21-decompilation-coverage.json#ledger[].decomp_state",
+      "universe": 58757
+    },
+    "integration_status": {
+      "counts": {
+        "blocked": 1,
+        "integrated": 299
+      },
+      "note": "integration_status is the 299/1 integrated/blocked split; body_status is a DIFFERENT axis",
+      "source_of_truth": "knowledgegraph/research/source-reconstruction-manifest.json#functions[].integration_status",
+      "universe": 300
+    },
+    "name_evidence": {
+      "counts": {
+        "APPROX": 1500,
+        "CONFIRMED": 1167,
+        "INFERRED": 12371,
+        "SUPPORTED": 3836,
+        "UNKNOWN": 39883
+      },
+      "gameplay_counts": {
+        "APPROX": 94,
+        "CONFIRMED": 487,
+        "INFERRED": 1413,
+        "SUPPORTED": 155
+      },
+      "gameplay_universe": 2149,
+      "note": "this is the EVIDENCE ladder, not a semantic tier",
+      "source_of_truth": "knowledgegraph/research/21-decompilation-coverage.json#ledger[].name_evidence",
+      "universe": 58757
+    },
+    "package_status": {
+      "counts": {
+        "in_progress": 1,
+        "integrated": 64
+      },
+      "source_of_truth": "knowledgegraph/research/source-reconstruction-manifest.json#packages[].status",
+      "universe": 65
+    },
+    "priority": {
+      "counts": {
+        "IGNORE": 178,
+        "P0": 159,
+        "P1": 6261,
+        "P2": 19,
+        "P3": 52140
+      },
+      "source_of_truth": "knowledgegraph/research/21-decompilation-coverage.json#ledger[].priority",
+      "universe": 58757
+    },
+    "queue_state": {
+      "counts": {
+        "candidate": 177,
+        "implemented": 35,
+        "queued": 153
+      },
+      "queue_file_vocabulary": [
+        "candidate",
+        "queued",
+        "analyzing",
+        "understood",
+        "implemented",
+        "replacement-tested",
+        "runtime-validated"
+      ],
+      "source_of_truth": "knowledgegraph/research/21-decompilation-coverage.json#ledger[].queue.queue_state",
+      "universe": 58757
+    },
+    "readiness": {
+      "counts": {
+        "DEPENDENCY_FIRST": 24,
+        "ENGINE_BOUNDARY": 23,
+        "LIKELY_INFRASTRUCTURE": 182,
+        "NEEDS_RE": 101,
+        "READY": 6,
+        "READY_WITH_LOCAL_CONTEXT": 29
+      },
+      "source_of_truth": "knowledgegraph/research/21-decompilation-coverage.json#ledger[].queue.readiness",
+      "universe": 58757
+    },
+    "semantic_classification": {
+      "counts": {
+        "BOUNDED_SEMANTIC": 8,
+        "NEEDS_RUNTIME": 15,
+        "STRONG_SEMANTIC": 4,
+        "STRUCTURAL_ONLY": 5
+      },
+      "gameplay_universe": 2149,
+      "source_of_truth": "knowledgegraph/research/semantic-decomp.json#records[].classification",
+      "vocabulary_documented_in": "docs/analysis/semantic-decomp.md"
+    },
+    "triage_category": {
+      "counts": {
+        "ENGINE_IMPLEMENTATION": 11585,
+        "ENGINE_INTERFACE": 1227,
+        "GAMEPLAY_LOGIC": 1656,
+        "GAMEPLAY_SUPPORT": 493,
+        "THIRD_PARTY_OR_RUNTIME": 4080,
+        "UNKNOWN": 39716
+      },
+      "gameplay_counts": {
+        "GAMEPLAY_LOGIC": 1656,
+        "GAMEPLAY_SUPPORT": 493
+      },
+      "gameplay_universe": 2149,
+      "source_of_truth": "knowledgegraph/research/21-decompilation-coverage.json#ledger[].triage_category",
+      "universe": 58757
+    }
+  },
+  "dependencies": {
+    "actionable_frontier": 231,
+    "actionable_frontier_in_universe": 228,
+    "availability_conflicts": [
+      {
+        "conflicts": [
+          {
+            "kind": "multiple_sdk_export_files_for_one_va",
+            "paths": [
+              ".spore-analysis/ghidra-exports/decompiled_sdk/IO__StreamChild__GetAccessFlags.c",
+              ".spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__ImageDrawable__GetImageDrawableFlags.c"
+            ],
+            "primary_path": ".spore-analysis/ghidra-exports/decompiled_sdk/UTFWin__ImageDrawable__GetImageDrawableFlags.c",
+            "selected_by": "triage.decomp_path"
+          }
+        ],
+        "va": "0093b630"
+      },
+      {
+        "conflicts": [
+          {
+            "kind": "duplicate_body_capture",
+            "paths": [
+              ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__MovePlayerToMousePosition.c",
+              "tools/re/data/decompiled/MovePlayerToMousePosition.c"
+            ],
+            "primary_path": ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__Cell__MovePlayerToMousePosition.c",
+            "selected_by": "prefer_canonical_sdk_export"
+          }
+        ],
+        "va": "00e5b790"
+      }
+    ],
+    "blocked_axes": {
+      "axes": {
+        "blockers": {
+          "callee_dependencies_unresolved": 24,
+          "decompilation_not_persisted": 181,
+          "engine_interface_boundary": 23,
+          "local_type_context_required": 29,
+          "needs_reverse_engineering": 101,
+          "outside_reconstruction_scope": 182
+        },
+        "ledger_rows_with_empty_blockers_and_readiness_READY": 6,
+        "ledger_rows_with_non_empty_blockers": 359,
+        "ledger_rows_with_queue": 365,
+        "queue_state": {
+          "candidate": 177,
+          "implemented": 35,
+          "queued": 153
+        },
+        "readiness": {
+          "DEPENDENCY_FIRST": 24,
+          "ENGINE_BOUNDARY": 23,
+          "LIKELY_INFRASTRUCTURE": 182,
+          "NEEDS_RE": 101,
+          "READY": 6,
+          "READY_WITH_LOCAL_CONTEXT": 29
+        }
+      },
+      "do_not_sum": true,
+      "warning": "These axes are ALTERNATIVE STATES of the same 365 queue rows, not additive quantities. Summing them would double-count every row that carries more than one signal."
+    },
+    "blockers": {
+      "callee_dependencies_unresolved": 24,
+      "decompilation_not_persisted": 181,
+      "engine_interface_boundary": 23,
+      "local_type_context_required": 29,
+      "needs_reverse_engineering": 101,
+      "outside_reconstruction_scope": 182
+    },
+    "dependency_completeness": {
+      "closed_gameplay_functions": 500,
+      "distinct_queue_dependency_tokens": 6,
+      "queue_rows_with_dependencies": 204,
+      "uncertain_gameplay_functions": 0
+    },
+    "frontier_cross_check": {
+      "agrees_with_derived_actionable_frontier": true,
+      "knowledge_index_frontier_size": 231,
+      "knowledge_index_present": true
+    },
+    "in_universe": 365,
+    "out_of_universe": [
+      "00e3a400",
+      "00e7b6c0",
+      "00e7d2c0"
+    ],
+    "out_of_universe_count": 3,
+    "queue": 368,
+    "queue_state_crosstab": {
+      "candidate/LIKELY_INFRASTRUCTURE": 76,
+      "candidate/NEEDS_RE": 101,
+      "implemented/DEPENDENCY_FIRST": 14,
+      "implemented/ENGINE_BOUNDARY": 7,
+      "implemented/LIKELY_INFRASTRUCTURE": 3,
+      "implemented/READY_WITH_LOCAL_CONTEXT": 11,
+      "queued/DEPENDENCY_FIRST": 10,
+      "queued/ENGINE_BOUNDARY": 16,
+      "queued/LIKELY_INFRASTRUCTURE": 103,
+      "queued/READY": 6,
+      "queued/READY_WITH_LOCAL_CONTEXT": 18
+    },
+    "readiness": {
+      "DEPENDENCY_FIRST": 24,
+      "ENGINE_BOUNDARY": 23,
+      "LIKELY_INFRASTRUCTURE": 182,
+      "NEEDS_RE": 101,
+      "READY": 6,
+      "READY_WITH_LOCAL_CONTEXT": 29
+    }
+  },
+  "dimensions": [
+    {
+      "available": true,
+      "caveats": [],
+      "counting_rule": "row count of the canonical 58,757-row ledger; each VA counted once",
+      "covered": 58757,
+      "gameplay_covered": 2149,
+      "gameplay_pct": 100.0,
+      "gameplay_universe": 2149,
+      "id": "total_internal_functions",
+      "label": "Total internal functions",
+      "pct": null,
+      "pct_is_tautological": true,
+      "pct_null_because": "covered equals universe by construction, so any percentage would be the identity 100.0 and not a measurement; read `covered` and `universe` directly",
+      "provenance": "tracked",
+      "source_of_truth": "knowledgegraph/research/21-decompilation-coverage.json#ledger",
+      "universe": 58757
+    },
+    {
+      "available": true,
+      "caveats": [],
+      "counting_rule": "count of ledger rows whose triage category is GAMEPLAY_LOGIC or GAMEPLAY_SUPPORT",
+      "covered": 2149,
+      "gameplay_covered": 2149,
+      "gameplay_pct": 100.0,
+      "gameplay_universe": 2149,
+      "id": "gameplay_functions",
+      "label": "Gameplay functions",
+      "pct": null,
+      "pct_is_tautological": true,
+      "pct_null_because": "covered equals universe by construction, so any percentage would be the identity 100.0 and not a measurement; read `covered` and `universe` directly",
+      "provenance": "tracked",
+      "source_of_truth": "knowledgegraph/research/21-decompilation-coverage.json#ledger[].triage_category in {GAMEPLAY_LOGIC, GAMEPLAY_SUPPORT}",
+      "universe": 2149
+    },
+    {
+      "available": true,
+      "caveats": [
+        "a residual category, not an independently sourced universe"
+      ],
+      "counting_rule": "universe minus gameplay; no independent source of truth",
+      "covered": 56608,
+      "gameplay_covered": 0,
+      "gameplay_pct": 0.0,
+      "gameplay_universe": 2149,
+      "id": "non_gameplay_functions",
+      "label": "Non-gameplay functions",
+      "pct": null,
+      "pct_is_tautological": true,
+      "pct_null_because": "covered equals universe by construction, so any percentage would be the identity 100.0 and not a measurement; read `covered` and `universe` directly",
+      "provenance": "derived",
+      "source_of_truth": "knowledgegraph/research/21-decompilation-coverage.json#ledger minus the gameplay set",
+      "universe": 56608
+    },
+    {
+      "available": true,
+      "caveats": [
+        "source is a gitignored SQLite database that a fresh clone will NOT have",
+        "the DB's triage table is classifier triage-v4, not the v6 the ledger was built from, so the DB's own category census disagrees with the ledger",
+        "the local DB undercounts the gameplay set, so gameplay_* here understates reality",
+        "NOT reproducible from a fresh clone: 0% of this dimension survives",
+        "the xref census is a lower bound: it counts only reference types direct-call/thunk/external/computed-call and drops EXT:/VT: pseudo-targets"
+      ],
+      "counting_rule": "count of distinct callee_va in xref where reference_type in ['direct-call', 'thunk', 'external', 'computed-call'], excluding callee_va LIKE 'EXT:%' OR callee_va LIKE 'VT:%'",
+      "covered": 33643,
+      "database_uri": "mode=ro",
+      "gameplay_covered": 1780,
+      "gameplay_pct": 82.8292,
+      "gameplay_universe": 2149,
+      "id": "functions_with_caller",
+      "label": "Functions with at least one caller",
+      "machine_local": true,
+      "pct": 57.2579,
+      "provenance": "machine_local",
+      "source_of_truth": "knowledgegraph/spore.db#xref where reference_type in ['direct-call', 'thunk', 'external', 'computed-call']",
+      "universe": 58757,
+      "xref_column_read": "callee_va"
+    },
+    {
+      "available": true,
+      "caveats": [
+        "source is a gitignored SQLite database that a fresh clone will NOT have",
+        "the DB's triage table is classifier triage-v4, not the v6 the ledger was built from, so the DB's own category census disagrees with the ledger",
+        "the local DB undercounts the gameplay set, so gameplay_* here understates reality",
+        "NOT reproducible from a fresh clone: 0% of this dimension survives",
+        "the xref census is a lower bound: it counts only reference types direct-call/thunk/external/computed-call and drops EXT:/VT: pseudo-targets"
+      ],
+      "counting_rule": "count of distinct caller_va in xref where reference_type in ['direct-call', 'thunk', 'external', 'computed-call'], excluding caller_va LIKE 'EXT:%' OR caller_va LIKE 'VT:%'",
+      "covered": 41031,
+      "database_uri": "mode=ro",
+      "gameplay_covered": 1681,
+      "gameplay_pct": 78.2224,
+      "gameplay_universe": 2149,
+      "id": "functions_with_callee",
+      "label": "Functions with at least one callee",
+      "machine_local": true,
+      "pct": 69.8317,
+      "provenance": "machine_local",
+      "source_of_truth": "knowledgegraph/spore.db#xref where reference_type in ['direct-call', 'thunk', 'external', 'computed-call']",
+      "universe": 58757,
+      "xref_column_read": "caller_va"
+    },
+    {
+      "available": true,
+      "caveats": [
+        "source is a gitignored SQLite database that a fresh clone will NOT have",
+        "the DB's triage table is classifier triage-v4, not the v6 the ledger was built from, so the DB's own category census disagrees with the ledger",
+        "the local DB undercounts the gameplay set, so gameplay_* here understates reality",
+        "NOT reproducible from a fresh clone: 0% of this dimension survives",
+        "the xref census is a lower bound: it counts only reference types direct-call/thunk/external/computed-call and drops EXT:/VT: pseudo-targets"
+      ],
+      "counting_rule": "count of distinct callee_va UNION caller_va in xref where reference_type in ['direct-call', 'thunk', 'external', 'computed-call'], with EXT:/VT: pseudo-targets dropped from both columns",
+      "covered": 49451,
+      "database_uri": "mode=ro",
+      "gameplay_covered": 2104,
+      "gameplay_pct": 97.906,
+      "gameplay_universe": 2149,
+      "id": "functions_with_any_call_role",
+      "label": "Functions in any call role",
+      "machine_local": true,
+      "pct": 84.1619,
+      "provenance": "machine_local",
+      "source_of_truth": "knowledgegraph/spore.db#xref where reference_type in ['direct-call', 'thunk', 'external', 'computed-call']",
+      "universe": 58757,
+      "xref_column_read": null
+    },
+    {
+      "available": true,
+      "caveats": [
+        "the 478 bodies live under gitignored .spore-analysis/, and the tracked decompiler .c output does not account for them",
+        "a second decompiler cache under tools/mcp/cache/decompiled/ holds further bodies and is gitignored and self-described as disposable; this reporter does not count it, because counting it would mean trusting a cache its own author calls throwaway"
+      ],
+      "counting_rule": "count of ledger rows where body_available is exactly true; each VA counted once (ledger has 0 duplicate VAs)",
+      "covered": 478,
+      "gameplay_covered": 172,
+      "gameplay_pct": 8.0037,
+      "gameplay_universe": 2149,
+      "id": "persisted_decompilation",
+      "label": "Persisted decompilation",
+      "pct": 0.8135,
+      "provenance": "tracked",
+      "source_of_truth": "knowledgegraph/research/21-decompilation-coverage.json#ledger[].body_available == true",
+      "universe": 58757
+    },
+    {
+      "available": true,
+      "caveats": [
+        "includes 2 snapshot_only rows that are NOT persisted decompilation bodies"
+      ],
+      "counting_rule": "count of ledger rows in any non-unavailable decomp_state; strictly a superset of persisted_decompilation",
+      "covered": 480,
+      "gameplay_covered": 173,
+      "gameplay_pct": 8.0503,
+      "gameplay_universe": 2149,
+      "id": "any_decompilation_evidence",
+      "label": "Any decompilation evidence",
+      "pct": 0.8169,
+      "provenance": "tracked",
+      "source_of_truth": "knowledgegraph/research/21-decompilation-coverage.json#ledger[].decomp_state != 'unavailable'",
+      "universe": 58757
+    },
+    {
+      "available": true,
+      "caveats": [
+        "absence of evidence, not a claim of impossibility"
+      ],
+      "counting_rule": "complement of any_decompilation_evidence; this is the real size of the gap",
+      "covered": 58277,
+      "gameplay_covered": 1976,
+      "gameplay_pct": 91.9497,
+      "gameplay_universe": 2149,
+      "id": "no_decompilation_evidence",
+      "label": "No decompilation evidence",
+      "pct": 99.1831,
+      "provenance": "tracked",
+      "source_of_truth": "knowledgegraph/research/21-decompilation-coverage.json#ledger[].decomp_state == 'unavailable'",
+      "universe": 58757
+    },
+    {
+      "available": true,
+      "caveats": [
+        "provably disjoint from the 478 persisted bodies: the gap universe is defined as gameplay AND decomp.available == False",
+        "this dimension IS clone-reproducible: it is computed from the git-tracked knowledgegraph/research/decomp-gap/*.json partitions, not from the gitignored synthesis output",
+        "the gitignored synthesis output decomp-gap-excavation.json is deliberately NOT read or regenerated here, because synthesize.py main() writes it; this reporter re-derives the 184 VAs from the tracked partitions instead"
+      ],
+      "counting_rule": "count of VAs whose decomp-gap record satisfies has_live_static_body; a DIMENSION UNION, NOT a decompilation count",
+      "covered": 184,
+      "disjoint_from_persisted_decompilation": true,
+      "gameplay_covered": 184,
+      "gameplay_pct": 8.5621,
+      "gameplay_universe": 2149,
+      "id": "live_only_decomp_observation",
+      "label": "Live-only decompilation observation",
+      "overlap": [],
+      "pct": 0.3132,
+      "provenance": "tracked",
+      "source_of_truth": "knowledgegraph/research/decomp-gap/synthesize.py:250-264 (has_live_static_body), reimplemented verbatim in coverage.py; applied to knowledgegraph/research/decomp-gap/*.json",
+      "union_with_persisted_gameplay": 356,
+      "universe": 58757
+    },
+    {
+      "available": true,
+      "caveats": [
+        "this is the same 478 body population narrowed by queue membership, NOT additional decompilation"
+      ],
+      "counting_rule": "count of ledger rows that are both queued and already decompiled; the queue-side view of the same body population",
+      "covered": 184,
+      "gameplay_covered": 59,
+      "gameplay_pct": 2.7455,
+      "gameplay_universe": 2149,
+      "id": "staging_decomp_candidate",
+      "label": "Staging decompilation candidate",
+      "pct": 0.3132,
+      "provenance": "derived",
+      "source_of_truth": "knowledgegraph/research/21-decompilation-coverage.json#ledger[] where queue != null AND body_available == true",
+      "universe": 58757
+    },
+    {
+      "available": true,
+      "caveats": [
+        "both sides are needed: reconstruction of the remaining 151 manifest VAs happened without a persisted decompiler body"
+      ],
+      "counting_rule": "count of manifest VAs that also carry a persisted body; the complement (reconstructed with NO persisted body) is the interesting number and is reported in the reconstruction section",
+      "covered": 149,
+      "gameplay_covered": 47,
+      "gameplay_pct": 2.1871,
+      "gameplay_universe": 2149,
+      "id": "reconstructed_without_persisted_decompilation",
+      "label": "Reconstructed without persisted decompilation",
+      "pct": 0.2536,
+      "provenance": "derived",
+      "source_of_truth": "knowledgegraph/research/source-reconstruction-manifest.json#functions[] intersected with knowledgegraph/research/21-decompilation-coverage.json#ledger[].body_available",
+      "universe": 58757
+    },
+    {
+      "available": true,
+      "caveats": [
+        "reconstruction/metadata is ~66% untracked; only 101 of the 328 metadata files are git-tracked, so most of this dimension does not survive a fresh clone"
+      ],
+      "counting_rule": "count of VAs with a reconstruction/metadata record but no manifest function record",
+      "covered": 27,
+      "gameplay_covered": 14,
+      "gameplay_pct": 0.6515,
+      "gameplay_universe": 2149,
+      "id": "metadata_only_record",
+      "label": "Metadata-only record",
+      "metadata_distinct_vas": 326,
+      "metadata_files": 328,
+      "metadata_in_universe": 322,
+      "pct": 0.046,
+      "provenance": "untracked",
+      "source_of_truth": "reconstruction/metadata/**/*.json basenames minus knowledgegraph/research/source-reconstruction-manifest.json#functions[]",
+      "universe": 58757
+    },
+    {
+      "available": true,
+      "caveats": [
+        "record count, not VA count; see integrated_unique_va for the deduplicated view",
+        "metric bodies_reconstructed=299 and integrated=299 are the same 299 records"
+      ],
+      "counting_rule": "count of manifest function RECORDS with integration_status integrated; the 299/1 integrated/blocked split comes from integration_status, NOT body_status",
+      "covered": 299,
+      "gameplay_covered": 146,
+      "gameplay_pct": 6.7939,
+      "gameplay_universe": 2149,
+      "id": "integrated_reconstruction_record",
+      "label": "Integrated reconstruction record",
+      "pct": 99.6667,
+      "provenance": "tracked",
+      "source_of_truth": "knowledgegraph/research/source-reconstruction-manifest.json#functions[].integration_status == 'integrated'",
+      "universe": 300
+    },
+    {
+      "available": true,
+      "caveats": [
+        "equals the record count because the 300 records hold 300 distinct VAs (0 duplicates)",
+        "4 of these VAs lie outside the 58,757-row universe and are reported separately"
+      ],
+      "counting_rule": "distinct VAs among integrated records; 12 records carry no `va` key and use `function_address`, so both keys must be read",
+      "covered": 299,
+      "gameplay_covered": 146,
+      "gameplay_pct": 6.7939,
+      "gameplay_universe": 2149,
+      "id": "integrated_unique_va",
+      "label": "Integrated unique VA",
+      "pct": 0.5089,
+      "provenance": "derived",
+      "source_of_truth": "knowledgegraph/research/source-reconstruction-manifest.json#functions[] deduplicated by normalize_va(va or function_address)",
+      "universe": 58757
+    },
+    {
+      "available": true,
+      "caveats": [
+        "gameplay reconstruction is far below the gameplay universe; the gap is the point"
+      ],
+      "counting_rule": "distinct integrated VAs that are also gameplay rows",
+      "covered": 146,
+      "gameplay_covered": 146,
+      "gameplay_pct": 6.7939,
+      "gameplay_universe": 2149,
+      "id": "integrated_gameplay_va",
+      "label": "Integrated gameplay VA",
+      "pct": 6.7939,
+      "provenance": "derived",
+      "source_of_truth": "knowledgegraph/research/source-reconstruction-manifest.json#functions[] intersected with the gameplay set",
+      "universe": 2149
+    },
+    {
+      "available": true,
+      "caveats": [
+        "STAGED IS NOT INTEGRATED: this count is never added into any integrated figure",
+        "a staged VA may be blocked, deferred, or never promoted; staging is a work state, not a reconstruction claim",
+        "reconstruction/staging is untracked and concurrently edited by other agents"
+      ],
+      "counting_rule": "distinct VAs named by a VA-named JSON file under reconstruction/staging",
+      "covered": 42,
+      "gameplay_covered": 25,
+      "gameplay_pct": 1.1633,
+      "gameplay_universe": 2149,
+      "id": "staged_va",
+      "label": "Staged VA",
+      "pct": null,
+      "pct_is_tautological": true,
+      "pct_null_because": "covered equals universe by construction, so any percentage would be the identity 100.0 and not a measurement; read `covered` and `universe` directly",
+      "provenance": "untracked",
+      "source_of_truth": "reconstruction/staging/*/**.json with a VA-shaped basename",
+      "staging_c_cxx_files": 404,
+      "staging_cpp_files": 266,
+      "staging_directories": 120,
+      "staging_hpp_files": 138,
+      "staging_member_files": 472,
+      "staging_other_member_files": 22,
+      "staging_vas_in_universe": 38,
+      "universe": 42
+    },
+    {
+      "available": true,
+      "blocked_va": "0x00dd0e10",
+      "caveats": [
+        "BLOCKED IS NOT RUNTIME-FAILED: this is a static integration blocker",
+        "the blocked VA is NOT part of any runtime dimension"
+      ],
+      "counting_rule": "count of manifest VAs whose integration_status is blocked",
+      "covered": 1,
+      "gameplay_covered": 1,
+      "gameplay_pct": 0.0465,
+      "gameplay_universe": 2149,
+      "id": "blocked_va",
+      "label": "Blocked VA",
+      "pct": null,
+      "pct_is_tautological": true,
+      "pct_null_because": "covered equals universe by construction, so any percentage would be the identity 100.0 and not a measurement; read `covered` and `universe` directly",
+      "provenance": "tracked",
+      "source_of_truth": "knowledgegraph/research/source-reconstruction-manifest.json#functions[].integration_status == 'blocked'",
+      "universe": 1
+    },
+    {
+      "available": false,
+      "caveats": [
+        "`withheld` has no canonical field/enum anywhere in the repository",
+        "the only VA-level quantity is handoff excluded_addresses, which is an EXCLUSION, not a withholding decision"
+      ],
+      "counting_rule": "'withheld' is NOT a canonical term in this repo: no field, enum, or status carries that name. The closest sourced quantities are reported by name instead",
+      "covered": null,
+      "deferred_withheld_body_count": 10,
+      "deferred_withheld_body_count_note": "a bare integer with NO VA list, so it cannot be turned into a VA count",
+      "deferred_withheld_body_count_va_list": null,
+      "excluded_addresses_distinct_vas": 50,
+      "excluded_addresses_handoffs": 5,
+      "gameplay_covered": null,
+      "gameplay_pct": null,
+      "gameplay_universe": 2149,
+      "id": "withheld_va",
+      "label": "Withheld VA",
+      "not_determinable_reason": "'withheld' is not a canonical term; a VA count cannot be determined without inventing a definition. The two closest sourced quantities are reported verbatim in reconstruction.withheld_sourced_quantities",
+      "pct": null,
+      "provenance": "derived",
+      "source_of_truth": "reconstruction/integrated/**/handoff.json#excluded_addresses and #deferred_full_package_claims.withheld_body_count",
+      "universe": 58757
+    },
+    {
+      "available": true,
+      "caveats": [
+        "ZERO runtime-validated functions exist; this is a capability gap, not a quality judgement",
+        "NOT_RUN is not FAILED: no original-process experiment has been attempted, let alone failed"
+      ],
+      "counting_rule": "max of every independent runtime-validated counter in the repo; all of them are 0",
+      "covered": 0,
+      "gameplay_covered": 0,
+      "gameplay_pct": 0.0,
+      "gameplay_universe": 2149,
+      "id": "runtime_validated_reconstruction_va",
+      "label": "Runtime-validated reconstruction VA",
+      "metrics_runtime_validated": 0,
+      "pct": 0.0,
+      "provenance": "mixed",
+      "record_audit_runtime_validated_total": 0,
+      "residual_unknown_runtime_evidence": "NOT_PRESENT",
+      "semantic_decomp_runtime_promoted_count": 0,
+      "source_of_truth": "knowledgegraph/research/source-reconstruction-manifest.json#metrics.runtime_validated, #functions[].audit_runtime_validated, knowledgegraph/research/semantic-decomp.json#aggregate_metrics.runtime_promoted_count, knowledgegraph/research/residual-unknown-priority.json#quality_status.runtime_evidence",
+      "universe": 58757
+    },
+    {
+      "available": true,
+      "caveats": [
+        "RUNTIME-GATED IS NOT RUNTIME-FAILED: a gate is a required capability, not an observed failure",
+        "288 records carry a gate token, but the canonical metric is 299",
+        "182 of 300 records reference a gate token absent from the canonical runtime_gates[] list"
+      ],
+      "counting_rule": "the manifest's own runtime_gated metric; distinct from 'records carrying any gate'",
+      "covered": 299,
+      "gameplay_covered": 136,
+      "gameplay_pct": 6.3285,
+      "gameplay_universe": 2149,
+      "id": "runtime_gated_reconstruction_va",
+      "label": "Runtime-gated reconstruction VA",
+      "pct": 99.6667,
+      "provenance": "tracked",
+      "source_of_truth": "knowledgegraph/research/source-reconstruction-manifest.json#metrics.runtime_gated",
+      "universe": 300
+    },
+    {
+      "available": true,
+      "caveats": [
+        "these tiers are only ever assigned to gameplay rows, so the 58,757 denominator is overwhelmingly NOT-APPLICABLE rather than failed",
+        "there is NO canonical semantic tier named 'inferred' or 'hypothesized'"
+      ],
+      "counting_rule": "count of semantic-decomp records carrying this canonical classification; the classification vocabulary is documented in docs/analysis/semantic-decomp.md",
+      "covered": 4,
+      "gameplay_covered": 4,
+      "gameplay_pct": 0.1861,
+      "gameplay_universe": 2149,
+      "id": "semantic_strong",
+      "label": "Strong semantic",
+      "pct": 0.0068,
+      "provenance": "tracked",
+      "records": [
+        "00576650",
+        "006a25a0",
+        "00b21340",
+        "01021300"
+      ],
+      "source_of_truth": "knowledgegraph/research/semantic-decomp.json#records[].classification == 'STRONG_SEMANTIC'",
+      "universe": 58757
+    },
+    {
+      "available": true,
+      "caveats": [
+        "these tiers are only ever assigned to gameplay rows, so the 58,757 denominator is overwhelmingly NOT-APPLICABLE rather than failed",
+        "there is NO canonical semantic tier named 'inferred' or 'hypothesized'"
+      ],
+      "counting_rule": "count of semantic-decomp records carrying this canonical classification; the classification vocabulary is documented in docs/analysis/semantic-decomp.md",
+      "covered": 8,
+      "gameplay_covered": 8,
+      "gameplay_pct": 0.3723,
+      "gameplay_universe": 2149,
+      "id": "semantic_bounded",
+      "label": "Bounded semantic",
+      "pct": 0.0136,
+      "provenance": "tracked",
+      "records": [
+        "004c5200",
+        "005c0380",
+        "005e0000",
+        "0062c550",
+        "00aeb720",
+        "00c877f0",
+        "00e5c780",
+        "01073700"
+      ],
+      "source_of_truth": "knowledgegraph/research/semantic-decomp.json#records[].classification == 'BOUNDED_SEMANTIC'",
+      "universe": 58757
+    },
+    {
+      "available": true,
+      "caveats": [
+        "these tiers are only ever assigned to gameplay rows, so the 58,757 denominator is overwhelmingly NOT-APPLICABLE rather than failed",
+        "there is NO canonical semantic tier named 'inferred' or 'hypothesized'"
+      ],
+      "counting_rule": "count of semantic-decomp records carrying this canonical classification; the classification vocabulary is documented in docs/analysis/semantic-decomp.md",
+      "covered": 5,
+      "gameplay_covered": 5,
+      "gameplay_pct": 0.2327,
+      "gameplay_universe": 2149,
+      "id": "semantic_structural_only",
+      "label": "Structural only",
+      "pct": 0.0085,
+      "provenance": "tracked",
+      "records": [
+        "005bf9d0",
+        "00606880",
+        "00834fa0",
+        "00b28ec0",
+        "00de9fc0"
+      ],
+      "source_of_truth": "knowledgegraph/research/semantic-decomp.json#records[].classification == 'STRUCTURAL_ONLY'",
+      "universe": 58757
+    },
+    {
+      "available": true,
+      "caveats": [
+        "these tiers are only ever assigned to gameplay rows, so the 58,757 denominator is overwhelmingly NOT-APPLICABLE rather than failed",
+        "there is NO canonical semantic tier named 'inferred' or 'hypothesized'"
+      ],
+      "counting_rule": "count of semantic-decomp records carrying this canonical classification; the classification vocabulary is documented in docs/analysis/semantic-decomp.md",
+      "covered": 15,
+      "gameplay_covered": 15,
+      "gameplay_pct": 0.698,
+      "gameplay_universe": 2149,
+      "id": "semantic_needs_runtime",
+      "label": "Needs runtime",
+      "pct": 0.0255,
+      "provenance": "tracked",
+      "records": [
+        "005c53c0",
+        "005c9230",
+        "005cb240",
+        "005cb5a0",
+        "005dda30",
+        "00b3d2a0",
+        "00b3d300",
+        "00b3d4f0",
+        "00dd0e10",
+        "00e780a0",
+        "00e7a4a0",
+        "00e7a7c0",
+        "00e7fd00",
+        "00ff3f00",
+        "0102d1b0"
+      ],
+      "source_of_truth": "knowledgegraph/research/semantic-decomp.json#records[].classification == 'NEEDS_RUNTIME'",
+      "universe": 58757
+    },
+    {
+      "available": true,
+      "caveats": [
+        "these tiers are only ever assigned to gameplay rows, so the 58,757 denominator is overwhelmingly NOT-APPLICABLE rather than failed",
+        "there is NO canonical semantic tier named 'inferred' or 'hypothesized'"
+      ],
+      "counting_rule": "count of semantic-decomp records carrying this canonical classification; the classification vocabulary is documented in docs/analysis/semantic-decomp.md",
+      "covered": 0,
+      "gameplay_covered": 0,
+      "gameplay_pct": 0.0,
+      "gameplay_universe": 2149,
+      "id": "semantic_still_unknown",
+      "label": "Still unknown",
+      "pct": 0.0,
+      "provenance": "tracked",
+      "records": [],
+      "source_of_truth": "knowledgegraph/research/semantic-decomp.json#records[].classification == 'STILL_UNKNOWN'",
+      "universe": 58757
+    },
+    {
+      "available": true,
+      "caveats": [
+        "unclassified is not the same as unknown: no one asserted anything about them",
+        "the ledger's semantic_understanding field is the constant 'not_established' on all 58,757 rows, so it carries zero information"
+      ],
+      "counting_rule": "58,757 minus the 32 semantically classified rows; these rows carry NO semantic claim",
+      "covered": 58725,
+      "gameplay_covered": 2117,
+      "gameplay_pct": 98.5109,
+      "gameplay_universe": 2149,
+      "id": "semantic_unclassified",
+      "label": "Semantically unclassified",
+      "pct": 99.9455,
+      "provenance": "derived",
+      "source_of_truth": "universe minus knowledgegraph/research/semantic-decomp.json#records[]",
+      "universe": 58757
+    },
+    {
+      "available": true,
+      "caveats": [
+        "the 1976-row residual-unknown set is the exact complement of the 173 'partial' set inside gameplay: including it would make this number meaningless",
+        "this is a union of differently-defined axes, not a single confidence score"
+      ],
+      "complement_gameplay_vas": 1173,
+      "counting_rule": "union of the three POSITIVE semantic axes; residual-unknown-priority.json is deliberately EXCLUDED because it is a NEGATIVE label and unioning it in would trivially reach 100%",
+      "covered": 976,
+      "gameplay_covered": 976,
+      "gameplay_pct": 45.4165,
+      "gameplay_universe": 2149,
+      "id": "semantic_positive_any",
+      "label": "Positive semantic (any axis)",
+      "pct": 45.4165,
+      "provenance": "derived",
+      "source_of_truth": "union of knowledgegraph/research/semantic-decomp.json#records[].classification, knowledgegraph/research/semantic-blueprint.json#functions[].evidence.claim_kind != UNKNOWN, and knowledgegraph/research/semantic-blueprint.json#functions[].contract_status.semantic_understanding != not_established",
+      "universe": 2149
+    },
+    {
+      "available": true,
+      "available_evidence": 13,
+      "available_evidence_gameplay": 7,
+      "caveats": [
+        "a class is AVAILABLE when the artifact field is present and non-empty",
+        "a class is SUFFICIENT only when the record's evidence level is SUPPORTED/CONFIRMED/VERIFIED (canonical ladder from manifest.policy.semantic_labels)",
+        "an existing field is NEVER called 'verified' merely because it exists"
+      ],
+      "counting_rule": "count of distinct VAs where at least one of the class's artifact keys is present and non-empty",
+      "covered": 13,
+      "gameplay_covered": 7,
+      "gameplay_pct": 0.3257,
+      "gameplay_universe": 2149,
+      "id": "evidence_globals",
+      "label": "Evidence: globals",
+      "pct": 0.0221,
+      "provenance": "untracked",
+      "source_of_truth": "reconstruction/metadata/**/*.json and knowledgegraph/research/source-reconstruction-manifest.json#functions[] keys ['globals', 'global_reader_evidence', 'publisher_evidence', 'global_slot']",
+      "sufficient_evidence": 8,
+      "sufficient_evidence_gameplay": 4,
+      "universe": 58757,
+      "vas": [
+        "005c5ee0",
+        "0067ca90",
+        "0067cae0",
+        "0067dcf0",
+        "0067dde0",
+        "0067de00",
+        "007c3ba0",
+        "007c79e0",
+        "0095fa30",
+        "00b3d2a0",
+        "00b3d300",
+        "00b3d4f0",
+        "00b72370"
+      ]
+    },
+    {
+      "available": true,
+      "available_evidence": 45,
+      "available_evidence_gameplay": 30,
+      "caveats": [
+        "a class is AVAILABLE when the artifact field is present and non-empty",
+        "a class is SUFFICIENT only when the record's evidence level is SUPPORTED/CONFIRMED/VERIFIED (canonical ladder from manifest.policy.semantic_labels)",
+        "an existing field is NEVER called 'verified' merely because it exists"
+      ],
+      "counting_rule": "count of distinct VAs where at least one of the class's artifact keys is present and non-empty",
+      "covered": 45,
+      "gameplay_covered": 30,
+      "gameplay_pct": 1.396,
+      "gameplay_universe": 2149,
+      "id": "evidence_fields_offsets",
+      "label": "Evidence: fields offsets",
+      "pct": 0.0766,
+      "provenance": "untracked",
+      "source_of_truth": "reconstruction/metadata/**/*.json and knowledgegraph/research/source-reconstruction-manifest.json#functions[] keys ['layout_evidence', 'observed_field_offsets', 'field_offsets', 'vtable_evidence', 'type_vtable_evidence', 'structure_evidence']",
+      "sufficient_evidence": 35,
+      "sufficient_evidence_gameplay": 26,
+      "universe": 58757,
+      "vas": [
+        "004ae250",
+        "0059b2f0",
+        "005a2320",
+        "005c0380",
+        "005c53c0",
+        "005c9230",
+        "005cb240",
+        "005cb5a0",
+        "005dda30",
+        "005e0000",
+        "00641400",
+        "00641770",
+        "00697a50",
+        "00697a80",
+        "00697af0",
+        "006a2470",
+        "006a24d0",
+        "00834fa0",
+        "008db310",
+        "0093b610",
+        "0095fa30",
+        "00b1fbf0",
+        "00b3d2a0",
+        "00b3d300",
+        "00b3d350",
+        "00b3d3b0",
+        "00b3d3e0",
+        "00b3d3f0",
+        "00b3d430",
+        "00b3d4f0",
+        "00e51010",
+        "00e5c0f0",
+        "00e5c780",
+        "00e6c860",
+        "00e780a0",
+        "00e7a4a0",
+        "00e7a7c0",
+        "00e7d660",
+        "00e7fc00",
+        "00e7fd00",
+        "00e818f0",
+        "00e81f30",
+        "00fec3c0",
+        "00ff3f00",
+        "0102df20"
+      ]
+    },
+    {
+      "available": true,
+      "available_evidence": 12,
+      "available_evidence_gameplay": 8,
+      "caveats": [
+        "a class is AVAILABLE when the artifact field is present and non-empty",
+        "a class is SUFFICIENT only when the record's evidence level is SUPPORTED/CONFIRMED/VERIFIED (canonical ladder from manifest.policy.semantic_labels)",
+        "an existing field is NEVER called 'verified' merely because it exists"
+      ],
+      "counting_rule": "count of distinct VAs where at least one of the class's artifact keys is present and non-empty",
+      "covered": 12,
+      "gameplay_covered": 8,
+      "gameplay_pct": 0.3723,
+      "gameplay_universe": 2149,
+      "id": "evidence_constants",
+      "label": "Evidence: constants",
+      "pct": 0.0204,
+      "provenance": "untracked",
+      "source_of_truth": "reconstruction/metadata/**/*.json and knowledgegraph/research/source-reconstruction-manifest.json#functions[] keys ['constants', 'observed_constants', 'constant_evidence']",
+      "sufficient_evidence": 6,
+      "sufficient_evidence_gameplay": 3,
+      "universe": 58757,
+      "vas": [
+        "0059b0f0",
+        "0059b4b0",
+        "005c5ee0",
+        "0095fa30",
+        "00b72370",
+        "00be2440",
+        "00c1d460",
+        "00c877f0",
+        "00d00d00",
+        "00e5c0f0",
+        "00e6c860",
+        "00e7d660"
+      ]
+    },
+    {
+      "available": true,
+      "available_evidence": 50,
+      "available_evidence_gameplay": 21,
+      "caveats": [
+        "a class is AVAILABLE when the artifact field is present and non-empty",
+        "a class is SUFFICIENT only when the record's evidence level is SUPPORTED/CONFIRMED/VERIFIED (canonical ladder from manifest.policy.semantic_labels)",
+        "an existing field is NEVER called 'verified' merely because it exists"
+      ],
+      "counting_rule": "count of distinct VAs where at least one of the class's artifact keys is present and non-empty",
+      "covered": 50,
+      "gameplay_covered": 21,
+      "gameplay_pct": 0.9772,
+      "gameplay_universe": 2149,
+      "id": "evidence_control_flow",
+      "label": "Evidence: control flow",
+      "pct": 0.0851,
+      "provenance": "untracked",
+      "source_of_truth": "reconstruction/metadata/**/*.json and knowledgegraph/research/source-reconstruction-manifest.json#functions[] keys ['observed_execution_order', 'observed_order', 'state_evidence', 'observed_state_contract', 'transitions']",
+      "sufficient_evidence": 24,
+      "sufficient_evidence_gameplay": 15,
+      "universe": 58757,
+      "vas": [
+        "004c5200",
+        "005a2050",
+        "005a2320",
+        "00697a50",
+        "00697a80",
+        "00697af0",
+        "006a1600",
+        "006a1e50",
+        "006a2a40",
+        "006a3070",
+        "006a3300",
+        "006c0550",
+        "007c64c0",
+        "007c6e50",
+        "007e5f30",
+        "007e93d0",
+        "00841290",
+        "0093b5a0",
+        "0093b610",
+        "0093bd50",
+        "009849a0",
+        "00985ce0",
+        "00987ae0",
+        "00abf790",
+        "00b267d0",
+        "00b28ec0",
+        "00b3d350",
+        "00c1c5c0",
+        "00c1d460",
+        "00c2e640",
+        "00c8b6b0",
+        "00c8ec00",
+        "00d01410",
+        "00d01ab0",
+        "00d01ff0",
+        "00d1dcd0",
+        "00d2e340",
+        "00d2e350",
+        "00d2e380",
+        "00d2e480",
+        "00d2e490",
+        "00d2e830",
+        "00d2e8a0",
+        "00e51010",
+        "00e5c0f0",
+        "00e6c860",
+        "00e7d660",
+        "00e7fc00",
+        "00e818f0",
+        "00fc7e10"
+      ]
+    },
+    {
+      "available": true,
+      "available_evidence": 26,
+      "available_evidence_gameplay": 14,
+      "caveats": [
+        "a class is AVAILABLE when the artifact field is present and non-empty",
+        "a class is SUFFICIENT only when the record's evidence level is SUPPORTED/CONFIRMED/VERIFIED (canonical ladder from manifest.policy.semantic_labels)",
+        "an existing field is NEVER called 'verified' merely because it exists"
+      ],
+      "counting_rule": "count of distinct VAs where at least one of the class's artifact keys is present and non-empty",
+      "covered": 26,
+      "gameplay_covered": 14,
+      "gameplay_pct": 0.6515,
+      "gameplay_universe": 2149,
+      "id": "evidence_virtual_dispatch",
+      "label": "Evidence: virtual dispatch",
+      "pct": 0.0443,
+      "provenance": "untracked",
+      "source_of_truth": "reconstruction/metadata/**/*.json and knowledgegraph/research/source-reconstruction-manifest.json#functions[] keys ['vtable_evidence', 'type_vtable_evidence']",
+      "sufficient_evidence": 21,
+      "sufficient_evidence_gameplay": 12,
+      "universe": 58757,
+      "vas": [
+        "0059b2f0",
+        "005c0380",
+        "005e0000",
+        "00697a50",
+        "00697a80",
+        "00697af0",
+        "0093b610",
+        "0095fa30",
+        "00b1fbf0",
+        "00b3d350",
+        "00b3d3b0",
+        "00b3d3e0",
+        "00b3d3f0",
+        "00b3d430",
+        "00e51010",
+        "00e5c0f0",
+        "00e6c860",
+        "00e780a0",
+        "00e7a4a0",
+        "00e7a7c0",
+        "00e7d660",
+        "00e7fc00",
+        "00e7fd00",
+        "00e818f0",
+        "00e81f30",
+        "00fec3c0"
+      ]
+    },
+    {
+      "available": true,
+      "available_evidence": 327,
+      "available_evidence_gameplay": 161,
+      "caveats": [
+        "288 of 300 manifest records carry signature_status; the other 12 are the function_address-only records",
+        "an ABI signature observed statically says nothing about runtime behaviour"
+      ],
+      "counting_rule": "count of distinct VAs where signature_status is present or one of the ABI keys is present and non-empty",
+      "covered": 327,
+      "gameplay_covered": 161,
+      "gameplay_pct": 7.4919,
+      "gameplay_universe": 2149,
+      "id": "evidence_abi",
+      "label": "Evidence: ABI",
+      "pct": 0.5565,
+      "provenance": "mixed",
+      "source_of_truth": "knowledgegraph/research/source-reconstruction-manifest.json#functions[].signature_status, and metadata keys ['abi', 'signature', 'original_native_abi', 'observed_original_abi']",
+      "sufficient_evidence": 183,
+      "sufficient_evidence_gameplay": 91,
+      "universe": 58757,
+      "vas": [
+        "0040ccb0",
+        "0041dc10",
+        "0041e8b0",
+        "0041e920",
+        "004279d0",
+        "00428060",
+        "00432a50",
+        "0043ac40",
+        "00447150",
+        "004786e0",
+        "004ad6f0",
+        "004ae250",
+        "004b62a0",
+        "004bc540",
+        "004bf770",
+        "004c4a30",
+        "004c5200",
+        "00506590",
+        "005182f0",
+        "005183c0",
+        "00518bf0",
+        "00518cf0",
+        "00518f10",
+        "0051a350",
+        "0051a9a0",
+        "005291f0",
+        "005737d0",
+        "00574a20",
+        "00575ea0",
+        "00576650",
+        "00585890",
+        "00585d10",
+        "00587270",
+        "00588570",
+        "0058ac10",
+        "0058b650",
+        "00596da0",
+        "00596e10",
+        "0059b0f0",
+        "0059b2f0",
+        "0059b4b0",
+        "0059cac0",
+        "0059cb10",
+        "0059cea0",
+        "0059cf00",
+        "0059d840",
+        "0059d8b0",
+        "005a2010",
+        "005a2050",
+        "005a2320",
+        "005ac9f0",
+        "005bf9d0",
+        "005c0100",
+        "005c0380",
+        "005c0a60",
+        "005c2e00",
+        "005c3000",
+        "005c53c0",
+        "005c5ee0",
+        "005c65e0",
+        "005c7320",
+        "005c7c10",
+        "005c7ff0",
+        "005c85d0",
+        "005c9230",
+        "005ca960",
+        "005cb240",
+        "005cb5a0",
+        "005dc310",
+        "005dcf20",
+        "005dd610",
+        "005dd750",
+        "005dda30",
+        "005dfd00",
+        "005e0000",
+        "005f9230",
+        "005f9310",
+        "005fa8d0",
+        "005fc330",
+        "0060ee90",
+        "00628450",
+        "006286a0",
+        "0062c910",
+        "00635700",
+        "00641400",
+        "00641460",
+        "00641770",
+        "006417b0",
+        "006417c0",
+        "00641810",
+        "00641820",
+        "00641850",
+        "00641860",
+        "00642190",
+        "00642230",
+        "00676710",
+        "00676e90",
+        "00676ed0",
+        "0067ca90",
+        "0067cae0",
+        "0067dcc0",
+        "0067dcd0",
+        "0067dce0",
+        "0067dcf0",
+        "0067dde0",
+        "0067ddf0",
+        "0067de00",
+        "00697a50",
+        "00697a80",
+        "00697af0",
+        "006a1600",
+        "006a1de0",
+        "006a1e50",
+        "006a2470",
+        "006a24d0",
+        "006a25a0",
+        "006a27d0",
+        "006a2800",
+        "006a28c0",
+        "006a2a40",
+        "006a3070",
+        "006a30c0",
+        "006a3180",
+        "006a3300",
+        "006a3310",
+        "006a3400",
+        "006c0550",
+        "00743b50",
+        "007c3ba0",
+        "007c3c20",
+        "007c3c50",
+        "007c4900",
+        "007c64c0",
+        "007c6e50",
+        "007c79e0",
+        "007d8360",
+        "007d85b0",
+        "007d8c80",
+        "007d8cc0",
+        "007d8d40",
+        "007e5f30",
+        "007e6080",
+        "007e6100",
+        "007e6130",
+        "007e93d0",
+        "00801ac0",
+        "00834fa0",
+        "00835380",
+        "00841290",
+        "00847a40",
+        "00847a90",
+        "00847b10",
+        "00847b40",
+        "00848020",
+        "00848100",
+        "008841f0",
+        "008db310",
+        "008dc820",
+        "008dcab0",
+        "008dcb70",
+        "00901930",
+        "00926100",
+        "00926140",
+        "009317b0",
+        "009317e0",
+        "00931810",
+        "0093ae60",
+        "0093b5a0",
+        "0093b610",
+        "0093b6d0",
+        "0093b950",
+        "0093bd50",
+        "0093c0c0",
+        "0093db80",
+        "00951220",
+        "00951230",
+        "00957510",
+        "0095f960",
+        "0095f990",
+        "0095f9a0",
+        "0095fa30",
+        "00960050",
+        "009601e0",
+        "00961260",
+        "00961300",
+        "00962830",
+        "009646d0",
+        "00967e20",
+        "00967e60",
+        "00967e80",
+        "0096feb0",
+        "0096fec0",
+        "0096ffc0",
+        "0097e440",
+        "0097e550",
+        "0097e890",
+        "0097e990",
+        "0097ea50",
+        "00980120",
+        "00980200",
+        "00980470",
+        "009849a0",
+        "00985ce0",
+        "00987ae0",
+        "0098f4d0",
+        "00a6c940",
+        "00abf790",
+        "00aea230",
+        "00aea250",
+        "00aea5d0",
+        "00aeb160",
+        "00aeb720",
+        "00b1fbf0",
+        "00b1fdb0",
+        "00b21340",
+        "00b225d0",
+        "00b25f40",
+        "00b25fb0",
+        "00b267d0",
+        "00b28ec0",
+        "00b31cc0",
+        "00b3d2a0",
+        "00b3d300",
+        "00b3d350",
+        "00b3d3a0",
+        "00b3d3b0",
+        "00b3d3e0",
+        "00b3d3f0",
+        "00b3d400",
+        "00b3d420",
+        "00b3d430",
+        "00b3d480",
+        "00b3d4d0",
+        "00b3d4f0",
+        "00b5b840",
+        "00b5b880",
+        "00b5b8a0",
+        "00b5b8c0",
+        "00b5b8e0",
+        "00b5b960",
+        "00b5dbb0",
+        "00b5f040",
+        "00b63510",
+        "00b63980",
+        "00b72370",
+        "00b7e560",
+        "00b8da30",
+        "00ba83a0",
+        "00ba8420",
+        "00ba9370",
+        "00bb4af0",
+        "00bb5b50",
+        "00be1fb0",
+        "00be2440",
+        "00bf9820",
+        "00c1c5c0",
+        "00c1d460",
+        "00c2e640",
+        "00c30cc0",
+        "00c30e20",
+        "00c31890",
+        "00c32cd0",
+        "00c33690",
+        "00c86760",
+        "00c871d0",
+        "00c877f0",
+        "00c8b6b0",
+        "00c8d060",
+        "00c8ec00",
+        "00c982a0",
+        "00ce6950",
+        "00d00d00",
+        "00d00d60",
+        "00d01410",
+        "00d01ab0",
+        "00d01e30",
+        "00d01ff0",
+        "00d038e0",
+        "00d065a0",
+        "00d06920",
+        "00d1dcd0",
+        "00d2e340",
+        "00d2e350",
+        "00d2e380",
+        "00d2e480",
+        "00d2e490",
+        "00d2e830",
+        "00d2e8a0",
+        "00dd0e10",
+        "00de9fc0",
+        "00e310c0",
+        "00e4ce20",
+        "00e51010",
+        "00e52910",
+        "00e5b790",
+        "00e5c0f0",
+        "00e5c780",
+        "00e616c0",
+        "00e6c860",
+        "00e780a0",
+        "00e7a190",
+        "00e7a4a0",
+        "00e7a7c0",
+        "00e7d660",
+        "00e7e6c0",
+        "00e7fc00",
+        "00e7fd00",
+        "00e806b0",
+        "00e80980",
+        "00e818f0",
+        "00e81f30",
+        "00f47930",
+        "00fc7e10",
+        "00febc90",
+        "00fec3c0",
+        "00fee310",
+        "00ff3f00",
+        "01021080",
+        "01021230",
+        "01021260",
+        "010212a0",
+        "01021300",
+        "0102d1b0",
+        "0102df20",
+        "01073700",
+        "011f96e0",
+        "011f9710"
+      ]
+    },
+    {
+      "available": true,
+      "available_evidence": 49451,
+      "available_evidence_gameplay": 2104,
+      "caveats": [
+        "the xref half is machine-local and not reproducible from a fresh clone",
+        "the blueprint half covers only the 2149 gameplay rows"
+      ],
+      "counting_rule": "count of distinct VAs appearing in any call role in either source",
+      "covered": 49451,
+      "database_uri": "mode=ro",
+      "gameplay_covered": 2104,
+      "gameplay_pct": 97.906,
+      "gameplay_universe": 2149,
+      "id": "evidence_calls",
+      "label": "Evidence: calls",
+      "machine_local": true,
+      "pct": 84.1619,
+      "provenance": "mixed",
+      "source_of_truth": "union of knowledgegraph/spore.db#xref call roles and knowledgegraph/research/semantic-blueprint.json#functions[].dependencies.{caller,callee}_count > 0",
+      "sufficient_evidence": 143,
+      "sufficient_evidence_gameplay": 83,
+      "universe": 58757
+    },
+    {
+      "available": false,
+      "available_evidence": 0,
+      "available_evidence_gameplay": 0,
+      "caveats": [
+        "every non-zero runtime_evidence value in the corpus is a NEGATIVE (NOT_PRESENT) or a gate token; there is no positive runtime observation anywhere",
+        "the original Cell stage was never entered in any recorded Wine run",
+        "this count is of evidence MENTIONS and must not be read as validation"
+      ],
+      "counting_rule": "count of VAs whose decomp-gap record carries positive runtime evidence; 0 functions are runtime-VALIDATED, so this counts evidence mentions, not validations",
+      "covered": null,
+      "gameplay_covered": 0,
+      "gameplay_pct": 0.0,
+      "gameplay_universe": 2149,
+      "id": "evidence_runtime",
+      "label": "Evidence: runtime",
+      "not_determinable_reason": "no decomp-gap record carries positive runtime evidence, so the class is reported unavailable rather than available-with-zero",
+      "pct": null,
+      "provenance": "tracked",
+      "source_of_truth": "knowledgegraph/research/decomp-gap/*.json records satisfying synthesize.py has_runtime_evidence",
+      "sufficient_evidence": 0,
+      "sufficient_evidence_gameplay": 0,
+      "universe": 58757
+    },
+    {
+      "available": true,
+      "caveats": [
+        "UNKNOWN means unclassified, not incorrectly classified"
+      ],
+      "counting_rule": "count of ledger rows with a triage category other than UNKNOWN",
+      "covered": 19041,
+      "gameplay_covered": 2149,
+      "gameplay_pct": 100.0,
+      "gameplay_universe": 2149,
+      "id": "has_triage_classification",
+      "label": "Has triage classification",
+      "pct": 32.4064,
+      "provenance": "tracked",
+      "source_of_truth": "knowledgegraph/research/21-decompilation-coverage.json#ledger[].triage_category != 'UNKNOWN'",
+      "universe": 58757
+    },
+    {
+      "available": true,
+      "caveats": [
+        "name evidence is the EVIDENCE ladder, not a semantic understanding claim",
+        "APPROX and INFERRED are weak rungs; do not read them as identification"
+      ],
+      "counting_rule": "count of ledger rows whose name evidence is above UNKNOWN on the canonical ladder (APPROX/INFERRED/SUPPORTED/CONFIRMED)",
+      "covered": 18874,
+      "gameplay_covered": 2149,
+      "gameplay_pct": 100.0,
+      "gameplay_universe": 2149,
+      "id": "has_name_evidence",
+      "label": "Has name evidence",
+      "pct": 32.1221,
+      "provenance": "tracked",
+      "source_of_truth": "knowledgegraph/research/21-decompilation-coverage.json#ledger[].name_evidence != 'UNKNOWN'",
+      "universe": 58757
+    },
+    {
+      "available": true,
+      "caveats": [
+        "this dimension is SATURATED and therefore carries almost no information: 27 distinct subsystem values over 58,757 rows",
+        "the knowledge-graph edge census (knowledgegraph/spore.db#edge rel='belongsToSubsystem') covers only 3880"
+      ],
+      "counting_rule": "count of ledger rows with a non-null subsystem; the ledger populates all 58,757",
+      "covered": 58757,
+      "distinct_subsystems": 27,
+      "gameplay_covered": 2149,
+      "gameplay_pct": 100.0,
+      "gameplay_universe": 2149,
+      "id": "has_subsystem",
+      "kg_belongsToSubsystem_edges": 3880,
+      "kg_gameplay_subsystem_vas": 191,
+      "label": "Has subsystem",
+      "pct": null,
+      "pct_is_tautological": true,
+      "pct_null_because": "covered equals universe by construction, so any percentage would be the identity 100.0 and not a measurement; read `covered` and `universe` directly",
+      "provenance": "tracked",
+      "source_of_truth": "knowledgegraph/research/21-decompilation-coverage.json#ledger[].subsystem",
+      "universe": 58757
+    },
+    {
+      "available": true,
+      "caveats": [
+        "the DB portion is machine-local and not reproducible from a fresh clone",
+        "the knowledge_index portion is untracked-but-not-ignored",
+        "an association is not a layout: it says a type is referenced, not that its fields are known"
+      ],
+      "counting_rule": "count of distinct in-universe VAs associated with at least one type, vtable, global, or service record",
+      "covered": 6807,
+      "database_only": 6733,
+      "gameplay_covered": 611,
+      "gameplay_pct": 28.4318,
+      "gameplay_universe": 2149,
+      "id": "has_type_association",
+      "knowledge_index_only": 454,
+      "label": "Has type association",
+      "machine_local": true,
+      "pct": 11.585,
+      "provenance": "mixed",
+      "source_of_truth": "union of knowledgegraph/spore.db#edge rel in (hasSlot, sdkAssociatedWithStructure, staticAssociatedWithStructure), knowledgegraph/spore.db#triage.struct_names != '[]', and reconstruction/knowledge/index.json types/vtables/globals/services",
+      "universe": 58757
+    },
+    {
+      "available": true,
+      "blueprint_package": 2149,
+      "caveats": [
+        "96.0% of the universe has no package/cluster membership claim at all",
+        "package claims come from three different vocabularies and are NOT merged into one taxonomy"
+      ],
+      "counting_rule": "count of distinct in-universe VAs claiming some package or cluster",
+      "covered": 2344,
+      "gameplay_covered": 2149,
+      "gameplay_pct": 100.0,
+      "gameplay_universe": 2149,
+      "id": "has_package_membership",
+      "label": "Has package membership",
+      "manifest_package": 296,
+      "pct": 3.9893,
+      "provenance": "derived",
+      "queue_cluster": 365,
+      "source_of_truth": "union of knowledgegraph/research/source-reconstruction-manifest.json#functions[].package, knowledgegraph/research/21-decompilation-coverage.json#ledger[].queue.cluster, and knowledgegraph/research/semantic-blueprint.json#functions[].package",
+      "universe": 58757,
+      "universe_without_membership": 56413
+    },
+    {
+      "available": true,
+      "caveats": [
+        "only 6 distinct dependency tokens exist across the whole queue, so this is a coarse resource classification, not a call-graph dependency record",
+        "the real call-graph dependency record lives in the blueprint and the gitignored DB"
+      ],
+      "counting_rule": "count of in-universe VAs whose triage-queue row carries a non-empty dependencies list",
+      "covered": 204,
+      "gameplay_covered": 78,
+      "gameplay_pct": 3.6296,
+      "gameplay_universe": 2149,
+      "id": "has_dependency_record",
+      "label": "Has dependency record",
+      "pct": 0.3472,
+      "provenance": "tracked",
+      "source_of_truth": "knowledgegraph/triage/queue-f0e310e0-v6.json#queue[].dependencies",
+      "universe": 58757
+    },
+    {
+      "available": true,
+      "caveats": [
+        "ZERO. This is the single most important blind spot in the entire reconstruction"
+      ],
+      "counting_rule": "max of all independent runtime-validated counters; every one of them is 0",
+      "covered": 0,
+      "gameplay_covered": 0,
+      "gameplay_pct": 0.0,
+      "gameplay_universe": 2149,
+      "id": "runtime_validated",
+      "label": "Runtime validated",
+      "metrics_runtime_validated": 0,
+      "pct": 0.0,
+      "provenance": "mixed",
+      "record_audit_runtime_validated_total": 0,
+      "residual_unknown_runtime_evidence": "NOT_PRESENT",
+      "semantic_decomp_runtime_promoted_count": 0,
+      "source_of_truth": "cross-source: knowledgegraph/research/source-reconstruction-manifest.json#metrics.runtime_validated, per-record audit_runtime_validated, knowledgegraph/research/semantic-decomp.json#aggregate_metrics.runtime_promoted_count, knowledgegraph/research/residual-unknown-priority.json#quality_status.runtime_evidence",
+      "universe": 58757
+    },
+    {
+      "available": true,
+      "canonical_distinct_gate_entries": 232,
+      "canonical_gate_entries": 262,
+      "caveats": [
+        "RUNTIME-GATED IS NOT RUNTIME-FAILED: nothing was observed to fail",
+        "288 of 300 records carry some gate token; the canonical metric is 299, and the two numbers must not be conflated"
+      ],
+      "counting_rule": "the manifest's own runtime_gated metric",
+      "covered": 299,
+      "gameplay_covered": null,
+      "gameplay_pct": null,
+      "gameplay_universe": 2149,
+      "id": "runtime_gated",
+      "label": "Runtime gated",
+      "pct": 0.5089,
+      "provenance": "tracked",
+      "records_carrying_any_gate": 288,
+      "records_referencing_gate_absent_from_canonical_list": 182,
+      "runtime_gated_gameplay_records": 136,
+      "source_of_truth": "knowledgegraph/research/source-reconstruction-manifest.json#metrics.runtime_gated",
+      "universe": 58757
+    },
+    {
+      "available": false,
+      "capability_source": "knowledgegraph/research/runtime-oracle.json#current_capability.overall_status",
+      "capability_status": "TECHNICALLY_FEASIBLE_NOT_IMPLEMENTED",
+      "caveats": [
+        "this dimension is emitted unavailable on purpose: fabricating a count would invent a category the corpus does not have",
+        "the closest real quantity is the capability status, reported below"
+      ],
+      "counting_rule": "no record in this repository carries a `runtime_unavailable` field; NOT_AVAILABLE is a capability/verdict token, not a runtime-unavailable observation",
+      "covered": null,
+      "gameplay_covered": null,
+      "gameplay_pct": null,
+      "gameplay_universe": 2149,
+      "id": "runtime_unavailable",
+      "label": "Runtime unavailable",
+      "not_available_token_in_validate_py": true,
+      "not_determinable_reason": "`runtime_unavailable` is not a field on any record; NOT_AVAILABLE is a capability/verdict token in validate.py and residual_unknown.quality_status, so a VA count for this dimension is not determinable without inventing the category",
+      "pct": null,
+      "provenance": "derived",
+      "source_of_truth": "no such field exists on any record",
+      "universe": null
+    },
+    {
+      "all_non_zero_failed_counts_are_static_gates": true,
+      "all_non_zero_failed_counts_are_static_gates_evidence": {
+        "method": "every key naming a failure with a non-zero value, found by a full walk of the manifest and every handoff, classified from the counter's own name plus the command/status/reason/verdict siblings in the same object",
+        "non_zero_failed_counter_count": 5,
+        "non_zero_failed_counters": [
+          {
+            "check_name": "batch_wave6_integrator_clean_clang_format",
+            "classification": "static_gate",
+            "failed": 3,
+            "path": "metrics.tests_passing.batch_wave6_integrator_clean_clang_format.failed",
+            "siblings": {},
+            "source": "knowledgegraph/research/source-reconstruction-manifest.json"
+          },
+          {
+            "check_name": "batch_wave6_integrator_clean_python_unittest",
+            "classification": "static_gate",
+            "failed": 3,
+            "path": "metrics.tests_passing.batch_wave6_integrator_clean_python_unittest.failed",
+            "siblings": {
+              "status": "failed_isolated_machine_lock"
+            },
+            "source": "knowledgegraph/research/source-reconstruction-manifest.json"
+          },
+          {
+            "check_name": "clang_format_dry_run",
+            "classification": "static_gate",
+            "failed": 3,
+            "path": "validation_results.clang_format_dry_run.failed",
+            "siblings": {},
+            "source": "reconstruction/integrated/batch-2026-09-25-wave6-integrator-clean/handoff.json"
+          },
+          {
+            "check_name": "python_unittest",
+            "classification": "static_gate",
+            "failed": 3,
+            "path": "validation_results.python_unittest.failed",
+            "siblings": {
+              "status": "failed_isolated_machine_lock"
+            },
+            "source": "reconstruction/integrated/batch-2026-09-25-wave6-integrator-clean/handoff.json"
+          },
+          {
+            "check_name": "python",
+            "classification": "static_gate",
+            "failed": 3,
+            "path": "validation_results.python.failed",
+            "siblings": {
+              "reason": "Another process held /tmp/openspore-machine.lock; the three failures are test_run lock-precedence assertions, not reconstruction behavior",
+              "status": "transient_blocked"
+            },
+            "source": "reconstruction/integrated/batch-2026-09-25/handoff.json"
+          }
+        ],
+        "static_gate_count": 5,
+        "static_gate_tokens": [
+          "clang-format",
+          "clang_format",
+          "unittest",
+          "cmake",
+          "git diff",
+          "machine lock",
+          "machine_lock",
+          "py_compile",
+          "pyflakes",
+          "json.tool",
+          "sha256sum",
+          "lock"
+        ],
+        "unclassified_count": 0
+      },
+      "all_non_zero_failed_counts_are_static_gates_is_computed": true,
+      "available": true,
+      "caveats": [
+        "runtime-oracle's OBSERVED_NEGATIVE and HISTORICAL_NEGATIVE describe REACHABILITY of the original Cell stage, not a correctness negative"
+      ],
+      "counting_rule": "count of functions with an observed NEGATIVE runtime result; zero, and every non-zero failed count in the repo is a STATIC gate (clang-format / python unittest / machine lock)",
+      "covered": 0,
+      "gameplay_covered": 0,
+      "gameplay_pct": 0.0,
+      "gameplay_universe": 2149,
+      "id": "runtime_negative",
+      "label": "Runtime negative",
+      "manifest_audit_unresolved_contradiction": null,
+      "not_available_is_a_sibling_of_fail_not_a_failure": true,
+      "pct": 0.0,
+      "provenance": "tracked",
+      "runtime_oracle_observed_negative_scope": "reachability of the original Cell stage, not a correctness negative",
+      "source_of_truth": "knowledgegraph/research/source-reconstruction-manifest.json#audit.unresolved_contradiction, validate.py VALIDATION_VERDICTS, runtime-oracle.json",
+      "static_gate_families": [
+        "clang-format --dry-run",
+        "python3 -m unittest",
+        "cmake --build",
+        "git diff --check",
+        "machine lock"
+      ],
+      "universe": 58757,
+      "validate_not_available_uses": [
+        "tools/reconstruction_tooling/validate.py",
+        "residual_unknown.quality_status.runtime_evidence"
+      ],
+      "validate_verdicts": [
+        "PASS",
+        "WARN",
+        "FAIL",
+        "UNKNOWN",
+        "NOT_AVAILABLE"
+      ]
+    },
+    {
+      "available": true,
+      "caveats": [
+        "the queue file holds 368 rows, 3 of which lie outside the 58,757-row universe and are preserved in a separate list rather than discarded",
+        "presence in the queue is a work-tracking fact, not a coverage claim"
+      ],
+      "counting_rule": "count of in-universe VAs present in the canonical triage queue",
+      "covered": 365,
+      "gameplay_covered": 236,
+      "gameplay_pct": 10.9819,
+      "gameplay_universe": 2149,
+      "id": "in_triage_queue",
+      "label": "In triage queue",
+      "pct": 0.6212,
+      "provenance": "tracked",
+      "source_of_truth": "knowledgegraph/triage/queue-f0e310e0-v6.json#queue[]",
+      "universe": 58757
+    },
+    {
+      "agrees_with_derived_actionable_frontier": true,
+      "available": true,
+      "caveats": [
+        "index.json is untracked-but-not-ignored and is therefore only a CROSS-CHECK, never a hard input",
+        "the derived set is disjoint from the manifest by construction",
+        "the three out-of-universe queue rows are real actionable work items, so this count is NOT intersected with the universe; the in-universe subset is reported alongside it"
+      ],
+      "counting_rule": "queued VAs that no manifest record claims; this is the derivable definition and it does NOT require the untracked index.json",
+      "covered": 231,
+      "gameplay_covered": 182,
+      "gameplay_pct": 8.4691,
+      "gameplay_universe": 2149,
+      "id": "in_actionable_frontier",
+      "in_universe": 228,
+      "in_universe_gameplay": 182,
+      "knowledge_index_frontier_size": 231,
+      "knowledge_index_present": true,
+      "label": "In actionable frontier",
+      "pct": 0.3931,
+      "provenance": "derived",
+      "source_of_truth": "triage queue VA set minus manifest VA set",
+      "universe": 58757
+    },
+    {
+      "available": true,
+      "caveats": [
+        "DO NOT SUM dependency_closed WITH dependency_uncertain: they are alternative states, not additive quantities",
+        "the callee lists come from the blueprint, so this is a gameplay-universe dimension overlaid on the 58,757 denominator; the vast majority are simply not applicable"
+      ],
+      "counting_rule": "a function is closed when it has no callee VA whose manifest integration_status is not 'integrated' and its dependency lists are not truncated",
+      "covered": 500,
+      "gameplay_covered": 500,
+      "gameplay_pct": 23.2666,
+      "gameplay_universe": 2149,
+      "id": "dependency_closed",
+      "label": "Dependency closed",
+      "pct": 23.2666,
+      "provenance": "tracked",
+      "source_of_truth": "knowledgegraph/research/semantic-blueprint.json#functions[].dependencies.callees checked against knowledgegraph/research/source-reconstruction-manifest.json#functions[].integration_status, mirroring tools/reconstruction_tooling/frontier.py:208-213",
+      "universe": 2149
+    },
+    {
+      "available": true,
+      "caveats": [
+        "DO NOT SUM with dependency_closed: they are alternative states",
+        "zero here means no truncation flag is set, NOT that every dependency is genuinely known"
+      ],
+      "counting_rule": "count of functions whose dependency evidence is explicitly truncated, so readiness is unknown rather than closed",
+      "covered": 0,
+      "gameplay_covered": 0,
+      "gameplay_pct": 0.0,
+      "gameplay_universe": 2149,
+      "id": "dependency_uncertain",
+      "label": "Dependency uncertain",
+      "pct": 0.0,
+      "provenance": "tracked",
+      "source_of_truth": "knowledgegraph/research/semantic-blueprint.json#functions[].dependencies.callees_truncated / edges_truncated, mirroring tools/reconstruction_tooling/frontier.py:208-213",
+      "universe": 2149
+    }
+  ],
+  "evidence": {
+    "class_names": [
+      "CALLS",
+      "GLOBALS",
+      "FIELDS_OFFSETS",
+      "CONSTANTS",
+      "CONTROL_FLOW",
+      "VIRTUAL_DISPATCH",
+      "ABI",
+      "RUNTIME"
+    ],
+    "classes": {
+      "ABI": {
+        "available": true,
+        "available_evidence": 327,
+        "available_evidence_gameplay": 161,
+        "dimension": "evidence_abi",
+        "sufficient_evidence": 183,
+        "sufficient_evidence_gameplay": 91
+      },
+      "CALLS": {
+        "available": true,
+        "available_evidence": 49451,
+        "available_evidence_gameplay": 2104,
+        "dimension": "evidence_calls",
+        "sufficient_evidence": 143,
+        "sufficient_evidence_gameplay": 83
+      },
+      "CONSTANTS": {
+        "available": true,
+        "available_evidence": 12,
+        "available_evidence_gameplay": 8,
+        "dimension": "evidence_constants",
+        "sufficient_evidence": 6,
+        "sufficient_evidence_gameplay": 3
+      },
+      "CONTROL_FLOW": {
+        "available": true,
+        "available_evidence": 50,
+        "available_evidence_gameplay": 21,
+        "dimension": "evidence_control_flow",
+        "sufficient_evidence": 24,
+        "sufficient_evidence_gameplay": 15
+      },
+      "FIELDS_OFFSETS": {
+        "available": true,
+        "available_evidence": 45,
+        "available_evidence_gameplay": 30,
+        "dimension": "evidence_fields_offsets",
+        "sufficient_evidence": 35,
+        "sufficient_evidence_gameplay": 26
+      },
+      "GLOBALS": {
+        "available": true,
+        "available_evidence": 13,
+        "available_evidence_gameplay": 7,
+        "dimension": "evidence_globals",
+        "sufficient_evidence": 8,
+        "sufficient_evidence_gameplay": 4
+      },
+      "RUNTIME": {
+        "available": false,
+        "available_evidence": 0,
+        "available_evidence_gameplay": 0,
+        "dimension": "evidence_runtime",
+        "sufficient_evidence": 0,
+        "sufficient_evidence_gameplay": 0
+      },
+      "VIRTUAL_DISPATCH": {
+        "available": true,
+        "available_evidence": 26,
+        "available_evidence_gameplay": 14,
+        "dimension": "evidence_virtual_dispatch",
+        "sufficient_evidence": 21,
+        "sufficient_evidence_gameplay": 12
+      }
+    },
+    "never_called_verified_because_present": true,
+    "sufficient_definition": "A class is AVAILABLE when the class's artifact field is present and non-empty. A class is SUFFICIENT only when the record's evidence level is SUPPORTED, CONFIRMED, or VERIFIED -- the canonical ladder in manifest.policy.semantic_labels. An existing field is never called verified merely because it exists.",
+    "universe_scale_limitation": "Every evidence class below is measured against the 58,757-row universe, but evidence is only ever RECORDED for reconstructed or triaged functions. The gameplay figures are the meaningful ones; the universe figures are dominated by rows no human or agent has looked at. Reading a class percentage as 'how much of the game we understand' would invert the meaning."
+  },
+  "generated_by": "tools/reconstruction_tooling/coverage.py",
+  "generator_status": {
+    "composite_score": "deliberately absent; see caveats",
+    "host_probes": [
+      {
+        "consequence": "two reports of byte-identical artifacts can differ in these fields alone; that difference is NOT engine nondeterminism",
+        "content_deterministic": false,
+        "feeds": [
+          "snapshot.inputs[*].git_tracked",
+          "snapshot.inputs[*].tracked_verdict",
+          "snapshot.inputs[*].tracked_members",
+          "reconstruction.evidence_packs_git_tracked"
+        ],
+        "mitigation": "no other host probe is performed: no source-index presence check, no hostname, no environment read, and no developer-tool index probe",
+        "probe": "git ls-files --error-unmatch",
+        "reads": "the git INDEX at report time, not the working tree",
+        "why": "this is the one field in the report that a concurrent `git add` or `git rm --cached` can change without any artifact byte changing. Every other field is a pure function of artifact content."
+      }
+    ],
+    "imports_no_writing_subsystem": true,
+    "no_absolute_paths_in_body": true,
+    "read_only": true,
+    "sqlite_mode": "ro",
+    "sqlite_sidecar_note": "the database is in WAL mode, so taking a read lock re-stamps the -shm read-lock index and may trigger SQLite's one-time recovery of a stale -wal. Neither the .db nor the -wal is written, and this is exactly what a bare mode=ro open does: it is a SQLite artefact, not a mutation by this reporter",
+    "takes_machine_lock": false,
+    "timestamp_free": true,
+    "writes": "none unless --out is passed explicitly"
+  },
+  "history": {
+    "checkpoints": [],
+    "delta_since_previous": null,
+    "limitation": "history checkpoints omitted: pass --history to include them (the underlying data is always recovered from the manifest)",
+    "omitted_by_flag": true,
+    "source": null
+  },
+  "reconstruction": {
+    "accounting_exclusions": [
+      "00b28ec0",
+      "00e7a190",
+      "00e7e6c0",
+      "00e7fc00",
+      "01073700"
+    ],
+    "accounting_exclusions_all_integrated": true,
+    "accounting_exclusions_are_not_subtractions": true,
+    "accounting_exclusions_warning": "metrics.accounting_exclusions is a frozen PRESERVATION list, NOT an exclusion set: all 5 listed VAs ARE integrated function records. Subtracting it would understate integration from 299 to 294.",
+    "audit": {
+      "functions_audited": 40,
+      "status": "completed_with_resolved_map_and_runtime_boundaries",
+      "unresolved_contradiction": null
+    },
+    "batches": 25,
+    "blocked": 1,
+    "blocked_va": [
+      "0x00dd0e10"
+    ],
+    "evidence_pack_count": 8,
+    "evidence_packs": [
+      "00576c50",
+      "007d9410",
+      "008db310",
+      "00980510",
+      "00b1fbf0",
+      "00e5b790",
+      "00fc7e10",
+      "01053790"
+    ],
+    "evidence_packs_git_tracked": 0,
+    "handoffs": 25,
+    "in_universe": 296,
+    "integrated": 299,
+    "metadata_distinct_vas": 326,
+    "metadata_files": 328,
+    "metadata_gameplay_vas": 160,
+    "metadata_in_universe": 322,
+    "metadata_vas_without_manifest_record": 27,
+    "out_of_universe": [
+      "00b5b880",
+      "00b5b8a0",
+      "00b5b8c0",
+      "00b5b8e0"
+    ],
+    "out_of_universe_count": 4,
+    "packages": 65,
+    "packages_functions_distinct_vas": 154,
+    "packages_status": {
+      "in_progress": 1,
+      "integrated": 64
+    },
+    "packages_with_functions_key": 43,
+    "record_package_ids": 86,
+    "record_package_ids_absent_count": 21,
+    "record_package_ids_absent_from_packages": [
+      "PKG-06-WAVE6-APP-MANAGERS",
+      "PKG-APP-LIFECYCLE-WAVE7",
+      "PKG-APP-LIFECYCLE-WAVE8",
+      "PKG-CAMERA-WAVE7",
+      "PKG-CAMERA-WAVE8",
+      "PKG-EDITOR-RUNTIME-WAVE7",
+      "PKG-EDITOR-RUNTIME-WAVE8",
+      "PKG-FRAME-RUNTIME-WAVE7",
+      "PKG-FRAME-RUNTIME-WAVE8",
+      "PKG-GAME-INPUT-WAVE7",
+      "PKG-GAME-INPUT-WAVE8",
+      "PKG-GAME-MODE-WAVE7",
+      "PKG-GAME-MODE-WAVE8",
+      "PKG-RUNTIME-SERVICES-WAVE7",
+      "PKG-RUNTIME-SERVICES-WAVE8",
+      "PKG-WAVE6-CONTAINERS-MEMORY",
+      "PKG-WAVE6-MISC-ENGINE",
+      "WAVE6-ENGINE-RUNTIME",
+      "WAVE6-PRESENTATION",
+      "wave6-resources",
+      "wave6-serialization-persistence"
+    ],
+    "records": 300,
+    "records_with_function_address_only": 12,
+    "staged": 42,
+    "staged_is_separate_from_integrated": true,
+    "staging_cpp": 266,
+    "staging_directories": 120,
+    "staging_hpp": 138,
+    "staging_member_files": 472,
+    "staging_members_sha256": "451158a85e5edb78f8be04a3a62a5a573073db306c7b41937f763849c34e9eb6",
+    "staging_vas": 42,
+    "types": 137,
+    "unique_vas": 300,
+    "withheld": null,
+    "withheld_is_canonical": false,
+    "withheld_sourced_quantities": {
+      "deferred_full_package_claims_note": "a bare integer with no VA list; a VA count is not determinable from it",
+      "deferred_full_package_claims_va_list": null,
+      "deferred_full_package_claims_withheld_body_count": 10,
+      "handoff_excluded_addresses_distinct_vas": 50,
+      "handoff_excluded_addresses_handoffs": 5,
+      "handoff_excluded_addresses_vas": [
+        "004af260",
+        "004c5910",
+        "004c73f0",
+        "004cd3c0",
+        "004df550",
+        "00519640",
+        "0051ab50",
+        "0051afd0",
+        "005507a0",
+        "00571db0",
+        "00591fa0",
+        "005c00e0",
+        "005c29c0",
+        "005ca9f0",
+        "005f0ca0",
+        "005f2350",
+        "005f27c0",
+        "005f2e00",
+        "005f2ee0",
+        "005f30b0",
+        "005f3cf0",
+        "005f4310",
+        "005f49f0",
+        "005f4b80",
+        "00628af0",
+        "00628d50",
+        "0062a820",
+        "0067dcc0",
+        "0068f490",
+        "006a1710",
+        "006a1b90",
+        "006a1de0",
+        "006a1e80",
+        "006a3330",
+        "007c3ce0",
+        "007e6130",
+        "008105b0",
+        "00847a90",
+        "00848100",
+        "0093db80",
+        "00b31da0",
+        "00b3d240",
+        "00b3d260",
+        "00b3d3c0",
+        "00b5b800",
+        "00dd3ca0",
+        "00e30f90",
+        "00e4ce40",
+        "00f47380",
+        "011e0744"
+      ]
+    }
+  },
+  "runtime": {
+    "capability_available": true,
+    "capability_source": "knowledgegraph/research/runtime-oracle.json#current_capability.overall_status",
+    "capability_status": "TECHNICALLY_FEASIBLE_NOT_IMPLEMENTED",
+    "gated": 299,
+    "gated_is_not_failed": "runtime_gated=299 means a capability gate on the original process is still open. Nothing was attempted and nothing failed.",
+    "negative": 0,
+    "no_original_process_observations": {
+      "original_cell_stage": "never entered in any recorded Wine run (reachability negative, not a correctness negative)",
+      "positive_runtime_evidence_vas": 0,
+      "runtime_validated_functions": 0,
+      "semantic_decomp_runtime_performed": false
+    },
+    "not_run_values_must_not_be_read_as_failed": {
+      "high_misread_risk_tokens": [
+        "blocked",
+        "UNKNOWN",
+        "NOT_AVAILABLE",
+        "not_established"
+      ],
+      "principle": "A not-run observation is an ABSENCE of evidence, never evidence of failure. Runtime-gated is a capability gate on the original process, not a runtime failure. UNKNOWN is a disclaimer with zero variance, never an incorrect claim.",
+      "reachability_negatives": {
+        "HISTORICAL_NEGATIVE": "historical run record; not a correctness negative",
+        "OBSERVED_NEGATIVE": "original Cell stage never entered; a reachability negative"
+      },
+      "token_inventory": {
+        "NOT_AVAILABLE": {
+          "count": 0,
+          "meaning": "capability/verdict token, never a runtime failure"
+        },
+        "NOT_PRESENT": {
+          "count": 1,
+          "meaning": "evidence absent, not evidence negative"
+        },
+        "blocked": {
+          "count": 2,
+          "meaning": "static integration or dependency blocker, not a runtime failure",
+          "misread_risk": "HIGH"
+        },
+        "not performed": {
+          "count": 0
+        },
+        "not run": {
+          "count": 3
+        },
+        "not_established": {
+          "count": 58757,
+          "meaning": "a disclaimer, not a classification"
+        },
+        "not_promoted": {
+          "count": 0
+        },
+        "not_run": {
+          "manifest_function_records": 154,
+          "metadata_files": 85
+        },
+        "required": {
+          "count": 16,
+          "meaning": "promotion prerequisite, not a failure"
+        }
+      }
+    },
+    "unavailable": null,
+    "unavailable_is_not_a_field": true,
+    "validated": 0
+  },
+  "semantics": {
+    "canonical_vocabulary": {
+      "documented_in": "docs/analysis/semantic-decomp.md",
+      "no_inferred_tier": true,
+      "source_of_truth": "knowledgegraph/research/semantic-decomp.json#records[].classification",
+      "tiers": [
+        "STRONG_SEMANTIC",
+        "BOUNDED_SEMANTIC",
+        "STRUCTURAL_ONLY",
+        "NEEDS_RUNTIME",
+        "STILL_UNKNOWN"
+      ]
+    },
+    "evidence_ladder_axes": {
+      "blueprint_claim_kind_gameplay": {
+        "INFERRED": 484,
+        "SEMANTIC": 411,
+        "UNKNOWN": 1254
+      },
+      "blueprint_contract_state_gameplay": {
+        "body_partial": 171,
+        "dossier_partial": 2,
+        "identity_graph_partial": 388,
+        "unresolved": 1588
+      },
+      "blueprint_semantic_understanding_gameplay": {
+        "not_established": 1976,
+        "partial": 173
+      },
+      "ledger_name_evidence_gameplay": {
+        "APPROX": 94,
+        "CONFIRMED": 487,
+        "INFERRED": 1413,
+        "SUPPORTED": 155
+      },
+      "ledger_name_evidence_total": {
+        "APPROX": 1500,
+        "CONFIRMED": 1167,
+        "INFERRED": 12371,
+        "SUPPORTED": 3836,
+        "UNKNOWN": 39883
+      },
+      "note": "INFERRED belongs to the EVIDENCE ladder and to blueprint.claim_kind, NOT to the semantic tier axis"
+    },
+    "honest_note": "There is NO canonical semantic tier named 'inferred' or 'hypothesized'. INFERRED is an EVIDENCE-ladder rung (ledger name_evidence: 12371 rows; blueprint claim_kind: 484 gameplay rows) and a blueprint claim_kind, not a semantic tier. Mapping it onto the strong/bounded/structural axis would require inventing a category name that no artifact in this repository uses, so this report does not do it. Every figure under `semantics.tiers` comes from the one documented canonical vocabulary; every INFERRED figure is reported separately under `evidence_ladder_axes` with its own denominator.",
+    "positive_any_gameplay": 976,
+    "positive_axes": {
+      "blueprint_claim_kind_not_unknown": 895,
+      "blueprint_semantic_understanding_not_not_established": 173,
+      "semantic_decomp_classified": 32
+    },
+    "positive_axes_sum_is_not_a_union": {
+      "note": "positive_axes_sum_is_not_a_union: the three axes OVERLAP, so they MUST NOT be summed. A VA with a positive claim_kind and a partial semantic_understanding is counted by both. Their union is computed separately and deduplicated over VAs, not over axis tallies, and is reported as semantics.positive_any_gameplay",
+      "positive_axes_sum_if_you_were_wrong": 1100,
+      "positive_axes_sum_is_wrong_because": "the axes share VAs, so the sum double-counts them",
+      "union_gameplay_vas": 976,
+      "union_gameplay_vas_is_not_the_sum_above": true
+    },
+    "positive_complement_gameplay": 1173,
+    "residual_unknown_negative_label": {
+      "available": true,
+      "is_a_negative_label": true,
+      "must_not_be_unioned_into_positive_coverage": true,
+      "reason": "it is the exact complement of the 173 'partial' set within gameplay, so unioning it into a positive-coverage figure trivially reaches 100% and means nothing",
+      "records": 1976
+    },
+    "tiers": {
+      "BOUNDED_SEMANTIC": 8,
+      "NEEDS_RUNTIME": 15,
+      "STILL_UNKNOWN": 0,
+      "STRONG_SEMANTIC": 4,
+      "STRUCTURAL_ONLY": 5
+    },
+    "unclassified": 58725
+  },
+  "snapshot": {
+    "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+    "binary_version": "3.1.0.22",
+    "image_base": "0x00400000",
+    "input_drift": [],
+    "inputs": {
+      "coverage_ledger": {
+        "bytes": 49709906,
+        "git_tracked": true,
+        "path": "knowledgegraph/research/21-decompilation-coverage.json",
+        "present": true,
+        "sha256": "16ac8cb10f0f0300964ab1655b20706d8c3a87104be0b8b30aee77b185e11784",
+        "tracked_verdict": "tracked"
+      },
+      "decomp_gap_parts": {
+        "bytes": 36016940,
+        "git_tracked": true,
+        "member_count": 16,
+        "path": "knowledgegraph/research/decomp-gap/*.json",
+        "present": true,
+        "sha256": null,
+        "sha256_is_null_by_design": "a directory input has no single content hash; member sha256 values are individually reproducible",
+        "tracked_members": 16,
+        "tracked_members_is_all": true,
+        "tracked_verdict": "tracked"
+      },
+      "evidence_dir": {
+        "bytes": null,
+        "git_tracked": false,
+        "member_count": 8,
+        "path": "reconstruction/evidence/*/",
+        "present": true,
+        "sha256": null,
+        "sha256_is_null_by_design": "a directory input has no single content hash; member sha256 values are individually reproducible",
+        "tracked_members": 0,
+        "tracked_members_is_all": false,
+        "tracked_verdict": "untracked"
+      },
+      "handoff_dir": {
+        "bytes": 349936,
+        "git_tracked": true,
+        "member_count": 25,
+        "path": "reconstruction/integrated/**/handoff.json",
+        "present": true,
+        "sha256": null,
+        "sha256_is_null_by_design": "a directory input has no single content hash; member sha256 values are individually reproducible",
+        "tracked_members": 14,
+        "tracked_members_is_all": false,
+        "tracked_verdict": "tracked"
+      },
+      "kg_db": {
+        "bytes": 109469696,
+        "git_tracked": false,
+        "path": "knowledgegraph/spore.db",
+        "present": true,
+        "sha256": "98bb75b335528f3253a38272b8f6f04756d986f7799d06144838b050d0cf4082",
+        "tracked_verdict": "untracked"
+      },
+      "knowledge_index": {
+        "bytes": 6868101,
+        "git_tracked": false,
+        "path": "reconstruction/knowledge/index.json",
+        "present": true,
+        "sha256": "ebe77607b3814073bffbe7f342f3532ccb8f6f20ecbbbfeda5688e80297df395",
+        "tracked_verdict": "untracked"
+      },
+      "manifest": {
+        "bytes": 1664241,
+        "git_tracked": true,
+        "path": "knowledgegraph/research/source-reconstruction-manifest.json",
+        "present": true,
+        "sha256": "d90445b9d8ae08427199e9ad2ca6331d55710a8728c67fd792f7e79f8af48e71",
+        "tracked_verdict": "tracked"
+      },
+      "metadata_dir": {
+        "bytes": 2624186,
+        "git_tracked": true,
+        "member_count": 328,
+        "path": "reconstruction/metadata/**/*.json",
+        "present": true,
+        "sha256": null,
+        "sha256_is_null_by_design": "a directory input has no single content hash; member sha256 values are individually reproducible",
+        "tracked_members": 101,
+        "tracked_members_is_all": false,
+        "tracked_verdict": "tracked"
+      },
+      "residual_unknown": {
+        "bytes": 49365824,
+        "git_tracked": true,
+        "path": "knowledgegraph/research/residual-unknown-priority.json",
+        "present": true,
+        "sha256": "bc293927d15200d58713bfda392cd703392569df7bf417c1873779804061d1c1",
+        "tracked_verdict": "tracked"
+      },
+      "runtime_oracle": {
+        "bytes": 89076,
+        "git_tracked": true,
+        "path": "knowledgegraph/research/runtime-oracle.json",
+        "present": true,
+        "sha256": "1ef4aeab6d8319521d4f3aadf56fdcf041d4c74f33a5e7e8418678a3d4c2f06b",
+        "tracked_verdict": "tracked"
+      },
+      "semantic_blueprint": {
+        "bytes": 28839863,
+        "git_tracked": true,
+        "path": "knowledgegraph/research/semantic-blueprint.json",
+        "present": true,
+        "sha256": "12b53d8365cd413c8846a6343cfd5e01baa0eb8ae883fb0b098a40646e3fd906",
+        "tracked_verdict": "tracked"
+      },
+      "semantic_decomp": {
+        "bytes": 1332852,
+        "git_tracked": true,
+        "path": "knowledgegraph/research/semantic-decomp.json",
+        "present": true,
+        "sha256": "9abf6af075bfeccf21f27ca0bf94e1b8be466c8a9a44b4f029cc99c9784ec5c6",
+        "tracked_verdict": "tracked"
+      },
+      "staging_dir": {
+        "bytes": 4405568,
+        "git_tracked": false,
+        "member_count": 472,
+        "path": "reconstruction/staging/*/",
+        "present": true,
+        "sha256": "451158a85e5edb78f8be04a3a62a5a573073db306c7b41937f763849c34e9eb6",
+        "sha256_is_a_member_aggregate": "sha256 of the sorted '%s\\0%s\\0%s' lines (relpath, member sha256, member bytes) over every .json/.cpp/.hpp/.sh member, so a C++ edit changes it; content-derived, never mtime-derived",
+        "sha256_is_null_by_design": null,
+        "tracked_members": 168,
+        "tracked_members_is_all": false,
+        "tracked_verdict": "untracked"
+      },
+      "triage_queue": {
+        "bytes": 454392,
+        "git_tracked": true,
+        "path": "knowledgegraph/triage/queue-f0e310e0-v6.json",
+        "present": true,
+        "sha256": "3592f667979b0a7fd603b47e2af0e3452814d04c014f4d0e73928e9dc1c29638",
+        "tracked_verdict": "tracked"
+      }
+    },
+    "source_input_hash_verification": {
+      "agrees_with_recomputed": true,
+      "gameplay_defined_by": "ledger triage_category in {GAMEPLAY_LOGIC, GAMEPLAY_SUPPORT}",
+      "ledger_self_reported_counts": {
+        "canonical": {
+          "body_available": 478,
+          "body_quality": {
+            "annotated_decompiler_capture": 1,
+            "decompiler_pseudocode_with_warnings": 477,
+            "snapshot_role_only": 1,
+            "snapshot_snippet_only": 1,
+            "unavailable": 58277
+          },
+          "decomp_state": {
+            "annotated_decompiler_capture": 1,
+            "decompiler_export": 477,
+            "snapshot_only": 2,
+            "unavailable": 58277
+          },
+          "decomp_text_bytes": {
+            "count": 478,
+            "max": 67588,
+            "min": 183,
+            "total": 740382
+          },
+          "decomp_text_lines": {
+            "count": 478,
+            "histogram": {
+              "1-10": 0,
+              "11-20": 175,
+              "1281+": 1,
+              "161-320": 10,
+              "21-40": 187,
+              "321-640": 7,
+              "41-80": 68,
+              "641-1280": 2,
+              "81-160": 28
+            },
+            "max": 1726,
+            "min": 11,
+            "total": 23601
+          },
+          "decompiler_warnings": {
+            "max_warning_lines_in_row": 10,
+            "rows_with_warnings": 477,
+            "total_warning_lines": 1171
+          },
+          "function_body_size_bytes": {
+            "count": 58757,
+            "max": 57671,
+            "min": 1,
+            "total": 13247745
+          },
+          "name_evidence": {
+            "APPROX": 1500,
+            "CONFIRMED": 1167,
+            "INFERRED": 12371,
+            "SUPPORTED": 3836,
+            "UNKNOWN": 39883
+          },
+          "priority": {
+            "IGNORE": 178,
+            "P0": 159,
+            "P1": 6261,
+            "P2": 19,
+            "P3": 52140
+          },
+          "snapshot_evidence": {
+            "rows_with_body_and_snapshot": 6,
+            "rows_with_snapshot_address": 8,
+            "rows_with_snapshot_decompiled_evidence": 7,
+            "snapshot_only_rows": 2
+          },
+          "total": 58757,
+          "triage_category": {
+            "ENGINE_IMPLEMENTATION": 11585,
+            "ENGINE_INTERFACE": 1227,
+            "GAMEPLAY_LOGIC": 1656,
+            "GAMEPLAY_SUPPORT": 493,
+            "THIRD_PARTY_OR_RUNTIME": 4080,
+            "UNKNOWN": 39716
+          }
+        },
+        "decompiler_warning_categories": {
+          "deadcode_restart": 13,
+          "enum_name_collision": 340,
+          "indirect_jump_as_call": 16,
+          "jumptable_recovery_failure": 16,
+          "non_returning_subroutine": 2,
+          "restart_limit": 1,
+          "symbol_overlap": 14,
+          "type_propagation": 3,
+          "unknown_calling_convention": 477,
+          "unreachable_block_removal": 13
+        },
+        "gameplay": {
+          "body_available": 172,
+          "body_quality": {
+            "decompiler_pseudocode_with_warnings": 172,
+            "snapshot_role_only": 1,
+            "unavailable": 1976
+          },
+          "decomp_state": {
+            "decompiler_export": 172,
+            "snapshot_only": 1,
+            "unavailable": 1976
+          },
+          "decomp_text_bytes": {
+            "count": 172,
+            "max": 67588,
+            "min": 205,
+            "total": 478272
+          },
+          "decomp_text_lines": {
+            "count": 172,
+            "histogram": {
+              "1-10": 0,
+              "11-20": 59,
+              "1281+": 1,
+              "161-320": 8,
+              "21-40": 47,
+              "321-640": 7,
+              "41-80": 33,
+              "641-1280": 2,
+              "81-160": 15
+            },
+            "max": 1726,
+            "min": 11,
+            "total": 14279
+          },
+          "decompiler_warnings": {
+            "max_warning_lines_in_row": 10,
+            "rows_with_warnings": 172,
+            "total_warning_lines": 501
+          },
+          "function_body_size_bytes": {
+            "count": 2149,
+            "max": 12342,
+            "min": 1,
+            "total": 660640
+          },
+          "name_evidence": {
+            "APPROX": 94,
+            "CONFIRMED": 487,
+            "INFERRED": 1413,
+            "SUPPORTED": 155
+          },
+          "priority": {
+            "P0": 34,
+            "P1": 388,
+            "P2": 19,
+            "P3": 1708
+          },
+          "snapshot_evidence": {
+            "rows_with_body_and_snapshot": 1,
+            "rows_with_snapshot_address": 2,
+            "rows_with_snapshot_decompiled_evidence": 1,
+            "snapshot_only_rows": 1
+          },
+          "total": 2149,
+          "triage_category": {
+            "GAMEPLAY_LOGIC": 1656,
+            "GAMEPLAY_SUPPORT": 493
+          }
+        },
+        "queue_including_out_of_universe": {
+          "decomp_state": {
+            "decompiler_export": 184,
+            "unavailable": 184
+          },
+          "gameplay_intersection": 236,
+          "in_canonical": 365,
+          "non_gameplay_intersection": 129,
+          "out_of_canonical": 3,
+          "queue_state": {
+            "candidate": 180,
+            "implemented": 35,
+            "queued": 153
+          },
+          "readiness": {
+            "DEPENDENCY_FIRST": 24,
+            "ENGINE_BOUNDARY": 23,
+            "LIKELY_INFRASTRUCTURE": 185,
+            "NEEDS_RE": 101,
+            "READY": 6,
+            "READY_WITH_LOCAL_CONTEXT": 29
+          },
+          "total": 368
+        },
+        "queue_inside_canonical": {
+          "body_available": 184,
+          "body_quality": {
+            "decompiler_pseudocode_with_warnings": 184,
+            "unavailable": 181
+          },
+          "decomp_state": {
+            "decompiler_export": 184,
+            "unavailable": 181
+          },
+          "decomp_text_bytes": {
+            "count": 184,
+            "max": 28051,
+            "min": 216,
+            "total": 335475
+          },
+          "decomp_text_lines": {
+            "count": 184,
+            "histogram": {
+              "1-10": 0,
+              "11-20": 72,
+              "1281+": 0,
+              "161-320": 6,
+              "21-40": 60,
+              "321-640": 4,
+              "41-80": 30,
+              "641-1280": 2,
+              "81-160": 10
+            },
+            "max": 809,
+            "min": 11,
+            "total": 10627
+          },
+          "decompiler_warnings": {
+            "max_warning_lines_in_row": 10,
+            "rows_with_warnings": 184,
+            "total_warning_lines": 471
+          },
+          "function_body_size_bytes": {
+            "count": 365,
+            "max": 6297,
+            "min": 1,
+            "total": 85432
+          },
+          "name_evidence": {
+            "CONFIRMED": 194,
+            "INFERRED": 74,
+            "SUPPORTED": 97
+          },
+          "priority": {
+            "P0": 159,
+            "P1": 86,
+            "P2": 19,
+            "P3": 101
+          },
+          "snapshot_evidence": {
+            "rows_with_body_and_snapshot": 5,
+            "rows_with_snapshot_address": 5,
+            "rows_with_snapshot_decompiled_evidence": 5,
+            "snapshot_only_rows": 0
+          },
+          "total": 365,
+          "triage_category": {
+            "ENGINE_IMPLEMENTATION": 4,
+            "ENGINE_INTERFACE": 125,
+            "GAMEPLAY_LOGIC": 193,
+            "GAMEPLAY_SUPPORT": 43
+          }
+        },
+        "source_coverage": {
+          "decompiled_sdk_files": 478,
+          "decompiled_sdk_unique_vas": 477,
+          "snapshot_address_rows": 8,
+          "snapshot_function_rows": 9,
+          "snapshot_only_rows_in_canonical": 2,
+          "snapshot_rows_outside_canonical": 1,
+          "supplemental_capture_files": 2,
+          "supplemental_capture_unique_vas": 2
+        }
+      },
+      "manifest_self_reported_metrics": {
+        "blocked": 1,
+        "bodies_reconstructed": 299,
+        "deferred": 0,
+        "function_records": 300,
+        "integrated": 299,
+        "runtime_gated": 299,
+        "runtime_validated": 0,
+        "total_functions_indexed": 58757
+      },
+      "universe_defined_by": "distinct VA rows in the coverage ledger"
+    }
+  },
+  "universes": {
+    "gameplay_definition": {
+      "categories": [
+        "GAMEPLAY_LOGIC",
+        "GAMEPLAY_SUPPORT"
+      ],
+      "definition": "canonical rows whose triage category is GAMEPLAY_LOGIC or GAMEPLAY_SUPPORT",
+      "independently_confirmed_by": "knowledgegraph/research/semantic-blueprint.json#functions[] VA set is identical to the gameplay set",
+      "source": "knowledgegraph/research/21-decompilation-coverage.json#ledger[].triage_category"
+    },
+    "gameplay_functions": 2149,
+    "internal_functions": 58757,
+    "non_gameplay_functions": 56608,
+    "universe_definition": {
+      "definition": "unique VA rows in the 58,757-row functions.tsv export and triage-f0e310e0.triage-v6.jsonl",
+      "duplicate_vas": 0,
+      "source": "knowledgegraph/research/21-decompilation-coverage.json#ledger"
+    }
+  }
+}

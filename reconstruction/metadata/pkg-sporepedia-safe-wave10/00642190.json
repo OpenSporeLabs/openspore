@@ -1,0 +1,176 @@
+{
+  "schema": "pkg-sporepedia-safe-wave10.function-handoff.v1",
+  "package": "PKG-SPOREPEDIA-SAFE-WAVE10",
+  "subsystem": "Sporepedia.Asset",
+  "va": "0x00642190",
+  "ghidra_name": "FUN_00642190",
+  "normalized_symbol": "sporepedia_asset_destroy_00642190",
+  "semantic_label": "sporepedia asset destructor: write the derived vtable triple, release five handles, free a non inline entry vector, then tail jump to the base destructor",
+  "declaration": "void __thiscall sporepedia_asset_destroy_00642190(OpaqueSporepediaAsset* asset)",
+  "abi": {
+    "architecture": "x86-32",
+    "calling_convention": "thiscall, receiver only, no stack arguments",
+    "receiver_register": "ECX",
+    "receiver_type": "OpaqueSporepediaAsset*",
+    "frame": "PUSH ESI / MOV ESI,ECX; no stack frame is allocated",
+    "stack_arguments": [],
+    "stack_cleanup_bytes": 0,
+    "ret_form": "RET",
+    "return_register": "EAX",
+    "return_width_bytes": 0,
+    "return_contract": "void; the entry has no return of its own. It ends at 0x00642205 with POP ESI followed by JMP 0x006412a0, a tail transfer into the base destructor port, so the base port's return is the only RET this call chain executes",
+    "exit_count": 1,
+    "tail_transfer": "JMP 0x006412a0 at 0x00642205"
+  },
+  "observed_body": {
+    "entry": "0x00642190",
+    "body_end_inclusive": "0x0064220a",
+    "instruction_count": 46,
+    "byte_length": 122,
+    "raw_bytes_sha256": "99d0f9dbb079e50140cdf930fb310d45c41372efdb9e213b620dc30a3e9d08e7",
+    "raw_bytes_hex": "568bf1c70648f63f01c7461048274601c74614382746018b4e7485c974078b018b5004ffd28b4e7085c974078b018b5004ffd28b464085c0740e3b4650740950e8ab51900083c4048b4e3c85c974078b018b5004ffd28b4e2085c974078b018b5004ffd28b4e1c85c974078b018b5004ffd28bce5ee996f0ffff",
+    "instruction_list": [
+      "0x00642193 MOV [ESI],0x13ff648 / MOV [ESI+0x10],0x1462748 / MOV [ESI+0x14],0x1462738  (derived vtable triple)",
+      "0x006421a7 release the handle at +0x74 through vtable slot +0x04 when non null",
+      "0x006421b5 release the handle at +0x70 through vtable slot +0x04 when non null",
+      "0x006421c3 MOV EAX,[ESI+0x40] / TEST EAX,EAX / JZ 0x006421d8 / CMP EAX,[ESI+0x50] / JZ 0x006421d8  (inline marker comparison)",
+      "0x006421cf PUSH EAX / CALL 0x00f47380 / ADD ESP,0x4  (free a non inline entry vector)",
+      "0x006421d8 release the handle at +0x3c through vtable slot +0x04 when non null",
+      "0x006421e6 release the handle at +0x20 through vtable slot +0x04 when non null",
+      "0x006421f4 release the handle at +0x1c through vtable slot +0x04 when non null",
+      "0x00642202 MOV ECX,ESI / POP ESI / JMP 0x006412a0  (tail call to the base destructor)"
+    ],
+    "direct_callee_calls": [
+      "0x00f47380",
+      "0x006412a0"
+    ]
+  },
+  "mechanics": [
+    "write the derived primary vtable 0x013ff648 at +0x00, the derived secondary 0x01462748 at +0x10 and the derived tertiary 0x01462738 at +0x14",
+    "release the handle at +0x74 through vtable slot +0x04 when it is non null",
+    "release the handle at +0x70 next, then the handle at +0x3c, then +0x20, then +0x1c",
+    "read the inline entry vector first word at +0x40 and skip the free when it is null",
+    "skip the free when the vector first word equals the inline marker word at +0x50",
+    "otherwise free the entry vector through the cdecl port 0x00f47380 with the vector first word pushed",
+    "all five handle releases are null guarded and none of them is followed by a use of the released pointer",
+    "no receiver field outside the three vtable slots is written",
+    "end with a tail jump into the base destructor 0x006412a0 after popping the saved receiver"
+  ],
+  "ports": [
+    {
+      "va": "0x00f47380",
+      "name": "FUN_00f47380",
+      "kind": "cdecl free",
+      "port_field": "SporepediaSafeBindings::free_00f47380",
+      "body_defined_here": false,
+      "observed_abi": "cdecl, one stack word, caller cleanup ADD ESP,0x4",
+      "default": "package-local inert sink, replaceable through sporepedia_safe_publish_bindings"
+    },
+    {
+      "va": "0x006412a0",
+      "name": "FUN_006412a0",
+      "kind": "thiscall base asset destructor",
+      "port_field": "SporepediaSafeBindings::base_destroy_006412a0",
+      "body_defined_here": false,
+      "observed_abi": "thiscall, receiver only, reached by tail transfer JMP rather than CALL",
+      "default": "package-local default that writes the base vtable triple 0x013ec458, 0x013eb938, 0x01403758",
+      "note": "the default port reproduces only the three vtable stores the base body is known to perform; the remainder of 0x006412a0 is not reconstructed"
+    },
+    {
+      "va": "handle vtable slot +0x04",
+      "name": "release slot",
+      "kind": "indirect thiscall release",
+      "port_field": "OpaqueAssetRefVtable::release_04",
+      "body_defined_here": false,
+      "observed_abi": "thiscall, receiver only, return value ignored",
+      "default": "supplied by the caller of the package"
+    }
+  ],
+  "globals_read": [],
+  "runtime_gates": [
+    "runtime validation not performed; static decompilation and disassembly only",
+    "the base destructor 0x006412a0 is a tail-transfer target and is not promoted; only its three vtable stores are modelled in the default port",
+    "the free port 0x00f47380 is shared across the campaign and is not promoted here",
+    "the handle release slots at asset-ref vtable +0x04 are opaque seams and are not promoted",
+    "the inline marker comparison uses the word at +0x50 against the vector first word at +0x40; the invariant that keeps an inline vector from being freed is unverified at runtime",
+    "the six vtable words are literal image addresses with no class attribution in the live database"
+  ],
+  "phase": "integrated",
+  "review_status": "reviewed_static_semantic_abi_and_runtime_lifecycle",
+  "runtime_validation": 0,
+  "worker_ownership": "pkg-sporepedia-safe-wave10-target-only",
+  "ghidra_provenance": {
+    "ghidra_program": "SporeApp.exe",
+    "ghidra_project": "SporeProject",
+    "ghidra_mutated": false,
+    "ghidra_saved": false,
+    "binary": "SPORE/SporeBin/SporeApp.exe",
+    "version": "3.1.0.22",
+    "architecture": "x86:LE:32",
+    "image_base": "0x00400000",
+    "captured_on": "2026-09-25",
+    "tools": [
+      "ghidra_get_function_by_address",
+      "ghidra_disassemble_function",
+      "ghidra_get_current_program_info"
+    ],
+    "evidence_rule": "The disassembly listed in observed_body was read back from the live Ghidra database for SporeApp.exe at the addresses shown, and the byte extent was read from the .text section of SPORE/SporeBin/SporeApp.exe (.text VMA 0x00401000, file offset 0x400). The sha256 below covers exactly that byte extent. No Ghidra symbol, structure, comment or program state was created or modified."
+  },
+  "implementation": {
+    "status": "promoted to canonical",
+    "canonical_status": "present; promoted by the sole integrator in batch-2026-09-25-wave10-safe-core",
+    "namespace": "openspore::reconstruction::pkg_sporepedia_safe_wave10",
+    "header": "src/reconstruction/pkg_sporepedia_safe_wave10/sporepedia_safe_wave10.hpp",
+    "source": "src/reconstruction/pkg_sporepedia_safe_wave10/sporepedia_safe_wave10.cpp",
+    "model_test": "src/reconstruction/pkg_sporepedia_safe_wave10/sporepedia_safe_wave10_model_test.cpp",
+    "staged_from": "reconstruction/staging/pkg-sporepedia-safe-wave10",
+    "metadata": "reconstruction/metadata/pkg-sporepedia-safe-wave10/00642190.json"
+  },
+  "model_test_cases": [
+    "test_abi_type_shapes",
+    "test_bindings_round_trip",
+    "test_default_base_destroy_resets_three_vtable_words",
+    "test_default_destroy_writes_observed_words_before_the_base_tail",
+    "test_default_range_port_feeds_the_record_walk_through_thiscall",
+    "test_default_range_port_returns_the_primary_plus_0x18",
+    "test_defaults_are_inert_and_shape_preserving",
+    "test_destroy_after_default_base_destroy_stays_callable",
+    "test_destroy_free_sits_between_second_and_third_release",
+    "test_destroy_frees_unmarked_heap_pointer",
+    "test_destroy_releases_five_refs_in_field_order",
+    "test_destroy_returns_to_its_call_site",
+    "test_destroy_skips_free_when_pointer_is_null",
+    "test_destroy_skips_free_when_pointer_matches_inline_marker",
+    "test_destroy_skips_null_receivers",
+    "test_destroy_tail_precedes_every_other_port",
+    "test_destroy_writes_three_vtable_words_in_order",
+    "test_observed_vtable_words_come_from_the_default_bindings"
+  ],
+  "focused_test_evidence": {
+    "command": "clang++ -m32 -std=c++17 -O0/-O2 [-DNDEBUG] -Wall -Wextra -Wpedantic -Werror -I <canonical dir> <source> <model test> && <binary>",
+    "configurations": [
+      "-O0",
+      "-O2",
+      "-O0 -DNDEBUG",
+      "-O2 -DNDEBUG"
+    ],
+    "normal": "passed at -O0 and at -O2",
+    "ndebug": "passed at -O0 -DNDEBUG and at -O2 -DNDEBUG",
+    "assertions_weakened": 0,
+    "assertions_removed": 0,
+    "test_count": 18,
+    "compiled_ret_form_matches_ghidra": true
+  },
+  "helper_and_data_vas_not_promoted": [
+    "0x00571db0",
+    "0x00e30f90",
+    "0x00f47380",
+    "0x008105b0",
+    "0x005c29c0",
+    "0x005507a0",
+    "0x0067dcc0",
+    "0x00b3d240",
+    "0x00b3d3c0",
+    "0x011e0744"
+  ]
+}

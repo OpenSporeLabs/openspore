@@ -21,10 +21,10 @@
     "header": "reconstruction/staging/wave6-misc-engine/misc_engine.hpp",
     "source": "reconstruction/staging/wave6-misc-engine/misc_engine.cpp",
     "model_test": "reconstruction/staging/wave6-misc-engine/misc_engine_model_test.cpp",
-    "types": "OpaqueMessageManager and OpaqueMessageService are package-local offset/opaque views; MessageQueuePorts is a normalized unresolved-callback seam"
+    "types": "OpaqueMessageManager and OpaqueMessageService are package-local offset/opaque views; MessageQueuePorts carries ABI-typed thiscall callbacks for service vtable slots +0x7c and +0x90"
   },
   "selection": {
-    "reason": "Unclaimed shared message-queue boundary with a bounded four-way write, unsigned out-of-range guard, and two ordered service callbacks.",
+    "reason": "Unclaimed shared message-queue boundary with a bounded four-way write, unsigned out-of-range guard, and two ordered thiscall service-slot callbacks.",
     "fan_in": {
       "direct_caller_query_total": 0,
       "function_data_xref_count": 1,
@@ -105,17 +105,23 @@
       "vtable slot +0x7c and +0x90 implementations",
       "queue-pointer ownership and lifetime"
     ],
-    "ports": "MessageQueuePorts.prepare_7c and query_90 are normalized package-owned callbacks; they are not asserted to be original function-pointer types"
+    "ports": "MessageQueuePorts.prepare_7c is the ABI-typed thiscall callback for service vtable slot +0x7c; query_90 is the ABI-typed thiscall callback for slot +0x90. The +0x7c callback consumes its two stack words; the +0x90 callback consumes none."
   },
   "verification": {
     "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/wave6-misc-engine -fsyntax-only reconstruction/staging/wave6-misc-engine/misc_engine.cpp reconstruction/staging/wave6-misc-engine/misc_engine_model_test.cpp",
     "model_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fno-pie -Wl,-z,notext -I reconstruction/staging/wave6-misc-engine reconstruction/staging/wave6-misc-engine/misc_engine.cpp reconstruction/staging/wave6-misc-engine/misc_engine_model_test.cpp -o /tmp/opencode/wave6-misc-engine-test && /tmp/opencode/wave6-misc-engine-test",
+    "ndebug_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -DNDEBUG -fno-pie -Wl,-z,notext -I reconstruction/staging/wave6-misc-engine reconstruction/staging/wave6-misc-engine/misc_engine.cpp reconstruction/staging/wave6-misc-engine/misc_engine_model_test.cpp -o /tmp/opencode/wave6-misc-engine-test-ndebug && /tmp/opencode/wave6-misc-engine-test-ndebug",
+    "format_command": "clang-format --dry-run --Werror -style='{BasedOnStyle: Google, FixNamespaceComments: false}' reconstruction/staging/wave6-misc-engine/misc_engine.hpp reconstruction/staging/wave6-misc-engine/misc_engine.cpp reconstruction/staging/wave6-misc-engine/misc_engine_model_test.cpp",
+    "json_command": "python3 -m json.tool reconstruction/metadata/wave6-misc-engine/0067dcc0.json >/dev/null && python3 -m json.tool reconstruction/metadata/wave6-misc-engine/0098f4d0.json >/dev/null && python3 -m json.tool reconstruction/metadata/wave6-misc-engine/00b3d480.json >/dev/null && python3 -m json.tool reconstruction/metadata/wave6-misc-engine/00b63980.json >/dev/null",
+    "diff_command": "git diff --check -- reconstruction/staging/wave6-misc-engine reconstruction/metadata/wave6-misc-engine",
     "result": "passed",
     "coverage": [
       "selectors 0 through 3",
       "unsigned selector 4 out-of-range path",
       "four-byte pointer stores at 0xac, 0xb0, 0xb4, and 0xb8",
       "callback argument order 8 then 1",
+      "thiscall service slot +0x7c and +0x90 calling conventions",
+      "callee cleanup for the two manager stack words and the +0x7c slot",
       "service pointer at manager-0x208",
       "query result forwarding"
     ],

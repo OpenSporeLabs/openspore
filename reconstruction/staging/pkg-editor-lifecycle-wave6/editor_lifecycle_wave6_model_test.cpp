@@ -15,7 +15,11 @@ struct Fixture {
   OpaqueEditor editor{};
   OpaqueManager manager{};
   std::array<std::byte, 0x50> object{};
+  std::array<std::byte, 0x50> object98{};
+  std::array<std::byte, 0x20> object90{};
+  std::array<std::byte, 0x20> object94{};
   std::array<std::byte, 0x20> service{};
+  std::array<std::byte, 0x20> asset_view_manager{};
   std::array<std::byte, 0x40> message{};
   void* global_service = nullptr;
   void* global_service_slot = nullptr;
@@ -23,6 +27,11 @@ struct Fixture {
   bool app_available = false;
   bool required_available = false;
   bool renderer_available = false;
+  bool release_prepare_sets_exit_mode_arg = false;
+  bool asset_view_available = false;
+  bool first_gate = false;
+  bool second_gate = false;
+  bool property_gate = false;
   bool message_result = false;
   bool clock_expired = false;
   std::uint64_t now = 0;
@@ -81,6 +90,15 @@ std::size_t count(const Fixture& fixture, NativeOp operation) {
   return result;
 }
 
+bool has_address(const Fixture& fixture, std::uint32_t address) {
+  for (const NativeCall& call : fixture.calls) {
+    if (call.address == address) {
+      return true;
+    }
+  }
+  return false;
+}
+
 NativeResult invoke(const NativeCall& call) {
   Fixture* fixture = reinterpret_cast<Fixture*>(call.editor->bytes.data());
   fixture->calls.push_back(call);
@@ -88,6 +106,12 @@ NativeResult invoke(const NativeCall& call) {
   switch (call.operation) {
     case NativeOp::dispose_self_1c:
       set_byte(fixture->editor, kOffsetActive, 0);
+      break;
+    case NativeOp::dispose_release_prepare:
+      if (fixture->release_prepare_sets_exit_mode_arg) {
+        set_pointer(fixture->editor, kOffsetExitModeArg,
+                    fixture->object98.data());
+      }
       break;
     case NativeOp::dispose_acquire_app:
       result.pointer =
@@ -120,8 +144,20 @@ NativeResult invoke(const NativeCall& call) {
     case NativeOp::update_timer_gate:
       result.boolean = true;
       break;
-    case NativeOp::message_route:
-      result.boolean = fixture->message_result;
+    case NativeOp::message_service:
+      if (call.address == 0x00401030) {
+        result.pointer = fixture->asset_view_available
+                             ? fixture->asset_view_manager.data()
+                             : nullptr;
+      } else if (call.address == 0x005dc2e0) {
+        result.boolean = fixture->first_gate;
+      } else if (call.address == 0x005dc2f0) {
+        result.boolean = fixture->second_gate;
+      } else if (call.address == 0x006a25a0) {
+        result.boolean = fixture->property_gate;
+      } else {
+        result.boolean = fixture->message_result;
+      }
       break;
     case NativeOp::message_object_000c:
       result.word = 0x12345678;
@@ -137,6 +173,11 @@ void initialize(Fixture& fixture) {
   fixture.app_available = false;
   fixture.required_available = false;
   fixture.renderer_available = false;
+  fixture.release_prepare_sets_exit_mode_arg = false;
+  fixture.asset_view_available = false;
+  fixture.first_gate = false;
+  fixture.second_gate = false;
+  fixture.property_gate = false;
   fixture.message_result = false;
   fixture.clock_expired = false;
   fixture.now = 0;
@@ -158,15 +199,73 @@ void test_dispose() {
   set_byte(fixture.editor, kOffsetActive, 1);
   set_word(fixture.editor, kOffsetGlobalFlag5c0, 9);
   set_pointer(fixture.editor, kOffsetObjectA0, fixture.object.data());
+  set_pointer(fixture.editor, kOffsetExitModeArg, fixture.object.data());
+  set_pointer(fixture.editor, kOffsetObject90, fixture.object90.data());
+  set_pointer(fixture.editor, kOffsetExitObject94, fixture.object94.data());
+  set_pointer(fixture.editor, 0x3d0, fixture.object.data());
   write(fixture.object.data() + 0x40, static_cast<std::uint32_t>(1));
+  write(fixture.object.data() + 8, static_cast<std::uint32_t>(1));
+  write(fixture.object90.data() + 4, static_cast<std::uint32_t>(1));
   assert(editor_dispose_00576c50(&fixture.editor));
   assert(word(fixture.editor, kOffsetActive) == 0);
   assert(word(fixture.editor, kOffsetGlobalFlag5c0) == 0);
   assert(word(fixture.editor, kOffsetObjectA0) == 0);
+  assert(word(fixture.editor, kOffsetExitModeArg) == 0);
+  assert(word(fixture.editor, kOffsetObject90) == 0);
+  assert(word(fixture.editor, kOffsetExitObject94) == 0);
   assert(read<std::uint32_t>(fixture.object.data() + 0x40) == 1);
+  assert(read<std::uint32_t>(fixture.object.data() + 8) == 1);
+  assert(read<std::uint32_t>(fixture.object90.data() + 4) == 1);
   assert(count(fixture, NativeOp::dispose_remove_hash) == 3);
   assert(count(fixture, NativeOp::dispose_render_2c) == 3);
+  bool viewer_reset_object = false;
+  bool object90_released = false;
+  bool object94_released = false;
+  for (const NativeCall& call : fixture.calls) {
+    if (call.operation == NativeOp::dispose_viewer_reset &&
+        call.pointer == fixture.object.data()) {
+      viewer_reset_object = true;
+    }
+    if (call.operation == NativeOp::dispose_release_virtual &&
+        call.pointer == fixture.object90.data()) {
+      object90_released = true;
+    }
+    if (call.operation == NativeOp::dispose_release_virtual &&
+        call.pointer == fixture.object94.data()) {
+      object94_released = true;
+    }
+  }
+  assert(viewer_reset_object);
+  assert(object90_released);
+  assert(object94_released);
+  static_cast<void>(viewer_reset_object);
+  static_cast<void>(object90_released);
+  static_cast<void>(object94_released);
   assert(fixture.global_service == nullptr);
+}
+
+void test_dispose_second_release() {
+  Fixture fixture{};
+  initialize(fixture);
+  fixture.release_prepare_sets_exit_mode_arg = true;
+  set_pointer(fixture.editor, kOffsetExitModeArg2, fixture.object.data());
+  write(fixture.object98.data() + 8, static_cast<std::uint32_t>(1));
+  assert(editor_dispose_00576c50(&fixture.editor));
+  assert(word(fixture.editor, kOffsetExitModeArg) == 0);
+  assert(word(fixture.editor, kOffsetExitModeArg2) ==
+         static_cast<std::uint32_t>(
+             reinterpret_cast<std::uintptr_t>(fixture.object.data())));
+  assert(read<std::uint32_t>(fixture.object98.data() + 8) == 1);
+  assert(count(fixture, NativeOp::dispose_release_prepare) == 1);
+  bool released = false;
+  for (const NativeCall& call : fixture.calls) {
+    if (call.operation == NativeOp::dispose_release_virtual &&
+        call.pointer == fixture.object98.data() + 4) {
+      released = true;
+    }
+  }
+  assert(released);
+  static_cast<void>(released);
 }
 
 void test_initialize() {
@@ -185,7 +284,7 @@ void test_initialize() {
   assert(word(fixture.editor, kOffsetMapRight) ==
          word(fixture.editor, kOffsetMapSentinel));
   assert(word(fixture.editor, kOffsetMapCount) == 0);
-  assert(read<float>(at(fixture.editor, kOffsetDefaultScalar)) == 1.25F);
+  assert(word(fixture.editor, kOffsetDefaultScalar) == 0x43fa0000u);
   assert(word(fixture.editor, 0x580) == 0);
   assert(read<std::uint16_t>(at(fixture.editor, 0x584)) == 0);
   assert(count(fixture, NativeOp::initialize_register_hash) == 6);
@@ -227,7 +326,7 @@ void test_update() {
   set_word(fixture.editor, kOffsetMode, 2);
   set_pointer(fixture.editor, kOffsetMessagePending, fixture.service.data());
   write(at(fixture.editor, kOffsetMessageTimer), 1.0F);
-  editor_update_0058be50(&fixture.editor, 9.0F, 0.25F);
+  editor_update_0058be50(&fixture.editor, 0.25F, 9.0F);
   assert(has(fixture, NativeOp::update_main));
   assert(has(fixture, NativeOp::update_play));
   assert(has(fixture, NativeOp::update_finish));
@@ -235,10 +334,20 @@ void test_update() {
     if (call.operation == NativeOp::update_main) {
       assert(call.first == 250);
       assert(call.first_scalar == 0.25F);
-      assert(call.second_scalar == 0.25F);
+      assert(call.second_scalar == 9.0F);
     }
   }
   assert(read<float>(at(fixture.editor, kOffsetMessageTimer)) == 0.75F);
+  assert(count(fixture, NativeOp::update_timer_expire) == 0);
+
+  Fixture expiry{};
+  initialize(expiry);
+  set_byte(expiry.editor, kOffsetActive, 1);
+  set_pointer(expiry.editor, kOffsetMessagePending, expiry.service.data());
+  write(at(expiry.editor, kOffsetMessageTimer), 0.25F);
+  editor_update_0058be50(&expiry.editor, 0.25F, 9.0F);
+  assert(read<float>(at(expiry.editor, kOffsetMessageTimer)) == 0.0F);
+  assert(count(expiry, NativeOp::update_timer_expire) == 1);
 }
 
 void test_message() {
@@ -253,9 +362,35 @@ void test_message() {
   assert(editor_handle_message_00591fa0(&fixture.editor, 0x29d57f4,
                                         fixture.message.data()));
   assert(word(fixture.editor, kOffsetMessageFlag389) == 0);
+  assert(fixture.calls.empty());
+
+  fixture.calls.clear();
+  assert(!editor_handle_message_00591fa0(&fixture.editor, 0x1c94708,
+                                         fixture.message.data()));
+  assert(read<std::uint8_t>(at(fixture.editor, kOffsetMessageFlag385)) == 1);
+  assert(fixture.calls.empty());
+
+  fixture.calls.clear();
+  set_pointer(fixture.editor, 0x14, fixture.service.data());
+  write(fixture.message.data(),
+        static_cast<std::uint32_t>(
+            reinterpret_cast<std::uintptr_t>(fixture.object.data())));
+  fixture.message_result = true;
+  assert(!editor_handle_message_00591fa0(&fixture.editor, 0xf058b0f2,
+                                         fixture.message.data()));
+  assert(has_address(fixture, 0x0040cf10));
+  assert(!has_address(fixture, 0x00591fa0));
+
+  fixture.calls.clear();
+  assert(editor_handle_message_00591fa0(&fixture.editor, 0x3fc3f13,
+                                        fixture.message.data()));
+  assert(has_address(fixture, 0x006b1f90));
+  assert(has_address(fixture, 0x004ae000));
+  assert(!has_address(fixture, 0x00591fa0));
 
   fixture.calls.clear();
   std::uint8_t enabled = 1;
+
   write(fixture.message.data() + 0xc, enabled);
   fixture.message_result = true;
   assert(!editor_handle_message_00591fa0(&fixture.editor, 0xf1ff568b,
@@ -271,7 +406,7 @@ void test_message() {
   fixture.message_result = true;
   assert(editor_handle_message_00591fa0(&fixture.editor, 0xd1511790,
                                         fixture.message.data()));
-  assert(has(fixture, NativeOp::message_route));
+  assert(has(fixture, NativeOp::message_service));
 
   fixture.calls.clear();
   set_word(fixture.editor, kOffsetMessageState, 1);
@@ -279,6 +414,86 @@ void test_message() {
                                          fixture.message.data()));
   assert(target == 0);
   assert(word(fixture.editor, kOffsetMessageStateValue) == 3);
+}
+
+void test_message_5132389() {
+  Fixture fixture{};
+  initialize(fixture);
+  set_byte(fixture.editor, 0x2a0, 1);
+  assert(!editor_handle_message_00591fa0(&fixture.editor, 0x5132389,
+                                         fixture.message.data()));
+  assert(fixture.calls.empty());
+
+  write(fixture.message.data(), static_cast<std::uint32_t>(1));
+  fixture.first_gate = true;
+  set_word(fixture.editor, 0x30c, 2);
+  assert(editor_handle_message_00591fa0(&fixture.editor, 0x5132389,
+                                        fixture.message.data()));
+  assert(has_address(fixture, 0x00401030));
+  assert(has_address(fixture, 0x005dc2e0));
+  assert(!has_address(fixture, 0x005dc2f0));
+  assert(!has_address(fixture, 0x006a25a0));
+  assert(has_address(fixture, 0x00628910));
+
+  initialize(fixture);
+  set_byte(fixture.editor, 0x2a0, 1);
+  write(fixture.message.data(), static_cast<std::uint32_t>(1));
+  fixture.second_gate = true;
+  set_word(fixture.editor, 0x30c, 2);
+  assert(editor_handle_message_00591fa0(&fixture.editor, 0x5132389,
+                                        fixture.message.data()));
+  assert(has_address(fixture, 0x005dc2e0));
+  assert(has_address(fixture, 0x005dc2f0));
+  assert(!has_address(fixture, 0x006a25a0));
+
+  initialize(fixture);
+  set_byte(fixture.editor, 0x2a0, 1);
+  write(fixture.message.data(), static_cast<std::uint32_t>(1));
+  fixture.property_gate = true;
+  set_word(fixture.editor, 0x30c, 2);
+  assert(editor_handle_message_00591fa0(&fixture.editor, 0x5132389,
+                                        fixture.message.data()));
+  assert(has_address(fixture, 0x005dc2e0));
+  assert(has_address(fixture, 0x005dc2f0));
+  assert(has_address(fixture, 0x006a25a0));
+
+  initialize(fixture);
+  set_byte(fixture.editor, 0x2a0, 1);
+  write(fixture.message.data(), static_cast<std::uint32_t>(1));
+  assert(!editor_handle_message_00591fa0(&fixture.editor, 0x5132389,
+                                         fixture.message.data()));
+  assert(has_address(fixture, 0x005dc2e0));
+  assert(has_address(fixture, 0x005dc2f0));
+  assert(has_address(fixture, 0x006a25a0));
+  assert(!has_address(fixture, 0x00628910));
+
+  initialize(fixture);
+  set_byte(fixture.editor, 0x2a0, 1);
+  write(fixture.message.data(), static_cast<std::uint32_t>(1));
+  write(fixture.asset_view_manager.data() + 0x1c, static_cast<std::uint8_t>(1));
+  fixture.asset_view_available = true;
+  fixture.property_gate = true;
+  set_word(fixture.editor, 0x30c, 2);
+  assert(!editor_handle_message_00591fa0(&fixture.editor, 0x5132389,
+                                         fixture.message.data()));
+  assert(has_address(fixture, 0x00401030));
+  assert(has_address(fixture, 0x005dc2e0));
+  assert(has_address(fixture, 0x005dc2f0));
+  assert(has_address(fixture, 0x006a25a0));
+  assert(!has_address(fixture, 0x00628910));
+
+  initialize(fixture);
+  set_byte(fixture.editor, 0x2a0, 1);
+  write(fixture.message.data(), static_cast<std::uint32_t>(1));
+  fixture.first_gate = true;
+  fixture.message_result = true;
+  set_word(fixture.editor, 0x30c, 1);
+  assert(!editor_handle_message_00591fa0(&fixture.editor, 0x5132389,
+                                         fixture.message.data()));
+  assert(has_address(fixture, 0x005dc450));
+  assert(has_address(fixture, 0x0067caa0));
+  assert(has_address(fixture, 0x005df8f0));
+  assert(!has_address(fixture, 0x00628910));
 }
 
 }
@@ -305,9 +520,11 @@ int main() {
                              HandleMessage>::value,
                 "message ABI");
   test_dispose();
+  test_dispose_second_release();
   test_initialize();
   test_on_exit();
   test_update();
   test_message();
+  test_message_5132389();
   return 0;
 }

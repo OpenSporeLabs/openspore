@@ -1,0 +1,108 @@
+{
+  "$schema": "pkg-dogfood-004df420-a1.ownership.v1",
+  "package": "PKG-DOGFOOD-004DF420-A1",
+  "captured_on": "2026-09-26",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+  "scope_rule": "one package owns one directory under reconstruction/staging; this package creates and edits nothing outside reconstruction/staging/pkg-dogfood-004df420-a1 and reconstruction/metadata/pkg-dogfood-004df420-a1",
+  "duplicate_candidate_disclosure": {
+    "finding": "This VA already has a complete staged candidate: PKG-EDITOR-SPECIES-DEFAULT-WAVE12 ships reconstruction/staging/pkg-editor-species-default-wave12/ with the 0x004df420 handoff at reconstruction/metadata/pkg-editor-species-default-wave12/004df420.json. This package is a SECOND candidate for the same VA, not the first.",
+    "not_touched": "No file under reconstruction/staging/pkg-editor-species-default-wave12 or reconstruction/metadata/pkg-editor-species-default-wave12 was read for modification, edited or deleted. Those files were read only, to match the house staging conventions, exactly as the briefing's existing_reconstruction field invites.",
+    "independent_agreement": "The two candidates agree on every machine mechanic of 0x004df420, and this package reproduced them from its own Ghidra reads rather than by copying: 28 bytes, 12 instructions, raw 558bec51894dfc8b45fc05a4000000508b4dfce8180100008be55dc3, one receiver in ECX, zero ordinary stack arguments, one direct callee 0x004df550 with relative operand e8 18 01 00 00, one +0xa4 displacement, bare RET, no branch, no global, no indirect dispatch, no memory write, EBP the only saved register.",
+    "what_this_package_adds": "Three results the earlier record carried as open questions, established here by reading the callee chain rather than only the caller: (1) the twelve bytes at +0xa4 are stored INLINE in the receiver, proven by the copy at 0x004df5bd..0x004df5d7 which computes receiver+0xa4 and then reads three dwords through that address, so the port argument is const and aliases the receiver; (2) the key-substitution branch inside 0x004df550 at 0x004df5bd..0x004df5ff is UNREACHABLE on this caller's path, because the key is the receiver's own +0xa4 block so the gate at 0x004df5b7 and the entry test at 0x004df56d read the same dword and the function has already returned null if it is zero; (3) the callee is a keyed lookup-or-create over a hash container at receiver+0x4 whose hash is (key[0] ^ key[2]) % count, read at 0x004e0f80, with an allocate-and-construct miss path.",
+    "validator_interaction": "Two sidecars now exist for this VA, and how the gate picks between them is decided by a directory sort, so it was measured rather than assumed. tools/reconstruction_tooling/evidence.py extract_metadata() walks reconstruction/metadata with sorted(rglob('*.json')) and CONCATENATES every sidecar it finds for a VA into one record; tools/reconstruction_tooling/validate.py _source() returns the FIRST existing candidate in that concatenation. 'pkg-dogfood-004df420-a1' sorts BEFORE 'pkg-editor-species-default-wave12' (d < e), so this package's source file is the one `openspore validate 0x004df420` reads. Measured directly: _source() returns reconstruction/staging/pkg-dogfood-004df420-a1/dogfood_004df420_a1.cpp with role 'staging', and the FIELDS/OFFSETS check reports 'field key_0a4', which is this package's field name and appears in no other candidate. The consequence for the integrator is the reverse of the risk: this candidate SHADOWS the earlier one for the gate, so the earlier package is now the invisible one and whoever promotes a candidate should know that retiring or renaming the earlier sidecar is what makes the earlier source visible again. The package name was chosen for the worker identity and deliberately NOT tuned to win or lose this sort; it is reported here so the ordering is a known quantity rather than an accident.",
+    "symbol_collision_note": "Both candidates declare the port symbol `unresolved_004df550`, because the validator's call-set comparison requires a callee token suffixed with the callee's 8 hex digits and both packages model the same single callee. If the two candidate translation units are ever linked into one binary the extern \"C\" port symbols collide by design; the integrator must rename one at promotion."
+  },
+  "owned": [
+    {
+      "va": "0x004df420",
+      "role": "a zero-argument receiver accessor that resolves the receiver's own inline twelve byte key at +0xa4 through the resolve port 0x004df550 and returns the port's dword",
+      "abi": "__thiscall, zero ordinary stack arguments, bare RET, dword result in EAX, EBP the only saved register",
+      "evidence": "body 0x004df420..0x004df43b, 28 bytes, 12 instructions, raw 558bec51894dfc8b45fc05a4000000508b4dfce8180100008be55dc3, re-read this attempt with both ghidra_read_memory and ghidra_disassemble_function and in agreement; one direct callee 0x004df550; 64 xrefs / 58 incoming direct-call edges in the Ghidra export",
+      "handoff": "reconstruction/metadata/pkg-dogfood-004df420-a1/004df420.json"
+    }
+  ],
+  "adjacent_addresses_deliberately_not_modelled": [
+    {
+      "va": "0x004df400",
+      "note": "9 instructions: PUSH EBP / MOV EBP,ESP / PUSH ECX / MOV [EBP-0x4],ECX / MOV EAX,[EBP-0x4] / ADD EAX,0xa4 / MOV ESP,EBP / POP EBP / RET. It returns the address receiver+0xa4 in EAX and makes no call. Read as corroboration that +0xa4 is a distinct receiver-relative object with its own accessor. Not claimed as a body."
+    },
+    {
+      "va": "0x004df550",
+      "note": "the single callee, 108 instructions, __thiscall with one stack word, RET 0x4. Owned elsewhere as editor_species_resolve_004df550. Read here only far enough to fix the port contract this target depends on: the argument is a read-only twelve byte block, the receiver is dereferenced at +0x4 and +0xa4, the result dword is produced at 0x004df6bc and is null on every early exit, and the key-substitution branch at 0x004df5bd..0x004df5ff is unreachable from this caller. Not reimplemented and not claimed."
+    },
+    {
+      "va": "0x004df440",
+      "note": "78 instructions and a near-clone of the resolve shape bound to the anchor at +0x44 instead of +0x4, with no leading zero short-circuit and a 1 rather than a 0 passed to 0x004d3dd0. Read as layout evidence that the resolve port is instantiated at more than one receiver offset. Owned elsewhere; not claimed."
+    },
+    {
+      "va": "0x004df6d0",
+      "note": "the stdcall probe inside 0x004df550, 67 instructions. It returns the node's mapped-value word at node+0xc, or null at node+0x04a4a4's sentinel comparison, and applies a lazy revalidation when the value's +0x53c word is null. Read as callee-internal evidence only; not claimed."
+    },
+    {
+      "va": "0x004e0f80",
+      "note": "the bucket probe 0x004df6d0 calls. Its hash is (key[0] ^ key[2]) % count with buckets at +0x4 and count at +0x8, and its chain link is at +0x10. Read to characterise the container. Not claimed, and see not_claimed for the node-layout question it leaves open."
+    },
+    {
+      "va": "0x004d3dd0",
+      "note": "the constructor the callee's miss path calls. It takes (this, const key, uint8) and writes offsets up to +0x80d, which is what bounds the value object from below. Read as callee-internal evidence; not claimed."
+    },
+    {
+      "va": "0x00401090",
+      "note": "PUSH EBP / MOV EBP,ESP / MOV EAX,[0x015d0c24] / POP EBP / RET, which Ghidra reports as cSpeciesManager * Editors::cSpeciesManager::Get(void). It is the nearest preceding call at 55 of the 58 direct call sites, and at each sampled site its result moves straight into ECX. Read as receiver provenance only. No class name is asserted from it: an accessor name describes the accessor, and SporeApp.exe carries no MSVC RTTI."
+    }
+  ],
+  "not_claimed": [
+    {
+      "item": "the owning C++ class of the receiver",
+      "reason": "SporeApp.exe carries no MSVC RTTI, so no class name is readable from the binary. The SDK import label at 0x00401090 names the singleton accessor, not the class of the object it returns, and inferring the class from the accessor would be a guess."
+    },
+    {
+      "item": "a declared return type",
+      "reason": "the machine contract is a 4-byte value in EAX. The callee's miss path allocates and constructs an object, the hit path returns a container's mapped-value pointer, and both observed dereference sites (0x00c02734 at +0x5b0, 0x00aec396 at +0x51c) sit behind a null test, so pointer is consistent with the evidence. No declared type is proven, so the model returns an opaque 32-bit word."
+    },
+    {
+      "item": "a field name or declared type for the three words of the +0xa4 key",
+      "reason": "the callee reads the block as three dwords and copies all twelve, and its bucket probe mixes key[0] and key[2] into a hash while comparing all three. That fixes the width, the order and the fact that word zero is the identity word the callee null-tests. It fixes no name and no declared type."
+    },
+    {
+      "item": "the exact node layout of the callee's hash container",
+      "reason": "0x004df6d0 and 0x004e0f80 agree that a chain node carries the key at +0/+4/+8, the mapped value at +0xc and the chain link at +0x10, which is self-consistent. The node that 0x004e0560 constructs on the insert path could not be reconciled with that layout: its 20-byte payload is initialised as {0, key[0], key[1], key[2], 0}, which would place the key two dwords later than the probe reads it. I could not resolve which reading is right without reimplementing 0x004e0560, so no node layout is asserted and the container is characterised only by its proven hash formula and its accessors."
+    },
+    {
+      "item": "that 0xa18 is the size of the allocated value object",
+      "reason": "0x004df550's miss path calls 0x00f473a0 with the constants 0x13f0e00 and 0xa18 among six arguments; 0x00f473a0 forwards to the allocator pair 0x009289f0/0x00927be0 with the arguments reordered, and I did not read 0x00927be0 to establish which parameter is a byte count. What IS proven is a lower bound: 0x004d3dd0 writes offsets up to +0x80d, so the object behind the port's result is at least 0x80e bytes. 0xa18 is consistent with that bound as a full object size and is recorded as consistent-with, not as a fact."
+    },
+    {
+      "item": "the bodies of the callee chain",
+      "reason": "0x004df550, 0x004df440, 0x004df6d0, 0x004e0f80, 0x004e0560, 0x004d3dd0, 0x004da3a0, 0x004d4f10 and 0x00f473a0 are separate owned VAs. This package reads them to fix the port contract and records the results in prose; reimplementing any of them here would duplicate another package's work and would not be evidence about 0x004df420."
+    },
+    {
+      "item": "the identity behind the predicate 0x004df550 calls at 0x004da3a0",
+      "reason": "0x004da3a0 obtains a singleton through 0x0067dcd0 and dispatches the key through that object's vtable slot at +0x0c with six dwords, five of them zero. Ghidra's decompilation labels the slot \"Initialize\" through a best-effort guess against the IGameModeManager type; there is no RTTI in this binary to support the name. The slot's role is recorded as an unnamed predicate that gates the create path."
+    }
+  ],
+  "ghidra_access": "read-only: disassemble_function, decompile_function, read_memory, get_function_by_address. No rename, no comment, no type change, no save, no run_script_inline mutation, zero Ghidra writes this attempt.",
+  "validation": {
+    "command": "reconstruction/staging/pkg-dogfood-004df420-a1/dogfood_004df420_a1_boundary_test.sh",
+    "toolchain": "clang with -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror",
+    "configurations": ["-O0", "-O2", "-O0 -DNDEBUG", "-O2 -DNDEBUG"],
+    "checks": [
+      "clang-format --dry-run -Werror over the header, the source and the model test against the package local .clang-format",
+      "all four configurations compile with zero diagnostics and all twelve model tests pass in each",
+      "the emitted body releases exactly zero stack words at its return, matching the bare RET at 0x004df43b",
+      "the emitted body makes exactly one call and it targets only the proven port",
+      "the emitted body contains no conditional branch, no indirect call and no absolute image address",
+      "the emitted body references ECX as the receiver and forms the +0xa4 displacement",
+      "nothing writes the return register after the port call, so the port's dword is what reaches the caller"
+    ],
+    "negative_controls": [
+      "passing a null key instead of &receiver->key_0a4 aborts the model test on the argument identity assertions",
+      "discarding the port result and returning a constant aborts the model test on the return forwarding assertions",
+      "adding a second port call aborts the model test on the call count, and the disassembly check independently reports \"makes 2 calls, expected exactly 1\" when run on that build alone",
+      "narrowing the accepted return cleanup set to {0x04} fails the boundary check on the return form, reporting \"returns '', expected one of [4]\""
+    ],
+    "negative_control_correction": "An earlier attempt at the fourth control WIDENED the accepted cleanup set to {0x00, 0x04} and consequently did not trip, because the model emits a bare `ret` whose 0x00 immediate is still inside the widened set. Widening cannot detect a return-form defect here. The control was rebuilt as a narrowing, which trips, and it is the narrowing form that is recorded above."
+  }
+}

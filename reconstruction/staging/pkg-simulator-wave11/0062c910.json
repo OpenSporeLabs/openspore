@@ -1,0 +1,113 @@
+{
+  "$schema": "pkg-simulator-wave11.function-handoff.v1",
+  "package": "PKG-SIMULATOR-WAVE11",
+  "phase": "body-reconstruction",
+  "worker_ownership": "simulator-wave11-unclaimed-va",
+  "review_status": "staged_static_self_review",
+  "runtime_validation": 0,
+  "ghidra_program": "SporeApp.exe",
+  "ghidra_mutated": false,
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "captured_on": "2026-09-25",
+  "va": "0x0062c910",
+  "function_address": "0x0062c910",
+  "ghidra_name": "FUN_0062c910",
+  "subsystem": "Simulator",
+  "normalized_symbol": "release_child_0062c910",
+  "declaration": "void __thiscall release_child_0062c910(OpaqueEditor00628 *subject)",
+  "implementation": {
+    "status": "implemented in worker owned staging",
+    "canonical_status": "not present; canonical promotion is not claimed",
+    "header": "reconstruction/staging/pkg-simulator-wave11/simulator_wave11.hpp",
+    "source": "reconstruction/staging/pkg-simulator-wave11/simulator_wave11.cpp",
+    "model_test": "reconstruction/staging/pkg-simulator-wave11/simulator_wave11_model_test.cpp",
+    "boundary_test": "reconstruction/staging/pkg-simulator-wave11/simulator_wave11_boundary_test.sh",
+    "metadata": "reconstruction/staging/pkg-simulator-wave11/0062c910.json"
+  },
+  "selection": {
+    "live_function": {
+      "entry": "0x0062c910",
+      "body_end_inclusive": "0x0062c98c",
+      "body_end_exclusive": "0x0062c98d",
+      "instruction_count": 43
+    },
+    "range_convention": "this file names the last byte of a body as body_end_inclusive and the first byte past it as body_end_exclusive, the same convention the other wave11 handoffs use"
+  },
+  "package_scope": {
+    "modelled_functions": [
+      {
+        "va": "0x00628450",
+        "symbol": "dispatch_key_00628450",
+        "body": "0x00628450..0x00628496"
+      },
+      {
+        "va": "0x006286a0",
+        "symbol": "cycle_key_006286a0",
+        "body": "0x006286a0..0x00628703"
+      },
+      {
+        "va": "0x00628af0",
+        "symbol": "forward_key_00628af0",
+        "body": "0x00628af0..0x00628c99"
+      },
+      {
+        "va": "0x00628d50",
+        "symbol": "route_key_00628d50",
+        "body": "0x00628d50..0x00628f0c"
+      },
+      {
+        "va": "0x0062c910",
+        "symbol": "release_child_0062c910",
+        "body": "0x0062c910..0x0062c98c"
+      }
+    ],
+    "note": "this handoff is centred on 0x0062c910 because that is the only function in the package with a known C++ modelling limit; the other four are covered by the model test and the boundary test"
+  },
+  "role": "release the four owned children and the one global child of an editor in a fixed order, with the last release performed as the epilogue itself",
+  "original_native_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "thiscall, receiver only, no stack arguments",
+    "receiver_register": "ESI, moved there from ECX at 0x0062c911",
+    "receiver_type": "OpaqueEditor00628*",
+    "frame": "PUSH ESI / MOV ESI,ECX / PUSH EDI, so there is no frame pointer and no stack reservation",
+    "stack_arguments": [],
+    "stack_cleanup_bytes": 0,
+    "return_register": "none",
+    "return_width_bytes": 0,
+    "ret_form": "RET with no immediate, at 0x0062c98c, reached only from the null branch at 0x0062c97c",
+    "saved_registers": "ESI and EDI, restored by 0x0062c98a POP EDI and 0x0062c98b POP ESI on the null path and by 0x0062c986 POP EDI and 0x0062c987 POP ESI on the tail path"
+  },
+  "release_order": [
+    "0x0062c913 reads the holder at [ESI+0x94]; if it is non null, 0x0062c920 clears the slot and 0x0062c92b CALL EDX dispatches vtable slot 0x4, so the +0x94 destroy is first and releases 0x0",
+    "0x0062c92d tests [ESI+0xc8]; if it is non null, 0x0062c937 CALL 0x0062c340 is the second release",
+    "0x0062c93c loads [ESI+0xcc] and 0x0062c947 CALL EDX dispatches vtable slot 0x8, so the +0xcc release is third",
+    "0x0062c949 loads [ESI+0x3588] and 0x0062c95e CALL EDX dispatches vtable slot 0x8 with ECX pointed at the member itself by the LEA at 0x0062c952, so the blend release is fourth; the same block clears [ESI+0xcc] at 0x0062c958, that is after the third release and before the fourth",
+    "0x0062c960 loads the global at 0x015f7cf4; if it is non null, 0x0062c96a clears it and 0x0062c975 CALL EDX dispatches vtable slot 0x8, so the global release is fifth",
+    "0x0062c977 loads the holder at [ESI+0xc]; if it is non null, 0x0062c97e clears the slot and 0x0062c988 JMP EDX dispatches vtable slot 0x4, so the +0xc destroy is last and releases 0x0"
+  ],
+  "known_cpp_modelling_limits": [
+    {
+      "id": "0062c910-last-release-is-a-tail-call",
+      "severity": "cosmetic, semantically faithful",
+      "claim": "the native function performs its sixth and last release as a real tail call: the destroy of the +0xc holder is the epilogue",
+      "evidence": "0x0062c977 MOV ECX,dword ptr [ESI+0xc] / 0x0062c97a CMP ECX,EDI / 0x0062c97c JZ 0x0062c98a / 0x0062c97e MOV dword ptr [ESI+0xc],EDI / 0x0062c981 MOV EAX,dword ptr [ECX] / 0x0062c983 MOV EDX,dword ptr [EAX+0x4] / 0x0062c986 POP EDI / 0x0062c987 POP ESI / 0x0062c988 JMP EDX; the callee's return address slot is therefore never used, ESI and EDI are already restored, and the null path at 0x0062c98a POP EDI / 0x0062c98b POP ESI / 0x0062c98c RET is the only place the function returns normally",
+      "model_shape": "release_child_0062c910 in simulator_wave11.cpp invokes the same vtable slot 0x4 through an ordinary call after the null check and after clearing the slot, so the model has a call where the binary has a jump; the observable effect is identical because the call is the last statement in the function",
+      "why_not_faked": "C++ has no portable way to express this from the source shape used here, and hand writing an inline asm tail jump would tie the model to one compiler and one optimisation level, so the deviation is disclosed rather than emulated",
+      "boundary_test_behaviour": "reconstruction/staging/pkg-simulator-wave11/simulator_wave11_boundary_test.sh counts indirect jumps with its TAIL pattern, and when the count is zero it sets tail_note to 'invokes the last port with call, not the original tail jmp' and prints it at the end of the run; it deliberately does not fail, because the port count, the release order and the three cleared slots are the asserted invariants and the call versus jump shape is not one of them",
+      "status": "known and intentional; no change requested"
+    }
+  ],
+  "focused_test_evidence": {
+    "command": "reconstruction/staging/pkg-simulator-wave11/simulator_wave11_boundary_test.sh",
+    "configurations": [
+      "-O0",
+      "-O2",
+      "-O0 -DNDEBUG",
+      "-O2 -DNDEBUG"
+    ],
+    "asserted_for_0062c910": "six indirect port crossings in every configuration, a stable release order with the +0xcc holder first and the +0x3588 blend against its own address, exactly three member slot clears at 0x0c, 0x94 and 0xcc and none of them after the last port call at -O2, and the 0x015f7cf4 holder confirmed to be a data symbol rather than a code reference"
+  },
+  "reconstruction": "release_child_0062c910 in simulator_wave11.cpp",
+  "confidence": "high; the release order, the three slot clears and the global clear were read from the disassembly, and the tail call shape was confirmed at 0x0062c986, 0x0062c987 and 0x0062c988"
+}

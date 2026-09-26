@@ -58,9 +58,8 @@ TargetWord WAVE6_THISCALL message_manager_get_queue_0098f4d0(
   return g_message_queue_ports.query_90(service);
 }
 
-OpaqueDestructible* WAVE6_THISCALL
-time_start_frame_deleting_destructor_00b63980(OpaqueDestructible* receiver,
-                                              TargetWord deleting_flag) {
+OpaqueDestructible* WAVE6_THISCALL destructible_lifecycle_thunk_00b63980(
+    OpaqueDestructible* receiver, TargetWord deleting_flag) {
   receiver->vtable = reinterpret_cast<OpaqueDestructibleVtable*>(0x01464450U);
   g_deleting_destructor_ports.base_destroy_005725a0(receiver);
   if ((deleting_flag & 1U) != 0U) {

@@ -1,0 +1,259 @@
+{
+  "schema": "openspore-worker-metadata-1",
+  "package": "wave13-w1-dispatch-b03",
+  "va": "0x004adb00",
+  "address": "0x004adb00",
+  "function_address": "0x004adb00",
+  "entry_address": "0x004adb00",
+  "ghidra_name": "FUN_004adb00",
+  "normalized_symbol": "wave13_w1_dispatch_b03_004adb00",
+  "reconstructed_symbol": "editor_model_min_height_getter_004adb00",
+  "declaration": "extern \"C\" float __thiscall editor_model_min_height_getter_004adb00(const OpaqueEditorModel* model);",
+  "source_files": [
+    "reconstruction/staging/wave13-w1-dispatch-b03/editor_model_min_height_getter.cpp",
+    "reconstruction/staging/wave13-w1-dispatch-b03/editor_model_min_height_getter.hpp",
+    "reconstruction/staging/wave13-w1-dispatch-b03/editor_model_min_height_getter_test.cpp"
+  ],
+
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "calling_convention_observation": "0x004adb04 MOV dword ptr [EBP-0x4],ECX stores the incoming ECX and 0x004adb07 reloads it, so the receiver arrives in ECX. There is no stack argument: the body never reads [EBP+8] and the terminating instruction 0x004adb10 is a bare RET with no immediate, so the callee pops nothing. Ghidra labels the decompilation __fastcall, which is its default for a one-ECX-input leaf and is contradicted by the absence of any stack read. The sibling setters in the same family (0x004ada80, 0x004adae0, 0x004adb20) all end in RET 0x4, which is the __thiscall form, and their matching getters (0x004adaa0, 0x004adb40) end in a bare RET exactly as this one does.",
+    "return_type": "float",
+    "return_semantics": "the 32-bit float stored at receiver+0x40, returned unchanged",
+    "return_register": "ST(0) of the x87 stack",
+    "return_width_bytes": 4,
+    "return_observation": "0x004adb0a is FLD dword ptr [EAX+0x40], an 80-bit x87 load whose 32-bit single-precision source is promoted to extended precision; nothing is written to EAX, XMM0 or any general register after the load. Every inspected caller consumes the result with FSTP, either to memory (0x0043fda3, 0x005d37c7) or to [ESP+0xc] (0x005d37bc), which is only correct for an ST0 return. On x86-32 a float return therefore does NOT travel in XMM0 as it would under a different ABI, and Ghidra's float10 rendering is the accurate one.",
+    "ret_form": "RET",
+    "termination": "single exit at 0x004adb10",
+    "stack_cleanup_bytes": 0,
+    "stack_cleanup_owner": "caller",
+    "stack_arguments": [],
+    "ordinary_stack_argument_slots": 0,
+    "saved_registers": ["EBP"],
+    "receiver": true,
+    "hidden_this_register": "ECX, spilled to [EBP-0x4] at 0x004adb04 and reloaded at 0x004adb07",
+    "frame": "PUSH EBP / MOV EBP,ESP / PUSH ECX, torn down by MOV ESP,EBP / POP EBP. Four bytes of frame, holding nothing but the spilled receiver."
+  },
+
+  "layout": {
+    "entry_address": "0x004adb00",
+    "body_start": "0x004adb00",
+    "body_end": "0x004adb10",
+    "body_span_bytes": 17,
+    "instruction_count": 9,
+    "instructions": [
+      {"address": "0x004adb00", "bytes": "55", "mnemonic": "PUSH", "operands": "EBP"},
+      {"address": "0x004adb01", "bytes": "8bec", "mnemonic": "MOV", "operands": "EBP,ESP"},
+      {"address": "0x004adb03", "bytes": "51", "mnemonic": "PUSH", "operands": "ECX"},
+      {"address": "0x004adb04", "bytes": "894dfc", "mnemonic": "MOV", "operands": "dword ptr [EBP - 0x4],ECX"},
+      {"address": "0x004adb07", "bytes": "8b45fc", "mnemonic": "MOV", "operands": "EAX,dword ptr [EBP - 0x4]"},
+      {"address": "0x004adb0a", "bytes": "d94040", "mnemonic": "FLD", "operands": "float ptr [EAX + 0x40]"},
+      {"address": "0x004adb0d", "bytes": "8be5", "mnemonic": "MOV", "operands": "ESP,EBP"},
+      {"address": "0x004adb0f", "bytes": "5d", "mnemonic": "POP", "operands": "EBP"},
+      {"address": "0x004adb10", "bytes": "c3", "mnemonic": "RET", "operands": ""}
+    ],
+    "frame_shape": "4 bytes, EBP-based, holding only the spilled receiver",
+    "padding_after": "0x004adb11 onward is cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc (FUN_004adb10's RET plus 15 bytes of INT3) up to the next function at 0x004adb20, the +0x44 setter",
+    "reads": "one dword: [receiver + 0x40]. No global, no other field, no callee.",
+    "writes": "nothing. The function is a pure read with no side effect on the receiver or anywhere else.",
+    "x87_note": "FLD pushes exactly one value onto the x87 stack and the epilogue contains no FFREE, so the function is stack-neutral for the FPU: exactly one push in, one value out."
+  },
+
+  "observed_mechanics": [
+    "0x004adb04 MOV dword ptr [EBP-0x4],ECX followed by 0x004adb07 MOV EAX,dword ptr [EBP-0x4]: the receiver is spilled and immediately reloaded. The spill is redundant, which is why the same function compiled as MOV EAX,ECX / FLD [EAX+0x40] / RET elsewhere; it is a register-allocation artefact, not an invariant.",
+    "0x004adb0a FLD dword ptr [EAX + 0x40] is the entire semantic content: a 32-bit float load from field offset +0x40, promoted to x87 extended precision",
+    "0x004adb10 is C3, a bare RET with no immediate, which is what proves the callee pops zero stack words",
+    "The body contains no TEST, no CMP and no conditional branch of any kind: there is no null check on the receiver and no validation of any field",
+    "0x0043fda6 MOV ECX,[EBP-0x6c] / 0x0043fda9 CALL 0x004adb00 / 0x0043fdae PUSH ECX / 0x0043fdaf FSTP float ptr [ESP]: the caller reserves a stack slot, calls, then stores ST0 over the pre-pushed ECX. This is the canonical MSVC x86 idiom for passing a float by value and proves the ST0 return.",
+    "0x005d37b5..0x005d37d1 calls 0x004adaa0 (+0x38), 0x004adb00 (+0x40) and 0x004adb40 (+0x44) back to back on the SAME receiver EBX, storing the three results to [ESP+0xc], [ESI+0x2c] and [ESI+0x24] respectively. The three-field read as a group is the strongest available evidence about what the field means.",
+    "The same code region holds a matched setter for every field this getter family touches: 0x004ada80 stores a float to +0x38, 0x004adac0 to +0x3c, 0x004adae0 to +0x40, 0x004adb20 to +0x44, 0x004adba0 stores a byte to +0x4c, 0x004adbe0 to +0x4d and 0x004adb60 to +0x4e, each ending in RET 0x4",
+    "Every setter in that family uses MOVSS (SSE) while every getter uses FLD (x87), so the field is genuinely a float and the asymmetry is a codegen choice for the return path, not evidence of a different type"
+  ],
+
+  "fields_and_offsets": [
+    {"owner": "receiver", "offset": "+0x40", "access": "read at 0x004adb0a, the only memory access in the body", "meaning": "the 32-bit float this accessor returns", "confidence": "OBSERVED", "sdk_candidate": "Spore/Editors/EditorModel.h /* 40h */ float mMinHeight;  // -2.0", "note": "there is a matching setter at 0x004adae0 (MOVSS [EAX+0x40],XMM0) in the same code region, which is what makes the field identification much stronger than a single offset match"},
+    {"owner": "receiver (sibling accessors, not touched by this body)", "offset": "+0x38", "access": "getter 0x004adaa0, setter 0x004ada80", "meaning": "the float immediately below +0x40", "confidence": "OBSERVED", "sdk_candidate": "Spore/Editors/EditorModel.h /* 38h */ float mBounds;"},
+    {"owner": "receiver (sibling accessors)", "offset": "+0x3c", "access": "setter 0x004adac0", "meaning": "the float between +0x38 and +0x40", "confidence": "OBSERVED", "sdk_candidate": "Spore/Editors/EditorModel.h /* 3Ch */ float mFeetBounds;"},
+    {"owner": "receiver (sibling accessors)", "offset": "+0x44", "access": "getter 0x004adb40, setter 0x004adb20", "meaning": "the float immediately above +0x40", "confidence": "OBSERVED", "sdk_candidate": "Spore/Editors/EditorModel.h /* 44h */ float mMaxHeight;  // 2.0"},
+    {"owner": "receiver (sibling accessors)", "offset": "+0x4c", "access": "getter 0x004adb80 (MOV AL,[EAX+0x4c]), setter 0x004adba0", "meaning": "a one-byte field, proving the type changes from float to bool at +0x4c", "confidence": "OBSERVED", "sdk_candidate": "Spore/Editors/EditorModel.h /* 4Ch */ bool mShowHiddenHandles;"},
+    {"owner": "receiver (sibling accessors)", "offset": "+0x4d", "access": "getter 0x004adbc0, setter 0x004adbe0", "meaning": "a one-byte field", "confidence": "OBSERVED", "sdk_candidate": "Spore/Editors/EditorModel.h /* 4Dh */ bool mShowBoneLengthHandles;"},
+    {"owner": "receiver (sibling accessors)", "offset": "+0x4e", "access": "setter 0x004adb60", "meaning": "a one-byte field", "confidence": "OBSERVED", "sdk_candidate": "Spore/Editors/EditorModel.h /* 4Eh */ bool mUseBoundsForDelete;  // true"},
+    {"owner": "receiver (not read anywhere in the observed accessor family)", "offset": "+0x48", "access": "no accessor found between 0x004adb40 and 0x004adb60", "meaning": "a fourth consecutive float between mMaxHeight and the bool block", "confidence": "INFERRED", "sdk_candidate": "Spore/Editors/EditorModel.h /* 48h */ float mMinimumLeglessCreatureHeight;", "caveat": "inferred only from the type boundary implied by the +0x4c byte accessors and from the SDK ordering, not from a read or a write"}
+  ],
+
+  "constants": [
+    {"value": "0x40", "address": "0x004adb0a", "meaning": "the single field offset the body uses; encoded in the instruction as the ModR/M disp8 0x40"},
+    {"value": "0xfffffffc", "address": "0x004adb04", "meaning": "the -4 frame slot holding the spilled receiver"},
+    {"value": "0x0", "address": "n/a", "meaning": "no arithmetic, no branch and no immediate operand other than the offsets; the function has no constants in the semantic sense"}
+  ],
+
+  "globals": [],
+
+  "virtual_dispatch": [],
+
+  "control_flow": {
+    "shape": "completely straight-line: no branch of any kind, no loop, no switch, one exit",
+    "exits": [
+      {"address": "0x004adb10", "condition": "always", "effect": "RET with the loaded float in ST0"}
+    ],
+    "branch_polarity": [],
+    "no_null_check": "the receiver is dereferenced once with no TEST or CMP. A null receiver faults. That is a real precondition of the function and the reconstruction preserves it rather than adding a guard."
+  },
+
+  "callers_evidence": [
+    {"callsite": "0x0043fda9", "caller": "FUN_0043fc20", "form": "CALL, real, direct", "setup": "0x0043fda2 PUSH ECX reserves the float slot, 0x0043fda6 MOV ECX,[EBP-0x6c] loads the receiver", "result_use": "0x0043fdae PUSH ECX / 0x0043fdaf FSTP float ptr [ESP] stores ST0 into that slot; the same function calls 0x004adb40 (+0x44) and 0x004adaa0 (+0x38) either side of it and then 0x00493640 with four floats, so this is one component of a four-float aggregate being assembled"},
+    {"callsite": "0x00485bb0", "caller": "FUN_00485b90", "form": "CALL, real, direct", "setup": "0x00485ba5 MOV EAX,[ECX] / 0x00485ba7 MOV EDX,[EAX+0x28] / 0x00485baa MOV [EBP-0x14],EDX / 0x00485bad MOV ECX,[EBP-0x14] - the receiver is the value the OUTER object's vtable slot +0x28 returns, not the outer object itself", "result_use": "0x00485bb5 FSTP float ptr [EBP-0x10]"},
+    {"callsite": "0x00485c8d", "caller": "FUN_00485b90", "form": "CALL, real, direct", "setup": "second call in the same function", "result_use": "not inspected"},
+    {"callsite": "0x004869df", "caller": "FUN_00486910", "form": "CALL, real, direct", "setup": "not disassembled", "result_use": "not inspected"},
+    {"callsite": "0x0048ddfe", "caller": "FUN_0048dcd0", "form": "CALL, real, direct", "setup": "not disassembled", "result_use": "not inspected"},
+    {"callsite": "0x0049ad2d", "caller": "FUN_0049a2a0", "form": "CALL, real, direct", "setup": "not disassembled", "result_use": "not inspected"},
+    {"callsite": "0x0049ae31", "caller": "FUN_0049a2a0", "form": "CALL, real, direct", "setup": "not disassembled", "result_use": "not inspected"},
+    {"callsite": "0x005d37c2", "caller": "FUN_005d36e0", "form": "CALL, real, direct", "setup": "0x005d37c0 MOV ECX,EBX, the same receiver used for the 0x004adaa0 and 0x004adb40 calls either side", "result_use": "0x005d37c7 FSTP float ptr [ESI + 0x2c]"},
+    {"callsite": "0x005b9a14", "caller": "FUN_005b9840", "form": "CALL, real, direct", "setup": "not disassembled", "result_use": "not inspected"},
+    {"callsite": "0x005be68d", "caller": "FUN_005be500", "form": "CALL, real, direct", "setup": "not disassembled", "result_use": "not inspected"},
+    {"callsite": "0x005b49be", "caller": "not resolved by Ghidra (no from_function)", "form": "CALL, real, direct", "setup": "not disassembled", "result_use": "not inspected"},
+    {"summary": "11 UNCONDITIONAL_CALL xrefs from 8 resolved caller functions plus one unresolved. No tail JMP and no DATA reference, so this address is not a vtable entry - consistent with the SDK declaring these accessors as ordinary non-virtual members of EditorModel."}
+  ],
+
+  "callees_evidence": [
+    {"callee_count_reported_by_briefing": 0, "note": "confirmed: the body contains no CALL instruction at all, so the function is a leaf with no port to model"},
+    {"note": "The x87 load has no matching FFREE in the body, so the function leaves the FPU stack exactly as balanced as it found it: one push, one returned value."}
+  ],
+
+  "analogue_functions": [
+    {"address": "0x004adaa0", "relationship": "identical shape, FLD dword ptr [EAX + 0x38], bare RET. The +0x38 sibling.", "confidence": "OBSERVED"},
+    {"address": "0x004adb40", "relationship": "identical shape, FLD dword ptr [EAX + 0x44], bare RET. The +0x44 sibling, and the SDK's mMaxHeight.", "confidence": "OBSERVED"},
+    {"address": "0x004adae0", "relationship": "the setter for this exact field: MOVSS dword ptr [EBP+0x8],XMM0 then MOVSS dword ptr [EAX + 0x40],XMM0, RET 0x4. The getter/setter pair is what makes the field identification structural rather than a single-offset guess.", "confidence": "OBSERVED"},
+    {"address": "0x004ada80", "relationship": "setter for +0x38", "confidence": "OBSERVED"},
+    {"address": "0x004adac0", "relationship": "setter for +0x3c; no getter for +0x3c exists in the observed range, so the accessor family is not complete and the field list above is bounded by what was disassembled", "confidence": "OBSERVED"},
+    {"address": "0x004adb20", "relationship": "setter for +0x44", "confidence": "OBSERVED"},
+    {"address": "0x004adb80 / 0x004adba0", "relationship": "byte getter and setter for +0x4c", "confidence": "OBSERVED"},
+    {"address": "0x004adbc0 / 0x004adbe0", "relationship": "byte getter and setter for +0x4d", "confidence": "OBSERVED"},
+    {"address": "0x004adb60", "relationship": "byte setter for +0x4e; no getter was found in the disassembled range", "confidence": "OBSERVED"}
+  ],
+
+  "sdk_correspondence": {
+    "status": "STRONG CANDIDATE, NOT ESTABLISHED",
+    "candidate_class": "Editors::EditorModel",
+    "basis": "Twelve accessors disassembled in the 0x004ada80..0x004adbe0 range touch seven distinct offsets (+0x38, +0x3c, +0x40, +0x44, +0x4c, +0x4d, +0x4e), and Spore/Editors/EditorModel.h is the only SDK struct examined whose declared field order and types reproduce all seven: float mBounds at 0x38, float mFeetBounds at 0x3c, float mMinHeight at 0x40 with the documented default -2.0, float mMaxHeight at 0x44 with the documented default 2.0, bool mShowHiddenHandles at 0x4c, bool mShowBoneLengthHandles at 0x4d, bool mUseBoundsForDelete at 0x4e. The type boundary the accessors reveal (float through +0x48, bool from +0x4c) also matches that declaration exactly, and the SDK's own Addresses(EditorModel) block places Dispose at 0x4AD1F0 and 0x4AD850, inside the same code region as the accessor family.",
+    "why_not_established": "This binary has no MSVC RTTI and no vtable was located for the candidate class. ghidra_get_xrefs_to on the SDK-recorded EditorModel::SetName at 0x004adc20 returns 45 references, all UNCONDITIONAL_CALL and no DATA reference, which means Ghidra has not typed any EditorModel vtable, so the class identity cannot be closed from the binary alone. The seven-offset agreement is recorded as SUPPORTED and the class is NOT claimed.",
+    "field_name_claimed": "mMinHeight is recorded as an SDK CANDIDATE for the +0x40 float, not as an asserted name. The independent evidence is that +0x40 is the middle of a contiguous run read together with +0x38 and +0x44 at 0x005d37b5..0x005d37d1, which is consistent with a low/high bracket plus a radius, and with the SDK's documented -2.0 / 2.0 defaults for that pair.",
+    "not_asserted": [
+      "the owning class",
+      "the field name mMinHeight",
+      "that the SDK's documented default of -2.0 is what a live instance holds; no constructor was located or read",
+      "the meaning of the three callers that never read the result"
+    ],
+    "sdk_paths_read": [
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Editors/EditorModel.h"
+    ]
+  },
+
+  "semantic_contract": "A leaf, non-virtual, side-effect-free accessor on a model-state object. ECX receiver, no stack argument, bare RET, and a 32-bit float returned in x87 ST0 - not in XMM0 and not in EAX. The whole contract is: return the four bytes at receiver+0x40 interpreted as an IEEE-754 single, promoted to extended precision. There is no null check on the receiver, no validation of the field, no branch of any kind, and no memory written anywhere. The field is the middle element of a contiguous float run whose lower and upper neighbours are read by two sibling getters in the same code region, and all three are read together by at least one caller, so the field is a member of a low/high/radius triple rather than an isolated scalar.",
+
+  "classification": "BOUNDED_SEMANTIC",
+  "classification_rationale": "The behaviour is completely determined: a 17-byte, 9-instruction, branch-free leaf whose entire content is one FLD at a known offset, with the return register, the frame shape and the absence of callee cleanup all read directly from the listing. It is not STRONG_SEMANTIC because the owning type is bounded rather than established, and the bound is named: the twelve sibling accessors reproduce seven offsets of a single SDK struct declaration exactly, but no vtable for that class exists in the typed program and Ghidra's xref sweep over the SDK-recorded EditorModel::SetName returns only call references, so the class cannot be closed from the binary. Under the batch's own definition this is precisely the BOUNDED_SEMANTIC case, an owning type that is bounded rather than established. A STRONG_SEMANTIC claim would require either a located vtable or runtime evidence, and neither exists.",
+
+  "semantic_findings": [
+    "The return travels in x87 ST0. Reconstructing this as a function returning float through XMM0 would be ABI-wrong on this target, so the reconstruction is written to return a C++ float and the ABI note records the ST0 path explicitly.",
+    "The receiver spill at 0x004adb04 followed immediately by a reload at 0x004adb07 is redundant; a sibling getter in the same region compiles the same operation without the frame. It is a register-allocation artefact and is preserved only as a structural note, not as an invariant.",
+    "The bare RET is what distinguishes this getter from its siblings the setters. The setters in the same family end in RET 0x4 because they take one stack argument; the getters end in a bare RET because they take none. Ghidra's __fastcall label on the decompilation is a default for a one-register-input leaf and is contradicted by the body.",
+    "The function dereferences the receiver exactly once with no test, so a null receiver faults. That precondition is preserved rather than defended.",
+    "The field at +0x40 sits in the middle of a float run +0x38/+0x3c/+0x40/+0x44 that ends where a run of one-byte fields begins at +0x4c. The type boundary is read directly from the sibling accessors' operand sizes, not inferred from the SDK.",
+    "The three-float read at 0x005d37b5..0x005d37d1 (same receiver, three consecutive getter calls, results stored to three different destinations) is the only observed evidence for the field's role, and it is consistent with a vertical extent bracket rather than a scalar preference.",
+    "The address is not in any vtable Ghidra has typed, and 11 real calls from 8 unrelated functions with no stack-argument setup is the expected shape for an inline-class accessor."
+  ],
+
+  "unresolved_questions": [
+    "Which class owns the receiver. Seven offsets match Spore/Editors/EditorModel.h exactly and no other examined SDK struct does, but no vtable was located and this binary has no RTTI, so the class is recorded as a candidate and not claimed.",
+    "What the field at +0x40 is called. mMinHeight is the SDK candidate; the independent binary evidence is only that it is the middle of a three-float run read together.",
+    "Is +0x48 really a fourth float, i.e. mMinimumLeglessCreatureHeight? It is inferred from the type boundary at +0x4c and from the SDK ordering; no accessor for it was found in the disassembled range and no read or write of +0x48 was observed.",
+    "Where is the getter for +0x3c (mFeetBounds) and the getter for +0x4e? Only setters were found in 0x004ada80..0x004adbe0, so the accessor family is incomplete and the field survey is bounded by the range that was disassembled.",
+    "What are the nine uninspected call sites doing with the value, and does the one at 0x005b49be belong to a function Ghidra could not attribute?",
+    "Why do three of the eight resolved callers take the receiver from an outer object's vtable slot +0x28 rather than from a field? That indirection is observed at 0x00485ba5..0x00485bad but the outer object's class is not identified."
+  ],
+
+  "runtime_gates": [
+    "No original-process trace exists for this function. Static analysis cannot show the live value of the +0x40 float, so the SDK's documented -2.0 default is unverified for the shipping build.",
+    "A trace with a concrete receiver is required before the owning class can be named, because no vtable could be located.",
+    "A differential test must confirm that the value is returned in ST0 and not in XMM0 in the shipping build. The static evidence for ST0 is strong - FLD with no FXCH and FSTP at every consumer - but it is static."
+  ],
+
+  "blockers": [],
+
+  "evidence": [
+    "reconstruction/evidence/004adb00/evidence.json",
+    "reconstruction/evidence/004adb00/context.json",
+    "/tmp/opencode/wave/w1/b03/briefings.json entry for 0x004adb00",
+    "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Editors/EditorModel.h",
+    "live ghidra_decompile_function / disassemble_function / get_function_callers / get_function_xrefs / disassemble_bytes / get_xrefs_to on SporeApp.exe"
+  ],
+
+  "tooling_evidence": [
+    {"tool": "ghidra_disassemble_function", "address": "0x004adb00", "observation": "9 instructions, 0x004adb00..0x004adb10, matching the briefing's body_bytes 17. PUSH EBP / MOV EBP,ESP / PUSH ECX / MOV [EBP-0x4],ECX / MOV EAX,[EBP-0x4] / FLD dword ptr [EAX+0x40] / MOV ESP,EBP / POP EBP / RET."},
+    {"tool": "ghidra_decompile_function", "address": "0x004adb00", "observation": "returns float10 from *(float*)(param_1 + 0x40). Ghidra labels it __fastcall, which the body contradicts: no stack read and a bare RET."},
+    {"tool": "ghidra_get_function_callers", "address": "0x004adb00", "observation": "8 caller functions: FUN_0043fc20, FUN_00485b90, FUN_00486910, FUN_0048dcd0, FUN_0049a2a0, FUN_005b9840, FUN_005be500, FUN_005d36e0."},
+    {"tool": "ghidra_get_function_xrefs", "address": "0x004adb00", "observation": "11 UNCONDITIONAL_CALL references, no JMP and no DATA reference, so the address is not a vtable entry."},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x0043fd80", "observation": "0x0043fda2 PUSH ECX / 0x0043fda6 MOV ECX,[EBP-0x6c] / 0x0043fda9 CALL 0x004adb00 / 0x0043fdae PUSH ECX / 0x0043fdaf FSTP float ptr [ESP] - the canonical float-by-value passing idiom, and proof of the ST0 return. The same function calls 0x004adb40 and 0x004adaa0 around it and then 0x00493640 with four floats."},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x00485b90", "observation": "0x00485ba5 MOV EAX,[ECX] / 0x00485ba7 MOV EDX,[EAX+0x28] / 0x00485baa MOV [EBP-0x14],EDX / 0x00485bad MOV ECX,[EBP-0x14] / 0x00485bb0 CALL 0x004adb00 / 0x00485bb5 FSTP float ptr [EBP-0x10]: the receiver comes from an outer object's vtable slot +0x28."},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x005d3790", "observation": "0x005d37b5..0x005d37d1: three consecutive getter calls on the same receiver EBX hitting +0x38, +0x40 and +0x44, with FSTP to [ESP+0xc], [ESI+0x2c] and [ESI+0x24]. The strongest single observation about the field's role."},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x004ad9a0", "observation": "the full accessor family: 0x004ada80 setter +0x38, 0x004adaa0 getter +0x38, 0x004adac0 setter +0x3c, 0x004adae0 setter +0x40, 0x004adb00 getter +0x40, 0x004adb20 setter +0x44, 0x004adb40 getter +0x44, 0x004adb60 setter +0x4e."},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x004adb10", "observation": "0x004adb80 getter +0x4c, 0x004adba0 setter +0x4c, 0x004adbc0 getter +0x4d, 0x004adbe0 setter +0x4d - the float-to-bool type boundary at +0x4c."},
+    {"tool": "ghidra_decompile_function", "address": "0x004adb40", "observation": "returns *(float*)(param_1 + 0x44), the +0x44 sibling."},
+    {"tool": "ghidra_decompile_function", "address": "0x004adaa0", "observation": "returns *(float*)(param_1 + 0x38), the +0x38 sibling."},
+    {"tool": "ghidra_get_xrefs_to", "address": "0x004adc20", "observation": "45 references, all UNCONDITIONAL_CALL, no DATA reference. 0x004adc20 is the address the SDK's Addresses(EditorModel) block records for EditorModel::SetName, so the absence of any data reference means no EditorModel vtable is typed in this program - which is why the class identity is left bounded."}
+  ],
+
+  "validation": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/wave13-w1-dispatch-b03 reconstruction/staging/wave13-w1-dispatch-b03/editor_model_min_height_getter.cpp reconstruction/staging/wave13-w1-dispatch-b03/editor_model_min_height_getter_test.cpp",
+    "model_test_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/wave13-w1-dispatch-b03 reconstruction/staging/wave13-w1-dispatch-b03/editor_model_min_height_getter.cpp reconstruction/staging/wave13-w1-dispatch-b03/editor_model_min_height_getter_test.cpp -o /tmp/opencode/4adb00-model && /tmp/opencode/4adb00-model",
+    "syntax": "passed",
+    "model_test": "passed (exit 0). The test asserts the returned value and then perturbs the two adjacent floats (+0x3c and +0x44) to prove the read is isolated to +0x40.",
+    "static_asserts": "7 offset assertions pin +0x38, +0x3c, +0x40, +0x44, +0x4c, +0x4d and +0x4e on the opaque receiver"
+  },
+
+  "body_reconstruction": {
+    "source": "reconstruction/staging/wave13-w1-dispatch-b03/editor_model_min_height_getter.cpp",
+    "status": "implemented",
+    "claim_scope": "The 17-byte body is reconstructed in full. The receiver is an opaque struct carrying only the seven offsets that the observed accessor family touches, with padding that reproduces those offsets, so the reconstruction cannot silently drift onto a neighbouring field. No vtable, no class name and no field name is asserted.",
+    "not_modelled": [
+      "the owning class name",
+      "the field name at +0x40",
+      "the +0x48 float, which is inferred rather than observed",
+      "the getters for +0x3c and +0x4e, which were not found"
+    ],
+    "confidence": {
+      "body_bytes": 1.0,
+      "control_flow": 1.0,
+      "field_offset": 1.0,
+      "calling_convention": 0.95,
+      "return_register_and_abi": 0.95,
+      "receiver_identity": 0.7,
+      "field_name": 0.6
+    }
+  },
+
+  "confidence": {
+    "body_and_control_flow": "high - a 9-instruction branch-free leaf, fully read",
+    "field_offset": "high - directly encoded in the FLD disp8 at 0x004adb0a and corroborated by a setter in the same region",
+    "return_abi": "high - FLD with no FXCH and FSTP at every consumer is unambiguous",
+    "calling_convention": "high - ECX spill/reload plus a bare RET; the sibling setters' RET 0x4 confirms the family convention",
+    "owning_class": "medium - seven offsets match one SDK struct uniquely, but no vtable exists to close it",
+    "field_name": "medium - mMinHeight is the SDK candidate, supported by the three-float group read at 0x005d37b5",
+    "runtime_behaviour": "none - no trace exists"
+  },
+
+  "provenance": {
+    "binary": "SPORE/SporeBin/SporeApp.exe",
+    "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+    "image_base": "0x00400000",
+    "worker_id": "wave13-w1-dispatch-b03",
+    "batch_id": "b03",
+    "package": "wave13-w1-dispatch-b03",
+    "subsystem": "Editor (model state accessors)",
+    "package_ids": ["PKG-10-EDITOR-DISPATCH"],
+    "date": "2026-09-26",
+    "tools": "live ghidra MCP against program SporeApp.exe; Spore-ModAPI read-only"
+  }
+}

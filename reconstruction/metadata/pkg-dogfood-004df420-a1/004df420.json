@@ -1,0 +1,348 @@
+{
+  "schema": "pkg-dogfood-004df420-a1.function-handoff.v1",
+  "address": "0x004df420",
+  "va": "0x004df420",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+  "version": "3.1.0.22",
+  "captured_on": "2026-09-26",
+  "package": "PKG-DOGFOOD-004DF420-A1",
+  "subsystem": "Editor",
+  "cluster": "unknown-fun-mass",
+  "ghidra_name": "FUN_004df420",
+  "normalized_symbol": "dogfood_species_key_resolve_fun_004df420",
+  "symbol": "FUN_004df420",
+  "semantic_label": "resolve-self: hand the receiver and the address of its own inline twelve byte key at +0xa4 to the resolve port 0x004df550, and return the port's dword",
+  "evidence_level": "OBSERVED",
+  "duplicate_candidate": {
+    "other_package": "PKG-EDITOR-SPECIES-DEFAULT-WAVE12",
+    "other_metadata": "reconstruction/metadata/pkg-editor-species-default-wave12/004df420.json",
+    "relationship": "second candidate for the same VA; the earlier package was not modified",
+    "agreement": "identical on every machine mechanic of 0x004df420, independently re-read this attempt rather than copied",
+    "delta": "this record adds the inline placement of the +0xa4 block, the unreachability of the callee's key-substitution branch from this caller, and the callee's keyed lookup-or-create shape; the earlier record carries all three as open questions"
+  },
+  "function_extent": {
+    "ghidra_entry": "0x004df420",
+    "body_end_inclusive": "0x004df43b",
+    "body_span_bytes": 28,
+    "instruction_count": 12,
+    "return_site": "0x004df43b: RET (bare, zero bytes popped)",
+    "raw_bytes": "558bec51894dfc8b45fc05a4000000508b4dfce8180100008be55dc3",
+    "instruction_count_source": "ghidra_disassemble_function returned 12 instructions; ghidra_read_memory at 0x004df420 length 28 returned the 28 bytes above. Both re-read this attempt and agree."
+  },
+  "observed_mechanics": [
+    "0x004df420 PUSH EBP: open the frame.",
+    "0x004df421 MOV EBP,ESP: establish the frame pointer.",
+    "0x004df423 PUSH ECX: reserve exactly one four byte local slot, the only allocation in the body.",
+    "0x004df424 MOV dword ptr [EBP - 0x4],ECX: spill the incoming ECX. This is the only write of any kind in the body.",
+    "0x004df427 MOV EAX,dword ptr [EBP - 0x4]: reload the spilled receiver into EAX.",
+    "0x004df42a ADD EAX,0xa4: form receiver + 0xa4. Pointer arithmetic on a forwarded pointer, not a load, so it is not a dereference of the receiver.",
+    "0x004df42f PUSH EAX: place that address as the single outgoing stack argument.",
+    "0x004df430 MOV ECX,dword ptr [EBP - 0x4]: reload the same receiver and forward it unchanged.",
+    "0x004df433 CALL 0x004df550: the only call, direct and relative with operands e8 18 01 00 00. No register or memory operand, so no indirect dispatch and no vtable slot in this body.",
+    "0x004df438 MOV ESP,EBP and 0x004df43a POP EBP: discard the frame.",
+    "0x004df43b RET: bare, so this frame releases zero stack bytes. The dword pushed at 0x004df42f is released by the callee, which ends with RET 0x4 at 0x004df6c2.",
+    "No instruction after the call writes EAX, so the dword the callee returns in EAX reaches the caller untouched. That is the return value, not register residue.",
+    "No instruction anywhere in the body dereferences the receiver, and none compares, masks, converts or range checks it. No word of the receiver is read and none is written. The only receiver-relative quantity the body produces is the address receiver + 0xa4.",
+    "The body contains no absolute address, therefore no global reference, and no branch, therefore a single block CFG.",
+    "EBP is the only callee-saved register touched. Nothing else is pushed and no other callee-saved register is written."
+  ],
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "convention": "__thiscall",
+    "convention_confidence": "OBSERVED",
+    "hidden_this": true,
+    "hidden_this_register": "ECX",
+    "receiver": true,
+    "receiver_register": "ECX",
+    "receiver_observation": "ECX is spilled at 0x004df424 and reloaded twice, once into EAX as a pointer base for the +0xa4 address and once into ECX to be forwarded. 0x004df550 independently dereferences ECX as `this` at [ECX + 0x4] and [ECX + 0xa4].",
+    "ordinary_stack_argument_slots": [],
+    "ordinary_stack_arguments": [],
+    "ordinary_stack_argument_caveat": "Zero ordinary stack arguments. [EBP + 0x8] is never read by this body. The single PUSH at 0x004df42f is the outgoing argument of 0x004df550, which reads it at its own [EBP + 0x8] and pops it with RET 0x4.",
+    "frame": "PUSH EBP / MOV EBP,ESP / PUSH ECX, one four byte local at [EBP - 0x4]",
+    "ret_form": "RET",
+    "termination": "RET",
+    "return_register": "EAX",
+    "return_type": "OpaqueWord",
+    "return_width_bytes": 4,
+    "return_semantics": "a 4-byte opaque word in EAX, produced by 0x004df550 and forwarded unmodified; the body writes no instruction to EAX after the call",
+    "return_observation": "The last write to EAX before the call is the ADD EAX,0xa4 argument computation, which the call then overwrites. 0x004df550 ends with MOV EAX,[EBP-0x4] / MOV ESP,EBP / POP EBP / RET 0x4, so the callee does produce that dword. Across the 58 direct call sites the value is consumed at 50 of them by the immediately following instruction and at 7 more within the following instructions; at 0x00d5d074 no use of EAX follows on the traced path. Two sites dereference the value behind a TEST EAX,EAX null guard, 0x00c02734 reading [EAX + 0x5b0] and 0x00aec396 reading [EAX + 0x51c], which is consistent with a pointer but proves no declared type.",
+    "stack_cleanup_bytes": 0,
+    "stack_cleanup_owner": "caller",
+    "saved_registers": "EBP only; pushed at 0x004df420 and popped at 0x004df43a. No other callee-saved register is pushed or written.",
+    "signature_caveat": "The Ghidra decompilation is `void __fastcall FUN_004df420(int param_1) { FUN_004df550(param_1 + 0xa4); }`. All three halves are wrong against the machine and are corrected in decompilation_defects_corrected: the return is a consumed dword rather than void, EDX is never read so the convention is not fastcall, and the value Ghidra calls param_1 is the incoming ECX, not a stack argument."
+  },
+  "observed_state_contract": {
+    "flow": [
+      "Spill the incoming ECX to the single local slot at [EBP - 0x4].",
+      "Form receiver + 0xa4 in EAX and push it as the one outgoing stack argument.",
+      "Reload the receiver into ECX and call 0x004df550.",
+      "Discard the frame and return with a bare RET, leaving the callee's dword in EAX."
+    ],
+    "no_reference_operations": true,
+    "receiver_reads": [],
+    "receiver_writes": [],
+    "state_writes": [],
+    "words_proven_untouched": [
+      "every word of the receiver: the body neither reads nor writes it"
+    ]
+  },
+  "callees": {
+    "direct_count": 1,
+    "port": {
+      "va": "0x004df550",
+      "call_site": "0x004df433",
+      "form": "direct relative CALL, operands e8 18 01 00 00",
+      "contract": "__thiscall, receiver in ECX, one four byte stack argument read at [EBP+0x8], RET 0x4 at 0x004df6c2, dword result in EAX produced at 0x004df6bc",
+      "contract_evidence": "0x004df550 is 108 instructions. It reads its argument at [EBP+0x8], dereferences its ECX receiver at [ECX+0x4] and [ECX+0xa4], and terminates with MOV EAX,[EBP-0x4] / MOV ESP,EBP / POP EBP / RET 0x4.",
+      "argument_constness": "the argument is read through and copied, never written, so the model declares it const",
+      "status_in_this_package": "port, not a promotion. 0x004df550 is a separate owned VA reconstructed elsewhere as editor_species_resolve_004df550, which lives in staging and not in src/, so this package declares the VA-suffixed port unresolved_004df550 and depends on nothing.",
+      "fan_in": "0x004df550 has 77 direct call sites in the Ghidra xref export, of which 0x004df420 is one. The dependency is real and one-directional but far from exclusive."
+    }
+  },
+  "callers": {
+    "direct_call_sites_in_ghidra_xref_export": 58,
+    "xref_count_reported_by_ghidra": 64,
+    "receiver_provenance_observation": "The nearest preceding call at 55 of the 58 direct call sites is 0x00401090, which Ghidra reports as cSpeciesManager * Editors::cSpeciesManager::Get(void) and which disassembles to PUSH EBP / MOV EBP,ESP / MOV EAX,[0x015d0c24] / POP EBP / RET. At each sampled site its result moves straight into ECX. That is evidence of the receiver's role as a freshly produced singleton and is deliberately NOT a proof of the owning class: an accessor name describes the accessor, and SporeApp.exe carries no MSVC RTTI."
+  },
+  "callee_chain_findings": {
+    "note": "These are properties of the callee chain that constrain this target's port contract. They are recorded as evidence about 0x004df420's contract, not as reconstructions of the callee bodies, which are separately owned VAs.",
+    "key_block_is_inline_at_a4": {
+      "claim": "the twelve bytes the port reads are stored INLINE in the receiver at +0xa4, not reached through a pointer stored at +0xa4",
+      "evidence": "0x004df5bd MOV EDX,[EBP-0x88] then 0x004df5c3 ADD EDX,0xa4 computes the ADDRESS receiver+0xa4, and 0x004df5c9 MOV EAX,[EDX], 0x004df5ce MOV ECX,[EDX+0x4] and 0x004df5d4 MOV EDX,[EDX+8] then read three dwords THROUGH that address at +0, +4 and +8. A pointer-to-key reading would have needed a load at [EDX] followed by a dereference of the loaded value; there is no second dereference.",
+      "consequence": "the port argument aliases the receiver, is never written, and is declared const in the model. The model test asserts the aliasing byte for byte."
+    },
+    "key_substitution_branch_is_unreachable_from_this_caller": {
+      "claim": "the branch 0x004df5bd..0x004df5ff of 0x004df550, which substitutes the receiver's +0xa4 block for the caller's key, is never executed on this caller's path",
+      "proof": "For a call from 0x004df433 the key argument is receiver+0xa4. The callee's entry test at 0x004df56d (CMP dword ptr [ECX + 0xa4],0x0) therefore reads the same dword as the key's word zero, and the earlier test at 0x004df562 (CMP dword ptr [EAX],0x0, where EAX is the key) reads it as well. The two are the same value, so: if it is zero, the callee has already returned null at 0x004df576 and never reaches the substitution; if it is non-zero, the gate at 0x004df5b7 (CMP dword ptr [EBP - 0x10],0x0, where the local at [EBP - 0x10] was loaded from the key's word zero at 0x004df5a6) fails and the JNZ at 0x004df5bb jumps to 0x004df604, skipping 0x004df5bd..0x004df5ff entirely. The two cases are exhaustive over the word.",
+      "scope": "This is a statement about the callee as reached from THIS call site only. 0x004df550 has 77 direct callers and other callers pass unrelated keys, for which the substitution is live. No claim is made that the branch is dead in the callee.",
+      "residual": "Static, not executed. No original-process run was performed, so this is a reading of the instruction stream, not an observed execution count."
+    },
+    "callee_is_a_keyed_lookup_or_create": {
+      "claim": "0x004df550 resolves a twelve byte key against a hash container at receiver+0x4, and on a miss allocates, constructs and inserts an entry",
+      "evidence": "The hit path is 0x004df591 CALL 0x004df6d0 with (receiver+4, key), returning immediately at 0x004df59d/0x004df5ff on a non-null result. The miss path is gated by a predicate at 0x004df608 (CALL 0x004da3a0) whose result is tested at 0x004df613/0x004df615, and on success calls 0x00f473a0 at 0x004df64f, constructs with 0x004d3dd0 at 0x004df669, obtains a value slot from 0x004e0560 at 0x004df696 and stores the constructed pointer into it at 0x004df69e, then re-probes at 0x004df6b4.",
+      "container_hash": "0x004e0f80 computes the bucket index as (key[0] XOR key[2]) modulo the count at container+0x8 over the bucket array at container+0x4, and follows a chain link at node+0x10 comparing all three key words. That formula is proven by 0x004e0f8f/0x004e0f91 and 0x004e0f9f.",
+      "mapped_value_is_a_pointer": "0x004df6d0 returns the node's word at +0xc, which is the container's mapped value, or null when the probe landed on the end sentinel at (buckets + count*4) or the mapped word is null. The value word is dereferenced at +0x53c and passed to 0x004d4f10 with value+0x504, so the mapped value is a pointer to a large record."
+    },
+    "value_object_lower_bound": {
+      "claim": "the object behind the port's result is at least 0x80e bytes",
+      "evidence": "the miss path's constructor 0x004d3dd0 writes offsets up to +0x80d (0x004d3dd0's stores at param_1+0x80c and param_1+0x80d are its highest), and the probe's lazy revalidation 0x004d4f10 writes +0x504 through +0x518 of it.",
+      "not_claimed": "that 0xa18 is that size. 0x004df550 passes the constants 0x13f0e00 and 0xa18 to 0x00f473a0, which forwards to the allocator pair 0x009289f0/0x00927be0 with the arguments reordered; which parameter is a byte count was not established, so 0xa18 is recorded as consistent-with the lower bound and not as a fact."
+    },
+    "unreconciled_node_layout": {
+      "issue": "0x004df6d0 and 0x004e0f80 agree that a chain node holds its key at +0, +4 and +8, its mapped value at +0xc and its chain link at +0x10. The node 0x004e0560 constructs on the insert path is a 20 byte payload initialised as {0, key[0], key[1], key[2], 0}, which would place the key two dwords later than the probe reads it.",
+      "handling": "left unresolved and asserted nowhere. The container is characterised only by its proven hash formula and its accessors, and the model does not depend on the node layout."
+    },
+    "create_gate_predicate": {
+      "claim": "the create path is gated by an unnamed predicate that receives the twelve byte key",
+      "evidence": "0x004da3a0 obtains a singleton through 0x0067dcd0 and dispatches the key through that object's vtable slot at +0x0c (0x004da3bd/0x004da3c2 read the slot, 0x004da3c5 calls it) with six dword arguments, five of them zero. Its result is consumed as a boolean at 0x004df610 (MOVZX EAX,AL) and tested at 0x004df615.",
+      "not_claimed": "a name for the slot. Ghidra's decompilation renders it as IGameModeManager::Initialize through a best-effort type guess; there is no RTTI in this binary to support that name."
+    }
+  },
+  "decompilation_defects_corrected": [
+    {
+      "id": "void-return-is-wrong",
+      "decompilation_says": "void __fastcall FUN_004df420(int param_1)",
+      "machine_says": "a 4-byte value in EAX that 57 of the 58 direct call sites consume, at two of which it is dereferenced at offsets 0x5b0 and 0x51c",
+      "impact": "The model returns the port's dword. A void model would silently discard the resolved value at every call site."
+    },
+    {
+      "id": "fastcall-is-wrong",
+      "decompilation_says": "__fastcall",
+      "machine_says": "EDX is never read and never forwarded",
+      "impact": "The model is __thiscall. A fastcall model would consume EDX, and no call site sets EDX for this target."
+    },
+    {
+      "id": "param-1-is-a-receiver-not-an-argument",
+      "decompilation_says": "int param_1, reported by Ghidra with storage register:00000004:4",
+      "machine_says": "The value is the incoming ECX. It is spilled to [EBP - 0x4], used as a pointer base and forwarded in ECX to a callee that dereferences it as `this`. [EBP + 0x8] is never read, so no ordinary argument arrives.",
+      "impact": "The model takes a receiver, not a parameter. A cdecl reading of the decompilation would put the receiver at [EBP + 0x8] and read a slot this body never touches."
+    },
+    {
+      "id": "callee-return-value-is-dropped",
+      "decompilation_says": "the call is made and its result discarded, the function returning void",
+      "machine_says": "no instruction after 0x004df433 writes EAX, and the callee's epilogue produces a dword in EAX at 0x004df6bc",
+      "impact": "same as void-return-is-wrong; recorded separately because the dropped value and the void return type are two independent decompiler errors that happen to coincide"
+    }
+  ],
+  "unresolved_questions": [
+    "What is the declared return type? The machine contract is a 4-byte value in EAX, the callee's hit path returns a container's mapped-value pointer and its miss path returns a freshly constructed object, and both observed dereference sites sit behind a null test. Pointer is consistent with all of that and none of it proves a declared type, so the model returns an opaque 32-bit word.",
+    "What is the declared type, field name and role of the three words at receiver + 0xa4? The callee reads the block as three dwords, copies all twelve, null-tests word zero, and hashes words zero and two together while comparing all three. That fixes the width, the order and the identity role of word zero, and fixes no name and no declared type.",
+    "Which C++ class owns the receiver, and is +0xa4 a member of that class or of a sub-object? SporeApp.exe carries no MSVC RTTI. The nearest preceding call at 55 of 58 direct call sites is the SDK-named accessor 0x00401090, which names the accessor and not the class of the object it returns.",
+    "How large is the real receiver object? The model covers receiver +0x00..+0xaf because that is all this body can touch. Nothing here bounds the object. This is a question about the RECEIVER, which is distinct from the value object behind the port's result: that one is bounded below at 0x80e bytes by 0x004d3dd0, and its upper bound is unresolved.",
+    "Why do 0x004df420 and 0x004df400 each recompute receiver + 0xa4 rather than 0x004df420 calling 0x004df400? Both are separate functions in the image and neither references the other, so the original source most likely inlined the accessor at each site. That is a codegen reading, not an observed fact about the source.",
+    "At 0x00d5d074 the returned dword is not consumed on the traced path while the other 57 direct call sites consume it. Is that call site a genuine discard of a value the original treated as void there, or is the value consumed on a path this listing window did not reach?",
+    "Are the offsets the resolve family uses, +0x04 in 0x004df550, +0x44 in 0x004df440 and +0xa4 here, three fields of one object or anchors of three different sub-objects? The two resolve bodies are near-clones differing only in those offsets and in the constant passed to 0x004d3dd0, consistent with one template instantiated at several offsets, but no evidence here decides it.",
+    "What is the chain-node layout of the callee's hash container? 0x004df6d0 and 0x004e0f80 agree on key at +0/+4/+8, value at +0xc and link at +0x10, while the insert path's 20 byte payload in 0x004e0560 is initialised two dwords later than the probe reads it. One of those two readings is wrong and resolving it needs 0x004e0560 reimplemented, which is outside this package's scope.",
+    "Which parameter of 0x00f473a0 is the allocation size? 0x004df550 passes 0x13f0e00 and 0xa18; the forwarder reorders them and the allocator pair 0x009289f0/0x00927be0 was not read far enough to say. Until that is settled, 0xa18 is only consistent with the 0x80e lower bound and is not asserted as a size.",
+    "What role does the vtable slot at +0x0c of the object returned by 0x0067dcd0 play, and what is that object's type? Ghidra names the slot Initialize via a type guess against IGameModeManager; with no RTTI in the binary, no name is asserted, and the slot is recorded only as an unnamed predicate that gates the create path.",
+    "Is the dead key-substitution branch reported for this caller really dead at run time, or is there a path into 0x004df550 that re-enters it after the entry test? The static proof covers the fall-through path from 0x004df550's entry to the gate, and 0x004df550 contains no loop and no second call to itself, but no original-process run was performed to confirm the execution count."
+  ],
+  "runtime_gates": [
+    "No original-process invocation was captured, so no live receiver value, no live argument value and no live return value was observed. Every statement in this record is a static reading of the 3.1.0.22 image.",
+    "The call sites were counted and classified from a static xref export. Which of them execute in a given play session, and with what receiver and key contents, is a runtime question this repository has no instrument for.",
+    "The unreachability result for the callee's key-substitution branch is static. Confirming it as an execution count needs an instrumented run of the original, which was not performed.",
+    "runtime validation not run"
+  ],
+  "blockers": [],
+  "runtime_validation": {
+    "status": "not_run",
+    "runtime_validated": 0,
+    "reason": "An original-process experiment requires human approval and the machine lock. None was performed for this target."
+  },
+  "types": [
+    {
+      "name": "OpaqueWord",
+      "kind": "opaque_alias",
+      "width_bytes": 4,
+      "role": "the return word in EAX and every receiver-relative word the body forms",
+      "declared_type_proven": false
+    }
+  ],
+  "globals": [],
+  "vtables": [],
+  "services": [],
+  "validation": {
+    "command": "reconstruction/staging/pkg-dogfood-004df420-a1/dogfood_004df420_a1_boundary_test.sh",
+    "toolchain": "clang with -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror",
+    "configurations": ["-O0", "-O2", "-O0 -DNDEBUG", "-O2 -DNDEBUG"],
+    "result": "all four configurations compiled with zero diagnostics, clang-format --dry-run -Werror clean over the header, the source and the model test, and all twelve model tests passed in each configuration",
+    "negative_controls": "four, all tripping. A null key instead of &receiver->key_0a4 aborts on the argument identity; discarding the port result and returning a constant aborts on the return forwarding; a second port call aborts on the call count and the disassembly check independently reports it makes 2 calls when run on that build alone; narrowing the accepted return cleanup set to {0x04} fails the boundary check on the return form."
+  },
+  "codegen_equivalence": {
+    "original_bytes": "558bec51894dfc8b45fc05a4000000508b4dfce8180100008be55dc3",
+    "original_instruction_count": 12,
+    "release_o0_instruction_count": 18,
+    "release_o0_byte_identical": false,
+    "instruction_correspondence_o0": [
+      "PUSH EBP                      <-> push ebp",
+      "MOV EBP,ESP                   <-> mov ebp,esp",
+      "PUSH ECX                      <-> push ebx ; sub esp,0x14, a different one slot reservation plus the PIC base idiom",
+      "MOV dword ptr [EBP-0x4],ECX   <-> mov DWORD PTR [ebp-0x8],ecx",
+      "MOV EAX,dword ptr [EBP-0x4]  <-> mov eax,DWORD PTR [ebp-0x8]",
+      "ADD EAX,0xa4                   <-> add eax,0xa4",
+      "PUSH EAX                      <-> mov DWORD PTR [esp],eax, the store-into-the-outgoing-argument-slot form",
+      "MOV ECX,dword ptr [EBP-0x4]   <-> mov ecx,DWORD PTR [ebp-0x8]",
+      "CALL 0x004df550               <-> call unresolved_004df550",
+      "MOV ESP,EBP                   <-> add esp,0x10 ; pop ebx",
+      "POP EBP                       <-> pop ebp",
+      "RET                           <-> ret"
+    ],
+    "release_o0_note": "All twelve original instructions have a one-to-one counterpart in the -O0 model, in the same order. The differences are the local slot offset (-0x8 against -0x4), the frame bookkeeping for the extra callee-saved register EBX, the position-independent base idiom, and the store-into-the-outgoing-argument-slot form of the PUSH. Byte-for-byte identity is NOT claimed and is not achievable here: the original is MSVC output and the model is clang output.",
+    "release_o2_note": "At -O2 clang folds the receiver into ECX directly and can emit lea eax,[ecx+0xa4] in place of the spill, the reload and the ADD. The observable machine contract is unchanged and the boundary test asserts it in every configuration: one receiver in ECX, one outgoing dword equal to receiver + 0xa4, one call to the proven port, a bare return, and no write to the return register after the call.",
+    "method": "clang++ -m32 -std=c++17 at -O0 and -O2, then objdump -d -C --no-show-raw-insn -M intel of the emitted body, compared instruction by instruction against the twelve instructions read live from SporeApp.exe"
+  },
+  "focused_test_evidence": {
+    "test_count": 12,
+    "tests": [
+      "test_receiver_is_forwarded_unchanged",
+      "test_argument_is_receiver_plus_0xa4",
+      "test_argument_aliases_the_receivers_inline_storage",
+      "test_key_argument_reads_the_receiver_key_block",
+      "test_key_word_zero_is_the_receivers_a4_word",
+      "test_return_value_is_the_ports_dword",
+      "test_zero_key_block_still_reaches_the_port",
+      "test_receiver_word_zero_does_not_influence_the_call",
+      "test_no_memory_is_written",
+      "test_argument_offset_is_independent_of_receiver_placement",
+      "test_exactly_one_dispatch_per_call",
+      "test_key_block_width_and_order_match_the_callee_copy"
+    ],
+    "compile_time_abi_assertions": [
+      "sizeof(void *) == 4",
+      "sizeof(OpaqueWord) == 4",
+      "offsetof(OpaqueSpeciesReceiver, word_000) == 0x00",
+      "offsetof(OpaqueSpeciesReceiver, opaque_004) == 0x04",
+      "offsetof(OpaqueSpeciesReceiver, key_0a4) == 0xa4",
+      "sizeof(OpaqueKeyTriple) == 0x0c",
+      "sizeof(OpaqueSpeciesReceiver) == 0xb0"
+    ],
+    "notes": [
+      "Each test seeds the receiver and both canary bands with distinct sentinels, so test_no_memory_is_written memcmps the whole framed receiver and aborts on any write, including one outside the covered prefix.",
+      "test_argument_aliases_the_receivers_inline_storage checks the port argument pointer against receiver+0xa4+i byte for byte. That is the in-model witness of the inline placement proven at 0x004df5bd..0x004df5d7: a pointer-to-key reading would fail it.",
+      "test_key_word_zero_is_the_receivers_a4_word asserts the identity that makes the callee's substitution branch dead, and sweeps that word over 0, 1, 0x7fffffff, 0x80000000 and 0xffffffff because the callee's two comparisons are exhaustive over it. The model cannot execute the callee, so the test asserts the algebra rather than the reachability result itself; the result stays a static claim.",
+      "test_return_value_is_the_ports_dword sweeps six seed values including 0, 0x7fffffff, 0x80000000 and 0xffffffff, so the return is a bit-exact 32-bit round trip rather than a truthiness check. Null is included because every early exit of the callee returns null.",
+      "test_argument_offset_is_independent_of_receiver_placement runs the model against a stack receiver, a heap receiver and a static receiver and asserts receiver+0xa4 in all three, so the displacement cannot be an artifact of one layout.",
+      "An apparent stack imbalance at -O2, an add esp after a call to a port that ends in ret 0x4, was investigated and dismissed: the slot was already reserved by the frame, so the add reclaims the outgoing-argument slot. It is a codegen shape, not a defect, and is recorded so the next reader does not re-derive it."
+    ]
+  },
+  "implementation": {
+    "source": "reconstruction/staging/pkg-dogfood-004df420-a1/dogfood_004df420_a1.cpp",
+    "declaration": "reconstruction/staging/pkg-dogfood-004df420-a1/dogfood_004df420_a1.hpp",
+    "focused_test": "reconstruction/staging/pkg-dogfood-004df420-a1/dogfood_004df420_a1_model_test.cpp",
+    "boundary_test": "reconstruction/staging/pkg-dogfood-004df420-a1/dogfood_004df420_a1_boundary_test.sh",
+    "ownership": "reconstruction/staging/pkg-dogfood-004df420-a1/ownership.json",
+    "clang_format_config": "reconstruction/staging/pkg-dogfood-004df420-a1/.clang-format",
+    "namespace": "openspore::reconstruction::pkg_dogfood_004df420_a1",
+    "status": "staged",
+    "port_policy": "One port, 0x004df550, declared as unresolved_004df550 so the call set stays comparable against the machine. No port stub ships in the package; the model test supplies a recording stand-in so the argument identity and the return forwarding are observable without a second reconstruction in the way.",
+    "state_policy": "The body writes no state at all. The only receiver-relative quantity it produces is the address receiver + 0xa4, which is an outgoing argument rather than a store."
+  },
+  "source_files": [
+    "reconstruction/staging/pkg-dogfood-004df420-a1/dogfood_004df420_a1.cpp",
+    "reconstruction/staging/pkg-dogfood-004df420-a1/dogfood_004df420_a1.hpp",
+    "reconstruction/staging/pkg-dogfood-004df420-a1/dogfood_004df420_a1_model_test.cpp",
+    "reconstruction/staging/pkg-dogfood-004df420-a1/dogfood_004df420_a1_boundary_test.sh",
+    "reconstruction/staging/pkg-dogfood-004df420-a1/ownership.json",
+    "reconstruction/staging/pkg-dogfood-004df420-a1/.clang-format"
+  ],
+  "source_path": {
+    "implementation": "reconstruction/staging/pkg-dogfood-004df420-a1/dogfood_004df420_a1.cpp",
+    "declaration": "reconstruction/staging/pkg-dogfood-004df420-a1/dogfood_004df420_a1.hpp",
+    "focused_test": "reconstruction/staging/pkg-dogfood-004df420-a1/dogfood_004df420_a1_model_test.cpp",
+    "staging_origin": "reconstruction/staging/pkg-dogfood-004df420-a1/"
+  },
+  "evidence": [
+    "ghidra_disassemble_function at 0x004df420, 12 instructions, re-read this attempt",
+    "ghidra_read_memory at 0x004df420 length 28, raw 558bec51894dfc8b45fc05a4000000508b4dfce8180100008be55dc3",
+    "ghidra_disassemble_function at 0x004df550, 108 instructions, the port contract and the key-substitution branch",
+    "ghidra_disassemble_function at 0x004df6d0, 67 instructions, the container probe the callee calls",
+    "ghidra_disassemble_function at 0x004e0f80, 98 instructions, the bucket probe and the hash formula",
+    "ghidra_decompile_function at 0x004e0560, the insert path and the unreconciled node layout",
+    "ghidra_decompile_function at 0x004da3a0, the unnamed create-gate predicate",
+    "ghidra_decompile_function at 0x004d3dd0, the miss-path constructor and the 0x80e value-object lower bound",
+    "ghidra_decompile_function at 0x004d4f10, the probe's lazy revalidation and its 0x504..0x518 writes",
+    "ghidra_decompile_function at 0x004df440, 78 instructions, the near-clone resolve bound to +0x44",
+    "ghidra_disassemble_function at 0x004df400, 9 instructions, the sibling +0xa4 accessor",
+    "ghidra_get_function_by_address at 0x00401090, cSpeciesManager * Editors::cSpeciesManager::Get(void), receiver provenance only",
+    "ghidra_decompile_function at 0x00f473a0 and ghidra_disassemble_function at 0x009289f0, the allocation wrapper the miss path calls",
+    "knowledgegraph/triage/xrefs-2540f2ca.tsv, 58 incoming direct-call edges and 77 to the callee",
+    "knowledgegraph/research/conflicts/track-a-type-signature.json, conflict FL-002 on cSpeciesProfile runtime size, resolution RESOLVED_OBSERVED, whose anchors include 0x004df420, 0x004df440 and 0x004df550"
+  ],
+  "live_provenance": {
+    "program": "SporeApp.exe",
+    "image_base": "0x00400000",
+    "language": "x86:LE:32:default",
+    "compiler": "windows",
+    "analysis_basis": "read-only live Ghidra MCP queries against the 3.1.0.22 image at the recorded sha256",
+    "ghidra_mutations": 0,
+    "ghidra_saves": 0,
+    "tools_used": [
+      "ghidra_disassemble_function",
+      "ghidra_decompile_function",
+      "ghidra_read_memory",
+      "ghidra_get_function_by_address"
+    ],
+    "body_disassembly_tool": "ghidra_disassemble_function plus ghidra_read_memory, both re-read this attempt and agreeing"
+  },
+  "scope": {
+    "staging_package": "reconstruction/staging/pkg-dogfood-004df420-a1",
+    "owned_vas": ["0x004df420"],
+    "package_scope": "The single VA this package claims. 0x004df400, 0x004df440, 0x004df550, 0x004df6d0, 0x004e0f80, 0x004e0560, 0x004d3dd0, 0x004d4f10, 0x004da3a0, 0x00f473a0 and 0x00401090 were read as layout, contract and receiver evidence only and were NOT promoted to records.",
+    "src_modified": false,
+    "tools_modified": false,
+    "other_package_modified": false,
+    "committed": false
+  },
+  "reconstruction_confidence": 0.93,
+  "confidence_note": "High on mechanics, deliberately lower than a mechanics-only record because this record also carries callee-chain conclusions. The twelve instructions of 0x004df420 are CONFIRMED and byte-exact, and each of the twelve has a one-to-one counterpart in the -O0 model in the same order. The +0xa4 inline placement and the substitution-branch unreachability are both direct readings of the callee's instruction stream with cited addresses, and the second is a proof over an exhaustive two-case split rather than an inference. What is NOT established, and is recorded as open rather than answered: the owning class, the declared type and role of the three key words, the declared return type, the receiver's true extent, the container's node layout, and the identity of the create-gate predicate. The figure is a confidence in the mechanics and the two callee-chain results, not in the naming.",
+  "target_state": "staged candidate source; runtime validation gated",
+  "validator_interaction": {
+    "command": "python3 tools/openspore.py validate --no-write --format json 0x004df420",
+    "status": "WARN",
+    "note": "Read-only probe of the same gate the orchestrator runs, executed with --no-write so nothing under reconstruction/evidence was modified. The aggregate is WARN and no PASS is claimed. CALLS, CONSTANTS, CONTROL FLOW, GLOBALS and VIRTUAL DISPATCH report NOT_AVAILABLE because the persisted index record for this target carries no disassembly listing and no dependency edge list, so those five have nothing to adjudicate against; that is an absence in the pack, not a finding. The call set was established independently instead: the body contains exactly one CALL, at 0x004df433, with operands e8 18 01 00 00, and the source names exactly that port as unresolved_004df550.",
+    "source_resolution_measured": "This package's candidate IS the source the validator reads for this VA, and that was measured rather than assumed. extract_metadata walks reconstruction/metadata with sorted(rglob('*.json')) and concatenates every sidecar it finds for a VA into one record, and validate._source returns the first existing candidate in that list. 'pkg-dogfood-004df420-a1' sorts before 'pkg-editor-species-default-wave12' (d < e), so this sidecar's source_files come first. Verified by calling validate._source directly: it returns reconstruction/staging/pkg-dogfood-004df420-a1/dogfood_004df420_a1.cpp with role 'staging', and the resulting FIELDS/OFFSETS check names 'field key_0a4', which is this package's field name and occurs in no other candidate for this VA. The package name was chosen for the worker identity and not tuned to win this sort; the ordering is reported so it is a known quantity rather than an accident.",
+    "shadowing_note": "Because this sidecar sorts first, this candidate now shadows PKG-EDITOR-SPECIES-DEFAULT-WAVE12 for the gate, and the earlier package's source is the one the validator can no longer see. The two candidates agree on every machine mechanic, so the shadowing does not change the verdict's substance, but an integrator comparing them should know that restoring the earlier source requires retiring or renaming the earlier sidecar."
+  }
+}

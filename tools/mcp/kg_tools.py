@@ -27,6 +27,7 @@ Domain failures are in-band ``{"status": "error", "code": ..., ...}``
 dicts (never exceptions), so registry.dispatch() callers can assert on
 them without tripping the server's -32603 path.
 """
+import datetime
 import glob
 import json
 import os
@@ -58,6 +59,29 @@ _QUEUE_WRITABLE = ("mode", "why_interesting", "stage", "status",
                    "block_reason", "prerequisites", "attempts",
                    "checkpoint", "evidence_refs", "implementer_id",
                    "adjudicator_id", "name", "subsystem", "va")
+# Progress vocabulary used by the orchestrator (docs/analysis/ORCHESTRATOR.md
+# stage machine). ``status`` carries lifecycle, ``stage`` carries progress, so
+# a blocked row keeps its stage and unblocking is a pure status transition.
+_STAGES = ("QUEUED", "SELECTED", "DOSSIER", "STATIC", "ASSETS", "CONTRACT",
+           "REPLACE", "VALIDATE", "RECORDED")
+# Documented block_reason prefixes. Free text stays accepted; these are the
+# machine-readable classes the orchestrator routes on (docs/tooling/
+# orchestration.md). Enforced nowhere -- advisory only.
+_BLOCK_REASON_PREFIXES = (
+    "validation_warn", "validation_unknown", "validation_fail",
+    "malformed_worker_output", "dependency_blocked", "no_evidence",
+    "ghidra_offline", "machine_locked", "no_spo", "approval_required",
+    "escalated", "obsolete",
+)
+# Floor for a lease TTL. Zero would make every active row instantly stealable,
+# which turns a single racing worker into a double-ownership bug.
+_MIN_STALE_AFTER_SECONDS = 60
+# Lease clock formats seen in the sidecar. ``datetime('now')`` (SQLite, used by
+# every queue_op write) produces the first; rows seeded outside queue_op carry
+# ISO-8601 with a trailing Z. A clock we cannot read is never stale: the row
+# stays locked and requires an explicit, human-asserted release.
+_LEASE_TIME_FORMATS = ("%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%SZ",
+                       "%Y-%m-%dT%H:%M:%S")
 
 _NODE_COLS = ("id", "label", "name", "attrs_json", "confidence", "origin",
               "note", "created_at", "evidence_level", "updated_at",
@@ -75,9 +99,16 @@ def _err(code, message, **extra):
 def _connect():
     # type: () -> sqlite3.Connection
     db = config.db_path()
-    conn = sqlite3.connect(db)
+    # An explicit timeout (rather than sqlite3's implicit 5s busy handler)
+    # keeps a multi-worker claim stampede from surfacing as an opaque
+    # "database is locked" db_error.
+    conn = sqlite3.connect(db, timeout=30.0)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA busy_timeout=30000")
     return conn
+
+
+_SCHEMA_READY = set()
 
 
 def _missing_table(conn, name):
@@ -90,10 +121,19 @@ def _missing_table(conn, name):
 
 def _ensure_schema(conn):
     # type: (sqlite3.Connection) -> None
-    """Create sidecar tables if absent (idempotent; write paths only)."""
+    """Create sidecar tables if absent (idempotent; write paths only).
+
+    executescript() takes a write lock, so it is run once per database per
+    process. Re-running it inside every write op would widen the window in
+    which a competing BEGIN IMMEDIATE has to wait.
+    """
+    db = config.db_path()
+    if db in _SCHEMA_READY:
+        return
     schema = config.resolve("knowledgegraph", "schema.sql")
     with open(schema) as fh:
         conn.executescript(fh.read())
+    _SCHEMA_READY.add(db)
 
 
 def _parse_attrs(raw):
@@ -580,6 +620,30 @@ def _derive_inv_id(kind, va, name, subsystem):
     return "%s:%s:%s" % (kind, va or "", leaf)
 
 
+def normalize_queue_va(va):
+    # type: (object) -> object
+    """Canonical bare-hex VA as stored in ``investigations.va``.
+
+    The planning layer (``frontier``/``swarm``) speaks ``0x%08x`` while every
+    queue row stores 8 lowercase hex characters with no prefix. Normalising at
+    the queue boundary is what lets a frontier target be claimed directly
+    instead of forcing each caller to re-derive an id. Returns None when the
+    value is not a 32-bit address.
+    """
+    if va is None:
+        return None
+    text = str(va).strip().lower()
+    if text.startswith("0x"):
+        text = text[2:]
+    if len(text) != 8:
+        return None
+    try:
+        int(text, 16)
+    except ValueError:
+        return None
+    return text
+
+
 def _find_by_dedup(conn, kind, va, sha):
     # type: (sqlite3.Connection, str, object, str) -> sqlite3.Row | None
     return conn.execute(
@@ -589,13 +653,19 @@ def _find_by_dedup(conn, kind, va, sha):
         (kind, va, sha)).fetchone()
 
 
+_QUEUE_OPS = ("list", "get", "insert", "update", "claim", "close", "release",
+              "unblock")
+_QUEUE_WRITING_OPS = ("insert", "update", "claim", "close", "release",
+                      "unblock")
+
+
 def queue_op(params):
     # type: (dict) -> dict
     op = params.get("op")
-    if op not in ("list", "get", "insert", "update", "close"):
+    if op not in _QUEUE_OPS:
         return _err("invalid_params",
-                    "'op' must be one of list|get|insert|update|close, "
-                    "got %r" % (op,))
+                    "'op' must be one of %s, got %r"
+                    % ("|".join(_QUEUE_OPS), op))
     try:
         conn = _connect()
     except sqlite3.Error as exc:
@@ -605,7 +675,7 @@ def queue_op(params):
                 _missing_table(conn, "investigations")):
             return _err("empty_database",
                         "KG database has no investigations table")
-        if op in ("insert", "update", "close"):
+        if op in _QUEUE_WRITING_OPS:
             _ensure_schema(conn)
         if op == "list":
             return _queue_list(conn, params)
@@ -615,6 +685,12 @@ def queue_op(params):
             return _queue_insert(conn, params)
         if op == "update":
             return _queue_update(conn, params)
+        if op == "claim":
+            return _queue_claim(conn, params)
+        if op == "release":
+            return _queue_release(conn, params)
+        if op == "unblock":
+            return _queue_unblock(conn, params)
         return _queue_close(conn, params)
     except (sqlite3.Error, OSError) as exc:
         return _err("db_error", "queue_op %s failed: %s" % (op, exc))
@@ -647,9 +723,21 @@ def _queue_list(conn, params):
 def _queue_get(conn, params):
     # type: (sqlite3.Connection, dict) -> dict
     inv_id = params.get("id")
+    if not inv_id and params.get("va"):
+        # The frontier/swarm layer speaks "0x%08x"; the queue stores bare
+        # 8-char hex. Accepting both here keeps one address space instead of
+        # forcing every caller to re-derive the id.
+        row = _queue_find_by_va(conn, params["va"],
+                                params.get("binary_sha256"))
+        if row is None:
+            return _err("not_found",
+                        "no investigation for va %r" % (params["va"],),
+                        va=params["va"])
+        return {"status": "ok", "tool": "queue_op", "op": "get",
+                "id": row["id"], "investigation": _inv_dict(row)}
     if not inv_id:
         return _err("missing_param",
-                    "queue_op get requires 'id'",
+                    "queue_op get requires 'id' (or 'va')",
                     field="id")
     row = conn.execute(
         "SELECT * FROM investigations WHERE id=?", (inv_id,)).fetchone()
@@ -657,7 +745,21 @@ def _queue_get(conn, params):
         return _err("not_found",
                     "investigation not found: %r" % (inv_id,), id=inv_id)
     return {"status": "ok", "tool": "queue_op", "op": "get",
-            "investigation": _inv_dict(row)}
+            "id": inv_id, "investigation": _inv_dict(row)}
+
+
+def _queue_find_by_va(conn, va, sha=None):
+    # type: (sqlite3.Connection, object, object) -> object
+    bare = normalize_queue_va(va)
+    if bare is None:
+        return None
+    if sha:
+        return conn.execute(
+            "SELECT * FROM investigations WHERE kind='function' AND va=? "
+            "AND binary_sha256=? ORDER BY id LIMIT 1", (bare, sha)).fetchone()
+    return conn.execute(
+        "SELECT * FROM investigations WHERE kind='function' AND va=? "
+        "ORDER BY id LIMIT 1", (bare,)).fetchone()
 
 
 def _queue_insert(conn, params):
@@ -721,7 +823,9 @@ def _queue_update(conn, params):
                     field="id")
     updates = {k: params[k] for k in _QUEUE_WRITABLE if k in params}
     unknown = [k for k in params
-               if k not in _QUEUE_WRITABLE and k not in ("op", "id")]
+               if k not in _QUEUE_WRITABLE and
+               k not in ("op", "id", "allow_blocked", "implementer_id",
+                         "stale_after_seconds", "reason")]
     if unknown:
         return _err("invalid_params",
                     "unknown update field(s): %s; writable: %s"
@@ -737,27 +841,456 @@ def _queue_update(conn, params):
                     "unknown investigation status %r; expected one of: %s"
                     % (updates["status"], ", ".join(_INVESTIGATION_STATUSES)),
                     value=updates["status"])
-    row = conn.execute(
-        "SELECT * FROM investigations WHERE id=?", (inv_id,)).fetchone()
-    if row is None:
-        return _err("not_found",
-                    "investigation not found: %r" % (inv_id,), id=inv_id)
-    if updates.get("status") == "active" and row["status"] == "active" \
-            and row["implementer_id"] \
-            and updates.get("implementer_id") \
-            and updates["implementer_id"] != row["implementer_id"]:
-        return _err("already_claimed",
-                    "investigation %r already claimed by %r"
-                    % (inv_id, row["implementer_id"]), id=inv_id)
-    with conn:
-        conn.execute(
+    if updates.get("status") == "active":
+        # Activation is its own lane so the blocked/terminal/owner guards in
+        # _queue_update_active stay authoritative.
+        updates.setdefault("implementer_id", params.get("implementer_id"))
+        return _queue_update_active(conn, inv_id, updates, params)
+    return _queue_update_owned(conn, inv_id, updates, params)
+
+
+def _queue_update_owned(conn, inv_id, updates, params):
+    # type: (sqlite3.Connection, str, dict, dict) -> dict
+    """Non-activation writes, guarded by a lease-token CAS.
+
+    Three properties this restores, all of which the previous unguarded
+    ``WHERE id=?`` write lacked:
+
+    * a write to a row held under a lease (``status='active'``) requires
+      ``implementer_id`` to equal the row's current owner, so a displaced
+      worker cannot clobber its successor;
+    * terminal rows are immutable, so ``done``/``dropped`` cannot be
+      resurrected;
+    * the compare-and-set makes concurrent writers produce exactly one winner
+      instead of a silent last-write-wins.
+    """
+    implementer = params.get("implementer_id")
+    if not isinstance(implementer, str) or not implementer.strip():
+        implementer = updates.get("implementer_id")
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute(
+            "SELECT * FROM investigations WHERE id=?", (inv_id,)).fetchone()
+        if row is None:
+            conn.rollback()
+            return _err("not_found", "investigation not found: %r" % inv_id,
+                        id=inv_id)
+        if row["status"] in _TERMINAL_STATUSES:
+            conn.rollback()
+            return _err("already_completed",
+                        "investigation %r is terminal (%s); terminal rows are "
+                        "never rewritten" % (inv_id, row["status"]),
+                        id=inv_id, previous_status=row["status"])
+        if row["status"] == "active":
+            if not isinstance(implementer, str) or not implementer.strip():
+                conn.rollback()
+                return _err("not_owner",
+                            "investigation %r is leased by %r; a write to an "
+                            "active row requires implementer_id to match the "
+                            "lease holder"
+                            % (inv_id, row["implementer_id"]),
+                            id=inv_id,
+                            implementer_id=row["implementer_id"])
+            if row["implementer_id"] != implementer:
+                conn.rollback()
+                return _err("not_owner",
+                            "investigation %r is leased by %r, not %r"
+                            % (inv_id, row["implementer_id"], implementer),
+                            id=inv_id,
+                            implementer_id=row["implementer_id"],
+                            next_action="the lease was taken over; re-read the "
+                                        "row and re-plan instead of writing")
+        # Ownership and status transitions have their own verbs; keeping them
+        # out of a generic update is what stops the active+unowned state
+        # (unrecoverable for every other op) from being expressible.
+        for guarded in ("status", "implementer_id"):
+            if guarded in updates:
+                conn.rollback()
+                return _err("invalid_params",
+                            "queue_op update may not write %r; use claim, "
+                            "release or close" % guarded, field=guarded)
+        cursor = conn.execute(
             "UPDATE investigations SET %s, updated_at=datetime('now') "
-            "WHERE id=?" % ", ".join("%s=?" % k for k in sorted(updates)),
-            [updates[k] for k in sorted(updates)] + [inv_id])
+            "WHERE id=? AND status=? AND COALESCE(implementer_id,'')=?" %
+            ", ".join("%s=?" % key for key in sorted(updates)),
+            [updates[key] for key in sorted(updates)] +
+            [inv_id, row["status"], row["implementer_id"] or ""])
+        if cursor.rowcount != 1:
+            conn.rollback()
+            return _err("conflict",
+                        "investigation %r changed while being written" % inv_id,
+                        id=inv_id)
+        conn.commit()
+    except sqlite3.Error:
+        try:
+            conn.rollback()
+        except sqlite3.Error:
+            pass
+        raise
     row = conn.execute(
         "SELECT * FROM investigations WHERE id=?", (inv_id,)).fetchone()
     return {"status": "ok", "tool": "queue_op", "op": "update",
             "id": inv_id, "investigation": _inv_dict(row)}
+
+
+def _queue_update_active(conn, inv_id, updates, params):
+    implementer = updates.get("implementer_id")
+    allow_blocked = _is_true(params.get("allow_blocked", False))
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute(
+            "SELECT * FROM investigations WHERE id=?", (inv_id,)).fetchone()
+        if row is None:
+            conn.rollback()
+            return _err("not_found", "investigation not found: %r" % inv_id,
+                        id=inv_id)
+        if not isinstance(implementer, str) or not implementer.strip():
+            conn.rollback()
+            return _err("missing_param",
+                        "activating an investigation requires implementer_id",
+                        field="implementer_id")
+        if row["status"] in _TERMINAL_STATUSES:
+            conn.rollback()
+            return _err("already_completed",
+                        "investigation %r is terminal (%s)" %
+                        (inv_id, row["status"]), id=inv_id,
+                        previous_status=row["status"])
+        if row["status"] == "active" and row["implementer_id"] != implementer:
+            conn.rollback()
+            return _err("already_claimed",
+                        "investigation %r already claimed by %r" %
+                        (inv_id, row["implementer_id"]), id=inv_id,
+                        implementer_id=row["implementer_id"])
+        if row["status"] == "blocked" and not allow_blocked:
+            conn.rollback()
+            return _err("blocked",
+                        "investigation %r is blocked; pass allow_blocked=true "
+                        "to activate it" % inv_id, id=inv_id,
+                        block_reason=row["block_reason"])
+        updates = dict(updates)
+        updates["block_reason"] = None
+        cursor = conn.execute(
+            "UPDATE investigations SET %s, updated_at=datetime('now') "
+            "WHERE id=? AND status=? AND COALESCE(implementer_id,'')=?" %
+            ", ".join("%s=?" % key for key in sorted(updates)),
+            [updates[key] for key in sorted(updates)] +
+            [inv_id, row["status"], row["implementer_id"] or ""])
+        if cursor.rowcount != 1:
+            conn.rollback()
+            return _err("already_claimed",
+                        "investigation %r changed while being activated" %
+                        inv_id, id=inv_id)
+        conn.commit()
+    except sqlite3.Error:
+        try:
+            conn.rollback()
+        except sqlite3.Error:
+            pass
+        raise
+    row = conn.execute(
+        "SELECT * FROM investigations WHERE id=?", (inv_id,)).fetchone()
+    return {"status": "ok", "tool": "queue_op", "op": "update",
+            "id": inv_id, "investigation": _inv_dict(row)}
+
+
+def _claim_is_stale(updated_at, stale_after_seconds):
+    # type: (object, object) -> bool
+    """True when a lease clock is readable and older than the TTL.
+
+    Fails closed: a NULL or unparseable clock is never stale, so the row stays
+    locked until someone releases it explicitly. Reading the clock correctly
+    matters in practice -- rows seeded outside queue_op carry ISO-8601 with a
+    trailing Z, which the SQLite ``datetime('now')`` format alone would miss,
+    leaving every stale takeover unreachable.
+    """
+    if not updated_at:
+        return False
+    timestamp = None
+    for fmt in _LEASE_TIME_FORMATS:
+        try:
+            timestamp = datetime.datetime.strptime(str(updated_at), fmt)
+            break
+        except (TypeError, ValueError):
+            continue
+    if timestamp is None:
+        return False
+    age = (datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None) -
+           timestamp).total_seconds()
+    return age >= stale_after_seconds
+
+
+def _lease_ttl(params):
+    # type: (dict) -> object
+    """Validate ``stale_after_seconds`` and return it (or an error dict)."""
+    try:
+        stale_after = int(params.get("stale_after_seconds", 3600))
+    except (TypeError, ValueError):
+        return _err("invalid_params", "stale_after_seconds must be an integer")
+    if stale_after < _MIN_STALE_AFTER_SECONDS:
+        return _err("invalid_params",
+                    "stale_after_seconds must be >= %d (a zero-length lease "
+                    "would make every held claim instantly stealable)"
+                    % _MIN_STALE_AFTER_SECONDS,
+                    minimum=_MIN_STALE_AFTER_SECONDS, value=stale_after)
+    return stale_after
+
+
+def _queue_claim(conn, params):
+    inv_id = params.get("id")
+    implementer = params.get("implementer_id")
+    if not inv_id:
+        return _err("missing_param", "queue_op claim requires 'id'",
+                    field="id")
+    if not isinstance(implementer, str) or not implementer.strip():
+        return _err("missing_param",
+                    "queue_op claim requires 'implementer_id'",
+                    field="implementer_id")
+    stale_after = _lease_ttl(params)
+    if isinstance(stale_after, dict):
+        return stale_after
+    allow_stale = _is_true(params.get("allow_stale", False))
+    allow_blocked = _is_true(params.get("allow_blocked", False))
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute(
+            "SELECT * FROM investigations WHERE id=?", (inv_id,)).fetchone()
+        if row is None:
+            conn.rollback()
+            return _err("not_found", "investigation not found: %r" % inv_id,
+                        id=inv_id)
+        expected_sha = params.get("binary_sha256")
+        if expected_sha and expected_sha != row["binary_sha256"]:
+            conn.rollback()
+            return _err("stale_binary",
+                        "investigation belongs to a different binary identity",
+                        id=inv_id,
+                        expected_binary_sha256=expected_sha,
+                        actual_binary_sha256=row["binary_sha256"])
+        if row["status"] in _TERMINAL_STATUSES:
+            conn.rollback()
+            return _err("already_completed",
+                        "investigation %r is terminal (%s)" %
+                        (inv_id, row["status"]), id=inv_id,
+                        previous_status=row["status"])
+        if row["status"] == "active":
+            if row["implementer_id"] == implementer:
+                conn.commit()
+                return {"status": "ok", "tool": "queue_op", "op": "claim",
+                        "claimed": False, "idempotent": True, "id": inv_id,
+                        "investigation": _inv_dict(row)}
+            stale = _claim_is_stale(row["updated_at"], stale_after)
+            if not allow_stale or not stale:
+                conn.rollback()
+                return _err("already_claimed",
+                            "investigation %r is active under %r" %
+                            (inv_id, row["implementer_id"]), id=inv_id,
+                            implementer_id=row["implementer_id"],
+                            stale=stale,
+                            stale_after_seconds=stale_after,
+                            next_action="retry only after the lease is stale "
+                                        "with allow_stale=true")
+        if row["status"] == "blocked" and not allow_blocked:
+            conn.rollback()
+            return _err("blocked",
+                        "investigation %r is blocked; pass allow_blocked=true "
+                        "to claim it" % inv_id, id=inv_id,
+                        block_reason=row["block_reason"])
+        expected_status = row["status"]
+        expected_owner = row["implementer_id"] or ""
+        # A stale takeover silently overwrites implementer_id, which would make
+        # the displacement unauditable afterwards. Record the displaced lease
+        # holder in the checkpoint so recovery stays explainable.
+        displaced = None
+        checkpoint = row["checkpoint"]
+        if expected_status == "active" and expected_owner:
+            displaced = {"owner": expected_owner,
+                         "displaced_at": datetime.datetime.now(
+                             datetime.timezone.utc).replace(
+                                 tzinfo=None).isoformat(timespec="seconds"),
+                         "previous_stage": row["stage"],
+                         "stale_after_seconds": stale_after}
+        assignments = ["status='active'", "implementer_id=?",
+                       "block_reason=NULL", "updated_at=datetime('now')"]
+        values = [implementer]
+        if displaced is not None:
+            merged = _merge_checkpoint(checkpoint, displaced)
+            assignments.append("checkpoint=?")
+            values.append(merged)
+        values.extend([inv_id, expected_status, expected_owner])
+        cursor = conn.execute(
+            "UPDATE investigations SET %s "
+            "WHERE id=? AND status=? AND COALESCE(implementer_id,'')=?" %
+            ", ".join(assignments), values)
+        if cursor.rowcount != 1:
+            conn.rollback()
+            return _err("already_claimed",
+                        "investigation %r changed while being claimed" % inv_id,
+                        id=inv_id)
+        conn.commit()
+    except sqlite3.Error:
+        try:
+            conn.rollback()
+        except sqlite3.Error:
+            pass
+        raise
+    row = conn.execute(
+        "SELECT * FROM investigations WHERE id=?", (inv_id,)).fetchone()
+    result = {"status": "ok", "tool": "queue_op", "op": "claim",
+              "claimed": True, "idempotent": False, "id": inv_id,
+              "investigation": _inv_dict(row) if row else None}
+    if displaced is not None:
+        result["displaced_owner"] = displaced
+    return result
+
+
+def _merge_checkpoint(raw, addition):
+    # type: (object, dict) -> str
+    """Fold ``addition`` into a checkpoint blob, preserving what is there.
+
+    Whole-value overwrite on purpose: read-modify-write across a lease
+    boundary is exactly the racy pattern the lease exists to prevent.
+    """
+    if not raw:
+        current = {}
+    else:
+        try:
+            current = json.loads(raw)
+        except (TypeError, ValueError):
+            current = {"unparsed_checkpoint": str(raw)[:500]}
+        if not isinstance(current, dict):
+            current = {"checkpoint": current}
+    history = current.get("lease_history")
+    if not isinstance(history, list):
+        history = []
+    history = (history + [addition])[-8:]
+    current["lease_history"] = history
+    return json.dumps(current, sort_keys=True)
+
+
+def _queue_unblock(conn, params):
+    # type: (sqlite3.Connection, dict) -> dict
+    """Return a blocked row to ``queued``.
+
+    Needed because ``blocked`` is deliberately fail-closed: a row parked for
+    review has no lease holder, so ``release`` (which is a lease operation and
+    therefore requires the holder) cannot move it, and ``close`` on a blocked
+    row is an adjudication to a *terminal* state. Without this verb a blocked
+    row could only ever be closed, never returned to work -- so any reason that
+    turns out to be spurious (an absent validator, a mislabelled block) would
+    strand the target permanently.
+
+    There is deliberately no ownership check, because there is no owner; the
+    authority is the explicit ``allow_blocked=true`` assertion plus the fact
+    that the caller must name the row. ``reason`` records why the block is
+    being lifted and is written to ``block_reason`` so the audit trail keeps
+    the superseded reason visible until the next claim clears the column.
+    """
+    inv_id = params.get("id")
+    if not inv_id:
+        return _err("missing_param", "queue_op unblock requires 'id'",
+                    field="id")
+    if not _is_true(params.get("allow_blocked", False)):
+        return _err("invalid_params",
+                    "queue_op unblock requires allow_blocked=true; returning "
+                    "blocked work to the queue is an explicit assertion, not a "
+                    "side effect", field="allow_blocked")
+    reason = params.get("reason")
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute(
+            "SELECT * FROM investigations WHERE id=?", (inv_id,)).fetchone()
+        if row is None:
+            conn.rollback()
+            return _err("not_found", "investigation not found: %r" % inv_id,
+                        id=inv_id)
+        if row["status"] in _TERMINAL_STATUSES:
+            conn.rollback()
+            return _err("already_completed",
+                        "investigation %r is terminal (%s); a completed row "
+                        "cannot be returned to the queue" %
+                        (inv_id, row["status"]), id=inv_id,
+                        previous_status=row["status"])
+        if row["status"] == "active" and row["implementer_id"]:
+            conn.rollback()
+            return _err("already_claimed",
+                        "investigation %r is leased by %r; release the lease "
+                        "instead of unblocking it" %
+                        (inv_id, row["implementer_id"]), id=inv_id,
+                        implementer_id=row["implementer_id"])
+        if row["status"] != "blocked":
+            if not row["block_reason"]:
+                conn.commit()
+                return {"status": "ok", "tool": "queue_op", "op": "unblock",
+                        "id": inv_id, "unblocked": False, "idempotent": True,
+                        "previous_status": row["status"],
+                        "investigation": _inv_dict(row)}
+            # Not blocked by status, yet still carrying a block_reason. The
+            # frontier's claim view reads a non-null block_reason as blocked
+            # regardless of status, so the row is functionally blocked and
+            # unblock has to clear the column. This is what makes unblock
+            # converge from any half-blocked state rather than only from
+            # status='blocked'.
+            previous = row["block_reason"]
+            merged = _merge_checkpoint(row["checkpoint"], {
+                "unblocked_at": datetime.datetime.now(
+                    datetime.timezone.utc).replace(tzinfo=None).isoformat(
+                        timespec="seconds"),
+                "superseded_block_reason": previous,
+                "unblock_reason": reason,
+            })
+            cursor = conn.execute(
+                "UPDATE investigations SET block_reason=NULL, checkpoint=?, "
+                "updated_at=datetime('now') WHERE id=?",
+                (merged, inv_id))
+            if cursor.rowcount != 1:
+                conn.rollback()
+                return _err("conflict",
+                            "investigation %r changed while being unblocked"
+                            % inv_id, id=inv_id)
+            conn.commit()
+            row = conn.execute(
+                "SELECT * FROM investigations WHERE id=?",
+                (inv_id,)).fetchone()
+            return {"status": "ok", "tool": "queue_op", "op": "unblock",
+                    "id": inv_id, "unblocked": True, "idempotent": False,
+                    "previous_status": row["status"],
+                    "previous_block_reason": previous,
+                    "investigation": _inv_dict(row)}
+        previous = row["block_reason"]
+        # block_reason is cleared, not overwritten: the frontier's claim view
+        # treats a non-null block_reason as "still blocked", so writing the new
+        # reason there would silently re-block the row this call just freed.
+        # The superseded reason is preserved in the checkpoint instead.
+        merged = _merge_checkpoint(row["checkpoint"], {
+            "unblocked_at": datetime.datetime.now(
+                datetime.timezone.utc).replace(tzinfo=None).isoformat(
+                    timespec="seconds"),
+            "superseded_block_reason": previous,
+            "unblock_reason": reason,
+        })
+        cursor = conn.execute(
+            "UPDATE investigations SET status='queued', block_reason=NULL, "
+            "implementer_id=NULL, checkpoint=?, updated_at=datetime('now') "
+            "WHERE id=? AND status='blocked'",
+            (merged, inv_id))
+        if cursor.rowcount != 1:
+            conn.rollback()
+            return _err("conflict",
+                        "investigation %r changed while being unblocked" % inv_id,
+                        id=inv_id)
+        conn.commit()
+    except sqlite3.Error:
+        try:
+            conn.rollback()
+        except sqlite3.Error:
+            pass
+        raise
+    row = conn.execute(
+        "SELECT * FROM investigations WHERE id=?", (inv_id,)).fetchone()
+    return {"status": "ok", "tool": "queue_op", "op": "unblock",
+            "id": inv_id, "unblocked": True, "idempotent": False,
+            "previous_status": "blocked", "previous_block_reason": previous,
+            "investigation": _inv_dict(row)}
 
 
 def _queue_close(conn, params):
@@ -771,27 +1304,158 @@ def _queue_close(conn, params):
         return _err("invalid_params",
                     "queue_op close 'status' must be one of %s, got %r"
                     % ("/".join(_TERMINAL_STATUSES), disposition))
-    row = conn.execute(
-        "SELECT * FROM investigations WHERE id=?", (inv_id,)).fetchone()
-    if row is None:
-        return _err("not_found",
-                    "investigation not found: %r" % (inv_id,), id=inv_id)
-    if row["status"] in _TERMINAL_STATUSES:
-        # Terminal rows are never deleted and never re-closed: idempotent.
-        return {"status": "ok", "tool": "queue_op", "op": "close",
-                "id": inv_id, "closed": False,
-                "previous_status": row["status"],
-                "investigation": _inv_dict(row)}
-    previous = row["status"]
-    with conn:
-        conn.execute(
+    implementer = params.get("implementer_id")
+    expected_sha = params.get("binary_sha256")
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute(
+            "SELECT * FROM investigations WHERE id=?", (inv_id,)).fetchone()
+        if row is None:
+            conn.rollback()
+            return _err("not_found", "investigation not found: %r" % inv_id,
+                        id=inv_id)
+        if row["status"] in _TERMINAL_STATUSES:
+            # Terminal rows are never deleted and never re-closed: idempotent.
+            conn.commit()
+            return {"status": "ok", "tool": "queue_op", "op": "close",
+                    "id": inv_id, "closed": False,
+                    "previous_status": row["status"],
+                    "investigation": _inv_dict(row)}
+        if expected_sha and expected_sha != row["binary_sha256"]:
+            conn.rollback()
+            return _err("stale_binary",
+                        "investigation belongs to a different binary identity",
+                        id=inv_id,
+                        expected_binary_sha256=expected_sha,
+                        actual_binary_sha256=row["binary_sha256"])
+        if row["status"] == "active" and row["implementer_id"] != implementer:
+            conn.rollback()
+            return _err("not_owner",
+                        "investigation %r is leased by %r; only the lease "
+                        "holder may close it" %
+                        (inv_id, row["implementer_id"]), id=inv_id,
+                        implementer_id=row["implementer_id"],
+                        next_action="release the claim instead, or wait for "
+                                    "the lease to go stale")
+        if row["status"] == "blocked" and not _is_true(
+                params.get("allow_blocked", False)):
+            # A blocked row has no lease holder, so an ownership check cannot
+            # distinguish the worker that unblocked itself from anyone else.
+            # Closing a blocked row is an adjudication, not a work item, and
+            # must be asserted explicitly -- otherwise a worker whose own
+            # validation routed it to review could immediately close it and
+            # erase the reason it was parked.
+            conn.rollback()
+            return _err("blocked",
+                        "investigation %r is blocked; closing a blocked row "
+                        "requires allow_blocked=true (it is an adjudication, "
+                        "not a work item)" % inv_id, id=inv_id,
+                        block_reason=row["block_reason"])
+        previous = row["status"]
+        cursor = conn.execute(
             "UPDATE investigations SET status=?, updated_at=datetime('now') "
-            "WHERE id=?", (disposition, inv_id))
+            "WHERE id=? AND status=? AND COALESCE(implementer_id,'')=?",
+            (disposition, inv_id, previous, row["implementer_id"] or ""))
+        if cursor.rowcount != 1:
+            conn.rollback()
+            return _err("conflict",
+                        "investigation %r changed while being closed" % inv_id,
+                        id=inv_id)
+        conn.commit()
+    except sqlite3.Error:
+        try:
+            conn.rollback()
+        except sqlite3.Error:
+            pass
+        raise
     row = conn.execute(
         "SELECT * FROM investigations WHERE id=?", (inv_id,)).fetchone()
     return {"status": "ok", "tool": "queue_op", "op": "close",
             "id": inv_id, "closed": True,
             "previous_status": previous,
+            "investigation": _inv_dict(row)}
+
+
+def _queue_release(conn, params):
+    # type: (sqlite3.Connection, dict) -> dict
+    """End a lease without ending the investigation.
+
+    A distinct verb rather than ``update{status: queued}`` for three reasons:
+    the compare-and-set predicate is fixed (``status='active' AND owner=?``);
+    it needs a different replay contract from close and update (replay is a
+    success no-op, so the orchestrator can retry it after a crash); and it
+    clears the owner, which is what stops the unrecoverable
+    ``active + implementer_id IS NULL`` state from being expressible.
+    """
+    inv_id = params.get("id")
+    if not inv_id:
+        return _err("missing_param", "queue_op release requires 'id'",
+                    field="id")
+    implementer = params.get("implementer_id")
+    if not isinstance(implementer, str) or not implementer.strip():
+        return _err("missing_param", "queue_op release requires "
+                    "'implementer_id' (the lease holder)", field="implementer_id")
+    destination = params.get("to", "queued")
+    if destination not in ("queued", "blocked"):
+        return _err("invalid_params",
+                    "queue_op release 'to' must be queued or blocked, got %r"
+                    % (destination,), value=destination)
+    reason = params.get("reason")
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute(
+            "SELECT * FROM investigations WHERE id=?", (inv_id,)).fetchone()
+        if row is None:
+            conn.rollback()
+            return _err("not_found", "investigation not found: %r" % inv_id,
+                        id=inv_id)
+        if row["status"] in _TERMINAL_STATUSES:
+            conn.rollback()
+            return _err("already_completed",
+                        "investigation %r is terminal (%s); there is no lease "
+                        "to release" % (inv_id, row["status"]), id=inv_id,
+                        previous_status=row["status"])
+        if row["status"] != "active":
+            # Replay safety: releasing an unheld row is a success no-op, not
+            # an error, so a retried sequence converges instead of failing.
+            conn.commit()
+            return {"status": "ok", "tool": "queue_op", "op": "release",
+                    "id": inv_id, "released": False, "idempotent": True,
+                    "to": destination, "previous_status": row["status"],
+                    "investigation": _inv_dict(row)}
+        if row["implementer_id"] != implementer:
+            conn.rollback()
+            return _err("not_owner",
+                        "investigation %r is leased by %r, not %r; a lease is "
+                        "never taken by releasing it"
+                        % (inv_id, row["implementer_id"], implementer),
+                        id=inv_id, implementer_id=row["implementer_id"],
+                        next_action="claim with allow_stale=true once the lease "
+                                    "is stale, or escalate to a human")
+        cursor = conn.execute(
+            "UPDATE investigations SET status=?, implementer_id=NULL, "
+            "block_reason=?, updated_at=datetime('now') "
+            "WHERE id=? AND status='active' AND COALESCE(implementer_id,'')=?",
+            (destination,
+             reason if destination == "blocked" else None,
+             inv_id, implementer))
+        if cursor.rowcount != 1:
+            conn.rollback()
+            return _err("conflict",
+                        "investigation %r changed while being released" % inv_id,
+                        id=inv_id)
+        conn.commit()
+    except sqlite3.Error:
+        try:
+            conn.rollback()
+        except sqlite3.Error:
+            pass
+        raise
+    row = conn.execute(
+        "SELECT * FROM investigations WHERE id=?", (inv_id,)).fetchone()
+    return {"status": "ok", "tool": "queue_op", "op": "release",
+            "id": inv_id, "released": True, "idempotent": False,
+            "to": destination, "previous_status": "active",
             "investigation": _inv_dict(row)}
 
 

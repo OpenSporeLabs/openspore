@@ -8,8 +8,8 @@
   "va": "0x00b63980",
   "function_address": "0x00b63980",
   "ghidra_name": "Simulator::TimeAtStartOfFrame",
-  "normalized_symbol": "time_start_frame_deleting_destructor_00b63980",
-  "declaration": "OpaqueDestructible* WAVE6_THISCALL time_start_frame_deleting_destructor_00b63980(OpaqueDestructible* receiver, TargetWord deleting_flag)",
+  "normalized_symbol": "destructible_lifecycle_thunk_00b63980",
+  "declaration": "OpaqueDestructible* WAVE6_THISCALL destructible_lifecycle_thunk_00b63980(OpaqueDestructible* receiver, TargetWord deleting_flag)",
   "phase": "body-reconstruction",
   "review_status": "staged_static_review_with_semantic_label_boundary",
   "runtime_validation": 0,
@@ -17,11 +17,11 @@
     "status": "implemented in worker-owned staging",
     "staging_status": "header, source, and focused model test are present",
     "canonical_status": "not present; canonical promotion is not claimed",
-    "staging_symbol": "time_start_frame_deleting_destructor_00b63980",
+    "staging_symbol": "destructible_lifecycle_thunk_00b63980",
     "header": "reconstruction/staging/wave6-misc-engine/misc_engine.hpp",
     "source": "reconstruction/staging/wave6-misc-engine/misc_engine.cpp",
     "model_test": "reconstruction/staging/wave6-misc-engine/misc_engine_model_test.cpp",
-    "types": "OpaqueDestructible is a package-local vtable-prefix window; DeletingDestructorPorts is a normalized unresolved native-call seam"
+    "types": "OpaqueDestructible is a package-local vtable-prefix window; DeletingDestructorPorts preserves the observed thiscall BaseDestroy and cdecl GlobalDelete boundaries while leaving native bodies unresolved"
   },
   "selection": {
     "reason": "Unclaimed shared lifecycle boundary with a vtable write, base destructor call, scalar deleting flag, explicit delete call, and pointer return; the imported SDK label is not trusted as the machine identity.",
@@ -38,7 +38,7 @@
   },
   "semantic_label_boundary": {
     "imported_label": "Simulator::TimeAtStartOfFrame",
-    "machine_normalized_name": "time_start_frame_deleting_destructor_00b63980",
+    "machine_normalized_name": "destructible_lifecycle_thunk_00b63980",
     "reason": "The entry writes a vtable pointer, calls a one-instruction base destructor that writes another vtable pointer, conditionally calls the global delete wrapper, returns ECX in EAX, and cleans one stack word. This scalar-deleting-destructor shape is stronger evidence than the imported label for the mechanical boundary.",
     "class_identity_claim": false
   },
@@ -63,10 +63,10 @@
   "observed_mechanics": {
     "instruction_count": 12,
     "vtable_write": "receiver[0x00] = 0x01464450 before the base call",
-    "base_call": "0x005725a0 with ECX=receiver and no stack arguments",
+    "base_call": "0x005725a0 with ECX=receiver and no stack arguments; BaseDestroy is thiscall",
     "base_callee_observation": "0x005725a0 writes receiver[0x00] = 0x013ec458 and returns",
     "delete_guard": "TEST byte [ESP+0x08],1 after PUSH ESI; only bit 0 of the low byte controls deletion",
-    "delete_call": "0x00f47380 with receiver pushed; target then performs ADD ESP,4 before its return",
+    "delete_call": "0x00f47380 with receiver pushed through the cdecl GlobalDelete port; target then performs ADD ESP,4 before its return",
     "return": "MOV EAX,ESI; POP ESI; RET 4",
     "callee_order": [
       "vtable write",
@@ -95,17 +95,22 @@
       "the base object fields or destructor side effects",
       "the allocator/refcount semantics inside 0x00f47380"
     ],
-    "ports": "DeletingDestructorPorts callbacks preserve unresolved native bodies and do not assert the original callback function-pointer types"
+    "ports": "DeletingDestructorPorts keeps the unresolved native bodies while preserving the observed call boundaries: BaseDestroy is thiscall and GlobalDelete is cdecl."
   },
   "verification": {
     "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/wave6-misc-engine -fsyntax-only reconstruction/staging/wave6-misc-engine/misc_engine.cpp reconstruction/staging/wave6-misc-engine/misc_engine_model_test.cpp",
     "model_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fno-pie -Wl,-z,notext -I reconstruction/staging/wave6-misc-engine reconstruction/staging/wave6-misc-engine/misc_engine.cpp reconstruction/staging/wave6-misc-engine/misc_engine_model_test.cpp -o /tmp/opencode/wave6-misc-engine-test && /tmp/opencode/wave6-misc-engine-test",
+    "ndebug_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -DNDEBUG -fno-pie -Wl,-z,notext -I reconstruction/staging/wave6-misc-engine reconstruction/staging/wave6-misc-engine/misc_engine.cpp reconstruction/staging/wave6-misc-engine/misc_engine_model_test.cpp -o /tmp/opencode/wave6-misc-engine-test-ndebug && /tmp/opencode/wave6-misc-engine-test-ndebug",
+    "format_command": "clang-format --dry-run --Werror -style='{BasedOnStyle: Google, FixNamespaceComments: false}' reconstruction/staging/wave6-misc-engine/misc_engine.hpp reconstruction/staging/wave6-misc-engine/misc_engine.cpp reconstruction/staging/wave6-misc-engine/misc_engine_model_test.cpp",
+    "json_command": "python3 -m json.tool reconstruction/metadata/wave6-misc-engine/0067dcc0.json >/dev/null && python3 -m json.tool reconstruction/metadata/wave6-misc-engine/0098f4d0.json >/dev/null && python3 -m json.tool reconstruction/metadata/wave6-misc-engine/00b3d480.json >/dev/null && python3 -m json.tool reconstruction/metadata/wave6-misc-engine/00b63980.json >/dev/null",
+    "diff_command": "git diff --check -- reconstruction/staging/wave6-misc-engine reconstruction/metadata/wave6-misc-engine",
     "result": "passed",
     "coverage": [
       "deleting flags 0 and 1",
       "non-low-bit flag 2",
       "all-bits flag 0xffffffff",
       "vtable order and base callback observation",
+      "thiscall BaseDestroy and cdecl GlobalDelete boundaries",
       "global delete call count",
       "receiver pointer return"
     ],

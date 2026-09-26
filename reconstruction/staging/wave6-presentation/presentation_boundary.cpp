@@ -13,12 +13,12 @@ MatrixType g_transform_type_016f96a0 = 0;
 const Matrix4* g_transform_slot_016fa380 = nullptr;
 Matrix4 g_transform_storage_016fa4f0{};
 OpaquePointer g_device_016f89d0 = nullptr;
-OpaquePointer g_active_state_016f6568 = nullptr;
+GraphicsActiveState* g_active_state_016f6568 = nullptr;
 std::uint32_t g_state_016f9110 = 0;
 std::uint32_t g_state_01718610 = 0;
 std::uint32_t g_state_01718614 = 0;
 std::uint32_t g_state_01718618 = 0;
-std::uint32_t g_stream_cache_016f913c[96]{};
+std::uint32_t g_stream_cache_016f9138[12]{};
 std::uint32_t g_stream_limit_015d0934 = 0;
 std::uint32_t g_current_primitive_016f85a8 = 0;
 OpaquePointer g_cached_index_buffer_016f8afc = nullptr;
@@ -65,12 +65,12 @@ transform_pre_transform_by_0040ccb0(Transform* receiver, Transform* other) {
 
   Vector3 transformed_offset{};
   Vector3* offset_result = g_transform_boundary_ports.offset_transform(
-      &transformed_offset, &scaled_offset, receiver, other);
+      &transformed_offset, &scaled_offset, &receiver->mRotation);
   add_vectors(&receiver->mOffset, offset_result);
 
   Matrix3 transformed_rotation{};
   Matrix3* rotation_result = g_transform_boundary_ports.rotation_transform(
-      &transformed_rotation, other);
+      &transformed_rotation, &other->mRotation, &receiver->mRotation);
   receiver->mRotation = *rotation_result;
   receiver->mfScale *= other->mfScale;
   receiver->mnFlags =
@@ -101,7 +101,7 @@ renderware_mesh_set_index_buffer_011f9710(Mesh* receiver) {
   g_state_016f9110 = 0;
   const std::uint32_t vertex_buffer_count = receiver->vertexBuffersCount;
   if (vertex_buffer_count == 1) {
-    const VertexBuffer* vertex_buffer = receiver->pVertexBuffers;
+    const VertexBuffer* vertex_buffer = receiver->pVertexBuffers[0];
     g_state_01718614 = vertex_buffer->baseVertexIndex;
     g_state_01718618 = g_state_01718614;
   }
@@ -109,50 +109,58 @@ renderware_mesh_set_index_buffer_011f9710(Mesh* receiver) {
   std::uint32_t stream = 0;
   if (vertex_buffer_count != 0) {
     for (; stream < vertex_buffer_count; ++stream) {
-      const VertexBuffer* vertex_buffer = receiver->pVertexBuffers + stream;
-      const std::uint32_t source = pointer_word(vertex_buffer->pDXBuffer);
-      const std::uint8_t description_stride = load_u8(
-          static_cast<const std::uint8_t*>(vertex_buffer->pVertexDescription) +
-          0x0f);
-      const GraphicsActiveState* active_state =
-          static_cast<const GraphicsActiveState*>(
-              g_d3d_boundary_ports.get_active_state());
+      const VertexBuffer* vertex_buffer = receiver->pVertexBuffers[stream];
+      OpaquePointer source = nullptr;
+      std::uint8_t description_stride = 0;
       std::uint32_t stream_offset = 0;
-      if ((load_u8(reinterpret_cast<const std::uint8_t*>(active_state) + 0xd4) &
-           1U) != 0) {
-        stream_offset = vertex_buffer->baseVertexIndex * description_stride;
-        g_state_01718614 = 0;
-        g_state_01718618 = 0;
+      if (vertex_buffer != nullptr) {
+        source = vertex_buffer->pDXBuffer;
+        description_stride = load_u8(static_cast<const std::uint8_t*>(
+                                         vertex_buffer->pVertexDescription) +
+                                     0x0f);
+        const GraphicsActiveState* active_state =
+            static_cast<const GraphicsActiveState*>(
+                g_d3d_boundary_ports.get_active_state());
+        if ((load_u8(reinterpret_cast<const std::uint8_t*>(active_state) +
+                     0xd4) &
+             1U) != 0) {
+          stream_offset = vertex_buffer->baseVertexIndex * description_stride;
+          g_state_01718614 = 0;
+          g_state_01718618 = 0;
+        }
       }
 
+      const std::uint32_t source_word = pointer_word(source);
       const std::size_t cache_index = static_cast<std::size_t>(stream) * 3U;
-      if (g_stream_cache_016f913c[cache_index] != source ||
-          g_stream_cache_016f913c[cache_index + 1U] != stream_offset ||
-          g_stream_cache_016f913c[cache_index + 2U] != description_stride) {
+      if (g_stream_cache_016f9138[cache_index] != source_word ||
+          g_stream_cache_016f9138[cache_index + 1U] != stream_offset ||
+          g_stream_cache_016f9138[cache_index + 2U] != description_stride) {
         if (g_d3d_boundary_ports.set_stream_source(g_device_016f89d0, stream,
                                                    source, stream_offset,
                                                    description_stride) < 0) {
           return;
         }
-        g_stream_cache_016f913c[cache_index] = source;
-        g_stream_cache_016f913c[cache_index + 1U] = stream_offset;
-        g_stream_cache_016f913c[cache_index + 2U] = description_stride;
+        g_stream_cache_016f9138[cache_index] = source_word;
+        g_stream_cache_016f9138[cache_index + 1U] = stream_offset;
+        g_stream_cache_016f9138[cache_index + 2U] = description_stride;
       }
     }
   }
 
   const std::uint32_t old_stream_limit = g_stream_limit_015d0934;
-  for (; stream < old_stream_limit; ++stream) {
-    if (g_d3d_boundary_ports.set_stream_source(g_device_016f89d0, stream, 0, 0,
-                                               0) < 0) {
-      return;
+  if (stream < old_stream_limit) {
+    for (; stream < old_stream_limit; ++stream) {
+      if (g_d3d_boundary_ports.set_stream_source(g_device_016f89d0, stream,
+                                                 nullptr, 0, 0) < 0) {
+        return;
+      }
+      const std::size_t cache_index = static_cast<std::size_t>(stream) * 3U;
+      g_stream_cache_016f9138[cache_index] = 0;
+      g_stream_cache_016f9138[cache_index + 1U] = 0;
+      g_stream_cache_016f9138[cache_index + 2U] = 0;
     }
-    const std::size_t cache_index = static_cast<std::size_t>(stream) * 3U;
-    g_stream_cache_016f913c[cache_index] = 0;
-    g_stream_cache_016f913c[cache_index + 1U] = 0;
-    g_stream_cache_016f913c[cache_index + 2U] = 0;
+    g_stream_limit_015d0934 = vertex_buffer_count;
   }
-  g_stream_limit_015d0934 = vertex_buffer_count;
 
   const std::uint32_t current_primitive = g_current_primitive_016f85a8;
   const std::uint32_t primitive_count =
@@ -163,8 +171,7 @@ renderware_mesh_set_index_buffer_011f9710(Mesh* receiver) {
   g_state_01718610 = primitive_count;
 
   if (receiver->pIndexBuffer == nullptr) {
-    g_d3d_boundary_ports.draw_primitive(g_device_016f89d0,
-                                        receiver->primitiveType,
+    g_d3d_boundary_ports.draw_primitive(g_device_016f89d0, current_primitive,
                                         g_state_01718618, primitive_count);
     return;
   }
@@ -179,7 +186,7 @@ renderware_mesh_set_index_buffer_011f9710(Mesh* receiver) {
   }
 
   g_d3d_boundary_ports.draw_indexed(
-      g_device_016f89d0, receiver->primitiveType, g_state_01718614,
+      g_device_016f89d0, current_primitive, g_state_01718614,
       receiver->firstVertex, receiver->vertexCount,
       receiver->pIndexBuffer->startIndex + receiver->firstIndex,
       primitive_count);

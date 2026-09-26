@@ -1,0 +1,84 @@
+{
+  "va": "0x004ad6f0",
+  "body": "0x004ad6f0..0x004ada35",
+  "instructions": 223,
+  "symbol": "editor_entry_expand_004ad6f0",
+  "abi": {
+    "convention": "thiscall",
+    "receiver": "ECX, an OpaqueEntryList",
+    "stack_words": [
+      "OpaqueRecord * records"
+    ],
+    "return": "none",
+    "stack_cleanup": "RET 0x4",
+    "saved_registers": "EBP, ESI, EDI",
+    "frame": "SUB ESP, 0x180, then PUSH ESI, PUSH EDI"
+  },
+  "branch": {
+    "probe": "call 0x00526430 with ECX = this+0xc8, no stack argument, result read as a byte",
+    "fallback": "when the probe is zero, call 0x004b1cc0 with ECX = records and three stack arguments pushed in the order 0x004ad73b, 0x004ad73f and 0x004ad743, so the first stack word is this+0xc8, the second is this+0xcc and the third is the byte MOVZX ed from [EBP-0x6b] at 0x004ad737, then leave through the shared epilogue at 0x004ada2e without sizing the records",
+    "expand": "otherwise size the records at 0x004ad76f, then loop over the list from 0x004ad7a3 to 0x004ada29"
+  },
+  "fallback_call": {
+    "receiver": "ECX = [EBP+8], the records argument, loaded at 0x004ad744",
+    "pushes_in_order": [
+      "0x004ad73b PUSH EDX, where EDX was zero extended at 0x004ad737 from BYTE PTR [EBP-0x6b]",
+      "0x004ad73f PUSH EAX, where EAX was loaded at 0x004ad71f from this+0xcc and spilled at 0x004ad725",
+      "0x004ad743 PUSH ECX, where ECX was loaded at 0x004ad72e from this+0xc8 and spilled at 0x004ad734"
+    ],
+    "stack_arguments": [
+      "arg1, the last push, is this+0xc8, the head of the range triple",
+      "arg2 is this+0xcc, the second word of the same range triple, and not this+0xd4",
+      "arg3 is the byte at frame slot [EBP-0x6b]"
+    ],
+    "uninitialised_third_argument": "the 223 instruction body of 0x004ad6f0 was scanned for any write to [EBP-0x6b]; there is none, so the slot is never initialised and arg3 carries an indeterminate byte",
+    "port_cleanup": "0x004b1cc0 ends at 0x004b1f4d with RET 0xc, so it is a three word callee cleaned thiscall, and the call site at 0x004ad747 does not adjust the stack afterwards",
+    "model_consequence": "the reconstruction passes records as the receiver, self+0xc8 first, self+0xcc second and an explicitly uninitialised byte third; the tail triple at this+0xd4 is never read on this path"
+  },
+  "loop": {
+    "count": "the four byte distance between this+0x1c and this+0x18, then an arithmetic shift right by two at 0x004ad768, which is a word element count",
+    "stride": "0x18 bytes per destination record",
+    "uninitialised_port_slot": "the 223 instruction body of 0x004ad6f0 was scanned for any write to [EBP-0x58]; the only reference to the slot is the LEA at 0x004ad7f2 that forms arg1, so the slot is never initialised and arg1 of the port points at indeterminate bytes, exactly like [EBP-0x6b] is never written and arg3 of the fallback call carries an indeterminate byte",
+    "per_element": [
+      "read the element pointer from this+0x18 plus four times the index at 0x004ad7c4",
+      "call 0x0044ae00 with ECX = the element and stack arguments (&[EBP-0x58], 2, 1, 0) pushed at 0x004ad7ec..0x004ad7fc, where arg1 is the address of the never initialised frame slot documented in uninitialised_port_slot above, and read the result from the returned pointer",
+      "copy the twelve bytes at offset 0x0c of the returned record to offset 0x0c of the destination, 0x004ad807..0x004ad826",
+      "copy the twelve bytes at offset 0x00 of the returned record to offset 0x00 of the destination, 0x004ad829..0x004ad842",
+      "when bit 10 of the element word at +0xdc8 is set, which the sequence at 0x004ad872..0x004ad880 resolves to word zero offset 0xdc8 mask 0x400, call 0x0041dba0 on the destination base at 0x004ad8e6 and then on the destination base plus 0x0c at 0x004ad910, both with the address of the scalar loaded from 0x013ef54c, which is 1.1",
+      "call 0x00409930 on the stack box at [EBP-0x40] at 0x004ad91b",
+      "copy the three words at element offset 0x48 into the box span at 0x004ad949..0x004ad95c, then set box code bit 0x0004 and bump the box count, 0x004ad95f..0x004ad972",
+      "copy the nine words at element offset 0x60 into the box basis with the nine dword MOVSD.REP at 0x004ad9a5..0x004ad9aa, then set box code bit 0x0002 and bump the box count, 0x004ad9ac..0x004ad9bf",
+      "copy the scalar at element offset 0x1d8 into the box extra at 0x004ad9ec..0x004ad9f4 and bump the box count a third time at 0x004ada09",
+      "call 0x00409dd0 with ECX = the destination record and the box address as its single stack argument at 0x004ada24, then jump back to 0x004ad7a3"
+    ]
+  },
+  "ports": [
+    "0x00526430 thiscall, no stack argument, boolean result in AL",
+    "0x004b1cc0 thiscall, three stack words, callee cleanup RET 0xc",
+    "0x004aff80 thiscall, one stack word",
+    "0x0044ae00 thiscall, four stack words, returns a record pointer",
+    "0x0041dba0 cdecl, two stack words",
+    "0x00409930 thiscall, no stack argument",
+    "0x00409dd0 thiscall, one stack word"
+  ],
+  "constant_013ef54c": {
+    "address": "0x013ef54c",
+    "bytes": "cd cc 8c 3f, little endian 0x3f8ccccd",
+    "value": "1.1",
+    "readers": [
+      "0x004ad8ca MOVSS XMM0, dword ptr [0x013ef54c]",
+      "0x004ad8ef MOVSS XMM0, dword ptr [0x013ef54c]"
+    ],
+    "note": "read_memory at 0x013ef54c returns cd cc 8c 3f, that is 0x3f8ccccd, which is the canonical single precision encoding of 1.1: the mantissa field is 0x0ccccd, that is 838861, and 838861 over 2 raised to the 23 is 0.1; the two readers are 0x004ad8ca and 0x004ad8ef, and each feeds one of the two 0x0041dba0 calls through the stack slots at [EBP-0x5c] and [EBP-0x60]"
+  },
+  "epilogue": {
+    "shared": "0x004ada2e POP EDI, 0x004ada2f POP ESI, 0x004ada30 MOV ESP,EBP, 0x004ada32 POP EBP, 0x004ada33 RET 0x4, reached from the fallback jump at 0x004ad74c and from the loop exit at 0x004ad7b2",
+    "return_width": "none, the function returns no value"
+  },
+  "decompilation_defects_corrected": [
+    "the decompilation calls Math::BoundingBox::ApplyTransform with the local box first and an uninitialised register second; the assembly at 0x004ada15 pushes the box address and loads ECX with the destination record base plus twenty four times the index, so the receiver is the destination and the argument is the box",
+    "the decompilation omits the push and pop of ESI and EDI and therefore loses part of the epilogue"
+  ],
+  "reconstruction": "editor_entry_expand_004ad6f0 in editor_wave11.cpp",
+  "confidence": "high; the branch, the copy order and the box field order were all read from the assembly, and the fallback push order, the never written third argument and the 0x013ef54c bytes were each confirmed against the disassembly and the program bytes"
+}

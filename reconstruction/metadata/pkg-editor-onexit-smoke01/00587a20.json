@@ -1,0 +1,998 @@
+{
+  "schema": "openspore-reconstruction-metadata-1",
+  "package": "PKG-EDITOR-ONEXIT-SMOKE01",
+  "implementer_id": "smoke-01/0x00587a20",
+  "phase": "candidate_source_written",
+  "va": "0x00587a20",
+  "function_address": "0x00587a20",
+  "body": {
+    "entry_address": "0x00587a20",
+    "end_address": "0x0058856a",
+    "status": "modelled_in_full",
+    "describes": "0x00587a20..0x0058856a, the whole committed function body: 2891 bytes, 934 instructions, 167 basic blocks, all reachable from the entry, and no back edge, so the control-flow graph is a DAG and a single ordered statement sequence covers every instruction exactly once.",
+    "instruction_count": 934,
+    "basic_block_count": 167,
+    "back_edges": 0,
+    "reachable_blocks": 167,
+    "unreachable_blocks": 0,
+    "raw_bytes_hex_source": "GhidraMCP /disassemble_function @ http://127.0.0.1:8089, 934 instructions over a contiguous 0x00587a20..0x0058856a span",
+    "address_order_is_not_execution_order": "0x00588223 (XOR EDI,EDI ; JMP 0x00587bd0) and the four else-halves 0x0058822a, 0x0058827b, 0x005882cc and 0x0058831d sit between the blocks that reach them in address order. The reconstruction places each at the point the CFG reaches it.",
+    "mechanics": [
+      "ECX arrives as the hidden receiver and is copied to ESI at 0x00587a26; the body then works entirely off ESI.",
+      "EBX is the constant 0 for the whole body: XOR EBX,EBX at 0x00587a2e is its only definition, POP EBX at 0x00588566 its only other mention.",
+      "EBP is NOT a frame pointer. There is no MOV EBP,ESP. EBP holds the constant 1 from 0x00587aef, is loaded with a pointer at 0x00587be8 and used as a general register until 0x00587c78 restores the constant, and the epilogue's POP EBP restores the caller's. Every frame offset in this body is an ESP displacement.",
+      "EDI is the caller's register: PUSH EDI at 0x00587b61, POP EDI at 0x0058833f, and a scratch register in between.",
+      "162 CALL sites: 77 direct over 54 distinct targets, and 85 indirect through a dword read out of a table at a byte displacement the listing names at each site.",
+      "61 distinct receiver byte offsets, 0x0078..0x05e4, are read or written; every one is declared in the header with an offsetof assertion naming the instruction that touches it."
+    ]
+  },
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "hidden_this": true,
+    "hidden_this_register": "ECX",
+    "receiver": true,
+    "receiver_register": "ECX",
+    "stack_arguments": [],
+    "stack_cleanup_bytes": 0,
+    "stack_cleanup_owner": "caller",
+    "saved_registers": [
+      "EBX",
+      "EBP",
+      "EDI",
+      "ESI"
+    ],
+    "ret_form": "RET",
+    "termination": "RET",
+    "return_type": "void",
+    "return_semantics": "void. The epilogue is POP ESI ; POP EBP ; POP EBX ; ADD ESP,0x44 ; RET: a bare RET with no immediate, and no instruction after the last call reads a return register. The x87 pair at 0x00587b10 (FLD float ptr [ESI+0x4d0]) and 0x00587b1b (FSTP float ptr [ESP]) is balanced -- FSTP pops what FLD pushed -- so nothing is left on the x87 stack, and the value is a 4-byte stack argument, not a result. This DISAGREES with the derived ABI record for this target, which reports return_register ST0 and return_semantics float_or_x87_in_ST0; that reading is a false positive of the linear-sweep inference, produced by the FLD/FSTP pair in the middle of the body, and it is not adopted here.",
+    "return_observation": "Ghidra resolves return_type void (analyze_function_complete, ghidra_function.return_type_resolved true). The derived openspore-abi-inference-1 record for this target abstained (conventions.confidence UNKNOWN, calling_convention null, candidate_conventions __cdecl) and its return claim is contradicted by the balanced FLD/FSTP pair; see conflicts_and_disagreements.",
+    "frame": "SUB ESP,0x44 then PUSH EBX ; PUSH EBP ; PUSH ESI, so 0x50 bytes are reserved in total. There is no frame pointer, so every frame reference is an ESP displacement. With ESP sitting 0xc below the frame base, [ESP+0x10] is the stack object's +0x00, [ESP+0x14] its +0x04, [ESP+0x18] its +0x08, [ESP+0x40] its +0x30 and [ESP+0x48] its +0x38.",
+    "callee_cleanup_proof": "The epilogue's three POPs plus ADD ESP,0x44 are reachable only with ESP at the value the prologue left, and the PUSH EDI / POP EDI pair at 0x00587b61 / 0x0058833f is balanced. Therefore no argument pushed between those two addresses is still on the stack at 0x0058833f, and every indirect call in that window pops its own arguments. That is a proof, not an assumption: it is what rules out the alternative that a callee leaks 4 bytes and that the POP EDI then reads a leaked word.",
+    "convention_evidence": "thiscall is claimed from the machine, not from the oracle: the entry dereferences ECX into ESI at 0x00587a26 before any write to it, pushes no argument for its own entry, and returns with a bare RET. The eight callees ending in RET 0x4 / RET 0x8 need no second convention token because on i386 a thiscall callee already pops its own arguments."
+  },
+  "receiver_layout": {
+    "source_type": "machine-derived from the 934-instruction listing; every offset below is the displacement of a named MOV/CMP/MOVZX/FLD against [ESI+off]",
+    "declared_in": "reconstruction/staging/pkg-editor-onexit-smoke01/editor_onexit_00587a20.hpp",
+    "minimum_receiver_extent_bytes": "0x5e8",
+    "distinct_offsets": 61,
+    "field_count": 59,
+    "fields": [
+      {
+        "offset": "0x0078",
+        "name": "p_078",
+        "type": "void*",
+        "width": 4,
+        "access": "read+clear",
+        "released_via": "pointee table entry at +0x04, no refcount, after preparatory call 0x005de870",
+        "evidence": "0x005881b7, 0x005881cd, 0x005881d0"
+      },
+      {
+        "offset": "0x007c",
+        "name": "p_07c",
+        "type": "void*",
+        "width": 4,
+        "access": "read+clear",
+        "released_via": "table entry at +0x08, after preparatory call 0x0062c910",
+        "evidence": "0x005880b6, 0x005880c9, 0x005880ce"
+      },
+      {
+        "offset": "0x0084",
+        "name": "p_084",
+        "type": "void*",
+        "width": 4,
+        "access": "read only",
+        "released_via": "table entry at +0x134 with argument 0; never cleared",
+        "evidence": "0x005883fb, 0x00588407"
+      },
+      {
+        "offset": "0x008c",
+        "name": "p_08c",
+        "type": "void*",
+        "width": 4,
+        "access": "read only",
+        "released_via": "table entry at +0x134 with argument 0; never cleared",
+        "evidence": "0x00588410, 0x0058841c"
+      },
+      {
+        "offset": "0x0094",
+        "name": "p_094",
+        "type": "void*",
+        "width": 4,
+        "access": "read only",
+        "released_via": "table entry at +0x34 at 0x00587a39, and again at +0x0c with argument 2 at 0x005884a5; also read at +0x58 at 0x00587c38",
+        "evidence": "0x00587a28, 0x00587a34, 0x00587c32, 0x00588494"
+      },
+      {
+        "offset": "0x0098",
+        "name": "p_098",
+        "type": "void*",
+        "width": 4,
+        "access": "read+clear",
+        "released_via": "refcounted: LEA ECX,[EAX+4] makes +4 the block head, count at +0x08, table at +0x04; after 0x004ad280 and 0x004ad330",
+        "evidence": "0x00587c32, 0x00587e00..0x00587e40"
+      },
+      {
+        "offset": "0x009c",
+        "name": "p_09c",
+        "type": "void*",
+        "width": 4,
+        "access": "read+clear",
+        "released_via": "identical to +0x98",
+        "evidence": "0x00587e42..0x00587e82"
+      },
+      {
+        "offset": "0x00a0",
+        "name": "p_0a0",
+        "type": "void*",
+        "width": 4,
+        "access": "read+clear",
+        "released_via": "weak teardown: table at *[p] entry +0x16c with (p,0), then count at p+0x40, then table at p+0x00 entry +0x170 with (p,(p[0x04]>>31)&1)",
+        "evidence": "0x005881ee..0x00588246, else half at 0x0058822a"
+      },
+      {
+        "offset": "0x00a4",
+        "name": "p_0a4",
+        "type": "void*",
+        "width": 4,
+        "access": "read+clear",
+        "released_via": "as +0xa0",
+        "evidence": "0x00588246..0x00588297, else half at 0x0058827b"
+      },
+      {
+        "offset": "0x00a8",
+        "name": "p_0a8",
+        "type": "void*",
+        "width": 4,
+        "access": "read+clear",
+        "released_via": "as +0xa0",
+        "evidence": "0x00588297..0x005882e8, else half at 0x005882cc"
+      },
+      {
+        "offset": "0x00ac",
+        "name": "p_0ac",
+        "type": "void*",
+        "width": 4,
+        "access": "read+clear",
+        "released_via": "as +0xa0",
+        "evidence": "0x005882e8..0x00588339, else half at 0x0058831d"
+      },
+      {
+        "offset": "0x00d0",
+        "name": "p_0d0",
+        "type": "void*",
+        "width": 4,
+        "access": "read+clear",
+        "released_via": "table entry at +0x08, no preparatory call",
+        "evidence": "0x005883ae, 0x005883b8, 0x005883c0"
+      },
+      {
+        "offset": "0x00d4",
+        "name": "p_0d4",
+        "type": "void*",
+        "width": 4,
+        "access": "read+clear",
+        "released_via": "bit 1 of p[0xdc8] gates 0x00573d70 and 0x0043a9a0, then table entry at +0x08; also compared by identity against 0x0047e6c0's result",
+        "evidence": "0x00587cd9, 0x00587ce3, 0x00587cf1, 0x00587d18"
+      },
+      {
+        "offset": "0x00e4",
+        "name": "p_0e4",
+        "type": "void*",
+        "width": 4,
+        "access": "read+clear",
+        "released_via": "read at 0x00587cef for the identity test, released at 0x005881ec through table entry +0x04",
+        "evidence": "0x00587cef, 0x005881d7, 0x005881e1, 0x005881e9"
+      },
+      {
+        "offset": "0x00e8",
+        "name": "b_0e8",
+        "type": "Byte",
+        "width": 1,
+        "access": "read+clear",
+        "released_via": "cleared to 0 when non-zero, no call",
+        "evidence": "0x00587d2f, 0x00587d37"
+      },
+      {
+        "offset": "0x00e9",
+        "name": "b_0e9",
+        "type": "Byte",
+        "width": 1,
+        "access": "read+clear",
+        "released_via": "cleared to 0 after a call to 0x005772b0",
+        "evidence": "0x00587d3d, 0x00587d45, 0x00587d4c"
+      },
+      {
+        "offset": "0x0144",
+        "name": "b_144",
+        "type": "Byte",
+        "width": 1,
+        "access": "read",
+        "released_via": "MOVZX, pushed as an argument to 0x0067c420",
+        "evidence": "0x00587ae8"
+      },
+      {
+        "offset": "0x0148",
+        "name": "p_148",
+        "type": "void*",
+        "width": 4,
+        "access": "read+clear",
+        "released_via": "table entries at +0x30 then +0x04, with a re-test between",
+        "evidence": "0x0058836e, 0x00588392, 0x005883ac"
+      },
+      {
+        "offset": "0x014c",
+        "name": "p_14c",
+        "type": "void*",
+        "width": 4,
+        "access": "read+clear",
+        "released_via": "table entry at +0x08 after preparatory call 0x005d31b0",
+        "evidence": "0x00587e84, 0x00587e9d, 0x00587ea5"
+      },
+      {
+        "offset": "0x0150",
+        "name": "p_150",
+        "type": "void*",
+        "width": 4,
+        "access": "read+clear",
+        "released_via": "table entry at +0x04 after preparatory call 0x004c4eb0",
+        "evidence": "0x00587eaa, 0x00587ec3, 0x00587ecb"
+      },
+      {
+        "offset": "0x0154",
+        "name": "p_154",
+        "type": "void*",
+        "width": 4,
+        "access": "read+clear",
+        "released_via": "as +0x150",
+        "evidence": "0x00587ed0, 0x00587ee9, 0x00587ef1"
+      },
+      {
+        "offset": "0x01ac",
+        "name": "p_1ac",
+        "type": "void*",
+        "width": 4,
+        "access": "read only",
+        "released_via": "pushed as arg0 of table entry +0x140 on a fetched manager, with (0, 1)",
+        "evidence": "0x00587c9f, 0x00587cb3, 0x00587cc3"
+      },
+      {
+        "offset": "0x01cc",
+        "name": "p_1cc",
+        "type": "void*",
+        "width": 4,
+        "access": "read+clear",
+        "released_via": "drives the 0x00587b93 allocating block; released through table entry +0x08 at 0x00587c6d",
+        "evidence": "0x00587b93, 0x00587bd0, 0x00587c58, 0x00587c62"
+      },
+      {
+        "offset": "0x020e",
+        "name": "b_20e",
+        "type": "Byte",
+        "width": 1,
+        "access": "write only",
+        "released_via": "cleared to 0",
+        "evidence": "0x00587dda"
+      },
+      {
+        "offset": "0x0294",
+        "name": "p_294",
+        "type": "void*",
+        "width": 4,
+        "access": "read+clear",
+        "released_via": "table entries at +0x28(0), then +0x24 with NO re-test, then +0x04",
+        "evidence": "0x005883c5, 0x005883d1, 0x005883df, 0x005883ee"
+      },
+      {
+        "offset": "0x029c",
+        "name": "p_29c",
+        "type": "void*",
+        "width": 4,
+        "access": "read+clear",
+        "released_via": "table entry at +0x04 after preparatory call 0x004b27c0",
+        "evidence": "0x005880d3, 0x005880ec, 0x005880f4"
+      },
+      {
+        "offset": "0x02a0",
+        "name": "p_2a0",
+        "type": "void*",
+        "width": 4,
+        "access": "read+clear",
+        "released_via": "as +0x29c",
+        "evidence": "0x005880f9, 0x00588112, 0x0058811a"
+      },
+      {
+        "offset": "0x02a4",
+        "name": "p_2a4",
+        "type": "void*",
+        "width": 4,
+        "access": "read+clear",
+        "released_via": "table entries at +0x18 then +0x04, with a re-test between",
+        "evidence": "0x00587ff6, 0x00588002, 0x00588019"
+      },
+      {
+        "offset": "0x02b0",
+        "name": "b_2b0",
+        "type": "Byte",
+        "width": 1,
+        "access": "write only",
+        "released_via": "cleared to 0",
+        "evidence": "0x00587a4f"
+      },
+      {
+        "offset": "0x0350",
+        "name": "p_350",
+        "type": "void*",
+        "width": 4,
+        "access": "read+clear",
+        "released_via": "table entry at +0x0c after preparatory call 0x004581d0 -- the only release in this body through +0x0c",
+        "evidence": "0x0058801e, 0x00588037, 0x0058803f"
+      },
+      {
+        "offset": "0x0354",
+        "name": "p_354",
+        "type": "void*",
+        "width": 4,
+        "access": "read+clear",
+        "released_via": "table entry at +0x04 after preparatory call 0x00ed0660",
+        "evidence": "0x00588044, 0x0058805d, 0x00588065"
+      },
+      {
+        "offset": "0x0358",
+        "name": "p_358",
+        "type": "void*",
+        "width": 4,
+        "access": "read+clear",
+        "released_via": "table entry at +0x04 after preparatory call 0x005bfb90",
+        "evidence": "0x00588090, 0x005880a9, 0x005880b1"
+      },
+      {
+        "offset": "0x035c",
+        "name": "p_35c",
+        "type": "void*",
+        "width": 4,
+        "access": "read+clear",
+        "released_via": "table entry at +0x04 after preparatory call 0x0059a3b0",
+        "evidence": "0x0058806a, 0x00588083, 0x0058808b"
+      },
+      {
+        "offset": "0x0360",
+        "name": "p_360",
+        "type": "void*",
+        "width": 4,
+        "access": "read+clear",
+        "released_via": "refcounted with the count at pointee+0x04 and the table at +0x00, after preparatory call 0x0059c640",
+        "evidence": "0x00588339, 0x00588353, 0x00588359, 0x0058836c"
+      },
+      {
+        "offset": "0x0364",
+        "name": "w_364",
+        "type": "Dword",
+        "width": 4,
+        "access": "write only",
+        "released_via": "cleared to 0 unconditionally",
+        "evidence": "0x00588380"
+      },
+      {
+        "offset": "0x0368",
+        "name": "w_368",
+        "type": "Dword",
+        "width": 4,
+        "access": "write only",
+        "released_via": "cleared to 0 unconditionally",
+        "evidence": "0x00588386"
+      },
+      {
+        "offset": "0x0380",
+        "name": "p_380",
+        "type": "void*",
+        "width": 4,
+        "access": "read+clear",
+        "released_via": "table entry at +0x08, no preparatory call",
+        "evidence": "0x00587ac5, 0x00587acf, 0x00587ad7"
+      },
+      {
+        "offset": "0x0384",
+        "name": "b_384",
+        "type": "Byte",
+        "width": 1,
+        "access": "write only",
+        "released_via": "cleared to 0 unconditionally",
+        "evidence": "0x0058837a"
+      },
+      {
+        "offset": "0x0385",
+        "name": "b_385",
+        "type": "Byte",
+        "width": 1,
+        "access": "write only",
+        "released_via": "cleared to 0 unconditionally",
+        "evidence": "0x00588374"
+      },
+      {
+        "offset": "0x03b8",
+        "name": "p_3b8",
+        "type": "void*",
+        "width": 4,
+        "access": "read+clear",
+        "released_via": "table entry at +0x08 after preparatory call 0x005c5c20",
+        "evidence": "0x00588145, 0x0058815e, 0x00588166"
+      },
+      {
+        "offset": "0x03bc",
+        "name": "p_3bc",
+        "type": "void*",
+        "width": 4,
+        "access": "read+clear",
+        "released_via": "table entry at +0x04 after preparatory call 0x005cba90",
+        "evidence": "0x0058811f, 0x00588138, 0x00588140"
+      },
+      {
+        "offset": "0x03c0",
+        "name": "p_3c0",
+        "type": "void*",
+        "width": 4,
+        "access": "read+clear",
+        "released_via": "table entry at +0x08 after preparatory call 0x005c5c20",
+        "evidence": "0x00588191, 0x005881aa, 0x005881b2"
+      },
+      {
+        "offset": "0x03c4",
+        "name": "p_3c4",
+        "type": "void*",
+        "width": 4,
+        "access": "read+clear",
+        "released_via": "table entry at +0x04 after preparatory call 0x005cba90",
+        "evidence": "0x0058816b, 0x00588184, 0x0058818c"
+      },
+      {
+        "offset": "0x0438",
+        "name": "u_438",
+        "type": "U64",
+        "width": 8,
+        "access": "read only",
+        "released_via": "the 64-bit subtrahend at 0x00588517 (SUB EAX) and 0x00588522 (SBB EDX)",
+        "evidence": "0x00588517, 0x00588522"
+      },
+      {
+        "offset": "0x0448",
+        "name": "u_448",
+        "type": "U64",
+        "width": 8,
+        "access": "read+write",
+        "released_via": "the 64-bit accumulator at 0x00588528 (ADD EAX) and 0x0058852e (ADC EDX)",
+        "evidence": "0x00588528, 0x0058852e"
+      },
+      {
+        "offset": "0x0450",
+        "name": "w_450",
+        "type": "Dword",
+        "width": 4,
+        "access": "read only",
+        "released_via": "arg1 of 0x006a1880, which compares it unsigned against its own [ESI+0x38], so it is a count and not a pointer",
+        "evidence": "0x00587a3b, 0x00587a47"
+      },
+      {
+        "offset": "0x0494",
+        "name": "p_494",
+        "type": "void*",
+        "width": 4,
+        "access": "read+clear",
+        "released_via": "table entries at +0x24 then +0x04, with a re-test between",
+        "evidence": "0x00587f2e, 0x00587f3d, 0x00587f54"
+      },
+      {
+        "offset": "0x0498",
+        "name": "p_498",
+        "type": "void*",
+        "width": 4,
+        "access": "read+clear",
+        "released_via": "as +0x494",
+        "evidence": "0x00587f56, 0x00587f65, 0x00587f7c"
+      },
+      {
+        "offset": "0x049c",
+        "name": "p_49c",
+        "type": "void*",
+        "width": 4,
+        "access": "read+clear",
+        "released_via": "as +0x494",
+        "evidence": "0x00587f7e, 0x00587f8d, 0x00587fa4"
+      },
+      {
+        "offset": "0x04a0",
+        "name": "p_4a0",
+        "type": "void*",
+        "width": 4,
+        "access": "read+clear",
+        "released_via": "as +0x494",
+        "evidence": "0x00587fa6, 0x00587fb5, 0x00587fcc"
+      },
+      {
+        "offset": "0x04a4",
+        "name": "p_4a4",
+        "type": "void*",
+        "width": 4,
+        "access": "read+clear",
+        "released_via": "as +0x494",
+        "evidence": "0x00587fce, 0x00587fdd, 0x00587ff4"
+      },
+      {
+        "offset": "0x04b6",
+        "name": "b_4b6",
+        "type": "Byte",
+        "width": 1,
+        "access": "read only",
+        "released_via": "copied to +0xb9 of two fetched objects",
+        "evidence": "0x00587f06, 0x00587f22"
+      },
+      {
+        "offset": "0x04bc",
+        "name": "p_4bc",
+        "type": "void*",
+        "width": 4,
+        "access": "read+clear",
+        "released_via": "table entry at +0x08, no preparatory call",
+        "evidence": "0x00587b2a, 0x00587b34, 0x00587b3c"
+      },
+      {
+        "offset": "0x04d0",
+        "name": "f_4d0",
+        "type": "float",
+        "width": 4,
+        "access": "read only",
+        "released_via": "FLD, then FSTP to a 4-byte stack argument: argument of the table entry at +0x58 and of 0x007c53d0",
+        "evidence": "0x00587b10, 0x00587b1b"
+      },
+      {
+        "offset": "0x05d4",
+        "name": "p_5d4",
+        "type": "void*",
+        "width": 4,
+        "access": "read+clear",
+        "released_via": "guard for the 5-argument 0x00571db0 call; cleared after the five words are pushed and before the call. 0x00571db0 never reads its first argument, so this is a guard only",
+        "evidence": "0x005884c4, 0x005884eb"
+      },
+      {
+        "offset": "0x05d8",
+        "name": "p_5d8",
+        "type": "void*",
+        "width": 4,
+        "access": "read only",
+        "released_via": "arg1 of 0x00571db0, which reads it as an object with a table and calls its entry at +0x2c",
+        "evidence": "0x005884d4, 0x005884e1"
+      },
+      {
+        "offset": "0x05dc",
+        "name": "w_5dc",
+        "type": "Dword",
+        "width": 4,
+        "access": "read only",
+        "released_via": "arg2 of 0x00571db0, which compares it unsigned and loops while ESI is below it, so it is a count",
+        "evidence": "0x005884db, 0x005884e2"
+      },
+      {
+        "offset": "0x05e0",
+        "name": "p_5e0",
+        "type": "void*",
+        "width": 4,
+        "access": "read only",
+        "released_via": "arg3 of 0x00571db0, indexed as [base + i*4]",
+        "evidence": "0x005884d4, 0x005884e8"
+      },
+      {
+        "offset": "0x05e4",
+        "name": "w_5e4",
+        "type": "Dword",
+        "width": 4,
+        "access": "read only",
+        "released_via": "arg4 of 0x00571db0, pushed straight through to its callee; its role is not resolvable from that function",
+        "evidence": "0x005884ce, 0x005884da"
+      }
+    ],
+    "type_identity_note": "SporeApp.exe 3.1.0.22 carries no MSVC RTTI (see AGENTS.md), so nothing in the binary corroborates a class layout for the receiver. Ghidra types the parameter `cEditor *` from the SDK symbol alone. The struct is therefore named OpaqueEditor, every field is named by its offset rather than by a meaning, and no field is given a semantic name. Bytes outside a declared field are unmodelled padding and nothing at or above 0x05e8 is claimed."
+  },
+  "locals": [
+    {
+      "name": "app_state",
+      "type": "LocalAppState",
+      "extent": "0x40 bytes at the frame base",
+      "note": "The only stack object this body builds. Five words are written to it before the call at 0x00587a95 and a sixth by that call's result at 0x00587a97. 0x00421cf0 tears it down at 0x0058855f."
+    }
+  ],
+  "globals": [
+    {
+      "address": "0x015fd918",
+      "access": "read",
+      "evidence": "0x00587a41, 0x00587b49",
+      "observation": "Loaded twice: as the receiver of 0x006a1880, and as the base of the two-level read +0x3c then +0x118."
+    },
+    {
+      "address": "0x016f6ee0",
+      "access": "read",
+      "evidence": "0x00587ab4",
+      "observation": "The word at this address is dereferenced and ANDed with 0xfffffffe, clearing bit 0 of the pointee. This is the only bit operation on a global in the body."
+    },
+    {
+      "address": "0x015eebec",
+      "access": "read",
+      "evidence": "0x00587b83",
+      "observation": "The word at this address is loaded and pushed as the single argument of a table entry at +0x20."
+    }
+  ],
+  "indirect_globals_note": "Thirteen further global words are reached, but never by a `MOV reg,dword ptr [addr]` in this body. They are read inside the two-instruction getters that are themselves direct callees: 0x015fcc4c (0x0067caa0), 0x015fcc50 (0x0067cab0), 0x015fcc54 (0x0067cac0), 0x015fcc58 (0x0067cad0), 0x015fcc60 (0x0067caf0), 0x015fd890 (0x0067dcc0), 0x015fd8a4 (0x0067de20), 0x015fd8b0 (0x0067dd10), 0x015fd8bc (0x0067dd40), 0x015fd8c0 (0x0067dd50), 0x015fd8cc (0x0067dd80), 0x015fd8e8 (0x0067ddd0), 0x015fd8f8 (0x0067de40), plus 0x015d0c08 (0x00401020) and 0x015d0c14 (0x00401050) and 0x0166d9f4 (0x00a206f0). Each getter is `MOV EAX,[addr] ; RET` and is 2 instructions long, so the address is a property of the callee, not of this call site. They are listed here rather than modelled, because the body does not name them.",
+  "vtable_reference_evidence": {
+    "note": "The canonical record withdraws `vtables` as an oracle: it associates vtable:0x013f57f8 with this target while the xref export records vtable_reference_count 0, so the two contradict each other and neither is independent. No table address is therefore claimed as a dispatch target here.",
+    "table_addresses_read_by_the_body": [
+      "0x013eb844",
+      "0x013eb90c",
+      "0x013eb918"
+    ],
+    "table_address_evidence": "0x013eb844 and 0x013eb90c are the two words the body stores into its stack object (0x00587a72, 0x00587a89) and 0x013eb918 is the word 0x0040fdc0 and 0x0040fd90 store into themselves. Their contents were read to identify the object, not to claim a class: 0x013eb844 holds {0x004230e0, 0x00432a50, 0x00404f90} and 0x013eb90c holds {0x0040fdc0, 0x00432a50, 0x00404f90, 0x0040fd90, 0x011e06d0, 0x011e06d0, 0x0042fbc0, 0x00461290}, so the two share entries 0x04 and 0x08 and differ at 0x00.",
+    "string_evidence": "0x013eb430 is the six bytes `45 64 69 74 6f 72 00 00`, i.e. \"Editor\", and is the second argument of the 6-argument 0x00f473a0 at 0x00587ba3. 0x013f5ca0 is the six bytes `65 64 69 74 6f 72 00 00`, i.e. \"editor\", and is the single argument of the table entry at +0x1c at 0x00587b6e."
+  },
+  "dispatch": {
+    "indirect_sites": 85,
+    "distinct_slot_offsets": 24,
+    "slot_offsets": [
+      "0x00",
+      "0x04",
+      "0x08",
+      "0x0c",
+      "0x14",
+      "0x18",
+      "0x1c",
+      "0x20",
+      "0x24",
+      "0x28",
+      "0x2c",
+      "0x30",
+      "0x34",
+      "0x38",
+      "0x40",
+      "0x44",
+      "0x4c",
+      "0x50",
+      "0x58",
+      "0x98",
+      "0x134",
+      "0x140",
+      "0x16c",
+      "0x170"
+    ],
+    "slot_arity_histogram": {
+      "0": 49,
+      "1": 20,
+      "2": 13,
+      "3": 2,
+      "4": 1
+    },
+    "opaque_slots": "none. Every one of the 85 sites is reproduced with the byte displacement the listing reads at that site, so the source asserts a concrete table offset for every dispatch and leaves no slot unresolved.",
+    "slot_arity_note": "Counted per site from the listing, not by a linear push scan: a scan that walks back to the previous CALL reports arity 3 for 0x00587a39 because it crosses the prologue's own PUSH EBX / PUSH EBP / PUSH ESI, and it cannot see that FSTP float ptr [ESP] at 0x00587b1b overwrites the dead PUSH ECX at 0x00587b18. Both are corrected here against the instruction text."
+  },
+  "call_graph": {
+    "direct_sites": 77,
+    "distinct_direct_callees": 54,
+    "all_callees": [
+      "0x00401020",
+      "0x00401050",
+      "0x00421cf0",
+      "0x0043a9a0",
+      "0x004581d0",
+      "0x0045ab30",
+      "0x0047e6c0",
+      "0x004ad280",
+      "0x004ad330",
+      "0x004b27c0",
+      "0x004c4eb0",
+      "0x00571db0",
+      "0x00573c00",
+      "0x00573d70",
+      "0x005772b0",
+      "0x00579c80",
+      "0x00587270",
+      "0x0059a3b0",
+      "0x0059c640",
+      "0x005bfb90",
+      "0x005c5c20",
+      "0x005cba90",
+      "0x005d31b0",
+      "0x005dbb50",
+      "0x005dbb60",
+      "0x005de870",
+      "0x0062c910",
+      "0x0067a120",
+      "0x0067c420",
+      "0x0067ca40",
+      "0x0067caa0",
+      "0x0067cab0",
+      "0x0067cac0",
+      "0x0067cad0",
+      "0x0067caf0",
+      "0x0067dcc0",
+      "0x0067dd10",
+      "0x0067dd40",
+      "0x0067dd50",
+      "0x0067dd80",
+      "0x0067ddd0",
+      "0x0067de20",
+      "0x0067de40",
+      "0x006a1880",
+      "0x006c10e0",
+      "0x00777ae0",
+      "0x007c53d0",
+      "0x00801920",
+      "0x00801bb0",
+      "0x008130a0",
+      "0x00a206f0",
+      "0x00ed0660",
+      "0x00f473a0",
+      "0x0113ae10"
+    ],
+    "unique_direct_callers": 0,
+    "function_code_xrefs": 0,
+    "caller_finding": "The xref export records no call edge INTO 0x00587a20. That is expected for a method reached only through a table and is not evidence that it is unreachable; the record's fan_in is 0 and its `callers` list is empty. The dispatch that reaches it is not a direct call and so is not in this export.",
+    "callee_set_agreement": "The 54 direct call targets in the listing and the 54 address-named callees in the reconstruction are the same set, compared programmatically with no difference in either direction."
+  },
+  "decompiler_corrections": [
+    {
+      "claim": "Ghidra decompiles 0x00587a20 as calling App::IAppSystem::Get and then `(*pIVar5->_vftable0->Init)((IAppSystem *)0x60c874f, ...)`, reading the pushed literals as the receiver.",
+      "correction": "0x0067dcc0 is `MOV EAX,[0x015fd890] ; RET`: it fetches a singleton and returns it in EAX, and that value is moved into ECX as the receiver (0x00587ab0). The literals 0x60c874f, 0x30c11c7, 0x13eb844, 0x13eb90c and 0x13eb430 are stack arguments, not receivers. Ghidra's `(IAppSystem *)0x60c874f` and `(IAppSystem *)0x30c11c7` are decompiler artefacts of a call whose arguments are pushed before the receiver is known.",
+      "evidence": "0x0067dcc0 disassembly; 0x00587a9b, 0x00587ab0, 0x00587c42, 0x00587c4c"
+    },
+    {
+      "claim": "Ghidra emits `LOCK(); ...; UNLOCK();` around 0x00587a6a and `FUN_0067cac0(uVar6,1); FUN_0067c420(uVar6,uVar16)` with the constant 1 shown as an argument of 0x0067cac0.",
+      "correction": "There is no LOCK-prefixed instruction anywhere in the body. The real instruction is `XCHG dword ptr [EDX],ECX` at 0x00587a80, which Ghidra renders as a LOCK pair. And 0x0067cac0 is `MOV EAX,[0x015fcc54] ; RET`: it takes no argument. The two words pushed at 0x00587af4 and 0x00587af5 are the arguments of 0x0067c420, which follows and ends in RET 0x8.",
+      "evidence": "0x00587a7a..0x00587a80; 0x0067cac0 and 0x0067c420 epilogues; zero LOCK-prefixed instructions in the 934"
+    },
+    {
+      "claim": "Ghidra emits `FUN_007c53d0(unaff_ESI)` and prints the +0x4d0 float as a stale register.",
+      "correction": "The float is the argument. `FLD float ptr [ESI+0x4d0]` at 0x00587b10 loads it, `PUSH ECX` at 0x00587b18 pushes a dead word that `FSTP float ptr [ESP]` at 0x00587b1b immediately overwrites, and `CALL 0x007c53d0` at 0x00587b25 is a stdcall of one argument (RET 0x4). So 0x007c53d0 receives the float, and Ghidra's `unaff_ESI` is the dead push, not the value. The same shape at 0x00587b73 would make Ghidra print the same artefact; the two differ because the table entry at +0x58 sits between them.",
+      "evidence": "0x00587b10, 0x00587b18, 0x00587b1b, 0x00587b25; 0x007c53d0 ends in RET 0x4"
+    },
+    {
+      "claim": "Ghidra folds the two 0x00a206f0 blocks at 0x00587d52 and 0x00587d96 into one 5-call sequence and keeps only the first block's second argument (0x1d6253c0).",
+      "correction": "They are two separate 4-call blocks, each guarded by its own fetch of 0x0166d9f4, and the second argument of the +0x40 slot differs between them: 0x1d6253c0 in the first and 0xb07c3bbf in the second. The reconstruction keeps both.",
+      "evidence": "0x00587d52..0x00587d94 and 0x00587d96..0x00587dd8"
+    },
+    {
+      "claim": "Ghidra emits the same three-slot shape for the +0x294 member at 0x005883c5 and for the six +0x494..+0x4a4 members at 0x00587f2e, with a null re-test between the two slots in both.",
+      "correction": "The +0x294 member has NO re-test: 0x005883dd reloads it and 0x005883df dereferences it with no CMP, so a slot 0x28 that clears it faults at 0x005883df. The six +0x494-family members do re-test (0x00587f45, 0x00587f6d, 0x00587f95, 0x00587fbd, 0x00587fe5). The listing distinguishes the two shapes; the decompilation does not.",
+      "evidence": "0x005883d4..0x005883e2 against 0x00587f3d..0x00587f54"
+    },
+    {
+      "claim": "Ghidra reports the return as `float_or_x87_in_ST0` in the derived ABI record and warns 'Unknown calling convention' in the decompilation.",
+      "correction": "The x87 pair is balanced and is a stack argument, not a result; the function returns void through a bare RET. The convention warning is Ghidra's own: the body pushes its callees' arguments and this function's entry takes none, so the parameter count is 1 (the ECX receiver) and the convention is thiscall. See observed_original_abi.",
+      "evidence": "0x00587b10 and 0x00587b1b; epilogue 0x00588564..0x0058856a"
+    },
+    {
+      "claim": "Ghidra prints `in_stack_ffffffbc`, `unaff_BP` and `unaff_BL` as arguments of the cIDGenerator table entry at 0x00587b93.",
+      "correction": "Those are register and stack temporaries Ghidra could not tie to a definition. 0x00587b83 pushes exactly one word, `MOV ECX,dword ptr [0x015eebec]`, and the call at 0x00587b91 has one argument. The surrounding call at 0x00587b6e pushes exactly one word, 0x013f5ca0.",
+      "evidence": "0x00587b83, 0x00587b8e, 0x00587b91; 0x00587b6e"
+    },
+    {
+      "claim": "None -- this entry records a defect found and fixed in the candidate during verification, not in the decompilation.",
+      "correction": "The first draft of this package modelled the table entry at +0x58 (0x00587b21) as taking no argument, reading `MOV EAX,dword ptr [EDX+0x58] ; CALL EAX` on its own. FSTP float ptr [ESP] at 0x00587b1b writes the float into the callee's argument slot, and the absence of an ADD ESP proves the callee pops it, so the entry takes the float. Caught by checking the source against the listing site by site rather than by compiling; compiling cannot see a missing argument to a function-pointer call. The alias is now `using Fn1f = void* (*)(float);`, which also records that the entry's result is the pointer 0x007c53d0 is then given.",
+      "evidence": "0x00587b10, 0x00587b18, 0x00587b1b, 0x00587b21; absence of ADD ESP between 0x00587b21 and 0x00587b23, and the stack balance proof at 0x0058833f"
+    }
+  ],
+  "behaviours_not_smoothed_over": [
+    {
+      "address": "0x00588223",
+      "finding": "Allocation failure writes through a null pointer. When sub_00f473a0 returns 0 the machine runs XOR EDI,EDI ; JMP 0x00587bd0, and the block at 0x00587bd0 stores to [EDI+0x0c] with no re-test, i.e. to address 0x0000000c. The reconstruction reproduces the unconditional store rather than adding a guard.",
+      "reproduced": true
+    },
+    {
+      "address": "0x005883df",
+      "finding": "The +0x294 member's second table entry runs with no null re-test, so a first entry that clears the member faults. The six +0x494-family members do re-test; this one does not.",
+      "reproduced": true
+    },
+    {
+      "address": "0x005884ce",
+      "finding": "The +0x5d4 word is cleared after the five arguments are pushed and before the call, so the callee cannot see it. 0x00571db0 never reads its first argument at all.",
+      "reproduced": true
+    },
+    {
+      "address": "0x0058836e",
+      "finding": "The load of the +0x148 member precedes four unconditional stores (+0x385, +0x384, +0x364, +0x368), so the stores run even when the member is null and the loaded value is the pre-store one.",
+      "reproduced": true
+    },
+    {
+      "address": "0x00587c8f",
+      "finding": "The manager singleton is fetched twice and dereferenced twice (0x0067cad0 ; 0x006c10e0 at 0x00587c96 and again at 0x00587cae), so the two reads are not guaranteed to agree if the singleton changes between them.",
+      "reproduced": true
+    },
+    {
+      "address": "0x00587e20",
+      "finding": "The +0x98 and +0x9c refcount tests are `CMP ECX,EBP ; JLE`, i.e. signed, so a count at or below 1 -- including a negative one -- takes the release branch. The four +0xa0-family counts use the same signed JLE.",
+      "reproduced": true
+    },
+    {
+      "address": "0x00587b02",
+      "finding": "The +0x4d0 float is loaded with FLD and stored with FSTP around a table call, so the x87 stack is balanced across the call and no x87 register carries across it. Nothing in the body leaves a value on the x87 stack.",
+      "reproduced": true
+    }
+  ],
+  "source_files": [
+    "reconstruction/staging/pkg-editor-onexit-smoke01/editor_onexit_00587a20.hpp",
+    "reconstruction/staging/pkg-editor-onexit-smoke01/editor_onexit_00587a20.cpp"
+  ],
+  "normalized_symbol": "Editors_cEditor_OnExit_00587a20",
+  "declaration": "extern \"C\" void __thiscall Editors_cEditor_OnExit_00587a20(OpaqueEditor* self)",
+  "symbol_must_embed_va": "00587a20",
+  "evidence": [
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x00587a20",
+      "observation": "934 instructions over a contiguous 0x00587a20..0x0058856a span, 2891 bytes, no gaps larger than 15 bytes. This is the listing every offset, slot, literal and call site in this package is read from."
+    },
+    {
+      "tool": "ghidra_get_function_by_address",
+      "address": "0x00587a20",
+      "observation": "body_start 0x00587a20, body_end 0x0058856a, body_span_bytes 2891, return_type void, parameter_count 1, ghidra_calling_convention null, namespace derived_from_symbol_name. binary_sha256 25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e."
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x00587a20",
+      "observation": "The committed .spore-analysis/ghidra-exports/decompiled_sdk/Editors__cEditor__OnExit.c. Used as evidence, not as truth: seven of its readings are contradicted by the listing and are listed under decompiler_corrections."
+    },
+    {
+      "tool": "local analysis",
+      "observation": "Basic blocks and edges recomputed from the listing: 167 blocks, all 167 reachable from the entry, zero back edges. The CFG is a DAG, which is what makes a single ordered statement sequence a complete transliteration."
+    },
+    {
+      "tool": "ghidra_read_memory",
+      "address": "0x013eb430",
+      "observation": "45 64 69 74 6f 72 00 00 -- the string \"Editor\", the second argument of the 6-argument 0x00f473a0 at 0x00587ba3."
+    },
+    {
+      "tool": "ghidra_read_memory",
+      "address": "0x013f5ca0",
+      "observation": "65 64 69 74 6f 72 00 00 -- the string \"editor\", the single argument of the table entry at +0x1c at 0x00587b6e."
+    },
+    {
+      "tool": "ghidra_read_memory",
+      "address": "0x013eb844",
+      "observation": "e0 30 42 00 50 2a 43 00 90 4f 40 00, i.e. {0x004230e0, 0x00432a50, 0x00404f90}, followed at 0x013eb850 by the ASCII \"queuing %ls for bake\". A three-entry table."
+    },
+    {
+      "tool": "ghidra_read_memory",
+      "address": "0x013eb90c",
+      "observation": "c0 fd 40 00 50 2a 43 00 90 4f 40 00 90 fd 40 00 ..., i.e. {0x0040fdc0, 0x00432a50, 0x00404f90, 0x0040fd90, ...}. Shares entries 0x04 and 0x08 with 0x013eb844 and differs at 0x00."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x00432a50",
+      "observation": "XADD.LOCK dword ptr [EAX+4],1 ; INC ECX ; return -- a 13-instruction thiscall of one receiver, one dword at +0x04, no stack argument."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x00404f90",
+      "observation": "XADD.LOCK dword ptr [EAX+4],-1 ; on zero, XCHG the count to 1 and call the receiver's table entry 0x00 -- the release counterpart of 0x00432a50. Together they fix the +0x04/+0x08 pair of the stack object as a count and a table."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x0040fdc0",
+      "observation": "Stores 0x13eb90c then 0x13eb918 into the receiver and ends in RET 0x4. A deleting destructor for the type whose table is 0x013eb90c, re-pointing to the base table before the optional free."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x0040fd90",
+      "observation": "Stores 0x13eb918 into the receiver and ends in RET 0x4. The base-subobject destructor 0x0040fdc0 chains to."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x004230e0",
+      "observation": "Calls 0x00421cf0 on the receiver, then conditionally frees, and ends in RET 0x4. The slot 0x00 entry of the table at 0x013eb844."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x00421cf0",
+      "observation": "40 instructions. Stores 0x13eb844 into the receiver, loops i = 0..0x1f testing bit i of receiver[0x38] and calling the table entry +0x04 of receiver[0x08 + i*8] for each set bit with a non-null pointer, then stores 0x13eb90c and 0x13eb918 and returns with a bare RET. This is what fixes the stack object's extent and why 0x00587a91's zeroing of +0x38 matters."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x00571db0",
+      "observation": "36 instructions. Its prologue is PUSH ECX ; PUSH ESI and it never reloads ECX, so it is a plain __cdecl function of five stack arguments, not a thiscall. arg1 is dereferenced as an object with a table entry at +0x2c, arg2 is compared unsigned and is the loop bound, arg3 is indexed [base + i*4], arg4 is pushed straight through, and arg0 is never read."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x0067cac0",
+      "observation": "MOV EAX,[0x015fcc54] ; RET. Two instructions, no stack argument, ignores ECX. Sixteen callees of this body have this two-instruction shape, which is what fixes them as global getters rather than methods."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x006c10e0",
+      "observation": "MOV EAX,[ECX+0x3c] ; RET. A two-instruction thiscall, so the manager at 0x00587c96 is the word at +0x3c of the 0x015fcc58 singleton."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x006a1880",
+      "observation": "44 instructions with an SEH frame, ending in ADD ESP,0x20 ; RET 0x8. Its prologue makes it a 2-argument callee-popped function, which is what lets 0x00587a47's two pushes stand without an ADD ESP."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x00777ae0",
+      "observation": "29 instructions, bare RET, and it indexes a table at 0x16f65a8 with its first argument read as a word. Its two call sites pass 0x238 and 0x236, so those literals are small indices rather than pointers."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x007c53d0",
+      "observation": "FLD float ptr [0x0153c7a8] ; MOV EAX,[ECX+0x170] ; FMUL ; MOV [EAX+0x6c],1 ; RET 0x4. A one-float-argument callee-popped function, which is what identifies the FSTP'd value as its argument."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x008130a0",
+      "observation": "MOV EAX,[ECX+0x250] ; MOV EDX,[ECX+0x254] ; RET. A thiscall returning 64 bits in EDX:EAX, which is why the accumulate at 0x00588517 is a SUB/SBB pair."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x00579c80",
+      "observation": "21 instructions: MOV EAX,ECX then 20 stores, ending with the table 0x013f56ac and a bare RET. The constructor for the object the 0x00587b93 block builds."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x00f473a0",
+      "observation": "15 instructions reading six stack words at [ESP+0x8]..[ESP+0x18] and forwarding them. A six-argument __cdecl allocator, matching the ADD ESP,0x18 at 0x00587baf."
+    },
+    {
+      "tool": "local analysis",
+      "observation": "Callee epilogues read for all 54 direct targets to fix each one's convention and stack-argument count from the callee rather than from this caller's push sequence: eight end in RET 0x4 or RET 0x8, three are multi-argument __cdecl whose callers clean up, sixteen are two-instruction global getters, and the rest are thiscall with no stack argument."
+    }
+  ],
+  "verification": {
+    "build_command": "g++ -m32 -std=c++17 -Wall -Wextra -Werror -O2 -c reconstruction/staging/pkg-editor-onexit-smoke01/editor_onexit_00587a20.cpp -o /tmp/onexit.o",
+    "optimisation_levels_checked": [
+      "-O0",
+      "-O1",
+      "-O2",
+      "-O3",
+      "-Os"
+    ],
+    "x86_32_build": "PASS -- compiles clean under GCC 16.2.1 with -m32 -Wall -Wextra -Werror at all five optimisation levels checked.",
+    "layout_assertions": "PASS -- 69 static_asserts: 59 offsetof assertions for the receiver fields, 4 for the two 64-bit pairs and their high halves, 5 for the stack object, 5 for the two helper structs. The receiver assertions are generated from the listing rather than typed, so no offset can drift from its evidence without the generator changing.",
+    "emitted_indirect_call_sites": "PASS -- objdump on the -O2 object counts 85 indirect call sites, matching the 85 the listing performs. This is a machine measurement of the candidate, independent of the listing, and it is what settles the factoring difference: release_two_phase is one helper body serving six members with two dispatches each, and release_weak_teardown is one helper body serving four members with two each, so the static site count in the source is 71 where the dynamic count is 85.",
+    "emitted_direct_call_sites": "PASS -- 77 direct call sites, matching the 77 the listing performs, plus the single get_pc_thunk GCC inserts for the absolute address literals in the source.",
+    "callee_set_parity": "PASS -- the 54 direct call targets in the listing and the 54 sub_<va> names in the reconstruction are the same set, compared programmatically: no member missing, no member extra.",
+    "slot_parity": "PASS -- 24 distinct slot displacements in the listing and in the reconstruction, compared as a multiset; every class agrees except slot 0x00, where the reconstruction has 3 static sites to the listing's 4 because the two +0x98-family blocks share one helper. The dynamic count is 4, and objdump on the -O2 object independently reports exactly 85 indirect call sites, matching the listing's 85.",
+    "receiver_offset_parity": "PASS -- all 61 receiver offsets the listing touches are declared, and no offset is declared that the listing does not touch. 0x043c and 0x044c are the high halves of the two 64-bit pairs and are covered by sizeof(U64) == 8 rather than by their own members.",
+    "literal_parity": "PASS -- every hexadecimal literal in the function span, compared numerically against the listing, is present there. Two spellings differ without differing in value: 0x0 for the four slot-0x00 dispatches, which the listing writes as a bare [EAX], and 0xffffffff for the listing's PUSH -0x1. Literals inside static_assert message strings lie outside the function span and are not claims about the body.",
+    "model_test": "NOT_PROVIDED -- a runtime model test would need 54 stubs for the direct callees plus a table-bearing object for each of the 24 slots, which would be a harness larger than the reconstruction it is meant to check. What is testable is the layout, and that is covered at compile time by 69 static_asserts generated from the listing.",
+    "runtime_validation": "NOT_AVAILABLE -- no original-process trace exists in this repository for this target; nothing was run and nothing failed.",
+    "decompiler_corrections_note": "One further defect was found in the candidate itself during the site-by-site comparison and fixed before this record was written: the guard at 0x00587bf2 is `CMP EBP,EAX ; JZ 0x00587c17`, a plain 32-bit compare, and the first draft added an extra `peer+0x94 != 0` to it. That is not the same test: when peer+0x94 is null and created+0x10 is not, the machine still enters the block, the inner `CMP EBP,EBX ; JZ 0x00587c03` skips only the first dispatch, and the null is installed at 0x00587c03 anyway. Both tests are now kept separate. Compiling cannot catch either defect, because a missing argument or a strengthened guard through a function pointer is a legal program; both were caught by comparing the source against the listing site by site."
+  },
+  "confidence": {
+    "body": "HIGH",
+    "control_flow": "HIGH",
+    "call_set": "HIGH",
+    "indirect_dispatch_slots": "HIGH",
+    "receiver_offsets": "HIGH",
+    "literal_set": "HIGH",
+    "calling_convention": "HIGH",
+    "return_type": "HIGH",
+    "frame_layout": "MEDIUM",
+    "callee_argument_roles": "MEDIUM",
+    "field_semantics": "NONE",
+    "receiver_class_identity": "NONE",
+    "runtime_behaviour": "NONE",
+    "frame_layout_note": "The 0x50-byte reservation, the three saved registers and the ESP displacements of the stack object are read directly off the prologue and the five stores. What is not settled is the object's true extent: 0x00421cf0 can address sub-object slots up to receiver+0x100 while the frame leaves 0x40, and nothing in this function distinguishes a callee that never sets a high mask bit from one that writes past this caller's frame. See unresolved_questions."
+  },
+  "unresolved_questions": [
+    "What is the arity of the table entry at +0x44 (0x00587a95)? The listing pushes no argument and the stack object's address is not in a pushed register either: it sits at the callee's third stack-argument position inside this frame, which is only consistent if the callee is variadic or has three or more arguments and pops them. The first two argument words are below the 0x44-byte reservation, in the caller's own frame, and this body never writes them. Callee arity and the values of those two words are both undecidable from this function alone.",
+    "How far does the stack object really extend? 0x00421cf0 can address sub-object slots up to receiver+0x100, but the frame leaves only 0x40 bytes above the object base. The two readings are: the slot 0x44 callee never sets a bit in sub_mask above bit 2, or it writes past this caller's frame. The reconstruction models 0x40 bytes, which is correct under the first reading and not under the second, and nothing in this function distinguishes them.",
+    "What class is the receiver? SporeApp.exe carries no MSVC RTTI, so the `cEditor` name on the Ghidra parameter is the SDK symbol and not a machine-derived type. 61 offsets are pinned; the meaning of none of them is established, and 20 of the members are read as pointers to at least six different pointee layouts (count at +0x04 with table at +0x00, count at +0x08 with table at +0x04, table at +0x04 with no count, count at +0x40 with table at *[p], and the rest plain).",
+    "What are 0x347536b, 0x3475385 and 0x34753a0, and what distinguishes 0x1d6253c0 from 0xb07c3bbf? They are the literals the two 0x00a206f0 blocks push, and 0x013eb850 shows the string `queuing %ls for bake` four bytes past one of this body's tables, so the neighbourhood is a resource/bake queue record. Nothing in this function says what the words address.",
+    "What does bit 1 of p_0d4[0xdc8] mean? It gates both 0x00573d70 and 0x0043a9a0 and nothing else in the body, so it is a one-bit mode flag on that member. Its name and its set/clear sites are outside this function.",
+    "Is 0x015eebec a pointer to a pointer? 0x00587b83 loads the word at that address and pushes it as the argument of a table entry at +0x20. Whether the word is itself a pointer, and what it points at, is not decidable here.",
+    "Does the +0x4d0 float reach both callees? Yes in the reconstruction, and this is a correction of the decompilation rather than a doubt: FSTP overwrites the dead PUSH, so 0x007c53d0 receives the same float the +0x58 entry receives. If the +0x58 entry mutated the receiver in between, the two would still see the same value, because the float was loaded before that call. The open part is only what the two callees do with it.",
+    "The derived ABI record for this target reports return_register ST0 and return_semantics float_or_x87_in_ST0. That is contradicted by the balanced FLD/FSTP pair at 0x00587b10/0x00587b1b and by an epilogue that reads no return register, so it is not adopted; but the record is the oracle the validator compares against, and this package's `void` will be reported as a disagreement rather than a match."
+  ],
+  "blockers": [
+    "No original-process trace exists in this repository, so nothing about this function's runtime behaviour is established. The five conflict-ledger entries that name 0x00587a20 (editor_input_routing, editor_runtime_validation, history_budget_semantics, manipulator_cancel, manipulator_types) all record that their transition contract is not established, and all five remain open: knowledgegraph/research/conflicts/track-c-state-events.json.",
+    "The canonical record associates vtable:0x013f57f8 with this target while the xref export records vtable_reference_count 0 for it, so the two contradict each other and neither is independent of the other. No table is claimed as a dispatch target as a result.",
+    "48 of the 54 direct callees have no name in the SDK and no recovered body in this repository. Their conventions and argument counts are fixed from their own epilogues, which is enough to call them correctly, but not enough to say what they do."
+  ],
+  "runtime_gates": [
+    "runtime validation not run: no positive hash-pinned original-process trace reaches 0x00587a20 in the committed corpus"
+  ]
+}

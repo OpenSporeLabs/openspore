@@ -1,0 +1,94 @@
+{
+  "schema": "wave6-resources-function-handoff.v1",
+  "package": "wave6-resources",
+  "function_address": "0x006a24d0",
+  "ghidra_name": "App::PropertyList::GetPropertyObject",
+  "normalized_symbol": "property_list_get_property_object_006a24d0",
+  "source_files": [
+    "reconstruction/staging/wave6-resources/property_list_variants.hpp",
+    "reconstruction/staging/wave6-resources/property_list_variants.cpp",
+    "reconstruction/staging/wave6-resources/property_list_variants_model_test.cpp"
+  ],
+  "dependencies": ["reconstruction/staging/wave6-resources/property_list_access.hpp"],
+  "phase": "body-reconstruction",
+  "declaration": "Property* __thiscall property_list_get_property_object_006a24d0(PropertyList*, uint32_t property_id);",
+  "abi": {
+    "return_type": "Property*",
+    "return_register": "EAX",
+    "calling_convention": "__thiscall observed",
+    "hidden_this_register": "ECX",
+    "hidden_this_type": "PropertyList*",
+    "stack_arguments": [
+      {"position": 1, "entry_offset": "ESP+0x04", "name": "property_id", "type": "uint32_t", "width_bytes": 4}
+    ],
+    "stack_cleanup_bytes": 4,
+    "termination": "RET 0x4 at 0x006a250c, 0x006a252a, and the parent tail path"
+  },
+  "parent_virtual_ports": {
+    "get_property_object": {
+      "slot": "+0x28",
+      "calling_convention": "__thiscall",
+      "hidden_receiver": "ECX = parent PropertyList*",
+      "stack_arguments": [
+        {"position": 1, "entry_offset": "ESP+0x04", "name": "property_id", "type": "uint32_t", "width_bytes": 4}
+      ],
+      "stack_cleanup_bytes": 4
+    }
+  },
+  "layout_evidence": {
+    "gtype": "PropertyList",
+    "size_bytes": 56,
+    "fields": [
+      {"offset": "0x08", "size_bytes": 12, "meaning": "ResourceKey conceptual name key"},
+      {"offset": "0x18", "size_bytes": 24, "meaning": "property map"},
+      {"offset": "0x30", "size_bytes": 4, "meaning": "parent PropertyList pointer"}
+    ],
+    "map": {"entries_begin": "0x18", "entries_end": "0x1c", "lookup_mode": "0x2c", "entry_stride": "0x18", "value_offset": "0x04"},
+    "identity_boundary": "The returned runtime object is the property value at entry+0x04. It is not the PropertyList's conceptual ResourceKey and is not a cache identity."
+  },
+  "mechanics": {
+    "lookup": "Read the same map span and lookup mode as HasProperty and call the shared lower-bound helper 0x00612db0. The helper count is the byte distance between entries_begin and entries_end divided by 0x18 before its binary search.",
+    "hit": "Return the address entry+0x04 when the lower-bound result is not the end sentinel and property_id is not less than the entry key.",
+    "parent": "On a local miss, if parent is non-null, tail-dispatch through parent vtable +0x28 with the original property_id and return its Property* result. The parent port is a one-stack-word __thiscall boundary: ECX is the parent receiver, property_id is at ESP+0x04, and the callee cleans 4 bytes.",
+    "no_parent_sentinel": "When both the local map and parent are absent, return the live global sentinel address 0x016027d0 rather than null.",
+    "sentinel": "The map end pointer rejects a lower-bound miss; the no-parent result sentinel is a distinct runtime object boundary and is not interpreted as a valid property."
+  },
+  "call_graph": {
+    "direct_callers": {"ghidra_count": 1, "functions": ["App::DirectPropertyList::GetPropertyObject at 0x006a2800"]},
+    "direct_callees": {"ghidra_functions": ["FUN_00612db0 at 0x00612db0"]},
+    "function_xrefs": [
+      {"from_address": "0x006a28ab", "type": "UNCONDITIONAL_CALL", "from_function": "App::DirectPropertyList::GetPropertyObject"},
+      {"from_address": "0x01408848", "type": "DATA"}
+    ],
+    "shared_helper": {"address": "0x00612db0", "direct_caller_count": 29, "role": "24-byte-entry unsigned lower-bound helper"}
+  },
+  "evidence": [
+    {"tool": "ghidra_decompile_function", "address": "0x006a24d0", "observation": "The body returns entry+1 on a map hit, delegates a miss to the parent, and returns the global 0x016027d0 sentinel when no parent exists."},
+    {"tool": "ghidra_disassemble_function", "address": "0x006a24d0", "observation": "The assembly proves the map offsets, the helper's byte-distance/0x18 count, end-sentinel check, entry+0x04 return, the one-word thiscall parent port at +0x28, sentinel address, and RET 0x4."},
+    {"tool": "ghidra_get_function_callers", "address": "0x006a24d0", "observation": "One direct caller is reported."},
+    {"tool": "ghidra_get_function_callees", "address": "0x006a24d0", "observation": "The only direct named callee is the shared lower-bound helper at 0x00612db0."},
+    {"tool": "ghidra_get_function_xrefs", "address": "0x006a24d0", "observation": "The function has one direct call xref and one data xref."},
+    {"tool": "ghidra_get_struct_layout", "struct_name": "PropertyList", "observation": "The live type is 56 bytes with the map at +0x18 and parent at +0x30."},
+    {"tool": "ghidra_get_struct_layout", "struct_name": "ResourceKey", "observation": "The conceptual key remains a separate 12-byte value at list+0x08."}
+  ],
+  "confidence": {
+    "mechanics": "high",
+    "abi": "high",
+    "parent_virtual_abi": "high",
+    "parent_virtual_semantics": "medium",
+    "sentinel_object_meaning": "low"
+  },
+  "unresolved_questions": [
+    "Concrete parent PropertyList subtype and vtable +0x28 implementation",
+    "Runtime contents and ownership of the global 0x016027d0 sentinel object",
+    "Whether callers distinguish the no-parent sentinel from a valid property pointer"
+  ],
+  "blockers": [
+    "The parent virtual dispatch and sentinel object contents are outside the selected body.",
+    "No original runtime trace validates returned property lifetime or sentinel use."
+  ],
+  "verification": {
+    "command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror property_list_variants.cpp property_list_variants_model_test.cpp -o /tmp/opencode/wave6-property-list-variants-model && /tmp/opencode/wave6-property-list-variants-model",
+    "result": "passed"
+  }
+}

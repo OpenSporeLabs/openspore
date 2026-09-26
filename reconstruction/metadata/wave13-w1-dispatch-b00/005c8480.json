@@ -1,0 +1,637 @@
+{
+  "schema": "openspore-worker-metadata-1",
+  "package": "wave13-w1-dispatch-b00",
+  "va": "0x005c8480",
+  "address": "0x005c8480",
+  "function_address": "0x005c8480",
+  "entry_address": "0x005c8480",
+  "ghidra_name": "FUN_005c8480",
+  "normalized_symbol": "wave13_w1_dispatch_b00_005c8480",
+  "reconstructed_symbol": "FUN_005c8480_reconstruct",
+  "declaration": "extern \"C\" void __thiscall FUN_005c8480_reconstruct(Opaque5c8480SlotVector* self, void* position, void** value_in_out);",
+  "source_files": [
+    "reconstruction/staging/wave13-w1-dispatch-b00/slot_vector_005c8480.hpp",
+    "reconstruction/staging/wave13-w1-dispatch-b00/slot_vector_005c8480.cpp"
+  ],
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "calling_convention_observation": "The receiver is copied from ECX at 0x005c8487 (MOV EDI,ECX) before the stack arguments are touched, and the arguments are then read at [ESP + 0x20] and [ESP + 0x1c] -- offsets that only resolve correctly after 'sub esp, 8' plus four register pushes (0x005c8480 through 0x005c8486), i.e. ESP lowered by 0x18. The terminal instruction is RET 0x8 at 0x005c85cc, so the callee pops two argument words. The two exits (0x005c84fc and 0x005c85cc) both restore the four saved registers and add back the 8 bytes.",
+    "return_type": "void",
+    "return_semantics": "no register result. The observable effects are the rewritten receiver triple and, on the in-capacity arm, an overwrite of the caller's *second argument* through the pointer it holds.",
+    "return_register": "none (EAX carries the allocator result and the running memcpy cursor but is not returned as a value)",
+    "return_width_bytes": 0,
+    "return_observation": "no MOV to EAX in either epilogue; the last EAX written on the grow arm is the biased cursor at 0x005c8597, which is immediately stored to [EDI + 4] at 0x005c85bd rather than returned.",
+    "ret_form": "RET 0x8",
+    "termination": "RET 0x8 (two distinct sites: 0x005c84fc for the in-capacity arm, 0x005c85cc for the grow arm)",
+    "stack_cleanup_bytes": 8,
+    "stack_cleanup_owner": "callee",
+    "stack_arguments": [
+      {
+        "slot": 1,
+        "offset_in_callee": "[ESP + 0x1c] with ESP lowered 0x18",
+        "read_by": "0x005c8495: MOV EBP,dword ptr [ESP + 0x1c] (grow arm re-read at 0x005c8550)",
+        "role": "the append/insert position, a slot address; both inspected callers pass the receiver's own `last` pointer",
+        "width_bytes": 4
+      },
+      {
+        "slot": 2,
+        "offset_in_callee": "[ESP + 0x20] with ESP lowered 0x18",
+        "read_by": "0x005c8491: MOV ECX,dword ptr [ESP + 0x20] (grow arm re-read at 0x005c8571)",
+        "role": "a pointer to a value slot; both inspected callers pass the address of a caller stack slot holding the new value",
+        "width_bytes": 4
+      }
+    ],
+    "ordinary_stack_argument_slots": 2,
+    "saved_registers": [
+      "EBX",
+      "EBP",
+      "ESI",
+      "EDI"
+    ],
+    "saved_registers_observation": "SUB ESP,0x8 (0x005c8480) then PUSH EBX/EBP/ESI/EDI (0x005c8483..0x005c8486); POP EDI/ESI/EBP/EBP (0x005c85c5..0x005c85c8 and 0x005c84f5..0x005c84f8) then ADD ESP,0x8 (0x005c85c9 / 0x005c84f9). Balanced on both arms.",
+    "receiver": true,
+    "hidden_receiver": "ECX, copied to EDI at 0x005c8487; every receiver access in the body is [EDI + disp]",
+    "x87_stack_effect": "none"
+  },
+  "layout": {
+    "entry_address": "0x005c8480",
+    "body_start": "0x005c8480",
+    "body_end": "0x005c85cf",
+    "body_span_bytes": 335,
+    "instruction_count": 133,
+    "instruction_list_note": "The full 133-instruction listing was read live via ghidra_disassemble_function. The ranges below partition it; every field offset, constant and virtual slot used below is quoted with its proving address.",
+    "instruction_ranges": [
+      {
+        "from": "0x005c8480",
+        "to": "0x005c848f",
+        "what": "frame setup, receiver copy, and the arm split: CMP EAX,[EDI + 8] / JZ 0x005c84ff"
+      },
+      {
+        "from": "0x005c8491",
+        "to": "0x005c84a3",
+        "what": "read both arguments; decide whether the position is strictly inside [arg2, last)"
+      },
+      {
+        "from": "0x005c84a6",
+        "to": "0x005c84b8",
+        "what": "mirror the last element into the slot at `last` and run slot +0x4 on it"
+      },
+      {
+        "from": "0x005c84ba",
+        "to": "0x005c84c3",
+        "what": "call 0x005c1dc0 with (arg2, last - 4, last)"
+      },
+      {
+        "from": "0x005c84c8",
+        "to": "0x005c84ef",
+        "what": "move the value at the chosen cursor into *arg2 with slot +0x4 on the incoming and +0x8 on the displaced"
+      },
+      {
+        "from": "0x005c84f1",
+        "to": "0x005c84fc",
+        "what": "advance `last` by 4, restore registers, RET 0x8"
+      },
+      {
+        "from": "0x005c84ff",
+        "to": "0x005c8546",
+        "what": "grow arm: compute the used count, double it, force 1 when empty, and produce a null block when the doubled capacity is 0"
+      },
+      {
+        "from": "0x005c854e",
+        "to": "0x005c8582",
+        "what": "allocate via 0x00f473a0 with the 'Editor' tag, memcpy the prefix, install the caller's value with slot +0x4"
+      },
+      {
+        "from": "0x005c8584",
+        "to": "0x005c85af",
+        "what": "memcpy the tail up one slot, then release the old block if both it and the allocator word before it are non-null"
+      },
+      {
+        "from": "0x005c85b2",
+        "to": "0x005c85cc",
+        "what": "rewrite last/first/capacity, restore registers, RET 0x8"
+      }
+    ],
+    "padding_after": "the body ends at 0x005c85cf; the next function in the region is FUN_005c85d0 (subsystem Palettes per the briefing), a 1-byte gap",
+    "frame": "SUB ESP,0x8 plus four register pushes; no EBP frame. Four locals live in the pushed registers (the new block, the new capacity, the running cursor, the old block) plus two stack slots at [ESP + 0x10] and [ESP + 0x14] used by the capacity-zero special case.",
+    "reads": "receiver +0x0, +0x4, +0x8; the two stack arguments; the dword immediately before the old block (the allocator's size/cookie word at 0x005c85a3); the value at the cursor and at *arg2",
+    "writes": "receiver +0x0, +0x4 and +0x8 on the grow arm; receiver +0x4 on the in-capacity arm; the slot at `last`; *arg2 on the in-capacity arm; the new block's contents. No global is written."
+  },
+  "observed_mechanics": [
+    "0x005c8480: SUB ESP,0x8 / 0x005c8483..0x005c8486: PUSH EBX,EBP,ESI,EDI -- 0x18 bytes of outgoing-args area plus callee-saves",
+    "0x005c8487: MOV EDI,ECX -- the receiver is the base of all three field accesses",
+    "0x005c8489: MOV EAX,dword ptr [EDI + 0x4] / 0x005c848c: CMP EAX,dword ptr [EDI + 0x8] / 0x005c848f: JZ 0x005c84ff -- THE ARM SPLIT: the grow arm runs when `last` EQUALS the capacity end, the in-capacity arm otherwise",
+    "0x005c8491: MOV ECX,dword ptr [ESP + 0x20] / 0x005c8495: MOV EBP,dword ptr [ESP + 0x1c] / 0x005c8499: MOV ESI,ECX -- argument 1 is the position, argument 2 is the value slot, and ESI starts as a copy of the position",
+    "0x005c849b: CMP ECX,EBP / 0x005c849d: JC 0x005c84a6 -- skip when the position is below the value slot",
+    "0x005c849f: CMP ECX,EAX / 0x005c84a1: JNC 0x005c84a6 -- skip when the position is at or past `last`; together with the previous line this makes the cursor advance by one slot only when the position is strictly inside (arg2, last)",
+    "0x005c84a3: LEA ESI,[ECX + 0x4] -- the cursor becomes 'the slot one past the position'",
+    "0x005c84a6: TEST EAX,EAX / 0x005c84a8: JZ 0x005c84ba -- guard on a non-null `last`",
+    "0x005c84aa: MOV ECX,dword ptr [EAX + -0x4] -- reads the element one slot BEFORE `last`, i.e. the current last element",
+    "0x005c84ad: MOV dword ptr [EAX],ECX -- writes that element into the slot AT `last`, which is one past the used range: a spare slot the container maintains",
+    "0x005c84af..0x005c84b8: if that element is non-null, load its vtable and CALL slot +0x4",
+    "0x005c84ba: MOV EAX,dword ptr [EDI + 0x4] / 0x005c84bd: PUSH EAX / 0x005c84be: ADD EAX,-0x4 / 0x005c84c1: PUSH EAX / 0x005c84c2: PUSH EBP / 0x005c84c3: CALL 0x005c1dc0 -- the shift port is called with (arg2, last - 4, last)",
+    "0x005c84c8: MOV ESI,dword ptr [ESI] -- the value at the chosen cursor, i.e. the element that is about to move into the hole",
+    "0x005c84ca: MOV EBX,dword ptr [EBP] -- the value currently in *arg2, i.e. the element being displaced",
+    "0x005c84d0: CMP ESI,EBX / 0x005c84d2: JZ 0x005c84f1 -- a no-op move is skipped entirely, so no virtual call is made when the two pointers are equal",
+    "0x005c84d4..0x005c84df: if the incoming value is non-null, CALL its slot +0x4 with ECX = the value",
+    "0x005c84e1: MOV dword ptr [EBP],ESI -- the caller's slot now holds the incoming value; this is the write that makes argument 2 an in/out parameter",
+    "0x005c84e4..0x005c84ef: if the displaced value is non-null, CALL its slot +0x8 with ECX = the displaced value",
+    "0x005c84f1: ADD dword ptr [EDI + 0x4],0x4 -- `last` advances by exactly one slot, on BOTH the no-op and the real path",
+    "0x005c84f5..0x005c84fc: POP EDI/ESI/EBP/EBP, ADD ESP,0x8, RET 0x8",
+    "0x005c84ff: SUB EAX,dword ptr [EDI] / 0x005c8501: SAR EAX,0x2 -- the used count as a SIGNED slot count: (last - first) / 4",
+    "0x005c8504: TEST EAX,EAX / 0x005c8506: JBE 0x005c8538 -- an empty or negative count jumps to the force-1 path, so a first-ever append allocates capacity 1",
+    "0x005c8508: ADD EAX,EAX -- the capacity DOUBLES; 0x005c850a stores it to [ESP + 0x14]",
+    "0x005c850e: TEST EAX,EAX / 0x005c8510: JZ 0x005c8546 -- a doubled capacity of exactly 0 (only reachable from a count of 0x40000000) produces a NULL block at 0x005c8546 and skips the allocation entirely, so the function then operates on a null block",
+    "0x005c8512: PUSH 0xd1 / 0x005c8517: PUSH 0x13ebb38 / 0x005c851c: PUSH 0x0 / 0x005c851e: PUSH 0x0 / 0x005c8520: ADD EAX,EAX / 0x005c8522: ADD EAX,EAX / 0x005c8524: PUSH 0x13eb430 / 0x005c8529: PUSH EAX / 0x005c852a: CALL 0x00f473a0 -- six cdecl arguments: line 0xd1, an unknown group id 0x13ebb38, two zeros, the size, and the tag pointer 0x013eb430",
+    "0x013eb430 reads live as 45 64 69 74 6f 72 00 00, i.e. the ASCII 'Editor', which is the EASTL allocation tag. The companion file path 0x013ebb38 reads live as 'c:\\BuildAgent\\max-spore001-spore\\CMBuild\\SporeEP1_RL\\Core\\UTFKernel\\EASTL\\include\\EASTL/allocator.h' followed by 'Bake syste...', so this is the EASTL allocator's own allocation-site record",
+    "0x00f473a0 forwards to 0x009289f0(param_1, param_3, param_4, param_2, param_5, param_6), i.e. it reorders (size, tag, group, type, file, line) into the underlying allocator's order; 0x00f47380 is `if (param_1) FUN_009276c0(param_1)`",
+    "0x005c8520 / 0x005c8522 double the capacity twice more before pushing it as the byte count, so the allocated size is capacity * 16 bytes for 4-byte elements, i.e. four times the capacity in slots",
+    "0x005c854e: MOV EAX,dword ptr [EDI] / 0x005c8550: MOV EBP,dword ptr [ESP + 0x1c] / 0x005c8554: MOV ECX,dword ptr [ESP + 0x10] / 0x005c8558: MOV ESI,EBP / 0x005c855a: SUB ESI,EAX / 0x005c855c: PUSH ESI / 0x005c855d: PUSH EAX / 0x005c855e: PUSH ECX / 0x005c855f: CALL 0x011e0744 -- memcpy(new_block, first, position - first); the size is the byte distance from `first` to the position",
+    "0x005c8564: SAR ESI,0x2 / 0x005c8567: LEA EBX,[EAX + ESI*0x4] -- the cursor is the memcpy return biased by (size >> 2) * 4, which is the size itself, so the bias is idempotent",
+    "0x005c856d: TEST EBX,EBX / 0x005c856f: JZ 0x005c8584 -- the null-block case skips installing the caller's value",
+    "0x005c8571..0x005c8582: the slot at the cursor takes *arg2, and that value gets slot +0x4 when non-null",
+    "0x005c8584: MOV ESI,dword ptr [EDI + 0x4] / 0x005c8587: SUB ESI,EBP / 0x005c8589: PUSH ESI / 0x005c858a: ADD EBX,0x4 / 0x005c858d: PUSH EBP / 0x005c858e: PUSH EBX / 0x005c858f: CALL 0x011e0744 -- memcpy(cursor + 4, position, last - position), i.e. the tail is shifted up one slot",
+    "0x005c8594: SAR ESI,0x2 / 0x005c8597: LEA ESI,[EAX + ESI*0x4] -- the new `last`",
+    "0x005c859a: MOV EAX,dword ptr [EDI] / 0x005c859f: TEST EAX,EAX / 0x005c85a1: JZ 0x005c85b2 / 0x005c85a3: CMP dword ptr [EAX + -0x4],0x0 / 0x005c85a7: JZ 0x005c85b2 -- the old block is released only when BOTH the block and the dword immediately before it are non-null, which is the EASTL allocator's own guard",
+    "0x005c85a9: PUSH EAX / 0x005c85aa: CALL 0x00f47380 / 0x005c85af: ADD ESP,0x4",
+    "0x005c85b2: MOV EAX,dword ptr [ESP + 0x10] / 0x005c85b6: MOV ECX,dword ptr [ESP + 0x14] / 0x005c85ba: LEA EDX,[EAX + ECX*0x4] / 0x005c85bd: MOV dword ptr [EDI + 0x4],ESI / 0x005c85c0: MOV dword ptr [EDI],EAX / 0x005c85c2: MOV dword ptr [EDI + 0x8],EDX -- the triple is rewritten in the order last, first, capacity, and the capacity end is new_block + capacity * 4 BYTES, i.e. capacity slots",
+    "0x005c8480's two callers are the out-of-line slow halves of a push_back. 0x005864db: MOV EAX,[ESI + 0x164] / 0x005864e1: CMP EAX,[ESI + 0x168] / 0x005864e7: LEA ECX,[ESI + 0x160] / 0x005864ed: JNC 0x0058650a -- i.e. `if (last >= capacity) call the slow path`, with the receiver at cEditor + 0x160 and the position at `last`",
+    "0x005864f2: MOV dword ptr [ECX + 0x4],EDX with EDX = EAX + 4 is the inlined fast half: `last` advances, *old_last = the value, and 0x005864ff..0x00586506 runs slot +0x4 on the value",
+    "0x0058650a: LEA EDX,[ESP + 0x10] / 0x0058650e: PUSH EDX / 0x0058650f: PUSH EAX / 0x00586510: CALL 0x005c8480 -- argument 2 is the address of a caller stack slot and argument 1 is `last`",
+    "0x00586515..0x00586528 is the same caller's own allocation bookkeeping, pushing 0x13eb430 and 0xac into 0x00f473a0 -- the same 'Editor' tag at a different call site",
+    "0x005c8a59: LEA EDI,[ESI + 0x70] ... 0x005c8a82: CALL 0x005c8480 -- a second caller with the receiver at this + 0x70 and the position at this + 0x74, in the Palettes subsystem; 0x005c8a8f..0x005c8a94 then runs slot +0x8 on the value the call left in the stack slot"
+  ],
+  "fields_and_offsets": [
+    {
+      "offset": "+0x0",
+      "size_bytes": 4,
+      "type": "pointer to the first slot (nullable)",
+      "proved_by": [
+        "0x005c854e: MOV EAX,dword ptr [EDI]",
+        "0x005c85c0: MOV dword ptr [EDI],EAX",
+        "0x005c84ff: SUB EAX,dword ptr [EDI]"
+      ],
+      "confidence": "high",
+      "note": "null on a freshly zeroed container, which makes the grow arm's used count 0 and forces capacity 1"
+    },
+    {
+      "offset": "+0x4",
+      "size_bytes": 4,
+      "type": "pointer to the slot one past the last used slot (nullable)",
+      "proved_by": [
+        "0x005c8489: MOV EAX,dword ptr [EDI + 4]",
+        "0x005c84f1: ADD dword ptr [EDI + 0x4],0x4",
+        "0x005c85bd: MOV dword ptr [EDI + 0x4],ESI"
+      ],
+      "confidence": "high",
+      "note": "the first 0x5c8480 caller reads the same field at its own +0x164, i.e. this receiver sits at cEditor + 0x160"
+    },
+    {
+      "offset": "+0x8",
+      "size_bytes": 4,
+      "type": "pointer to the slot one past the capacity",
+      "proved_by": [
+        "0x005c848c: CMP EAX,dword ptr [EDI + 8]",
+        "0x005c85c2: MOV dword ptr [EDI + 0x8],EDX"
+      ],
+      "confidence": "high"
+    },
+    {
+      "offset": "one slot BEFORE `last`",
+      "size_bytes": 4,
+      "type": "payload pointer",
+      "proved_by": [
+        "0x005c84aa: MOV ECX,dword ptr [EAX + -0x4]"
+      ],
+      "confidence": "high",
+      "note": "the spare-slot mirror at 0x005c84ad copies this into the slot AT `last`"
+    },
+    {
+      "offset": "one dword BEFORE the block pointer",
+      "size_bytes": 4,
+      "type": "allocator cookie / size",
+      "proved_by": [
+        "0x005c85a3: CMP dword ptr [EAX + -0x4],0x0"
+      ],
+      "confidence": "high",
+      "note": "gates the release of the old block; its non-zero-ness is the allocator's own 'this was a real allocation' flag"
+    }
+  ],
+  "container_layout_as_observed": {
+    "shape": "three consecutive dwords: {first, last, capacityEnd}, elements of 4 bytes, with ONE spare slot maintained at [last] holding a copy of the last used element",
+    "element_size_bytes": 4,
+    "element_semantics": "a pointer to a refcounted payload object",
+    "proof_of_element_size": "0x005c8501 SAR EAX,0x2 converts (last - first) to a slot count, and 0x005c84f1 advances `last` by exactly 4",
+    "spare_slot_proof": "0x005c84aa..0x005c84ad copies [last - 4] into [last], and 0x005c84b1..0x005c84b8 then runs the payload's slot +0x4 on it, so the spare slot owns a reference of its own"
+  },
+  "constants": [
+    {
+      "value": "0x2",
+      "address": "0x005c8501 / 0x005c8564 / 0x005c8594",
+      "instruction": "SAR EAX,0x2",
+      "meaning": "bytes-to-slots conversion for 4-byte elements"
+    },
+    {
+      "value": "0x4",
+      "address": "0x005c84f1 / 0x005c84a3 / 0x005c84be / 0x005c858a / 0x005c85ba",
+      "instruction": "ADD ... ,0x4 / LEA ...,0x4",
+      "meaning": "one element, expressed in bytes"
+    },
+    {
+      "value": "0x8",
+      "address": "0x005c8480",
+      "instruction": "SUB ESP,0x8",
+      "meaning": "outgoing-args area for the allocator call; restored by ADD ESP,0x8 at both exits"
+    },
+    {
+      "value": "0xd1",
+      "address": "0x005c8512",
+      "instruction": "PUSH 0xd1",
+      "meaning": "the allocator's line number, 209, matching the allocator.h path string at 0x013ebb38"
+    },
+    {
+      "value": "0x13ebb38",
+      "address": "0x005c8517",
+      "instruction": "PUSH 0x13ebb38",
+      "meaning": "a pointer to the EASTL allocator source path string, read live as 'c:\\BuildAgent\\max-spore001-spore\\CMBuild\\SporeEP1_RL\\Core\\UTFKernel\\EASTL\\include\\EASTL/allocator.h'"
+    },
+    {
+      "value": "0x13eb430",
+      "address": "0x005c8524",
+      "instruction": "PUSH 0x13eb430",
+      "meaning": "a pointer to the allocation tag, read live as 'Editor'"
+    },
+    {
+      "value": "0x0 / 0x0",
+      "address": "0x005c851c / 0x005c851e",
+      "instruction": "PUSH 0x0 twice",
+      "meaning": "two null allocator arguments; which parameters they are is not established (0x00f473a0 reorders six arguments)"
+    },
+    {
+      "value": "0x8",
+      "address": "0x005c8508 / 0x005c8520 / 0x005c8522",
+      "instruction": "ADD EAX,EAX three times total",
+      "meaning": "capacity doubling, then two further doublings that turn the slot capacity into a byte count of capacity * 16"
+    },
+    {
+      "value": "0x8",
+      "address": "0x005c84fc / 0x005c85cc",
+      "instruction": "RET 0x8",
+      "meaning": "the callee pops two argument words on both arms"
+    },
+    {
+      "value": "0xac",
+      "address": "0x0058651e (caller)",
+      "instruction": "PUSH 0xac",
+      "meaning": "a different allocation line (172) for the same 'Editor' tag inside Editors::cEditor::CommitEditHistory, showing the tag is a per-subsystem constant rather than per-function"
+    }
+  ],
+  "globals": [
+    {
+      "address": "0x013eb430",
+      "role": "allocation tag string, argument 6 of 0x00f473a0",
+      "value_in_file_image": "'Editor' (45 64 69 74 6f 72 00 00)",
+      "access": "read (address-taken and pushed)"
+    },
+    {
+      "address": "0x013ebb38",
+      "role": "allocation source-path string, argument 2 of 0x00f473a0",
+      "value_in_file_image": "'c:\\BuildAgent\\max-spore001-spore\\CMBuild\\SporeEP1_RL\\Core\\UTFKernel\\EASTL\\include\\EASTL/allocator.h'",
+      "access": "read (address-taken and pushed)"
+    }
+  ],
+  "virtual_dispatch": [
+    {
+      "slot_offset": "+0x04",
+      "invoked_in": "0x005c84b8 (spare-slot mirror), 0x005c84df (value entering a slot), 0x005c8582 (value installed on the grow arm)",
+      "receiver": "the payload pointer",
+      "table_address": "unknown -- only reachable through the runtime element pointer",
+      "concrete_callee_resolved": false,
+      "form": "MOV EAX,[ECX] / MOV EDX,[EAX + 0x4] / MOV ECX,payload / CALL EDX",
+      "slot_role_evidence": "the same slot fires on the value ENTERING a slot in 0x005c1dc0 (0x005c1ded), in 0x0045ac20 (0x0045adc2, when a map slot is overwritten) and in the inlined push_back fast path at 0x00586506 -- so it is consistently attach/add-ref-shaped. NOT named."
+    },
+    {
+      "slot_offset": "+0x08",
+      "invoked_in": "0x005c84ef (value displaced from a slot)",
+      "receiver": "the payload pointer",
+      "table_address": "unknown",
+      "concrete_callee_resolved": false,
+      "form": "MOV EAX,[EBX] / MOV EDX,[EAX + 0x8] / MOV ECX,EBX / CALL EDX",
+      "slot_role_evidence": "the same slot fires on the value LEAVING a slot in 0x005c1dc0 (0x005c1dfc) and in 0x0045ac20 (0x0045ade2), and on a dropped object in 0x00573caa. Consistently detach/release-shaped. NOT named."
+    }
+  ],
+  "control_flow": {
+    "switches": [],
+    "loops": [
+      {
+        "where": "0x005c1dc0",
+        "shape": "downward do/while over slots",
+        "from": "param_2 (last - 4)",
+        "to": "param_1 (the second argument of 0x005c8480)",
+        "step": "-4 per slot on both cursors",
+        "termination": "while (param_2 != param_1)",
+        "early_exit_inside_loop": false,
+        "hazard": "On the in-capacity arm the second argument is the CALLER's stack-slot address, not a slot inside the array, so the loop bound is not reachable by walking down from `last - 4`. Both inspected callers avoid this because they only ever enter the grow arm. See unresolved_questions."
+      }
+    ],
+    "early_exits": [
+      {
+        "address": "0x005c8506",
+        "target": "0x005c8538",
+        "condition": "the used count is <= 0",
+        "effect": "the new capacity is forced to 1 and the flow rejoins the allocation path"
+      },
+      {
+        "address": "0x005c8510",
+        "target": "0x005c8546",
+        "condition": "the doubled capacity is 0",
+        "effect": "the block is set to NULL and the allocation is SKIPPED; the function then memcpy's into and out of a null block"
+      },
+      {
+        "address": "0x005c84d2",
+        "target": "0x005c84f1",
+        "condition": "the incoming and displaced values are the same pointer",
+        "effect": "no virtual call and no store to *arg2; only `last` advances"
+      }
+    ],
+    "branches": [
+      {
+        "address": "0x005c848f",
+        "instruction": "JZ 0x005c84ff",
+        "polarity": "last == capacity -> grow arm; this is the arm split and the only place the two paths diverge"
+      },
+      {
+        "address": "0x005c849d",
+        "instruction": "JC 0x005c84a6",
+        "polarity": "position < arg2 -> leave the cursor at the position"
+      },
+      {
+        "address": "0x005c84a1",
+        "instruction": "JNC 0x005c84a6",
+        "polarity": "position >= last -> leave the cursor at the position"
+      },
+      {
+        "address": "0x005c84a8",
+        "instruction": "JZ 0x005c84ba",
+        "polarity": "no `last` -> skip the spare-slot mirror and its slot +0x4"
+      },
+      {
+        "address": "0x005c84b1",
+        "instruction": "JZ 0x005c84ba",
+        "polarity": "the mirrored element is null -> skip slot +0x4"
+      },
+      {
+        "address": "0x005c8506",
+        "instruction": "JBE 0x005c8538",
+        "polarity": "used count <= 0 -> capacity 1"
+      },
+      {
+        "address": "0x005c8510",
+        "instruction": "JZ 0x005c8546",
+        "polarity": "doubled capacity == 0 -> null block, no allocation"
+      },
+      {
+        "address": "0x005c856d",
+        "instruction": "JZ 0x005c8584",
+        "polarity": "the running cursor is null (the null-block case) -> skip installing the caller's value"
+      },
+      {
+        "address": "0x005c859f",
+        "instruction": "JZ 0x005c85b2",
+        "polarity": "no old block -> skip the release"
+      },
+      {
+        "address": "0x005c85a7",
+        "instruction": "JZ 0x005c85b2",
+        "polarity": "the allocator cookie before the old block is zero -> skip the release"
+      }
+    ],
+    "arithmetic": "byte/slot conversions (SAR 2), capacity doubling (ADD EAX,EAX three times), a four-byte cursor advance, and the two memcpy length computations (position - first) and (last - position)"
+  },
+  "callers_evidence": [
+    {
+      "callsite": "0x00586510",
+      "caller": "0x00586410 (Editors::cEditor::CommitEditHistory)",
+      "form": "CALL",
+      "receiver_setup": "0x005864e7 LEA ECX,[ESI + 0x160] and ECX survives to the call; the SDK records cEditor + 0x160 as `eastl::vector<DefaultRefCounted*> field_160` (Spore/Editors/Editor.h line 332)",
+      "args": "0x0058650a LEA EDX,[ESP + 0x10] then PUSH EDX (arg2, a caller stack slot); 0x0058650f PUSH EAX where EAX = [ESI + 0x164] = the receiver's own `last` (arg1)",
+      "arm_taken": "ALWAYS the grow arm, because the caller only reaches this site when 0x005864e1 CMP EAX,[ESI + 0x168] / 0x005864ed JNC proves last >= capacityEnd",
+      "result_use": "0x00586515..0x00586528 is the caller's own allocation; the value slot at [ESP + 0x10] is reused afterwards"
+    },
+    {
+      "callsite": "0x005c8a82",
+      "caller": "0x005c85d0 (FUN_005c85d0, subsystem Palettes)",
+      "form": "CALL",
+      "receiver_setup": "0x005c8a59 LEA EDI,[ESI + 0x70] and 0x005c8a80 MOV ECX,EDI -- a container embedded at this + 0x70",
+      "args": "0x005c8a7a LEA EDX,[ESP + 0x28] then PUSH EDX (arg2, a caller stack slot); 0x005c8a7f PUSH EAX where EAX = [EDI + 4] = `last` (arg1)",
+      "arm_taken": "ALWAYS the grow arm, gated the same way at 0x005c8a67/0x005c8a6a",
+      "result_use": "0x005c8a87: MOV ECX,dword ptr [ESP + 0x28] reloads the value slot, and 0x005c8a8f..0x005c8a94 runs slot +0x8 on whatever this function left there -- which is the observable sign that argument 2 is an in/out parameter on the grow arm too"
+    },
+    {
+      "callsite": "0x0059cbb8",
+      "caller": "0x0059cb80 (FUN_0059cb80)",
+      "form": "CALL",
+      "result_use": "not inspected"
+    },
+    {
+      "callsite": "0x005c221a",
+      "caller": "0x005c21d0 (FUN_005c21d0)",
+      "form": "CALL",
+      "result_use": "not inspected"
+    },
+    {
+      "callsite": "0x005c2372",
+      "caller": "0x005c22b0 (FUN_005c22b0)",
+      "form": "CALL",
+      "result_use": "not inspected"
+    },
+    {
+      "callsite": "0x005c2455",
+      "caller": "0x005c2390 (FUN_005c2390)",
+      "form": "CALL",
+      "result_use": "not inspected"
+    },
+    {
+      "callsite": "0x005c5fbe / 0x005c5feb",
+      "caller": "0x005c5f00 (FUN_005c5f00)",
+      "form": "CALL (two sites)",
+      "result_use": "not inspected"
+    },
+    {
+      "callsite": "0x005c95ea",
+      "caller": "0x005c9230 (FUN_005c9230, subsystem Palettes)",
+      "form": "CALL",
+      "result_use": "not inspected"
+    }
+  ],
+  "caller_count_from_briefing": 21,
+  "callees_evidence": [
+    {
+      "callsite": "0x005c84c3",
+      "callee": "0x005c1dc0",
+      "form": "CALL (direct, cdecl, 3 args)",
+      "operation": "shift a slot range up by one element, applying the attach/detach protocol to every slot whose occupant changes",
+      "resolved": "yes, fully",
+      "detail": "0x005c1dc0's own body was disassembled. Per slot it reads the incoming occupant at (cursor - 4) and the outgoing occupant at (dest - 1); if they differ it calls slot +0x4 on the incoming, stores it, and calls slot +0x8 on the outgoing. Its loop is `if (param_2 == param_1) return param_3;` then do/while (param_2 != param_1), with param_1 read as [ESP + 0x14] and param_2 as [ESP + 0xc] AFTER 'push ebp' -- so its first parameter is the loop's exclusive lower bound, which 0x005c8480 supplies as its own SECOND argument. This is the source of the structural caveat recorded below."
+    },
+    {
+      "callsite": "0x005c855f and 0x005c858f",
+      "callee": "0x011e0744 (memcpy thunk)",
+      "form": "CALL (direct)",
+      "operation": "block copy",
+      "resolved": "yes",
+      "detail": "the briefing records this as a thunk to the runtime memcpy; the return value is used as a running cursor in both cases"
+    },
+    {
+      "callsite": "0x005c852a",
+      "callee": "0x00f473a0",
+      "form": "CALL (direct, cdecl, 6 args)",
+      "operation": "allocate a block with an allocation-site tag",
+      "resolved": "yes, one level",
+      "detail": "0x00f473a0 is a pure argument-reordering shim onto 0x009289f0; the underlying allocator is not resolved. The six arguments are (line 0xd1, path 0x13ebb38, 0, 0, size, tag 'Editor') in push order, which after the shim's reordering is not the underlying allocator's parameter order."
+    },
+    {
+      "callsite": "0x005c85aa",
+      "callee": "0x00f47380",
+      "form": "CALL (direct, one arg)",
+      "operation": "release a block",
+      "resolved": "yes, one level",
+      "detail": "0x00f47380 is `if (param_1) FUN_009276c0(param_1)`"
+    },
+    {
+      "callsite": "0x005c84b8, 0x005c84df, 0x005c84ef, 0x005c8582",
+      "callee": "vtable slots +0x4 and +0x8 on the payload",
+      "form": "indirect CALL",
+      "operation": "attach-shaped / detach-shaped notifications",
+      "resolved": "no"
+    }
+  ],
+  "semantic_contract": "Insert one 4-byte element into a {first, last, capacityEnd} slot array at an arbitrary position, growing the array when it is full, and maintain an intrusive attach/detach protocol on the payload objects the slots point at. The invariants: (1) The arm is chosen solely by `last == capacityEnd`. (2) The container keeps ONE spare slot at [last] that mirrors the last used element; before any move on the in-capacity arm the last element is copied into that spare slot and slot +0x4 is run on it, so the spare slot owns a reference of its own. (3) The element move is skipped entirely when the incoming and displaced pointers are equal, so no virtual call happens for a self-move; only `last` advances. (4) The move runs slot +0x4 on the value entering a slot and slot +0x8 on the value leaving one, matching 0x005c1dc0 slot for slot. (5) On the in-capacity arm the caller's value slot is an IN/OUT parameter: it is overwritten with the value that was moved, and the value it held is detached. (6) The grow arm doubles the capacity (forcing 1 for an empty container and producing a NULL block, with no allocation at all, when the doubling overflows to 0), allocates capacity*16 bytes through the EASTL allocator with the literal tag 'Editor' at allocator.h:209, copies [first, position) and then shifts [position, last) up one slot, installs the caller's value in the hole with slot +0x4, and releases the old block only when both the block and the allocator cookie in front of it are non-null. (7) The receiver triple is rewritten last, in the order last, first, capacity, with the capacity end computed as new_block + capacity*4 bytes. STRUCTURAL CAVEAT, recorded rather than smoothed over: on the in-capacity arm the shift port receives the function's SECOND argument as its loop's exclusive lower bound, while the slot that receives the moved value is derived from the FIRST argument. Those two agree only when the second argument is itself a slot inside the array. Both inspected callers pass a stack address and only ever enter the grow arm, so the in-capacity arm is reproduced structurally and is NOT claimed to be a correct general-purpose insert.",
+  "classification": "BOUNDED_SEMANTIC",
+  "classification_rationale": "The grow arm -- the only arm any inspected caller reaches -- is read end to end: 133 instructions, exact capacity arithmetic including the two special cases, two memcpys with their exact length expressions, the allocator call with all six arguments and the live 'Editor' tag string, the cookie-guarded release, and the receiver triple rewritten in the observed order. The attach/detach slot roles are corroborated across five bodies in this batch and in 0x005c1dc0's own disassembly. It is not STRONG_SEMANTIC for three named reasons: (1) the two virtual slots have no concrete callee and no located vtable, since the payload type is only known at runtime; (2) the in-capacity arm's element algebra is not established, for the reason given in the contract above -- the shift loop's bound and the hole position are derived from different arguments and cannot both be right for a general position; (3) the container's own type is bounded rather than established: the cEditor + 0x160 correspondence is an SDK offset match on a field the SDK itself comments as 'we only know it calls the DefaultRefCounted* destructor', and the Palettes caller's container at + 0x70 matches no SDK class at all.",
+  "semantic_findings": [
+    "0x005c8480 is the out-of-line slow half of a push_back, not a general insert, in every observed use. Two independent callers inline the fast half (advance `last`, store, run slot +0x4) and branch to this function only when `last >= capacityEnd`.",
+    "The container keeps a spare slot one past the used range holding a duplicate of the last element, and that duplicate gets its own slot +0x4 call. This is why `last` is a valid dereference target in a function that appears not to use it, and it is the most easily misread part of the body.",
+    "The capacity is doubled, but the ALLOCATION SIZE is four times the capacity in slots (three ADD EAX,EAX in total). A 4-byte element array therefore over-allocates by 4x, which is either a deliberate slot granularity or padding; static evidence does not say which.",
+    "A capacity of 0 after doubling is special-cased to a NULL block with no allocation, after which the function still performs both memcpys -- on a null destination. That is a latent defect in the shipped build, observed statically, not hypothesised.",
+    "An empty container forces capacity 1 rather than 2, so the first allocation is exactly one slot.",
+    "The old block is released only when the dword immediately before it is non-zero, which is the EASTL allocator's own allocation cookie. Copying the container by memcpy would therefore leak, and the reconstruction preserves the check.",
+    "The allocation site is recorded in the binary as tag 'Editor' at EASTL/allocator.h line 209, on a build agent path under c:\\BuildAgent\\max-spore001-spore\\. The same tag appears at a different line (0xac) in cEditor::CommitEditHistory, so the tag is per-subsystem, not per-function.",
+    "Argument 2 is an in/out parameter. On the in-capacity arm it is overwritten with the moved value; on the grow arm the Palettes caller at 0x005c8a8f reads it back and runs slot +0x8 on it, which is direct evidence that the value survives the call.",
+    "Slots +0x4 and +0x8 are consistently attach-shaped and detach-shaped respectively across 0x005c1dc0, 0x005c8480, 0x0045ac20 and 0x00573c00. This is a cross-body observation about slot behaviour; neither slot is named."
+  ],
+  "unresolved_questions": [
+    "What is the element type, and hence what class owns the vtable whose slots +0x4 and +0x8 are called? The payload is reached only through the container's slots at runtime, so no vtable can be located statically.",
+    "Is the in-capacity arm reachable with a position strictly inside the array by any caller? Both inspected callers pass `last` and take the grow arm. If some of the other 19 callers pass an interior position, the argument-bound mismatch between 0x005c1dc0's loop and the hole position becomes live, and the arm's element algebra must be re-derived.",
+    "Why is the allocation size capacity*16 bytes for 4-byte elements? Either the slot granularity is deliberately 4x, or this is a bug. Nothing in the binary or the SDK distinguishes the two.",
+    "What is the spare slot at [last] FOR? It is written on the in-capacity arm and never read by this function, and it is not part of the {first,last,capacity} triple. Its consumer, if any, is not in these two callsites.",
+    "What are the two NULL arguments at 0x005c851c and 0x005c851e to 0x00f473a0? The shim reorders six parameters and the underlying 0x009289f0 signature was not read, so their positions are unknown.",
+    "What do vtable slots +0x4 and +0x8 actually do -- reference counting, slot-change notification, or something else? Their call-shape consistency across five bodies is strong but does not name them.",
+    "The 19 uninspected callers include four in the 0x005c2xxx range that the briefing attributes to ENGINE_IMPLEMENTATION. Their argument shapes, and therefore whether any of them uses the in-capacity arm, are not established.",
+    "Is the container an eastl::vector? The +0x160 field correspondence says a vector of pointers, but the spare slot and the cookie-guarded release are not standard vector behaviour, so the SDK type is a candidate and not an identification."
+  ],
+  "confidence": {
+    "body_bytes": 1.0,
+    "grow_arm_mechanics": 0.97,
+    "in_capacity_arm_mechanics": 0.55,
+    "capacity_arithmetic": 0.95,
+    "allocator_arguments": 0.9,
+    "attach_detach_slot_roles": 0.85,
+    "container_layout": 0.95,
+    "container_type": 0.45,
+    "virtual_callee_resolution": 0.05
+  },
+  "confidence_note": "confidence in the per-aspect claim, not a probability of behavioural equivalence with any shipped source. in_capacity_arm_mechanics is deliberately low: the arm is reproduced structurally and the recorded structural caveat is a real, unresolved inconsistency in the observed code, not a modelling choice.",
+  "sdk_correspondence": {
+    "status": "OFFSET_CORRESPONDENCE_ONLY",
+    "observation": "The first callsite's receiver is cEditor + 0x160 (0x005864e7 LEA ECX,[ESI + 0x160]) with `last` at + 0x164 and capacityEnd at + 0x168. Spore/Editors/Editor.h line 332 declares cEditor + 0x160 as `eastl::vector<DefaultRefCounted*> field_160` with the comment 'we only know it calls the DefaultRefCounted* destructor'. The {first, last, capacityEnd} triple this function manipulates is exactly an eastl::vector<T> layout, and the tag 'Editor' plus the allocator.h:209 record show the allocation goes through EASTL, which the SDK vendors at EASTL-3.02.01.",
+    "not_asserted": "No SDK method name is claimed. eastl::vector has no member matching this two-pointer signature, the spare slot at [last] is not standard vector behaviour, and the Palettes callsite's container at + 0x70 matches no declared class. The vector correspondence is recorded for the layout, not for the function's identity. DefaultRefCounted's method names are NOT mapped onto vtable slots +0x4 and +0x8, because no vtable was located and the slot order in the binary is the only evidence.",
+    "sdk_paths_read": [
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Editors/Editor.h",
+      "/home/juanr/apps/Spore-ModAPI/EASTL-3.02.01 (directory listing only; no header was matched against)"
+    ]
+  },
+  "evidence": [
+    "reconstruction/evidence/005c8480/evidence.json",
+    "reconstruction/evidence/005c8480/context.json",
+    "/tmp/opencode/wave/w1/b00/briefings.json (canonical contract record for 0x005c8480)",
+    "ghidra_decompile_function / ghidra_disassemble_function at 0x005c8480, 0x005c1dc0, 0x00f47380, 0x00f473a0",
+    "ghidra_disassemble_bytes at 0x005864d0 (cEditor::CommitEditHistory) and 0x005c8a50 (FUN_005c85d0)",
+    "ghidra_read_memory at 0x013eb430 and 0x013ebb38",
+    "~/apps/Spore-ModAPI Spore/Editors/Editor.h (read-only)"
+  ],
+  "tooling_evidence": [
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x005c8480",
+      "observation": "133 instructions, 0x005c8480..0x005c85cc, two RET 0x8 sites (0x005c84fc and 0x005c85cc); the arm split is 0x005c848f JZ 0x005c84ff"
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x005c8480",
+      "observation": "the pseudocode shows both arms and the EASTL allocation with the 'Editor' tag and the allocator.h path; its 'local_4 = local_4 * 2' and 'local_4 * 4' summarisation matches the disassembly's doubling and byte scaling"
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x005c1dc0",
+      "observation": "the per-slot attach/detach shift: reads *(param_2 - 4) and *(param_3 - 1), and on a difference calls slot +0x4 on the incoming, stores it, then slot +0x8 on the outgoing; loop is 'do ... while (param_2 != param_1)' with the early return 'if (param_2 == param_1) return param_3'"
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x005c1dc0",
+      "observation": "38 instructions; MOV EBP,[ESP + 0xc] and CMP EBP,[ESP + 0x8] establish that its first argument is the loop's exclusive lower bound, and the loop-back test at 0x005c1dfe is CMP EBP,[ESP + 0x14] -- which is what makes the argument-bound mismatch with 0x005c8480's in-capacity arm a fact rather than a guess"
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x00f473a0",
+      "observation": "a six-argument shim onto 0x009289f0(param_1, param_3, param_4, param_2, param_5, param_6) -- the argument reordering that makes the two NULL pushes uninterpretable"
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x00f47380",
+      "observation": "if (param_1) FUN_009276c0(param_1) -- a null-guarded free"
+    },
+    {
+      "tool": "ghidra_read_memory",
+      "address": "0x013eb430",
+      "observation": "456469746f7200 = 'Editor' -- the allocation tag"
+    },
+    {
+      "tool": "ghidra_read_memory",
+      "address": "0x013ebb38",
+      "observation": "633a5c4275696c644167656e745c6d61782d73706f72653030312d73706f7265 = 'c:\\BuildAgent\\max-spore001-spore\\CMBuild\\SporeEP1_RL\\Core\\UTFKernel\\EASTL\\include\\EASTL/allocator.h' -- the allocation source path, which identifies the allocator family as EASTL"
+    },
+    {
+      "tool": "ghidra_disassemble_bytes",
+      "address": "0x005864d0",
+      "observation": "0x005864db MOV EAX,[ESI + 0x164] ; 0x005864e1 CMP EAX,[ESI + 0x168] ; 0x005864e7 LEA ECX,[ESI + 0x160] ; 0x005864ed JNC 0x0058650a ; the inlined fast half 0x005864f2/0x005864f9/0x00586506 ; 0x0058650a..0x00586510 the slow-path call"
+    },
+    {
+      "tool": "ghidra_disassemble_bytes",
+      "address": "0x005c8a50",
+      "observation": "0x005c8a59 LEA EDI,[ESI + 0x70] ; 0x005c8a60 MOV EAX,[EDI + 4] ; 0x005c8a67 CMP EAX,[EDI + 8] ; 0x005c8a6a JNC ; 0x005c8a7a..0x005c8a82 the call ; 0x005c8a87 MOV ECX,[ESP + 0x28] ; 0x005c8a8f..0x005c8a94 slot +0x8 on the read-back value -- the in/out evidence"
+    }
+  ],
+  "runtime_gates": [
+    "No original-process trace exists for 0x005c8480; every claim is static and the Cell stage has never been entered in any recorded run.",
+    "Whether the in-capacity arm is ever reached with an interior position can only be settled by instrumenting the 19 uninspected callsites or by a run; the two inspected ones never reach it.",
+    "The payload's vtable and therefore the meanings of slots +0x4 and +0x8 require a run with a live editor or palette session.",
+    "The capacity*16 allocation size and the null-block overflow path can only be confirmed as intentional or as defects by a run that exercises them."
+  ],
+  "blockers": [],
+  "provenance": {
+    "binary": "SPORE/SporeBin/SporeApp.exe",
+    "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+    "binary_version": "Spore 3.1.0.22 (GOG digital, no DRM)",
+    "image_base": "0x00400000",
+    "architecture": "x86-32 PE / windows cspec",
+    "worker_id": "wave13-w1-dispatch-b00",
+    "batch_id": "w1/b00",
+    "package_name": "wave13-w1-dispatch-b00",
+    "upstream_package_id": "PKG-10-EDITOR-DISPATCH",
+    "date": "2026-09-26",
+    "analysis_mode": "static only; no original-process trace exists for this target",
+    "clean_room": "No EA source, asset or decompiled listing was used. SDK headers under ~/apps/Spore-ModAPI were read read-only for name/type candidates only."
+  }
+}

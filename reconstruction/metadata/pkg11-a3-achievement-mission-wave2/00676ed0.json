@@ -1,0 +1,137 @@
+{
+  "schema": "pkg11-a3-achievement-mission-wave2.function-handoff.v1",
+  "package": "PKG-11-A3-ACHIEVEMENT-MISSION-WAVE2",
+  "function_address": "0x00676ed0",
+  "ghidra_name": "FUN_00676ed0",
+  "normalized_symbol": "achievement_progress_flag_transition_00676ed0",
+  "source_files": [
+    "reconstruction/staging/pkg11-a3-achievement-mission-wave2/achievement_mission_wave2.hpp",
+    "reconstruction/staging/pkg11-a3-achievement-mission-wave2/achievement_mission_wave2.cpp"
+  ],
+  "ownership": {
+    "status": "unowned_body",
+    "manifest_checked": true,
+    "metadata_checked": true,
+    "integrated_handoffs_checked": true,
+    "staging_and_canonical_source_checked": true,
+    "git_status_checked": true,
+    "boundary": "No existing body record, staging source, integrated source, or test claims 0x00676ed0. The three callees 0x00676660, 0x006751c0 and 0x00676710 stay opaque ports here: 0x00676660 and 0x006751c0 are referenced by PKG-11-A2 as ports, and 0x00676710 is reconstructed as a body by the sibling record 00676710.json in this package."
+  },
+  "imported_name_resolution": {
+    "status": "normalized_from_live_abi",
+    "supported_signature": "void thiscall(AchievementManagerWire* manager, Word key, Word mask, std::uint8_t set)",
+    "reason": "ECX is copied to ESI at 0x00676ed1 and the function ends with RET 0xc, so exactly three stack words are consumed. Stack word one is read into EDI at 0x00676eda and forwarded to 0x00676660 and 0x00676710. Stack word two is read at 0x00676eeb and 0x00676ef4 and is applied to record+0x04 as a mask. Stack word three is read as a byte at 0x00676ee4 and selects set versus clear.",
+    "unsupported_imported_elements": [
+      "Pollinator::cAchievementsManager::SetProgressFlags semantic name as bound at 0x00676e90",
+      "imported argument names achievementID, progressFlags and value",
+      "any achievement award semantics"
+    ],
+    "note": "The SDK prototype SetProgressFlags(this, achievementID, progressFlags, value) does match this live shape (three stack words, RET 0xc, mask applied to record+0x04). The import pass bound that name to 0x00676e90 instead, whose live body takes two stack words and returns with RET 8. The binding is therefore reported as unreliable and the symbol is normalized from the live ABI only; the field name progress_flags is derived from the observed mask behaviour of the dword at +0x04 and not from the imported declaration."
+  },
+  "signature": {
+    "calling_convention": "x86-32 thiscall with callee stack cleanup",
+    "receiver": "ECX AchievementManagerWire pointer copied to ESI at 0x00676ed1",
+    "stack_arguments": [
+      {"position": 1, "entry_offset": "ESP+0x04", "type": "std::uint32_t", "observed_use": "read into EDI at 0x00676eda, pushed to 0x00676660 and 0x00676710, never masked or transformed"},
+      {"position": 2, "entry_offset": "ESP+0x08", "type": "std::uint32_t", "observed_use": "read at 0x00676eeb and 0x00676ef4 and applied to record+0x04 as OR mask or AND-NOT mask"},
+      {"position": 3, "entry_offset": "ESP+0x0c", "type": "std::uint8_t", "observed_use": "read as a byte at 0x00676ee4; nonzero selects the set path, zero selects the clear path"}
+    ],
+    "stack_cleanup_bytes": 12,
+    "stack_cleanup_owner": "callee",
+    "callee_return_form": "ret 0xc with an immediate operand, popping the three incoming stack words",
+    "return_semantics": "void",
+    "preserved_registers": ["ESI", "EDI"],
+    "receiver_reads": [
+      {"offset": "0x24", "type": "std::uint8_t gate", "observed_use": "CMP byte ptr [ESI+0x24],0x0 at 0x00676ed3; nonzero returns immediately"}
+    ],
+    "record_reads": [
+      {"offset": "0x00", "type": "std::uint32_t flags", "observed_use": "TEST byte ptr [EAX],0x1 at 0x00676efd gates the comparator and the forward"}
+    ],
+    "record_writes": [
+      {"offset": "0x04", "type": "std::uint32_t progress flags", "observed_use": "OR [EAX+0x4],ECX at 0x00676eef on the set path, AND [EAX+0x4],~EDX at 0x00676efa on the clear path", "width": "full 32-bit dword"}
+    ]
+  },
+  "body": {
+    "entry_address": "0x00676ed0",
+    "end_address": "0x00676f1b",
+    "length_bytes": 75,
+    "instruction_count": 29,
+    "raw_bytes": "568bf1807e2400753e578b7c240c57e87cf7ffff807c24140074098b4c2410094804eb098b542410f7d2215004f600017414508bcee8b6e2ffff84c07408578bcee8faf7ffff5f5ec20c00"
+  },
+  "port_abis": [
+    {"boundary": "0x00676660", "convention": "thiscall", "receiver": "ECX = manager", "stack": ["Word key"], "cleanup": "RET 4", "return": "AchievementDefinitionWire* in EAX; lookup may create the entry"},
+    {"boundary": "0x006751c0", "convention": "cdecl", "receiver": null, "stack": ["const AchievementDefinitionWire* record"], "cleanup": "RET 4", "return": "bool in AL; the threshold comparator"},
+    {"boundary": "0x00676710", "convention": "thiscall", "receiver": "ECX = manager", "stack": ["Word key"], "cleanup": "RET 4", "return": "bool in AL, discarded by the target"}
+  ],
+  "mechanics": {
+    "order": [
+      "Return immediately when the manager gate byte at +0x24 is nonzero. No record is looked up and no mask is applied.",
+      "Call 0x00676660 with the manager in ECX and stack word one on the stack to obtain the definition record.",
+      "Test stack word three as a byte; a nonzero value branches to the set path at 0x00676eeb, zero to the clear path at 0x00676ef4.",
+      "Set path: read stack word two and execute OR dword ptr [EAX+0x4],ECX, a read-modify-write of the full 32-bit word.",
+      "Clear path: read stack word two, negate it with NOT, and execute AND dword ptr [EAX+0x4],EDX.",
+      "Return when record byte +0x00 bit 0 is clear, tested with TEST byte ptr [EAX],0x1.",
+      "Push the record and call 0x006751c0; a false AL returns.",
+      "Push stack word one, set ECX to the manager, call 0x00676710 and discard its AL.",
+      "Pop EDI, pop ESI and return with RET 0xc."
+    ],
+    "write_order": "The mask write is unconditional inside the gate and always precedes the flag-bit test, the comparator call and the forward. The comparator therefore observes the record after the mask has already been applied.",
+    "flag_bit_propagation": "Only record+0x00 bit 0 is consulted, and only after the mask write. The mask word at record+0x04 never participates in the gating decision.",
+    "mask_semantics": "The mask is a full 32-bit word. A zero mask is a no-op on both paths. A 0xffffffff mask sets the word to all ones on the set path and to zero on the clear path. The clear path negates the mask first, so bits outside the mask are preserved.",
+    "set_flag_width": "Stack word three is read as a single byte, so any nonzero low byte selects the set path; the upper three bytes are never examined.",
+    "comparator_modes": "The comparator at 0x006751c0 selects mode (flags >> 8) & 0x7 from the jump table at 0x00675230: mode 0 progress >= target, mode 1 target < progress, mode 2 progress == target, mode 3 progress < target, mode 4 progress <= target, mode 5 progress != target, modes 6 and 7 false. The mode encoding is owned by 0x006751c0; this package reproduces the encoding only inside its model test and claims no body for it.",
+    "forward_result": "The 0x00676710 return value is discarded, so a forward that reports failure is indistinguishable to the caller.",
+    "key_identity": "Stack word one is forwarded unchanged to the lookup and to the forward; the mask and the set flag are never mixed into the key.",
+    "domain_separation": "The mask edit is the only mutation the target performs. Lookup, threshold comparison and completion notification are all delegated. The target touches no event object, no communication queue, no serializer and no mission record."
+  },
+  "call_graph": {
+    "direct_caller_function_count": 7,
+    "direct_call_xref_count": 10,
+    "fan_in_note": "Call sites at 0x00c3d440 and 0x00cfd5d2 have no enclosing function in the current database.",
+    "direct_callees": ["0x00676660", "0x006751c0", "0x00676710"]
+  },
+  "evidence": [
+    {"tool": "ghidra_disassemble_function", "address": "0x00676ed0", "observation": "PUSH ESI, MOV ESI,ECX, gate test at +0x24, PUSH EDI, MOV EDI,[ESP+0xc], a second PUSH EDI, three port calls, POP EDI, POP ESI, RET 0xc."},
+    {"tool": "ghidra_get_function_by_address", "address": "0x00676ed0", "observation": "The entry carries no symbol, so the address is unowned in the analysis database."},
+    {"tool": "ghidra_disassemble_function", "address": "0x006751c0", "observation": "Mode is (flags >> 8) & 7; CMP ECX,0x5 with JA returns zero for modes 6 and 7; JMP dword ptr [ECX*0x4+0x675230] dispatches the six live modes."},
+    {"tool": "ghidra_read_memory", "address": "0x00675230", "observation": "The six-entry jump table resolves to 0x006751d8, 0x006751e4, 0x006751f1, 0x00675201, 0x0067520e and 0x0067521a in mode order."},
+    {"tool": "ghidra_get_function_callers", "address": "0x00676ed0", "observation": "Seven direct caller functions, matching the ten call references less the two sites with no enclosing function."},
+    {"tool": "bash", "address": "SDKtoGhidra/SporeGhidra_march2017.xml", "observation": "The FUNCTION_DEF entries for the cAchievementsManager namespace carry no address attribute, so no SDK address binding exists for this function."}
+  ],
+  "verification": {
+    "commands": [
+      "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only reconstruction/staging/pkg11-a3-achievement-mission-wave2/achievement_mission_wave2.cpp reconstruction/staging/pkg11-a3-achievement-mission-wave2/achievement_mission_wave2_model_test.cpp",
+      "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror reconstruction/staging/pkg11-a3-achievement-mission-wave2/achievement_mission_wave2.cpp reconstruction/staging/pkg11-a3-achievement-mission-wave2/achievement_mission_wave2_model_test.cpp -o /tmp/opencode/pkg11-a3-model && /tmp/opencode/pkg11-a3-model",
+      "clang++ -m32 -std=c++17 -O2 -DNDEBUG -Wall -Wextra -Wpedantic -Werror reconstruction/staging/pkg11-a3-achievement-mission-wave2/achievement_mission_wave2.cpp reconstruction/staging/pkg11-a3-achievement-mission-wave2/achievement_mission_wave2_model_test.cpp -o /tmp/opencode/pkg11-a3-model-ndebug && /tmp/opencode/pkg11-a3-model-ndebug",
+      "clang++ -m32 -std=c++17 -O0 -Wall -Wextra -Wpedantic -Werror reconstruction/staging/pkg11-a3-achievement-mission-wave2/achievement_mission_wave2.cpp reconstruction/staging/pkg11-a3-achievement-mission-wave2/achievement_mission_wave2_model_test.cpp -o /tmp/opencode/pkg11-a3-model-o0 && /tmp/opencode/pkg11-a3-model-o0",
+      "clang-format --dry-run --Werror --style='{BasedOnStyle: Google, FixNamespaceComments: false}' reconstruction/staging/pkg11-a3-achievement-mission-wave2/achievement_mission_wave2.hpp reconstruction/staging/pkg11-a3-achievement-mission-wave2/achievement_mission_wave2.cpp reconstruction/staging/pkg11-a3-achievement-mission-wave2/achievement_mission_wave2_model_test.cpp",
+      "python3 -m json.tool reconstruction/metadata/pkg11-a3-achievement-mission-wave2/00676ed0.json"
+    ],
+    "results": {
+      "x86_32_syntax": "passed",
+      "focused_model_test": "passed",
+      "focused_model_test_ndebug": "passed",
+      "focused_model_test_o0": "passed",
+      "clang_format_dry_run": "passed",
+      "json_validation": "passed",
+      "abi_inspection": "passed: achievement_progress_flag_transition_00676ed0 compiles to a thiscall body ending in RET 0xc"
+    },
+    "covered_behaviors": [
+      "manager gate byte suppressing lookup, mask and forward",
+      "set path OR of the full mask word",
+      "clear path AND of the negated mask word",
+      "zero mask, all-ones mask, high-bit-only mask and single-bit masks",
+      "set flag byte width, with 0x00, 0x01 and 0x02 all taking the set path",
+      "record flag bit 0 gating the comparator and the forward",
+      "all seven comparator modes with their live forward or no-forward outcomes",
+      "write order, with the comparator observing the already-masked record",
+      "discarded forward result and key identity propagation"
+    ]
+  },
+  "blockers": [
+    "No original-process flag transition trace was run.",
+    "The two call sites with no enclosing function (0x00c3d440, 0x00cfd5d2) are unreconciled.",
+    "The meaning of the individual bits of the mask word is not derivable from this function; only the set and clear mechanics are.",
+    "Record creation inside 0x00676660 and the comparator body at 0x006751c0 remain owned by other packages."
+  ]
+}

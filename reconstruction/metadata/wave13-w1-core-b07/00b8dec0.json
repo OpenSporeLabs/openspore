@@ -1,0 +1,332 @@
+{
+  "schema": "openspore-worker-metadata-1",
+  "package": "wave13-w1-core-b07",
+  "va": "0x00b8dec0",
+  "address": "0x00b8dec0",
+  "function_address": "0x00b8dec0",
+  "entry_address": "0x00b8dec0",
+  "ghidra_name": "FUN_00b8dec0",
+  "normalized_symbol": "sim_core_00b8dec0",
+  "reconstructed_symbol": "sim_core_00b8dec0",
+  "declaration": "extern \"C\" std::int32_t FUN_00b8dec0_indexed_element_accessor(openspore::b07::ElementBlock* block, std::int32_t index);",
+  "source_files": [
+    "reconstruction/staging/wave13-w1-core-b07/00b8dec0_indexed_element_accessor.cpp",
+    "reconstruction/staging/wave13-w1-core-b07/b07_opaque_types.hpp",
+    "reconstruction/staging/wave13-w1-core-b07/b07_model_test.cpp"
+  ],
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "calling_convention_observation": "ECX is read at 0x00b8dec0 before anything else; the index is read at 0x00b8decc from [ESP + 0x4] with an untouched stack, and both exits are RET 0x4, so the callee pops exactly one word.",
+    "return_type": "std::int32_t",
+    "return_semantics": "the 4-byte element itself (by value in EAX), or 0 when the index is at or past the element count",
+    "return_register": "EAX",
+    "return_width_bytes": 4,
+    "return_observation": "0x00b8dedd MOV EAX,dword ptr [ECX + EAX*0x4] loads the element into EAX; 0x00b8dee3 XOR EAX,EAX is the only other write, so the return is never a pointer.",
+    "ret_form": "RET 0x4",
+    "termination": "0x00b8dee0 RET 0x4 and 0x00b8dee5 RET 0x4",
+    "stack_cleanup_bytes": 4,
+    "stack_cleanup_owner": "callee",
+    "stack_arguments": [
+      {
+        "slot": "entry ESP+4",
+        "read_at": "0x00b8decc",
+        "role": "signed 32-bit element index"
+      }
+    ],
+    "ordinary_stack_argument_slots": 1,
+    "saved_registers": [],
+    "receiver": true,
+    "hidden_receiver": "owner of the element block at +0x15c",
+    "hidden_this_register": "ECX, read at 0x00b8dec0",
+    "frame": "none: no PUSH, no SUB ESP, no saved registers"
+  },
+  "layout": {
+    "entry_address": "0x00b8dec0",
+    "body_start": "0x00b8dec0",
+    "body_end": "0x00b8dee5",
+    "body_span_bytes": 40,
+    "body_bytes_hex": "8b91600100002b915c0100008b442404c1fa023bc27d0c8b895c0100008b0481c2040033c0c20400",
+    "instruction_count": 11,
+    "instructions": [
+      {
+        "address": "0x00b8dec0",
+        "mnemonic": "MOV",
+        "operands": "EDX,dword ptr [ECX + 0x160]"
+      },
+      {
+        "address": "0x00b8dec6",
+        "mnemonic": "SUB",
+        "operands": "EDX,dword ptr [ECX + 0x15c]"
+      },
+      {
+        "address": "0x00b8decc",
+        "mnemonic": "MOV",
+        "operands": "EAX,dword ptr [ESP + 0x4]"
+      },
+      {
+        "address": "0x00b8ded0",
+        "mnemonic": "SAR",
+        "operands": "EDX,0x2"
+      },
+      {
+        "address": "0x00b8ded3",
+        "mnemonic": "CMP",
+        "operands": "EAX,EDX"
+      },
+      {
+        "address": "0x00b8ded5",
+        "mnemonic": "JGE",
+        "operands": "0x00b8dee3"
+      },
+      {
+        "address": "0x00b8ded7",
+        "mnemonic": "MOV",
+        "operands": "ECX,dword ptr [ECX + 0x15c]"
+      },
+      {
+        "address": "0x00b8dedd",
+        "mnemonic": "MOV",
+        "operands": "EAX,dword ptr [ECX + EAX*0x4]"
+      },
+      {
+        "address": "0x00b8dee0",
+        "mnemonic": "RET",
+        "operands": "0x4"
+      },
+      {
+        "address": "0x00b8dee3",
+        "mnemonic": "XOR",
+        "operands": "EAX,EAX"
+      },
+      {
+        "address": "0x00b8dee5",
+        "mnemonic": "RET",
+        "operands": "0x4"
+      }
+    ],
+    "padding_after": "0x00b8dee6 onwards is cc cc cc",
+    "frame_shape": "no frame at all; the two RET 0x4 exits share no teardown",
+    "reads": [
+      "[ECX + 0x160] block end",
+      "[ECX + 0x15c] block begin",
+      "[ESP + 0x4] the index",
+      "the element at begin + 4*index"
+    ],
+    "writes": "none"
+  },
+  "observed_mechanics": [
+    "0x00b8dec0/0x00b8dec6: the two words at +0x160 and +0x15c are subtracted to give the block's byte extent.",
+    "0x00b8ded0: SAR EDX,0x2 turns that extent into an element count, fixing the element size at exactly 4 bytes.",
+    "0x00b8ded3/0x00b8ded5: CMP EAX,EDX with JGE is a SIGNED comparison, so the guard rejects only index >= count. A negative index passes and the read at 0x00b8dedd lands before the block; there is no lower-bound check anywhere in the body.",
+    "0x00b8dedd: MOV EAX,dword ptr [ECX + EAX*0x4] scales the index by 4 and loads the element by value, so the caller receives the element, not its address.",
+    "0x00b8dee3: the out-of-range answer is the integer 0, which is indistinguishable from a stored zero element.",
+    "0x00c71030: MOV ECX,dword ptr [ECX + 0x13c] / JMP 0x00b8dec0 is a two-instruction thunk, so the element block is a sub-object reached through owner+0x13c; with the observed offsets the block's own words sit at owner+0x198 and owner+0x19c.",
+    "0x00c71040: the same count computation is inlined by a sibling (MOV ESI,[EAX + 0x160] / SUB ESI,[EAX + 0x15c] / ADD EAX,0x15c / SAR ESI,0x2), which independently confirms the two field offsets and the 4-byte stride.",
+    "0x00c5c860: PUSH EAX / CALL 0x00b8dec0 / MOV ESI,EAX / MOV ECX,ESI / CALL 0x00ff0420, and 0x00ff0420 is p + 0x14, so at least one element is an object pointer whose +0x14 is read.",
+    "0x00c5c860 guards its loop with TEST ECX,0xfffffffc / JLE, so the caller never passes a negative index on that path; the missing lower bound in the accessor is therefore not exercised by that caller."
+  ],
+  "fields_and_offsets": [
+    {
+      "offset": "+0x15c",
+      "field": "first element of the block",
+      "proved_by": "0x00b8dec6 SUB EDX,dword ptr [ECX + 0x15c] and 0x00b8ded7 MOV ECX,dword ptr [ECX + 0x15c]",
+      "confidence": "high"
+    },
+    {
+      "offset": "+0x160",
+      "field": "one past the last element",
+      "proved_by": "0x00b8dec0 MOV EDX,dword ptr [ECX + 0x160]",
+      "confidence": "high"
+    },
+    {
+      "offset": "+0x13c",
+      "field": "pointer to the element block, in the thunk owner",
+      "proved_by": "0x00c71030 MOV ECX,dword ptr [ECX + 0x13c]",
+      "confidence": "high"
+    }
+  ],
+  "constants": [
+    {
+      "value": "0x15c",
+      "at": "0x00b8dec6",
+      "meaning": "byte offset of the first element"
+    },
+    {
+      "value": "0x160",
+      "at": "0x00b8dec0",
+      "meaning": "byte offset of the end pointer"
+    },
+    {
+      "value": "2",
+      "at": "0x00b8ded0",
+      "meaning": "log2 of the 4-byte element size"
+    },
+    {
+      "value": "4",
+      "at": "0x00b8dedd",
+      "meaning": "scale applied to the index"
+    },
+    {
+      "value": "0xfffffffc",
+      "at": "0x00c5cb80 (caller)",
+      "meaning": "caller-side loop guard that keeps the index non-negative"
+    }
+  ],
+  "globals": [],
+  "virtual_dispatch": [],
+  "control_flow": {
+    "switch_tables": [],
+    "loops": [],
+    "early_exits": [
+      {
+        "at": "0x00b8ded5",
+        "condition": "index >= (end - begin) >> 2 (signed)",
+        "effect": "return 0 without touching the block"
+      }
+    ],
+    "branch_polarity": [
+      "0x00b8ded5 JGE fires on out-of-range indices only; negative indices are in range as far as this body is concerned"
+    ]
+  },
+  "callers_evidence": [
+    {
+      "callsite": "0x00c71036",
+      "caller": "0x00c71030",
+      "form": "JMP (tail transfer, after MOV ECX,dword ptr [ECX + 0x13c])",
+      "result_use": "returned straight to the original caller"
+    },
+    {
+      "callsite": "0x00c5cb9d",
+      "caller": "0x00c5c860",
+      "form": "CALL with PUSH EAX (the index) and ECX from [ESP + 0x18]",
+      "result_use": "0x00c5cba2 MOV ESI,EAX / 0x00c5cba4 MOV ECX,ESI / 0x00c5cbaf CALL 0x00ff0420, i.e. the element is used as an object pointer"
+    },
+    {
+      "callsite": "0x00c70295, 0x00c70507, 0x00c70625, 0x00c71077, 0x00c71218, 0x00c7211f, 0x00c722c0, 0x00c7380e, 0x00c8b8a7, 0x00c8b983, 0x00c8ba66, 0x00c8bb8a and 16 more",
+      "caller": "22 further callers",
+      "form": "CALL",
+      "result_use": "not inspected"
+    }
+  ],
+  "callees_evidence": [],
+  "analogue_functions": [
+    {
+      "va": "0x00c71030",
+      "relation": "two-instruction thunk that supplies the sub-object pointer and tail-jumps"
+    },
+    {
+      "va": "0x00c71040",
+      "relation": "sibling with the identical count computation inlined, confirming the field offsets"
+    },
+    {
+      "va": "0x00c5c860",
+      "relation": "caller that iterates and uses each element as an object pointer"
+    }
+  ],
+  "sdk_correspondence": {
+    "status": "UNRESOLVED",
+    "observation": "The shape (a begin/end pointer pair plus a >>2 count) is the layout of a contiguous sequence container, and the offsets are consistent with a vector member inside a larger class, but no Spore ModAPI type was matched to the observed body, so the container is modelled as an opaque block.",
+    "sdk_paths_read": [],
+    "not_asserted": "No class, method or field name from the SDK is claimed."
+  },
+  "semantic_contract": "Indexed accessor over a contiguous block of 4-byte elements delimited by the words at +0x15c and +0x160. The element count is (end - begin) >> 2, and the index is compared against it with a signed comparison, so only the upper bound is enforced. In range the element word is returned by value; out of range the answer is the integer 0. The function reads memory and mutates nothing.",
+  "subsystem": "Bounds-checked 4-byte element accessor: returns element[index] when (signed) index < (end - begin) >> 2 and 0 otherwise, with no lower-bound check.",
+  "classification": "BOUNDED_SEMANTIC",
+  "classification_rationale": "The body is 11 instructions with no frame, no callee, no global and no virtual dispatch, and every offset, constant and branch polarity is read directly from the disassembly and independently confirmed by the inlined copy in 0x00c71040. It is not STRONG_SEMANTIC because the element type is unestablished: one caller uses the element as an object pointer and the other 22 callers were not inspected, so the port keeps a raw 4-byte word, and the owning class is unknown.",
+  "semantic_findings": [
+    "The function is a bounds-checked read with an upper bound only; the signed comparison means a negative index produces an out-of-bounds read rather than the zero answer.",
+    "The zero answer is ambiguous: it is returned both for an out-of-range index and, trivially, for a stored element whose value is zero.",
+    "The element size is fixed at 4 by the SAR, so the block is an array of 32-bit values or 32-bit handles, not of larger records.",
+    "The block is reached through an owner sub-object pointer (owner+0x13c in the one thunk that was disassembled), so the receiver of this function is not the owner of the data."
+  ],
+  "unresolved_questions": [
+    "What is the element type? A single caller dereferences it and reads +0x14; the other 22 callsites were not inspected and no common type was established.",
+    "Which class owns the block? The one disassembled thunk shows owner+0x13c, but no vtable or SDK type was located for that owner.",
+    "Is the +0x164 word (a capacity pointer in a three-pointer vector layout) also maintained by the container? It is never read here, so the reconstruction does not model it.",
+    "Do any of the 22 uninspected callers pass a negative index? The one caller that was disassembled does not; the others are unknown.",
+    "Is the zero out-of-range answer relied upon as a sentinel by the callers, or is it merely a discarded value? Not established."
+  ],
+  "confidence": {
+    "body_bytes": 1.0,
+    "instruction_list": 1.0,
+    "abi": 1.0,
+    "frame_shape": 1.0,
+    "control_flow": 1.0,
+    "field_offsets": 1.0,
+    "bounds_polarity": 1.0,
+    "element_type": 0.2,
+    "owning_class": 0.15
+  },
+  "runtime_gates": [
+    "No original-process trace exists for this address.",
+    "The element type and the owning class can only be settled with a receiver trace or by inspecting the 22 remaining call sites."
+  ],
+  "evidence": [
+    "reconstruction/evidence/00b8dec0/evidence.json",
+    "reconstruction/evidence/00b8dec0/context.json",
+    "GhidraMCP decompile/disassemble of 0x00b8dec0, 0x00ff0420 and disassembly windows at 0x00c71030 and 0x00c5cb80"
+  ],
+  "tooling_evidence": [
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x00b8dec0",
+      "observation": "11 instructions, two RET 0x4 exits, no frame"
+    },
+    {
+      "tool": "ghidra_read_memory",
+      "address": "0x00b8dec0",
+      "observation": "40 body bytes matching layout.body_bytes_hex"
+    },
+    {
+      "tool": "ghidra_disassemble_bytes",
+      "address": "0x00c71030",
+      "observation": "0x00c71030 MOV ECX,[ECX + 0x13c] ; 0x00c71036 JMP 0x00b8dec0, then INT3 padding"
+    },
+    {
+      "tool": "ghidra_disassemble_bytes",
+      "address": "0x00c71040",
+      "observation": "the inlined SUB/SAR count computation over the same +0x160 and +0x15c words"
+    },
+    {
+      "tool": "ghidra_disassemble_bytes",
+      "address": "0x00c5cb80",
+      "observation": "TEST ECX,0xfffffffc / JLE guard, then PUSH EAX / CALL 0x00b8dec0 / MOV ECX,ESI / CALL 0x00ff0420"
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x00ff0420",
+      "observation": "returns param_1 + 0x14, i.e. the element is used as a pointer"
+    },
+    {
+      "tool": "clang++ -m32 -O2 + objdump",
+      "observation": "the reconstruction emits MOV 0x15c(%eax),%edx / MOV 0x160(%eax),%esi / SUB / SAR $0x2 / CMP / JGE, the same operation order as the original body"
+    }
+  ],
+  "body_reconstruction": "Simulator",
+  "result_summary": {
+    "status": "implemented",
+    "source": "reconstruction/staging/wave13-w1-core-b07/00b8dec0_indexed_element_accessor.cpp",
+    "claim_scope": "The 11-instruction body is reconstructed in full, including the signed comparison and the arithmetic shift.",
+    "byte_exactness": "Clang -m32 -O2 emits the same operation sequence (mov +0x15c / mov +0x160 / sub / sar $2 / cmp / jge) as the original; register allocation and one redundant PUSH differ."
+  },
+  "provenance": {
+    "binary": "SPORE/SporeBin/SporeApp.exe",
+    "binary_version": "Spore 3.1.0.22",
+    "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+    "image_base": "0x00400000",
+    "worker_id": "wave13-w1-core-b07",
+    "implementer_id": "wave13-w1-b07",
+    "batch_id": "b07",
+    "package": "wave13-w1-core-b07",
+    "date": "2026-09-26",
+    "tooling": "Ghidra 12.1.2 headless via ghidra-mcp, program SporeApp.exe",
+    "runtime_evidence": "none; no original-process trace was captured"
+  },
+  "validation": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/wave13-w1-core-b07 reconstruction/staging/wave13-w1-core-b07/*.cpp",
+    "model_test_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/wave13-w1-core-b07 reconstruction/staging/wave13-w1-core-b07/*.cpp -o /tmp/opencode/wave13-w1-core-b07-model && /tmp/opencode/wave13-w1-core-b07-model",
+    "syntax": "passed",
+    "model_test": "passed"
+  }
+}

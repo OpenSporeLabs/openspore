@@ -1,0 +1,284 @@
+{
+  "schema": "openspore-worker-metadata-1",
+  "package": "wave13-pilot-dispatch-b00",
+  "va": "0x00635760",
+  "address": "0x00635760",
+  "function_address": "0x00635760",
+  "entry_address": "0x00635760",
+  "ghidra_name": "FUN_00635760",
+  "normalized_symbol": "utfwin_00635760_set_flag_by_control_id",
+  "reconstructed_symbol": "UtfWin_00635760_set_flag_by_control_id",
+  "declaration": "void UtfWin_00635760_set_flag_by_control_id(OpaqueUtfWinRootRegistry*, std::uint32_t control_id, bool visible);  // original ABI: __thiscall",
+  "source_files": [
+    "reconstruction/staging/wave13-pilot-dispatch-b00/utfwin_00635760.hpp",
+    "reconstruction/staging/wave13-pilot-dispatch-b00/utfwin_00635760.cpp",
+    "reconstruction/staging/wave13-pilot-dispatch-b00/utfwin_00635760_model_test.cpp"
+  ],
+
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "calling_convention_observation": "Three independent observations. (1) The body ends in the single instruction RET 8 at 0x0063577f, so the callee pops two four-byte words. (2) The body never touches ESP except to read [ESP+4] and overwrite [ESP+4], and it makes no CALL, so the receiver cannot travel on the stack. (3) The incoming ECX is forwarded unchanged into 0x00634dc0, which is itself __thiscall and starts with ADD ECX,0x14 at 0x00634dc4, so ECX must already hold the receiver on entry. All 27 recorded callers set ECX from a field of their own receiver (MOV ECX,[ESI+0xc] in the Editor code region, MOV ECX,[ESI+0x4c] in the UTFWin code region) immediately before the call.",
+    "return_type": "void",
+    "return_semantics": "void",
+    "return_register": null,
+    "return_width_bytes": 0,
+    "return_observation": "EAX is a lookup result on entry to the dispatch path and is overwritten with the window pointer at 0x0063577b; on the null path EAX is 0 at 0x0063576a. No consumer reads EAX after any of the recorded call sites, so no return value is observable.",
+    "ret_form": "RET 0x8",
+    "termination": "0x0063577f RET 8 on the null path; 0x0063577d JMP EDX (tail transfer) on the success path",
+    "stack_cleanup_bytes": 8,
+    "stack_cleanup_owner": "callee",
+    "stack_arguments": [
+      {"name": "control_id", "type": "std::uint32_t", "entry_offset": "ESP+4", "width_bytes": 4, "role": "UTFWin control id, forwarded to the lookup and then replaced by the constant 1 before the tail transfer"},
+      {"name": "visible", "type": "bool", "entry_offset": "ESP+8", "width_bytes": 4, "role": "value written into kWinFlagVisible; forwarded verbatim as the second argument of the +0x7C dispatch"}
+    ],
+    "ordinary_stack_argument_slots": 2,
+    "saved_registers": [],
+    "receiver": true,
+    "hidden_receiver": "ECX, forwarded unchanged to 0x00634dc0; overwritten at 0x0063577b with the resolved window before the tail transfer",
+    "hidden_this_register": "ECX"
+  },
+
+  "layout": {
+    "entry_address": "0x00635760",
+    "body_start": "0x00635760",
+    "body_end": "0x00635781",
+    "body_span_bytes": 34,
+    "body_bytes_hex": "8b44240450e856f6ffff85c074118b108b527cc7442404010000008bc8ffe2c20800",
+    "instruction_count": 11,
+    "instructions": [
+      {"address": "0x00635760", "bytes": "8b 44 24 04", "mnemonic": "MOV", "operands": "EAX, dword ptr [ESP + 0x4]", "note": "control id"},
+      {"address": "0x00635764", "bytes": "50", "mnemonic": "PUSH", "operands": "EAX"},
+      {"address": "0x00635765", "bytes": "e8 56 f6 ff ff", "mnemonic": "CALL", "operands": "0x00634dc0"},
+      {"address": "0x0063576a", "bytes": "85 c0", "mnemonic": "TEST", "operands": "EAX, EAX"},
+      {"address": "0x0063576c", "bytes": "74 11", "mnemonic": "JZ", "operands": "0x0063577f", "note": "null lookup result -> RET 8"},
+      {"address": "0x0063576e", "bytes": "8b 10", "mnemonic": "MOV", "operands": "EDX, dword ptr [EAX]"},
+      {"address": "0x00635770", "bytes": "8b 52 7c", "mnemonic": "MOV", "operands": "EDX, dword ptr [EDX + 0x7c]"},
+      {"address": "0x00635773", "bytes": "c7 44 24 04 01 00 00 00", "mnemonic": "MOV", "operands": "dword ptr [ESP + 0x4], 0x1"},
+      {"address": "0x0063577b", "bytes": "8b c8", "mnemonic": "MOV", "operands": "ECX, EAX"},
+      {"address": "0x0063577d", "bytes": "ff e2", "mnemonic": "JMP", "operands": "EDX", "note": "tail transfer, no frame to unwind"},
+      {"address": "0x0063577f", "bytes": "c2 08 00", "mnemonic": "RET", "operands": "0x8"}
+    ],
+    "padding_after": "0x00635782 onwards is cc cc cc ... (INT3), the standard inter-function pad",
+    "frame": "none: no PUSH of a callee-saved register, no SUB ESP, no MOV EBP,ESP, no register save or restore. The only ESP writes are the single PUSH EAX at 0x00635764, which the callee 0x00634dc0 pops with its own RET 4, and the MOV to [ESP+4] at 0x00635773.",
+    "reads": "[ESP+4] once at 0x00635760; the vtable pointer of the resolved object at 0x0063576e; the vtable slot +0x7c at 0x00635770",
+    "writes": "[ESP+4] = 1 at 0x00635773; ECX at 0x0063577b; EAX and EDX are scratch. No memory outside the incoming argument slot is written, and no global is touched."
+  },
+
+  "observed_mechanics": [
+    "0x00635760: MOV EAX,[ESP+4] takes the first stack argument, a 32-bit control id",
+    "0x00635764-0x00635765: PUSH EAX; CALL 0x00634dc0 - the lookup is a __thiscall method, so ECX is left untouched and still holds the incoming receiver",
+    "0x00634dc4: ADD ECX,0x14 inside the callee proves the receiver owns a pointer vector at +0x14 and that the callee is a sibling method on the same class as this target",
+    "0x0063576a-0x0063576c: TEST EAX,EAX / JZ 0x0063577f - a null lookup result takes the early exit and performs no dispatch at all",
+    "0x0063576e: MOV EDX,[EAX] loads the vtable pointer of the resolved object",
+    "0x00635770: MOV EDX,[EDX+0x7c] reads vtable slot +0x7C",
+    "0x00635773: MOV dword ptr [ESP+4],0x1 replaces the control-id argument slot with the constant 1, which is UTFWin::kWinFlagVisible",
+    "0x0063577b: MOV ECX,EAX installs the resolved window as the receiver of the tail call",
+    "0x0063577d: JMP EDX is a tail transfer, not a CALL: the frame built by the two arguments is handed unchanged to the +0x7C target, so the target must itself use RET 8",
+    "0x0063577f: RET 8 pops both argument words; the immediate is what proves callee-side cleanup of exactly two words",
+    "Live memory read at 0x00635760 returns 8b44240450e856f6ffff85c074118b108b527cc7442404010000008bc8ffe2c20800 followed by cc padding, confirming all 11 instructions and the 34-byte span",
+    "0x00635773 is the only immediate store in the body: 0x1, matching UTFWin::kWinFlagVisible from Spore-ModAPI Spore/UTFWin/IWindow.h",
+    "Siblings in the same code region confirm slot identity rather than assuming it: 0x006357c0 calls [vtable+0x7c] with the constant 2 (kWinFlagEnabled) after testing GetFlags() at +0x28 for bit 1; 0x00635600, 0x00635680 and 0x00635580 call [vtable+0x7c] with 2 and then 0x10 (kWinFlagIgnoreMouse) and finish with [vtable+0x5c] and [vtable+0x90]; 0x006358c0 inlines [vtable+0x7c](1,1) and [vtable+0x7c](1,0)",
+    "0x00634dc0: PUSH 0xeeee8218 passes UTFWin::IWindow::TYPE, read from Spore-ModAPI Spore/UTFWin/IWindow.h:91, and the same callee then compares [vtable+0x1c] (GetControlID) against the requested id and falls back to [vtable+0xf0](id,1) (FindWindowByID with bRecursive true)",
+    "0x00635790, the immediate sibling at +0x30, has the same 13-instruction shape but reaches the window through 0x005dc310 and a two-step receiver chain (MOV EAX,[ECX+0xc]; MOV ECX,[EAX+0x78]) before the identical SetFlag tail transfer"
+  ],
+
+  "fields_and_offsets": [
+    {"owner": "resolved window object (UTFWin::IWindow)", "offset": "+0x00", "kind": "vtable pointer", "proving_instruction": "0x0063576e: MOV EDX,[EAX]", "confidence": "OBSERVED"},
+    {"owner": "resolved window object (UTFWin::IWindow)", "offset": "+0x7C", "kind": "virtual slot SetFlag(WindowFlags, bool)", "proving_instruction": "0x00635770: MOV EDX,[EDX+0x7c]", "confidence": "OBSERVED for the offset; SUPPORTED for the name, see virtual_dispatch"},
+    {"owner": "receiver (the registry object owned by the caller)", "offset": "+0x14", "kind": "pointer vector scanned by the callee 0x00634dc0", "proving_instruction": "0x00634dc4: ADD ECX,0x14 followed by CALL 0x008100c0 at 0x00634dc7", "confidence": "OBSERVED"},
+    {"owner": "element of the +0x14 vector", "offset": "+0x0C", "kind": "virtual slot taking one uint32 type id and returning an object (0xEEEE8218 in this callee, 0x8ED27E7A in 0x00635810)", "proving_instruction": "0x00634dec: MOV EAX,[EDX+0xc]; PUSH 0xeeee8218; CALL EAX at 0x00634df4", "confidence": "OBSERVED for the offset and arity; the slot's name is UNKNOWN"},
+    {"owner": "window returned by the element's +0x0C slot", "offset": "+0x1C", "kind": "virtual slot GetControlID(), compared against the requested control id", "proving_instruction": "0x00634dfe: MOV EAX,[EDX+0x1c]; CALL EAX at 0x00634e03, compared at 0x00634e09", "confidence": "OBSERVED for the offset; SUPPORTED for the name (SDK IWindow.h 0x1Ch GetControlID)"},
+    {"owner": "window returned by the element's +0x0C slot", "offset": "+0xF0", "kind": "virtual slot (controlId, bool) returning a window, called with (controlId, 1)", "proving_instruction": "0x00634e0f: MOV EAX,[EDX+0xf0]; PUSH 0x1; PUSH ECX; CALL EAX at 0x00634e1a", "confidence": "OBSERVED for the offset and arity; SUPPORTED for the name (SDK IWindow.h 0xF0h FindWindowByID, bRecursive default true)"},
+    {"owner": "window", "offset": "+0x28", "kind": "virtual slot returning a flag bitmask, tested for bit 1 by sibling 0x006357c0", "proving_instruction": "0x006357c0 body: (**(code **)(*piVar1 + 0x28))() then (uVar2 & 2)", "confidence": "SUPPORTED (SDK IWindow.h 0x28h GetFlags); not read by this target"},
+    {"owner": "window", "offset": "+0x5C", "kind": "virtual slot taking one 32-bit colour, used by siblings 0x00635600/0x00635680/0x00635580 with 0xFFFFFFFF and 0xA0A0A0A0", "proving_instruction": "0x00635600 body: (**(code **)(*piVar1 + 0x5c))(0xffffffff)", "confidence": "SUPPORTED (SDK IWindow.h 0x5Ch SetShadeColor); not read by this target"},
+    {"owner": "window", "offset": "+0x90", "kind": "virtual slot taking no argument and called last by siblings 0x00635600/0x00635680/0x00635580", "proving_instruction": "0x00635600 body: (**(code **)(*piVar1 + 0x90))()", "confidence": "SUPPORTED (SDK IWindow.h 0x90h Invalidate); not read by this target"},
+    {"owner": "window", "offset": "+0x20", "kind": "virtual slot taking no argument and returning 32 bits, used by 0x00635850", "proving_instruction": "0x00635850 body: (**(code **)(*piVar1 + 0x20))()", "confidence": "SUPPORTED (SDK IWindow.h 0x20h GetCommandID); not read by this target"}
+  ],
+
+  "constants": [
+    {"value": "0x1", "address": "0x00635773", "meaning": "first argument written into the tail-dispatched slot; equals UTFWin::kWinFlagVisible (Spore-ModAPI Spore/UTFWin/IWindow.h, enum WindowFlags kWinFlagVisible = 0x1)", "confidence": "OBSERVED value; SUPPORTED name"},
+    {"value": "0x2", "address": "sibling 0x006357c0 / 0x00635600 / 0x00635680 / 0x00635580", "meaning": "kWinFlagEnabled, used by the same +0x7C slot", "confidence": "SUPPORTED"},
+    {"value": "0x10", "address": "siblings 0x00635600 / 0x00635680 / 0x00635580", "meaning": "kWinFlagIgnoreMouse, used by the same +0x7C slot", "confidence": "SUPPORTED"},
+    {"value": "0x8", "address": "0x0063577f", "meaning": "RET immediate: the callee pops two four-byte argument words", "confidence": "OBSERVED"},
+    {"value": "0xeeee8218", "address": "0x00634def (callee 0x00634dc0)", "meaning": "UTFWin::IWindow::TYPE, the type id queried on every element of the receiver's +0x14 vector", "confidence": "OBSERVED value; SUPPORTED name from Spore-ModAPI Spore/UTFWin/IWindow.h:91"},
+    {"value": "0x7c", "address": "0x00635770", "meaning": "vtable slot displacement of the tail-dispatched method", "confidence": "OBSERVED"}
+  ],
+
+  "globals": [],
+
+  "virtual_dispatch": [
+    {
+      "site": "0x00635770 (slot read) / 0x0063577d (transfer)",
+      "slot_offset": "+0x7C",
+      "receiver": "ECX = the object returned by 0x00634dc0",
+      "concrete_callee": null,
+      "resolved": false,
+      "resolution": "The slot identity is resolved to UTFWin::IWindow::SetFlag(WindowFlags, bool) with SUPPORTED confidence, not OBSERVED, because this binary has no MSVC RTTI and no concrete IWindow vtable for this receiver was located. The identification rests on four independent observations: the SDK slot comment /* 7Ch */ virtual void SetFlag(WindowFlags nFlag, bool bValue) in Spore/UTFWin/IWindow.h:276; the flag value 1 written by this body matching kWinFlagVisible; sibling 0x006357c0 passing 2 (kWinFlagEnabled) after a GetFlags()&2 test at +0x28; and siblings 0x00635600/0x00635680/0x00635580 passing 2 and 0x10 (kWinFlagIgnoreMouse). The concrete implementation for the receiver's dynamic type was not observed and is not claimed.",
+      "arguments_at_transfer": {"this": "ECX = window", "arg0": "1 (kWinFlagVisible), written over the control-id slot by 0x00635773", "arg1": "the caller's second argument, forwarded verbatim"},
+      "tail_transfer": true,
+      "target_must_use": "RET 8, because the frame is the caller's own frame"
+    }
+  ],
+
+  "control_flow": {
+    "shape": "one branch",
+    "branches": [
+      {"address": "0x0063576c", "mnemonic": "JZ 0x0063577f", "polarity": "taken when the lookup returned null", "effect": "RET 8 with no virtual dispatch and no side effect whatsoever"},
+      {"address": "0x0063577d", "mnemonic": "JMP EDX (indirect)", "polarity": "always taken on the non-null path", "effect": "tail transfer into vtable slot +0x7C"}
+    ],
+    "switch_tables": [],
+    "loops": [],
+    "early_exits": ["0x0063577f - the null-lookup early exit, taken at every one of the 60+ recorded callsites whose control id does not resolve to a live window"],
+    "exit_paths": 2
+  },
+
+  "callers_evidence": [
+    {"callsite": "0x0062baef", "caller": "0x0062ba10", "form": "CALL", "receiver_setup": "0x0062bae5: MOV ECX,[ESI+0xc]", "arguments": "PUSH 0x0 then PUSH 0x4066678, so control id 0x00406678 and visible = false", "result_use": "none; EAX is not read afterwards", "reading": "hide the window whose control id is 0x00406678"},
+    {"callsite": "0x0062bafe", "caller": "0x0062ba10", "form": "CALL", "receiver_setup": "0x0062baf4: MOV ECX,[ESI+0xc]", "arguments": "PUSH 0x0 then PUSH 0x40666b8", "result_use": "none", "reading": "hide the window whose control id is 0x004066b8"},
+    {"callsite": "0x0062bfe2", "caller": "0x0062bf10", "form": "CALL", "receiver_setup": "0x0062bfce: MOV ECX,[ESI+0xc]", "arguments": "PUSH 0x1 then PUSH 0x3fbfa5c", "result_use": "none", "reading": "show the window whose control id is 0x03fbfa5c"},
+    {"callsite": "0x0062bff1", "caller": "0x0062bf10", "form": "CALL", "receiver_setup": "0x0062bfe7: MOV ECX,[ESI+0xc]", "arguments": "PUSH 0x1 then PUSH 0x4446a98", "result_use": "none", "reading": "show"},
+    {"callsite": "0x0062c000", "caller": "0x0062bf10", "form": "CALL", "receiver_setup": "0x0062bfF6: MOV ECX,[ESI+0xc]", "arguments": "PUSH 0x1 then PUSH 0x4446ae0", "result_use": "none", "reading": "show"},
+    {"callsite": "0x0062c020", "caller": "0x0062bf10", "form": "CALL", "receiver_setup": "0x0062c016: MOV ECX,[ESI+0xc], guarded by TEST AL,AL on the result of 0x0062e5f0 at 0x0062c012", "arguments": "PUSH 0x1 then PUSH 0x4864e88", "result_use": "none", "reading": "show, conditional on 0x0062e5f0 returning non-zero"},
+    {"callsite": "0x0063e8d9", "caller": "0x0063e880 (UTFWin subsystem)", "form": "CALL", "receiver_setup": "0x0063e8cf: MOV ECX,[ESI+0x4c]", "arguments": "PUSH 0x1 then PUSH 0x46530c8", "result_use": "none; control falls through to JMP 0x0063e91e at 0x0063e8de", "reading": "show"},
+    {"callsite": "0x0063e8f2", "caller": "0x0063e880", "form": "CALL", "receiver_setup": "0x0063e8e9: MOV ECX,[ESI+0x4c]", "arguments": "PUSH EBX then PUSH 0x46530c8; EBX is the zero used by the surrounding 0x0063e8e5 test", "result_use": "none", "reading": "hide"},
+    {"callsite": "0x0063e9bf", "caller": "0x0063e880", "form": "CALL", "receiver_setup": "0x0063e9b5: MOV ECX,[ESI+0x4c]", "arguments": "PUSH 0x1 then PUSH 0x410cf00", "result_use": "none", "reading": "show"},
+    {"callsite": "0x0063e9ce", "caller": "0x0063e880", "form": "CALL", "receiver_setup": "0x0063e9c4: MOV ECX,[ESI+0x4c]", "arguments": "PUSH 0x1 then PUSH 0x41a30c0", "result_use": "none", "reading": "show"},
+    {"callsite": "0x0063ea0c", "caller": "0x0063e880", "form": "CALL", "receiver_setup": "0x0063ea02: MOV ECX,[ESI+0x4c], guarded by TEST AL,AL on 0x00635890 at 0x0063e9fe", "arguments": "PUSH 0x1 then PUSH 0x4463e78", "result_use": "none", "reading": "show, conditional"},
+    {"callsite": "0x0063ea1a", "caller": "0x0063e880", "form": "CALL", "receiver_setup": "0x0063ea11: MOV ECX,[ESI+0x4c]", "arguments": "PUSH EBX then PUSH 0x46530c8", "result_use": "none", "reading": "hide"},
+    {"callsite": "all 60+ remaining recorded callsites", "caller": "the 27 callers listed in the briefing canonical record", "form": "CALL", "receiver_setup": "not individually disassembled", "arguments": "not individually disassembled", "result_use": "not inspected", "reading": "not claimed"}
+  ],
+
+  "callees_evidence": [
+    {
+      "callsite": "0x00635765",
+      "callee": "0x00634dc0",
+      "form": "CALL (direct), popped by the callee's own RET 4 at 0x00634e2b / 0x00634e34",
+      "result_use": "TEST EAX,EAX at 0x0063576a; the non-null pointer becomes the tail-call receiver at 0x0063577b",
+      "named_operation": "UTFWin root-registry lookup by control id, established from the callee's own disassembly",
+      "callee_body_summary": "Saves EBX/EBP/ESI/EDI, then ADD ECX,0x14 and CALL 0x008100c0 to obtain a {begin,end} pair; count = (end-begin)>>2; loops over the elements, skipping null ones, calling element->vtable[0x0c](0xEEEE8218) and skipping null results, then comparing window->GetControlID() (+0x1c) with the argument and returning that window on a match, otherwise calling window->FindWindowByID(arg, 1) (+0xf0) and returning it when non-null; returns 0 for an empty vector or no match. Returns EAX, void.",
+      "callee_identity": "PARTIAL - the operation is established, the owning class is not. The vector element type behind slot +0x0C is unknown and no vtable for the receiver of this target was located."
+    }
+  ],
+
+  "sdk_correspondence": {
+    "status": "PARTIAL",
+    "asserted": "The tail-dispatched slot at +0x7C is UTFWin::IWindow::SetFlag(WindowFlags, bool) and the constant 1 written into the first argument is UTFWin::kWinFlagVisible.",
+    "not_asserted": "The class that owns the +0x14 registry vector is not identified. Editors::PlayModeUI (Spore-ModAPI Spore/Editors/PlayModeUI.h) declares SetWindowVisible(uint32_t controlID, bool visible) at address 0x635450/0x635750 and FindWindowByID at 0x634AB0/0x634DB0, which is numerically adjacent to both 0x00635760 and 0x00634dc0, but 0x00635750 does not exist as a function in this image (0x00635700 spans 0x00635700..0x0063575e and is a scalar deleting destructor) and 0x00634dc0 scans a service-type vector at +0x14 rather than a UILayout, so the PlayModeUI identification is recorded as a CANDIDATE ONLY and is not used in the reconstruction.",
+    "sdk_paths_read": [
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/UTFWin/IWindow.h",
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Editors/PlayModeUI.h",
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Palettes/PaletteCategoryUI.h"
+    ]
+  },
+
+  "analogue_evidence": [
+    {"address": "0x00635790", "relationship": "immediate sibling, +0x30", "shared": "identical 13-instruction shape: load a window, test it, read vtable+0x7c, overwrite the first stack argument with 1, set ECX, JMP EDX, RET 8 on the null path", "differs": "the window comes from 0x005dc310 and a two-step receiver chain, and the incoming ECX is dereferenced twice (MOV EAX,[ECX+0xc]; MOV ECX,[EAX+0x78]) before the lookup, so this target is the variant that receives the registry object directly"},
+    {"address": "0x006357c0", "relationship": "sibling, +0x60", "shared": "same callee 0x00634dc0 and the same +0x7C slot", "differs": "reads GetFlags() at +0x28 first and only enables when the flag bit is clear and the requested value is false; the flag argument is 2, not 1"},
+    {"address": "0x00635600, 0x00635680, 0x00635580", "relationship": "near siblings", "shared": "+0x7C slot", "differs": "hard-coded control ids, use 0x005dc310 instead of 0x00634dc0, and additionally drive +0x5C and +0x90"},
+    {"address": "0x006358c0", "relationship": "caller of the same callee", "shared": "inlines SetFlag(1,1) and SetFlag(1,0) directly through +0x7C", "differs": "larger initialisation routine"}
+  ],
+
+  "semantic_contract": "Show or hide a UTFWin window identified by its control id. Invariants, in the order the body establishes them: (1) the receiver arrives in ECX and is the object whose +0x14 pointer vector 0x00634dc0 scans; it is used for exactly one thing, the lookup, and is then abandoned; (2) the first argument is a 32-bit UTFWin control id; (3) the lookup searches every registered root in order, and for each root compares the root's own GetControlID() first and then asks the root for FindWindowByID(id, true), stopping at the first hit; (4) if the lookup yields null, the function performs no virtual call, no memory write and no global access, and returns immediately after popping its two arguments; (5) if the lookup yields a window, the function tail-transfers to the window's vtable slot +0x7C with the receiver in ECX, the constant 1 as the first argument and the caller's second argument as the second, so the only state it can change is that window's kWinFlagVisible flag; (6) the function never reads or writes a global, never allocates, never loops, and has no return value; (7) because the transfer is a tail call, the +0x7C target must use RET 8, and the caller's two argument words are consumed by whichever path is taken.",
+
+  "classification": "BOUNDED_SEMANTIC",
+  "classification_rationale": "The complete body, ABI, argument roles, the single constant, the branch polarity, the tail-transfer mechanics and the virtual slot offset are read directly from the disassembly, and the callee's search algorithm is read from its own disassembly. The virtual slot is identified as UTFWin::IWindow::SetFlag with multi-site corroboration but not from a located vtable, because this binary has no MSVC RTTI and the receiver's dynamic type was never observed. Two material elements are therefore bounded rather than established: the class that owns the +0x14 registry vector, and the concrete IWindow subclass that the +0x7C dispatch reaches at runtime. STRONG_SEMANTIC is withheld for those two bounds; STRUCTURAL_ONLY is not applicable because the behavioural claim is supported by the body, the inlined sibling evidence and the caller argument patterns, not by structure alone.",
+
+  "semantic_findings": [
+    "The function is a UTFWin visibility setter keyed by control id: it resolves the id to a window and writes kWinFlagVisible with the caller's boolean.",
+    "The flag is hard-coded to 1. Every recorded callsite passes either 0 or 1 as the second argument, and 0x006358c0 contains the inlined pair SetFlag(1,1) and SetFlag(1,0), so the only reachable behaviour is show/hide.",
+    "Resolution is a registry scan, not a tree walk from a single root: 0x00634dc0 iterates every element of the receiver's +0x14 vector and searches each element's window hierarchy, which explains the very high fan-in of 27 callers spread over the Editor, UTFWin, Palettes, Sporepedia and ArgScript regions.",
+    "Failure is silent and side-effect free. The null path is a single RET 8 and no caller tests a result, so a stale control id simply does nothing.",
+    "The dispatch is a tail call, so the callee inherits the caller's frame. This is observable in the reconstruction: the +0x7C target must pop 8 bytes, and the reconstruction's model test exercises exactly that.",
+    "The receiver is genuinely consumed: ECX is forwarded unchanged into 0x00634dc0, which immediately does ADD ECX,0x14. This is what rules out a free function and establishes a sibling method on the registry class."
+  ],
+
+  "unresolved_questions": [
+    "Which class owns the +0x14 registry vector? The vector's element type and the meaning of its slot +0x0C (a get-object-by-type query) are not established, and no vtable for the receiver was located.",
+    "What is the dynamic IWindow subclass of the resolved window, and therefore which concrete SetFlag implementation runs? No receiver was observed at a dispatch site, and no original-process trace exists.",
+    "Is the vector at +0x14 a list of UTFWin service providers, a list of root windows, or a type registry? The observed protocol (query by type id, then treat the result as a window) fits all three.",
+    "The control ids pushed by callers are addresses of string literals in .rdata (0x00406678, 0x004066b8, 0x0044 6a98 and so on). Their character contents were not read, so no caller-level purpose is claimed for any individual window.",
+    "Spore-ModAPI declares Editors::PlayModeUI::SetWindowVisible at 0x635450/0x635750, numerically adjacent to this target. Whether this target is that method could not be confirmed: 0x00635750 is not a function boundary in this image and 0x00634dc0 does not match PlayModeUI::FindWindowByID's described shape. Recorded as a candidate, not a claim.",
+    "Why do all 27 callers load ECX from a field and then call a function that would work equally well as a free function? The most likely reading is a source-level member call whose receiver happens to be unused on the fast path, but that is INFERRED, not observed."
+  ],
+
+  "confidence": {
+    "body_bytes": 1.0,
+    "instruction_count": 1.0,
+    "control_flow": 1.0,
+    "abi_calling_convention": 0.95,
+    "abi_stack_cleanup": 1.0,
+    "receiver_presence_and_register": 0.95,
+    "argument_roles": 0.9,
+    "constant_value_0x1": 1.0,
+    "constant_name_kWinFlagVisible": 0.9,
+    "virtual_slot_offset_0x7C": 1.0,
+    "virtual_slot_identity_SetFlag": 0.85,
+    "virtual_concrete_callee": 0.2,
+    "callee_semantics_0x00634dc0": 0.9,
+    "owning_class_identity": 0.15,
+    "semantic_identity_show_hide": 0.85
+  },
+
+  "runtime_gates": [
+    "No original-process trace has ever been captured for this function; the original Cell stage has never been entered in any recorded run. Every claim here is static.",
+    "A runtime differential test would have to (a) confirm the lookup returns the same window for a given control id, (b) confirm the +0x7C dispatch reaches an IWindow::SetFlag implementation and not a patched one, and (c) confirm the callee really uses RET 8, which the tail transfer requires but which no in-binary observation of the concrete callee can prove."
+  ],
+
+  "blockers": [],
+
+  "evidence": [
+    "reconstruction/evidence/00635760/evidence.json",
+    "reconstruction/evidence/00635760/context.json",
+    "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/UTFWin/IWindow.h",
+    "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Editors/PlayModeUI.h",
+    "GhidraMCP decompile_function / disassemble_function / read_memory on SporeApp.exe at 0x00635760, 0x00634dc0, 0x00435e90, 0x00435ed0 and the sibling helpers 0x00635790, 0x006357c0, 0x00635810, 0x00635850, 0x00635890, 0x006358c0, 0x00635600, 0x00635680, 0x00635580, 0x00635350",
+    "GhidraMCP disassemble_bytes around the callsites 0x0062bae5, 0x0062bfce, 0x0063e8cf, 0x0063e8e9, 0x0063e9b5, 0x0063e9c4, 0x0063ea02, 0x0063ea11"
+  ],
+
+  "tooling_evidence": [
+    {"tool": "ghidra_decompile_function", "address": "0x00635760", "observation": "decompiler reports a null check then (**(code **)(*piVar1 + 0x7c))(); with two decompiler warnings: jumptable not recovered at 0x0063577d and indirect jump treated as a call. Both warnings are the tail transfer, resolved here from the disassembly."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00635760", "observation": "11 instructions 0x00635760..0x0063577f, matching the ledger body size of 34 bytes"},
+    {"tool": "ghidra_read_memory", "address": "0x00635760", "observation": "8b44240450e856f6ffff85c074118b108b527cc7442404010000008bc8ffe2c20800cccccccccccccccccccccccccccc"},
+    {"tool": "ghidra_disassemble_function", "address": "0x00634dc0", "observation": "ADD ECX,0x14; CALL 0x008100c0; loop over (end-begin)>>2 elements; PUSH 0xeeee8218 then CALL [EDX+0xc]; CALL [EDX+0x1c] compared with the argument; PUSH 0x1; PUSH ECX; CALL [EDX+0xf0]; RET 4 on both exits"},
+    {"tool": "ghidra_decompile_function", "address": "0x006357c0", "observation": "(**(code **)(*piVar1 + 0x7c))(2,1) and (2,0) after (uVar2 & 2) from +0x28, establishing kWinFlagEnabled at the same slot"},
+    {"tool": "ghidra_decompile_function", "address": "0x00635600", "observation": "(**(code **)(*piVar1 + 0x7c))(2,param_1); (**(code **)(*piVar1 + 0x7c))(0x10,...); (**(code **)(*piVar1 + 0x5c))(0xffffffff or 0xa0a0a0a0); (**(code **)(*piVar1 + 0x90))()"},
+    {"tool": "ghidra_decompile_function", "address": "0x006358c0", "observation": "inlines (**(code **)(*piVar2 + 0x7c))(1,1) and (**(code **)(*piVar3 + 0x7c))(1,0); also writes fields +0xc and +0x10 and calls FUN_00812160(L\"PlayMode\",...), matching Editors::PlayModeUI's documented field offsets"},
+    {"tool": "ghidra_disassemble_function", "address": "0x00635790", "observation": "MOV EAX,[ECX+0xc]; MOV ECX,[EAX+0x78]; then CALL 0x005dc310 and the identical +0x7c / MOV [ESP+4],1 / MOV ECX,EAX / JMP EDX / RET 8 tail sequence"},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x0062bac0", "observation": "0x0062bae5 MOV ECX,[ESI+0xc]; 0x0062bae8 PUSH 0x0; 0x0062baea PUSH 0x4066678; 0x0062baef CALL 0x00635760"},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x0062bfc0", "observation": "four callsites 0x0062bfe2/0x0062bff1/0x0062c000/0x0062c020, each preceded by MOV ECX,[ESI+0xc] and each pushing 0x1 then a control id"},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x0063e8b0", "observation": "UTFWin-region callsites 0x0063e8d9 and 0x0063e8f2 use the same control id 0x46530c8 with PUSH 0x1 and PUSH EBX respectively, i.e. show then hide, each preceded by MOV ECX,[ESI+0x4c]"},
+    {"tool": "ghidra_get_function_callers", "address": "0x00634dc0", "observation": "40 callers including the SDK-named Editors::PlayModeBackgrounds::UpdateBackgroundButtons, confirming the 0x00635xxx helper family belongs to the Editor/UTFWin dispatch region"},
+    {"tool": "ghidra_get_xrefs_to", "address": "0x0166d9f4", "observation": "24 references, all inside 0x00a2xxxx; unrelated to this target, which touches no global"},
+    {"tool": "objdump", "observation": "clang++ 22.1.8 -m32 -O2 emits for UtfWin_00635760_set_flag_by_control_id_raw: mov 0x4(%esp),%eax / push %eax / call <port> / test %eax,%eax / je / mov (%eax),%edx / mov 0x7c(%edx),%edx / movl $0x1,0x4(%esp) / mov %eax,%ecx / jmp *%edx / ret $0x8 - instruction-for-instruction identical to the original body, with only the CALL displacement differing because the port has a different address"},
+    {"tool": "model test", "observation": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror builds and runs clean, exit 0, five cases: hide a known id, show a known id, unknown id (no dispatch), empty registry (no dispatch), and the set_visible alias. Each dispatch records flag=0x1 and the forwarded boolean."}
+  ],
+
+  "body_reconstruction": {
+    "source": "reconstruction/staging/wave13-pilot-dispatch-b00/utfwin_00635760.cpp",
+    "status": "implemented",
+    "claim_scope": "The 34-byte body is reproduced instruction for instruction as a naked function, the vtable layout of the dispatched interface is declared with asserted offsets, the callee is kept as an explicitly named opaque port with its observed contract documented, and the receiver type is declared opaque with only the +0x14 vector asserted. No class is claimed for the receiver and no concrete callee is claimed for the +0x7C slot.",
+    "byte_exactness": "Verified by objdump against the live bytes: the eleven instructions and the RET 8 immediate match exactly. The only difference is the relative displacement of the single CALL, because the reconstruction calls a locally named opaque port rather than 0x00634dc0.",
+    "host_abi_note": "clang's i386 Linux __thiscall models the callee stack pop but not the ECX receiver, so a C++ caller of a __thiscall function is unreliable on this host. UtfWin_00635760_host_bridge is therefore a host shim, not part of the original body: it rebuilds the original __thiscall frame (receiver into ECX, the two arguments on the stack, the caller's return address on top) and transfers control into the byte-exact body. All C++ declarations in the header are plain cdecl and the original convention is recorded in comments and in observed_original_abi.",
+    "validation": {
+      "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/wave13-pilot-dispatch-b00 reconstruction/staging/wave13-pilot-dispatch-b00/utfwin_00635760.cpp reconstruction/staging/wave13-pilot-dispatch-b00/utfwin_00635760_model_test.cpp",
+      "model_test_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/wave13-pilot-dispatch-b00 reconstruction/staging/wave13-pilot-dispatch-b00/utfwin_00635760.cpp reconstruction/staging/wave13-pilot-dispatch-b00/utfwin_00635760_model_test.cpp -o /tmp/opencode/00635760-model && /tmp/opencode/00635760-model",
+      "syntax": "passed",
+      "model_test": "passed",
+      "byte_check": "passed",
+      "clang_format": "passed"
+    }
+  },
+
+  "provenance": {
+    "binary": "SPORE/SporeBin/SporeApp.exe",
+    "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+    "image_base": "0x00400000",
+    "worker_id": "wave13-pilot-b00",
+    "batch_id": "b00",
+    "package_name": "wave13-pilot-dispatch-b00",
+    "upstream_package": "PKG-10-EDITOR-DISPATCH",
+    "date": "2026-09-26",
+    "all_claims_static": true
+  }
+}

@@ -1,0 +1,115 @@
+{
+  "schema": "pkg13-e2-diplomacy-alt.function-handoff.v1",
+  "package": "PKG-13-E2-DIPLOMACY-ALT",
+  "function_address": "0x00d00d00",
+  "ghidra_name": "FUN_00d00d00",
+  "normalized_symbol": "RelationshipScoreBand_00d00d00",
+  "source_files": [
+    "reconstruction/staging/pkg13-e2-diplomacy-alt/diplomacy_alt.hpp",
+    "reconstruction/staging/pkg13-e2-diplomacy-alt/diplomacy_alt.cpp",
+    "reconstruction/staging/pkg13-e2-diplomacy-alt/diplomacy_alt_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "float __cdecl RelationshipScoreBand_00d00d00(std::uint32_t source, std::uint32_t target);",
+  "abi": {
+    "calling_convention": "cdecl",
+    "hidden_this": null,
+    "stack_arguments": [
+      {"position": 1, "entry_offset": "ESP+0x04", "name": "source", "type": "std::uint32_t", "width_bytes": 4},
+      {"position": 2, "entry_offset": "ESP+0x08", "name": "target", "type": "std::uint32_t", "width_bytes": 4}
+    ],
+    "stack_cleanup_bytes": 8,
+    "stack_cleanup_owner": "caller",
+    "return_type": "float",
+    "return_location": "x87 ST(0)",
+    "return_width_bytes": 4,
+    "internal_policy_resolver_call": {
+      "address": "0x00b3d2c0",
+      "calling_convention": "cdecl-shaped plain RET",
+      "pushed_words_top_to_bottom": ["source", "target", "1"],
+      "argument_consumption": "The resolver body reads no stack argument and leaves all three words for the following 0x00d00a70 thiscall."
+    },
+    "internal_stage_call": {
+      "address": "0x00d00a70",
+      "calling_convention": "thiscall",
+      "receiver_register": "ECX",
+      "receiver": "policy returned by 0x00b3d2c0",
+      "stack_arguments": ["source", "target", "1"],
+      "stack_cleanup_bytes": 12
+    }
+  },
+  "body": {
+    "status": "reconstructed",
+    "entry_address": "0x00d00d00",
+    "body_addresses": ["0x00d00d00", "0x00d00d46"],
+    "instruction_count": 21,
+    "basic_block_count": 8,
+    "raw_bytes": "8b4424088b4c24046a015051e8afc5e3ff8bc8e858fdffff83f8047723ff2485480dd000d905608d4701c3d905bc534801c3d905c4634701c3d905d0c43e01c3d905ac1c3f01c3",
+    "mechanics": [
+      "Push the constant 1, target, and source, call 0x00b3d2c0 for a relationship policy pointer, and use its EAX result as ECX.",
+      "Call 0x00d00a70 with the preserved source, target, and constant 1 stack words in that order; that thiscall removes its 12 argument bytes.",
+      "Compare the returned relationship stage with 4 using unsigned JA and dispatch a five-entry jump table.",
+      "Return immutable x87 constants 10.0, 30.0, 50.0, 80.0, and 100.0 for stages 0, 1, 2, 3, and 4; every unsigned stage above 4 also returns 100.0."
+    ]
+  },
+  "constants": [
+    {"stage": 0, "address": "0x01478d60", "value": 10.0},
+    {"stage": 1, "address": "0x014853bc", "value": 30.0},
+    {"stage": 2, "address": "0x014763c4", "value": 50.0},
+    {"stage": 3, "address": "0x013ec4d0", "value": 80.0},
+    {"stage": 4, "address": "0x013f1cac", "value": 100.0},
+    {"stage": ">4 unsigned", "address": "0x013f1cac", "value": 100.0}
+  ],
+  "mechanics_scope": {
+    "directed_identity": "The source and target words retain caller order through both the resolver call and 0x00d00a70; reversing the pair reverses the classifier inputs.",
+    "sentinel_and_invalid_ids": "No source or target validation occurs. Zero and 0xffffffff are forwarded unchanged.",
+    "null_policy": "The target has no null guard. A null resolver result is passed to 0x00d00a70, whose policy threshold fields are then dereferenced.",
+    "state_events_containers": "No empire, diplomacy, relationship, UI, communication, persistence, event, or container state is written.",
+    "caller_observation": "Direct callers include 0x00bd80d0, 0x00bdde70, and 0x00e2e6e0; their UI or presentation effects remain outside this target."
+  },
+  "call_graph": {
+    "direct_callers": ["0x00bd80d0", "0x00bdde70", "0x00e2e6e0"],
+    "direct_call_sites": ["0x00bd8104", "0x00bde259", "0x00e2e748"],
+    "direct_callees": ["0x00b3d2c0", "0x00d00a70"],
+    "function_xrefs": 3
+  },
+  "evidence": [
+    {"tool": "ghidra_get_function_by_address", "address": "0x00d00d00", "observation": "Live function is 0x00d00d00 through 0x00d00d46."},
+    {"tool": "ghidra_decompile_function", "address": "0x00d00d00", "observation": "Live pseudocode resolves a policy, classifies the directed pair with constant mode 1, and maps five bands."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00d00d00", "observation": "Assembly proves plain RET, two caller-cleaned arguments, x87 constant returns, unsigned stage guard, and shared resolver/classifier stack words."},
+    {"tool": "ghidra_get_function_callers", "address": "0x00d00d00", "observation": "Three direct caller functions are reported."},
+    {"tool": "ghidra_get_function_callees", "address": "0x00d00d00", "observation": "0x00b3d2c0 and restored-package function 0x00d00a70 are the only direct callees."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00b3d2c0", "observation": "Resolver uses a plain RET and reads no stack arguments."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00d00a70", "observation": "Classifier is thiscall with three stack words and RET 0x0c."},
+    {"tool": "ghidra_read_memory", "addresses": ["0x01478d60", "0x014853bc", "0x014763c4", "0x013ec4d0", "0x013f1cac"], "observation": "Raw IEEE-754 bytes decode to 10.0, 30.0, 50.0, 80.0, and 100.0."}
+  ],
+  "tests": [
+    "stage-to-band mapping including unsigned out-of-range stages",
+    "directed source/target order and reversal",
+    "zero and 0xffffffff forwarding without local rejection",
+    "null policy forwarding without a target-local guard",
+    "policy-before-classifier ordering and absence of state/event/container mutation"
+  ],
+  "confidence": {
+    "body": "high",
+    "abi_and_cleanup": "high",
+    "stage_mapping": "high",
+    "runtime_policy_values": "medium; policy resolver remains opaque"
+  },
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/pkg13-e2-diplomacy-alt reconstruction/staging/pkg13-e2-diplomacy-alt/diplomacy_alt.cpp reconstruction/staging/pkg13-e2-diplomacy-alt/diplomacy_alt_model_test.cpp",
+    "model_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg13-e2-diplomacy-alt reconstruction/staging/pkg13-e2-diplomacy-alt/diplomacy_alt.cpp reconstruction/staging/pkg13-e2-diplomacy-alt/diplomacy_alt_model_test.cpp -o /tmp/opencode/pkg13-e2-diplomacy-alt-model && /tmp/opencode/pkg13-e2-diplomacy-alt-model",
+    "format_command": "clang-format --dry-run --Werror --style='{BasedOnStyle: Google, FixNamespaceComments: false}' reconstruction/staging/pkg13-e2-diplomacy-alt/diplomacy_alt.hpp reconstruction/staging/pkg13-e2-diplomacy-alt/diplomacy_alt.cpp reconstruction/staging/pkg13-e2-diplomacy-alt/diplomacy_alt_model_test.cpp",
+    "json_command": "python3 -m json.tool reconstruction/metadata/pkg13-e2-diplomacy-alt/00d00d00.json >/dev/null",
+    "results": {"syntax": "passed", "model": "passed", "format": "passed", "json": "passed"}
+  },
+  "unresolved_questions": [
+    "runtime 0x00b3d2c0 policy availability by mode",
+    "runtime relationship stage values and threshold policy contents",
+    "caller-specific UI scaling and presentation behavior"
+  ],
+  "blockers": [
+    "No original-process relationship IDs, policy object, or stage output was observed.",
+    "Concrete policy owner and runtime mode routing remain opaque."
+  ]
+}

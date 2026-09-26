@@ -708,6 +708,173 @@ def _committed_snapshot_functions():
     return funcs if isinstance(funcs, list) else []
 
 
+# --------------------------------------------------------------------------- #
+# /get_function_by_address + /analyze_function_complete merge helpers.
+#
+# The two live endpoints cover disjoint ground:
+#   /get_function_by_address   -> name, signature, entry_point,
+#                                 body_start, body_end   (identity only)
+#   /analyze_function_complete -> parameters[] (with storage), locals[],
+#                                 callers, callees, xrefs, classification,
+#                                 return_type_resolved, decompiled_code,
+#                                 completeness.has_calling_convention
+# so a card has to join them rather than pick one. The rule is
+# "prefer whichever side actually has a value, and never let a null
+# overwrite a good one".
+# --------------------------------------------------------------------------- #
+def _first_populated(*values):
+    # type: (object) -> object
+    """First value that is neither None nor empty. Never raises.
+
+    An empty list/dict/string counts as UNPOPULATED, so a source that
+    answers ``[]`` does not shadow a source that has real rows.
+    """
+    for value in values:
+        if value is None:
+            continue
+        if isinstance(value, (list, tuple, dict, str)) and len(value) == 0:
+            continue
+        return value
+    return None
+
+
+def _first_keyed(*sources):
+    # type: (tuple) -> object
+    """First ``(mapping, key)`` whose key is present and non-None.
+
+    Unlike ``_first_populated`` an EMPTY list/dict counts as present:
+    for ``callers``/``callees`` a bridge answer of ``[]`` is a real
+    finding ("Ghidra knows of no callers"), not an absence, and must not
+    be reported as ``null``.
+    """
+    for mapping, key in sources:
+        if isinstance(mapping, dict) and key in mapping:
+            if mapping[key] is not None:
+                return mapping[key]
+    return None
+
+
+def _body_span_bytes(start, end):
+    # type: (object, object) -> int | None
+    """Inclusive ``body_end - body_start + 1`` byte span. Never raises.
+
+    This is a SPAN, not necessarily a byte count: a Ghidra function body
+    is an ``AddressSet`` and may contain holes (measured on
+    ``Resource::PFIndexModifiable::Write``: span 128 vs 125 real body
+    addresses), so callers must treat it as an upper bound unless it is
+    accompanied by contiguity evidence. Returns ``None`` when either end
+    is missing or unparseable, or when the end precedes the start.
+    """
+    low, high = _parse_int(start), _parse_int(end)
+    if low is None or high is None or high < low:
+        return None
+    return high - low + 1
+
+
+def _namespace_from_name(name):
+    # type: (object) -> str | None
+    """Class-scope prefix of a symbol name. Never raises.
+
+    Ghidra's own parent namespace is ``Global`` for every function in
+    SporeApp.exe (measured), and no REST endpoint returns it, so the
+    meaningful "namespace" -- the owning class/namespace a human reads
+    off a demangled ``A::B::C`` symbol -- is derived from the name
+    instead. ``FUN_00e806b0`` has none, hence ``None``. Derivation, not
+    a Ghidra observation: the card says so via ``namespace_source``.
+    """
+    if not isinstance(name, str) or "::" not in name:
+        return None
+    head = name.split("::", 1)[0].strip()
+    return head or None
+
+
+def _parameter_rows(analysis_d):
+    # type: (dict) -> list
+    """``parameters`` normalised to name/type/ordinal/storage rows.
+
+    The bridge returns ``{name, type, storage}`` per parameter and no
+    ordinal, so ``ordinal`` is the 0-based position in the array as
+    Ghidra ordered it -- a presentation convenience, not a Ghidra field.
+
+    ``storage`` is GHIDRA'S CURRENT MODEL, and for a member function it
+    is routinely wrong in the direction that matters: measured,
+    ``App::cCellModeStrategy::Update`` reports ``this`` as
+    ``Stack[0x4]:4`` rather than ``ECX``, simply because no prototype was
+    ever applied. A stack-shaped ``this`` is therefore evidence that
+    Ghidra lacks a prototype, NOT evidence about the real receiver.
+    """
+    rows = []
+    raw = analysis_d.get("parameters")
+    if not isinstance(raw, list):
+        return rows
+    for index, item in enumerate(raw):
+        if not isinstance(item, dict):
+            continue
+        rows.append({"name": item.get("name"),
+                     "type": item.get("type"),
+                     "ordinal": item.get("ordinal", index),
+                     "storage": item.get("storage")})
+    return rows
+
+
+def _local_rows(analysis_d):
+    # type: (dict) -> list
+    """``locals`` normalised to name/type/storage rows. Never raises.
+
+    Same caveat as ``_parameter_rows``: ``storage`` is Ghidra's model.
+    """
+    rows = []
+    raw = analysis_d.get("locals")
+    if not isinstance(raw, list):
+        return rows
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        rows.append({"name": item.get("name"),
+                     "type": item.get("type"),
+                     "storage": item.get("storage")})
+    return rows
+
+
+def _cc_observation(completeness):
+    # type: (object) -> dict
+    """Calling-convention cross-validation fields from ``completeness``.
+
+    Returns ``{"ghidra_has_calling_convention": bool | None,
+    "ghidra_calling_convention": None,
+    "ghidra_calling_convention_signal": "informative" |
+    "no_information" | "unavailable"}``.
+
+    POLICY (see tools/mcp/ghidra_client.py): this is an OBSERVATION
+    ABOUT GHIDRA, never a verdict. It must not be able to set a calling
+    convention, a receiver or an sret claim. ``no_information`` (Ghidra
+    holds no convention for the function) and ``unavailable`` (the
+    completeness block was not returned) are BOTH silence: they are not
+    agreement and not disagreement.
+
+    The convention STRING is always ``None`` here: only
+    ``/get_function_documentation`` returns one, and paying an extra
+    HTTP GET per function to fetch a value that is ``unknown`` for
+    99.8877% of SporeApp.exe functions is not worth it. The lazy accessor
+    is ``GhidraClient.calling_convention(address)``.
+    """
+    if isinstance(completeness, dict) and "has_calling_convention" in completeness:
+        flag = completeness.get("has_calling_convention")
+        if flag is None:
+            return {"ghidra_has_calling_convention": None,
+                    "ghidra_calling_convention": None,
+                    "ghidra_calling_convention_signal": (
+                        client_mod.CC_NO_INFORMATION)}
+        return {"ghidra_has_calling_convention": bool(flag),
+                "ghidra_calling_convention": None,
+                "ghidra_calling_convention_signal": (
+                    client_mod.CC_INFORMATIVE if flag
+                    else client_mod.CC_NO_INFORMATION)}
+    return {"ghidra_has_calling_convention": None,
+            "ghidra_calling_convention": None,
+            "ghidra_calling_convention_signal": client_mod.CC_UNAVAILABLE}
+
+
 def _vtable_join(va_int):
     # type: (int) -> dict
     """Join vtables.json evidence for one VA. Never raises."""
@@ -759,6 +926,36 @@ def _vtable_join(va_int):
 
 def ghidra_function(params):
     # type: (dict) -> dict
+    """Live metadata card for one function. Never raises.
+
+    Two REST calls, disjoint responsibilities:
+
+      * ``/get_function_by_address`` -- identity: ``name``, ``signature``,
+        ``entry_point``, ``body_start``, ``body_end``;
+      * ``/analyze_function_complete`` -- everything ABI-relevant:
+        ``parameters[]`` (each with ``storage``), ``locals[]``,
+        ``callers``, ``callees``, ``xrefs``, ``classification``,
+        ``return_type_resolved`` and ``completeness`` (only with
+        ``include_completeness``). NOTE that endpoint's required query
+        parameter is ``name``; a VA string resolves there unchanged.
+
+    Every pre-existing key keeps its meaning; the join only fills
+    values that used to arrive as ``null`` because the second call had
+    been answering ``Function not found: null``. ``provenance`` now
+    names only the endpoints that actually answered.
+
+    Calling-convention fields (``ghidra_calling_convention``,
+    ``ghidra_has_calling_convention``,
+    ``ghidra_calling_convention_signal``) are a CROSS-VALIDATION SIGNAL
+    ONLY: an observation about Ghidra's own model, never a verdict. They
+    cannot set a calling convention, a receiver or an sret claim, and
+    ``no_information``/``unavailable`` is silence, not agreement. See
+    ``_cc_observation``.
+
+    ``decompiled_code`` is deliberately NOT inlined here: the dedicated
+    ``ghidra_decompile`` tool already serves it (with disk caching), and
+    every card is retained in the in-session ``_FUNCTION_MEMO``.
+    """
     identity = _binary_identity()
     program = _program_name(params)
     base = _image_base(params)
@@ -795,11 +992,18 @@ def ghidra_function(params):
     info, analysis = None, None
     online = va is not None
     if online:
+        # Each call is isolated: a transport raise on one endpoint must
+        # not discard the other's answer (they are used together, and
+        # provenance names only the ones that answered). The historical
+        # shared try/except turned any single failure into a total one.
         try:
             info = client.function_by_address(va)
+        except Exception:
+            info = None
+        try:
             analysis = client.analyze_function(va)
         except Exception:
-            info, analysis = None, None
+            analysis = None
     info_d = _as_dict(info) if isinstance(info, dict) else {}
     if isinstance(info, dict) and info.get("status") != "ok":
         info_d = {}
@@ -847,30 +1051,81 @@ def ghidra_function(params):
             identity, tool="ghidra_function", program=program,
             image_base="0x%x" % base)
 
+    # Provenance names only the endpoints that actually answered: the
+    # old fixed string claimed /analyze_function_complete even on the
+    # paths where that call had failed and contributed nothing.
+    sources = []
+    if info_d:
+        sources.append("/get_function_by_address")
+    if analysis_d:
+        sources.append("/analyze_function_complete")
+    provenance = _rest_provenance(client, " + ".join(sources) or "unknown")
+
     merged = dict(info_d)
     for key, value in analysis_d.items():
         merged.setdefault(key, value)
+    name = _first_populated(merged.get("name"), target.get("name"))
+    entry_point = _first_populated(
+        merged.get("entry_point"), merged.get("address"))
+    body_start = _first_populated(merged.get("body_start"), entry_point)
+    body_end = _first_populated(merged.get("body_end"))
+    body_span = _body_span_bytes(body_start, body_end)
+    # size_bytes keeps its meaning ("size of the function in bytes"); it
+    # is only filled from the body span when neither endpoint stated one,
+    # and body_span_bytes always carries the raw span separately.
+    size_bytes = _first_populated(merged.get("size_bytes"),
+                                  merged.get("size"), body_span)
+    namespace = _first_populated(merged.get("namespace"))
+    if namespace:
+        namespace_source = "ghidra"
+    else:
+        namespace = _namespace_from_name(name)
+        namespace_source = ("derived_from_symbol_name" if namespace
+                            else None)
+    parameters = _parameter_rows(analysis_d)
+    locals_rows = _local_rows(analysis_d)
+    xrefs = analysis_d.get("xrefs")
+    completeness = analysis_d.get("completeness")
+    completeness = completeness if isinstance(completeness, dict) else {}
+    cc = _cc_observation(completeness)
     va_int = _parse_int(va) if va is not None else None
     join = _vtable_join(va_int) if va_int is not None else \
         {"vtable_at": [], "referenced_by_vtables": [],
          "sdk_associations": []}
     card = _ok_envelope(
-        identity, _MODE_LIVE,
-        _rest_provenance(client, "/get_function_by_address + "
-                                 "/analyze_function_complete"),
+        identity, _MODE_LIVE, provenance,
         program, base, status="ok", tool="ghidra_function",
         va=va, rva=target.get("rva"),
-        name=merged.get("name") or target.get("name"),
+        name=name,
         program=program, image_base="0x%x" % base,
-        size_bytes=merged.get("size_bytes", merged.get("size")),
-        namespace=merged.get("namespace"),
+        size_bytes=size_bytes,
+        body_span_bytes=body_span,
+        entry_point=entry_point,
+        body_start=body_start,
+        body_end=body_end,
+        namespace=namespace,
+        namespace_source=namespace_source,
         signature=merged.get("signature"),
         dispatch=merged.get("dispatch"),
-        callers=merged.get("callers"),
-        callees=merged.get("callees"),
+        callers=_first_keyed((analysis_d, "callers"), (info_d, "callers")),
+        callees=_first_keyed((analysis_d, "callees"), (info_d, "callees")),
+        parameters=parameters,
+        parameter_count=len(parameters),
+        locals=locals_rows,
+        locals_count=len(locals_rows),
+        classification=merged.get("classification"),
+        return_type=completeness.get("return_type"),
+        return_type_resolved=merged.get("return_type_resolved"),
+        xref_count=analysis_d.get("xref_count"),
+        xrefs=xrefs if isinstance(xrefs, list) else None,
         sdk_name=merged.get("sdk_name"),
         sdk_type=merged.get("sdk_type"),
         subsystem=merged.get("subsystem"),
+        ghidra_calling_convention=cc["ghidra_calling_convention"],
+        ghidra_has_calling_convention=cc["ghidra_has_calling_convention"],
+        ghidra_calling_convention_signal=cc[
+            "ghidra_calling_convention_signal"],
+        ghidra_calling_convention_role="cross-validation-only",
         vtables=join,
         evidence_note=EVIDENCE_NOTE)
     if va is not None:

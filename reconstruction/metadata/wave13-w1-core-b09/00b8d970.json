@@ -1,0 +1,241 @@
+{
+  "schema": "openspore-worker-metadata-1",
+  "package": "wave13-w1-core-b09",
+  "va": "0x00b8d970",
+  "address": "0x00b8d970",
+  "function_address": "0x00b8d970",
+  "entry_address": "0x00b8d970",
+  "ghidra_name": "FUN_00b8d970",
+  "normalized_symbol": "wave13_w1_core_b09_00b8d970",
+  "reconstructed_symbol": "SimFlagBit_00b8d970_reconstruct",
+  "declaration": "extern \"C\" B09_THISCALL std::uint32_t SimFlagBit_00b8d970_reconstruct(OpaqueFlagWordOwnerObserved* self);",
+  "source_files": [
+    "reconstruction/staging/wave13-w1-core-b09/b09_abi.hpp",
+    "reconstruction/staging/wave13-w1-core-b09/sim_flagbit_00b8d970.hpp",
+    "reconstruction/staging/wave13-w1-core-b09/sim_flagbit_00b8d970.cpp",
+    "reconstruction/staging/wave13-w1-core-b09/sim_flagbit_00b8d970_model_test.cpp"
+  ],
+  "subsystem": "Simulator",
+  "package_ids": ["PKG-11-SIM-CORE"],
+
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "calling_convention_observation": "0x00b8d970 is 8b 41 2c, MOV EAX,[ECX + 0x2c]: the ModRM byte 41 is mod=01 disp8 reg=000, so the receiver is ECX with an 8-bit displacement. EDX is used as scratch by the SHR. There is no stack argument, no frame and the epilogue is a bare RET, so the caller owns all stack cleanup.",
+    "return_type": "std::uint32_t (single flag bit, 0 or 1)",
+    "return_semantics": "Bit 8 of the flag word at receiver+0x2c, materialised as a full dword that is exactly 0 or exactly 1. SHR EAX,8 first clears bits 0..7 and bit 31, then AND AL,1 clears bits 8..31, so the whole register ends up 0 or 1 and the upper three bytes are provably zero.",
+    "return_register": "EAX",
+    "return_width_bytes": 4,
+    "return_observation": "0x00b8d973 SHR EAX,0x8 followed by 0x00b8d976 AND AL,0x1 leaves the full dword as 0 or 1. Consumers agree: 0x00c8b878 and 0x00c48534 and 0x00c44d0c all use TEST AL,AL, which is compatible with either width, but the reconstruction was written to the dword contract rather than the byte one and the model test pins it.",
+    "ret_form": "RET",
+    "termination": "RET",
+    "stack_cleanup_bytes": 0,
+    "stack_cleanup_owner": "caller",
+    "stack_arguments": [],
+    "ordinary_stack_argument_slots": 0,
+    "saved_registers": [],
+    "frame": "none",
+    "receiver": true,
+    "hidden_receiver": "read",
+    "hidden_this_register": "ECX, read once and never modified"
+  },
+
+  "layout": {
+    "entry_address": "0x00b8d970",
+    "body_start": "0x00b8d970",
+    "body_end": "0x00b8d978",
+    "body_span_bytes": 9,
+    "body_bytes_hex": "8b412cc1e8082401c3",
+    "body_bytes_verified_by": "ghidra_read_memory at 0x00b8d970 and ghidra_disassemble_bytes at 0x00b8d970",
+    "instruction_count": 4,
+    "instructions": [
+      {"address": "0x00b8d970", "bytes": "8b 41 2c", "mnemonic": "MOV", "operands": "EAX,dword ptr [ECX + 0x2c]"},
+      {"address": "0x00b8d973", "bytes": "c1 e8 08", "mnemonic": "SHR", "operands": "EAX,0x8"},
+      {"address": "0x00b8d976", "bytes": "24 01", "mnemonic": "AND", "operands": "AL,0x1"},
+      {"address": "0x00b8d978", "bytes": "c3", "mnemonic": "RET", "operands": ""}
+    ],
+    "padding_after": "0x00b8d979 through 0x00b8d97f are seven cc bytes (INT3 inter-function pad), confirmed by the 16-byte live read",
+    "frame_shape": "none: no PUSH, no SUB ESP, no MOV EBP,ESP, no register save or restore",
+    "reads": "exactly four bytes at receiver+0x2c",
+    "writes": "nothing: EAX only, no memory write anywhere in the program address space"
+  },
+
+  "observed_mechanics": [
+    "0x00b8d970: 8b 41 2c - MOV EAX,[ECX + 0x2c] loads the whole 32-bit flag word; the ModRM disp8 0x2c is the field offset.",
+    "0x00b8d973: c1 e8 08 - SHR EAX,0x8 is a logical right shift by 8, so bit 8 of the original word becomes bit 0 of EAX and bits 0..7 plus bit 31 are discarded.",
+    "0x00b8d976: 24 01 - AND AL,0x1 masks only the low byte, and because the SHR already zeroed bits 8..31 the whole register is reduced to 0 or 1. AND AL,1 rather than AND EAX,1 is what makes the upper three bytes provably zero.",
+    "0x00b8d978: c3 - RET with no immediate, so the callee pops zero stack words.",
+    "Live memory read at 0x00b8d970 returns 8b412cc1e8082401c3cccccccccccccccccc, confirming all four instructions and the pad.",
+    "The inlined duplicate at 0x00b8d9ff..0x00b8da12 is the decisive corroboration: on the SAME field +0x2c it performs EAX = [ESI + 0x2c] ; SHR EAX,8 ; TEST AL,1 ; JNZ, an exact inlining of this function, and then at 0x00b8da12 separately tests bit 0x800 of the same word with TEST dword ptr [ESI + 0x2c],0x800. Two independent bit positions in one 32-bit word is what proves +0x2c is a packed flag word and that bit 8 is a flag rather than data.",
+    "0x00c8b873: CALL 0x00b8d970 ; 0x00c8b878 TEST AL,AL ; 0x00c8b87a JNZ 0x00c8b905, so the answer is a gate that skips the rest of the loop body.",
+    "0x00c44d07: CALL 0x00b8d970 ; 0x00c44d0c TEST AL,AL ; 0x00c44d0e JNZ 0x00c44ec3, an early return from the caller.",
+    "0x00c4852f and 0x00c48548 in caller 0x00c484e0 both dispatch this function on ECX = [ESI + 0x9c] + 0x13c and [ESI + 0x1e8] + 0x13c respectively, and each is followed by TEST AL,AL ; JNZ 0x00c48591, so the same flag is consulted on two different sub-objects before the caller commits to state 1.",
+    "clang++ -m32 -O2 with __attribute__((thiscall)) emits 8b 41 2c c1 e8 08 83 e0 01 c3 for the reconstruction: the same 9 bytes, the same offsets, the same instruction sequence; the only difference is that clang prefers AND EAX,1 over AND AL,1, which for a full-dword result is semantically identical."
+  ],
+
+  "fields_and_offsets": [
+    {"owner": "receiver", "offset": "+0x2c", "type": "dword bitfield", "read_at": ["0x00b8d970"], "written_at": [],
+     "meaning": "a packed flag word; bit 8 is the flag this function reports. Bit 11 (mask 0x800) is a second flag, read separately at 0x00b8da12 by the inlined sibling.",
+     "confidence": "high", "evidence": "OBSERVED",
+     "note": "the bitfield nature is proved by the inlined duplicate at 0x00b8d9ff, not inferred"},
+    {"owner": "receiver", "offset": "+0x28", "type": "dword state", "read_at": [], "written_at": [],
+     "meaning": "a small state that callers compare against 0 and 1 before ever consulting the flag word; not read by this function",
+     "confidence": "medium", "evidence": "OBSERVED_IN_CALLERS",
+     "note": "0x00c8b859 loads [ESI + 0x28], compares it against 1 at 0x00c8b860 and against 0 at 0x00c8b869, and skips the loop body in both cases, only reaching this function when the state is 2 or greater"}
+  ],
+
+  "constants": [
+    {"value": "0x8", "address": "0x00b8d973", "meaning": "SHR immediate: the index of the flag bit being extracted, which is the whole content of this function"},
+    {"value": "0x1", "address": "0x00b8d976", "meaning": "AND mask: reduce the shifted value to the single extracted bit"}
+  ],
+
+  "globals": [],
+  "virtual_dispatch": [],
+
+  "control_flow": {
+    "shape": "straight line, four instructions, no branch",
+    "guard": "none; the caller performs the state guard at +0x28, not this function",
+    "switch_table": "none",
+    "loops": "none",
+    "early_exits": ["0x00b8d978, the only exit"],
+    "exhaustiveness": "complete and trivially so"
+  },
+
+  "callers_evidence": [
+    {"callsite": "0x00c8b873", "caller": "0x00c8b820", "form": "CALL", "receiver_setup": "0x00c8b871 MOV ECX,ESI where ESI is an element of a pointer vector; the call is reached only after 0x00c8b860 CMP EAX,1 and 0x00c8b869 TEST EAX,EAX both fall through, i.e. only when [ESI + 0x28] is 2 or greater", "result_use": "0x00c8b878 TEST AL,AL ; 0x00c8b87a JNZ 0x00c8b905, gating the rest of the loop body for that element"},
+    {"callsite": "0x00c44d07", "caller": "0x00c44d00", "form": "CALL", "receiver_setup": "0x00c44d05 MOV ECX,ESI where ESI was loaded from the caller stack at 0x00c44d01", "result_use": "0x00c44d0c TEST AL,AL ; 0x00c44d0e JNZ 0x00c44ec3, an early return that skips the rest of the function"},
+    {"callsite": "0x00c4852f", "caller": "0x00c484e0", "form": "CALL", "receiver_setup": "0x00c48523 MOV EAX,[ESI + 0x9c] then 0x00c48529 MOV ECX,[EAX + 0x13c], so the receiver is the sub-object at offset +0x13c of the object at +0x9c", "result_use": "0x00c48534 TEST AL,AL ; 0x00c48536 JNZ 0x00c48591, i.e. a true answer skips the whole tail of the caller including the state assignment at 0x00c48595"},
+    {"callsite": "0x00c48548", "caller": "0x00c484e0", "form": "CALL", "receiver_setup": "0x00c48538 MOV EAX,[ESI + 0x1e8] then 0x00c48542 MOV ECX,[EAX + 0x13c], the same +0x13c sub-object of a second object", "result_use": "0x00c4854d TEST AL,AL ; 0x00c4854f JNZ 0x00c48591, the same gate applied to a second object"},
+    {"callsite": "0x00bba811", "caller": "0x00bba790", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x00bba9d4", "caller": "0x00bba990", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x00c38295", "caller": "0x00c38270", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x00c4852f region siblings 0x00c8b951, 0x00c8bb57, 0x00c8c656, 0x00c8ca8e", "caller": "0x00c8b920, 0x00c8bb00, 0x00c8c5d0, 0x00c8c9d0", "form": "CALL", "result_use": "not inspected; all four are neighbours of the inspected 0x00c8b873 site and are likely the same loop shape"},
+    {"callsite": "0x00c8b873, 0x00c8ba31, 0x00c8bb57, 0x00c8c46d, 0x00c8c656, 0x00c8c844, 0x00c8ca8e, 0x00c8d0d0", "caller": "0x00c8b820, 0x00c8ba00, 0x00c8bb00, 0x00c8c420, 0x00c8c5d0, 0x00c8c7f0, 0x00c8c9d0, 0x00c8d060", "form": "CALL", "result_use": "not inspected", "note": "the 0x00c8b8xx family is a run of near-identical short functions in one code region, all consulting this flag"},
+    {"callsite": "0x00e97e50", "caller": "0x00e97bf0", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x00fdd293", "caller": "0x00fdd210", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x00fde8e5", "caller": "0x00fde3e0", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x01002501", "caller": "0x010021a0", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x010092cb, 0x010092e5", "caller": "0x010091d0", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x0100a24a", "caller": "0x0100a160", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x0103aa56", "caller": "0x0103aa00", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x0106898d", "caller": "0x01068970", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x01069d8f", "caller": "0x01069aa0", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x0106bb77", "caller": "0x0106ba00", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x010733c4, 0x010734f4", "caller": "0x01072d40", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x00c56f3f, 0x00c56f95, 0x01025ad7", "caller": "outside any Ghidra function", "form": "UNCONDITIONAL_CALL", "result_use": "not inspected", "note": "present in the live xref list but absent from the briefing's 25-caller table"}
+  ],
+
+  "callees_evidence": [],
+
+  "sdk_correspondence": {
+    "status": "NO_CANDIDATE",
+    "observation": "No Spore-ModAPI signature corresponds to a bare bit-8 extraction from a packed flag word at offset +0x2c. Nothing is claimed.",
+    "sdk_paths_read": []
+  },
+
+  "analogue_functions": [
+    {"va": "0x00b8d9f0 region, specifically 0x00b8d9ff..0x00b8da12", "relation": "INLINED DUPLICATE, 0x90 bytes later in the same code region", "strength": "very strong",
+     "shared": "loads the same field receiver+0x2c, performs the identical SHR EAX,8 then AND/TEST AL,1 sequence on it, and branches on the result",
+     "difference": "0x00b8d9f0 first loads and range-checks the separate state field receiver+0x28 against 0 and 1, then inlines this function's extraction, then separately tests bit 0x800 of the same word at 0x00b8da12 before calling 0x00b8d9b0",
+     "corroborates": "that receiver+0x2c is a packed flag word with at least bits 8 and 11 in use, that the receiver type here is the same family, and that the compiler chose to inline this accessor rather than call it at that site"},
+    {"va": "0x00b8d9b0", "relation": "NEIGHBOUR, same receiver family", "strength": "medium",
+     "observation": "called by the inlined duplicate at 0x00b8da09 immediately after both the bit-8 and the bit-0x800 tests have passed, so it operates only when both flags are clear. Its body chains 0x00b3d2a0, 0x00bb99e0, 0x00feb9f0, 0x00fee220 and 0x00c4b220 and was not fully resolved in this batch."}
+  ],
+
+  "semantic_contract": "Return bit 8 of the 32-bit flag word at receiver+0x2c, as a full dword that is exactly 0 or exactly 1. The extraction is a logical right shift by 8 followed by a mask of 1, so the function is a pure bit test: no guard, no clamp, no callee, no global read, no side effect and no branch. The receiver is not null-checked. The neighbouring state field at receiver+0x2c's offset minus 4, i.e. +0x28, is not consulted here; callers check it themselves and skip this function entirely for state values 0 and 1.",
+
+  "classification": "BOUNDED_SEMANTIC",
+  "classification_rationale": "Not STRONG_SEMANTIC: the body is complete and the ABI, the offset, the shift amount, the mask, the return width and the bit index are all OBSERVED, and the bitfield nature of the field is corroborated by an inlined duplicate rather than assumed; but the owning class and the game meaning of flag bit 8 are not established, and that is a material element. Not STRUCTURAL_ONLY: the behavioural contract is a specific bit extraction with a specific index, fully determined and reconstructed. The bound is named: owning type and the meaning of bit 8.",
+
+  "semantic_findings": [
+    "This is a named-bit accessor, not a data accessor: the SHR-by-8 plus AND-1 pair exists solely to isolate one bit, and the model test pins that bit 8 and not bit 0 is the one reported.",
+    "The inlined duplicate at 0x00b8d9ff is the strongest available evidence and it upgrades the claim from 'a dword field' to 'a packed flag word': the same function reads bit 8 of +0x2c and then reads bit 11 of +0x2c in the same basic block.",
+    "Because the extraction is a pure read with no side effect, 25 direct call sites can consult it freely, and 0x00c484e0 consults it twice on two different sub-objects within one function at 0x00c4852f and 0x00c48548.",
+    "The caller-side state guard at receiver+0x28 (values 0 and 1 skip the flag entirely) shows the flag word is only meaningful from state 2 onwards, so +0x28 and +0x2c together form a state-plus-flags pair.",
+    "AND AL,1 rather than AND EAX,1 is what makes the upper three bytes of the return provably zero; the model test therefore pins a full dword of 0 or 1 rather than a boolean.",
+    "The 0x00c8b8xx run of eight short functions in one code region all consult this flag on elements of pointer vectors, which is consistent with a per-element eligibility test in a container sweep.",
+    "The briefing recorded 25 callers; the live xref query returns 31 UNCONDITIONAL_CALL references, so three further callsites at 0x00c56f3f, 0x00c56f95 and 0x01025ad7 exist outside any Ghidra function body. None is a DATA reference, so the function still occupies no vtable slot."
+  ],
+
+  "unresolved_questions": [
+    "What class owns this function? 31 live references, all UNCONDITIONAL_CALL, and no DATA reference, so it is not a vtable slot and no owner can be named.",
+    "What does flag bit 8 mean? That it is a flag is established; its game meaning is not, and no SDK field, global name or string ties it to a concept.",
+    "Which other bits of the word at +0x2c are in use? Only bit 8 (here) and bit 11 (0x00b8da12) were observed; the other 30 bits are unaccounted for.",
+    "Who writes the flag word at +0x2c? No writer was found in this batch.",
+    "What is the state enum at +0x28, and what are all its values beyond the observed 0, 1 and 2-or-greater?",
+    "What is 0x00b8d9b0, the chain of five calls that runs only when both bit 8 and bit 0x800 are clear? It was not resolved in this batch.",
+    "What are the three unreported callsites at 0x00c56f3f, 0x00c56f95 and 0x01025ad7, which lie outside any Ghidra function body?",
+    "No original-process trace exists, so the runtime flag values are unverified."
+  ],
+
+  "confidence": {
+    "body_bytes": 1.0,
+    "instruction_list": 1.0,
+    "control_flow": 1.0,
+    "field_offset": 1.0,
+    "constants": 1.0,
+    "abi_and_return_width": 0.95,
+    "bit_index": 1.0,
+    "bitfield_nature_of_field": 0.95,
+    "flag_meaning": 0.2,
+    "owning_class": 0.0
+  },
+
+  "evidence": [
+    "reconstruction/evidence/00b8d970/evidence.json",
+    "reconstruction/evidence/00b8d970/context.json",
+    "reconstruction/staging/wave13-w1-core-b09/sim_flagbit_00b8d970.cpp",
+    "ghidra_read_memory 0x00b8d970 (16 bytes)",
+    "ghidra_disassemble_bytes 0x00b8d970 and 0x00b8d9f0 (the inlined duplicate)",
+    "ghidra_decompile_function 0x00b8d970",
+    "ghidra_disassemble_function 0x00b8d9b0 (the neighbour called after both flag tests pass)",
+    "ghidra_disassemble_bytes 0x00c8b820, 0x00c44d00, 0x00c484e0 (the three inspected customer families)",
+    "ghidra_get_function_xrefs 0x00b8d970 (31 refs, all UNCONDITIONAL_CALL, no DATA ref)"
+  ],
+
+  "tooling_evidence": [
+    {"tool": "ghidra_read_memory", "address": "0x00b8d970", "observation": "8b412cc1e8082401c3cccccccccccccccccc - nine body bytes then seven INT3 pad bytes"},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x00b8d970", "observation": "MOV EAX,[ECX + 0x2c] (3 bytes) ; SHR EAX,0x8 (3 bytes) ; AND AL,0x1 (2 bytes) ; RET (1 byte)"},
+    {"tool": "ghidra_decompile_function", "address": "0x00b8d970", "observation": "uint __fastcall FUN_00b8d970(int param_1) returning *(uint *)(param_1 + 0x2c) >> 8 & 0xffffff01 - the decompiler's 0xffffff01 mask is WRONG; it models AND AL,1 as a full-dword mask. The disassembly is authoritative and the reconstruction follows it."},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x00b8d9f0", "observation": "MOV EAX,[ESI + 0x28] ; TEST EAX,EAX ; JZ ; CMP EAX,1 ; JZ ; MOV EAX,[ESI + 0x2c] ; SHR EAX,8 ; TEST AL,1 ; JNZ ; CALL 0x00b8d9b0 ; TEST EAX,EAX ; JNZ ; TEST dword ptr [ESI + 0x2c],0x800 ; JNZ ; MOV AL,1 - an exact inlining of the target plus a second bit test on the same word"},
+    {"tool": "ghidra_disassemble_function", "address": "0x00b8d9b0", "observation": "24 instructions chaining 0x00b3d2a0, 0x00bb99e0, 0x00feb9f0, 0x00fee220 and 0x00c4b220, reached only when both bit 8 and bit 0x800 of the flag word are clear"},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x00c8b820", "observation": "MOV EAX,[ESI + 0x28] ; CMP EAX,1 ; JZ 0x00c8b905 ; TEST EAX,EAX ; JZ 0x00c8b905 ; MOV ECX,ESI ; CALL 0x00b8d970 ; TEST AL,AL ; JNZ 0x00c8b905"},
+    {"tools": ["ghidra_disassemble_bytes"], "address": "0x00c44d00", "observation": "MOV ESI,[ESP + 0x8] ; MOV ECX,ESI ; CALL 0x00b8d970 ; TEST AL,AL ; JNZ 0x00c44ec3"},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x00c484e0", "observation": "MOV EAX,[ESI + 0x9c] ; MOV ECX,[EAX + 0x13c] ; CALL 0x00b8d970 ; TEST AL,AL ; JNZ 0x00c48591, then the same shape for [ESI + 0x1e8] + 0x13c at 0x00c48548"},
+    {"tool": "ghidra_get_function_xrefs", "address": "0x00b8d970", "observation": "31 UNCONDITIONAL_CALL references and zero DATA references; three callsites are absent from the briefing's caller table"},
+    {"tool": "objdump", "observation": "clang++ -m32 -O2 with __attribute__((thiscall)) emits 8b 41 2c c1 e8 08 83 e0 01 c3 - the same 9 bytes and the same offsets; only the AND encoding differs (EAX vs AL), which is semantically identical for a full-dword result"}
+  ],
+
+  "runtime_gates": [
+    "No original-process trace exists for this address, so the runtime value of the flag word at +0x2c is unverified.",
+    "The Cell stage has never been entered in any recorded run, so nothing here is runtime observed.",
+    "A differential fixture is cheap but needs a receiver whose flag word is set by real game code, which static evidence does not supply."
+  ],
+
+  "body_reconstruction": {
+    "source": "reconstruction/staging/wave13-w1-core-b09/sim_flagbit_00b8d970.cpp",
+    "status": "implemented",
+    "claim_scope": "The 9-byte body is reconstructed in full, including the bit index, the mask and the full-dword 0-or-1 return. No class name and no flag name are claimed, and the reconstruction follows the disassembly rather than the decompiler's erroneous 0xffffff01 mask.",
+    "byte_exactness": "clang++ 22.1.8 -m32 -O2 with __attribute__((thiscall)) emits 8b 41 2c c1 e8 08 83 e0 01 c3, the same 9 bytes and the same offsets as the original; the AND is encoded on EAX rather than AL, which is semantically identical for a full-dword result.",
+    "validation": {
+      "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/wave13-w1-core-b09 reconstruction/staging/wave13-w1-core-b09/sim_flagbit_00b8d970.cpp reconstruction/staging/wave13-w1-core-b09/sim_flagbit_00b8d970_model_test.cpp",
+      "model_test_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/wave13-w1-core-b09 reconstruction/staging/wave13-w1-core-b09/sim_flagbit_00b8d970.cpp reconstruction/staging/wave13-w1-core-b09/sim_flagbit_00b8d970_model_test.cpp -o /tmp/opencode/b09/sim_flagbit_00b8d970-model && /tmp/opencode/b09/sim_flagbit_00b8d970-model",
+      "syntax": "passed",
+      "model_test": "passed, exit 0",
+      "byte_check": "passed, 9 of 9 bytes with identical offsets; one encoding difference (AND EAX,1 vs AND AL,1) noted as semantically equivalent"
+    }
+  },
+
+  "provenance": {
+    "binary": "SPORE/SporeBin/SporeApp.exe",
+    "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+    "image_base": "0x00400000",
+    "worker_id": "wave13-w1-core-b09",
+    "batch_id": "b09",
+    "package": "wave13-w1-core-b09",
+    "date": "2026-09-26",
+    "tool": "Ghidra 12.1.2 headless via ghidra-mcp, program SporeApp.exe",
+    "all_claims_static": true,
+    "rtti_present": false
+  }
+}

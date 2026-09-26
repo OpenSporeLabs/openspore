@@ -1,0 +1,163 @@
+{
+  "$schema": "pkg-skinner-wave11.function-handoff.v1",
+  "package": "PKG-SKINNER-WAVE11",
+  "phase": "body-reconstruction",
+  "worker_ownership": "skinner-wave11-nine-unclaimed-va",
+  "review_status": "staged_static_self_review",
+  "runtime_validation": 0,
+  "ghidra_program": "SporeApp.exe",
+  "ghidra_mutated": false,
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "captured_on": "2026-09-25",
+  "va": "0x005183c0",
+  "function_address": "0x005183c0",
+  "ghidra_name": "FUN_005183c0",
+  "subsystem": "Skinner",
+  "normalized_symbol": "skin_paint_slot_pass_005183c0",
+  "declaration": "unsigned char __thiscall skin_paint_slot_pass_005183c0(OpaqueSkinJobState* job)",
+  "implementation": {
+    "status": "implemented in worker owned staging",
+    "canonical_status": "not present; canonical promotion is not claimed",
+    "header": "reconstruction/staging/pkg-skinner-wave11/skinner_wave11.hpp",
+    "source": "reconstruction/staging/pkg-skinner-wave11/skinner_wave11.cpp",
+    "model_test": "reconstruction/staging/pkg-skinner-wave11/skinner_wave11_model_test.cpp",
+    "boundary_test": "reconstruction/staging/pkg-skinner-wave11/skinner_wave11_boundary_test.sh",
+    "metadata": "reconstruction/staging/pkg-skinner-wave11/005183c0.json"
+  },
+  "selection": {
+    "live_function": {
+      "entry": "0x005183c0",
+      "body_end_inclusive": "0x00518af4",
+      "body_end_exclusive": "0x00518af5",
+      "instruction_count": 445,
+      "byte_length": 1845
+    },
+    "ownership_search": {
+      "manifest_claim": false,
+      "integrated_handoff_claim": false,
+      "worker_metadata_claim": false,
+      "staging_function_claim": false,
+      "note": "no other staging package claims this address; the neighbouring pkg-skinner-wave10 and pkg-skinner-safe-wave10 packages claim 0x00506590, 0x00517160 and 0x005182f0 only"
+    }
+  },
+  "role": "acquire the indexed painter texture slot and run either the first call setup pass or the per pass region loop",
+  "original_native_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "thiscall, receiver only, no stack arguments",
+    "receiver_register": "ECX",
+    "receiver_type": "OpaqueSkinJobState*",
+    "frame": "PUSH EBP / MOV EBP,ESP / SUB ESP,0x198",
+    "stack_arguments": [],
+    "stack_cleanup_bytes": 0,
+    "return_register": "EAX",
+    "return_width_bytes": 1,
+    "return_contract": "the setup path writes only the AL lane at 0x005187a0 and the pass loop writes a full 32 bit signed compare at 0x00518aeb, so the model returns the widened 0 and the full width boolean, matching the repository convention used by pkg-editor-wave10",
+    "ret_form": "RET"
+  },
+  "field_contract": {
+    "receiver_reads": [
+      {
+        "offset": "0x10",
+        "width_bytes": 4,
+        "type": "std::int32_t",
+        "expression": "used as a painter texture slot index, painter + 0x10 + index * 4"
+      },
+      {
+        "offset": "0x14",
+        "width_bytes": 4,
+        "type": "std::int32_t",
+        "expression": "signed compare against the pass cursor to form the return value"
+      },
+      {
+        "offset": "0x18",
+        "width_bytes": 4,
+        "type": "std::int32_t",
+        "expression": "branch selector, then the pass cursor"
+      }
+    ],
+    "receiver_writes": [
+      {
+        "offset": "0x18",
+        "width_bytes": 4,
+        "type": "std::int32_t",
+        "expression": "set to 1 by the setup path and advanced by the clamped batch size otherwise"
+      }
+    ]
+  },
+  "call_graph": {
+    "direct_callers": [],
+    "data_references": [],
+    "direct_callees": [
+      {
+        "va": "0x00401080",
+        "count": 3,
+        "note": "cdecl, no arguments, RET, sampled at the slot fetch, the batch fetch and the pass loop"
+      },
+      {
+        "va": "0x00528e90",
+        "count": 1,
+        "note": "thiscall StartRender on the active texture"
+      },
+      {
+        "va": "0x00529280",
+        "count": 2,
+        "note": "thiscall, four stack words, callee clean 0x10"
+      },
+      {
+        "va": "0x005295b0",
+        "count": 7,
+        "note": "thiscall, four stack words, callee clean 0x10; six setup vertices plus the per index rig vertices"
+      },
+      {
+        "va": "0x00529520",
+        "count": 2,
+        "note": "thiscall, one stack word, callee clean 4; once for the setup clamp and once per batch"
+      },
+      {
+        "va": "0x00529690",
+        "count": 2,
+        "note": "thiscall flush, once after the setup quad and once per batch"
+      },
+      {
+        "va": "0x0067dd00",
+        "count": 1,
+        "note": "cdecl probe accessor, then one indirect call through the 0x44 slot"
+      },
+      {
+        "va": "0x005296b0",
+        "count": 1,
+        "note": "thiscall, three stack words, callee clean 0xc, inside the pass loop"
+      },
+      {
+        "va": "0x00529bf0",
+        "count": 2,
+        "note": "thiscall EndRender, one per path"
+      },
+      {
+        "va": "0x00518b00",
+        "count": 1,
+        "note": "thiscall, one stack word, callee clean 4, once per pass"
+      }
+    ]
+  },
+  "unresolved_gates": [
+    "runtime validation not performed; static decompilation and disassembly only",
+    "the six vertex setup quad repeats its third and first vertex, so the emitted strip is degenerate; the repetition is preserved verbatim because it is observable in the vertex stream",
+    "the block at 0x00518a0c that would repaint with material 0xa0468560 compares two copies of the same slot pointer, so it is unreachable; only the reachable effect is modelled",
+    "the swap port at 0x00518b00 exchanges the head words of the two painters, so the pointer identity compared just before it is unaffected and the dead block stays dead after the swap",
+    "the six vertex block is bound by the graphics probe 0x44 query only through the two and eight pass choice; the probe object itself is not modelled"
+  ],
+  "focused_test_evidence": {
+    "command": "reconstruction/staging/pkg-skinner-wave11/skinner_wave11_boundary_test.sh",
+    "test_count": 48,
+    "assertion_count": 280,
+    "ndebug": "passed at -O0 -DNDEBUG and -O2 -DNDEBUG; the emitted object is byte for byte equal to the matching non NDEBUG object at both optimisation levels",
+    "normal": "passed at -O0 and at -O2"
+  },
+  "return_width": {
+    "observed": "byte in AL only; the epilogue never writes a wider register",
+    "evidence": "0x00518aee SETG AL / 0x00518aeb CMP / 0x00518ae9 XOR EAX,EAX, so only AL is written before the RET at 0x00518af4",
+    "correction": "the declaration previously claimed a 4 byte TargetWord return, which is wider than the target writes; the model and the header now return TargetByte"
+  }
+}

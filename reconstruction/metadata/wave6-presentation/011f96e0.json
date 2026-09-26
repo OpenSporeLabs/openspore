@@ -5,9 +5,9 @@
   "ghidra_name": "RenderWare::Mesh::SetIndicesCount",
   "normalized_symbol": "renderware_mesh_set_indices_count_011f96e0",
   "source_files": [
-    "reconstruction/staging/wave6-presentation/presentation_boundary.hpp",
-    "reconstruction/staging/wave6-presentation/presentation_boundary.cpp",
-    "reconstruction/staging/wave6-presentation/presentation_boundary_test.cpp"
+    "src/reconstruction/wave6_presentation/presentation_boundary.hpp",
+    "src/reconstruction/wave6_presentation/presentation_boundary.cpp",
+    "src/reconstruction/wave6_presentation/presentation_boundary_test.cpp"
   ],
   "phase": "body-reconstruction",
   "declaration": "void __thiscall renderware_mesh_set_indices_count_011f96e0(Mesh* receiver, IndexBuffer* index_buffer);",
@@ -50,7 +50,7 @@
   "mechanics": {
     "pointer_store": "Always store the incoming index-buffer pointer at receiver+0x08 before the null branch.",
     "primitive_copy": "When the incoming pointer is non-null, copy index_buffer+0x14 to receiver+0x04.",
-    "count_delegate": "Call 0x011f95c0 with receiver in ECX and the resulting primitive type as the stack argument, then store the returned uint32 at receiver+0x0c.",
+    "count_delegate": "Call shape verified: PUSH resulting primitive type, MOV ECX=receiver, CALL 0x011f95c0, then store the returned uint32 at receiver+0x0c.",
     "null_path": "A null incoming pointer leaves receiver+0x04 unchanged and still delegates the existing primitive type to 0x011f95c0.",
     "ownership": "The pointer is published without AddRef or Release in this body."
   },
@@ -82,7 +82,7 @@
     {
       "tool": "ghidra_disassemble_function",
       "address": "0x011f96e0",
-      "observation": "The 15-instruction body preserves ECX receiver, ESP+0x04 argument, offsets +0x08/+0x04/+0x0c, helper call 0x011f95c0, and RET 0x4."
+      "observation": "The 15-instruction body preserves ECX receiver and ESP+0x04 argument, writes offsets +0x08/+0x04/+0x0c, pushes the resulting primitive type, reloads ECX with receiver for 0x011f95c0, and returns with RET 0x4."
     },
     {
       "tool": "ghidra_get_function_callers",
@@ -106,9 +106,10 @@
     }
   ],
   "confidence": {
-    "overall": "high for thiscall ABI, field writes, null path, and delegated count call",
+    "overall": "high for thiscall ABI, exact helper call shape, field writes, null path, and delegated count call",
     "high": [
       "ECX receiver and ESP+0x04 pointer",
+      "0x011f95c0 thiscall shape with receiver in ECX and primitive type pushed once",
       "mesh+0x08 pointer store",
       "index-buffer+0x14 conditional copy",
       "mesh+0x0c helper result store",
@@ -120,12 +121,14 @@
     "low": []
   },
   "verification": {
-    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only reconstruction/staging/wave6-presentation/presentation_boundary.cpp",
-    "model_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror reconstruction/staging/wave6-presentation/presentation_boundary.cpp reconstruction/staging/wave6-presentation/presentation_boundary_test.cpp -o /tmp/opencode/wave6-presentation-model-test && /tmp/opencode/wave6-presentation-model-test",
+    "syntax_command": "clang++ -m32 -std=c++17 -O0 -g -Wall -Wextra -Wpedantic -Werror -fsyntax-only src/reconstruction/wave6_presentation/presentation_boundary.cpp",
+    "debug_command": "clang++ -m32 -std=c++17 -O0 -g -Wall -Wextra -Wpedantic -Werror src/reconstruction/wave6_presentation/presentation_boundary.cpp src/reconstruction/wave6_presentation/presentation_boundary_test.cpp -o /tmp/opencode/wave6-presentation-debug-test && /tmp/opencode/wave6-presentation-debug-test",
+    "ndebug_command": "clang++ -m32 -std=c++17 -O2 -DNDEBUG -Wall -Wextra -Wpedantic -Werror src/reconstruction/wave6_presentation/presentation_boundary.cpp src/reconstruction/wave6_presentation/presentation_boundary_test.cpp -o /tmp/opencode/wave6-presentation-ndebug-test && /tmp/opencode/wave6-presentation-ndebug-test",
     "json_command": "python3 -m json.tool reconstruction/metadata/wave6-presentation/011f96e0.json >/dev/null",
     "results": {
       "syntax": "passed",
-      "model": "passed",
+      "debug": "passed",
+      "ndebug": "passed",
       "json": "passed"
     }
   },

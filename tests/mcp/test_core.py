@@ -1,6 +1,6 @@
 """Unit tests for the MCP server core (tools/mcp).
 
-Covers: startup/initialize, tools/list (exact 21 names), stub dispatch,
+Covers: startup/initialize, tools/list (exact 24 names), stub dispatch,
 unknown tool, malformed JSON, malformed requests/params, tool exceptions
 (server keeps running), batch handling, notifications, clean shutdown on
 EOF/quit, and stdout/stderr separation.
@@ -19,7 +19,8 @@ from tools.mcp import registry
 from tools.mcp import server as srv
 
 EXPECTED_TOOLS = [
-    "pipeline_state", "target_select",
+    "pipeline_state", "target_select", "function_context",
+    "frontier_context", "reconstruction_status",
     "kg_query", "kg_neighbors", "kg_record",
     "dossier_read", "dossier_regenerate",
     "ghidra_decompile", "ghidra_function", "ghidra_search",
@@ -59,7 +60,7 @@ class TestRegistry(unittest.TestCase):
 
     def test_list_tools_shapes(self):
         tools = registry.list_tools()
-        self.assertEqual(len(tools), 21)
+        self.assertEqual(len(tools), 24)
         for tool in tools:
             self.assertIn("name", tool)
             self.assertIn("description", tool)
@@ -201,7 +202,7 @@ class TestServerCore(unittest.TestCase):
         self.assertEqual(len(batch), 2)  # notification yields no response.
         by_id = {item["id"]: item for item in batch}
         self.assertEqual(by_id[1]["result"], {"status": "ok"})
-        self.assertEqual(len(by_id[2]["result"]["tools"]), 21)
+        self.assertEqual(len(by_id[2]["result"]["tools"]), 24)
 
     def test_empty_batch_is_invalid_request(self):
         _code, out, _err = run_lines(["[]"])

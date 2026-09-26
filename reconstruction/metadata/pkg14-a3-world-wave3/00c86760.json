@@ -1,0 +1,153 @@
+{
+  "schema": "pkg14-a3-world-wave3-function-handoff-v1",
+  "package": "PKG-14-A3-WORLD-WAVE3",
+  "function_address": "0x00c86760",
+  "ghidra_name": "FUN_00c86760",
+  "normalized_symbol": "solar_system_load_00c86760",
+  "source_files": [
+    "reconstruction/staging/pkg14-a3-world-wave3/world_wave3.hpp",
+    "reconstruction/staging/pkg14-a3-world-wave3/world_wave3.cpp",
+    "reconstruction/staging/pkg14-a3-world-wave3/world_wave3_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "void __thiscall solar_system_load_00c86760(OpaqueSolarSystem* system, OpaqueStar* star);",
+  "abi": {
+    "calling_convention": "thiscall",
+    "hidden_this_register": "ECX",
+    "hidden_this_type": "OpaqueSolarSystem*",
+    "stack_arguments": [
+      {"position": 1, "entry_offset": "ESP+0x04", "name": "star", "type": "OpaqueStar*"}
+    ],
+    "stack_cleanup_bytes": 4,
+    "return_type": "void",
+    "termination": "RET 0x4",
+    "body_start": "0x00c86760",
+    "body_end_exclusive": "0x00c86a98",
+    "live_globals": {
+      "transform_words": [
+        {"address": "0x01694c10", "symbol": "g_solar_load_transform_01694c10", "width": 4},
+        {"address": "0x01694c14", "symbol": "g_solar_load_transform_01694c14", "width": 4},
+        {"address": "0x01694c18", "symbol": "g_solar_load_transform_01694c18", "width": 4}
+      ],
+      "radius_cache": {"address": "0x01579d10", "symbol": "g_solar_load_radius_cache_01579d10", "element_width": 4, "element_count": 32}
+    },
+    "control_flow_evidence": {
+      "binary_branch_source": "0x00c8677f",
+      "binary_branch_jump_target": "0x00c8688f",
+      "bypassed_primary_range": ["0x00c8678b", "0x00c86888"],
+      "common_tail_start": "0x00c8688f",
+      "common_tail_operations": ["asteroid gate", "radius cache", "orbit scale thresholds", "planet materialization", "retain/release/append", "radius flags"]
+    }
+  },
+  "raw_body_hex": "83ec14535556578b7c24288be98bcf896c2418897d0ce86550000084c0740c8bcde8baedffffe904010000837d38008d7538757a6a006a006a006a00686ce0450168cc000000e8f50b2c0083c41885c0740d6a008bc8e855fcf4ff8bf8eb0233ff8b1e3bfb741b85ff74088b078b108bcfffd2893e85db74098b038b50048bcbffd28b45283b452c8d4d24731a8d500489510485c074178b0e890885c9740f8b018b10ffd2eb075650e8c23de6ff8b06c64038018b068b0d104c69018988a00000008b15144c690105a00000008950048b0d184c69018948088b4d0c8b3ee80d4d000050e857daffffd99fac0000008b4d0c8b3e83c404e8e44c00008d8fb00000003bc1740c8b50048b005250e8decd79ff8b4d0c8b36e8d44c000050e89ed8ffffd99ec80000008b7c242c83c4048bcfe86a4f000084c074078bcde88ff1ffff8b4d0ce8a74c00000f57c08bf00f2f04b5109d5701763056e8924b000083c4045684c07407e855dbffffeb05e84ed8ffffd95c242cf30f1044242c83c404f30f1104b5109d570156e822daffffd95c242cf30f1044242cf30f590570344701f30f100cb5109d57018b4d0cf30f58c883c404f30f114c241ce8324c00000f57c08bf00f2f04b5109d5701763056e81d4b000083c4045684c07407e8e0daffffeb05e8d9d7ffffd95c242cf30f1044242c83c404f30f1104b5109d570156e8add9ffffd95c242cf30f1044242cf30f590574344701f30f5804b5109d57018b4f4883c404f30f11442420e8013ef3ff8b58042b1833edc1fb028944241485db0f8ee9000000eb048b4424148b088b3ca98d04a98d542428c7442428000000008b005250e8d868ebff8bc8e8e1eff2ff8b4c242885c9745c8b018b90bc0000008bf189742410ffd28b4c24188b411483c1103b4108731a8d500489510485c0741f89308b068b90bc0000008bceffd2eb0f8d5424105250e8e54ef2ff8b74241085f6740c8b068b90c00000008bceffd28b4c24286a01e856a5feffd9542410d944241cdff1ddd8760f8b472ca80175080d0010000089472cf30f104424100f2f442420760f8b472ca80175080d0020000089472c8b4c242885c9740a8b018b90c0000000ffd2453beb0f8c19ffffff5f5e5d5b83c414c20400",
+  "mechanics": {
+    "owner_star_write": "Store the incoming OpaqueStar* at system+0x0c before either branch.",
+    "binary_asteroid_branch": "Call the opaque binary-or-asteroid system port with system when the star mode service returns true, then bypass only the primary creation/materialization range 0x00c8678b..0x00c86888 and continue at common tail 0x00c8688f. The common tail still runs the asteroid gate, radius-cache block, orbit-scale thresholds, planet materialization and references, append, and radius-flag writes. This path does not dereference system+0x38.",
+    "regular_lazy_body": "When the mode is not binary or asteroid and system+0x38 is null, request a 0xcc Simulator/cCelestialBody allocation, construct it with mode zero, compare the result with the old slot, call the new-body vtable slot zero when different, store the new slot, call the old-body vtable slot four when the old slot is non-null, and append the slot through the vector at system+0x24.",
+    "vector_layout": "The primary vector is the three-pointer vector at system+0x24 with end at system+0x28 and capacity at system+0x2c. The later planet list is the vector at system+0x10 with end at system+0x14 and capacity at system+0x18.",
+    "asteroid_belt_branch": "The common tail at 0x00c8688f calls the opaque asteroid-belt system port when the star mode service returns true, for both regular and binary-or-asteroid paths.",
+    "primary_materialization": "Set body+0x38 to one, copy the three runtime transform words at body+0xa0, +0xa4, and +0xa8, query the star angular scale and write body+0xac, copy the current name into body+0xb0 when the name pointer differs, query the star radius and write body+0xc8.",
+    "star_type_query_order": "Query the opaque star type for angular scale, body radius, lower radius cache, and upper radius cache in that order.",
+    "radius_cache": "For each lower and upper threshold, read the indexed precalculated star radius. A non-positive nonzero cache entry is recomputed by the binary-or-asteroid type test; the false branch uses the regular star-radius service and the true branch uses the binary-or-asteroid radius service. The lower threshold is orbit-scale times 85 plus radius; the upper threshold is orbit-scale times 195 plus radius.",
+    "planet_materialization": "For every entry returned by the opaque planet-list port, obtain the opaque planet manager, materialize the source body into a null output slot, retain the materialized body, append it to system+0x10, release the appended body, sample distance selector one, apply the lower and upper radius flags to the source body, and release the original materialized output.",
+    "reference_order": "A successful in-capacity materialization has two retain calls, one append-path retain call, and two release calls around the append and end-of-iteration boundaries. Full-vector behavior is delegated to the separate opaque growth ports.",
+    "radius_flags": "Set 0x1000 when the sampled distance is less than the lower threshold and bit zero is clear. Set 0x2000 when the sampled distance is greater than the upper threshold and bit zero is clear. Preserve all other bits.",
+    "side_effect_boundary": "The binary-or-asteroid path bypasses only primary creation and materialization, then executes the common tail with its radius-cache, list, append, release, and source-flag effects. The regular path additionally creates and materializes the primary body. Unresolved services remain ports."
+  },
+  "ports": {
+    "is_binary_or_asteroid": "0x00c8b7e0",
+    "load_binary_or_asteroid": "0x00c85540",
+    "is_asteroid_system": "0x00c8b800",
+    "load_asteroid_belt": "0x00c85a30",
+    "allocate_celestial_body": "0x00f473a0",
+    "construct_celestial_body": "0x00bd6410",
+    "primary_vector_growth": "0x00aea5d0",
+    "planet_vector_growth": "0x00bab900",
+    "current_planet_manager": "0x00b3d2a0",
+    "materialize_planet": "0x00bb59b0",
+    "list_planets": "0x00bba790",
+    "star_type": "0x00c8b550",
+    "star_name": "0x00c8b540",
+    "star_angular_scale": "0x00c842a0",
+    "star_radius": "0x00c84120",
+    "star_orbit_scale": "0x00c84310",
+    "binary_or_asteroid_radius": "0x00c84420",
+    "is_binary_or_asteroid_type": "0x00c8b450",
+    "distance_sample": "0x00c70f90",
+    "copy_name": "0x00423650"
+  },
+  "port_abi": {
+    "0x00c8b7e0": {"receiver": "ECX", "receiver_type": "OpaqueStar*", "stack_words": 0, "cleanup": "plain RET", "return": "AL"},
+    "0x00c85540": {"receiver": "ECX", "receiver_type": "OpaqueSolarSystem*", "stack_words": 0, "cleanup": "plain RET", "return": "void"},
+    "0x00c8b800": {"receiver": "ECX", "receiver_type": "OpaqueStar*", "stack_words": 0, "cleanup": "plain RET", "return": "AL"},
+    "0x00c85a30": {"receiver": "ECX", "receiver_type": "OpaqueSolarSystem*", "stack_words": 0, "cleanup": "plain RET", "return": "void"},
+    "0x00f473a0": {"receiver": "none", "stack_words": 6, "cleanup": "caller", "return": "EAX", "arguments": ["0xcc", "Simulator/cCelestialBody", "0", "0", "0", "0"]},
+    "0x00bd6410": {"receiver": "ECX", "stack_words": 1, "cleanup": "RET 4", "return": "EAX"},
+    "0x00aea5d0": {"receiver": "ECX", "receiver_type": "OpaquePlanetVector*", "stack_words": 2, "cleanup": "RET 8", "return": "void"},
+    "0x00bab900": {"receiver": "ECX", "receiver_type": "OpaquePlanetVector*", "stack_words": 2, "cleanup": "RET 8", "return": "void"},
+    "0x00bb59b0": {"receiver": "ECX", "receiver_type": "OpaquePlanetManager*", "stack_words": 2, "cleanup": "RET 8", "return": "void"},
+    "0x00c84120": {"receiver": "none", "stack_words": 1, "cleanup": "caller", "return": "float"},
+    "0x00c842a0": {"receiver": "none", "stack_words": 1, "cleanup": "caller", "return": "float"},
+    "0x00c84310": {"receiver": "none", "stack_words": 1, "cleanup": "caller", "return": "float"},
+    "0x00c84420": {"receiver": "none", "stack_words": 1, "cleanup": "caller", "return": "float"},
+    "0x00c8b450": {"receiver": "none", "stack_words": 1, "cleanup": "caller", "return": "AL"},
+    "0x00c70f90": {"receiver": "none", "stack_words": 1, "cleanup": "caller", "return": "float"},
+    "0x00423650": {"receiver": "ECX", "receiver_type": "OpaqueName*", "stack_words": 2, "cleanup": "RET 8", "return": "void"}
+  },
+  "call_graph": {
+    "direct_callers": {
+      "ghidra_count": 1,
+      "representative_functions": ["0x00c8b700"]
+    },
+    "direct_callees": [
+      "0x00423650",
+      "0x00aea5d0",
+      "0x00b3d2a0",
+      "0x00bab900",
+      "0x00bb59b0",
+      "0x00bba790",
+      "0x00bd6410",
+      "0x00c70f90",
+      "0x00c84120",
+      "0x00c842a0",
+      "0x00c84310",
+      "0x00c84420",
+      "0x00c85540",
+      "0x00c85a30",
+      "0x00c8b450",
+      "0x00c8b540",
+      "0x00c8b550",
+      "0x00c8b7e0",
+      "0x00c8b800",
+      "0x00f473a0"
+    ],
+    "function_xref_count_live": 1
+  },
+  "model_tests": [
+    "regular lazy primary creation writes owner star and creates one body",
+    "existing primary body is reused without allocation",
+    "binary-or-asteroid path bypasses only primary materialization and remains null-safe while common-tail mutations execute",
+    "binary-or-asteroid and asteroid-belt services remain separate branches",
+    "primary vector and planet vector append paths preserve receiver and cursor boundaries",
+    "materialized planet retain and release order is exercised",
+    "radius flags 0x1000, 0x2000, and bit-zero suppression are exercised",
+    "transform, angular scale, name, body radius, and cached radius writes are checked"
+  ],
+  "verification": {
+    "syntax": "passed: clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only",
+    "normal": "passed: strict x86-32 optimized model",
+    "ndebug": "passed: strict x86-32 optimized NDEBUG model",
+    "format": "passed: clang-format Google with FixNamespaceComments false",
+    "json": "passed: python3 -m json.tool and raw-body byte-length validation",
+    "objdump": "passed: x86-32 model shows ECX receiver and RET 4",
+    "diff": "passed: only authorized package paths are untracked"
+  },
+  "unresolved_questions": [
+    "The concrete owner and domain meaning of the system, star, planet, and materialization services remain opaque.",
+    "Runtime population of the three transform words and indexed star-radius table remains outside this worker boundary.",
+    "The binary-or-asteroid and asteroid-belt services are preserved as separate unresolved ports."
+  ],
+  "blockers": [
+    "No original-process runtime trace is available for the opaque world, allocation, materialization, and radius services."
+  ]
+}

@@ -1,0 +1,81 @@
+{
+  "schema": "pkg13-e3-empire-state-wave2.function-handoff.v1",
+  "package": "PKG-13-E3-EMPIRE-STATE-WAVE2",
+  "function_address": "0x00c30e20",
+  "ghidra_name": "Simulator::GetArchetypeRelationshipsID",
+  "normalized_symbol": "ArchetypeRelationshipsID_00c30e20",
+  "source_files": [
+    "reconstruction/staging/pkg13-e3-empire-state-wave2/empire_state_wave2.hpp",
+    "reconstruction/staging/pkg13-e3-empire-state-wave2/empire_state_wave2.cpp",
+    "reconstruction/staging/pkg13-e3-empire-state-wave2/empire_state_boundary.S",
+    "reconstruction/staging/pkg13-e3-empire-state-wave2/empire_state_wave2_model_test.cpp",
+    "reconstruction/staging/pkg13-e3-empire-state-wave2/empire_state_boundary_test.sh"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "std::uint32_t __cdecl ArchetypeRelationshipsID_00c30e20(std::uint32_t archetype, std::uint32_t difficulty);",
+  "abi": {
+    "calling_convention": "cdecl",
+    "hidden_this": null,
+    "stack_arguments": [
+      {"position": 1, "entry_offset": "ESP+0x04", "name": "archetype", "type": "std::uint32_t", "width_bytes": 4},
+      {"position": 2, "entry_offset": "ESP+0x08", "name": "difficulty", "type": "std::uint32_t", "width_bytes": 4}
+    ],
+    "stack_cleanup_bytes": 8,
+    "stack_cleanup_owner": "caller",
+    "return_type": "std::uint32_t",
+    "return_register": "EAX",
+    "return_width_bytes": 4
+  },
+  "body": {
+    "status": "reconstructed",
+    "entry_address": "0x00c30e20",
+    "body_addresses": ["0x00c30e20", "0x00c30e44"],
+    "instruction_count": 13,
+    "raw_bytes": "8b4c240883e900741683e901740b83e9017511b89a82d787c3b8ccd6567ec3b8af5e8825c3",
+    "mechanics": [
+      "Read the difficulty word from ESP+0x08 and ignore the archetype word at ESP+0x04.",
+      "Return 0x25885eaf for difficulty 0, 0x7e56d6cc for difficulty 1, and 0x87d7829a for difficulty 2.",
+      "Leave incoming EAX unchanged for every other difficulty word; this standalone entry does not initialize a selector default.",
+      "Use a plain RET and leave both cdecl arguments to the caller."
+    ]
+  },
+  "mechanics_scope": {
+    "bounds": "No archetype bounds check exists in this standalone entry; all archetype words reach the same difficulty switch.",
+    "pass_through": "Invalid difficulty returns incoming EAX unchanged. The selector initializes 0x4e5855b9 before its computed jump, but the standalone entry does not.",
+    "selector_relationship": "This entry is the ninth dispatch-table target for the selector's archetype-8 byte, but remains a separate function boundary in both the model and metadata.",
+    "state_events_containers": "No state, UI, communication, persistence, event, or container mutation occurs in this target."
+  },
+  "call_graph": {
+    "direct_callers": [],
+    "computed_jump_sources": ["0x00c30cd9"],
+    "function_xrefs": 2,
+    "reference_kinds": ["DATA", "COMPUTED_JUMP"]
+  },
+  "evidence": [
+    {"tool": "ghidra_get_function_by_address", "address": "0x00c30e20", "observation": "Live function is 0x00c30e20 through 0x00c30e44."},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x00c30e20", "observation": "Assembly proves the ignored archetype word, exact difficulty comparisons, three EAX constants, untouched incoming EAX on the invalid path, and plain RET."},
+    {"tool": "ghidra_get_function_xrefs", "address": "0x00c30e20", "observation": "References report a data use at 0x00c30e68 and the selector computed jump at 0x00c30cd9."}
+  ],
+  "tests": [
+    "difficulty 0, 1, and 2 constants",
+    "invalid difficulty returns incoming EAX through the compiled continuation",
+    "archetype independence including zero, 8, 18, invalid, and 0xffffffff",
+    "separate function symbol from 0x00c30cc0",
+    "compiled O0 and O2 selector emits a call to the separate symbol"
+  ],
+  "confidence": {
+    "body": "high",
+    "abi_and_cleanup": "high",
+    "selector_relationship": "high"
+  },
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/pkg13-e3-empire-state-wave2 reconstruction/staging/pkg13-e3-empire-state-wave2/empire_state_wave2.cpp reconstruction/staging/pkg13-e3-empire-state-wave2/empire_state_wave2_model_test.cpp",
+    "model_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg13-e3-empire-state-wave2 reconstruction/staging/pkg13-e3-empire-state-wave2/empire_state_wave2.cpp reconstruction/staging/pkg13-e3-empire-state-wave2/empire_state_boundary.S reconstruction/staging/pkg13-e3-empire-state-wave2/empire_state_wave2_model_test.cpp -o /tmp/opencode/pkg13-e3-empire-state-wave2-model && /tmp/opencode/pkg13-e3-empire-state-wave2-model",
+    "o0_command": "clang++ -m32 -std=c++17 -O0 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg13-e3-empire-state-wave2 reconstruction/staging/pkg13-e3-empire-state-wave2/empire_state_wave2.cpp reconstruction/staging/pkg13-e3-empire-state-wave2/empire_state_boundary.S reconstruction/staging/pkg13-e3-empire-state-wave2/empire_state_wave2_model_test.cpp -o /tmp/opencode/pkg13-e3-empire-state-wave2-model-o0 && /tmp/opencode/pkg13-e3-empire-state-wave2-model-o0",
+    "ndebug_command": "clang++ -m32 -std=c++17 -O2 -DNDEBUG -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg13-e3-empire-state-wave2 reconstruction/staging/pkg13-e3-empire-state-wave2/empire_state_wave2.cpp reconstruction/staging/pkg13-e3-empire-state-wave2/empire_state_boundary.S reconstruction/staging/pkg13-e3-empire-state-wave2/empire_state_wave2_model_test.cpp -o /tmp/opencode/pkg13-e3-empire-state-wave2-model-ndebug && /tmp/opencode/pkg13-e3-empire-state-wave2-model-ndebug",
+    "format_command": "clang-format --dry-run --Werror --style='{BasedOnStyle: Google, FixNamespaceComments: false}' reconstruction/staging/pkg13-e3-empire-state-wave2/empire_state_wave2.hpp reconstruction/staging/pkg13-e3-empire-state-wave2/empire_state_wave2.cpp reconstruction/staging/pkg13-e3-empire-state-wave2/empire_state_wave2_model_test.cpp",
+    "json_command": "python3 -m json.tool reconstruction/metadata/pkg13-e3-empire-state-wave2/00c30e20.json >/dev/null",
+    "abi_check_command": "sh reconstruction/staging/pkg13-e3-empire-state-wave2/empire_state_boundary_test.sh",
+    "results": {"syntax": "passed", "model": "passed", "o0": "passed", "ndebug": "passed", "format": "passed", "json": "passed", "abi_check": "passed"}
+  }
+}

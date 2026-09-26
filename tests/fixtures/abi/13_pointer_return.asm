@@ -1,0 +1,4 @@
+PUSH EBP
+MOV EBP,ESP
+MOV EAX,dword ptr [EBP + 0x8]
+RET

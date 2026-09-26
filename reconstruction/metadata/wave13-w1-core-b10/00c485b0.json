@@ -1,0 +1,375 @@
+{
+  "schema": "openspore-worker-metadata-1",
+  "package": "wave13-w1-core-b10",
+  "va": "0x00c485b0",
+  "address": "0x00c485b0",
+  "function_address": "0x00c485b0",
+  "entry_address": "0x00c485b0",
+  "ghidra_name": "FUN_00c485b0",
+  "normalized_symbol": "wave13_w1_core_b10_00c485b0",
+  "reconstructed_symbol": "SimTokenOwner_SetMode2_00c485b0",
+  "declaration": "void SimTokenOwner_SetMode2_00c485b0(OpaqueSimTokenOwner* owner);",
+  "source_files": [
+    "reconstruction/staging/wave13-w1-core-b10/c485b0_set_mode2.hpp",
+    "reconstruction/staging/wave13-w1-core-b10/c485b0_set_mode2.cpp",
+    "reconstruction/staging/wave13-w1-core-b10/b10_observed_types.hpp"
+  ],
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "calling_convention_observation": "ECX is neither read nor written by 0x00c485b0, but the single callee 0x00c47cc0 reads ECX+0x84 at 0x00c47cc7, so the receiver arrives in ECX and is forwarded untouched. 0x00c485b7 is a bare C3, so 0x00c485b0 itself has no stack argument and pops zero words. The PUSH 0x2 at 0x00c485b0 is consumed by 0x00c47cc0's own RET 0x4 at 0x00c47d6f, which is what makes the trailing RET a tail return to the original caller rather than a return into 0x00c485b0.",
+    "return_type": "void",
+    "return_semantics": "none: EAX is not written by 0x00c485b0 and the tail callee 0x00c47cc0 ends in ADD ESP,0x40 ; RET 4 without touching EAX on either exit path",
+    "return_register": "none",
+    "return_width_bytes": 0,
+    "return_observation": "0x00c47d6c: ADD ESP,0x40 ; 0x00c47d6f: RET 4 leaves EAX exactly as 0x00c47cc0 received it, and 0x00c485b0 adds nothing to it",
+    "ret_form": "RET (tail return after a callee-cleaned call)",
+    "termination": "RET",
+    "stack_cleanup_bytes": 0,
+    "stack_cleanup_owner": "the caller, for 0x00c485b0; 0x00c47cc0 cleans its own single 4-byte word",
+    "stack_arguments": [],
+    "ordinary_stack_argument_slots": 0,
+    "saved_registers": [],
+    "receiver": true,
+    "receiver_register": "ECX",
+    "hidden_receiver": "read (by the tail callee, on this function's behalf)",
+    "hidden_this_register": "ECX is passed through 0x00c485b0 unmodified: there is no MOV ECX,... in the body"
+  },
+  "layout": {
+    "entry_address": "0x00c485b0",
+    "body_start": "0x00c485b0",
+    "body_end": "0x00c485b7",
+    "body_span_bytes": 8,
+    "body_bytes_hex": "6a02e809f7ffffc3",
+    "instruction_count": 3,
+    "instructions": [
+      {
+        "address": "0x00c485b0",
+        "bytes": "6a 02",
+        "mnemonic": "PUSH",
+        "operands": "0x2"
+      },
+      {
+        "address": "0x00c485b2",
+        "bytes": "e8 09 f7 ff ff",
+        "mnemonic": "CALL",
+        "operands": "0x00c47cc0"
+      },
+      {
+        "address": "0x00c485b7",
+        "bytes": "c3",
+        "mnemonic": "RET",
+        "operands": ""
+      }
+    ],
+    "padding_after": "0x00c485b8 through 0x00c485bf are cc cc cc cc cc cc cc cc (INT3)",
+    "frame": "none of its own: the only stack effect is the single PUSH whose word 0x00c47cc0 pops with its RET 4",
+    "reads": "nothing: no memory operand at all in 0x00c485b0",
+    "writes": "nothing: no memory operand at all in 0x00c485b0; the effect is entirely inside 0x00c47cc0",
+    "callee_body": {
+      "address": "0x00c47cc0",
+      "instruction_count": 43,
+      "note": "fully disassembled with ghidra_disassemble_function; the reachable behaviour for the constant 2 is recorded in observed_mechanics"
+    }
+  },
+  "observed_mechanics": [
+    "0x00c485b0: PUSH 0x2 is the only immediate in the body and is the sole source of 0x00c485b0's semantics",
+    "0x00c485b2: CALL 0x00c47cc0, encoded e8 09 f7 ff ff, i.e. a relative displacement of -0x8f7 from 0x00c485b7, which resolves to 0x00c47cc0",
+    "0x00c485b7: C3 bare RET, and because 0x00c47cc0 ends in RET 4 the sequence is a tail call, so the original caller of 0x00c485b0 resumes directly from 0x00c47cc0's epilogue",
+    "0x00c47cc0: MOV EAX,dword ptr [ESP + 0x4] reads the pushed 2 before the frame is allocated, so the new mode is 2",
+    "0x00c47cc7: CMP dword ptr [ECX + 0x84],EAX followed by 0x00c47ccd: JZ 0x00c47d6c makes the whole function a no-op when the field already holds 2, so the mode write is idempotent",
+    "0x00c47cd3: MOV dword ptr [ECX + 0x84],EAX is the only write to the receiver's scalar mode field on the reachable path",
+    "0x00c47ce5/0x00c47ce9/0x00c47cf2: if [+0x14c] != [+0x150] then word [+0x14c] = 0 and [+0x150] = [+0x14c], i.e. the first wchar-terminated buffer is truncated and its write cursor is rewound to its base",
+    "0x00c47d04/0x00c47d08/0x00c47d11: the identical shape at [+0x15c] and [+0x160] truncates and rewinds a second wchar-terminated buffer",
+    "0x00c47d17: CMP dword ptr [ECX + 0x84],0x3 followed by 0x00c47d1e: JNZ 0x00c47d6c proves that with the pushed constant 2 the App::IAppSystem state-switch block at 0x00c47d20..0x00c47d67 is statically unreachable",
+    "0x00c47d20..0x00c47d67, had the value been 3, would have built a 0x40-byte stack object with vtable 0x13eb844 and owner pointer at +0x8 (0x00c47d46: MOV dword ptr [ESP + 0x8],ECX), called 0x0067dcc0, then invoked vtable slot +0x14 of that object's result and finally 0x00421cf0; this is the App::IAppSystem::Init(CommandLine*) state switch, and it is dead for 0x00c485b0",
+    "0x00c70168/0x00c7016e in 0x00c70150 read the same +0x15c/+0x160 pointer pair that 0x00c47cf8..0x00c47d11 truncate, which is what identifies the two functions' receiver as the same class",
+    "ghidra_read_memory at 0x00c485b0 returns 6a 02 e8 09 f7 ff ff c3 cc cc cc cc cc cc cc cc, matching the three instructions and the eight-byte pad",
+    "0x00fe9afc: MOV ECX,ESI ; CALL 0x00c485b0 shows a caller that sets only the receiver and pushes no argument, so 0x00c485b0 really is a zero-argument member",
+    "ghidra_get_function_xrefs at 0x00c485b0 returns 16 UNCONDITIONAL_CALL references from 16 distinct caller functions",
+    "A positive-controlled .rdata/.data dword scan found no vtable slot pointing at 0x00c485b0 or 0x00c47cc0, so the setter is a free helper, not an interface method"
+  ],
+  "fields_and_offsets": [
+    {
+      "offset": "0x00000084",
+      "instruction": "0x00c47cd3: MOV dword ptr [ECX + 0x84],EAX",
+      "meaning": "receiver mode field, set to 2; compared for idempotence at 0x00c47cc7 and against 3 at 0x00c47d17",
+      "confidence": "OBSERVED"
+    },
+    {
+      "offset": "0x0000014c",
+      "instruction": "0x00c47ce9: MOV word ptr [EAX],DX where EAX = [ECX + 0x14c]",
+      "meaning": "base of the first wchar-terminated buffer, cleared to L'\\0'",
+      "confidence": "OBSERVED"
+    },
+    {
+      "offset": "0x00000150",
+      "instruction": "0x00c47cf2: MOV dword ptr [ECX + 0x150],EAX",
+      "meaning": "write cursor of the first buffer, rewound to its base at +0x14c",
+      "confidence": "OBSERVED"
+    },
+    {
+      "offset": "0x0000015c",
+      "instruction": "0x00c47d08: MOV word ptr [EAX],DX where EAX = [ECX + 0x15c]",
+      "meaning": "base of the second buffer; 0x00c7016e reads the same slot as a vector begin",
+      "confidence": "OBSERVED"
+    },
+    {
+      "offset": "0x00000160",
+      "instruction": "0x00c47d11: MOV dword ptr [ECX + 0x160],EAX",
+      "meaning": "end cursor of the second buffer; 0x00c70168 reads the same slot as a vector end",
+      "confidence": "OBSERVED"
+    },
+    {
+      "offset": "0x00000194",
+      "instruction": "0x00b8dab0: MOV EAX,dword ptr [ECX + 0x194]",
+      "meaning": "a kind field of the same receiver, compared against 5 by 0x00c7015d; this is the link between the two functions' receiver",
+      "confidence": "OBSERVED (neighbouring function, not this one)"
+    }
+  ],
+  "constants": [
+    {
+      "value": "0x00000002",
+      "address": "0x00c485b0",
+      "meaning": "the pushed mode value; the whole function is 'set the mode field to 2'",
+      "kind": "immediate"
+    },
+    {
+      "value": "0x00000003",
+      "address": "0x00c47d17",
+      "meaning": "the only mode value that reaches the App::IAppSystem state switch; 2 fails this test, so the switch is dead on this path",
+      "kind": "immediate"
+    },
+    {
+      "value": "0xfffff709",
+      "address": "0x00c485b2",
+      "meaning": "relative CALL displacement -0x8f7, resolving to 0x00c47cc0",
+      "kind": "displacement"
+    },
+    {
+      "value": "0x00000040",
+      "address": "0x00c47cc4",
+      "meaning": "SUB ESP,0x40, the frame of the tail callee; unreachable-code path only",
+      "kind": "immediate"
+    },
+    {
+      "value": "0x013eb844 / 0x013eb90c / 0x38cf2fd",
+      "address": "0x00c47d28 / 0x00c47d37 / 0x00c47d20",
+      "meaning": "the vtable and magic words of the dead App::IAppSystem::Init state descriptor",
+      "kind": "address"
+    }
+  ],
+  "globals": [],
+  "virtual_dispatch": [
+    {
+      "callsite": "0x00c47d62",
+      "form": "CALL EDX",
+      "slot_offset": "+0x14",
+      "vtable_base": "the object returned by 0x0067dcc0",
+      "concrete_callee_resolved": false,
+      "reachability": "UNREACHABLE for mode 2; the branch at 0x00c47d1e always taken",
+      "receiver": "the same object 0x0067dcc0 returned, plus the 0x40-byte descriptor and 0"
+    }
+  ],
+  "control_flow": {
+    "switch_tables": [],
+    "loops": [],
+    "early_exits": [
+      "0x00c47ccd: JZ 0x00c47d6c exits immediately when [+0x84] already equals 2, so the setter is idempotent"
+    ],
+    "branch_polarity": "0x00c47cc7 CMP [ECX + 0x84],EAX / 0x00c47ccd JZ: equal means do nothing. 0x00c47ce5 JZ and 0x00c47d04 JZ: equal cursors mean the corresponding buffer is already empty. 0x00c47d17 CMP [ECX + 0x84],0x3 / 0x00c47d1e JNZ: anything other than 3 returns without the state switch, so the constant 2 always takes this exit.",
+    "note": "0x00c485b0's own three instructions contain no branch at all; every decision lives in 0x00c47cc0 and all of them resolve the same way for the constant 2."
+  },
+  "callers_evidence": [
+    {
+      "callsite": "0x00fe9afe",
+      "caller": "0x00fe9580",
+      "form": "CALL",
+      "result_use": "discarded; 0x00fe9b03 continues with MOV ECX,EBP, and EAX is never read back"
+    },
+    {
+      "callsite": "0x00c59edf",
+      "caller": "0x00c59eb0",
+      "form": "CALL",
+      "result_use": "not inspected"
+    },
+    {
+      "callsite": "0x00c5a7bb",
+      "caller": "0x00c5a790",
+      "form": "CALL",
+      "result_use": "not inspected"
+    },
+    {
+      "callsite": "0x00c563a9",
+      "caller": "not resolved by the xref record",
+      "form": "CALL",
+      "result_use": "not inspected"
+    },
+    {
+      "callsite": "0x0102e18f / 0x0102efd1",
+      "caller": "0x0102df20",
+      "form": "CALL",
+      "result_use": "not inspected"
+    },
+    {
+      "callsite": "0x0102410c",
+      "caller": "0x01023fc0",
+      "form": "CALL",
+      "result_use": "not inspected"
+    },
+    {
+      "callsite": "0x0102547f",
+      "caller": "0x010251e0",
+      "form": "CALL",
+      "result_use": "not inspected"
+    },
+    {
+      "callsite": "0x010124ed",
+      "caller": "0x0101246a",
+      "form": "CALL",
+      "result_use": "not inspected"
+    },
+    {
+      "callsite": "0x01012bb5 / 0x01012b12",
+      "caller": "0x01012b50 / 0x01012aa0",
+      "form": "CALL",
+      "result_use": "not inspected"
+    },
+    {
+      "callsite": "0x0101464a / 0x0101494b",
+      "caller": "0x01014540 / 0x01014870",
+      "form": "CALL",
+      "result_use": "not inspected"
+    },
+    {
+      "callsite": "0x0100e7fd",
+      "caller": "0x0100e780",
+      "form": "CALL",
+      "result_use": "not inspected"
+    },
+    {
+      "callsite": "0x01059ece",
+      "caller": "0x010593e0",
+      "form": "CALL",
+      "result_use": "not inspected"
+    },
+    {
+      "callsite": "0x0102d13e",
+      "caller": "0x0102d0b0",
+      "form": "CALL",
+      "result_use": "not inspected"
+    }
+  ],
+  "callees_evidence": [
+    {
+      "callsite": "0x00c485b2",
+      "callee": "0x00c47cc0",
+      "form": "direct CALL, callee-cleaned (RET 0x4 at 0x00c47d6f)",
+      "result_use": "none; EAX is not consumed",
+      "identity": "OBSERVED in full, 43 instructions. It is a guarded state setter on the same receiver: it writes +0x84, truncates the two wchar buffers at +0x14c and +0x15c, and only performs an App::IAppSystem::Init(0x13eb844) transition when the new value is 3."
+    }
+  ],
+  "semantic_contract": "0x00c485b0 is a zero-argument mode setter. It forwards its ECX receiver and the literal 2 to 0x00c47cc0 and tail-returns, so the entire observable effect of 0x00c485b0 is the effect of that one call. For the constant 2 that effect is fully determined and fully reachable: if the receiver's dword at +0x84 already equals 2 the call does nothing at all, making the setter idempotent; otherwise +0x84 is set to 2, the wchar-terminated buffer whose base is at +0x14c is truncated to an empty string and its cursor at +0x150 is rewound to that base, and the same truncation-and-rewind is applied to the second buffer at +0x15c/+0x160. 0x00c47cc0 then tests the new value against 3 and returns, because 2 is not 3; the App::IAppSystem::Init state-switch block that would follow is statically unreachable from 0x00c485b0. The function therefore has no return value, no error path and no observable read outside the receiver. The +0x15c/+0x160 pair it clears is the same pair that 0x00c70150 treats as a pointer-vector, which is what ties the two functions to one receiver class.",
+  "classification": "BOUNDED_SEMANTIC",
+  "classification_rationale": "All eight bytes of the body, the tail-call structure, the ABI, the callee's full 43-instruction body, every field offset, every immediate and every branch polarity are read directly from the disassembly, and the reachability of the state-switch block is proved from the constant rather than assumed. STRONG_SEMANTIC is withheld for one named bound: the class of the receiver is not established. SporeApp.exe has no MSVC RTTI, no vtable was located for the receiver, neither 0x00c485b0 nor 0x00c47cc0 appears in any .rdata or .data slot, and no ModAPI header declares a class with a dword at +0x84, two adjacent wchar cursors at +0x14c/+0x150 and a pointer pair at +0x15c/+0x160 followed by a kind field at +0x194. The bound is the owning type; the behaviour carries no residual uncertainty. A second, smaller bound is recorded for completeness: the concrete target of the virtual call at 0x00c47d62 is unresolved, but that call is unreachable.",
+  "semantic_findings": [
+    "0x00c485b0 is a pure forwarder: PUSH 2, CALL 0x00c47cc0, RET. There is no other instruction and no other effect.",
+    "Because 0x00c47cc0 ends in RET 4, the sequence is a tail call and the original caller resumes from the callee's epilogue; no value is produced or consumed.",
+    "The reachable effect of the constant 2 is: set the receiver's +0x84 to 2 and clear two wchar-terminated buffers, with an idempotence guard on the mode field.",
+    "The App::IAppSystem::Init(0x13eb844) state switch inside 0x00c47cc0 is dead for mode 2, proved by 0x00c47d17/0x00c47d1e rather than assumed. The same callee reaches it for mode 3, so the setter family is a state machine whose interesting state is 3, not 2.",
+    "The two buffers truncated here are addressed by the same +0x15c/+0x160 offsets that 0x00c70150 subtracts to get an element count, so the receiver carries both a text buffer and an indexable list, and switching the mode invalidates both.",
+    "0x00c485b0 and 0x00c47cc0 are in no vtable, so this is a free helper on a concrete class rather than an interface method, and no SDK name can be attached to it."
+  ],
+  "unresolved_questions": [
+    "The binary carries no MSVC RTTI, so no class identity can be read from typeinfo; class claims in this record rest only on observed vtable data and SDK header text.",
+    "No original-process trace exists for any function in this batch. Every statement here is static.",
+    "What class owns 0x00c485b0? The offset signature (+0x84 mode, +0x14c/+0x150 and +0x15c/+0x160 wchar cursors, +0x194 kind) matches no ModAPI declaration, and no vtable for the receiver was located.",
+    "What is the value 3 that unlocks the App::IAppSystem::Init(0x13eb844) transition, and which caller performs it? Only 0x00c485b0 (value 2) and 0x00c47d80 (unconditional variant) were located in this session; a caller of 0x00c47cc0 with 3 was not found.",
+    "Is 0x00c47d80 the same operation without the mode guard? Its body clears both buffers and then always runs the Init transition, with no comparison against the incoming value, which suggests the pair is 'transition unconditionally' versus 'transition if the mode actually changes'.",
+    "Why do the two buffers get truncated on every mode change? The evidence shows that it happens; it does not show whether the old contents are meant to be discarded or re-derived.",
+    "Fifteen of the sixteen observed call sites were not disassembled, so the context in which mode 2 is selected is unverified."
+  ],
+  "confidence": {
+    "body_bytes": 1.0,
+    "tail_call_structure": 1.0,
+    "callee_body_0x00c47cc0": 0.98,
+    "reachable_effect": 0.97,
+    "unreachability_of_state_switch": 0.95,
+    "field_offsets": 1.0,
+    "owning_type": 0.15,
+    "meaning_of_mode_2_and_3": 0.25
+  },
+  "runtime_gates": [
+    "No original-process trace has been captured for 0x00c485b0, so the claim that the +0x84 write is the only persistent effect is static-only.",
+    "A runtime differential test must confirm that 0x00c47cc0's RET 4 still matches in the shipping build, since the whole tail-call reading depends on it.",
+    "The value stored at +0x84 before and after each of the 16 call sites must be observed to confirm the idempotence guard is exercised rather than always false."
+  ],
+  "blockers": [],
+  "evidence": [
+    "/tmp/opencode/wave/w1/b10/batch.json",
+    "/tmp/opencode/wave/w1/b10/briefs.json",
+    "reconstruction/evidence/00c37360/evidence.json",
+    "reconstruction/evidence/00c37360/context.json",
+    "reconstruction/evidence/00bd8210/evidence.json",
+    "reconstruction/evidence/00c0c080/evidence.json",
+    "reconstruction/evidence/00c70150/evidence.json",
+    "reconstruction/evidence/00c0c130/evidence.json",
+    "reconstruction/staging/wave13-w1-core-b10/b10_observed_types.hpp",
+    "reconstruction/staging/wave13-w1-core-b10/b10_batch_model_test.cpp",
+    "ghidra_disassemble_function at 0x00c47cc0 (43 instructions, the tail callee)",
+    "ghidra_disassemble_function at 0x00c47d80 (the unconditional sibling of the tail callee)"
+  ],
+  "tooling_evidence": [
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x00c485b0",
+      "observation": "3 instructions: PUSH 0x2 ; CALL 0x00c47cc0 ; RET"
+    },
+    {
+      "tool": "ghidra_read_memory",
+      "address": "0x00c485b0",
+      "observation": "6a02e809f7ffffc3cccccccccccccccc: PUSH 0x2 ; CALL -0x8f7 ; RET, then eight INT3 pad bytes"
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x00c47cc0",
+      "observation": "43 instructions ending in ADD ESP,0x40 ; RET 0x4; writes [ECX + 0x84], clears word [[ECX + 0x14c]] and word [[ECX + 0x15c]], rewrites [ECX + 0x150] and [ECX + 0x160], and gates an App::IAppSystem::Init(0x13eb844) transition on [ECX + 0x84] == 3"
+    },
+    {
+      "tool": "ghidra_get_function_xrefs",
+      "address": "0x00c485b0",
+      "observation": "16 UNCONDITIONAL_CALL references from 16 distinct caller functions, no data references"
+    },
+    {
+      "tool": "ghidra_get_function_xrefs",
+      "address": "0x00c70150",
+      "observation": "0x00c70168/0x00c7016e read [arg1 + 0x160] and [arg1 + 0x15c], the same offsets 0x00c47cf8..0x00c47d11 truncate, which is the evidence that both functions share a receiver class"
+    },
+    {
+      "tool": "ghidra_disassemble_bytes",
+      "address": "0x00fe9ae0",
+      "observation": "0x00fe9afc MOV ECX,ESI ; 0x00fe9afe CALL 0x00c485b0 ; 0x00fe9b03 MOV ECX,EBP -- receiver only, no pushed argument, result discarded"
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x00c47d80",
+      "observation": "the sibling clears both buffers and calls App::IAppSystem::Get()->Init unconditionally, with no comparison against an incoming value"
+    },
+    {
+      "tool": "run_script_inline",
+      "address": ".rdata/.data",
+      "observation": "VSLOTSCANRES| [e7d660@01485590/.rdata] -- only the positive control matched; 0x00c485b0 and 0x00c47cc0 are not vtable entries"
+    }
+  ],
+  "provenance": {
+    "binary": "SPORE/SporeBin/SporeApp.exe",
+    "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+    "binary_version": "Spore 3.1.0.22, x86-32 PE, image base 0x00400000",
+    "worker_id": "wave13-w1-core-b10",
+    "batch_id": "b10",
+    "wave": "wave13 / wave1 / core",
+    "package": "wave13-w1-core-b10",
+    "date": "2026-09-26",
+    "method": "static only; live ghidra_* MCP against program=SporeApp.exe"
+  }
+}

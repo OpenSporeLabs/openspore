@@ -42,17 +42,28 @@ struct OpaqueWordVector {
   TargetWord* field_08;
 };
 
-using OpaquePropertyResolver = OpaqueProperty* (*)(
-    OpaquePropertyService*, TargetWord);
-using OpaqueListSetProperty = void (*)(OpaqueList*, TargetWord,
-                                        OpaqueProperty*);
-using OpaqueListGetProperty = OpaqueProperty* (*)(OpaqueList*, TargetWord);
-using OpaqueBaseHasProperty = bool (*)(OpaqueBaseObject*, TargetWord);
-using OpaqueBaseGetProperty = bool (*)(OpaqueBaseObject*, TargetWord,
-                                         OpaqueProperty**);
-using OpaqueBaseGetPropertyObject = OpaqueProperty* (*)(OpaqueBaseObject*,
-                                                         TargetWord);
-using OpaqueBaseInsert = void (*)(OpaqueList*, TargetWord, OpaqueProperty*);
+#if defined(_MSC_VER)
+#define PKG20_WAVE6_THISCALL __thiscall
+#else
+#define PKG20_WAVE6_THISCALL __attribute__((thiscall))
+#endif
+
+using OpaquePropertyResolver =
+    OpaqueProperty* (PKG20_WAVE6_THISCALL*)(OpaquePropertyService*,
+                                              TargetWord);
+using OpaqueListSetProperty = void (PKG20_WAVE6_THISCALL*)(
+    OpaqueList*, TargetWord, OpaqueProperty*);
+using OpaqueListGetProperty =
+    OpaqueProperty* (PKG20_WAVE6_THISCALL*)(OpaqueList*, TargetWord);
+using OpaqueBaseHasProperty =
+    bool (PKG20_WAVE6_THISCALL*)(OpaqueBaseObject*, TargetWord);
+using OpaqueBaseGetProperty = bool (PKG20_WAVE6_THISCALL*)(OpaqueBaseObject*,
+                                                            TargetWord,
+                                                            OpaqueProperty**);
+using OpaqueBaseGetPropertyObject =
+    OpaqueProperty* (PKG20_WAVE6_THISCALL*)(OpaqueBaseObject*, TargetWord);
+using OpaqueBaseInsert = void (PKG20_WAVE6_THISCALL*)(
+    OpaqueList*, TargetWord, OpaqueProperty*);
 using OpaqueErrorPort = void (*)(TargetWord);
 using OpaqueTypeConversion = void (*)(TargetWord, TargetWord, const void*,
                                       TargetWord, TargetWord);
@@ -149,12 +160,6 @@ void set_opaque_fast_list(OpaqueList* list);
 void set_opaque_base_insert(OpaqueBaseInsert insert);
 void set_opaque_error_port(OpaqueErrorPort port);
 void set_opaque_type_conversion(OpaqueTypeConversion conversion);
-
-#if defined(_MSC_VER)
-#define PKG20_WAVE6_THISCALL __thiscall
-#else
-#define PKG20_WAVE6_THISCALL __attribute__((thiscall))
-#endif
 
 bool PKG20_WAVE6_THISCALL opaque_list_has_property_006a27d0(
     OpaqueList* list, TargetWord property_id);

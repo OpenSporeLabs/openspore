@@ -7,7 +7,7 @@ newline-delimited JSON-RPC 2.0 to it. No in-process Server shortcuts.
 Coverage (one bullet per group):
   * server launch ............ TestLaunch
   * request/response protocol  TestProtocol
-  * all 21 tools smoke ....... TestAllToolsSmoke ({} + minimal params)
+  * all 24 tools smoke ....... TestAllToolsSmoke ({} + minimal params)
   * malformed input .......... TestMalformed
   * error handling ........... TestErrorHandling
   * KG temp-DB ops ............ TestKnowledgeGraph
@@ -43,7 +43,8 @@ ROOT = os.path.dirname(os.path.dirname(
 SERVER_SCRIPT = os.path.join(ROOT, "tools", "mcp", "server.py")
 
 EXPECTED_TOOLS = [
-    "pipeline_state", "target_select",
+    "pipeline_state", "target_select", "function_context",
+    "frontier_context", "reconstruction_status",
     "kg_query", "kg_neighbors", "kg_record",
     "dossier_read", "dossier_regenerate",
     "ghidra_decompile", "ghidra_function", "ghidra_search",
@@ -58,6 +59,9 @@ EXPECTED_TOOLS = [
 SMOKE_ARGS = {
     "pipeline_state": {},
     "target_select": {},
+    "function_context": {"va": "0x00e5b790"},
+    "frontier_context": {"limit": 1},
+    "reconstruction_status": {"va": "0x00e5b790"},
     "kg_query": {},
     "kg_neighbors": {"name": "srv-smoke-absent"},
     "kg_record": {"reason": "srv smoke probe"},
@@ -313,7 +317,7 @@ class TestProtocol(ServerBase):
             self.srv.request("ping", None, req_id=7), 7)
         self.assertEqual(result, {"status": "ok"})
 
-    def test_tools_list_exact_21(self):
+    def test_tools_list_exact_24(self):
         result = self.assert_rpc_ok(
             self.srv.request("tools/list", None, req_id=2), 2)
         names = [tool["name"] for tool in result["tools"]]
@@ -342,26 +346,26 @@ class TestProtocol(ServerBase):
         self.assertEqual(len(batch), 2, batch)  # notification: no reply
         by_id = {item["id"]: item for item in batch}
         self.assertEqual(by_id[11]["result"], {"status": "ok"})
-        self.assertEqual(len(by_id[12]["result"]["tools"]), 21)
+        self.assertEqual(len(by_id[12]["result"]["tools"]), 24)
 
 
 # --------------------------------------------------------------------------- #
-# All 21 tools at smoke level over the real protocol.
+# All 24 tools at smoke level over the real protocol.
 # --------------------------------------------------------------------------- #
 class TestAllToolsSmoke(ServerBase):
-    def test_all_21_tools_empty_args_no_crash(self):
+    def test_all_24_tools_empty_args_no_crash(self):
         for i, name in enumerate(EXPECTED_TOOLS):
             resp = self.srv.call_tool(name, {}, req_id=100 + i)
             result = self.assert_inband(resp, 100 + i)
             if result["status"] == "error":
                 self.assertIn(result["code"], GRACEFUL_CODES,
                               (name, result))
-        # Server survived all 21: still answering.
+        # Server survived all 24: still answering.
         result = self.assert_rpc_ok(
             self.srv.request("ping", None, req_id=999), 999)
         self.assertEqual(result, {"status": "ok"})
 
-    def test_all_21_tools_minimal_args_no_crash(self):
+    def test_all_24_tools_minimal_args_no_crash(self):
         for i, name in enumerate(EXPECTED_TOOLS):
             resp = self.srv.call_tool(name, SMOKE_ARGS[name], req_id=200 + i)
             result = self.assert_inband(resp, 200 + i)
@@ -824,7 +828,7 @@ class TestFreshClone(ServerBase):
         self.assertEqual(result["serverInfo"]["name"], "openspore-mcp")
         result = self.assert_rpc_ok(
             self.srv.request("tools/list", None, req_id=132), 132)
-        self.assertEqual(len(result["tools"]), 21)
+        self.assertEqual(len(result["tools"]), 24)
 
     def test_spore_absent_degrades_gracefully(self):
         empty_root = os.path.join(self.tmp, "empty-root")

@@ -1,0 +1,188 @@
+{
+  "schema": "openspore-source-reconstruction-function-evidence-1",
+  "va": "0x008db310",
+  "package": "PKG-ORCHESTRATE-DOGFOOD-008DB310",
+  "subsystem": "Resource",
+  "normalized_symbol": "pf_index_write_bounds_008db310",
+  "reconstructed_symbol": "pf_index_write_bounds_008db310",
+  "ghidra_name": "Resource::PFIndexModifiable::Write",
+  "source_files": [
+    "reconstruction/staging/pkg-orchestrate-dogfood-008db310/dogfood_008db310.hpp",
+    "reconstruction/staging/pkg-orchestrate-dogfood-008db310/dogfood_008db310.cpp",
+    "reconstruction/staging/pkg-orchestrate-dogfood-008db310/dogfood_008db310_model_test.cpp"
+  ],
+  "focused_test": {
+    "path": "reconstruction/staging/pkg-orchestrate-dogfood-008db310/dogfood_008db310_model_test.cpp",
+    "o0": "pass",
+    "o2": "pass",
+    "o2_ndebug": "pass",
+    "result": "pass",
+    "test_count": 15,
+    "tests": [
+      "test_zero_extent_returns_true_before_the_map_is_read",
+      "test_overlapping_record_returns_false",
+      "test_adjacent_records_are_not_overlaps",
+      "test_zero_sized_record_is_never_compared",
+      "test_range_compare_is_unsigned_across_wrap",
+      "test_chain_interior_node_is_examined",
+      "test_end_node_terminates_before_any_range_test",
+      "test_null_slots_are_skipped_before_the_first_test",
+      "test_chain_end_resumes_at_the_next_slot",
+      "test_whole_index_without_overlap_returns_true",
+      "test_end_slot_word_selects_the_terminator",
+      "test_dispatch_port_is_closed_by_default",
+      "test_configured_dispatch_receives_the_two_stack_words",
+      "test_carrier_and_node_layout_is_proved",
+      "test_modeled_signatures"
+    ],
+    "mutation_spotcheck": "Seven single-token body mutations (drop the record_size guard, both interval comparisons made inclusive, break the next_1c chain follow, drop the zero-extent early return, replace the end sentinel, flip the destination end arithmetic) were each detected by the model test."
+  },
+  "type_dependencies": [
+    "openspore::reconstruction::pkg_orchestrate_dogfood_008db310::OpaqueWriteCarrier",
+    "openspore::reconstruction::pkg_orchestrate_dogfood_008db310::OpaqueItemNode",
+    "openspore::reconstruction::pkg_orchestrate_dogfood_008db310::OpaqueWord",
+    "openspore::reconstruction::pkg_orchestrate_dogfood_008db310::OpaquePorts",
+    "openspore::reconstruction::pkg_orchestrate_dogfood_008db310::DispatchSlot014368bc"
+  ],
+  "type_scope": "package-local qualified names only; no global type record added",
+  "upstream_type_labels": [
+    "PFIndexModifiableWriteCarrier*",
+    "ItemsMap",
+    "DATA",
+    "void*",
+    "uint32_t",
+    "bool"
+  ],
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "x86-32 thiscall, callee cleanup",
+    "convention": "__thiscall observed",
+    "hidden_this_register": "ECX",
+    "hidden_receiver": "ECX, the write carrier, read only at +0x2c and +0x30",
+    "hidden_this_type": "PFIndexModifiableWriteCarrier*",
+    "return_type": "bool",
+    "return_width_bytes": 4,
+    "return_register": "AL",
+    "return_semantics": "AL is set to 0x1 at 0x008db381 on the no-overlap path and to 0x0 at 0x008db38a on the overlap path; the function returns true when the destination extent is empty or when no scanned record interval overlaps it, and false on the first overlap",
+    "ordinary_stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "ESP+0x04",
+        "name": "destination",
+        "type": "void*",
+        "width_bytes": 4,
+        "read_at": "0x008db31c reads ESP+0x14, which is the entry ESP+0x04 after the four register pushes at 0x008db314..0x008db317"
+      },
+      {
+        "position": 2,
+        "entry_offset": "ESP+0x08",
+        "name": "destination_size",
+        "type": "uint32_t",
+        "width_bytes": 4,
+        "read_at": "0x008db310 reads ESP+0x08 into EAX before any push"
+      }
+    ],
+    "stack_cleanup_bytes": 8,
+    "stack_cleanup_owner": "callee",
+    "saved_registers": "EBX, EBP, ESI, EDI are pushed at 0x008db314..0x008db317 and popped on both exits",
+    "ret_form": "RET 0x8 at 0x008db384 and 0x008db38d",
+    "termination": "two exits, both RET 0x8",
+    "signature_caveat": "The imported decompiler prototype exposes five parameters (PFIndexModifiable* this, void** pDstIndexData, size_t* nDstIndexSize, size_t nIndexCount, bool arg_C) under a 'WARNING: Unknown calling convention' banner. The machine body reads only the two words at entry ESP+0x04 and ESP+0x08 and returns with RET 0x8 on both paths, so the two-word callee-clean thiscall contract above is the modelled machine contract and the four-parameter form is a decompiler artefact."
+  },
+  "observed_mechanics": [
+    "0x008db310 MOV EAX,[ESP+0x8] loads the second stack word, the extent, before any register is saved.",
+    "0x008db314..0x008db317 PUSH EBX/EBP/ESI/EDI; 0x008db318 TEST EAX,EAX and 0x008db31a JZ 0x008db37e return true immediately when the extent word is zero, before ECX+0x2c or ECX+0x30 is read.",
+    "0x008db31c MOV EBX,[ESP+0x14] reloads the first stack word, the destination, from the post-push frame so ESP+0x14 is the entry ESP+0x04.",
+    "0x008db320 MOV EDX,[ECX+0x2c] and 0x008db33d/0x008db340 read the slot array pointer at carrier+0x2c; 0x008db323 LEA EBP,[EBX+EAX*1] forms destination_end = destination + extent.",
+    "0x008db326..0x008db33b load slots[0] into EAX and, while it is null, step the EDX cursor four bytes at a time (0x008db32c, 0x008db333, 0x008db373) until the first non-null slot is found.",
+    "0x008db33d MOV ESI,[ECX+0x30] reads the slot index word at carrier+0x30; 0x008db343 MOV EDI,[ECX+ESI*0x4] takes that word as an index into the slot array and keeps the slot contents as the end sentinel.",
+    "0x008db346 CMP EAX,EDI and 0x008db348 JZ 0x008db37e return true when the first reached node is already the end sentinel, before any record field is read.",
+    "0x008db34a LEA EBX,[EBX] is a two-byte alignment no-op that leaves the destination unchanged.",
+    "0x008db350 MOV ESI,[EAX+0x10] loads the node extent word; 0x008db353 TEST ESI,ESI and 0x008db355 JZ 0x008db364 skip the range test entirely when that word is zero.",
+    "0x008db357 MOV ECX,[EAX+0xc] loads the node record begin word; 0x008db35a CMP ECX,EBP and 0x008db35c JNC 0x008db364 skip the node when record_begin is unsigned-greater-or-equal to destination_end.",
+    "0x008db35e ADD ECX,ESI forms record_end = record_begin + record_size; 0x008db360 CMP EBX,ECX and 0x008db362 JC 0x008db387 return false when the destination is unsigned-below record_end.",
+    "0x008db364 MOV EAX,[EAX+0x1c] follows the node chain link at node+0x1c; 0x008db367 TEST EAX,EAX and 0x008db369 JNZ 0x008db37a continue the chain when the link is non-null.",
+    "0x008db36b JMP 0x008db370 and 0x008db370..0x008db378 resume the slot scan one slot past the current cursor position when the chain link is null, skipping further null slots in the same loop.",
+    "0x008db37a CMP EAX,EDI and 0x008db37c JNZ 0x008db350 re-test every resumed or chained node against the end sentinel and loop back to the range test when it differs.",
+    "The false path 0x008db387..0x008db38d pops EDI/ESI/EBP, zeroes AL and returns with RET 0x8; the true path 0x008db37e..0x008db384 pops EDI/ESI/EBP, sets AL to 0x1 and returns with RET 0x8.",
+    "The body contains no CALL, no reference to any global, and no store: it only reads the receiver, the slot array, the sentinel slot, and the node words, so the whole function is a read-only interval overlap query."
+  ],
+  "modelled_body": {
+    "semantics": "Return true when the extent word is zero, or when no record interval in the scanned node set overlaps the half-open destination interval; return false on the first overlap.",
+    "overlap_predicate": "record_begin < destination_end && destination_begin < record_end, both compared as unsigned 32-bit values (JNC at 0x008db35c and JC at 0x008db360 are the unsigned forms).",
+    "traversal": "Slot cursor walks forward past null slots; each non-null slot entry is a node whose +0x1c link continues the chain; a null chain link resumes the cursor one slot later; the node equal to slots[carrier+0x30] terminates the scan and is never range-tested.",
+    "state_writes": [],
+    "reference_operations": [],
+    "modelling_bounds": [
+      "The machine slot-skip loops at 0x008db32f/0x008db336 and 0x008db370/0x008db376 carry no upper bound. The model bounds the cursor at the end-sentinel slot read at 0x008db343, which is the only slot index the body itself proves, and returns true when the cursor passes it. This bound is a model closure, not an observed branch."
+    ]
+  },
+  "layout_evidence": {
+    "receiver": "OpaqueWriteCarrier; only +0x2c and +0x30 are read by this body, every other byte is opaque to it",
+    "receiver_extent_provenance": "0x4c is the imported PFIndexModifiable size recorded in reconstruction/metadata/wave6-resources/008db310.json; the disassembly at 0x008db320 and 0x008db33d proves only the +0x2c and +0x30 accesses",
+    "node": "OpaqueItemNode; +0x0c record begin, +0x10 record size, +0x1c chain link, 0x20 extent",
+    "node_extent_provenance": "0x20 follows from +0x1c being the last word read plus a 32-bit link; the imported ItemsMap node record in reconstruction/metadata/wave6-resources/008db310.json also reports 32 bytes"
+  },
+  "field_offsets": [
+    {"owner": "OpaqueWriteCarrier", "offset": "0x2c", "width_bytes": 4, "role": "slot array pointer", "proof": "0x008db320, 0x008db340"},
+    {"owner": "OpaqueWriteCarrier", "offset": "0x30", "width_bytes": 4, "role": "index of the end sentinel slot", "proof": "0x008db33d, 0x008db343"},
+    {"owner": "OpaqueItemNode", "offset": "0x0c", "width_bytes": 4, "role": "record begin", "proof": "0x008db357"},
+    {"owner": "OpaqueItemNode", "offset": "0x10", "width_bytes": 4, "role": "record size", "proof": "0x008db350"},
+    {"owner": "OpaqueItemNode", "offset": "0x1c", "width_bytes": 4, "role": "chain link", "proof": "0x008db364"}
+  ],
+  "globals": [],
+  "calls": {
+    "callers": [],
+    "callees": [],
+    "observation": "The 57-instruction body contains no call instruction; the function is a leaf and its only inputs are the two stack words and the receiver memory."
+  },
+  "virtual_dispatch": {
+    "referenced_by": [
+      {
+        "table_address": "0x01436878",
+        "pointer_slot": "0x014368bc",
+        "value": "0x008db310",
+        "observation": "0x014368bc holds the little-endian 32-bit value 0x008db310. The surrounding run from at least 0x01436794 is defined only as undefined4 / undefined * pointer data and carries no Ghidra symbol or vtable data type; an 0xffffffff word sits at 0x014368c0, which is not an MSVC vtable shape."
+      }
+    ],
+    "vtable_struct_modelled": false,
+    "reason": "No vtable base, owner class, or slot index is provable for 0x01436878, so no vtable layout and no slot index is asserted in the model. The only proven dispatch fact is the pointer value at 0x014368bc, which is exposed as the default-null port g_pf_index_write_008db310_ports.dispatch_014368bc."
+  },
+  "runtime_ports": [
+    {
+      "name": "dispatch_014368bc",
+      "shape": "bool (carrier, void* destination, uint32_t destination_size) over the observed machine contract",
+      "status": "runtime_port_not_promoted",
+      "default": "null"
+    }
+  ],
+  "type_scope_note": "The upstream labels PFIndexModifiableWriteCarrier*, ItemsMap, and DATA are import-derived candidate names; the model keeps package-local opaque types and asserts no upstream field semantics beyond the offsets listed in field_offsets.",
+  "runtime_gates": [
+    "The owner of the pointer run around 0x01436878 that stores 0x008db310 at 0x014368bc is unknown, so the class that reaches this function and the slot index it occupies are unproved.",
+    "No direct caller xref exists, so the producer of the destination pointer and the meaning of the extent word in bytes versus an index count are unconfirmed.",
+    "The record interval values at node+0x0c and node+0x10 are treated as opaque 32-bit offsets; the buffer they index is not identified from this function.",
+    "The end sentinel at slots[carrier+0x30] is proven as a terminating value but its construction and lifetime are unresolved.",
+    "No original-process invocation or indirect-caller trace was captured; runtime_validation stays 0."
+  ],
+  "unresolved_questions": [
+    "Is the second stack word a byte count of the destination buffer or a count of index entries? The body only proves that it is added to the destination pointer and compared against node record offsets in the same units as node+0x10.",
+    "What is the owner and slot index of the pointer table that references 0x008db310 at 0x014368bc, and is 0x01436878 that table's base?",
+    "Does the word at carrier+0x30 always equal the live bucket count, or can it be an independent end index? The body only uses it to scale an index into the slot array.",
+    "How is the chain at node+0x1c maintained, and can a null link with an exhausted slot run occur in a real index instance? The machine body would read past the array in that case; the model bounds the cursor at the end sentinel instead.",
+    "Why does the imported prototype expose four explicit parameters while the machine reads two and returns RET 0x8? The decompiler banner reports an unknown calling convention for this function."
+  ],
+  "confidence": {
+    "body": "high",
+    "abi_and_stack_cleanup": "high",
+    "mechanics": "high",
+    "runtime_ownership": "low"
+  },
+  "runtime_validation": 0,
+  "runtime_validation_status": "not_run",
+  "review_status": "pending",
+  "integration_status": "staged",
+  "target_state": "staged candidate source; runtime validation gated",
+  "version": "3.1.0.22",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e"
+}

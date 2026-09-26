@@ -20,6 +20,7 @@ import unittest
 from tools.mcp import config
 from tools.mcp import ghidra_tools
 from tools.mcp import kg_tools
+from tools.mcp import reconstruction_tools
 from tools.mcp import registry
 
 SHA_A = "a" * 64  # current build identity in these fixtures
@@ -636,6 +637,10 @@ class TestWiring(unittest.TestCase):
                      "kg_neighbors", "kg_record", "queue_op"):
             self.assertIs(registry.HANDLERS[name],
                           getattr(kg_tools, name), name)
+        for name in ("function_context", "frontier_context",
+                     "reconstruction_status"):
+            self.assertIs(registry.HANDLERS[name],
+                          getattr(reconstruction_tools, name), name)
         for name in ("ghidra_decompile", "ghidra_function", "ghidra_search",
                      "ghidra_snapshot_save", "vtable_lookup",
                      "dossier_read", "dossier_regenerate"):
@@ -650,8 +655,8 @@ class TestWiring(unittest.TestCase):
                      "test_run", "status_update", "fixture_check"):
             self.assertIs(registry.HANDLERS[name],
                           getattr(runtime_tools, name), name)
-        # Nothing renamed: all 21 tools real, no silent stubs.
-        self.assertEqual(len(registry.tool_names()), 21)
+        # Nothing renamed: all 24 tools real, no silent stubs.
+        self.assertEqual(len(registry.tool_names()), 24)
         self.assertNotEqual(
             registry.dispatch("asset_resolve", {})["status"],
             "not_implemented")

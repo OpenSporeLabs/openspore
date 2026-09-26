@@ -1,0 +1,161 @@
+{
+  "schema": "pkg-editor-runtime-wave7.function-handoff.v1",
+  "package": "PKG-EDITOR-RUNTIME-WAVE7",
+  "scope": {
+    "package_scope": "Six animation and controller VAs only. 0x00591fa0 was removed from this package after pkg-editor-lifecycle-wave6 claimed it; its source file editor_runtime_wave7.cpp, its declarations, its tests and its metadata handoff were deleted.",
+    "owned_vas": [
+      "0x0059b0f0",
+      "0x0059b4b0",
+      "0x0059cac0",
+      "0x0059cb10",
+      "0x0059cea0",
+      "0x0059cf00"
+    ],
+    "removed_vas": [
+      {
+        "va": "0x00591fa0",
+        "owner": "pkg-editor-lifecycle-wave6",
+        "artefacts_removed": [
+          "src/reconstruction/pkg_editor_runtime_wave7/editor_runtime_wave7.cpp",
+          "OpaqueEditor / EditorDispatchPorts / message-id constants in editor_runtime_wave7.hpp",
+          "editor_handle_message_00591fa0 and its model tests",
+          "reconstruction/metadata/pkg-editor-runtime-wave7/00591fa0.json"
+        ]
+      }
+    ]
+  },
+  "function_address": "0x0059cf00",
+  "ghidra_name": "Editors::cEditorAnimWorld::SetTargetPosition",
+  "normalized_symbol": "EditorAnimWorld_SetTargetPosition_0059cf00",
+  "source_files": [
+    "src/reconstruction/pkg_editor_runtime_wave7/editor_runtime_wave7.hpp",
+    "src/reconstruction/pkg_editor_runtime_wave7/editor_runtime_wave7.cpp",
+    "src/reconstruction/pkg_editor_runtime_wave7/editor_runtime_wave7_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "void __thiscall EditorAnimWorld_SetTargetPosition_0059cf00(cEditorAnimWorld *this, int creatureID, Vector3 position, bool applyNow, bool ignoreZ);",
+  "abi": {
+    "calling_convention": "thiscall",
+    "hidden_this": "OpaqueAnimWorld * in ECX",
+    "stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "ESP+0x04",
+        "name": "creatureID",
+        "type": "std::int32_t",
+        "width_bytes": 4
+      },
+      {
+        "position": 2,
+        "entry_offset": "ESP+0x08",
+        "name": "position",
+        "type": "Vector3 (12 bytes, by value, occupies three argument slots)",
+        "width_bytes": 12
+      },
+      {
+        "position": 3,
+        "entry_offset": "ESP+0x14",
+        "name": "applyNow",
+        "type": "bool",
+        "width_bytes": 4
+      },
+      {
+        "position": 4,
+        "entry_offset": "ESP+0x18",
+        "name": "ignoreZ",
+        "type": "bool",
+        "width_bytes": 4
+      }
+    ],
+    "stack_cleanup_bytes": 24,
+    "stack_cleanup_owner": "caller",
+    "return_type": "void",
+    "return_register": null,
+    "return_width_bytes": 0
+  },
+  "body": {
+    "status": "reconstructed",
+    "entry_address": "0x0059cf00",
+    "body_addresses": [
+      "0x0059cf00",
+      "0x0059cf59"
+    ],
+    "instruction_count": 36,
+    "mechanics": [
+      "Spill argument 1 and check the map gate this+0x38; a zero gate returns without any map call.",
+      "lower_bound against this+0x0c through a valid local cursor out pointer, then find, then TEST ECX,ECX on the mapped controller: a null controller is an additional early return.",
+      "On success load applyNow from [ESP+0x20] and ignoreZ from [ESP+0x24], then LEA EDX,[ESP+0x1c] to take the address of the by-value Vector3 argument on the caller's stack frame.",
+      "Forward to 0x0059b0f0 as (controller, &position, applyNow, ignoreZ); the target reads through that pointer, so the callee must keep forwarding the address of its own incoming argument rather than a copy it mutates.",
+      "Epilogue is POP ESI/EDI/ECX, RET 0x18."
+    ],
+    "abi_note": "The Vector3 argument spans three stack slots, so the total callee cleanup is 0x18 rather than 0x10. Forwarding uses the address of the incoming argument block, which is what makes the by-value semantics observable in the target."
+  },
+  "call_graph": {
+    "direct_callees": [
+      "0x00e5c780",
+      "0x0059c740",
+      "0x0059b0f0"
+    ],
+    "direct_callers": [
+      "0x005873c0",
+      "0x00583610",
+      "0x00583820",
+      "0x005838a0",
+      "0x0059d240",
+      "0x00639350",
+      "0x0063aa30"
+    ],
+    "direct_call_site_count": 8
+  },
+  "evidence": [
+    {
+      "tool": "ghidra_get_function_by_address",
+      "address": "0x0059cf00",
+      "observation": "Live function spans 0x0059cf00..0x0059cf59."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x0059cf00",
+      "observation": "Listing proves the 0x38 gate, the null-controller exit, the [ESP+0x20]/[ESP+0x24] loads, the LEA EDX,[ESP+0x1c] position pointer and the RET 0x18 epilogue."
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x0059b0f0",
+      "observation": "The forwarded target copies position->x/y/z into controller+0x20 and controller+0x2c before the magnitude clamp, fixing the read-through-pointer contract."
+    },
+    {
+      "tool": "ghidra_get_function_xrefs",
+      "address": "0x0059cf00",
+      "observation": "Eight direct call sites."
+    },
+    "0x00e5c780 stores the found node through [ESP+0x8] and dereferences [ESP+0xc] as the search key, so the native stack order after the receiver is (out, key). The port declaration and both call sites use (map, out, key) with a non-null out pointer and the cursor is read back from that slot."
+  ],
+  "tests": [
+    "hit path forwards (controller, &position, applyNow, ignoreZ) preserving the argument copy contents",
+    "the forwarded pointer differs from the caller's own variable, proving the by-value contract",
+    "the lower-bound port receives a non-null out pointer on the hit path",
+    "key past the last node forwards nothing",
+    "this+0x38 == 0 skips the lookup and the forward",
+    "lower_bound hit but find miss forwards nothing",
+    "lower-bound port receives (out, key) with a non-null out pointer"
+  ],
+  "runtime_gates": [
+    "Coordinate space and units of the forwarded Vector3",
+    "Whether ignoreZ is ever set in practice by editor input paths",
+    "Interaction between applyNow and the ground-follow raycast in the target"
+  ],
+  "confidence": {
+    "body": "high",
+    "abi_and_cleanup": "high",
+    "forward_order": "high",
+    "by_value_contract": "high"
+  },
+  "verification": "self-consistent: 29 focused x86-32 model tests pass in normal and NDEBUG builds; -Wall -Wextra -Wpedantic -Werror clean; clang-format clean",
+  "target_state": "integrated canonical source; runtime validation gated",
+  "integration_status": "integrated",
+  "canonical_files": [
+    "src/reconstruction/pkg_editor_runtime_wave7/editor_runtime_wave7.hpp",
+    "src/reconstruction/pkg_editor_runtime_wave7/editor_runtime_wave7.cpp",
+    "src/reconstruction/pkg_editor_runtime_wave7/editor_runtime_wave7_model_test.cpp"
+  ]
+}

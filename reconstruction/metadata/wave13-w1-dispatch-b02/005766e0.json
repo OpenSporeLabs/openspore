@@ -1,0 +1,263 @@
+{
+  "schema": "openspore-worker-metadata-1",
+  "package": "wave13-w1-dispatch-b02",
+  "va": "0x005766e0",
+  "address": "0x005766e0",
+  "function_address": "0x005766e0",
+  "entry_address": "0x005766e0",
+  "ghidra_name": "FUN_005766e0",
+  "normalized_symbol": "refcounted_ptr_assign_005766e0",
+  "reconstructed_symbol": "FUN_005766e0_intrusive_ptr_assign",
+  "declaration": "extern \"C\" openspore::wave13::b02::RefHolder* FUN_005766e0_intrusive_ptr_assign(openspore::wave13::b02::RefHolder* self, openspore::wave13::b02::RefCounted** new_value);",
+  "source_files": [
+    "reconstruction/staging/wave13-w1-dispatch-b02/b5766e0_intrusive_ptr_assign.cpp",
+    "reconstruction/staging/wave13-w1-dispatch-b02/b5766e0_intrusive_ptr_assign.hpp"
+  ],
+
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "calling_convention_observation": "The receiver arrives in ECX and is copied to EDI at 0x005766e9. The single stack argument is read with MOV EAX,dword ptr [ESP + 0x4] at 0x005766e0, BEFORE the three pushes at 0x005766e4..0x005766e8, which is what proves there is exactly one stack argument and that it is consumed by the callee. The epilogue is POP EDI; POP ESI; POP EBX; RET 0x4 at 0x0057670f..0x00576712; RET 0x4 pops four bytes, so the argument is callee-cleanup. No inspected callsite issues an ADD ESP after the call.",
+    "return_type": "RefHolder*",
+    "return_semantics": "the receiver, unchanged; this is a mutator that returns its own this, so the result is chainable",
+    "return_register": "EAX",
+    "return_width_bytes": 4,
+    "return_observation": "0x0057670d: MOV EAX,EDI, where EDI was loaded from ECX at 0x005766e9. The single write is on the common tail, so all three exits (equal, completed, and either null path) return the same value.",
+    "ret_form": "RET 0x4",
+    "termination": "three paths, all merging at 0x0057670d: the early return at 0x005766ef, the fall-through after the Release, and the two JZ skips at 0x005766f3 and 0x00576702 which both target 0x0057670d",
+    "stack_cleanup_bytes": 4,
+    "stack_cleanup_owner": "callee",
+    "stack_arguments": [
+      {"index": 1, "frame_offset": "[ESP + 0x4] at entry", "width": 4, "meaning": "a pointer to a pointer. 0x005766e0 loads it and 0x005766e6 dereferences it, so the incoming refcounted pointer is read through two levels of indirection. Every inspected callsite passes the address of a separate dword rather than the value itself."}
+    ],
+    "ordinary_stack_argument_slots": 1,
+    "saved_registers": ["EBX", "ESI", "EDI"],
+    "saved_registers_observation": "PUSH EBX/ESI/EDI at 0x005766e4..0x005766e8, POP EDI/ESI/EBX at 0x0057670f..0x00576711; the frame is a pure register save with no stack allocation",
+    "receiver": true,
+    "hidden_receiver": "ECX",
+    "hidden_this_register": "ECX is copied to EDI at 0x005766e9 and is never read again; the two virtual calls take their receivers from EBX and ESI instead",
+    "frame": "none: no SUB ESP and no MOV EBP,ESP, so the argument is read at [ESP + 0x4] before the pushes"
+  },
+
+  "layout": {
+    "entry_address": "0x005766e0",
+    "body_start": "0x005766e0",
+    "body_end": "0x00576712",
+    "body_span_bytes": 53,
+    "body_bytes_hex": null,
+    "instruction_count": 27,
+    "instructions_note": "Full listing read with ghidra_disassemble_function; all 27 instructions appear in observed_mechanics.",
+    "frame_shape": "three-register save, no locals, no stack allocation",
+    "padding_after": "not read; the body ends at 0x00576712 which is 0x0057670b + 7 bytes (CALL EAX plus the four-instruction epilogue)",
+    "reads": "[ESP + 0x4] (the argument) at 0x005766e0; [EAX] (the incoming value through the argument) at 0x005766e6; [EDI] (the holder's current value) at 0x005766eb; [ESI] and [EBX] then [EDX + 0x04] and [EDX + 0x08] for the two vtable slots at 0x005766f5/0x005766f7 and 0x00576704/0x00576706",
+    "writes": "[EDI] at 0x005766fe, i.e. the holder's single member; and EAX at 0x0057670d"
+  },
+
+  "observed_mechanics": [
+    "0x005766e0: MOV EAX,dword ptr [ESP + 0x4] -- the argument is read before any push, so it is the entry's first stack slot",
+    "0x005766e4/0x005766e5/0x005766e8: PUSH EBX; PUSH ESI; PUSH EDI",
+    "0x005766e6: MOV ESI,dword ptr [EAX] -- a second indirection, so the argument is a pointer to the incoming pointer",
+    "0x005766e9: MOV EDI,ECX -- the receiver is cached in EDI",
+    "0x005766eb: MOV EBX,dword ptr [EDI] -- EBX is the holder's current value, cached so the store cannot lose it",
+    "0x005766ed/0x005766ef: CMP ESI,EBX / JZ 0x0057670d -- the self-assignment guard. It is a full dword equality on the pointer, not a truthiness test, and it skips the AddRef, the store and the Release alike. Without it the store-then-release order below would release the very pointer just AddRef'd.",
+    "0x005766f1/0x005766f3: TEST ESI,ESI / JZ 0x005766fe -- a null incoming value skips only the AddRef and still performs the store, so clearing the holder is a supported operation",
+    "0x005766f5: MOV EDX,dword ptr [ESI]",
+    "0x005766f7: MOV EAX,dword ptr [EDX + 0x4] -- vtable slot +0x04 of the incoming value",
+    "0x005766fa: MOV ECX,ESI -- the receiver is the incoming value",
+    "0x005766fc: CALL EAX -- a __thiscall with no stack argument; the return value is discarded",
+    "0x005766fe: MOV dword ptr [EDI],ESI -- the store, after the AddRef and before the Release",
+    "0x00576700/0x00576702: TEST EBX,EBX / JZ 0x0057670d -- a null previous occupant skips only the Release",
+    "0x00576704: MOV EDX,dword ptr [EBX]",
+    "0x00576706: MOV EAX,dword ptr [EDX + 0x8] -- vtable slot +0x08 of the previous occupant, four bytes past the AddRef slot",
+    "0x00576709: MOV ECX,EBX",
+    "0x0057670b: CALL EAX -- a __thiscall with no stack argument; the return value is discarded",
+    "0x0057670d: MOV EAX,EDI -- the single return write, reached from four different paths",
+    "0x0057670f/0x00576710/0x00576711: POP EDI; POP ESI; POP EBX",
+    "0x00576712: RET 0x4 -- the callee pops the one argument",
+    "0x0064af76/0x0064af7a: LEA ECX,[ESP + 0x20] forms the receiver as a stack local and PUSH EAX with EAX = [EBP + 0x1b0] from 0x0064af66 supplies the argument, i.e. the address of a member dword four bytes away in the enclosing frame",
+    "0x0064af71/0x0064af73: the caller performs its own CMP dword ptr [EAX],ESI / JZ check before calling, so the self-assignment case is filtered twice",
+    "0x00588e9b/0x00588ea1/0x00588ea2/0x00588ea8: inside Editors::cEditor::OnMouseDown, LEA ESI,[EBP + 0xd4] is the argument and LEA ECX,[EBP + 0xd8] is the receiver -- the holder at cEditor+0xd8 is assigned from the raw pointer at cEditor+0xd4, four bytes earlier",
+    "0x00c3a897/0x00c3a89d/0x00c3a89e/0x00c3a8a4: LEA EAX,[EBX + 0x29c] is the argument and LEA ECX,[EBX + 0x288] is the receiver",
+    "0x00c3a8bf/0x00c3a8c5/0x00c3a8c6/0x00c3a8cc: LEA ECX,[EBX + 0x28c] is the argument and LEA ECX,[EBX + 0x288] is the receiver, so the same holder is assigned from two different neighbouring dwords at two different sites",
+    "ghidra_get_xrefs_to(0x005766e0) returns 13 references, every one UNCONDITIONAL_CALL, and no data reference, so the address is not a vtable entry and no owning class can be derived from it",
+    "the slot pair +0x04 / +0x08 is the refcounted protocol, established independently in reconstruction/metadata/wave13-w1-dispatch-b02/005a9200.json from the base vtable at 0x013eb844, whose +0x04 holds 0x00432a50 (LOCK; INC [this+4]; return the old value) and whose +0x08 holds 0x00404f90 (LOCK; DEC [this+4]; on reaching zero set [this+4] = 1 and call slot +0x00 with argument 1)"
+  ],
+
+  "fields_and_offsets": [
+    {"offset": "self+0x00", "width": 4, "meaning": "the single refcounted pointer the holder owns", "proved_by": "0x005766eb MOV EBX,dword ptr [EDI] reads it and 0x005766fe MOV dword ptr [EDI],ESI writes it", "confidence": "OBSERVED"},
+    {"offset": "arg1", "width": 4, "meaning": "a pointer to the incoming refcounted pointer, dereferenced once at 0x005766e6", "proved_by": "0x005766e0 MOV EAX,dword ptr [ESP + 0x4] then 0x005766e6 MOV ESI,dword ptr [EAX]", "confidence": "OBSERVED"},
+    {"offset": "pointee+0x00", "width": 4, "meaning": "the pointee's vtable pointer; slot +0x04 is AddRef and slot +0x08 is Release", "proved_by": "0x005766f5/0x005766f7 and 0x00576704/0x00576706", "confidence": "OBSERVED"},
+    {"offset": "pointee+0x04", "width": 4, "meaning": "the refcount, per the independently read AddRef and Release bodies", "proved_by": "0x00432a50 and 0x00404f90, recorded in the 0x005a9200 metadata rather than in this function", "confidence": "OBSERVED", "note": "read in the pointee's methods, not in the target"}
+  ],
+
+  "constants": [
+    {"value": "0x00000004", "address": "0x00576712", "meaning": "RET 0x4 -- the callee pops the single stack argument"},
+    {"value": "0x00000004", "address": "0x005766e0", "meaning": "the frame offset of the argument at entry, before the three pushes"},
+    {"value": "0x00000004", "address": "0x005766f7", "meaning": "vtable slot +0x04, the AddRef slot"},
+    {"value": "0x00000008", "address": "0x00576706", "meaning": "vtable slot +0x08, the Release slot"},
+    {"value": "0x00000000", "address": "0x005766f1", "meaning": "the null test on the incoming value; a null value is stored without an AddRef"},
+    {"value": "0x00000000", "address": "0x00576700", "meaning": "the null test on the previous occupant; a null occupant is not Released"}
+  ],
+
+  "globals": [
+    {"address": "none", "name": "the function touches no global", "access": "none", "observed_value": "n/a"}
+  ],
+
+  "virtual_dispatch": [
+    {"callsite": "0x005766fc", "receiver": "the incoming value, in ECX from ESI", "slot_offset": "+0x04", "table_address": "not located; the pointee's class is not identified", "callee": "unresolved", "resolved": false, "stack_args": 0, "result_use": "discarded", "protocol": "AddRef -- established from 0x00432a50, which is LOCK; INC [this+4]; return the old value"},
+    {"callsite": "0x0057670b", "receiver": "the previous occupant, in ECX from EBX", "slot_offset": "+0x08", "table_address": "not located", "callee": "unresolved", "resolved": false, "stack_args": 0, "result_use": "discarded", "protocol": "Release -- established from 0x00404f90, which is LOCK; DEC [this+4]; on reaching zero set [this+4] = 1 and call slot +0x00 with argument 1"}
+  ],
+
+  "control_flow": {
+    "shape": "a straight line with two conditional skips and one early return, all merging at 0x0057670d",
+    "loops": [],
+    "early_exits": [
+      "0x005766ef JZ 0x0057670d -- self-assignment: nothing at all happens",
+      "0x005766f3 JZ 0x005766fe -- a null incoming value skips only the AddRef",
+      "0x00576702 JZ 0x0057670d -- a null previous occupant skips only the Release"
+    ],
+    "branch_polarity": [
+      "0x005766ed CMP ESI,EBX / JZ: pointer EQUALITY, not truthiness. A null incoming value with a null current value takes the early return, so clearing an already-clear holder performs no virtual call at all.",
+      "0x005766f1 TEST ESI,ESI / JZ: zero incoming means 'store null', not 'abort'",
+      "0x00576700 TEST EBX,EBX / JZ: zero current means 'nothing to release'",
+      "every branch target except 0x005766fe is the common tail, so the function has no early return other than the self-assignment case"
+    ],
+    "ordering_invariant": "The order is strictly AddRef new, then store, then Release old. Both that order and the self-assignment guard are load-bearing: without the guard the store-then-release order would drop the count of the pointer just AddRef'd when old equals new.",
+    "exception_safety": "The AddRef precedes the store, so a throw or fault inside the AddRef leaves the holder untouched; the Release follows the store, so the holder never briefly holds an unreferenced pointer."
+  },
+
+  "callers_evidence": [
+    {"callsite": "0x00588ea8", "caller": "0x00588570 (Editors::cEditor::OnMouseDown)", "form": "CALL with one push and no ADD ESP", "receiver_setup": "0x00588e9b LEA ESI,[EBP + 0xd4] then 0x00588ea1 PUSH ESI, so the argument is &cEditor->field_d4; 0x00588ea2 LEA ECX,[EBP + 0xd8] so the receiver is &cEditor->field_d8", "result_use": "not read; the next instruction pushes an immediate", "significance": "the argument is the raw pointer stored four bytes BELOW the holder, which is the shape of a raw-pointer-plus-intrusive-ptr pair"},
+    {"callsite": "0x0064af7a", "caller": "0x0064acd0", "form": "CALL with one push and no ADD ESP", "receiver_setup": "0x0064af66 LEA EAX,[EBP + 0x1b0] is the argument; 0x0064af76 LEA ECX,[ESP + 0x20] makes the holder a stack temporary", "result_use": "not read", "significance": "the holder is a stack temporary here, and the caller duplicates the equality check at 0x0064af71/0x0064af73 before calling"},
+    {"callsite": "0x0064b39a", "caller": "0x0064acd0", "form": "not disassembled", "receiver_setup": "not inspected", "result_use": "not inspected"},
+    {"callsite": "0x00c3a8a4 and 0x00c3a8cc", "caller": "an unnamed stub inside the region of 0x00c3a930, between INT3-delimited functions", "form": "CALL with one push and no ADD ESP", "receiver_setup": "0x00c3a89d/0x00c3a89e form the argument as [EBX + 0x29c] and the receiver as [EBX + 0x288]; 0x00c3a8c5/0x00c3a8c6 form the argument as [EBX + 0x28c] and the same receiver", "result_use": "not read", "significance": "the same holder at +0x288 is assigned from two different neighbouring dwords (+0x29c and +0x28c) on two different branches, which is the clearest confirmation that the argument is a pointer to a raw pointer rather than a pointer to a value"},
+    {"callsite": "0x0057c160", "caller": "0x0057c0e0", "form": "not disassembled", "receiver_setup": "not inspected", "result_use": "not inspected"},
+    {"callsite": "0x005c8342", "caller": "0x005c7ff0", "form": "not disassembled", "receiver_setup": "not inspected", "result_use": "not inspected"},
+    {"callsite": "0x00661f59 and 0x00661fd5", "caller": "0x0061d10", "form": "not disassembled", "receiver_setup": "not inspected", "result_use": "not inspected"},
+    {"callsite": "0x0069e131", "caller": "0x0069e090", "form": "not disassembled", "receiver_setup": "not inspected", "result_use": "not inspected"},
+    {"callsite": "0x0069e308", "caller": "0x0069e260", "form": "not disassembled", "receiver_setup": "not inspected", "result_use": "not inspected"},
+    {"callsite": "0x007bf944", "caller": "0x007bf720", "form": "not disassembled", "receiver_setup": "not inspected", "result_use": "not inspected"},
+    {"callsite": "0x00c3a9aa", "caller": "0x00c3a930", "form": "not disassembled", "receiver_setup": "not inspected", "result_use": "not inspected"}
+  ],
+
+  "callees_evidence": [
+    {"va": "none", "form": "no direct calls", "name": "n/a", "read_body": true, "operation": "the function has no direct callee; its only calls are the two indirect ones listed under virtual_dispatch, whose protocols are established from the independently read bodies of 0x00432a50 and 0x00404f90 recorded in the 0x005a9200 metadata. The briefing's callee list for this target was empty and that is confirmed."}
+  ],
+
+  "sdk_correspondence": {
+    "status": "CANDIDATE, NOT ASSERTED",
+    "observation": "The shape -- a one-dword holder assigned from the address of a separate raw pointer, AddRef on the incoming value at vtable slot +0x04, store, Release on the previous occupant at slot +0x08, self-assignment guard, return this -- is the EASTL and Spore intrusive_ptr assignment operator. Spore-ModAPI uses eastl::intrusive_ptr pervasively, and App/IMessageRC.h in the SDK declares exactly the three-slot refcounted interface (virtual ~IMessageRC, virtual int AddRef, virtual int Release) whose slots +0x04 and +0x08 are the two this function calls.",
+    "not_asserted": "Neither the name intrusive_ptr::operator= nor the C++ signature is claimed. The argument is a pointer to a pointer, which does not match the usual by-value or by-const-reference assignment parameter, and the address has no data reference from which to derive the template instantiation. The function is recorded under a neutral reconstructed symbol instead.",
+    "sdk_paths_read": [
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/App/IMessageRC.h",
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Editors/EditorRequest.h"
+    ]
+  },
+
+  "semantic_contract": "A 27-instruction __thiscall setter for a one-dword refcounted holder, returning the holder itself. It loads the incoming pointer through the argument, which is the address of a pointer rather than a pointer to a value, and compares it against the holder's current value. If the two are equal it returns immediately without any side effect at all -- no AddRef, no store, no Release -- which is what keeps the store-then-release order below from dropping a count on self-assignment. Otherwise it calls vtable slot +0x04 on the incoming pointer when that pointer is non-null, stores it into the holder, and then calls vtable slot +0x08 on the previous occupant when that occupant is non-null. A null incoming value is therefore a supported clear: it skips the AddRef but still performs the store and still releases the old pointer, and a holder that is already null absorbs it with no virtual call whatsoever. The order is strictly AddRef, store, Release, which keeps the holder's count correct at every observable point. The function touches no global, allocates nothing, reads no field other than the holder's single dword, and its return value is always the receiver.",
+
+  "classification": "STRONG_SEMANTIC",
+  "classification_rationale": "Every material element of this target is read directly from the 27-instruction disassembly and corroborated by the callers: the __thiscall ABI with one pointer-to-pointer argument and callee cleanup is fixed by the pre-push argument read at 0x005766e0, the RET 0x4 at 0x00576712 and the absence of any ADD ESP at the four inspected callsites; the single field offset self+0x00 is fixed by the read at 0x005766eb and the write at 0x005766fe; the control flow is four instructions of branching with all targets resolved; there are no constants beyond the two vtable slot offsets and the two null tests; there is no global access; and both virtual dispatch sites are read with their slot offsets and their receiver registers. The two indirect callees' concrete addresses are not resolved, but their behaviour is not in doubt: slots +0x04 and +0x08 of a three-slot refcounted vtable are the AddRef and Release pair, which is established independently from the base vtable at 0x013eb844 in the 0x005a9200 record, where +0x04 is 0x00432a50 (LOCK; INC [this+4]) and +0x08 is 0x00404f90 (LOCK; DEC [this+4], dispatching at zero), and which matches the three-slot interface declared as App::IMessageRC in the SDK. Five inspected callsites independently confirm the receiver/argument shape, including one site that assigns the same holder from two different neighbouring dwords. No material uncertainty remains in the reconstructed behaviour. The class identity and the C++ name are deliberately withheld rather than guessed, but withholding a name is not a behavioural uncertainty.",
+
+  "semantic_findings": [
+    "The function is a refcounted-pointer setter, not a general utility: one dword in, one dword out, two protocol calls.",
+    "The argument is a pointer to a pointer, fixed by the double indirection at 0x005766e0 then 0x005766e6 and confirmed by a callsite that passes two different neighbouring dwords to the same holder.",
+    "The self-assignment guard is a pointer equality test, not a truthiness test, and it skips every side effect rather than only the Release.",
+    "That guard is load-bearing: because the order is AddRef, store, Release, a self-assignment without it would release the pointer it had just AddRef'd.",
+    "The order is exception-safe in the useful direction: the AddRef precedes the store and the Release follows it, so the holder is never observed holding an unreferenced pointer and a failure inside the AddRef leaves it untouched.",
+    "Clearing is a supported operation: a null incoming value skips only the AddRef, and an already-null holder absorbs it with no virtual call at all.",
+    "The receiver is returned on every path, including the early return, so the function is chainable.",
+    "The function reads no field other than the holder's single dword and touches no global.",
+    "The receiver is a single-dword holder, and the two inspected callsites that place it inside a larger object put the raw source pointer four bytes below it, which is the raw-pointer-plus-holder pairing.",
+    "The 13 references are all direct calls with no data reference, so the address is not a vtable entry and the template instantiation cannot be recovered from it."
+  ],
+
+  "unresolved_questions": [
+    "What is the C++ name and exact signature? The pointer-to-pointer argument does not match the usual intrusive_ptr assignment parameter, and the address has no data reference from which to recover the instantiation.",
+    "What is the class of the pointee? The vtable is read but never identified; the three-slot refcounted shape matches App::IMessageRC and the 0x013eb844 family, but that is a shape match and not an identity.",
+    "Do the AddRef and Release at slots +0x04 and +0x08 return a count that any caller inspects? Every inspected callsite discards the result, and the other eight were not disassembled.",
+    "Are the two null checks on the pointee redundant with the callee's own behaviour? Not determinable without a runtime trace of a null pointee.",
+    "Seven of the thirteen callsites were not disassembled, so their receiver/argument shapes are inferred from the six that were."
+  ],
+
+  "runtime_gates": [
+    "No original-process trace has ever been captured for 0x005766e0; every claim here is static. The original Cell stage has never been entered in any recorded run.",
+    "A runtime trace is required to confirm that the concrete AddRef and Release at slots +0x04 and +0x08 of the actual pointee classes are the 0x00432a50 / 0x00404f90 pair, since the vtable was not located statically.",
+    "A runtime trace is required to observe whether a self-assignment ever occurs in practice, which is the only way to confirm the guard is exercised rather than dead."
+  ],
+
+  "confidence": {
+    "body_bytes": 1.0,
+    "instruction_level_structure": 1.0,
+    "control_flow": 1.0,
+    "abi_thiscall": 1.0,
+    "return_semantics": 1.0,
+    "field_offsets": 1.0,
+    "constants": 1.0,
+    "globals": 1.0,
+    "virtual_dispatch_slot_offsets": 1.0,
+    "virtual_dispatch_concrete_callees": 0.55,
+    "callee_operations": 0.95,
+    "semantic_identity": 0.85,
+    "receiver_and_argument_shape": 0.95,
+    "runtime_behaviour": 0.0
+  },
+
+  "blockers": [],
+
+  "evidence": [
+    "reconstruction/evidence/005766e0/evidence.json",
+    "reconstruction/evidence/005766e0/context.json",
+    "reconstruction/metadata/wave13-w1-dispatch-b02/005a9200.json",
+    "ghidra_disassemble_function(0x005766e0, SporeApp.exe)",
+    "ghidra_disassemble_bytes(0x0064af60, 0x0064af90)",
+    "ghidra_disassemble_bytes(0x00588e88, 0x00588ec0)",
+    "ghidra_disassemble_bytes(0x00c3a890, 0x00c3a8e0)",
+    "ghidra_get_xrefs_to(0x005766e0)",
+    "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/App/IMessageRC.h"
+  ],
+
+  "tooling_evidence": [
+    {"tool": "ghidra_disassemble_function", "address": "0x005766e0", "observation": "27 instructions 0x005766e0..0x00576712, matching the briefing's 53-byte body; MOV EAX,[ESP + 0x4] before the pushes, MOV EDI,ECX, two indirect calls, MOV EAX,EDI, RET 0x4"},
+    {"tool": "ghidra_get_xrefs_to", "address": "0x005766e0", "observation": "13 references, every one UNCONDITIONAL_CALL, and no data reference"},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x00588e88-0x00588ec0", "observation": "0x00588e9b LEA ESI,[EBP + 0xd4]; 0x00588ea1 PUSH ESI; 0x00588ea2 LEA ECX,[EBP + 0xd8]; 0x00588ea8 CALL -- the holder at cEditor+0xd8 assigned from the raw pointer at cEditor+0xd4"},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x0064af60-0x0064af90", "observation": "0x0064af66 LEA EAX,[EBP + 0x1b0]; 0x0064af71 CMP dword ptr [EAX],ESI; 0x0064af73 JZ; 0x0064af75 PUSH EAX; 0x0064af76 LEA ECX,[ESP + 0x20]; 0x0064af7a CALL -- a stack-local holder, with the caller duplicating the equality check"},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x00c3a890-0x00c3a8e0", "observation": "0x00c3a89d LEA EAX,[EBX + 0x29c] and 0x00c3a8c5 LEA ECX,[EBX + 0x28c] both feed the same receiver LEA ECX,[EBX + 0x288] at 0x00c3a89e and 0x00c3a8c6 -- one holder, two different source dwords, which fixes the argument as a pointer to a raw pointer"},
+    {"tool": "ghidra_read_memory", "address": "0x013eb844", "observation": "read in the 0x005a9200 session: +0x04 = 0x00432a50 (LOCK; INC [this+4]) and +0x08 = 0x00404f90 (LOCK; DEC [this+4], dispatching at zero), which is the independent source for the AddRef/Release protocol claimed here"}
+  ],
+
+  "body_reconstruction": {
+    "source": "reconstruction/staging/wave13-w1-dispatch-b02/b5766e0_intrusive_ptr_assign.cpp",
+    "status": "implemented",
+    "claim_scope": "The 27-instruction body is reconstructed exactly, including the self-assignment guard, the null skips, the AddRef-store-Release order and the return of the receiver on all four paths. The two protocol calls are modelled as declared ports with the evidence for their behaviour recorded; no pointee class is invented.",
+    "preserved_semantics": [
+      "the argument is a pointer to a pointer, read before the pushes",
+      "the self-assignment guard is pointer equality and skips every side effect",
+      "a null incoming value is stored without an AddRef",
+      "a null previous occupant is not Released",
+      "the order is strictly AddRef, store, Release",
+      "the receiver is returned on all four paths",
+      "RET 0x4, so the callee pops the single argument",
+      "no global is touched and no field other than self+0x00 is read or written"
+    ],
+    "validation": {
+      "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/wave13-w1-dispatch-b02 reconstruction/staging/wave13-w1-dispatch-b02/b5766e0_intrusive_ptr_assign.cpp",
+      "syntax": "passed",
+      "model_test": "not written; two stubbed protocol ports would assert the harness rather than the 27-line body",
+      "byte_exactness": "not attempted; clang emits a different prologue for a thiscall method with a by-value pointer parameter"
+    }
+  },
+
+  "provenance": {
+    "binary": "SPORE/SporeBin/SporeApp.exe",
+    "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+    "binary_version": "Spore 3.1.0.22",
+    "image_base": "0x00400000",
+    "worker_id": "wave13-w1-dispatch-b02",
+    "batch_id": "b02",
+    "package": "wave13-w1-dispatch-b02",
+    "repo_package": "PKG-10-EDITOR-DISPATCH",
+    "date": "2026-09-26",
+    "method": "live ghidra_* MCP tools against program SporeApp.exe; every claim re-verified by a tool call made in this session"
+  }
+}

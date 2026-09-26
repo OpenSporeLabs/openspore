@@ -1,0 +1,82 @@
+{
+  "schema": "wave6-resources-function-handoff.v1",
+  "package": "wave6-resources",
+  "function_address": "0x008db310",
+  "ghidra_name": "Resource::PFIndexModifiable::Write",
+  "normalized_symbol": "pf_index_modifiable_write_008db310",
+  "source_files": [
+    "reconstruction/staging/wave6-resources/pf_index_write.hpp",
+    "reconstruction/staging/wave6-resources/pf_index_write.cpp",
+    "reconstruction/staging/wave6-resources/property_list_variants_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "bool __thiscall pf_index_modifiable_write_008db310(PFIndexModifiableWriteCarrier*, void* destination, uint32_t destination_size);",
+  "abi": {
+    "return_type": "bool",
+    "return_register": "AL",
+    "calling_convention": "__thiscall observed",
+    "hidden_this_register": "ECX",
+    "hidden_this_type": "PFIndexModifiableWriteCarrier*",
+    "stack_arguments": [
+      {"position": 1, "entry_offset": "ESP+0x04", "name": "destination", "type": "void*", "width_bytes": 4},
+      {"position": 2, "entry_offset": "ESP+0x08", "name": "destination_size", "type": "uint32_t", "width_bytes": 4}
+    ],
+    "stack_cleanup_bytes": 8,
+    "termination": "RET 0x8 at 0x008db384 and 0x008db38d",
+    "prototype_boundary": "The imported decompiler signature exposes additional parameters, but the entry reads only ESP+0x04 and ESP+0x08 and the function returns with RET 0x8."
+  },
+  "layout_evidence": {
+    "gtype": "PFIndexModifiable",
+    "size_bytes": 76,
+    "fields": [
+      {"offset": "0x00", "size_bytes": 4, "meaning": "PFIndexModifiable vftable"},
+      {"offset": "0x04", "size_bytes": 4, "meaning": "parent allocator"},
+      {"offset": "0x08", "size_bytes": 32, "meaning": "FixedPoolAllocator prefix"},
+      {"offset": "0x28", "size_bytes": 36, "meaning": "ItemsMap"}
+    ],
+    "items_map": {"size_bytes": 36, "bucket_pointer_offset": "0x2c", "bucket_count_or_end_offset": "0x30"},
+    "node": {"size_bytes": 32, "record_offset": "0x0c", "record_size": "0x10", "next": "0x1c"},
+    "identity_boundary": "The node range describes persisted index records in the PF package. It is not a ResourceKey, cache identity, or runtime ResourceObject."
+  },
+  "mechanics": {
+    "empty_destination": "Return true immediately when destination_size is zero, before reading item buckets.",
+    "bucket_scan": "Read the item bucket pointer at carrier+0x2c and end node at carrier+0x30. Skip null bucket slots until a node or the end sentinel is found.",
+    "range_test": "For each non-end node, read record offset at node+0x0c and size at node+0x10. If size is nonzero, return false when the half-open destination interval overlaps the half-open record interval using unsigned comparisons.",
+    "chain_order": "Follow node+0x1c until null, then resume the next nonzero bucket slot. The end node at the bucket-count slot terminates the scan.",
+    "sentinels": "A null bucket is skipped and the end-node pointer terminates the scan; no allocation, free, or cache mutation occurs in this function."
+  },
+  "call_graph": {
+    "direct_callers": {"ghidra_count": 0, "functions": []},
+    "direct_callees": {"ghidra_functions": []},
+    "function_xrefs": [{"from_address": "0x014368bc", "type": "DATA"}],
+    "dispatch_boundary": "The single data xref is consistent with an index vtable or function-table boundary; no direct call-site fan-in is established."
+  },
+  "evidence": [
+    {"tool": "ghidra_decompile_function", "address": "0x008db310", "observation": "The body checks for a zero destination size, scans an item bucket table, reads each node range, and returns false on interval overlap."},
+    {"tool": "ghidra_disassemble_function", "address": "0x008db310", "observation": "The assembly proves the two stack words, +0x2c/+0x30 map accesses, node +0x0c/+0x10 range fields, +0x1c chain, and RET 0x8."},
+    {"tool": "ghidra_get_function_callers", "address": "0x008db310", "observation": "No direct caller functions are reported."},
+    {"tool": "ghidra_get_function_callees", "address": "0x008db310", "observation": "No direct named callees are reported."},
+    {"tool": "ghidra_get_function_xrefs", "address": "0x008db310", "observation": "The only xref is a data reference at 0x014368bc."},
+    {"tool": "ghidra_get_struct_layout", "struct_name": "PFIndexModifiable", "observation": "The live type is 76 bytes with ItemsMap at +0x28 and a 36-byte map extent."},
+    {"tool": "ghidra_get_type_size", "type_name": "ItemsMap", "observation": "The imported ItemsMap type is 36 bytes; the selected body uses its internal bucket pointer and end/count words."}
+  ],
+  "confidence": {
+    "mechanics": "high",
+    "abi": "high for observed stack words",
+    "map_carrier_mapping": "medium",
+    "runtime_dispatch_owner": "low"
+  },
+  "unresolved_questions": [
+    "Concrete ItemsMap node and bucket ownership semantics",
+    "Whether destination_size is a byte count or a target index extent in all callers",
+    "The vtable/data-table owner that reaches this otherwise uncalled function"
+  ],
+  "blockers": [
+    "No direct caller xrefs establish the runtime write-buffer allocation and persistence envelope.",
+    "The imported four-parameter prototype is not reconciled beyond the two words consumed by the live body."
+  ],
+  "verification": {
+    "command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror property_list_variants.cpp pf_index_write.cpp property_list_variants_model_test.cpp -o /tmp/opencode/wave6-unowned-model && /tmp/opencode/wave6-unowned-model",
+    "result": "passed"
+  }
+}

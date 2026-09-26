@@ -1,0 +1,202 @@
+{
+  "schema": "wave6-app-manager.function-handoff.v1",
+  "package": "PKG-06-WAVE6-APP-MANAGERS",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "va": "0x008841f0",
+  "address": "0x008841f0",
+  "symbol": "App::cMessageManager::ProcessQueue",
+  "normalized_symbol": "MessageManagerCleanupStorageWalker_008841f0",
+  "target_state": "implemented staging handoff; canonical review pending",
+  "phase": "body reconstruction implemented and statically verified",
+  "captured_on": "2026-09-25",
+  "intended_paths": {
+    "staging_reconstruction": [
+      "reconstruction/staging/wave6-app-managers/service_accessors_cleanup.hpp",
+      "reconstruction/staging/wave6-app-managers/service_accessors_cleanup.cpp",
+      "reconstruction/staging/wave6-app-managers/service_accessors_cleanup_model_test.cpp"
+    ],
+    "canonical_reconstruction": [],
+    "status": "staging-only handoff; no canonical path is claimed"
+  },
+  "implementation": {
+    "status": "implemented in staging",
+    "symbol": "MessageManagerCleanupStorageWalker_008841f0",
+    "declaration": "void PKG06_WAVE6_THISCALL OpaqueMessageCleanupWindow::cleanup_storage_walker() asm(\"MessageManagerCleanupStorageWalker_008841f0\");",
+    "linkage": "GNU/Clang asm-labeled C target symbol MessageManagerCleanupStorageWalker_008841f0",
+    "calling_convention": "__thiscall-shaped interior-receiver contract",
+    "argument_surface": "hidden ECX pointer to cMessageManager+0x08 and no ordinary stack arguments",
+    "return_type": "void-like; target does not define EAX",
+    "package_owned_model": "OpaqueMessageCleanupWindow",
+    "receiver_origin": "The modeled window is the cMessageManager interior at +0x08, not the cMessageManager base object.",
+    "model_test": "reconstruction/staging/wave6-app-managers/service_accessors_cleanup_model_test.cpp"
+  },
+  "function_extent": {
+    "entry": "0x008841f0",
+    "body_end_inclusive": "0x00884258",
+    "instruction_count": 45,
+    "return_site": "0x00884258: RET",
+    "tail_caller": "0x00885002: JMP 0x008841f0 from FUN_00884fb0 after LEA ECX,[EDI+0x08] at 0x00884ffd"
+  },
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "hidden_receiver_register": "ECX",
+    "hidden_receiver_origin": "cMessageManager+0x08",
+    "hidden_receiver_type": "interior pointer to opaque cMessageManager cleanup storage",
+    "ordinary_stack_argument_slots": 0,
+    "stack_cleanup_bytes": 0,
+    "return_register": "EAX is not assigned a defined result by the target body",
+    "ghidra_prototype": "int App::cMessageManager::ProcessQueue(cMessageManager * this, int param_2, int param_3, int param_4)",
+    "prototype_disposition": "The imported int/three-argument ProcessQueue prototype and base-object receiver annotation conflict with the live tail-call setup. The body dereferences ECX+0x00 directly, and FUN_00884fb0 establishes ECX as cMessageManager+0x08 before the jump."
+  },
+  "mechanics": {
+    "receiver_base": {
+      "object": "App::cMessageManager",
+      "offset": "0x08",
+      "modeled_window_offsets": "0x00..0x2b"
+    },
+    "block_walk": {
+      "cursor_source_offset": "0x08",
+      "limit_source_offset": "0x10",
+      "link_source_offset": "0x14",
+      "end_source_offset": "0x18",
+      "record_stride_bytes": 24,
+      "loop_guard": "cursor != end",
+      "limit_hit_order": [
+        "advance cursor by 0x18",
+        "if cursor equals limit, read the pointer word at link + 0x04",
+        "advance link by 0x04",
+        "set cursor to the loaded pointer",
+        "set limit to loaded pointer + 0xc0"
+      ]
+    },
+    "pointer_array_release": {
+      "guard": "opaque root/storage pointer at receiver+0x00 is non-zero",
+      "begin_source_offset": "0x14",
+      "end_source_offset": "0x24",
+      "end_calculation": "load the end pointer and add 0x04",
+      "item_width_bytes": 4,
+      "item_guard": "release only when the loaded item pointer is non-zero",
+      "ordering": "after the block walk and before the final root/storage read"
+    },
+    "opaque_root_storage_release": {
+      "source_offset": "0x00",
+      "operation": "re-read the opaque root/storage pointer after all array releases",
+      "guard": "release only if the re-read value is non-zero",
+      "ordering": "after the pointer-array release loop",
+      "semantic_boundary": "The target does not establish this pointer as a dispatch table or identify the storage ownership released by 0x00f47380."
+    },
+    "writes": [],
+    "direct_callees": ["0x00f47380"],
+    "unique_direct_callees": 1,
+    "direct_call_sites": 2,
+    "indirect_calls": 0
+  },
+  "live_structure_evidence": {
+    "manager_type": "/Spore/App/cMessageManager",
+    "manager_size_bytes": 200,
+    "manager_fields": [
+      {"offset": "0x00", "meaning": "opaque base word outside the observed cleanup receiver window"},
+      {"offset": "0x04", "meaning": "52-byte opaque internal storage containing the observed cleanup window"},
+      {"offset": "0x38", "meaning": "48-byte mutex"},
+      {"offset": "0x68", "meaning": "int field"},
+      {"offset": "0x6c", "meaning": "int field"},
+      {"offset": "0x70", "meaning": "32-byte listener hash map"},
+      {"offset": "0x90", "meaning": "48-byte listener mutex"},
+      {"offset": "0xc0", "meaning": "six-byte field array"}
+    ],
+    "receiver_window_origin": "0x08",
+    "target_window_size_bytes": 44,
+    "target_cmessage_manager_range": "0x08..0x33",
+    "target_window_limit": "The implementation models only the 0x2c-byte cleanup window at cMessageManager+0x08 and does not claim the remaining cMessageManager layout."
+  },
+  "implementation_abi_and_boundary": {
+    "manager_layout": "OpaqueMessageManager places OpaqueMessageCleanupWindow at +0x08; its receiver+0x00 is cMessageManager+0x08, not cMessageManager+0x00.",
+    "native_release_port": "OpaqueMessageCleanupPorts::release_00f47380 is a normalized cdecl port for the unresolved release boundary; the model preserves the initial non-null root/storage guard, non-null item guards, final root/storage re-read, and exact call order.",
+    "stale_label": "Research and Ghidra name this address ProcessQueue, but the live body and tail caller identify a cleanup/storage walker; no queue-dispatch claim is made."
+  },
+  "evidence": {
+    "classification": "static_observed",
+    "runtime_validated": false,
+    "assembly": [
+      "008841f0: PUSH ESI",
+      "008841f1: MOV ESI,ECX",
+      "008841f3: MOV EAX,dword ptr [ESI + 0x8]",
+      "008841f6: MOV EDX,dword ptr [ESI + 0x10]",
+      "008841f9: MOV ECX,dword ptr [ESI + 0x14]",
+      "008841fc: PUSH EDI",
+      "008841fd: MOV EDI,dword ptr [ESI + 0x18]",
+      "00884200: CMP EAX,EDI",
+      "00884202: JZ 0x0088421b",
+      "00884204: ADD EAX,0x18",
+      "00884207: CMP EAX,EDX",
+      "00884209: JNZ 0x00884217",
+      "0088420b: MOV EAX,dword ptr [ECX + 0x4]",
+      "0088420e: ADD ECX,0x4",
+      "00884211: LEA EDX,[EAX + 0xc0]",
+      "00884217: CMP EAX,EDI",
+      "00884219: JNZ 0x00884204",
+      "0088421b: CMP dword ptr [ESI],0x0",
+      "0088421e: JZ 0x00884256",
+      "00884220: MOV EDI,dword ptr [ESI + 0x14]",
+      "00884223: PUSH EBX",
+      "00884224: MOV EBX,dword ptr [ESI + 0x24]",
+      "00884227: ADD EBX,0x4",
+      "0088422a: CMP EDI,EBX",
+      "0088422c: JNC 0x00884246",
+      "0088422e: MOV EDI,EDI",
+      "00884230: MOV EAX,dword ptr [EDI]",
+      "00884232: TEST EAX,EAX",
+      "00884234: JZ 0x0088423f",
+      "00884236: PUSH EAX",
+      "00884237: CALL 0x00f47380",
+      "0088423c: ADD ESP,0x4",
+      "0088423f: ADD EDI,0x4",
+      "00884242: CMP EDI,EBX",
+      "00884244: JC 0x00884230",
+      "00884246: MOV ESI,dword ptr [ESI]",
+      "00884248: POP EBX",
+      "00884249: TEST ESI,ESI",
+      "0088424b: JZ 0x00884256",
+      "0088424d: PUSH ESI",
+      "0088424e: CALL 0x00f47380",
+      "00884253: ADD ESP,0x4",
+      "00884256: POP EDI",
+      "00884257: POP ESI",
+      "00884258: RET"
+    ],
+    "decompiler": "if (*in_ECX != 0) { for (piVar4 = (int *)in_ECX[5]; piVar4 < (int *)(in_ECX[9] + 4); piVar4 = piVar4 + 1) { if (*piVar4 != 0) { FUN_00f47380(*piVar4); } } if (*in_ECX != 0) { FUN_00f47380(*in_ECX); } }",
+    "direct_callers": 1,
+    "direct_caller": "0x00884fb0",
+    "function_xrefs": 1,
+    "function_xref": "0x00885002: unconditional xref from FUN_00884fb0; target instruction is JMP 0x008841f0",
+    "tail_caller_receiver_setup": ["0x00884ffd: LEA ECX,[EDI + 0x8]", "0x00885002: JMP 0x008841f0"]
+  },
+  "provenance": [
+    "ghidra_get_function_by_address(0x008841f0)",
+    "ghidra_decompile_function(0x008841f0)",
+    "ghidra_disassemble_function(0x008841f0)",
+    "ghidra_get_function_callers(0x008841f0)",
+    "ghidra_get_function_callees(0x008841f0)",
+    "ghidra_get_function_xrefs(0x008841f0)",
+    "ghidra_decompile_function(0x00884fb0)",
+    "ghidra_disassemble_function(0x00884fb0)",
+    "ghidra_get_struct_layout(cMessageManager)"
+  ],
+  "unresolved_questions": [
+    "What concrete queue or block object owns the 0x18-stride records and the +0xc0 next-block limit?",
+    "What are the meanings of the four-byte words in the cMessageManager+0x08 cleanup window?",
+    "What concrete root, storage, or allocator owns the opaque pointer released after the array loop?",
+    "Can malformed cursor, link, or end pointers reach the same path through SEH?",
+    "What runtime teardown ordering reaches this walker from the cMessageManager owner?"
+  ],
+  "runtime_gate": {
+    "status": "required",
+    "runtime_validation": 0,
+    "conditions": [
+      "A live cMessageManager teardown path supplies the cMessageManager+0x08 receiver window.",
+      "The block cursor, limit, link, and end pointers are valid for the observed walk.",
+      "The release port, opaque root/storage pointer, and array-item release ordering are observable."
+    ]
+  }
+}

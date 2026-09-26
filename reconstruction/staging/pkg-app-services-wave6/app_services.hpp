@@ -41,12 +41,15 @@ struct OpaqueMessageServicePorts {
 
 extern OpaqueMessageServicePorts* g_message_service_ports;
 
-extern "C" OpaqueMessageService* PKG_APP_THISCALL service_0067dc80(
-    OpaqueMessageService* service, OpaqueWord ownership);
+extern "C" OpaqueMessageService* PKG_APP_THISCALL
+service_0067dc80(OpaqueMessageService* service, OpaqueWord ownership);
+
+struct OpaqueObserver;
 
 struct OpaqueObserverVTable {
   void* slots_00[7]{};
-  void(PKG_APP_THISCALL* dispatch_1c)(void*, OpaqueWord, bool) = nullptr;
+  void(PKG_APP_THISCALL* dispatch_1c)(OpaqueObserver*, bool,
+                                      OpaqueWord) = nullptr;
 };
 
 struct OpaqueObserver {
@@ -90,18 +93,20 @@ struct OpaqueCheatServicePorts {
 
 extern OpaqueCheatServicePorts* g_cheat_service_ports;
 
-extern "C" OpaqueCheatService* PKG_APP_THISCALL service_0067e6b0(
-    OpaqueCheatService* service, OpaqueWord ownership);
+extern "C" OpaqueCheatService* PKG_APP_THISCALL
+service_0067e6b0(OpaqueCheatService* service, OpaqueWord ownership);
 
-extern "C" void PKG_APP_THISCALL service_0067e6f0(
-    OpaqueCheatService* service, OpaqueWord event_argument);
+extern "C" void PKG_APP_THISCALL service_0067e6f0(OpaqueCheatService* service,
+                                                  OpaqueWord event_argument);
 
-extern "C" void PKG_APP_THISCALL service_0067e730(
-    OpaqueCheatService* service, OpaqueWord event_argument);
+extern "C" void PKG_APP_THISCALL service_0067e730(OpaqueCheatService* service,
+                                                  OpaqueWord event_argument);
+
+struct ContinuationPort;
 
 struct ContinuationVTable {
-  void(PKG_APP_THISCALL* install_00)(void*) = nullptr;
-  void(PKG_APP_THISCALL* remove_04)(void*) = nullptr;
+  void(PKG_APP_THISCALL* install_00)(ContinuationPort*) = nullptr;
+  void(PKG_APP_THISCALL* remove_04)(ContinuationPort*) = nullptr;
 };
 
 struct ContinuationPort {
@@ -118,12 +123,14 @@ static_assert(offsetof(ContinuationOwner, current_008) == 0x8,
 static_assert(sizeof(ContinuationVTable) == 8,
               "continuation observed virtual prefix");
 
-extern "C" void PKG_APP_THISCALL service_0068f9b0(
-    ContinuationOwner* owner, ContinuationPort* continuation);
+extern "C" void PKG_APP_THISCALL
+service_0068f9b0(ContinuationOwner* owner, ContinuationPort* continuation);
+
+struct OpaqueOwnedObject;
 
 struct OpaqueObjectVTable {
   void* slots_00[1]{};
-  void(PKG_APP_THISCALL* remove_04)(void*) = nullptr;
+  void(PKG_APP_THISCALL* remove_04)(OpaqueOwnedObject*) = nullptr;
 };
 
 struct OpaqueOwnedObject {
@@ -152,8 +159,8 @@ struct MouseCameraServicePorts {
 
 extern MouseCameraServicePorts* g_mouse_camera_service_ports;
 
-extern "C" OpaqueMouseCameraBase* PKG_APP_THISCALL service_007d9410(
-    OpaqueMouseCameraTail* tail, OpaqueWord ownership);
+extern "C" OpaqueMouseCameraBase* PKG_APP_THISCALL
+service_007d9410(OpaqueMouseCameraTail* tail, OpaqueWord ownership);
 
 }
 

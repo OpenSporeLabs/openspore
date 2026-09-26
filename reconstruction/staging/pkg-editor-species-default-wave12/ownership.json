@@ -1,0 +1,84 @@
+{
+  "$schema": "pkg-editor-species-default-wave12.ownership.v1",
+  "package": "PKG-EDITOR-SPECIES-DEFAULT-WAVE12",
+  "captured_on": "2026-09-26",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "scope_rule": "one package owns one directory under reconstruction/staging; this package creates and edits nothing outside reconstruction/staging/pkg-editor-species-default-wave12 and reconstruction/metadata/pkg-editor-species-default-wave12",
+  "reinspection": {
+    "method": "grep for the eight hex digits 004df420 over reconstruction/staging, reconstruction/metadata, reconstruction/integrated, reconstruction/knowledge and src, plus a per-address count over knowledgegraph/research/source-reconstruction-manifest.json and knowledgegraph/triage/xrefs-2540f2ca.tsv, plus read-only Ghidra queries against SporeApp.exe",
+    "finding": "reconstruction/knowledge/index.json carries one record for 0x004df420 and that record is generated from the triage queue, not from a worker artifact; its source.file is null and its source.files list is empty. No staging package, no metadata sidecar, no integrated batch, no src file and no manifest function record references the address. knowledgegraph/triage/xrefs-2540f2ca.tsv records 58 incoming direct-call edges and zero outgoing manifest ownership.",
+    "conclusion": "0x004df420 is unclaimed. The neighbouring package PKG-EDITOR-WAVE11 owns 0x004df550 and its ownership.json enumerates six addresses, none of them 0x004df420, and its staging directory and metadata sidecar contain no occurrence of the address. This package takes 0x004df420 without displacing another worker.",
+    "ghidra_access": "read-only: disassemble_function, disassemble_bytes, read_memory, decompile_function, search_functions and get_function_by_address. No rename, no comment, no type change, no save, no run_script_inline mutation."
+  },
+  "owned": [
+    {
+      "va": "0x004df420",
+      "role": "forward the receiver to the species resolve port with the receiver's own twelve byte block at +0xa4 as the key, and return the port's dword",
+      "abi": "__thiscall, zero stack words, bare RET, dword result in EAX, EBP the only saved register",
+      "evidence": "body 0x004df420..0x004df43b, 28 bytes, 12 instructions, raw 558bec51894dfc8b45fc05a4000000508b4dfce8180100008be55dc3; one direct callee 0x004df550; 58 incoming direct-call xrefs in the Ghidra export",
+      "handoff": "reconstruction/metadata/pkg-editor-species-default-wave12/004df420.json"
+    }
+  ],
+  "adjacent_addresses_deliberately_not_modelled": [
+    {
+      "va": "0x004df400",
+      "note": "immediate sibling thunk: PUSH EBP / MOV EBP,ESP / PUSH ECX / MOV [EBP-0x4],ECX / MOV EAX,[EBP-0x4] / ADD EAX,0xa4 / MOV ESP,EBP / POP EBP / RET. It returns the address of the same +0xa4 block and makes no call. Read as corroboration that +0xa4 is a distinct receiver-relative object with its own accessor. Not claimed as a body."
+    },
+    {
+      "va": "0x004df440",
+      "note": "78 instructions. The same resolve shape as 0x004df550 but bound to the anchor at +0x44, with no leading zero short-circuit and a 1 rather than a 0 passed to 0x004d3dd0. Read as layout evidence that the resolve port is instantiated at more than one receiver offset. Owned elsewhere; not claimed."
+    },
+    {
+      "va": "0x004df550",
+      "note": "the single callee. Already reconstructed by PKG-EDITOR-WAVE11 as editor_species_resolve_004df550 (thiscall, one stack word, RET 0x4, dword in EAX) and this package declares it only as the VA-suffixed port unresolved_004df550. The Ghidra xref export records 77 direct callers of 0x004df550, of which 0x004df420 is one, so the dependency is real and one-directional but far from exclusive."
+    },
+    {
+      "va": "0x004df6d0",
+      "note": "the stdcall probe inside 0x004df550. Owned elsewhere; only the call is described, never invoked."
+    },
+    {
+      "va": "0x00401090",
+      "note": "PUSH EBP / MOV EBP,ESP / MOV EAX,[0x015d0c24] / POP EBP / RET, which Ghidra names Editors::cSpeciesManager::Get. It is the nearest preceding call at 55 of the 58 direct call sites of this target. Read as receiver provenance only; not claimed as a body and no class name is asserted from it."
+    }
+  ],
+  "not_claimed": [
+    {
+      "item": "the owning C++ class of the receiver",
+      "reason": "SporeApp.exe carries no MSVC RTTI, so no class name is readable from the binary. The SDK import label at 0x00401090 describes the singleton accessor, not the class of the object it returns, and inferring the class from the accessor would be a guess."
+    },
+    {
+      "item": "a field name or declared type for the twelve bytes at +0xa4",
+      "reason": "0x004df550 reads them as three dwords and copies all twelve, which fixes their width and order and nothing else. PKG-EDITOR-WAVE11 calls the same block fallback_0a4, which is a sibling package's choice and not evidence for this one."
+    },
+    {
+      "item": "a declared return type",
+      "reason": "the machine contract is a 4-byte value in EAX. Observed callers both store it and dereference it at offsets 0x51c and 0x5b0, which is consistent with a pointer, but no declared type is proven, so the model returns an opaque 32-bit word."
+    }
+  ],
+  "validation": {
+    "command": "reconstruction/staging/pkg-editor-species-default-wave12/editor_species_default_wave12_boundary_test.sh",
+    "toolchain": "clang 22.1.8, -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror",
+    "configurations": [
+      "-O0",
+      "-O2",
+      "-O0 -DNDEBUG",
+      "-O2 -DNDEBUG"
+    ],
+    "checks": [
+      "clang-format --dry-run -Werror over the header, the source and the model test against the package local style file",
+      "all four configurations compile clean and the model test binary passes in all four",
+      "the emitted body releases exactly zero stack bytes at its return, matching the bare RET at 0x004df43b",
+      "the emitted body makes exactly one call and that call targets only the proven port",
+      "the emitted body contains no conditional branch, no indirect call and no absolute image address",
+      "the emitted body references ECX as the receiver and forms the +0xa4 displacement",
+      "nothing writes the return register after the port call, so the port's dword is what reaches the caller"
+    ],
+    "negative_controls": [
+      "passing self instead of &self->key_0a4 makes the model test abort on the argument identity assertions",
+      "discarding the port result and returning a constant makes the model test abort on the return forwarding assertions",
+      "adding a second port call makes the boundary check fail with an unproven port",
+      "widening the expected cleanup to {0x04} makes the boundary check fail on the return form"
+    ]
+  }
+}

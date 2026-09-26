@@ -1,0 +1,135 @@
+{
+  "$schema": "pkg-skinner-wave11.function-handoff.v1",
+  "package": "PKG-SKINNER-WAVE11",
+  "phase": "body-reconstruction",
+  "worker_ownership": "skinner-wave11-nine-unclaimed-va",
+  "review_status": "staged_static_self_review",
+  "runtime_validation": 0,
+  "ghidra_program": "SporeApp.exe",
+  "ghidra_mutated": false,
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "captured_on": "2026-09-25",
+  "va": "0x0051a350",
+  "function_address": "0x0051a350",
+  "ghidra_name": "FUN_0051a350",
+  "subsystem": "Skinner",
+  "normalized_symbol": "skin_rig_index_pass_0051a350",
+  "declaration": "unsigned char __thiscall skin_rig_index_pass_0051a350(OpaqueSkinJobState* job)",
+  "implementation": {
+    "status": "implemented in worker owned staging",
+    "canonical_status": "not present; canonical promotion is not claimed",
+    "header": "reconstruction/staging/pkg-skinner-wave11/skinner_wave11.hpp",
+    "source": "reconstruction/staging/pkg-skinner-wave11/skinner_wave11.cpp",
+    "model_test": "reconstruction/staging/pkg-skinner-wave11/skinner_wave11_model_test.cpp",
+    "boundary_test": "reconstruction/staging/pkg-skinner-wave11/skinner_wave11_boundary_test.sh",
+    "metadata": "reconstruction/staging/pkg-skinner-wave11/0051a350.json"
+  },
+  "selection": {
+    "live_function": {
+      "entry": "0x0051a350",
+      "body_end_inclusive": "0x0051a691",
+      "body_end_exclusive": "0x0051a692",
+      "instruction_count": 232,
+      "byte_length": 834
+    },
+    "ownership_search": {
+      "manifest_claim": false,
+      "integrated_handoff_claim": false,
+      "worker_metadata_claim": false,
+      "staging_function_claim": false,
+      "note": "no other staging package claims this address; the neighbouring pkg-skinner-wave10 and pkg-skinner-safe-wave10 packages claim 0x00506590, 0x00517160 and 0x005182f0 only"
+    }
+  },
+  "role": "walk the rig block array from a caller owned index, resolve one property per live block and paint a unit overlay",
+  "original_native_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "thiscall, receiver only, no stack arguments",
+    "receiver_register": "ECX",
+    "receiver_type": "OpaqueSkinJobState*",
+    "frame": "PUSH EBP / MOV EBP,ESP / SUB ESP,0x8c",
+    "stack_arguments": [],
+    "stack_cleanup_bytes": 0,
+    "return_register": "EAX",
+    "return_width_bytes": 1,
+    "return_contract": "MOV AL,CL at 0x0051a68c follows XOR ECX,ECX and SETGE CL, so only the low lane is written over the cursor; the model returns the widened boolean and the model test pins both the drained and the bounded cases",
+    "ret_form": "RET"
+  },
+  "field_contract": {
+    "receiver_reads": [
+      {
+        "offset": "0x10",
+        "width_bytes": 4,
+        "type": "std::int32_t",
+        "expression": "rig block index, compared signed against the rig count and used as the mesh slot and id subscript"
+      }
+    ],
+    "receiver_writes": [
+      {
+        "offset": "0x10",
+        "width_bytes": 4,
+        "type": "std::int32_t",
+        "expression": "incremented once per iteration, including for skipped blocks"
+      }
+    ]
+  },
+  "call_graph": {
+    "direct_callers": [],
+    "data_references": [],
+    "direct_callees": [
+      {
+        "va": "0x00401080",
+        "count": 2,
+        "note": "cdecl, no arguments, RET"
+      },
+      {
+        "va": "0x00528e90",
+        "count": 1,
+        "note": "thiscall StartRender, once per call"
+      },
+      {
+        "va": "0x006a1250",
+        "count": 1,
+        "note": "cdecl, three stack words, caller clean 0xc, per iteration"
+      },
+      {
+        "va": "0x0067dd60",
+        "count": 2,
+        "note": "cdecl, no arguments, RET, behind the 0x1c and 0x34 slots"
+      },
+      {
+        "va": "0x00529280",
+        "count": 1,
+        "note": "thiscall, four stack words, callee clean 0x10, zero zero zero one"
+      },
+      {
+        "va": "0x005296b0",
+        "count": 1,
+        "note": "thiscall, three stack words, callee clean 0xc, per painted block"
+      },
+      {
+        "va": "0x00529bf0",
+        "count": 1,
+        "note": "thiscall EndRender, once per call"
+      }
+    ]
+  },
+  "unresolved_gates": [
+    "runtime validation not performed; static decompilation and disassembly only",
+    "the pass counter is only advanced when a region is actually painted, so a run of absent keys leaves the counter at zero and the ten pass bound never engages; the model keeps that and the model test covers the absent key case",
+    "the second raster count bump at 0x0051a629 is guarded by XOR EDX,EDX / JZ and is dead; only the unconditional second raster clear is modelled",
+    "the property key is resolved through the cdecl 0x006a1250 seam while the neighbouring 0x00519640 reaches the same constants through the element vtable; the two are different ports and are kept separate"
+  ],
+  "focused_test_evidence": {
+    "command": "reconstruction/staging/pkg-skinner-wave11/skinner_wave11_boundary_test.sh",
+    "test_count": 48,
+    "assertion_count": 280,
+    "ndebug": "passed at -O0 -DNDEBUG and -O2 -DNDEBUG; the emitted object is byte for byte equal to the matching non NDEBUG object at both optimisation levels",
+    "normal": "passed at -O0 and at -O2"
+  },
+  "return_width": {
+    "observed": "byte in AL only; the epilogue never writes a wider register",
+    "evidence": "0x0051a689 SETGE CL / 0x0051a68c MOV AL,CL before the RET at 0x0051a691, so only AL is written",
+    "correction": "the declaration previously claimed a 4 byte TargetWord return, which is wider than the target writes; the model and the header now return TargetByte"
+  }
+}

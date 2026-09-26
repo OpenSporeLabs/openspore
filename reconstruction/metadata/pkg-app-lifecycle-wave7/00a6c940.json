@@ -1,0 +1,174 @@
+{
+  "schema": "pkg-app-lifecycle-wave7.function-handoff.v1",
+  "package": "PKG-APP-LIFECYCLE-WAVE7",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "va": "0x00a6c940",
+  "address": "0x00a6c940",
+  "symbol": "App::cAppSystem::func88h",
+  "normalized_symbol": "app_capp_system_func88h_00a6c940",
+  "target_state": "integrated canonical source; runtime validation gated",
+  "phase": "body reconstruction implemented and statically verified",
+  "captured_on": "2026-09-25",
+  "ownership_recheck": {
+    "manifest": false,
+    "integrated_handoffs": false,
+    "staging": false,
+    "src_reconstruction": false,
+    "excluded_address": "0x00848100"
+  },
+  "source_files": [
+    "src/reconstruction/pkg_app_lifecycle_wave7/app_lifecycle_wave7.hpp",
+    "src/reconstruction/pkg_app_lifecycle_wave7/app_lifecycle_wave7.cpp",
+    "src/reconstruction/pkg_app_lifecycle_wave7/app_lifecycle_wave7_model_test.cpp"
+  ],
+  "staging_harness": {
+    "path": "src/reconstruction/pkg_app_lifecycle_wave7/app_lifecycle_wave7_model_test.cpp",
+    "status": "repaired",
+    "asm_argument_binding": "a volatile base pointer in EBX supplies receiver, index, enabled, initial EAX, and target before argument pushes; EAX, EBX, ECX, and EDX are declared clobbered, and EAX is stored back into the argument block",
+    "negative_index_regressions": [
+      "index -1 enabled 1 returns 0x80000000 and writes field_68",
+      "index -1 enabled 0 returns 0x7fffffff and clears field_68 bit 31",
+      "index 32 preserves incoming EAX and leaves field_68 unchanged"
+    ]
+  },
+  "implementation": {
+    "declaration": "extern \"C\" std::uint32_t __thiscall app_cAppSystem_func88h_00a6c940(OpaqueAppSystem*, std::int32_t, std::uint8_t);",
+    "receiver": "OpaqueAppSystem* in ECX",
+    "first_stack_argument": "std::int32_t index at ESP+0x04",
+    "second_stack_argument": "std::uint8_t enabled at ESP+0x08",
+    "return_type": "std::uint32_t in EAX",
+    "field": "OpaqueAppSystem::field_68 at receiver+0x68",
+    "stack_cleanup_bytes": 8,
+    "status": "integrated",
+    "canonical_path": "src/reconstruction/pkg_app_lifecycle_wave7",
+    "canonical_status": "present"
+  },
+  "function_extent": {
+    "entry": "0x00a6c940",
+    "body_end_inclusive": "0x00a6c966",
+    "instruction_count": 13,
+    "single_linear_flow": false,
+    "return_sites": [
+      "0x00a6c95c: RET 0x8",
+      "0x00a6c961: AND then RET 0x8",
+      "0x00a6c964: RET 0x8"
+    ]
+  },
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "thiscall with two stack words",
+    "hidden_receiver": "ECX OpaqueAppSystem*",
+    "ordinary_stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "ESP+0x04",
+        "name": "index",
+        "type": "int32"
+      },
+      {
+        "position": 2,
+        "entry_offset": "ESP+0x08",
+        "name": "enabled",
+        "type": "uint8"
+      }
+    ],
+    "stack_cleanup_bytes": 8,
+    "return_register": "EAX",
+    "return_width_bytes": 4,
+    "ret_form": "RET 0x8 on every path",
+    "ghidra_signature_discrepancy": "The live machine reads two stack words and emits RET 0x8 although the imported method header is shown with no ordinary parameters."
+  },
+  "mechanics": {
+    "validity_test": "Signed CMP index,0x20 followed by JGE; values less than 32 continue, including negative signed indices.",
+    "mask": "EAX receives 1 shifted by CL; x86 masks the shift count to five bits.",
+    "enable_nonzero": "OR the mask into receiver+0x68 and return the mask.",
+    "enable_zero": "Negate the mask, AND it into receiver+0x68, and return the negated mask.",
+    "invalid_index": "Skip the field update and RET 0x8 with the incoming EAX value unchanged.",
+    "null_behavior": "No receiver null guard exists; a null receiver faults on a valid-index field access."
+  },
+  "call_graph": {
+    "direct_callees": [],
+    "data_xrefs": [
+      {
+        "from": "0x01455c18",
+        "to": "0x00a6c940",
+        "type": "DATA"
+      }
+    ],
+    "direct_callers": [],
+    "caller_boundary": "The live data reference is a function-table entry; no direct code caller was reported."
+  },
+  "live_provenance": {
+    "program": "SporeApp.exe",
+    "analysis_basis": "Read-only live Ghidra queries against the open x86:LE:32 program.",
+    "ghidra_mutations": 0,
+    "ghidra_saves": 0,
+    "tools": [
+      "ghidra_get_function_by_address",
+      "ghidra_decompile_function",
+      "ghidra_disassemble_function",
+      "ghidra_get_bulk_xrefs",
+      "ghidra_get_function_callees",
+      "ghidra_get_function_variables"
+    ],
+    "decompile": "The live decompiler exposes the receiver, an index-like value, a byte flag, receiver+0x68 mutation, and a 4-byte result.",
+    "disassembly": "The live body is MOV EDX,ECX; MOV ECX,[ESP+4]; CMP ECX,0x20; JGE; MOV EAX,1; SHL EAX,CL; CMP byte [ESP+8],0; conditional OR/AND at [EDX+0x68]; RET 8.",
+    "function_variables": "Ghidra's decompiler layer lists only the receiver, while the live disassembly reads both ordinary stack words.",
+    "function_xrefs": {
+      "total": 1,
+      "references": [
+        {
+          "from_address": "0x01455c18",
+          "type": "DATA"
+        }
+      ]
+    }
+  },
+  "runtime_gate": {
+    "status": "required",
+    "runtime_validation": 0,
+    "condition": "Observe the actual table caller, index producer, enabled flag producer, receiver validity, and field_68 lifetime before promoting bitfield ownership semantics."
+  },
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/pkg-app-lifecycle-wave7 src/reconstruction/pkg_app_lifecycle_wave7/app_lifecycle_wave7.cpp src/reconstruction/pkg_app_lifecycle_wave7/app_lifecycle_wave7_model_test.cpp",
+    "model_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg-app-lifecycle-wave7 src/reconstruction/pkg_app_lifecycle_wave7/app_lifecycle_wave7.cpp src/reconstruction/pkg_app_lifecycle_wave7/app_lifecycle_wave7_model_test.cpp -o /tmp/opencode/pkg-app-lifecycle-wave7-test && /tmp/opencode/pkg-app-lifecycle-wave7-test",
+    "ndebug_command": "clang++ -m32 -std=c++17 -O2 -DNDEBUG -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg-app-lifecycle-wave7 src/reconstruction/pkg_app_lifecycle_wave7/app_lifecycle_wave7.cpp src/reconstruction/pkg_app_lifecycle_wave7/app_lifecycle_wave7_model_test.cpp -o /tmp/opencode/pkg-app-lifecycle-wave7-test-ndebug && /tmp/opencode/pkg-app-lifecycle-wave7-test-ndebug",
+    "format_command": "clang-format --dry-run --Werror --style='{BasedOnStyle: Google, FixNamespaceComments: false}' src/reconstruction/pkg_app_lifecycle_wave7/app_lifecycle_wave7.hpp src/reconstruction/pkg_app_lifecycle_wave7/app_lifecycle_wave7.cpp src/reconstruction/pkg_app_lifecycle_wave7/app_lifecycle_wave7_model_test.cpp",
+    "json_command": "python3 -m json.tool reconstruction/metadata/pkg-app-lifecycle-wave7/00a6c940.json",
+    "diff_command": "git diff --no-index --check /dev/null src/reconstruction/pkg_app_lifecycle_wave7/app_lifecycle_wave7.hpp && git diff --no-index --check /dev/null src/reconstruction/pkg_app_lifecycle_wave7/app_lifecycle_wave7.cpp && git diff --no-index --check /dev/null src/reconstruction/pkg_app_lifecycle_wave7/app_lifecycle_wave7_model_test.cpp && git diff --no-index --check /dev/null reconstruction/metadata/pkg-app-lifecycle-wave7/00a6c940.json"
+  },
+  "verification_results": {
+    "x86_32_syntax": "passed",
+    "focused_model_test": "passed",
+    "ndebug_model_test": "passed",
+    "clang_format": "passed",
+    "json": "passed",
+    "scoped_diff_check": "passed",
+    "runtime_validation": "not run"
+  },
+  "unresolved_questions": [
+    "Concrete table owner and caller of 0x00a6c940",
+    "Meaning and valid range of the signed index producer",
+    "Concrete ownership and lifetime of the field_68 bit set"
+  ],
+  "blockers": [
+    "Original-process index, flag, receiver, and field_68 state remain runtime-gated."
+  ],
+  "staging_verification": {
+    "x86_32_syntax": "passed",
+    "o0_normal": "passed",
+    "o0_ndebug": "passed",
+    "o2_normal": "passed",
+    "o2_ndebug": "passed",
+    "clang_format": "passed",
+    "json": "passed",
+    "scoped_diff_check": "passed"
+  },
+  "integration_status": "integrated",
+  "canonical_files": [
+    "src/reconstruction/pkg_app_lifecycle_wave7/app_lifecycle_wave7.hpp",
+    "src/reconstruction/pkg_app_lifecycle_wave7/app_lifecycle_wave7.cpp",
+    "src/reconstruction/pkg_app_lifecycle_wave7/app_lifecycle_wave7_model_test.cpp"
+  ]
+}

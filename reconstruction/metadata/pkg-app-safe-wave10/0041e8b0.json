@@ -1,0 +1,162 @@
+{
+  "schema": "pkg-app-safe-wave10.function-handoff.v1",
+  "package": "PKG-APP-SAFE-WAVE10",
+  "subsystem": "App.CursorBuffer",
+  "va": "0x0041e8b0",
+  "ghidra_name": "FUN_0041e8b0",
+  "normalized_symbol": "cursor_buffer_emit_0041e8b0",
+  "semantic_label": "cursor buffer emit: advance the cursor by the 0x18 element stride and copy one element, or hand the full buffer to the grow-and-emit port when the cursor reached the limit",
+  "declaration": "void __thiscall cursor_buffer_emit_0041e8b0(OpaqueCursorBuffer* buffer, std::uint32_t argument)",
+  "abi": {
+    "architecture": "x86-32",
+    "calling_convention": "thiscall with callee stack cleanup",
+    "receiver_register": "ECX",
+    "receiver_type": "OpaqueCursorBuffer*",
+    "frame": "PUSH EBP / MOV EBP,ESP / SUB ESP,0x18; the receiver is spilled to EBP-0x14",
+    "stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "EBP+0x08",
+        "width_bytes": 4,
+        "machine_type": "std::uint32_t",
+        "normalized_name": "argument",
+        "native_reads": [
+          "PUSH EAX at 0x0041e8ee for the copy port",
+          "PUSH ECX at 0x0041e908 for the grow port"
+        ],
+        "note": "the word is used as an opaque source pointer, not as a count"
+      }
+    ],
+    "stack_cleanup_bytes": 4,
+    "ret_form": "RET 0x4",
+    "return_register": "EAX",
+    "return_width_bytes": 0,
+    "return_contract": "void; the body never writes EAX and ends at 0x0041e91b with RET 0x4",
+    "exit_count": 1
+  },
+  "observed_body": {
+    "entry": "0x0041e8b0",
+    "body_end_inclusive": "0x0041e91e",
+    "instruction_count": 39,
+    "byte_length": 110,
+    "raw_bytes_sha256": "94367882b16735fd3dc58c9038489ea9c271600dbb382b21d44882b6eb24e9b2",
+    "raw_bytes_hex": "558bec83ec18894dec8b45ec8b4dec8b50043b5108733e8b45ec8b4804894df88b55ec8b420483c0188b4dec8941048b55f88955fc837dfc0074118b4508508b4dfce849280f008945e8eb07c745e800000000eb138b4d08518b55ec8b4204508b4dece8f85600008be55dc20400",
+    "instruction_list": [
+      "0x0041e8b6 MOV [EBP-0x14],ECX  (receiver spilled)",
+      "0x0041e8bf MOV EDX,[EAX+0x4] / CMP EDX,[ECX+0x8] / JNC 0x0041e905  (unsigned cursor >= limit takes the grow path)",
+      "0x0041e8c7 saved = cursor; MOV [ECX+0x4],EAX+0x18  (cursor advanced before the copy)",
+      "0x0041e8e5 CMP [EBP-0x4],0x0 / JZ 0x0041e8fc  (a null saved cursor stores a null result)",
+      "0x0041e8eb PUSH argument / MOV ECX,[EBP-0x4] / CALL 0x00511140 / MOV [EBP-0x18],EAX",
+      "0x0041e905 MOV ECX,[EBP+0x8] / PUSH ECX / MOV EAX,[EDX+0x4] / PUSH EAX / MOV ECX,[EBP-0x14] / CALL 0x00424010",
+      "0x0041e918 MOV ESP,EBP / POP EBP / RET 0x4"
+    ],
+    "direct_callee_calls": [
+      "0x00511140",
+      "0x00424010"
+    ]
+  },
+  "mechanics": [
+    "compare the cursor at +0x04 against the limit at +0x08 with an unsigned JNC",
+    "on the grow path push the argument and the unadvanced cursor, then the receiver, into port 0x00424010",
+    "on the copy path save the pre-advance cursor into a local and store cursor + 0x18 back to +0x04",
+    "advance the cursor before the element copy, not after",
+    "skip the copy port entirely when the saved cursor is zero and stage a null result instead",
+    "otherwise call port 0x00511140 with ECX equal to the saved cursor and the argument pushed as the source",
+    "the copy port return value is computed into EBP-0x18 and never read afterwards",
+    "no receiver field other than +0x04 is written"
+  ],
+  "ports": [
+    {
+      "va": "0x00511140",
+      "name": "FUN_00511140",
+      "kind": "thiscall element copy",
+      "port_field": "CursorRuntime::copy_element_00511140",
+      "body_defined_here": false,
+      "observed_abi": "thiscall, one stack word (RET 8 at the callee), pointer return discarded by this body",
+      "default": "package-local inert sink returning null, replaceable through cursor_runtime()"
+    },
+    {
+      "va": "0x00424010",
+      "name": "FUN_00424010",
+      "kind": "thiscall grow and emit",
+      "port_field": "CursorRuntime::grow_and_emit_00424010",
+      "body_defined_here": false,
+      "observed_abi": "thiscall, two stack words, void return",
+      "default": "package-local inert sink, replaceable through cursor_runtime()"
+    }
+  ],
+  "globals_read": [],
+  "runtime_gates": [
+    "runtime validation not performed; static decompilation and disassembly only",
+    "the element copy port 0x00511140 and the grow port 0x00424010 are opaque seams and are not promoted",
+    "the cursor buffer base word at +0x00 is never read or written by this body",
+    "the 0x18 element stride is a static constant read from the ADD EAX,0x18 immediate; the element size is not independently confirmed",
+    "the argument is modelled as an opaque source pointer; its declared type is unresolved"
+  ],
+  "phase": "integrated",
+  "review_status": "reviewed_static_semantic_abi_and_runtime_lifecycle",
+  "runtime_validation": 0,
+  "worker_ownership": "pkg-app-safe-wave10-target-only",
+  "ghidra_provenance": {
+    "ghidra_program": "SporeApp.exe",
+    "ghidra_project": "SporeProject",
+    "ghidra_mutated": false,
+    "ghidra_saved": false,
+    "binary": "SPORE/SporeBin/SporeApp.exe",
+    "version": "3.1.0.22",
+    "architecture": "x86:LE:32",
+    "image_base": "0x00400000",
+    "captured_on": "2026-09-25",
+    "tools": [
+      "ghidra_get_function_by_address",
+      "ghidra_disassemble_function",
+      "ghidra_get_current_program_info"
+    ],
+    "evidence_rule": "The disassembly listed in observed_body was read back from the live Ghidra database for SporeApp.exe at the addresses shown, and the byte extent was read from the .text section of SPORE/SporeBin/SporeApp.exe (.text VMA 0x00401000, file offset 0x400). The sha256 below covers exactly that byte extent. No Ghidra symbol, structure, comment or program state was created or modified."
+  },
+  "implementation": {
+    "status": "promoted to canonical",
+    "canonical_status": "present; promoted by the sole integrator in batch-2026-09-25-wave10-safe-core",
+    "namespace": "openspore::reconstruction::pkg_app_safe_wave10",
+    "header": "src/reconstruction/pkg_app_safe_wave10/app_safe_wave10.hpp",
+    "source": "src/reconstruction/pkg_app_safe_wave10/app_safe_wave10.cpp",
+    "model_test": "src/reconstruction/pkg_app_safe_wave10/app_safe_wave10_model_test.cpp",
+    "staged_from": "reconstruction/staging/pkg-app-safe-wave10",
+    "metadata": "reconstruction/metadata/pkg-app-safe-wave10/0041e8b0.json"
+  },
+  "model_test_cases": [
+    "test_cursor_fast_path_copies",
+    "test_cursor_fast_path_null_cursor",
+    "test_cursor_fast_path_wraps",
+    "test_cursor_gate_equal_limit",
+    "test_cursor_gate_is_unsigned",
+    "test_cursor_last_free_slot"
+  ],
+  "focused_test_evidence": {
+    "command": "clang++ -m32 -std=c++17 -O0/-O2 [-DNDEBUG] -Wall -Wextra -Wpedantic -Werror -I <canonical dir> <source> <model test> && <binary>",
+    "configurations": [
+      "-O0",
+      "-O2",
+      "-O0 -DNDEBUG",
+      "-O2 -DNDEBUG"
+    ],
+    "normal": "passed at -O0 and at -O2",
+    "ndebug": "passed at -O0 -DNDEBUG and at -O2 -DNDEBUG",
+    "assertions_weakened": 0,
+    "assertions_removed": 0,
+    "test_count": 6,
+    "compiled_ret_form_matches_ghidra": true
+  },
+  "helper_and_data_vas_not_promoted": [
+    "0x00571db0",
+    "0x00e30f90",
+    "0x00f47380",
+    "0x008105b0",
+    "0x005c29c0",
+    "0x005507a0",
+    "0x0067dcc0",
+    "0x00b3d240",
+    "0x00b3d3c0",
+    "0x011e0744"
+  ]
+}

@@ -5,6 +5,8 @@
 namespace {
 
 using openspore::reconstruction::wave6_misc_engine::DeletingDestructorPorts;
+using openspore::reconstruction::wave6_misc_engine::
+    destructible_lifecycle_thunk_00b63980;
 using openspore::reconstruction::wave6_misc_engine::g_app_system_015fd890;
 using openspore::reconstruction::wave6_misc_engine::g_deleting_destructor_ports;
 using openspore::reconstruction::wave6_misc_engine::
@@ -18,8 +20,14 @@ using openspore::reconstruction::wave6_misc_engine::OpaqueIAppSystem;
 using openspore::reconstruction::wave6_misc_engine::OpaqueMessageManager;
 using openspore::reconstruction::wave6_misc_engine::OpaqueMessageService;
 using openspore::reconstruction::wave6_misc_engine::TargetWord;
-using openspore::reconstruction::wave6_misc_engine::
-    time_start_frame_deleting_destructor_00b63980;
+
+#if defined(_MSC_VER)
+#define TEST_CDECL __cdecl
+#define TEST_THISCALL __thiscall
+#else
+#define TEST_CDECL __attribute__((cdecl))
+#define TEST_THISCALL __attribute__((thiscall))
+#endif
 
 void check(bool condition) {
   if (!condition) {
@@ -46,21 +54,21 @@ OpaqueDestructible* destroyed_receiver = nullptr;
 unsigned base_destroy_calls = 0;
 unsigned global_delete_calls = 0;
 
-void prepare_queue(OpaqueMessageService* service, TargetWord first,
-                   TargetWord second) {
+void TEST_THISCALL prepare_queue(OpaqueMessageService* service,
+                                 TargetWord first, TargetWord second) {
   prepared_service = service;
   prepared_first = first;
   prepared_second = second;
   ++prepare_calls;
 }
 
-TargetWord query_queue(OpaqueMessageService* service) {
+TargetWord TEST_THISCALL query_queue(OpaqueMessageService* service) {
   check(service == prepared_service);
   ++query_calls;
   return query_result;
 }
 
-void destroy_base(OpaqueDestructible* receiver) {
+void TEST_THISCALL destroy_base(OpaqueDestructible* receiver) {
   check(receiver == destroyed_receiver);
   check(receiver->vtable ==
         reinterpret_cast<decltype(receiver->vtable)>(0x01464450U));
@@ -68,7 +76,7 @@ void destroy_base(OpaqueDestructible* receiver) {
   ++base_destroy_calls;
 }
 
-void delete_globally(OpaqueDestructible* receiver) {
+void TEST_CDECL delete_globally(OpaqueDestructible* receiver) {
   check(receiver == destroyed_receiver);
   ++global_delete_calls;
 }
@@ -179,25 +187,24 @@ void test_deleting_destructor_flag_and_order() {
   receiver.vtable = reinterpret_cast<decltype(receiver.vtable)>(0x11111111U);
 
   OpaqueDestructible* result =
-      time_start_frame_deleting_destructor_00b63980(&receiver, 0U);
+      destructible_lifecycle_thunk_00b63980(&receiver, 0U);
   check(result == &receiver);
   check(base_destroy_calls == 1U);
   check(global_delete_calls == 0U);
   check(receiver.vtable ==
         reinterpret_cast<decltype(receiver.vtable)>(0x013ec458U));
 
-  result = time_start_frame_deleting_destructor_00b63980(&receiver, 1U);
+  result = destructible_lifecycle_thunk_00b63980(&receiver, 1U);
   check(result == &receiver);
   check(base_destroy_calls == 2U);
   check(global_delete_calls == 1U);
 
-  result = time_start_frame_deleting_destructor_00b63980(&receiver, 2U);
+  result = destructible_lifecycle_thunk_00b63980(&receiver, 2U);
   check(result == &receiver);
   check(base_destroy_calls == 3U);
   check(global_delete_calls == 1U);
 
-  result =
-      time_start_frame_deleting_destructor_00b63980(&receiver, 0xffffffffU);
+  result = destructible_lifecycle_thunk_00b63980(&receiver, 0xffffffffU);
   check(result == &receiver);
   check(base_destroy_calls == 4U);
   check(global_delete_calls == 2U);

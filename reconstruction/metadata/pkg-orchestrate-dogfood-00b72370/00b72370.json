@@ -1,0 +1,335 @@
+{
+  "schema": "pkg-orchestrate-dogfood-00b72370-function-handoff.v1",
+  "package": "PKG-ORCHESTRATE-DOGFOOD-00B72370",
+  "worker_ownership": "orchestrate-dogfood-00b72370",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "captured_on": "2026-09-25",
+  "va": "0x00b72370",
+  "function_address": "0x00b72370",
+  "ghidra_name": "Simulator::cObjectPool_::DeleteObject",
+  "normalized_symbol": "simulator_c_object_pool_delete_object_00b72370",
+  "subsystem": "Simulator",
+  "cluster": "sim-core-systems",
+  "phase": "body-reconstruction",
+  "review_status": "staged_static_review",
+  "integration_status": "staged",
+  "integration_note": "Candidate source lives in worker-owned staging only. Promotion to src/ is integrator-owned and is not claimed here.",
+  "runtime_validation": 0,
+  "runtime_validation_status": "not_run",
+  "source_files": [
+    "reconstruction/staging/pkg-orchestrate-dogfood-00b72370/dogfood_00b72370.hpp",
+    "reconstruction/staging/pkg-orchestrate-dogfood-00b72370/dogfood_00b72370.cpp",
+    "reconstruction/staging/pkg-orchestrate-dogfood-00b72370/dogfood_00b72370_model_test.cpp"
+  ],
+  "type_dependencies": [
+    "openspore::reconstruction::pkg_orchestrate_dogfood_00b72370::OpaqueDispatchTarget",
+    "openspore::reconstruction::pkg_orchestrate_dogfood_00b72370::OpaqueDispatchTargetVtable",
+    "openspore::reconstruction::pkg_orchestrate_dogfood_00b72370::OpaqueObjectPoolReceiver",
+    "openspore::reconstruction::pkg_orchestrate_dogfood_00b72370::DeleteObjectPorts",
+    "openspore::reconstruction::pkg_orchestrate_dogfood_00b72370::DeleteObjectGlobals"
+  ],
+  "type_scope": "package-local opaque layout types only; the Ghidra cObjectPool_ and cObjectPoolIndex types are not reproduced and no concrete class identity is claimed",
+  "declaration": "extern \"C\" void __thiscall simulator_c_object_pool_delete_object_00b72370(OpaqueObjectPoolReceiver* pool);",
+  "original_native_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "thiscall",
+    "hidden_receiver": "ECX is the cObjectPool_ receiver",
+    "ordinary_stack_argument_slots": 0,
+    "stack_cleanup_bytes": 0,
+    "stack_cleanup_owner": "callee",
+    "return_type": "void",
+    "return_register": "none",
+    "return_semantics": "void; the value returned by the dispatched slot is discarded",
+    "ret_form": "plain RET",
+    "saved_registers": [
+      "EBX",
+      "ESI",
+      "EDI"
+    ],
+    "derived_from": "disassembly plus live xrefs; the briefing abi section was empty and evidence.missing_sections listed ABI",
+    "ghidra_convention_note": "The live Ghidra decompilation warns 'Unknown calling convention' and renders the signature as (cObjectPool_ * this, cObjectPoolIndex index), deriving the second formal from in_ECX - 4. The disassembly pushes no stack argument at entry and returns with a plain RET, so the observed ordinary stack argument slot count is zero and the second formal is a derived word, not a parameter.",
+    "body_evidence": {
+      "entry": "0x00b72370",
+      "body_end_inclusive": "0x00b723c0",
+      "instruction_count": 31,
+      "raw_bytes_hex": "5356578bf1e8e614d1ff8bf88d5efc897e20895e24c7462804504601c7462c08000000c746300000000085ff741f85db741b33f68b8e045046018b078b502451538bcfffd283c60483fe2072e75f5e5bc3"
+    }
+  },
+  "observed_mechanics": [
+    "0x00b72370-0x00b72373 saves EBX, ESI and EDI, then copies the ECX receiver into ESI.",
+    "0x00b72375-0x00b7237a calls 0x00883860 with no pushed argument and consumes the EAX result as an object pointer.",
+    "0x00883860 is itself `undefined4 FUN_00883860(void) { return DAT_016514cc; }`, so the dispatched object is whatever the global word 0x016514cc holds.",
+    "0x00b7237c computes the receiver word minus four into EBX.",
+    "0x00b7237f-0x00b72393 stores unconditionally, before any null test: [receiver+0x20] = dispatch pointer, [receiver+0x24] = receiver-4, [receiver+0x28] = 0x01465004, [receiver+0x2c] = 8, [receiver+0x30] = 0.",
+    "0x00b7239a-0x00b7239c jumps to the epilogue when the dispatch pointer is zero.",
+    "0x00b7239e-0x00b723a0 jumps to the epilogue when the receiver-minus-four word is zero.",
+    "0x00b723a2-0x00b723bb walks the loop index from 0 to 0x20 in steps of 4, that is eight iterations, reading each word from 0x01465004 + index.",
+    "0x00b723aa-0x00b723ac reloads the dispatch object's vtable pointer and its slot word at displacement 0x24 on every iteration.",
+    "0x00b723af-0x00b723b3 pushes the current 0x01465004 word, then the receiver-minus-four word, sets ECX to the dispatch object, and calls the loaded slot. Callee-visible stack order is slot 0 = receiver-minus-four word, slot 1 = source word; the callee reclaims both words because the loop advances with no stack adjustment.",
+    "0x00b723bd-0x00b723c0 pops EDI, ESI and EBX and returns with a plain RET, so no stack cleanup is performed by this function and no value is returned."
+  ],
+  "observed_mechanics_detail": {
+    "receiver_writes": [
+      {
+        "offset": "0x20",
+        "value_source": "EAX returned by 0x00883860",
+        "instruction": "0x00b7237f: MOV dword ptr [ESI+0x20],EDI"
+      },
+      {
+        "offset": "0x24",
+        "value_source": "receiver word minus four",
+        "instruction": "0x00b72382: MOV dword ptr [ESI+0x24],EBX"
+      },
+      {
+        "offset": "0x28",
+        "value_source": "absolute constant 0x01465004, the loop source base",
+        "instruction": "0x00b72385: MOV dword ptr [ESI+0x28],0x1465004"
+      },
+      {
+        "offset": "0x2c",
+        "value_source": "absolute constant 8, the loop word count",
+        "instruction": "0x00b7238c: MOV dword ptr [ESI+0x2c],0x8"
+      },
+      {
+        "offset": "0x30",
+        "value_source": "absolute constant 0",
+        "instruction": "0x00b72393: MOV dword ptr [ESI+0x30],0x0"
+      }
+    ],
+    "receiver_reads": "none; the function never reads a receiver field, so the five stores are idempotent with respect to prior state",
+    "loop": {
+      "counter_register": "ESI",
+      "counter_start": 0,
+      "counter_step": 4,
+      "counter_limit": "0x20 unsigned-less-than",
+      "iterations": 8,
+      "source_base": "0x01465004",
+      "per_iteration_reads": "the dispatch vtable pointer and the slot word at displacement 0x24 are re-read on every iteration"
+    },
+    "dispatch_call": {
+      "receiver": "ECX = the object returned by 0x00883860",
+      "stack_slot_0": "the receiver word minus four, pushed second (PUSH EBX)",
+      "stack_slot_1": "the current 0x01465004 word, pushed first (PUSH ECX)",
+      "slot_displacement": "0x24",
+      "stack_cleanup": "callee; no ADD ESP or ADD ESP,8 appears between CALL EDX and the loop increment",
+      "return_value": "discarded; the next iteration reloads EAX and EDX before calling again"
+    },
+    "guard_order": "Both null tests happen after all five stores, so a null dispatch pointer still leaves the receiver fully populated.",
+    "not_rewritten": "The eight source words at 0x01465004 are read only; the body stores nothing back to that window."
+  },
+  "call_graph": {
+    "direct_callers": [],
+    "direct_callees": [
+      "0x00883860"
+    ],
+    "indirect_calls": [
+      "dispatch target vtable slot at displacement 0x24, called eight times"
+    ],
+    "direct_callsites": [
+      {
+        "callsite": "0x00b72375",
+        "target": "0x00883860",
+        "reference_type": "direct-call"
+      }
+    ],
+    "data_xrefs": [
+      {
+        "from": "0x014650f0",
+        "to": "0x00b72370",
+        "type": "DATA"
+      }
+    ],
+    "caller_evidence": "ghidra_get_function_callers at 0x00b72370 returned zero; reachability is through the containing vtable only"
+  },
+  "vtables": {
+    "containing_table": {
+      "address": "0x014650e8",
+      "function_word_address": "0x014650f0",
+      "function_word": "0x00b72370",
+      "slot_displacement": "0x08",
+      "slot_index_zero_based": 2,
+      "provenance": "briefing vtables evidence vtable:0x014650e8, confirmed by the single live DATA reference from 0x014650f0",
+      "limit": "The base address is taken from the triage vtable evidence. The neighbouring words were read but no class identity, RTTI record, or runtime instance is claimed."
+    },
+    "dispatch_table": {
+      "access_window": "0x00 through 0x24 plus the slot word",
+      "slot_displacement": "0x24",
+      "slot_index_zero_based": 9,
+      "class_identity": "unknown",
+      "provenance": "0x00b723aa MOV EAX,dword ptr [EDI] and 0x00b723ac MOV EDX,dword ptr [EAX+0x24]"
+    }
+  },
+  "globals": [
+    {
+      "address": "0x01465004",
+      "role": "loop source window",
+      "width_bytes": 32,
+      "word_count": 8,
+      "access": "read only",
+      "live_values": [
+        "0x025630b7",
+        "0x0477c00d",
+        "0x031018b9",
+        "0x02e9973e",
+        "0x032f76e7",
+        "0x04d80d9e",
+        "0x00f62def",
+        "0x0182c582"
+      ],
+      "note": "The same absolute address is also stored into receiver+0x28, so the receiver publishes the source base of its own loop."
+    },
+    {
+      "address": "0x016514cc",
+      "role": "global word returned by 0x00883860",
+      "access": "read at 0x00883860, written at 0x00883870",
+      "xref_count": 3,
+      "note": "Backing storage of the dispatched object. Its runtime identity, initialization order, and ownership are not recovered."
+    }
+  ],
+  "analogues": [
+    {
+      "package": "PKG-11-H4-HELPER-WAVE3",
+      "symbol": "context_word_read_00ce6950",
+      "match_basis": "same_subsystem"
+    },
+    {
+      "package": "PKG-01-SHARED-STATE-ROOTS",
+      "symbol": "FUN_00b3d2a0",
+      "match_basis": "same_subsystem"
+    }
+  ],
+  "semantic_findings": {
+    "claim": "Bounded state mutation plus a bounded dispatch anchor, nothing more.",
+    "statement": "The function publishes five receiver words, two of which are the source base 0x01465004 and the word count 8 that describe its own dispatch loop, and then drives an eight-iteration virtual loop over the eight words at 0x01465004 on the object returned by 0x00883860.",
+    "ledger_conflict": {
+      "conflict_id": "U-008-scenario-respawner",
+      "treatment": "The conflict ledger cites 0x00b72370 among its anchors. The direct body recovers only the bounded state mutation and the bounded call anchor; the transition policy, consumer order, and runtime reachability remain exactly as the ledger resolution states and are not claimed here."
+    }
+  },
+  "failure_boundaries": {
+    "null_dispatch_target": "All five receiver stores complete and the loop is skipped.",
+    "zero_receiver_minus_four": "The TEST EBX,EBX branch is taken only when the receiver word itself equals 4, which cannot be exercised through the modeled entry because the stores to receiver+0x20..0x30 execute first and would fault. The branch is documented, not modeled.",
+    "invalid_dispatch_vtable": "The first slot load faults with no rollback of the five stores.",
+    "dispatch_slot_fault": "No recovery path exists; later iterations are simply skipped."
+  },
+  "model_boundary": {
+    "represented": "The ECX receiver, the unconditional five stores, both null guards, the eight-iteration loop over the 0x01465004 window, the per-iteration vtable reload, the slot-0x24 displacement, the callee-visible stack order, and the void plain-RET return.",
+    "not_represented": [
+      "the concrete cObjectPool_ or cObjectPoolIndex C++ types",
+      "the concrete class behind the vtable at 0x014650e8",
+      "the concrete class and slot meaning at dispatch displacement 0x24",
+      "the identity, initialization, and ownership of the global word 0x016514cc",
+      "the runtime values and ownership of the eight words at 0x01465004",
+      "every caller, since the only reference is a vtable word"
+    ]
+  },
+  "not_claimed": [
+    "concrete C++ class identity for the receiver, the dispatch target, or the containing vtable",
+    "any RTTI-derived hierarchy, since SporeApp.exe has no MSVC RTTI",
+    "the behavior inside 0x00883860 or 0x00883870 beyond the read of DAT_016514cc",
+    "the behavior of the slot at displacement 0x24",
+    "the allocation size or complete layout of the receiver object",
+    "runtime pointer validity beyond the two modeled null guards"
+  ],
+  "confidence": {
+    "body": "high",
+    "abi_and_stack_cleanup": "high",
+    "constants": "high",
+    "fields_offsets": "high",
+    "globals": "high",
+    "virtual_dispatch": "high",
+    "return_semantics": "high",
+    "runtime_ownership": "low",
+    "class_identity": "low"
+  },
+  "runtime_gates": [
+    "Observe a real dispatch through the vtable word at 0x014650f0 and record the receiver instance state before and after the five stores.",
+    "Record the live values of the eight words at 0x01465004 and the concrete class of the object returned by 0x00883860.",
+    "Record the concrete target of the vtable slot at displacement 0x24 and observe its argument use and return-value handling.",
+    "Observe whether any later consumer reads the receiver words at +0x28 and +0x2c published here.",
+    "Observe initialization and write ordering of the global word 0x016514cc through 0x00883870."
+  ],
+  "unresolved_questions": [
+    "The briefing carried no ABI section (evidence.missing_sections listed ABI), so the recorded ABI is derived from the 31-instruction disassembly; a repaired Ghidra calling convention should confirm it.",
+    "The Ghidra signature shows a second formal `cObjectPoolIndex index`, but the disassembly proves it is the receiver word minus four (LEA EBX,[ESI-0x4]) and not a stack argument. Whether the original source declared such a parameter is unresolved.",
+    "What concrete class owns the vtable at 0x014650e8, and what do slots 0x00 and 0x04 of that table do?",
+    "What concrete class is the object returned by 0x00883860 and what does its slot at displacement 0x24 mean?",
+    "What are the runtime values of the eight words at 0x01465004, who owns them, and does the receiver word at +0x2c stay authoritative after return?",
+    "Is 0x016514cc a singleton pointer, a lazily installed object, or a plain value slot? Only the read at 0x00883860 and the write at 0x00883870 are observed.",
+    "Can the receiver-minus-four zero branch ever be taken in the original program, and with what receiver value?",
+    "What calls this function through the vtable, and with what receiver state?"
+  ],
+  "live_evidence": {
+    "program": "SporeApp.exe",
+    "image_base": "0x400000",
+    "mode": "live",
+    "function_by_address": "Simulator::cObjectPool_::DeleteObject; body 0x00b72370-0x00b723c0",
+    "briefing_decompilation": "briefing decompilation field for 0x00b72370, warning 'Unknown calling convention'",
+    "briefing_disassembly": "briefing disassembly field, 31 instructions 0x00b72370-0x00b723c0",
+    "read_memory": "0x00b72370 length 81, and 0x01465004 length 32, 0x014650b0 length 56, 0x014650e8 length 64",
+    "get_xrefs_to": "0x00b72370 returns one DATA reference from 0x014650f0; 0x016514cc returns three references",
+    "get_function_callers": "0x00b72370 total 0",
+    "callee_decompilation": "0x00883860 returns the global word DAT_016514cc"
+  },
+  "provenance": [
+    "briefing: decompilation, disassembly, xrefs, ghidra_function, vtables for 0x00b72370",
+    "ghidra_get_function_by_address(0x00b72370)",
+    "ghidra_get_function_callers(0x00b72370)",
+    "ghidra_get_xrefs_to(0x00b72370)",
+    "ghidra_get_xrefs_to(0x016514cc)",
+    "ghidra_read_memory(0x00b72370, 81)",
+    "ghidra_read_memory(0x01465004, 32)",
+    "ghidra_read_memory(0x014650e8, 64)",
+    "ghidra_read_memory(0x014650b0, 56)",
+    "ghidra_decompile_function(0x00883860)"
+  ],
+  "ghidra_mutations": 0,
+  "ghidra_saves": 0,
+  "evidence_refs": [
+    ".spore-analysis/ghidra-exports/decompiled_sdk/Simulator__cObjectPool___DeleteObject.c",
+    "briefing 00b72370.disassembly",
+    "briefing 00b72370.decompilation",
+    "GhidraMCP /get_function_by_address 0x00b72370",
+    "GhidraMCP /get_function_callers 0x00b72370",
+    "GhidraMCP /get_xrefs_to 0x00b72370 and 0x016514cc",
+    "GhidraMCP /read_memory 0x00b72370, 0x01465004, 0x014650e8",
+    "GhidraMCP /decompile_function 0x00883860",
+    "knowledgegraph/research/conflicts/track-c-state-events.json U-008-scenario-respawner"
+  ],
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/pkg-orchestrate-dogfood-00b72370 reconstruction/staging/pkg-orchestrate-dogfood-00b72370/dogfood_00b72370.cpp reconstruction/staging/pkg-orchestrate-dogfood-00b72370/dogfood_00b72370_model_test.cpp",
+    "model_command": "clang++ -m32 -std=c++17 -O0 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg-orchestrate-dogfood-00b72370 reconstruction/staging/pkg-orchestrate-dogfood-00b72370/dogfood_00b72370.cpp reconstruction/staging/pkg-orchestrate-dogfood-00b72370/dogfood_00b72370_model_test.cpp -o /tmp/opencode/dogfood/t_00b72370_o0 && /tmp/opencode/dogfood/t_00b72370_o0",
+    "o2_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg-orchestrate-dogfood-00b72370 reconstruction/staging/pkg-orchestrate-dogfood-00b72370/dogfood_00b72370.cpp reconstruction/staging/pkg-orchestrate-dogfood-00b72370/dogfood_00b72370_model_test.cpp -o /tmp/opencode/dogfood/t_00b72370_o2 && /tmp/opencode/dogfood/t_00b72370_o2",
+    "ndebug_command": "clang++ -m32 -std=c++17 -O2 -DNDEBUG -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg-orchestrate-dogfood-00b72370 reconstruction/staging/pkg-orchestrate-dogfood-00b72370/dogfood_00b72370.cpp reconstruction/staging/pkg-orchestrate-dogfood-00b72370/dogfood_00b72370_model_test.cpp -o /tmp/opencode/dogfood/t_00b72370_o2n && /tmp/opencode/dogfood/t_00b72370_o2n",
+    "format_command": "clang-format --dry-run --Werror --style='{BasedOnStyle: Google, FixNamespaceComments: false}' reconstruction/staging/pkg-orchestrate-dogfood-00b72370/dogfood_00b72370.hpp reconstruction/staging/pkg-orchestrate-dogfood-00b72370/dogfood_00b72370.cpp reconstruction/staging/pkg-orchestrate-dogfood-00b72370/dogfood_00b72370_model_test.cpp",
+    "json_command": "python3 -m json.tool reconstruction/metadata/pkg-orchestrate-dogfood-00b72370/00b72370.json",
+    "runtime": "not performed"
+  },
+  "verification_results": {
+    "x86_32_syntax": "passed",
+    "o0_model_test": "passed",
+    "o2_model_test": "passed",
+    "o2_ndebug_model_test": "passed",
+    "clang_format": "passed",
+    "json": "passed",
+    "scoped_diff_check": "passed",
+    "negative_control": "an out-of-tree copy with the loop bound changed from 8 to 7 fails the focused test, so the iteration-count claim is load bearing",
+    "runtime_validation": "not run"
+  },
+  "focused_model_test": {
+    "path": "reconstruction/staging/pkg-orchestrate-dogfood-00b72370/dogfood_00b72370_model_test.cpp",
+    "cases": [
+      "state stores match the five disassembly writes",
+      "eight dispatch calls carry the receiver, the receiver-minus-four word, and the eight source words in order",
+      "a null dispatch pointer still leaves all five stores and skips the loop",
+      "the source window at 0x01465004 is never rewritten",
+      "the ports table and globals default to null and zero",
+      "modeled signatures match the entry, the slot, and the accessor"
+    ],
+    "o0": "pass",
+    "o2": "pass",
+    "o2_ndebug": "pass",
+    "result": "pass"
+  }
+}

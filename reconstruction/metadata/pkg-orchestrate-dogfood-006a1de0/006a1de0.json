@@ -1,0 +1,470 @@
+{
+  "schema": "pkg-orchestrate-dogfood-006a1de0.function-handoff.v1",
+  "package": "PKG-ORCHESTRATE-DOGFOOD-006A1DE0",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "va": "0x006a1de0",
+  "address": "0x006a1de0",
+  "symbol": "App::PropertyList::GetPropertyAlt",
+  "normalized_symbol": "property_list_get_property_alt_006a1de0",
+  "reconstructed_symbol": "property_list_get_property_alt_006a1de0",
+  "subsystem": "App.Property",
+  "semantic_label": "OBSERVED",
+  "evidence_level": "OBSERVED",
+  "captured_on": "2026-09-25",
+  "phase": "live Ghidra machine-contract reconstruction, staged clean-room model, focused x86-32 model verification",
+  "target_state": "staged candidate; runtime validation gated; prerequisite boundary published for dependents",
+  "declaration": "extern \"C\" bool __thiscall property_list_get_property_alt_006a1de0(OpaquePropertyList* list, OpaqueWord property_id, OpaqueProperty** result);",
+  "source_files": [
+    "reconstruction/staging/pkg-orchestrate-dogfood-006a1de0/dogfood_006a1de0.hpp",
+    "reconstruction/staging/pkg-orchestrate-dogfood-006a1de0/dogfood_006a1de0.cpp",
+    "reconstruction/staging/pkg-orchestrate-dogfood-006a1de0/dogfood_006a1de0_model_test.cpp"
+  ],
+  "staging_package": "reconstruction/staging/pkg-orchestrate-dogfood-006a1de0",
+  "function_extent": {
+    "entry": "0x006a1de0",
+    "body_end": "0x006a1e46",
+    "last_instruction": "0x006a1e44: RET 0x8",
+    "instruction_count": 47,
+    "ghidra_body_end": "0x006a1e46"
+  },
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "convention": "thiscall with callee stack cleanup",
+    "hidden_this_register": "ECX",
+    "hidden_receiver": "ECX OpaquePropertyList*; copied to ESI at 0x006a1de1",
+    "hidden_this_type": "OpaquePropertyList*",
+    "ordinary_stack_argument_slots": 2,
+    "ordinary_stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "ESP+0x04",
+        "name": "property_id",
+        "type": "uint32_t",
+        "width_bytes": 4,
+        "evidence": "MOVZX-free 32-bit use; reloaded at 0x006a1dfb from [ESP+0x1c] with four callee arguments still pushed, which is the same slot as ESP+0x04 at function entry"
+      },
+      {
+        "position": 2,
+        "entry_offset": "ESP+0x08",
+        "name": "result",
+        "type": "Property **",
+        "width_bytes": 4,
+        "evidence": "reloaded from [ESP+0x10] at 0x006a1e17 and at 0x006a1e2e with ESP+8 adjusted, and pushed as the first callee-visible word of the +0x20 dispatch"
+      }
+    ],
+    "return_type": "bool",
+    "return_width_bytes": 1,
+    "return_register": "AL",
+    "ret_form": "RET 0x8",
+    "return_sites": [
+      "0x006a1e24: RET 0x8 with AL=0x1 (hit path)",
+      "0x006a1e3d: RET 0x8 with AL untouched by the epilogue, so the +0x20 callee's AL is forwarded (parent path)",
+      "0x006a1e44: RET 0x8 with AL=0x0 (no parent)"
+    ],
+    "stack_cleanup_bytes": 8,
+    "stack_cleanup_owner": "callee; all three exits are RET 0x8",
+    "saved_registers": "ESI is saved at 0x006a1de0 and restored at 0x006a1e23/0x006a1e3c/0x006a1e43; EDI is pushed at 0x006a1dea and popped at 0x006a1e1e/0x006a1e3b/0x006a1e40; EAX and EDX are caller-saved scratch",
+    "termination": "RET 0x8 at 0x006a1e24, 0x006a1e3d and 0x006a1e44",
+    "derived_from": "No ABI section was published in the worker briefing (evidence.missing_sections = [ABI]). Every field above was derived from the 47-instruction body and from the caller record reconstruction/metadata/pkg-property-safe-wave9/006a1e50.json.",
+    "tail_jump_precedent": "0x006a1e70 in App::DirectPropertyList::GetPropertyAlt jumps to this entry with ECX and both stack words already in place, so the RET 0x8 cleanup and the two-argument frame are fixed by that path as well as by the three exits."
+  },
+  "observed_mechanics": [
+    "0x006a1de0-0x006a1de3: PUSH ESI, MOV ESI,ECX, then MOVZX EAX,byte ptr [ESI+0x2c] loads the zero-extended mode byte.",
+    "0x006a1de7/0x006a1deb: EDX takes the +0x18 word and EDI takes the +0x1c word.",
+    "0x006a1def: LEA ECX,[ESP+0x10] with four words already pushed forms the address of this frame's own id stack slot, which is the third argument of the direct call.",
+    "0x006a1dee-0x006a1df5: four pushes in the order mode byte, id slot address, +0x1c word, +0x18 word; the callee therefore sees (entries_begin=+0x18, entries_end=+0x1c, id pointer, lookup mode).",
+    "0x006a1df6: CALL 0x00612db0 is the only direct call; 0x006a1dff ADD ESP,0x10 pops its four arguments, which fixes the callee as a cdecl function of three live arguments plus one dead word.",
+    "0x006a1dfb: EDX is reloaded from the caller's id stack slot after the call; the reload is a register reload, not an observable mutation, because the 33-instruction body of 0x00612db0 only reads the id pointer and never writes through it.",
+    "0x006a1e02/0x006a1e04: CMP EAX,EDI with JZ treats a returned end pointer as a miss.",
+    "0x006a1e06/0x006a1e08: CMP EDX,[EAX] with JC is an unsigned comparison of the id against the entry key at offset 0, so an id strictly below the key is also a miss.",
+    "0x006a1e0a-0x006a1e0f: LEA ECX,[EAX+0x18] and CMP EAX,ECX/JNZ maps a self-offset sentinel node onto the end pointer; the stride 0x18 is the entry size.",
+    "0x006a1e11: all three miss tests converge on MOV EAX,EDI, which substitutes the +0x1c end pointer.",
+    "0x006a1e17-0x006a1e1f: the out pointer is reloaded from the caller frame, EAX is advanced by 4 and that ADDRESS is stored through the out pointer; the dword stored inside the entry is never loaded.",
+    "0x006a1e21: MOV AL,0x1 fixes the hit-path return byte.",
+    "0x006a1e27-0x006a1e2c: the +0x30 word is loaded and tested; a null word diverts to 0x006a1e40.",
+    "0x006a1e2e-0x006a1e39: otherwise [ECX] is loaded as a vtable, the out pointer then the id word are pushed, the slot word at displacement 0x20 is loaded into EDX and called with the +0x30 object still in ECX.",
+    "0x006a1e3b-0x006a1e3d: the epilogue does not touch AL, so the +0x20 callee's return byte is this function's return byte.",
+    "0x006a1e40-0x006a1e44: XOR AL,AL is the no-parent return."
+  ],
+  "callee_ports": [
+    {
+      "va": "0x00612db0",
+      "name": "FUN_00612db0",
+      "kind": "direct_call",
+      "calling_convention": "cdecl",
+      "receiver_register": null,
+      "ordinary_stack_arguments": [
+        {
+          "position": 1,
+          "entry_offset": "ESP+0x04",
+          "value": "receiver+0x18",
+          "type": "OpaquePropertyEntry*"
+        },
+        {
+          "position": 2,
+          "entry_offset": "ESP+0x08",
+          "value": "receiver+0x1c",
+          "type": "OpaquePropertyEntry*"
+        },
+        {
+          "position": 3,
+          "entry_offset": "ESP+0x0c",
+          "value": "address of the caller's id stack slot",
+          "type": "const uint32_t*"
+        },
+        {
+          "position": 4,
+          "entry_offset": "ESP+0x10",
+          "value": "zero-extended byte at receiver+0x2c",
+          "type": "uint8_t",
+          "liveness": "dead at the callee; the callee body reads only its own ESP+0x04, ESP+0x08 and ESP+0x10"
+        }
+      ],
+      "ret_form": "plain RET",
+      "stack_cleanup_bytes": 0,
+      "return_value": "pointer to the first entry whose key is not below the key word, or entries_end",
+      "behavior": "unsigned lower bound over a 0x18-stride array: the count is the byte distance between the two span words divided by 0x18, the probe index is count>>1 and the comparison is CMP/JNC, therefore unsigned",
+      "modeled_as": "g_dogfood_006a1de0_ports.lower_bound_00612db0, default null"
+    }
+  ],
+  "indirect_dispatch_ports": [
+    {
+      "va": "vtable+0x20",
+      "shape": "__thiscall returning bool with (receiver, uint32_t id, Property** out); the receiver is the +0x30 object, the id is the reloaded id word and the out pointer is the caller's second stack word",
+      "status": "runtime_gate",
+      "va_evidence": "0x01408820 displacement 0x20 holds 0x006a1de0"
+    }
+  ],
+  "layout": {
+    "receiver_type": "OpaquePropertyList",
+    "modeled_prefix_bytes": 52,
+    "prefix_note": "0x34 is the end of the highest field this body reads; the class size is not recovered by this body",
+    "fields": [
+      {
+        "offset": "0x00",
+        "size_bytes": 4,
+        "name": "vtable",
+        "meaning": "class vtable pointer",
+        "evidence": "not read by this body; proved for the class because the +0x30 object is dereferenced as [dword 0] then [dword 0 + 0x20] at 0x006a1e32/0x006a1e36, and because the in-repo analogue reconstruction/staging/pkg-property-list-wave6 reads the same class word as `vtable`",
+        "confidence": "medium"
+      },
+      {
+        "offset": "0x18",
+        "size_bytes": 4,
+        "name": "entries_begin_18",
+        "type": "OpaquePropertyEntry*",
+        "meaning": "first element of the sorted entry span",
+        "evidence": "MOV EDX,[ESI+0x18] at 0x006a1de7, pushed as the first argument of 0x00612db0"
+      },
+      {
+        "offset": "0x1c",
+        "size_bytes": 4,
+        "name": "entries_end_1c",
+        "type": "OpaquePropertyEntry*",
+        "meaning": "end of the sorted entry span and the miss sentinel",
+        "evidence": "MOV EDI,[ESI+0x1c] at 0x006a1deb; compared against the callee return at 0x006a1e02 and reloaded into EAX on every miss at 0x006a1e11"
+      },
+      {
+        "offset": "0x2c",
+        "size_bytes": 1,
+        "name": "lookup_mode_2c",
+        "type": "uint8_t",
+        "meaning": "mode byte forwarded to the lookup helper",
+        "evidence": "MOVZX EAX,byte ptr [ESI+0x2c] at 0x006a1de3, pushed as the fourth word of 0x00612db0",
+        "liveness": "dead at the callee; no behaviour of this body depends on its value"
+      },
+      {
+        "offset": "0x30",
+        "size_bytes": 4,
+        "name": "parent_30",
+        "type": "OpaquePropertyList*",
+        "meaning": "second list queried through its +0x20 slot when the local span misses",
+        "evidence": "MOV ECX,[ESI+0x30] at 0x006a1e27, TEST ECX,ECX at 0x006a1e2a, then [ECX] and [EAX+0x20] at 0x006a1e32/0x006a1e36",
+        "naming_provenance": "the word 'parent' is inherited from the in-repo analogue record reconstruction/metadata/wave6-resources/006a2470.json layout_evidence and from reconstruction/staging/pkg-property-list-wave6; the relationship itself (parent, owner or aggregate) is not proved by this body",
+        "confidence": "medium"
+      }
+    ],
+    "opaque_ranges": [
+      "0x04-0x17",
+      "0x20-0x2b",
+      "0x2d-0x2f"
+    ]
+  },
+  "entry_layout": {
+    "type": "OpaquePropertyEntry",
+    "stride": "0x18",
+    "stride_evidence": "LEA ECX,[EAX+0x18] at 0x006a1e0a and the LEA EDX,[EAX+EAX*2] / [ESI+EDX*0x8] index step inside 0x00612db0",
+    "fields": [
+      {
+        "offset": "0x00",
+        "size_bytes": 4,
+        "name": "key_00",
+        "type": "uint32_t",
+        "meaning": "sort key compared against the requested id",
+        "evidence": "CMP EDX,dword ptr [EAX] at 0x006a1e06 and CMP dword ptr [ESI+EDX*0x8],EDI at 0x00612dde"
+      },
+      {
+        "offset": "0x04",
+        "size_bytes": 4,
+        "name": "property_slot_04",
+        "type": "opaque 4-byte word",
+        "meaning": "the word whose ADDRESS is handed to the caller",
+        "evidence": "ADD EAX,0x4 at 0x006a1e1b followed by MOV [ECX],EAX at 0x006a1e1f stores the address, not the value",
+        "confidence": "low; the pointee type is unresolved"
+      }
+    ],
+    "opaque_ranges": [
+      "0x08-0x17"
+    ]
+  },
+  "vtables": [
+    {
+      "table": "0x01408820",
+      "data_xref_from": "0x01408840",
+      "referenced_by_vtables": [
+        "0x01408820"
+      ],
+      "primary_slot_displacement": "0x20",
+      "primary_slot_index_zero_based": 8,
+      "primary_table_word": "0x006a1de0",
+      "live_memory_read": "0x01408820 length 128 bytes from SporeApp.exe",
+      "observed_words": [
+        "0x00:0x00432be0",
+        "0x04:0x00432b50",
+        "0x08:0x006a1c80",
+        "0x0c:0x006abe20",
+        "0x10:0x00432940",
+        "0x14:0x006a2e20",
+        "0x18:0x006a2ef0",
+        "0x1c:0x006a2470",
+        "0x20:0x006a1de0",
+        "0x24:0x006a2530",
+        "0x28:0x006a24d0",
+        "0x2c:0x006a2a40",
+        "0x30:0x006a2f10",
+        "0x34:0x006a14d0",
+        "0x38:0x006a1510",
+        "0x3c:0x006a2f60",
+        "0x40:0x006a1540",
+        "0x44:0x006a3070",
+        "0x48:0x00000000",
+        "0x4c:0x00432be0"
+      ],
+      "modeled_window": "0x00-0x23 with opaque words up to 0x1c",
+      "limit": "The table proves function-pointer storage and the slot arithmetic. It does not prove which runtime object supplies this table at the +0x30 field, nor the semantics of the null word at +0x48."
+    }
+  ],
+  "caller_visible_contract": {
+    "role": "prerequisite boundary; 0x006a1e50 App::DirectPropertyList::GetPropertyAlt is deferred behind this record",
+    "receiver_validity": "The receiver in ECX must be a live object of the modelled class. The body dereferences +0x18, +0x1c, +0x2c unconditionally, so all four words must be readable. A null receiver is not handled and must not be passed.",
+    "span_validity": "+0x18 and +0x1c are passed to the lookup helper as an ordered span; when they are equal the helper returns +0x18 immediately, which the body then treats as a miss.",
+    "arguments": "property_id is read only. The body passes the ADDRESS of its own id stack slot to the helper, and the helper only reads through it, so the id is not an in/out parameter and a caller may pass any 32-bit value including 0 and 0xffffffff.",
+    "return_semantics": {
+      "type": "bool",
+      "register": "AL",
+      "hit": "0x1 when the helper's result is neither the +0x1c end pointer nor a self-offset sentinel and the entry key is not above the id; in that case the out pointer receives the ADDRESS of the entry word at +0x04",
+      "miss_with_second_list": "AL is whatever the +0x20 implementation of the +0x30 object returns; the body neither writes the out pointer nor inspects the value",
+      "miss_without_second_list": "0x0 and the out pointer is left untouched"
+    },
+    "out_pointer_contract": "The caller must pass a writable 4-byte slot. It is written only on the hit path. On both miss paths the body does not touch it, and on the forwarded miss path the callee owns it.",
+    "side_effect_order": [
+      "1. one cdecl call to 0x00612db0 with the span words, the address of the id word and the mode byte, in that stack order",
+      "2. at most one store through the out pointer, on the hit path only",
+      "3. at most one thiscall through the +0x20 slot of the +0x30 object, on the miss path only, with the out pointer as the callee's second stack word and the id as its first"
+    ],
+    "reentrancy": "The +0x20 forward is a plain call, not a tail jump, so a cycle in the +0x30 chain is not broken by this frame; chain termination is a property of the data, not of this body.",
+    "what_a_caller_may_assume": [
+      "the receiver is not modified by this body in any observed path",
+      "the out pointer receives the address of a 4-byte word inside the entry, never a dereferenced property value",
+      "a false return never means the out pointer was written",
+      "the callee reclaims both stack words, so a caller must not adjust ESP after the call"
+    ],
+    "what_a_caller_must_not_assume": [
+      "that the entry word at +0x04 is itself a Property pointer; only its address is observable here",
+      "that the +0x30 object is the same object as the receiver or a parent of it; only that it answers slots +0x1c and +0x20 with these shapes",
+      "that the mode byte at +0x2c influences the outcome"
+    ]
+  },
+  "semantic_findings": [
+    "The function is a sorted-span lookup with a three-test miss refinement and a virtual forward, not a chain walk in this frame: the recursion lives in the +0x20 callee.",
+    "0x00612db0 is a shared, class-agnostic unsigned lower bound over a 0x18-stride array; the class contributes only the span words and the key position inside the entry.",
+    "The id is passed by address to the helper purely so the helper can read the key from the caller's frame; it is not an in/out parameter, so the reload at 0x006a1dfb is a register reload.",
+    "The mode byte at +0x2c is pushed and then ignored by the only callee that receives it, so it is dead in this body.",
+    "The hit path hands the caller the ADDRESS of the entry word at +0x04, which is why the out parameter is a pointer-to-pointer in the SDK signature; the stored value is never loaded here.",
+    "The self-offset guard at 0x006a1e0a maps a node equal to node+0x18 onto the miss sentinel; no valid 32-bit pointer can satisfy that identity, so the guard is unreachable for a well-formed span and is reproduced as an inert check.",
+    "The forwarded miss path returns the callee's AL untouched, so the bool of this function is a union of the local hit test and the delegated implementation's own result."
+  ],
+  "type_dependencies": [
+    "OpaquePropertyList (package-local, offsets 0x00, 0x18, 0x1c, 0x2c, 0x30)",
+    "OpaquePropertyEntry (package-local, stride 0x18, key at 0x00, address-only word at 0x04)",
+    "OpaqueProperty (forward declared only; size, layout and ownership unresolved)",
+    "OpaquePropertyListVtable (package-local window 0x00-0x23, named slots +0x1c and +0x20)",
+    "0x00612db0 cdecl port type OpaquePropertyListLowerBound00612db0"
+  ],
+  "analogue_cross_checks": [
+    {
+      "va": "0x006a2470",
+      "package": "wave6-resources",
+      "relation": "sibling method in the same table; shares the +0x18/+0x1c/+0x2c span and the +0x30 forward, at slot +0x1c",
+      "record": "reconstruction/metadata/wave6-resources/006a2470.json"
+    },
+    {
+      "va": "0x006a1e50",
+      "package": "PKG-PROPERTY-SAFE-WAVE9",
+      "relation": "derived override that tail-jumps to this entry with the same ECX and the same two stack words; independently fixes the RET 0x8 cleanup and the argument order",
+      "record": "reconstruction/metadata/pkg-property-safe-wave9/006a1e50.json"
+    },
+    {
+      "va": "0x006a24d0",
+      "package": "wave6-resources",
+      "relation": "sibling method at slot +0x28 of the same table",
+      "record": "reconstruction/metadata/wave6-resources/006a24d0.json"
+    },
+    {
+      "va": "0x006a2a40",
+      "package": "PKG-PROPERTY-SAFE-WAVE9",
+      "relation": "sibling method at slot +0x2c of the same table",
+      "record": "reconstruction/metadata/pkg-property-safe-wave9/006a2a40.json"
+    },
+    {
+      "va": "0x006a3070",
+      "package": "PKG-PROPERTY-SAFE-WAVE9",
+      "relation": "sibling method at slot +0x44 of the same table",
+      "record": "reconstruction/metadata/pkg-property-safe-wave9/006a3070.json"
+    }
+  ],
+  "corroborating_staging_analogue": {
+    "path": "reconstruction/staging/pkg-property-list-wave6",
+    "note": "That package already models this VA with the same field offsets, the same three-branch miss test and the same parent forward, but inlines the lower bound instead of calling the shared helper. This package keeps the direct call to 0x00612db0 behind a named cdecl port and adds the argument order, the dead mode word and the address-only hit store that the inline version cannot show. That package types the entry word at +0x04 as an inline 0x14-byte object; this record claims only the address and leaves the pointee unresolved."
+  },
+  "runtime_gates": [
+    "The runtime object that supplies the +0x30 word and its class identity are unobserved; the chain depth and its termination condition are data dependent.",
+    "The concrete implementation behind +0x20 (0x006a1de0 in the table read here, but the runtime table of the +0x30 object was not captured) is a runtime gate.",
+    "The pointee type and ownership of the word at entry+0x04 are unresolved; no runtime observation of the returned address was captured.",
+    "Whether the entry span is sorted at runtime, and therefore whether the unsigned lower bound is a valid search, is a runtime property of the data.",
+    "No original-process invocation and no indirect-caller trace were captured for this record."
+  ],
+  "unresolved_questions": [
+    "No ABI projection was published in the worker briefing (evidence.missing_sections = [ABI]); the whole ABI block above is derived from the 47-instruction body, from the RET 0x8 exits and from the tail-jump caller record 0x006a1e50.",
+    "The concrete class of the object at +0x30 is inferred, not proved: it answers slots +0x1c and +0x20 with the shapes this table provides, and the in-repo analogue calls that field 'parent'.",
+    "Whether the 'parent' relation is inheritance, aggregation or an override chain, and how the chain terminates.",
+    "The type, size and ownership of the word at entry+0x04; only its address is observable.",
+    "The runtime value range and meaning of the mode byte at +0x2c, which is dead in this body.",
+    "The recovered class size of PropertyList; 0x34 is only this body's read frontier, while the analogue record reports a 56-byte gtype.",
+    "Why the table word at +0x48 is null and whether 0x4c starts a second related table."
+  ],
+  "confidence": {
+    "overall": 0.9,
+    "identity": 0.98,
+    "abi": 0.95,
+    "mechanics": 0.95,
+    "layout": 0.9,
+    "virtual_dispatch": 0.85,
+    "semantics": 0.7,
+    "runtime": 0.0
+  },
+  "reconstruction_confidence": 0.9,
+  "runtime_validation": 0,
+  "runtime_validation_status": "not_run",
+  "runtime_validation_reason": "Original-process execution requires human approval and the machine lock; no differential trace was run for this record.",
+  "review_status": "pending_integrator_review",
+  "integration_status": "staged",
+  "scope": {
+    "staging_package": "reconstruction/staging/pkg-orchestrate-dogfood-006a1de0",
+    "metadata_record": "reconstruction/metadata/pkg-orchestrate-dogfood-006a1de0/006a1de0.json",
+    "owned_vas": [
+      "0x006a1de0"
+    ],
+    "files_created": [
+      "reconstruction/staging/pkg-orchestrate-dogfood-006a1de0/dogfood_006a1de0.hpp",
+      "reconstruction/staging/pkg-orchestrate-dogfood-006a1de0/dogfood_006a1de0.cpp",
+      "reconstruction/staging/pkg-orchestrate-dogfood-006a1de0/dogfood_006a1de0_model_test.cpp",
+      "reconstruction/metadata/pkg-orchestrate-dogfood-006a1de0/006a1de0.json"
+    ],
+    "src_modified": false,
+    "source_manifest_modified": false,
+    "other_packages_modified": false,
+    "port_policy": "The single direct callee 0x00612db0 is a package-local cdecl port with a null default; the +0x20 dispatch is expressed as a vtable slot on the modelled receiver. No helper VA is promoted to a record and no global type record was created.",
+    "state_policy": "The model writes no global or process state; the only store is through the caller's out pointer on the hit path."
+  },
+  "live_provenance": {
+    "program": "SporeApp.exe",
+    "language": "x86:LE:32:default",
+    "compiler_spec": "windows",
+    "image_base": "0x00400000",
+    "analysis_basis": "Read-only live Ghidra MCP queries against the open SporeApp.exe program; the decompiler output is treated as evidence, not as truth, and the binary has no MSVC RTTI.",
+    "tools": [
+      "ghidra_get_function_by_address",
+      "ghidra_decompile_function",
+      "ghidra_disassemble_function",
+      "ghidra_read_memory",
+      "ghidra_get_xrefs_to",
+      "openspore ghidra_* briefing bundle"
+    ],
+    "ghidra_mutations": 0,
+    "ghidra_saves": 0,
+    "function": "App::PropertyList::GetPropertyAlt at 0x006a1de0, Ghidra body 0x006a1de0..0x006a1e46, 47 instructions to 0x006a1e44.",
+    "helper": "0x00612db0 decompiled and disassembled live: 33 instructions, reads its own ESP+0x04, ESP+0x08 and ESP+0x10, unsigned CMP/JNC probe, plain RET.",
+    "xrefs_to": [
+      {
+        "from": "0x01408840",
+        "type": "DATA",
+        "interpretation": "vtable slot +0x20 of the table at 0x01408820"
+      },
+      {
+        "from": "0x006a1e70",
+        "type": "UNCONDITIONAL_CALL",
+        "from_function": "App::DirectPropertyList::GetPropertyAlt",
+        "interpretation": "tail jump, not a call; inherits this receiver and both stack words"
+      }
+    ],
+    "xrefs_from": [
+      {
+        "to": "0x00612db0",
+        "callsite": "0x006a1df6",
+        "type": "direct-call"
+      }
+    ]
+  },
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/pkg-orchestrate-dogfood-006a1de0 reconstruction/staging/pkg-orchestrate-dogfood-006a1de0/dogfood_006a1de0.cpp and .../dogfood_006a1de0_model_test.cpp",
+    "model_o0_command": "clang++ -m32 -std=c++17 -O0 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg-orchestrate-dogfood-006a1de0 <sources> -o /tmp/opencode/dogfood/t_006a1de0_o0 && /tmp/opencode/dogfood/t_006a1de0_o0",
+    "model_o2_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg-orchestrate-dogfood-006a1de0 <sources> -o /tmp/opencode/dogfood/t_006a1de0_o2 && /tmp/opencode/dogfood/t_006a1de0_o2",
+    "model_ndebug_command": "clang++ -m32 -std=c++17 -O2 -DNDEBUG -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg-orchestrate-dogfood-006a1de0 <sources> -o /tmp/opencode/dogfood/t_006a1de0_o2_ndebug && /tmp/opencode/dogfood/t_006a1de0_o2_ndebug",
+    "format_command": "clang-format --dry-run --Werror --style='{BasedOnStyle: Google, FixNamespaceComments: false}' <the three C++ files>",
+    "json_command": "python3 -m json.tool reconstruction/metadata/pkg-orchestrate-dogfood-006a1de0/006a1de0.json",
+    "diff_command": "git diff --no-index --check /dev/null <each of the four files>",
+    "negative_control": "A mutated copy of the model test in /tmp (hit expectation pointed at the wrong entry) exits 1, so the checks are not vacuous.",
+    "codegen_cross_check": "objdump of the -O0 build shows ECX consumed as the receiver, the id slot address passed as the third cdecl word, the four pushed port words in the original order, the +0x20 dispatch pushing the out pointer then the id, and `ret $0x8`."
+  },
+  "verification_results": {
+    "x86_32_werror_syntax": "passed",
+    "focused_model_o0": "passed",
+    "focused_model_o2": "passed",
+    "focused_model_o2_ndebug": "passed",
+    "clang_format": "passed",
+    "json": "passed",
+    "scoped_diff_check": "passed",
+    "negative_control": "passed",
+    "runtime_validation": "not run"
+  },
+  "focused_test_evidence": {
+    "test_count": 10,
+    "assertion_helper": "check(bool) with a file-scope failure counter; no external assertion macro",
+    "tests": [
+      "test_lower_bound_port_receives_span_key_and_mode",
+      "test_hit_path_stores_entry_property_slot_address",
+      "test_lower_bound_end_pointer_is_a_miss",
+      "test_key_below_entry_key_is_a_miss",
+      "test_key_above_entry_key_is_still_a_hit",
+      "test_zero_key_matches_zero_entry_key",
+      "test_miss_without_parent_returns_false_and_keeps_out_pointer",
+      "test_miss_forwards_the_parent_slot_return_value",
+      "test_ports_are_null_by_default",
+      "test_modeled_signatures"
+    ],
+    "not_covered": "The self-offset sentinel branch at 0x006a1e0a is implemented but no test can trigger it: no 32-bit pointer p satisfies p + 0x18 == p, so the branch is unreachable for any port return value that is a real address."
+  }
+}

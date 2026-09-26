@@ -1,6 +1,6 @@
 """Contract tests for the OpenSpore MCP tool surface (tools/mcp).
 
-Covers the S2-Subagent-6 tool contract audit: all 21 tools listed with
+Covers the S2-Subagent-6 tool contract audit: all 24 tools listed with
 schemas (name/description/inputSchema with type/properties/required),
 uniform in-band error shape (``status=error`` + ``ok=False`` + ``code``
 + ``message``), success shape (``status=ok``), no ``not_implemented``
@@ -16,7 +16,8 @@ import unittest
 from tools.mcp import registry
 
 EXPECTED_TOOLS = [
-    "pipeline_state", "target_select",
+    "pipeline_state", "target_select", "function_context",
+    "frontier_context", "reconstruction_status",
     "kg_query", "kg_neighbors", "kg_record",
     "dossier_read", "dossier_regenerate",
     "ghidra_decompile", "ghidra_function", "ghidra_search",
@@ -43,6 +44,8 @@ EXPECTED_REQUIRED = {
 # Conditional one-of requirements: at least one alias per group must be
 # supplied (documented in description prose + required_one_of note).
 EXPECTED_ONE_OF = {
+    "function_context": [["va", "address"]],
+    "reconstruction_status": [["va", "address"]],
     "dossier_read": [["topic", "path"]],
     "dossier_regenerate": [["topic", "path"]],
     "ghidra_decompile": [["function", "address", "rva", "name"]],
@@ -57,7 +60,7 @@ EXPECTED_ONE_OF = {
 
 
 class TestToolContract(unittest.TestCase):
-    def test_all_21_tools_listed_with_schemas(self):
+    def test_all_24_tools_listed_with_schemas(self):
         tools = registry.list_tools()
         self.assertEqual([t["name"] for t in tools], EXPECTED_TOOLS)
         for tool in tools:

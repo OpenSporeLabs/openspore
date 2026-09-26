@@ -9,9 +9,11 @@
 
 #if defined(_MSC_VER)
 #define WAVE6_CDECL __cdecl
+#define WAVE6_STDCALL __stdcall
 #define WAVE6_THISCALL __thiscall
 #else
 #define WAVE6_CDECL __attribute__((cdecl))
+#define WAVE6_STDCALL __attribute__((stdcall))
 #define WAVE6_THISCALL __attribute__((thiscall))
 #endif
 
@@ -80,7 +82,7 @@ struct Mesh {
   std::uint32_t indicesCount;
   std::uint32_t firstVertex;
   std::uint32_t vertexCount;
-  VertexBuffer* pVertexBuffers;
+  VertexBuffer** pVertexBuffers;
 };
 
 struct GraphicsActiveState {
@@ -119,9 +121,10 @@ static_assert(offsetof(GraphicsActiveState, flags) == 0xd4,
               "Graphics active-state flag offset");
 
 struct TransformBoundaryPorts {
-  using OffsetTransform = Vector3* (*)(Vector3*, const Vector3*,
-                                       const Transform*, const Transform*);
-  using RotationTransform = Matrix3* (*)(Matrix3*, const Transform*);
+  using OffsetTransform = Vector3*(WAVE6_CDECL*)(Vector3*, const Vector3*,
+                                                 const Matrix3*);
+  using RotationTransform = Matrix3*(WAVE6_CDECL*)(Matrix3*, const Matrix3*,
+                                                   const Matrix3*);
 
   OffsetTransform offset_transform = nullptr;
   RotationTransform rotation_transform = nullptr;
@@ -134,19 +137,24 @@ struct MeshBoundaryPorts {
 };
 
 struct D3dBoundaryPorts {
-  using FlushRenderState = void (*)();
-  using PrepareMesh = std::int32_t (*)(OpaquePointer, Mesh*);
-  using GetActiveState = OpaquePointer (*)();
-  using SetStreamSource = std::int32_t (*)(OpaquePointer, std::uint32_t,
-                                           std::uint32_t, std::uint32_t,
-                                           std::uint32_t);
-  using BindIndexBuffer = std::int32_t (*)(OpaquePointer, OpaquePointer);
-  using DrawPrimitive = std::int32_t (*)(OpaquePointer, std::uint32_t,
-                                         std::uint32_t, std::uint32_t);
-  using DrawIndexed = std::int32_t (*)(OpaquePointer, std::uint32_t,
-                                       std::uint32_t, std::uint32_t,
-                                       std::uint32_t, std::uint32_t,
-                                       std::uint32_t);
+  using FlushRenderState = void(WAVE6_CDECL*)();
+  using PrepareMesh = std::int32_t(WAVE6_CDECL*)(GraphicsActiveState*, Mesh*);
+  using GetActiveState = OpaquePointer(WAVE6_CDECL*)();
+  using SetStreamSource = std::int32_t(WAVE6_STDCALL*)(OpaquePointer,
+                                                       std::uint32_t,
+                                                       OpaquePointer,
+                                                       std::uint32_t,
+                                                       std::uint32_t);
+  using BindIndexBuffer = std::int32_t(WAVE6_STDCALL*)(OpaquePointer,
+                                                       OpaquePointer);
+  using DrawPrimitive = std::int32_t(WAVE6_STDCALL*)(OpaquePointer,
+                                                     std::uint32_t,
+                                                     std::uint32_t,
+                                                     std::uint32_t);
+  using DrawIndexed = std::int32_t(WAVE6_STDCALL*)(OpaquePointer, std::uint32_t,
+                                                   std::uint32_t, std::uint32_t,
+                                                   std::uint32_t, std::uint32_t,
+                                                   std::uint32_t);
 
   FlushRenderState flush_render_state = nullptr;
   PrepareMesh prepare_mesh = nullptr;
@@ -166,12 +174,12 @@ extern MatrixType g_transform_type_016f96a0;
 extern const Matrix4* g_transform_slot_016fa380;
 extern Matrix4 g_transform_storage_016fa4f0;
 extern OpaquePointer g_device_016f89d0;
-extern OpaquePointer g_active_state_016f6568;
+extern GraphicsActiveState* g_active_state_016f6568;
 extern std::uint32_t g_state_016f9110;
 extern std::uint32_t g_state_01718610;
 extern std::uint32_t g_state_01718614;
 extern std::uint32_t g_state_01718618;
-extern std::uint32_t g_stream_cache_016f913c[96];
+extern std::uint32_t g_stream_cache_016f9138[12];
 extern std::uint32_t g_stream_limit_015d0934;
 extern std::uint32_t g_current_primitive_016f85a8;
 extern OpaquePointer g_cached_index_buffer_016f8afc;

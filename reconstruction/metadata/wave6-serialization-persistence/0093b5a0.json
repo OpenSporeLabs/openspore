@@ -1,0 +1,116 @@
+{
+  "schema": "wave6-serialization-persistence.function-reconstruction.v1",
+  "package": "wave6-serialization-persistence",
+  "address": "0x0093b5a0",
+  "normalized_name": "stream_child_teardown_0093b5a0",
+  "imported_name": "IO::StreamChild::Open",
+  "status": "integrated_static_ready_with_imported_name_conflict_and_opaque_cleanup_ports",
+  "implementation": {
+    "language": "C++17",
+    "header": "src/reconstruction/wave6_serialization_persistence/stream_lifecycle.hpp",
+    "source": "src/reconstruction/wave6_serialization_persistence/stream_lifecycle.cpp",
+    "model_test": "src/reconstruction/wave6_serialization_persistence/stream_lifecycle_model_test.cpp"
+  },
+  "binary": {
+    "program": "SporeApp.exe",
+    "version": "3.1.0.22",
+    "architecture": "x86:LE:32",
+    "image_base": "0x00400000"
+  },
+  "abi": {
+    "calling_convention": "__thiscall",
+    "receiver_register": "ECX",
+    "receiver_type": "StreamChild*",
+    "stack_arguments": [],
+    "return_type": "void",
+    "termination": "plain RET",
+    "contradiction": "The imported prototype names an Open method with parent, position, and size arguments, but the machine body reads none of those stack words."
+  },
+  "layout": {
+    "type": "StreamChildTeardownWindow",
+    "size_bytes": 52,
+    "status": "package-local observed teardown window; the active parent is at 0x04 and the imported StreamChild prototype does not describe the live offsets",
+    "touched_fields": [
+      {"offset": "0x00", "meaning": "active vtable pointer"},
+      {"offset": "0x04", "meaning": "active parent pointer"},
+      {"offset": "0x0c", "meaning": "opaque state word cleared during parent teardown"},
+      {"offset": "0x10", "meaning": "opaque state word cleared during parent teardown"},
+      {"offset": "0x14", "meaning": "first owned block released through allocator"},
+      {"offset": "0x1c", "meaning": "opaque state word cleared"},
+      {"offset": "0x20", "meaning": "opaque state word cleared"},
+      {"offset": "0x24", "meaning": "second owned block released through allocator"},
+      {"offset": "0x2c", "meaning": "opaque state word cleared"},
+      {"offset": "0x30", "meaning": "opaque state word cleared"}
+    ]
+  },
+  "observed_order": [
+    {"order": 1, "address": "0x0093b5a6", "operation": "store active vtable 0x0143eaac before any cleanup"},
+    {"order": 2, "guard": "parent + 0x04 is nonzero", "addresses": ["0x0093b5ac", "0x0093b5b1"], "operation": "call 0x0093af00 with ECX as the child and ignore its boolean result"},
+    {"order": 3, "addresses": ["0x0093b5b9", "0x0093b5bc", "0x0093b5bf", "0x0093b5c2", "0x0093b5c5", "0x0093b5c8"], "operation": "zero offsets 0x1c, 0x20, 0x2c, 0x30, 0x0c, and 0x10 in that order"},
+    {"order": 4, "operation": "reload the active parent from child + 0x04 after the field clears"},
+    {"order": 5, "guard": "reloaded parent is nonzero", "addresses": ["0x0093b5cf", "0x0093b5d1", "0x0093b5d4"], "operation": "call parent vtable + 0x08 with the reloaded parent in ECX after the listed opaque words are cleared"},
+    {"order": 6, "address": "0x0093b5d6", "operation": "store null to child + 0x04 after the parent release"},
+    {"order": 7, "guard": "offset 0x14 is nonzero", "addresses": ["0x0093b5d9", "0x0093b5e0", "0x0093b5e6", "0x0093b5e7"], "operation": "load allocator pointer from global 0x016c8b44 into ECX and call 0x009276c0 thiscall with the first block on the stack"},
+    {"order": 8, "guard": "offset 0x24 is nonzero", "addresses": ["0x0093b5ec", "0x0093b5f3", "0x0093b5f9", "0x0093b5fa"], "operation": "load allocator pointer from global 0x016c8b44 into ECX again and call 0x009276c0 thiscall with the second block on the stack"},
+    {"order": 9, "address": "0x0093b600", "operation": "store final vtable 0x013f3a68"},
+    {"order": 10, "address": "0x0093b607", "operation": "plain RET without releasing the receiver"}
+  ],
+  "fan_in": {
+    "direct_call_xrefs": 7,
+    "distinct_caller_functions": 6,
+    "callers": [
+      "0x006ab120",
+      "0x008d6ed0",
+      "0x0091c640",
+      "0x0093b610",
+      "0x00e4c130"
+    ],
+    "additional_call_site": "0x00e4c2f7",
+    "final_vtable": "0x013f3a68",
+    "final_vtable_xref_count": 39
+  },
+  "delegated_boundaries": [
+    {"address": "0x0093af00", "role": "flush pending child writes", "calling_convention": "__thiscall", "receiver": "child in ECX", "return_use": "ignored"},
+    {"address": "0x009276c0", "role": "allocator release", "calling_convention": "__thiscall", "receiver": "allocator loaded from global 0x016c8b44 into ECX", "block_argument": "owned block on the stack", "stack_cleanup": "callee RET 0x4"},
+    {"address": "parent vtable + 0x08", "role": "parent Release", "calling_convention": "__thiscall"}
+  ],
+  "name_conflict": {
+    "observation": "The imported Open prototype is not consumed, the body clears all live state, and the immediate caller uses it as teardown before optional deletion.",
+    "normalization": "The integrated name is teardown; no parent attachment, open-position, or open-size behavior is claimed."
+  },
+  "model_tests": [
+    "active vtable publication before cleanup",
+    "active parent read and guard at +0x04",
+    "thiscall flush before the field clearing and parent reload",
+    "exact clear order at +0x1c, +0x20, +0x2c, +0x30, +0x0c, and +0x10",
+    "thiscall parent Release after the opaque words are cleared and before the child parent slot is cleared",
+    "release callback observes the parent still non-null and opaque +0x0c cleared",
+    "first block thiscall release before second block thiscall release",
+    "allocator global is loaded independently for each block release",
+    "final vtable publication",
+    "owned block words remain unchanged",
+    "untouched +0x08, +0x18, and +0x28 words remain unchanged"
+  ],
+  "unresolved_evidence": [
+    "The full concrete StreamChild subtype and ownership of both released blocks are unresolved.",
+    "The side effects and failure behavior of 0x0093af00 are outside this target.",
+    "The allocator implementation and thread-safety contract at 0x016c8b44 are unresolved.",
+    "The Ghidra decompiler's apparent boolean return from the second release is rejected by the plain-RET assembly and ignored by the immediate caller.",
+    "No original runtime teardown trace is claimed."
+  ],
+  "source_provenance": [
+    "ghidra:get_function_by_address(0x0093b5a0)",
+    "ghidra:decompile_function(0x0093b5a0)",
+    "ghidra:disassemble_function(0x0093b5a0)",
+    "ghidra:get_function_callers(0x0093b5a0)",
+    "ghidra:get_function_xrefs(0x0093b5a0)",
+    "ghidra:get_function_callees(0x0093b5a0)",
+    "ghidra:decompile_function(0x0093af00)",
+    "ghidra:disassemble_function(0x0093af00)",
+    "ghidra:decompile_function(0x009276c0)",
+    "ghidra:disassemble_function(0x009276c0)",
+    "ghidra:get_struct_layout(StreamChild)",
+    "ghidra:get_xrefs_to(0x013f3a68)",
+    "ghidra:get_assembly_context(0x00e4c1ff,0x0093b613)"
+  ]
+}

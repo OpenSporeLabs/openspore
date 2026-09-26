@@ -1,0 +1,341 @@
+{
+  "schema": "openspore-worker-metadata-1",
+  "package": "wave13-w1-core-b06",
+  "va": "0x00bb9af0",
+  "address": "0x00bb9af0",
+  "function_address": "0x00bb9af0",
+  "entry_address": "0x00bb9af0",
+  "ghidra_name": "FUN_00bb9af0",
+  "normalized_symbol": "sim_core_b06_00bb9af0",
+  "reconstructed_symbol": "SimCore_00bb9af0_testStarRecordFlags",
+  "declaration": "bool SimCore_00bb9af0_testStarRecordFlags(const sim_core_b06::StarRecord* star, std::uint32_t mask);",
+  "source_files": [
+    "reconstruction/staging/wave13-w1-core-b06/bb9af0_star_record_flag_test.cpp",
+    "reconstruction/staging/wave13-w1-core-b06/sim_core_b06_opaque.hpp",
+    "reconstruction/staging/wave13-w1-core-b06/sim_core_b06_ports_model.cpp",
+    "reconstruction/staging/wave13-w1-core-b06/sim_core_b06_model_test.cpp"
+  ],
+
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "calling_convention_observation": "Receiver is read from ECX at 0x00bb9af0 (8b 41 5c), the single argument is read from the stack at ESP+0x4 (0x00bb9af3, 23 44 24 04), and the function terminates with RET 0x4 (0x00bb9afd, c2 04 00) which pops that one argument. Callee-cleaned one-dword stack argument plus an ECX receiver is __thiscall on x86-32. Corroborated at 0x00ba6c3e: PUSH 0x20000 ; MOV ECX,EDI ; CALL 0x00bb9af0 with no caller-side ESP adjustment.",
+    "return_type": "bool",
+    "return_semantics": "true iff at least one bit selected by `mask` is set in the receiver's +0x5C dword; the result is exactly 0 or 1, never a mask value",
+    "return_register": "EAX",
+    "return_width_bytes": 4,
+    "return_observation": "0x00bb9af7 NEG EAX sets CF from the operand's sign, 0x00bb9af9 SBB EAX,EAX yields 0 (CF clear) or 0xFFFFFFFF (CF set), and 0x00bb9afb NEG EAX maps those to 0 and 1. The full dword is therefore written and bits 8..31 are zero. Every consumer tests AL, never the full dword.",
+    "ret_form": "RET 0x4",
+    "termination": "RET 0x4 at 0x00bb9afd",
+    "stack_cleanup_bytes": 4,
+    "stack_cleanup_owner": "callee",
+    "stack_arguments": [
+      {"offset": "ESP+0x4", "width_bytes": 4, "role": "bit mask", "instruction": "0x00bb9af3: AND EAX,dword ptr [ESP + 0x4]"}
+    ],
+    "ordinary_stack_argument_slots": 1,
+    "saved_registers": [],
+    "receiver": true,
+    "hidden_receiver": "unread by the mask itself; the receiver's +0x5C field IS read, so the receiver must be non-null",
+    "hidden_this_register": "ECX"
+  },
+
+  "layout": {
+    "entry_address": "0x00bb9af0",
+    "body_start": "0x00bb9af0",
+    "body_end": "0x00bb9aff",
+    "body_span_bytes": 16,
+    "body_bytes_hex": "8b415c23442404f7d81bc0f7d8c20400",
+    "instruction_count": 6,
+    "instructions": [
+      {"address": "0x00bb9af0", "bytes": "8b 41 5c", "mnemonic": "MOV", "operands": "EAX,dword ptr [ECX + 0x5C]"},
+      {"address": "0x00bb9af3", "bytes": "23 44 24 04", "mnemonic": "AND", "operands": "EAX,dword ptr [ESP + 0x4]"},
+      {"address": "0x00bb9af7", "bytes": "f7 d8", "mnemonic": "NEG", "operands": "EAX"},
+      {"address": "0x00bb9af9", "bytes": "1b c0", "mnemonic": "SBB", "operands": "EAX,EAX"},
+      {"address": "0x00bb9afb", "bytes": "f7 d8", "mnemonic": "NEG", "operands": "EAX"},
+      {"address": "0x00bb9afd", "bytes": "c2 04 00", "mnemonic": "RET", "operands": "0x4"}
+    ],
+    "padding_after": "none inside the body; the next function begins at 0x00bb9b00 with 80 7c 24 08 00 (ghidra_read_memory 0x00bb9af0,32 shows the body followed immediately by that instruction)",
+    "frame": "none: no PUSH, no SUB ESP, no MOV EBP,ESP, no register save or restore",
+    "reads": "receiver dword at +0x5C; caller dword at ESP+0x4",
+    "writes": "EAX only"
+  },
+
+  "observed_mechanics": [
+    "0x00bb9af0: 8b 41 5c - MOV EAX,dword ptr [ECX + 0x5C] reads the receiver's +0x5C dword",
+    "0x00bb9af3: 23 44 24 04 - AND EAX,dword ptr [ESP + 0x4] is a full 32-bit mask, not a byte or bit test",
+    "0x00bb9af7/0x00bb9af9/0x00bb9afb: NEG/SBB/NEG is the MSVC (x != 0) -> 0/1 idiom, so the result domain is exactly {0,1}",
+    "0x00bb9afd: c2 04 00 - RET 0x4 proves the callee pops the one stack dword",
+    "ghidra_decompile_function renders the body as `return (*(uint *)(param_1 + 0x5c) & param_2) != 0;`, which matches the six instructions exactly",
+    "Sibling 0x00bb9b00 (16 bytes later) is the paired mutator: `if (flag) *(uint*)(this+0x5C) |= mask; else *(uint*)(this+0x5C) &= ~mask;` - the same field, the same mask, complementary direction",
+    "Sibling 0x00bb9b30 reads/writes the same field as `[this+0x5C] & 0xFFFFBFFF | 0x2000`, which forces bit 13 and clears every other bit; a scalar field would not be manipulated with an AND/OR pair and a complement mask",
+    "Sibling 0x00bb9c60 reads the same field as `[this+0x5C] >> 6 & 0xFFFFFF01`, another single-bit probe of the same word",
+    "Ghidra already names 0x00bba900 `Simulator__cStarRecord__GetPlanetRecords`; that function reads `[in_ECX + 0x5C] >> 0xC & 1` (bit 12 of the same field) and its `this` is a cStarRecord",
+    "0x00ba6bb0 at 0x00ba6c3e: PUSH 0x20000 ; MOV ECX,EDI ; CALL 0x00bb9af0 ; 0x00ba6c4a TEST AL,AL ; 0x00ba6c4c JZ - a single-bit mask, AL-tested, guarding a branch",
+    "0x00b93550 at 0x00b9356d: PUSH 0x100 ; MOV ECX,EAX ; CALL 0x00bb9af0 ; 0x00b9357d TEST AL,AL ; 0x00b9357f SETNZ BL - the answer is converted to a byte predicate",
+    "0x00bb2070 at 0x00bb20d9: PUSH 0x4 ; MOV ECX,ESI ; CALL 0x00bb9af0 ; TEST AL,AL ; JNZ, and again at 0x00bb20e6 with PUSH 0x2 - a fallback chain of single-bit probes",
+    "0x00bb21b0 at 0x00bb2266 (PUSH 0x2) and 0x00bb2273 (PUSH 0x1): two more single-bit probes, each followed by TEST AL,AL and a JNZ that skips a block",
+    "Every one of the five masks observed at callsites (0x1, 0x2, 0x4, 0x100, 0x20000) is a single bit, but the AND is a full dword so multi-bit masks are also handled correctly; nothing in the body restricts the argument",
+    "0x00ba6bb0 at 0x00ba6bff and 0x00ba6c06 shows a sibling of the receiver's +0xAC byte gating a call to 0x00b3d2a0 before the flag probe, so the probe is one term in a larger predicate chain"
+  ],
+
+  "fields_and_offsets": [
+    {
+      "receiver": "Simulator::cStarRecord (identified, see sdk_correspondence)",
+      "offset": "0x5C",
+      "width_bytes": 4,
+      "access": "read",
+      "proving_instructions": ["0x00bb9af0: 8b 41 5c"],
+      "sdk_name": "mFlags",
+      "sdk_path": "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cStarRecord.h:106",
+      "confidence": "OBSERVED"
+    },
+    {
+      "receiver": "Simulator::cStarRecord",
+      "offset": "0x48",
+      "width_bytes": 4,
+      "access": "read by sibling 0x00801920 (*(param_1 + 0x48))",
+      "proving_instructions": ["0x00801920: MOV EAX,dword ptr [param_1 + 0x48]"],
+      "sdk_name": "mType (StarType)",
+      "sdk_path": "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cStarRecord.h:100",
+      "confidence": "OBSERVED",
+      "role": "independent corroboration that the receiver is a cStarRecord"
+    },
+    {
+      "receiver": "Simulator::cStarRecord",
+      "offset": "0x4C",
+      "width_bytes": 4,
+      "access": "read by sibling 0x00bb9ae0, written by sibling 0x00bb9ad0, compared against the literal 5 at 0x00bb20d4",
+      "proving_instructions": ["0x00bb9ae0: 8b 41 4c", "0x00bb9ad0: 89 41 4c", "0x00bb20d4: 83 f8 05"],
+      "sdk_name": "mTechLevel (TechLevel)",
+      "sdk_path": "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cStarRecord.h:101",
+      "confidence": "OBSERVED",
+      "role": "independent corroboration of the receiver type"
+    },
+    {
+      "receiver": "Simulator::cStarRecord",
+      "offset": "0x50",
+      "width_bytes": 1,
+      "access": "read by sibling 0x00bb9b20",
+      "proving_instructions": ["0x00bb9b20: MOV EAX,dword ptr [param_1 + 0x50] decompiled as *(undefined1 *)(param_1 + 0x50)"],
+      "sdk_name": "field_50 (bool)",
+      "sdk_path": "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cStarRecord.h:102",
+      "confidence": "OBSERVED",
+      "role": "independent corroboration of the receiver type"
+    },
+    {
+      "receiver": "Simulator::cStarRecord",
+      "offset": "0x84",
+      "width_bytes": 4,
+      "access": "read by 0x00bbaa60 as the first dword of a vector",
+      "proving_instructions": ["0x00bbaa60: *(int *)(param_1 + 0x84)"],
+      "sdk_name": "mPlanets (eastl::vector<cPlanetRecordPtr>)",
+      "sdk_path": "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cStarRecord.h:106",
+      "confidence": "OBSERVED",
+      "role": "independent corroboration of the receiver type"
+    }
+  ],
+
+  "constants": [
+    {"address": "0x00bb9af0", "value": "0x5C", "meaning": "receiver field displacement: the bit-mask word"},
+    {"address": "0x00bb9af3", "value": "0x4", "meaning": "displacement of the caller's mask argument relative to ESP at function entry"},
+    {"address": "0x00bb9afd", "value": "0x4", "meaning": "RET immediate: bytes of stack argument the callee pops"},
+    {"address": "0x00b9356d", "value": "0x100", "meaning": "callsite mask: bit 8 (observed at 0x00b93550)"},
+    {"address": "0x00ba6c3e", "value": "0x20000", "meaning": "callsite mask: bit 17 (observed at 0x00ba6bb0)"},
+    {"address": "0x00bb20d9", "value": "0x4", "meaning": "callsite mask: bit 2 (observed at 0x00bb2070)"},
+    {"address": "0x00bb20e6", "value": "0x2", "meaning": "callsite mask: bit 1 (observed at 0x00bb2070)"},
+    {"address": "0x00bb2266", "value": "0x2", "meaning": "callsite mask: bit 1 (observed at 0x00bb21b0)"},
+    {"address": "0x00bb2273", "value": "0x1", "meaning": "callsite mask: bit 0 (observed at 0x00bb21b0)"},
+    {"address": "0x00bb20d4", "value": "0x5", "meaning": "TechLevel literal compared against [receiver+0x4C] immediately before a flag probe; belongs to the caller, not to this function"}
+  ],
+
+  "globals": [],
+  "virtual_dispatch": [],
+
+  "control_flow": {
+    "switches": "none",
+    "loops": "none",
+    "early_exits": "none",
+    "branches": "none: the body is six straight-line instructions with no jump of any kind",
+    "branch_polarity": "not applicable; the boolean is produced arithmetically by NEG/SBB/NEG rather than by a branch",
+    "note": "0x00bb9b00, the sibling at +0x10, has a real branch (CMP byte ptr [ESP+0x8],0 ; JE) that selects set-versus-clear. This function has none."
+  },
+
+  "callers_evidence": [
+    {"callsite": "0x00b93574", "caller": "0x00b93550", "form": "CALL", "mask": "0x100", "result_use": "0x00b9357d TEST AL,AL ; 0x00b9357f SETNZ BL, then a divide-by-3 computation - the answer becomes a 0/1 factor"},
+    {"callsite": "0x00b96dd1", "caller": "0x00b96d40", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x00b96eb9", "caller": "0x00b96d40", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x00ba6c45", "caller": "0x00ba6bb0", "form": "CALL", "mask": "0x20000", "result_use": "0x00ba6c4a TEST AL,AL ; 0x00ba6c4c JZ 0x00ba6cdc, one term in a long predicate chain over [ESI], [ESI+4] and [ESI+8]"},
+    {"callsite": "0x00ba6f60", "caller": "0x00ba6f20", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x00ba6f79", "caller": "0x00ba6f20", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x00ba6f95", "caller": "0x00ba6f20", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x00ba884d", "caller": "0x00ba8830", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x00bade4e", "caller": "0x00badd10", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x00bb20dd", "caller": "0x00bb2070", "form": "CALL", "mask": "0x4", "result_use": "0x00bb20e2 TEST AL,AL ; 0x00bb20e4 JNZ 0x00bb20f3; on failure the caller immediately probes 0x2 at 0x00bb20ea"},
+    {"callsite": "0x00bb20ea", "caller": "0x00bb2070", "form": "CALL", "mask": "0x2", "result_use": "0x00bb20ef TEST AL,AL ; 0x00bb20f1 JZ 0x00bb2105"},
+    {"callsite": "0x00bb226a", "caller": "0x00bb21b0", "form": "CALL", "mask": "0x2", "result_use": "0x00bb226f TEST AL,AL ; 0x00bb2271 JNZ 0x00bb22bd"},
+    {"callsite": "0x00bb2277", "caller": "0x00bb21b0", "form": "CALL", "mask": "0x1", "result_use": "0x00bb227c TEST AL,AL ; 0x00bb227e JNZ 0x00bb22bd"},
+    {"callsite": "0x00bb2330", "caller": "0x00bb2330", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x00bb4100", "caller": "0x00bb4100", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x00bb6040", "caller": "0x00bb6040", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x00c47e20", "caller": "0x00c47e20", "form": "CALL", "result_use": "not at the probed window; the function's prologue at 0x00c47e20 was read and this callsite is later in the same body"},
+    {"callsite": "0x00c593f3", "caller": "0x00c59240", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x00c596fc", "caller": "0x00c59540", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x00c5f770", "caller": "0x00c5f770", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x00c8b560", "caller": "0x00c8b560", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x00df7f60", "caller": "0x00df7f60", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x0102daa0", "caller": "0x0102daa0", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x010463b0", "caller": "0x010463b0", "form": "CALL", "result_use": "not inspected"},
+    {"callsite": "0x0106cc70", "caller": "0x0106cc70", "form": "CALL", "result_use": "not inspected"}
+  ],
+  "callees_evidence": [],
+
+  "sibling_family": {
+    "region": "0x00bb9ab0 - 0x00bb9b80, INT3 separated, all operating on the same cStarRecord",
+    "members": [
+      {"va": "0x00bb9ab0", "shape": "copies three dwords from *arg to [ECX+0x3C], [ECX+0x40], [ECX+0x44]", "sdk_field": "mPosition (Math::Vector3 at 0x3C)"},
+      {"va": "0x00bb9ad0", "shape": "MOV [ECX+0x4C],EAX", "sdk_field": "mTechLevel setter"},
+      {"va": "0x00bb9ae0", "shape": "MOV EAX,[ECX+0x4C]", "sdk_field": "mTechLevel getter"},
+      {"va": "0x00bb9af0", "shape": "([ECX+0x5C] & mask) != 0", "sdk_field": "mFlags probe", "note": "this target"},
+      {"va": "0x00bb9b00", "shape": "[ECX+0x5C] |= mask or &= ~mask by a trailing char flag", "sdk_field": "mFlags mutator"},
+      {"va": "0x00bb9b20", "shape": "MOV EAX,[ECX+0x50]", "sdk_field": "field_50 getter"},
+      {"va": "0x00bb9b30", "shape": "[ECX+0x5C] = ([ECX+0x5C] & 0xFFFFBFFF) | 0x2000", "sdk_field": "mFlags bit-13 forcing"},
+      {"va": "0x00bb9b50", "shape": "[ECX+0x2C] = ([ECX+0x2C] & 0xFFFF7FFF) | 0x4000", "sdk_field": "a second bit-mask word at 0x2C, same idiom"},
+      {"va": "0x00bb9b80", "shape": "MOV EAX, param_1 + 0x74", "sdk_field": "&mCitizenSpeciesKey (ResourceKey at 0x74)"}
+    ],
+    "significance": "Five independent accessors land on the exact offsets the SDK declares for cStarRecord, and two of them (0x00bb9b00, 0x00bb9b30) treat +0x5C as a bit mask with set/clear/force operations. The receiver identification does not rest on a single coincidence."
+  },
+
+  "sdk_correspondence": {
+    "status": "STRONG",
+    "class": "Simulator::cStarRecord",
+    "field": "mFlags at 0x5C",
+    "sdk_path": "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cStarRecord.h",
+    "sdk_lines_read": [
+      "line 98: /* 3Ch */ Math::Vector3 mPosition;",
+      "line 100: /* 48h */ StarType mType;  // 1 - Galactic Core",
+      "line 101: /* 4Ch */ TechLevel mTechLevel;",
+      "line 102: /* 50h */ bool field_50;",
+      "line 104: /* 54h */ uint32_t mEmpireID;  // -1",
+      "line 105: /* 58h */ uint32_t mStarterWorldID;",
+      "line 106: /* 5Ch */ int mFlags;",
+      "line 108: /* 84h */ eastl::vector<cPlanetRecordPtr> mPlanets;",
+      "line 116: ASSERT_SIZE(cStarRecord, 0xB0);",
+      "line 121: DeclareAddress(GetPlanetRecords);  // 0xBB9870   0xBBA900"
+    ],
+    "address_range_containment": "0x00bb9af0 lies inside the SDK's declared cStarRecord function range 0xBB9870-0xBBA900.",
+    "not_claimed": [
+      "No SDK METHOD NAME is claimed. Spore-ModAPI declares no HasFlags/TestFlags member for cStarRecord, so the reconstructed name SimCore_00bb9af0_testStarRecordFlags is descriptive and carries the VA token, not an SDK identifier.",
+      "The SEMANTIC MEANING of individual bits is not established. Which star-system conditions bits 0, 1, 2, 8, 13, 17 and 31 denote was not determined; the SDK's own comment 'TODO 1 << 4 (16) is visited? sub_BB8B50' shows the upstream project has not settled them either."
+    ]
+  },
+
+  "semantic_contract": "The function answers a single question about a Simulator star-system record: is any bit selected by the caller's 32-bit mask currently set in the record's +0x5C flag word? It reads exactly two dwords - the receiver's flag word and the caller's mask - intersects them, and normalises the result to the boolean 0 or 1 with the NEG/SBB/NEG idiom, so the answer is never a mask value, never a count and never negative. It has no side effects, no callees, no frame, no branches and no error path; a null receiver faults, but a receiver with any flag word value including 0 and 0xFFFFFFFF is legal. Semantics of the mask: it is a bitwise ANY, not an ALL, because the only combination performed is AND followed by a zero test. Callers observed use single-bit masks (0x1, 0x2, 0x4, 0x100, 0x20000) to ask one flag question at a time, often as a fallback chain, and always consume the answer as an AL predicate. The complementary write path is 0x00bb9b00, which sets or clears the same bits in the same word, and 0x00bb9b30 forces bit 13, so the field is a genuine bit set rather than a scalar.",
+
+  "classification": "STRONG_SEMANTIC",
+  "classification_rationale": "Every element the vocabulary requires is read directly from the binary: the complete six-instruction body, the __thiscall ABI (ECX receiver, one callee-cleaned stack dword, RET 0x4), the single field offset 0x5C with the instruction that proves it, the absence of constants beyond the two displacements, the absence of control flow, the absence of callees and the absence of globals. The receiver identity is corroborated six independent ways - the SDK's declared offsets for mType/mTechLevel/field_50/mCitizenSpeciesKey/mPlanets are all hit by distinct sibling accessors, the SDK's own address range 0xBB9870-0xBBA900 contains this function, and Ghidra already carries a named cStarRecord method in the same file that reads the same +0x5C word. The behavioural claim carries no remaining uncertainty: the mask semantics, the result domain, the branch-free structure and the read-only nature are all fixed by the six instructions. The only thing not established is the per-bit MEANING, which is a naming gap and not a behavioural one, so it is listed under unresolved_questions rather than used to lower the classification.",
+
+  "semantic_findings": [
+    "The whole contract is `(star->mFlags & mask) != 0`. Two dword reads, one AND, one zero test, no side effects.",
+    "The result domain is exactly {0, 1}: NEG/SBB/NEG cannot produce a mask value, a count or a negative number, so callers may safely treat the full EAX as a boolean.",
+    "The mask semantics is ANY, not ALL, because the only combination is AND then zero-test.",
+    "The receiver is Simulator::cStarRecord and the field is mFlags, established by six independent SDK-offset coincidences plus the SDK's own address-range containment, not by a single match.",
+    "0x00bb9b00 sixteen bytes later is the exact complement: it ORs or ANDs the same mask into the same word, so the pair is a probe/mutate pair and proves the word is a bit set.",
+    "0x00bb9b30 and 0x00bb9b50 apply the same AND-complement/OR idiom to +0x5C and +0x2C respectively, so the record carries at least two independent bit-mask words.",
+    "0x00bba900, which Ghidra already names Simulator__cStarRecord__GetPlanetRecords, reads bit 12 of the same +0x5C word directly, and 0x00bbac99 shifts the same word by 0xF to read bit 15.",
+    "Callers use single-bit masks exclusively in the five inspected cases, and two of them (0x00bb2070, 0x00bb21b0) form fallback chains that probe several bits in sequence - a shape characteristic of a bitfield queried one flag at a time rather than a general-purpose predicate.",
+    "The function is not a vtable entry in any table located by this batch; it is reached exclusively by direct CALL, so its 'interface method' status is unestablished."
+  ],
+
+  "unresolved_questions": [
+    "What does each individual bit of mFlags mean? Bits 0, 1, 2, 8, 13, 17 and 31 were observed at callsites, but no flag name was established for any of them. Spore-ModAPI's own comment on this field ('TODO 1 << 4 (16) is visited?') shows the upstream project has not settled the bit assignment either.",
+    "Is this function reachable through a vtable? Every observed call is a direct CALL and no table slot was located for 0x00bb9af0, so its interface status, if any, is unestablished.",
+    "Why is the return value computed with NEG/SBB/NEG rather than a SETNE? Both produce 0/1, so the behaviour is identical; the choice is a codegen artefact and carries no semantic content. Recorded so the byte sequence is not mistaken for three meaningful operations.",
+    "Does any caller pass a multi-bit mask? The AND would handle it as ANY, but all five inspected callsites pass a single bit, so multi-bit use is supported by the body and unconfirmed by any caller.",
+    "The briefing's canonical ledger recorded caller_count 20; the live query also returns 20 caller functions but 25 call sites, because 0x00ba6f20, 0x00b96d40 and 0x00bb2070/0x00bb21b0 call it more than once. The fan-in figure is not a contradiction, only a different counting convention."
+  ],
+
+  "confidence": {
+    "body_bytes": 1.0,
+    "control_flow": 1.0,
+    "return_semantics": 1.0,
+    "calling_convention": 1.0,
+    "field_offset_0x5C": 1.0,
+    "mask_semantics_any_not_all": 1.0,
+    "receiver_class_cStarRecord": 0.95,
+    "field_name_mFlags": 0.95,
+    "per_bit_meanings": 0.0,
+    "vtable_membership": 0.0,
+    "runtime_equivalence": 0.0
+  },
+
+  "runtime_gates": [
+    "No original-process trace has ever been captured for this function; the original Cell stage has never been entered in any recorded run. Every claim here is static.",
+    "A runtime differential test would have to confirm the flag word's value for a known star system, which is the only way to attach a meaning to individual bits.",
+    "Because the function dereferences ECX with no null check, a runtime test that passes a null receiver would fault; that is a property of the original and must be preserved, not defended against."
+  ],
+
+  "blockers": [],
+
+  "evidence": [
+    "reconstruction/evidence/00bb9af0/context.json",
+    "reconstruction/evidence/00bb9af0/evidence.json",
+    "reconstruction/staging/wave13-w1-core-b06/bb9af0_star_record_flag_test.cpp",
+    "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Simulator/cStarRecord.h (read-only)",
+    "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/StarID.h (read-only)",
+    "GhidraMCP live calls listed in tooling_evidence"
+  ],
+
+  "tooling_evidence": [
+    {"tool": "ghidra_read_memory", "address": "0x00bb9af0", "length": 32, "observation": "hex 8b415c23442404f7d81bc0f7d8c20400807c240800740a8b44240409415cc208 - the 16-byte body followed immediately by 80 7c 24 08 00 (CMP byte ptr [ESP+0x8],0), the start of the sibling 0x00bb9b00"},
+    {"tool": "ghidra_disassemble_function", "address": "0x00bb9af0", "observation": "six instructions, MOV/AND/NEG/SBB/NEG/RET 0x4, ending exactly at 0x00bb9afd"},
+    {"tool": "ghidra_decompile_function", "address": "0x00bb9af0", "observation": "bool __thiscall FUN_00bb9af0(int param_1,uint param_2) { return (*(uint *)(param_1 + 0x5c) & param_2) != 0; }"},
+    {"tool": "ghidra_decompile_function", "address": "0x00bb9b00", "observation": "the paired mutator: if (param_3) *(uint*)(p+0x5c) |= param_2; else *(uint*)(p+0x5c) &= ~param_2; - same field, same mask"},
+    {"tool": "ghidra_get_function_by_address", "address": "0x00bb9b00", "observation": "body 0x00bb9b00-0x00bb9b1c, a distinct function immediately after this target"},
+    {"tool": "ghidra_disassemble_bytes", "start_address": "0x00bb9a80", "end_address": "0x00bb9aff", "observation": "the whole accessor run 0x00bb9ab0/0x00bb9ad0/0x00bb9ae0/0x00bb9af0 with their exact displacements 0x3C, 0x40, 0x44, 0x4C, 0x5C"},
+    {"tool": "ghidra_decompile_function", "functions": "0x00bb9ad0,0x00bb9ab0,0x00bb9b20,0x00bb9b40,0x00bb9b60,0x00bb9b80", "observation": "0x3C/0x40/0x44 copy, 0x4C setter, 0x50 getter, [0x5C]&0xFFFFBFFF|0x2000, [0x2C]&0xFFFF7FFF|0x4000, and this+0x74 - all matching the cStarRecord SDK layout"},
+    {"tool": "ghidra_decompile_function", "address": "0x00bba900", "observation": "Ghidra names it Simulator__cStarRecord__GetPlanetRecords; the body reads [in_ECX + 0x5C] >> 0xC & 1 and reads [v1+0x134]/[v1+0x138] on its elements"},
+    {"tool": "ghidra_decompile_function", "functions": "0x00801920,0x00bb9ae0,0x00ba6d80", "observation": "0x00801920 returns [this+0x48]; 0x00bb9ae0 returns [this+0x4C]; 0x00ba6d80 reads [this+0x14C] and a two-level table at [this+0xC8] indexed by (id>>0xC)*0x14 then (id&0xFFF)*4"},
+    {"tool": "ghidra_disassemble_bytes", "start_address": "0x00ba6bb0", "end_address": "0x00ba6c5f", "observation": "0x00ba6bb0 derives a bit index from 0x00801920 with AND ECX,0x1f ; SHL 1,CL, then 0x00ba6bfa CALL 0x00b3d2a0, 0x00ba6bff CMP byte ptr [EDI+0xac],0, 0x00ba6c0e CALL 0x00bb9c60, 0x00ba6c26 CALL 0x00bba900, and finally 0x00ba6c3e PUSH 0x20000 ; 0x00ba6c45 CALL 0x00bb9af0 ; 0x00ba6c4a TEST AL,AL"},
+    {"tool": "ghidra_disassemble_bytes", "start_address": "0x00b93560", "end_address": "0x00b9358f", "observation": "0x00b9356d PUSH 0x100 ; 0x00b93574 CALL 0x00bb9af0 ; 0x00b9357d TEST AL,AL ; 0x00b9357f SETNZ BL"},
+    {"tool": "ghidra_disassemble_bytes", "start_address": "0x00bb20c0", "end_address": "0x00bb20ff", "observation": "0x00bb20cf CALL 0x00bb9ae0 ; 0x00bb20d4 CMP EAX,0x5 ; 0x00bb20d9 PUSH 0x4 ; 0x00bb20dd CALL 0x00bb9af0 ; 0x00bb20e6 PUSH 0x2 ; 0x00bb20ea CALL 0x00bb9af0 - a two-bit fallback chain over the same receiver"},
+    {"tool": "ghidra_disassemble_bytes", "start_address": "0x00bb2250", "end_address": "0x00bb228f", "observation": "0x00bb2266 PUSH 0x2 and 0x00bb2273 PUSH 0x1, each followed by CALL 0x00bb9af0 and TEST AL,AL"},
+    {"tool": "ghidra_disassemble_bytes", "start_address": "0x00bbabd0", "end_address": "0x00bbaccf", "observation": "0x00bbac8b CMP EBX,[ESI+0x58] and 0x00bbac99 SHR EAX,0xF ; TEST AL,1 on [ESI+0x5C] and 0x00bbaca9 MOV ECX,[ESI+0x84] - the same cStarRecord offsets, in a function that then writes a planet record's key via 0x00b8dde0"},
+    {"tool": "ghidra_get_function_callers", "address": "0x00bb9af0", "observation": "20 caller functions reported"},
+    {"tool": "ghidra_get_function_callers", "address": "0x00bb9b00", "observation": "24 caller functions for the paired mutator, a comparable fan-in, which is what a probe/mutate pair looks like"}
+  ],
+
+  "body_reconstruction": {
+    "source": "reconstruction/staging/wave13-w1-core-b06/bb9af0_star_record_flag_test.cpp",
+    "status": "implemented",
+    "claim_scope": "The complete six-instruction body is reconstructed. The class and field names come from Spore-ModAPI and are justified in sdk_correspondence; no SDK method name is claimed.",
+    "preserved_semantics": [
+      "the result is a strict boolean 0 or 1, not the masked value",
+      "the mask is a bitwise ANY, not an ALL",
+      "the mask is applied to the full 32-bit word, so a sign bit in the field cannot affect a low-bit query",
+      "the receiver is dereferenced without a null check",
+      "there is no branch, no callee, no global access and no side effect",
+      "the callee pops the single stack dword (RET 0x4)"
+    ],
+    "validation": {
+      "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/wave13-w1-core-b06 reconstruction/staging/wave13-w1-core-b06/*.cpp",
+      "model_test_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/wave13-w1-core-b06 reconstruction/staging/wave13-w1-core-b06/*.cpp -o /tmp/opencode/b06-model && /tmp/opencode/b06-model",
+      "syntax": "passed",
+      "model_test": "passed, exit 0",
+      "model_test_covers": "all-zero field, mask 0, all five observed single-bit masks, sign-bit isolation, ANY-vs-ALL discrimination, and a round trip through the paired mutator including 0x00bb9b30's bit-13 forcing"
+    }
+  },
+
+  "provenance": {
+    "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+    "binary": "SPORE/SporeBin/SporeApp.exe",
+    "binary_version": "Spore 3.1.0.22",
+    "image_base": "0x00400000",
+    "worker_id": "wave13-w1-core-b06",
+    "implementer_id": "wave13-w1-core-b06",
+    "batch_id": "b06",
+    "package": "wave13-w1-core-b06",
+    "date": "2026-09-26",
+    "tool": "Ghidra 12.1.2 headless via ghidra_mcp, program SporeApp.exe",
+    "clean_room": "static analysis only; Spore-ModAPI headers were read read-only as candidate evidence; no proprietary EA source or asset was read, quoted or introduced"
+  }
+}

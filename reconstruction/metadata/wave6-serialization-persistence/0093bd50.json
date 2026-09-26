@@ -1,0 +1,125 @@
+{
+  "schema": "wave6-serialization-persistence.function-reconstruction.v1",
+  "package": "wave6-serialization-persistence",
+  "address": "0x0093bd50",
+  "normalized_name": "memory_stream_initialize_0093bd50",
+  "imported_name": "MemoryStream_dtor",
+  "status": "integrated_static_ready_with_imported_name_conflict",
+  "implementation": {
+    "language": "C++17",
+    "header": "src/reconstruction/wave6_serialization_persistence/stream_lifecycle.hpp",
+    "source": "src/reconstruction/wave6_serialization_persistence/stream_lifecycle.cpp",
+    "model_test": "src/reconstruction/wave6_serialization_persistence/stream_lifecycle_model_test.cpp"
+  },
+  "binary": {
+    "program": "SporeApp.exe",
+    "version": "3.1.0.22",
+    "architecture": "x86:LE:32",
+    "image_base": "0x00400000"
+  },
+  "abi": {
+    "calling_convention": "__thiscall",
+    "receiver_register": "ECX",
+    "receiver_type": "MemoryStream*",
+    "stack_arguments": [
+      {
+        "name": "ignored_word",
+        "type": "uint32_t",
+        "entry_offset": "ESP+0x04",
+        "width_bytes": 4,
+        "observed_use": "none"
+      }
+    ],
+    "return_type": "void",
+    "eax_residue": "copied ECX object pointer",
+    "preserved_register_residue": ["EDX", "EBX", "ESI", "EDI"],
+    "changed_register_residue": ["EAX", "ECX", "EFLAGS", "XMM0"],
+    "register_details": {
+      "ECX": "zeroed by XOR ECX, ECX and reused for zero stores",
+      "EAX": "receives the original ECX object pointer",
+      "EFLAGS": "set by XOR ECX, ECX; ZF and PF are set, CF and OF are clear, and AF is undefined",
+      "XMM0": "receives the float loaded from global 0x01485548"
+    },
+    "termination": "RET 0x4",
+    "stack_cleanup_bytes": 4,
+    "integrated_model": "single naked x86-32 thiscall body consumes ECX as the object, loads the resize factor from an integrated global, mirrors the exact stores and XOR flag behavior, leaves the object pointer in EAX, and cleans one ignored stack word"
+  },
+  "layout": {
+    "type": "MemoryStream",
+    "size_bytes": 36,
+    "fields": [
+      {"offset": "0x00", "width_bytes": 4, "meaning": "vtable pointer"},
+      {"offset": "0x04", "width_bytes": 4, "meaning": "shared-pointer word"},
+      {"offset": "0x08", "width_bytes": 4, "meaning": "reference count"},
+      {"offset": "0x0c", "width_bytes": 4, "meaning": "size"},
+      {"offset": "0x10", "width_bytes": 4, "meaning": "capacity"},
+      {"offset": "0x14", "width_bytes": 4, "meaning": "position"},
+      {"offset": "0x18", "width_bytes": 1, "meaning": "resize-enabled flag"},
+      {"offset": "0x19", "width_bytes": 1, "meaning": "clear-new-memory flag"},
+      {"offset": "0x1a", "width_bytes": 2, "meaning": "unwritten padding"},
+      {"offset": "0x1c", "width_bytes": 4, "meaning": "float resize factor"},
+      {"offset": "0x20", "width_bytes": 4, "meaning": "signed resize increment"}
+    ]
+  },
+  "observed_order": [
+    {"order": 1, "address": "0x0093bd50", "operation": "load float 0x01485548, currently 1.5, into XMM0"},
+    {"order": 2, "address": "0x0093bd58", "operation": "copy the ECX object pointer to EAX"},
+    {"order": 3, "address": "0x0093bd5a", "operation": "zero ECX with XOR ECX, ECX and establish the observed final EFLAGS"},
+    {"order": 4, "addresses": ["0x0093bd5c", "0x0093bd62", "0x0093bd65", "0x0093bd68", "0x0093bd6b", "0x0093bd6e"], "operation": "store vtable 0x0143eb78 and zero offsets 0x04, 0x08, 0x0c, 0x10, and 0x14"},
+    {"order": 5, "addresses": ["0x0093bd71", "0x0093bd74"], "operation": "zero flag bytes 0x18 and 0x19 from CL"},
+    {"order": 6, "address": "0x0093bd77", "operation": "store the globally loaded XMM0 value at offset 0x1c"},
+    {"order": 7, "address": "0x0093bd7c", "operation": "zero offset 0x20"},
+    {"order": 8, "address": "0x0093bd7f", "operation": "RET 0x4 with no semantic return value"}
+  ],
+  "fan_in": {
+    "direct_call_xrefs": 14,
+    "representative_callers": [
+      "0x006b17e9",
+      "0x006c0a55",
+      "0x006c0baf",
+      "0x006c0cc8",
+      "0x006c0e37",
+      "0x007ebd3d",
+      "0x008dcced",
+      "0x008dce2c",
+      "0x008dcf03",
+      "0x008dd130",
+      "0x008fdd8b",
+      "0x009009d3",
+      "0x00946e65",
+      "0x00947d73"
+    ],
+    "caller_pattern": "allocation result is moved to ECX immediately before the call, a debug-name pointer is pushed, and the returned EAX object is consumed as a newly initialized stream"
+  },
+  "name_conflict": {
+    "observation": "The imported symbol says dtor, but every direct caller invokes the function immediately after allocating a 0x24-byte object and before setting stream-specific fields.",
+    "normalization": "The integrated name is initialize; no destructor, release, or deallocation claim is made."
+  },
+  "model_tests": [
+    "ECX object input and EAX object-pointer residue",
+    "ECX zeroed after the object copy",
+    "EDX input residue preservation",
+    "XOR-derived EFLAGS with ZF and PF set and CF and OF clear",
+    "XMM0 and object factor loaded from the mutable integrated resize-factor global",
+    "one ignored stack word and RET 0x4 boundary",
+    "naked thiscall declaration and definition with MemoryStream* and uint32_t parameters",
+    "vtable and all initialized field values",
+    "unwritten 0x1a and 0x1b padding preservation"
+  ],
+  "unresolved_evidence": [
+    "The shared-pointer owner and concrete allocated subtype are not established.",
+    "The debug-name pointer is ignored by this function and its ownership is unresolved.",
+    "The secondary vtable stored by the caller after initialization is outside this target boundary.",
+    "No original runtime allocation trace is claimed."
+  ],
+  "source_provenance": [
+    "ghidra:get_function_by_address(0x0093bd50)",
+    "ghidra:decompile_function(0x0093bd50)",
+    "ghidra:disassemble_function(0x0093bd50)",
+    "ghidra:get_function_callers(0x0093bd50)",
+    "ghidra:get_function_xrefs(0x0093bd50)",
+    "ghidra:get_struct_layout(MemoryStream)",
+    "ghidra:read_memory(0x01485548)",
+    "ghidra:get_assembly_context(0x006b17e9,0x008fdd8b)"
+  ]
+}

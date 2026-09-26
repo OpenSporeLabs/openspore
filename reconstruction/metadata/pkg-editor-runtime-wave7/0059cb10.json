@@ -1,0 +1,162 @@
+{
+  "schema": "pkg-editor-runtime-wave7.function-handoff.v1",
+  "package": "PKG-EDITOR-RUNTIME-WAVE7",
+  "scope": {
+    "package_scope": "Six animation and controller VAs only. 0x00591fa0 was removed from this package after pkg-editor-lifecycle-wave6 claimed it; its source file editor_runtime_wave7.cpp, its declarations, its tests and its metadata handoff were deleted.",
+    "owned_vas": [
+      "0x0059b0f0",
+      "0x0059b4b0",
+      "0x0059cac0",
+      "0x0059cb10",
+      "0x0059cea0",
+      "0x0059cf00"
+    ],
+    "removed_vas": [
+      {
+        "va": "0x00591fa0",
+        "owner": "pkg-editor-lifecycle-wave6",
+        "artefacts_removed": [
+          "src/reconstruction/pkg_editor_runtime_wave7/editor_runtime_wave7.cpp",
+          "OpaqueEditor / EditorDispatchPorts / message-id constants in editor_runtime_wave7.hpp",
+          "editor_handle_message_00591fa0 and its model tests",
+          "reconstruction/metadata/pkg-editor-runtime-wave7/00591fa0.json"
+        ]
+      }
+    ]
+  },
+  "function_address": "0x0059cb10",
+  "ghidra_name": "EditorAnimWorld_PlayAnimation",
+  "normalized_symbol": "EditorAnimWorld_PlayAnimation_0059cb10",
+  "source_files": [
+    "src/reconstruction/pkg_editor_runtime_wave7/editor_runtime_wave7.hpp",
+    "src/reconstruction/pkg_editor_runtime_wave7/editor_runtime_wave7.cpp",
+    "src/reconstruction/pkg_editor_runtime_wave7/editor_runtime_wave7_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "void __thiscall EditorAnimWorld_PlayAnimation_0059cb10(cEditorAnimWorld *this, int creatureID, std::uint32_t animationID);",
+  "abi": {
+    "calling_convention": "thiscall",
+    "hidden_this": "OpaqueAnimWorld * in ECX",
+    "stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "ESP+0x04",
+        "name": "creatureID",
+        "type": "std::int32_t",
+        "width_bytes": 4
+      },
+      {
+        "position": 2,
+        "entry_offset": "ESP+0x08",
+        "name": "animationID",
+        "type": "std::uint32_t",
+        "width_bytes": 4
+      }
+    ],
+    "stack_cleanup_bytes": 8,
+    "stack_cleanup_owner": "caller",
+    "return_type": "void",
+    "return_register": null,
+    "return_width_bytes": 0
+  },
+  "body": {
+    "status": "reconstructed",
+    "entry_address": "0x0059cb10",
+    "body_addresses": [
+      "0x0059cb10",
+      "0x0059cb7c"
+    ],
+    "instruction_count": 45,
+    "independence_note": "Live Ghidra resolves 0x0059cb10 to its own entry point EditorAnimWorld_PlayAnimation with a distinct body range 0x0059cb10..0x0059cb7c, separate from GetCreatureController (ends 0x0059cb01) and SetTargetAngle (starts 0x0059cea0).",
+    "mechanics": [
+      "Spill argument 1 to the key slot before the three pushes so the lower-bound key pointer stays valid.",
+      "Read the map gate this+0x38; when zero skip the lookup entirely and take the null path. The cursor is a stack local written through a valid out pointer.",
+      "Compare the cursor against the end sentinel this+0x0c; an end result yields a null controller.",
+      "Then require this+0x3c to be non-zero, the controller to be non-null, and controller+0x08 to be non-null; any zero returns with no side effect.",
+      "Call the creature vtable slot +4 (offset 0x04) with (animationID, 0) via MOV EDX,[EAX+0x4]; CALL EDX.",
+      "Then call the distinct publication port for 0x007cd950 with (controller, animationID). That routine is a three-instruction body that stores the animation id at controller+0x1c; it is NOT the ground update helper 0x0059b390, which an earlier revision wrongly reused for it.",
+      "Epilogue is POP EDI/ESI/ECX, RET 0x8; the return register is unused."
+    ],
+    "call_order": [
+      "0x00e5c780",
+      "0x0059c740",
+      "creature vtable+0x04",
+      "0x007cd950 publication"
+    ],
+    "publication_slot": {
+      "offset": "0x1c",
+      "target": "OpaqueController::animation_id_01c",
+      "evidence": "0x007cd950 decompiles to *(undefined4 *)(param_1 + 0x1c) = param_2 and its three-instruction listing is MOV EAX,[ESP+0x4]; MOV dword ptr [ECX+0x1c],EAX; RET 0x4"
+    }
+  },
+  "call_graph": {
+    "direct_callees": [
+      "0x00e5c780",
+      "0x0059c740",
+      "0x007cd950"
+    ],
+    "direct_callers": [
+      "0x00583310",
+      "0x00577e10"
+    ],
+    "direct_call_site_count": 5
+  },
+  "evidence": [
+    {
+      "tool": "ghidra_get_function_by_address",
+      "address": "0x0059cb10",
+      "observation": "Live entry EditorAnimWorld_PlayAnimation spans 0x0059cb10..0x0059cb7c and is disjoint from its neighbours."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x0059cb10",
+      "observation": "PUSH EDI; MOV ECX,ESI; CALL 0x007cd950 passes the controller in ECX and the animation id on the stack, after the vtable+0x04 call."
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address": "0x007cd950",
+      "observation": "Body is a single store of argument 2 to argument 1 + 0x1c."
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x007cd950",
+      "observation": "MOV EAX,[ESP+0x4]; MOV dword ptr [ECX+0x1c],EAX; RET 0x4 confirms the publication offset and the single-argument cleanup."
+    },
+    {
+      "tool": "ghidra_get_function_xrefs",
+      "address": "0x0059cb10",
+      "observation": "Five direct call sites, four in FUN_00577e10 and one in Editors::cEditor::AddCreature."
+    },
+    "0x0059b58b tests AL directly after the slot +0x5c call, so the slot returns a byte in AL. get_blend_5c is typed bool and invoked through the creature vtable; the redundant QueryBlend port is gone."
+  ],
+  "tests": [
+    "hit path: lower_bound, find, creature vtable slot +4 with (animationID, 0), then the publication port",
+    "the publication port receives the controller and the same animation id, and 0x0059b390 is never called",
+    "this+0x3c == 0 suppresses both the creature call and the publication",
+    "controller+0x08 == nullptr suppresses both calls",
+    "this+0x38 == 0 suppresses the lookup entirely",
+    "key past the last node stops after lower_bound",
+    "creature vtable slot +0x5c is typed bool and returns via AL"
+  ],
+  "runtime_gates": [
+    "The concrete creature vtable at controller+0x08 and the meaning of slot +4",
+    "Whether controller+0x1c is a clip index, hash or resource id, and who reads it",
+    "Interaction with the 0x38 and 0x3c gates at runtime",
+    "The concrete implementation behind the 0x007cd950 publication port"
+  ],
+  "confidence": {
+    "body": "high",
+    "abi_and_cleanup": "high",
+    "call_order": "high",
+    "publication_slot": "high",
+    "independence": "high"
+  },
+  "verification": "self-consistent: 29 focused x86-32 model tests pass in normal and NDEBUG builds; -Wall -Wextra -Wpedantic -Werror clean; clang-format clean",
+  "target_state": "integrated canonical source; runtime validation gated",
+  "integration_status": "integrated",
+  "canonical_files": [
+    "src/reconstruction/pkg_editor_runtime_wave7/editor_runtime_wave7.hpp",
+    "src/reconstruction/pkg_editor_runtime_wave7/editor_runtime_wave7.cpp",
+    "src/reconstruction/pkg_editor_runtime_wave7/editor_runtime_wave7_model_test.cpp"
+  ]
+}

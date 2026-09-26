@@ -1,0 +1,841 @@
+# Evidence 0x00c309e0
+
+- Evidence state: `LIVE`
+- Live requested: `True`
+- Content SHA-256: `11809c53b06340d3c9cd5083a1d5d6de713cc57d1194db42e5f9c47e0c8b3d7b`
+
+## abi
+
+- Availability: `available`
+- Evidence state: `DERIVED`
+- Provenance: `reconstruction/knowledge/index.json, GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089, GhidraMCP /disassemble_function`
+
+```json
+{
+  "abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "hidden_this": true,
+    "hidden_this_register": "ECX",
+    "ordinary_stack_argument_slots": [
+      "entry_ESP+0x4"
+    ],
+    "ordinary_stack_arguments": [
+      {
+        "entry_offset": "entry_ESP+0x4",
+        "observed": true,
+        "ordinal": 1,
+        "read": false,
+        "size_inferred": false,
+        "sizes": [
+          4
+        ],
+        "written": false
+      }
+    ],
+    "receiver": true,
+    "receiver_register": "ECX",
+    "ret_form": "RET",
+    "return_register": "ST0",
+    "return_semantics": "float_or_x87_in_ST0",
+    "saved_registers": [
+      "EBP",
+      "EBX",
+      "EDI",
+      "ESI"
+    ],
+    "stack_arguments": [
+      {
+        "entry_offset": "entry_ESP+0x4",
+        "observed": true,
+        "ordinal": 1,
+        "read": false,
+        "size_inferred": false,
+        "sizes": [
+          4
+        ],
+        "written": false
+      }
+    ],
+    "stack_cleanup_bytes": 0,
+    "stack_cleanup_owner": "caller",
+    "termination": "RET"
+  },
+  "abstained_because": [
+    "flow_not_modelled: the linear ESP walk ends at -8, so the listing is not one path",
+    "unparsed_lines_present: 5 line(s) matched no grammar rule"
+  ],
+  "cleanup": {
+    "bytes": 0,
+    "confidence": "INFERRED",
+    "corroboration": "not_available",
+    "evidence": "ret with no immediate",
+    "side": "caller"
+  },
+  "completeness": "CORE_RESOLVED",
+  "conflicts": [],
+  "content_sha256": "c788d5f92993e52b6563032534850d319a88a5bf029749a941babe30a6aef7a8",
+  "conventions": {
+    "ambiguities": [],
+    "calling_convention": "__thiscall",
+    "candidate_conventions": [
+      "__thiscall",
+      "__fastcall"
+    ],
+    "confidence": "INFERRED",
+    "corroboration": "not_available"
+  },
+  "cross_validation": {
+    "agreement": false,
+    "ghidra": "no_information",
+    "ghidra_calling_convention": null,
+    "ghidra_parameter_count": 0,
+    "persisted": "no_information",
+    "persisted_calling_convention": null
+  },
+  "dispatch": {
+    "call_offsets": [],
+    "indirect_calls": 0,
+    "vtable_shaped_loads": 0
+  },
+  "inferences": [
+    {
+      "based_on": [
+        "obs-0016",
+        "obs-0031",
+        "obs-0049",
+        "obs-0056",
+        "obs-0070"
+      ],
+      "claim": "the caller cleans up the stack: a bare RET is compatible with caller cleanup and, for a zero-parameter __stdcall, with zero bytes of callee cleanup",
+      "confidence": "INFERRED",
+      "id": "C5",
+      "value": {
+        "bytes": 0,
+        "side": "caller"
+      }
+    },
+    {
+      "based_on": [
+        "obs-0059",
+        "obs-0062"
+      ],
+      "claim": "entry-relative argument slots",
+      "confidence": "APPROXIMATION",
+      "id": "A1",
+      "value": {
+        "gaps": 0,
+        "observed_slots": 1,
+        "total_bytes": 4
+      }
+    },
+    {
+      "based_on": [
+        "obs-0001",
+        "obs-0005",
+        "obs-0015",
+        "obs-0021",
+        "obs-0030",
+        "obs-0048",
+        "obs-0055",
+        "obs-0069"
+      ],
+      "claim": "ECX carries a receiver and is dereferenced before any definite write to it",
+      "confidence": "INFERRED",
+      "id": "R1",
+      "value": {
+        "offsets": [
+          132
+        ],
+        "register": "ECX",
+        "written_through": 0
+      }
+    },
+    {
+      "based_on": [
+        "obs-0001",
+        "obs-0005",
+        "obs-0015",
+        "obs-0016",
+        "obs-0021",
+        "obs-0030",
+        "obs-0031",
+        "obs-0048",
+        "obs-0049",
+        "obs-0055",
+        "obs-0056",
+        "obs-0069",
+        "obs-0070"
+      ],
+      "claim": "calling convention is __thiscall: the receiver arrives in ECX and the caller cleans the stack",
+      "confidence": "INFERRED",
+      "id": "C7",
+      "value": "__thiscall"
+    },
+    {
+      "based_on": [
+        "obs-0016",
+        "obs-0031",
+        "obs-0049",
+        "obs-0056",
+        "obs-0070"
+      ],
+      "claim": "entry slot 0 is not written through a pointer",
+      "confidence": "APPROXIMATION",
+      "id": "S2",
+      "value": {
+        "present": false
+      }
+    },
+    {
+      "based_on": [
+        "obs-0018"
+      ],
+      "claim": "the return value is carried in ST0: an x87 or SSE instruction appears in the body",
+      "confidence": "APPROXIMATION",
+      "id": "RT1",
+      "value": "ST0"
+    }
+  ],
+  "observations": [
+    {
+      "at": "0x00c309e0",
+      "count": 4,
+      "first_use": 0,
+      "first_write_index": 20,
+      "id": "obs-0001",
+      "index": 0,
+      "kind": "REG_READ",
+      "raw": "PUSH ECX",
+      "reg": "ECX"
+    },
+    {
+      "at": "0x00c309e1",
+      "count": 9,
+      "first_use": 1,
+      "first_write_index": 4,
+      "id": "obs-0002",
+      "index": 1,
+      "kind": "REG_READ",
+      "raw": "PUSH EBX",
+      "reg": "EBX"
+    },
+    {
+      "at": "0x00c309e2",
+      "count": 7,
+      "first_use": 2,
+      "first_write_index": 8,
+      "id": "obs-0003",
+      "index": 2,
+      "kind": "REG_READ",
+      "raw": "PUSH ESI",
+      "reg": "ESI"
+    },
+    {
+      "at": "0x00c309e3",
+      "count": 6,
+      "first_use": 3,
+      "first_write_index": 6,
+      "id": "obs-0004",
+      "index": 3,
+      "kind": "REG_READ",
+      "raw": "PUSH EDI",
+      "reg": "EDI"
+    },
+    {
+      "at": "0x00c309e4",
+      "definite": true,
+      "id": "obs-0005",
+      "index": 4,
+      "kind": "REG_WRITE",
+      "raw": "MOV EBX,ECX",
+      "reg": "EBX",
+      "write_kind": "reg"
+    },
+    {
+      "at": "0x00c309e6",
+      "id": "obs-0006",
+      "index": 5,
+      "kind": "CALL_DIRECT",
+      "raw": "CALL 0x00b3d2c0",
+      "target": "0x00b3d2c0"
+    },
+    {
+      "at": "0x00c309eb",
+      "count": 9,
+      "first_use": 6,
+      "first_write_index": 13,
+      "id": "obs-0007",
+      "index": 6,
+      "kind": "REG_READ",
+      "raw": "MOV EDI,EAX",
+      "reg": "EAX"
+    },
+    {
+      "at": "0x00c309eb",
+      "definite": true,
+      "id": "obs-0008",
+      "index": 6,
+      "kind": "REG_WRITE",
+ 
+[TRUNCATED]
+```
+
+## callees_dependencies
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## callers_dependencies
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## contradictions
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## decompilation
+
+- Availability: `available`
+- Evidence state: `LIVE`
+- Provenance: `GhidraMCP REST /decompile_function @ http://127.0.0.1:8089`
+
+```json
+"\nundefined4 __fastcall FUN_00c309e0(int param_1)\n\n{\n  char cVar1;\n  int iVar2;\n  int iVar3;\n  int iVar4;\n  float10 fVar5;\n  float10 extraout_ST0;\n  float10 fVar6;\n  \n  FUN_00b3d2c0();\n  iVar2 = FUN_01021090();\n  if (*(int *)(param_1 + 0x84) == iVar2) {\n    return 0;\n  }\n  iVar4 = *(int *)(param_1 + 0x84);\n  FUN_00b3d2a0();\n  iVar3 = FUN_00885c90();\n  if (iVar4 == iVar3) {\n    cVar1 = FUN_00d01f20(iVar4,iVar2);\n    if (cVar1 != '\\0') {\n      return 1;\n    }\n    iVar4 = FUN_010107b0(*(undefined4 *)(param_1 + 0x84));\n    if ((2 < iVar4) && (cVar1 = FUN_00d01fb0(*(undefined4 *)(param_1 + 0x84),iVar2), cVar1 == '\\0'))\n    {\n      return 1;\n    }\n  }\n  else {\n    fVar5 = (float10)FUN_00d01b80(iVar4,iVar2,0x5b6ce81);\n    if ((float10)0 < fVar5) {\n      fVar5 = (float10)FUN_00d00a10(*(undefined4 *)(param_1 + 0x84),iVar2,0);\n      FUN_010407c0();\n      FUN_01040860();\n      if (extraout_ST0 <= (float10)(float)fVar5) {\n        return 0;\n      }\n    }\n    cVar1 = FUN_00d01f20(*(undefined4 *)(param_1 + 0x84),iVar2);\n    if (cVar1 != '\\0') {\n      return 1;\n    }\n    iVar4 = FUN_010107b0(*(undefined4 *)(param_1 + 0x84));\n    if (2 < iVar4) {\n      fVar5 = (float10)FUN_00d00a10(*(undefined4 *)(param_1 + 0x84),iVar2,0);\n      FUN_010407c0();\n      fVar6 = (float10)FUN_0097eeb0();\n      if ((float10)(float)fVar5 <= fVar6) {\n        return 1;\n      }\n    }\n  }\n  return 0;\n}\n\n"
+```
+
+## disassembly
+
+- Availability: `available`
+- Evidence state: `LIVE`
+- Provenance: `GhidraMCP /disassemble_function`
+
+```json
+{
+  "count": 122,
+  "instructions": [
+    {
+      "address": "00c309e0",
+      "instruction": "PUSH ECX"
+    },
+    {
+      "address": "00c309e1",
+      "instruction": "PUSH EBX"
+    },
+    {
+      "address": "00c309e2",
+      "instruction": "PUSH ESI"
+    },
+    {
+      "address": "00c309e3",
+      "instruction": "PUSH EDI"
+    },
+    {
+      "address": "00c309e4",
+      "instruction": "MOV EBX,ECX"
+    },
+    {
+      "address": "00c309e6",
+      "instruction": "CALL 0x00b3d2c0"
+    },
+    {
+      "address": "00c309eb",
+      "instruction": "MOV EDI,EAX"
+    },
+    {
+      "address": "00c309ed",
+      "instruction": "CALL 0x01021090"
+    },
+    {
+      "address": "00c309f2",
+      "instruction": "MOV ESI,EAX"
+    },
+    {
+      "address": "00c309f4",
+      "instruction": "CMP dword ptr [EBX + 0x84],ESI"
+    },
+    {
+      "address": "00c309fa",
+      "instruction": "JNZ 0x00c30a03"
+    },
+    {
+      "address": "00c309fc",
+      "instruction": "POP EDI"
+    },
+    {
+      "address": "00c309fd",
+      "instruction": "POP ESI"
+    },
+    {
+      "address": "00c309fe",
+      "instruction": "XOR AL,AL"
+    },
+    {
+      "address": "00c30a00",
+      "instruction": "POP EBX"
+    },
+    {
+      "address": "00c30a01",
+      "instruction": "POP ECX"
+    },
+    {
+      "address": "00c30a02",
+      "instruction": "RET"
+    },
+    {
+      "address": "00c30a03",
+      "instruction": "PUSH EBP"
+    },
+    {
+      "address": "00c30a04",
+      "instruction": "MOV EBP,dword ptr [EBX + 0x84]"
+    },
+    {
+      "address": "00c30a0a",
+      "instruction": "CALL 0x00b3d2a0"
+    },
+    {
+      "address": "00c30a0f",
+      "instruction": "MOV ECX,EAX"
+    },
+    {
+      "address": "00c30a11",
+      "instruction": "CALL 0x00885c90"
+    },
+    {
+      "address": "00c30a16",
+      "instruction": "MOV ECX,EDI"
+    },
+    {
+      "address": "00c30a18",
+      "instruction": "CMP EBP,EAX"
+    },
+    {
+      "address": "00c30a1a",
+      "instruction": "JNZ 0x00c30a61"
+    },
+    {
+      "address": "00c30a1c",
+      "instruction": "PUSH ESI"
+    },
+    {
+      "address": "00c30a1d",
+      "instruction": "PUSH EBP"
+    },
+    {
+      "address": "00c30a1e",
+      "instruction": "CALL 0x00d01f20"
+    },
+    {
+      "address": "00c30a23",
+      "instruction": "TEST AL,AL"
+    },
+    {
+      "address": "00c30a25",
+      "instruction": "JNZ 0x00c30abd"
+    },
+    {
+      "address": "00c30a2b",
+      "instruction": "MOV EAX,dword ptr [EBX + 0x84]"
+    },
+    {
+      "address": "00c30a31",
+      "instruction": "MOV ECX,dword ptr [0x016dc798]"
+    },
+    {
+      "address": "00c30a37",
+      "instruction": "PUSH EAX"
+    },
+    {
+      "address": "00c30a38",
+      "instruction": "CALL 0x010107b0"
+    },
+    {
+      "address": "00c30a3d",
+      "instruction": "CMP EAX,0x3"
+    },
+    {
+      "address": "00c30a40",
+      "instruction": "JL 0x00c30a59"
+    },
+    {
+      "address": "00c30a42",
+      "instruction": "MOV ECX,dword ptr [EBX + 0x84]"
+    },
+    {
+      "address": "00c30a48",
+      "instruction": "PUSH ESI"
+    },
+    {
+      "address": "00c30a49",
+      "instruction": "PUSH ECX"
+    },
+    {
+      "address": "00c30a4a",
+      "instruction": "MOV ECX,EDI"
+    },
+    {
+      "address": "00c30a4c",
+      "instruction": "CALL 0x00d01fb0"
+    },
+    {
+      "address": "00c30a51",
+      "instruction": "TEST AL,AL"
+    },
+    {
+      "address": "00c30a53",
+      "instruction": "JZ 0x00c30b11"
+    },
+    {
+      "address": "00c30a59",
+      "instruction": "POP EBP"
+    },
+    {
+      "address": "00c30a5a",
+      "instruction": "POP EDI"
+    },
+    {
+      "address": "00c30a5b",
+      "instruction": "POP ESI"
+    },
+    {
+      "address": "00c30a5c",
+      "instruction": "XOR EAX,EAX"
+    },
+    {
+      "address": "00c30a5e",
+      "instruction": "POP EBX"
+    },
+    {
+      "address": "00c30a5f",
+      "instruction": "POP ECX"
+    },
+    {
+      "address": "00c30a60",
+      "instruction": "RET"
+    },
+    {
+      "address": "00c30a61",
+      "instruction": "PUSH 0x5b6ce81"
+    },
+    {
+      "address": "00c30a66",
+      "instruction": "PUSH ESI"
+    },
+    {
+      "address": "00c30a67",
+      "instruction": "PUSH EBP"
+    },
+    {
+      "address": "00c30a68",
+      "instruction": "CALL 0x00d01b80"
+    },
+    {
+      "address": "00c30a6d",
+      "instruction": "FLDZ"
+    },
+    {
+      "address": "00c30a6f",
+      "instruction": "FXCH"
+    },
+    {
+      "address": "00c30a71",
+      "instruction": "FCOMIP ST0,ST1"
+    },
+    {
+      "address": "00c30a73",
+      "instruction": "FSTP ST0"
+    },
+    {
+      "address": "00c30a75",
+      "instruction": "JBE 0x00c30aaa"
+    },
+    {
+      "address": "00c30a77",
+      "instruction": "MOV EDX,dword ptr [EBX + 0x84]"
+    },
+    {
+      "address": "00c30a7d",
+      "instruction": "PUSH 0x0"
+    },
+    {
+      "address": "00c30a7f",
+      "instruction": "PUSH ESI"
+    },
+    {
+      "address": "00c30a80",
+      "instruction": "PUSH EDX"
+    },
+    {
+      "address": "00c30a81",
+      "instruction": "MOV ECX,EDI"
+    },
+    {
+      "address": "00c30a83",
+      "instruction": "CALL 0x00d00a10"
+    },
+    {
+      "address": "00c30a88",
+      "instruction": "FSTP float ptr [ESP + 0x10]"
+    },
+    {
+      "address": "00c30a8c",
+      "instruction": "CALL 0x010407c0"
+    },
+    {
+      "address": "00c30a91",
+      "instruction": "MOV ECX,EAX"
+    },
+    {
+      "address": "00c30a93",
+      "instruction": "CALL 0x01040860"
+    },
+    {
+      "address": "00c30a98",
+      "instruction": "FLD float ptr [ESP + 0x10]"
+    },
+    {
+      "address": "00c30a9c",
+      "instruction": "FCOMIP ST0,ST1"
+    },
+    {
+      "address": "00c30a9e",
+      "instruction": "FSTP ST0"
+    },
+    {
+      "address": "00c30aa0",
+      "instruction": "JC 0x00c30aaa"
+    },
+    {
+      "address": "00c30aa2",
+      "instruction": "POP EBP"
+    },
+    {
+      "address": "00c30aa3",
+      "instruction": "POP EDI"
+    },
+    {
+      "address": "00c30aa4",
+      "instruction": "POP ESI"
+    },
+    {
+      "address": "00c
+[TRUNCATED]
+```
+
+## external_callees
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## function_identity
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## ghidra_function
+
+- Availability: `available`
+- Evidence state: `LIVE`
+- Provenance: `GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089`
+
+```json
+{
+  "binary_available": true,
+  "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+  "body_end": "00c30b1b",
+  "body_span_bytes": 316,
+  "body_start": "00c309e0",
+  "callees": [
+    "FUN_00885c90",
+    "FUN_01021090",
+    "FUN_00d01b80",
+    "FUN_010407c0",
+    "FUN_00b3d2c0",
+    "FUN_01040860",
+    "FUN_00d00a10",
+    "FUN_010107b0",
+    "FUN_00d01fb0",
+    "FUN_00d01f20",
+    "FUN_0097eeb0",
+    "FUN_00b3d2a0"
+  ],
+  "callers": [
+    "FUN_00c774b0",
+    "FUN_00ffabc0",
+    "FUN_01003df0",
+    "FUN_01006a40",
+    "FUN_00ffb270",
+    "FUN_01029a60",
+    "FUN_00c31640",
+    "FUN_01000eb0"
+  ],
+  "classification": "worker",
+  "dispatch": null,
+  "entry_point": "00c309e0",
+  "evidence_note": "decompiler output = evidence, not truth; no MSVC RTTI in this binary",
+  "ghidra_calling_convention": null,
+  "ghidra_calling_convention_role": "cross-validation-only",
+  "ghidra_calling_convention_signal": "no_information",
+  "ghidra_has_calling_convention": false,
+  "image_base": "0x400000",
+  "locals": [
+    {
+      "name": "fVar5",
+      "storage": "register:00001100:10",
+      "type": "float10"
+    },
+    {
+      "name": "extraout_ST0",
+      "storage": "register:00001100:10",
+      "type": "float10"
+    },
+    {
+      "name": "fVar6",
+      "storage": "register:00001100:10",
+      "type": "float10"
+    },
+    {
+      "name": "param_1",
+      "storage": "register:00000004:4",
+      "type": "int"
+    },
+    {
+      "name": "cVar1",
+      "storage": "register:00000000:1",
+      "type": "char"
+    },
+    {
+      "name": "iVar2",
+      "storage": "register:00000000:4",
+      "type": "int"
+    },
+    {
+      "name": "iVar3",
+      "storage": "register:00000000:4",
+      "type": "int"
+    },
+    {
+      "name": "iVar4",
+      "storage": "register:00000000:4",
+      "type": "int"
+    }
+  ],
+  "locals_count": 8,
+  "mode": "live",
+  "name": "FUN_00c309e0",
+  "namespace": null,
+  "namespace_source": null,
+  "parameter_count": 0,
+  "parameters": [],
+  "program": "SporeApp.exe",
+  "provenance": "GhidraMCP REST /get_function_by_address + /analyze_function_complete @ http://127.0.0.1:8089",
+  "return_type": "undefined",
+  "return_type_resolved": false,
+  "rva": "0x8309e0",
+  "sdk_name": null,
+  "sdk_type": null,
+  "signature": "undefined FUN_00c309e0(void)",
+  "size_bytes": 316,
+  "status": "ok",
+  "subsystem": null,
+  "tool": "ghidra_function",
+  "va": "0x00c309e0",
+  "vtables": {
+    "referenced_by_vtables": [],
+    "sdk_associations": [],
+    "vtable_at": []
+  },
+  "xref_count": 9,
+  "xrefs": [
+    {
+      "from": "00c77512"
+    },
+    {
+      "from": "01029a91"
+    },
+    {
+      "from": "00ffad09"
+    },
+    {
+      "from": "00ffad2d"
+    },
+    {
+      "from": "00ffb356"
+    },
+    {
+      "from": "0100107a"
+    },
+    {
+      "from": "00c31644"
+    },
+    {
+      "from": "01006c2b"
+    },
+    {
+      "from": "01003eb9"
+    }
+  ]
+}
+```
+
+## globals
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## reconstruction
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## runtime
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## runtime_metadata
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## semantic_hypotheses
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `knowledgegraph/research/semantic-decomp.json`
+
+## status
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## types
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## vtables
+
+- Availability: `unavailable`
+- Evidence state: `MISSING`
+- Provenance: `reconstruction/knowledge/index.json`
+
+## Conflicts
+
+```json
+[]
+```

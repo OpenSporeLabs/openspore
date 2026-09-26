@@ -1,0 +1,88 @@
+{
+  "schema": "pkg13-e3-empire-state-wave2.function-handoff.v1",
+  "package": "PKG-13-E3-EMPIRE-STATE-WAVE2",
+  "function_address": "0x00c31890",
+  "ghidra_name": "cEmpire_RequireHomePlanet",
+  "normalized_symbol": "HomeWorldMetricLazy_00c31890",
+  "source_files": [
+    "reconstruction/staging/pkg13-e3-empire-state-wave2/empire_state_wave2.hpp",
+    "reconstruction/staging/pkg13-e3-empire-state-wave2/empire_state_wave2.cpp",
+    "reconstruction/staging/pkg13-e3-empire-state-wave2/empire_state_boundary.S",
+    "reconstruction/staging/pkg13-e3-empire-state-wave2/empire_state_wave2_model_test.cpp",
+    "reconstruction/staging/pkg13-e3-empire-state-wave2/empire_state_boundary_test.sh"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "float __thiscall HomeWorldMetricLazy_00c31890(OpaqueEmpireMetricState* state);",
+  "abi": {
+    "calling_convention": "thiscall",
+    "hidden_this_register": "ECX",
+    "hidden_this_type": "OpaqueEmpireMetricState*",
+    "stack_arguments": [],
+    "stack_cleanup_bytes": 0,
+    "termination": "plain RET",
+    "return_type": "float",
+    "return_location": "x87 ST(0)",
+    "return_width_bytes": 4
+  },
+  "body": {
+    "status": "reconstructed",
+    "entry_address": "0x00c31890",
+    "body_addresses": ["0x00c31890", "0x00c318be"],
+    "instruction_count": 14,
+    "raw_bytes": "0f57c0568bf10f2f86e00000007218e8fcfeffff50e896803f008bc8e80f843f00d99ee0000000d986e00000005ec3",
+    "mechanics": [
+      "Zero XMM0 and compare it with the float at state+0xe0 using COMISS.",
+      "Return the cached float without helpers when the comparison carries or is unordered; initialize when the cached value is zero or negative.",
+      "On initialization call 0x00c317a0 through the unchanged ECX this receiver, push its EAX result, and call 0x01029940 without consuming that pending word.",
+      "Move the 0x01029940 EAX result into ECX and call 0x01029cc0 with the pending source word as its one stack argument; the callee returns the metric in x87 ST(0).",
+      "Store the returned x87 float at state+0xe0, reload it with FLD, restore ESI, and return it unchanged."
+    ]
+  },
+  "helper_order": [
+    {"address": "0x00c317a0", "abi": "thiscall", "receiver": "state", "result": "EAX source word"},
+    {"address": "0x01029940", "abi": "cdecl", "arguments": [], "result": "EAX context word"},
+    {"address": "0x01029cc0", "abi": "thiscall", "receiver": "context word", "stack_arguments": ["source word from 0x00c317a0"], "return": "x87 ST(0)"}
+  ],
+  "mechanics_scope": {
+    "cache_gate": "Positive and NaN cached values skip initialization; zero, negative zero, and negative cached values initialize. The source field is the float at offset 0xe0.",
+    "helper_order": "The source helper runs before the cdecl context getter, and the source word remains pending across that getter for the final thiscall.",
+    "x87_return": "The result is stored with FSTP, reloaded with FLD, and returned on x87 ST(0); no SSE return-store is introduced.",
+    "state_events_containers": "Only the target metric cache is conditionally written; no empire identity, species profile, color, UI, communication, persistence, event, or container state is touched."
+  },
+  "call_graph": {
+    "direct_callers": ["0x00c5c860", "0x00c774b0"],
+    "direct_call_sites": ["0x00c5c94d", "0x00c77537"],
+    "direct_callees": ["0x00c317a0", "0x01029940", "0x01029cc0"],
+    "function_xrefs": 2
+  },
+  "evidence": [
+    {"tool": "ghidra_get_function_by_address", "address": "0x00c31890", "observation": "Live function is 0x00c31890 through 0x00c318be."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00c31890", "observation": "Assembly proves hidden this in ECX, cache offset 0xe0, COMISS gate, helper call order, FSTP store, FLD reload, and plain RET."},
+    {"tool": "ghidra_disassemble_function", "address": "0x01029940", "observation": "The context getter is a plain RET and consumes no stack words."},
+    {"tool": "ghidra_disassemble_function", "address": "0x01029cc0", "observation": "The final value helper is thiscall with RET 0x4 and an x87 FLD return."},
+    {"tool": "ghidra_get_function_xrefs", "address": "0x00c31890", "observation": "Two direct caller functions and two direct call sites are reported."}
+  ],
+  "tests": [
+    "positive cache path skips every helper",
+    "zero and negative cache paths initialize and store",
+    "NaN unordered cache path skips initialization",
+    "source-context-value helper order",
+    "x87 result is returned and cache mutation is isolated"
+  ],
+  "confidence": {
+    "body": "high",
+    "abi_and_cleanup": "high",
+    "cache_gate": "high",
+    "helper_order": "high",
+    "runtime_metric_value": "medium; helper bodies remain opaque"
+  },
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/pkg13-e3-empire-state-wave2 reconstruction/staging/pkg13-e3-empire-state-wave2/empire_state_wave2.cpp reconstruction/staging/pkg13-e3-empire-state-wave2/empire_state_wave2_model_test.cpp",
+    "model_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg13-e3-empire-state-wave2 reconstruction/staging/pkg13-e3-empire-state-wave2/empire_state_wave2.cpp reconstruction/staging/pkg13-e3-empire-state-wave2/empire_state_boundary.S reconstruction/staging/pkg13-e3-empire-state-wave2/empire_state_wave2_model_test.cpp -o /tmp/opencode/pkg13-e3-empire-state-wave2-model && /tmp/opencode/pkg13-e3-empire-state-wave2-model",
+    "ndebug_command": "clang++ -m32 -std=c++17 -O2 -DNDEBUG -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg13-e3-empire-state-wave2 reconstruction/staging/pkg13-e3-empire-state-wave2/empire_state_wave2.cpp reconstruction/staging/pkg13-e3-empire-state-wave2/empire_state_boundary.S reconstruction/staging/pkg13-e3-empire-state-wave2/empire_state_wave2_model_test.cpp -o /tmp/opencode/pkg13-e3-empire-state-wave2-model-ndebug && /tmp/opencode/pkg13-e3-empire-state-wave2-model-ndebug",
+    "format_command": "clang-format --dry-run --Werror --style='{BasedOnStyle: Google, FixNamespaceComments: false}' reconstruction/staging/pkg13-e3-empire-state-wave2/empire_state_wave2.hpp reconstruction/staging/pkg13-e3-empire-state-wave2/empire_state_wave2.cpp reconstruction/staging/pkg13-e3-empire-state-wave2/empire_state_wave2_model_test.cpp",
+    "json_command": "python3 -m json.tool reconstruction/metadata/pkg13-e3-empire-state-wave2/00c31890.json >/dev/null",
+    "abi_check_command": "sh reconstruction/staging/pkg13-e3-empire-state-wave2/empire_state_boundary_test.sh",
+    "results": {"syntax": "passed", "model": "passed", "ndebug": "passed", "format": "passed", "json": "passed", "abi_check": "passed"}
+  }
+}

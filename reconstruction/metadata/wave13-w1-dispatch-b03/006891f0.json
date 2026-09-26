@@ -1,0 +1,316 @@
+{
+  "schema": "openspore-worker-metadata-1",
+  "package": "wave13-w1-dispatch-b03",
+  "va": "0x006891f0",
+  "address": "0x006891f0",
+  "function_address": "0x006891f0",
+  "entry_address": "0x006891f0",
+  "ghidra_name": "FUN_006891f0",
+  "normalized_symbol": "wave13_w1_dispatch_b03_006891f0",
+  "reconstructed_symbol": "editor_promote_save_file_006891f0",
+  "declaration": "extern \"C\" void __cdecl editor_promote_save_file_006891f0(const char16_t* source_name, const char16_t* dest_name);",
+  "source_files": [
+    "reconstruction/staging/wave13-w1-dispatch-b03/editor_promote_save_file.cpp",
+    "reconstruction/staging/wave13-w1-dispatch-b03/editor_promote_save_file.hpp",
+    "reconstruction/staging/wave13-w1-dispatch-b03/editor_promote_save_file_test.cpp"
+  ],
+
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__cdecl",
+    "calling_convention_observation": "Two wide-string arguments are passed on the stack and the callee never touches ECX as a receiver. 0x006894c7 ADD ESP,0x6c drops 0x60 of frame plus 16 bytes of saved registers plus the 8 bytes of incoming arguments, and the terminating instruction at 0x006894ca is a bare RET. Both observed call sites then execute their own ADD ESP,0x8: 0x00580dd3 after the call at 0x00580dc9 and 0x00de48f5 after the call at 0x00de48eb. A third site, 0x00b293d9, also does ADD ESP,0x8 after the call at 0x00b293d4.",
+    "return_type": "void",
+    "return_semantics": "no value; EAX is clobbered by the last tail call and none of the 4 observed call sites reads it",
+    "return_register": "EAX (clobbered, unused)",
+    "return_width_bytes": 0,
+    "return_observation": "0x006894ca is C3 with no immediate and no preceding MOV EAX; the last value written to EAX is the return of 0x00931fd0 at 0x00689421, which is immediately followed by stack-pointer arithmetic and the epilogue.",
+    "ret_form": "RET",
+    "termination": "single exit at 0x006894ca",
+    "stack_cleanup_bytes": 0,
+    "stack_cleanup_owner": "caller",
+    "stack_arguments": [
+      {"slot": "[ESP_entry+4]", "role": "source_name", "proof": "0x00de48e1 PUSH 0x145fb88 pushes L\"GGEUserData.dat\" first, so it is the second argument; 0x00de48e6 PUSH 0x147e040 pushes L\"GGEUserData.dat.tmp\" second, so it is the first argument, and the reconstruction's source_name is the .tmp name"},
+      {"slot": "[ESP_entry+8]", "role": "dest_name", "proof": "same callsite, the argument the reconstruction concatenates to form the destination path"}
+    ],
+    "ordinary_stack_argument_slots": 2,
+    "saved_registers": ["EBX", "EBP", "ESI", "EDI"],
+    "receiver": false,
+    "hidden_this_register": "ECX is not a receiver: 0x00689205 SUB ESP,0x60 is preceded by PUSH EDI at 0x0068920b, and ECX is only used as a scratch thiscall target for the string and allocator ports (0x00689225, 0x0068924a, 0x00689296, 0x006892ab, 0x0068930f, 0x00689385).",
+    "seh_frame": "Standard MSVC SEH prologue at 0x006891f0 PUSH -1 / 0x006891f2 PUSH 0x120c8a0 / 0x006891f7 MOV EAX,FS:[0x0] / 0x006891fd PUSH EAX / 0x006891fe MOV FS:[0x0],ESP, with the handler table at 0x0120c8a0 and a state byte written at eight distinct values (1,2,3,4,5,6,8) as each owning string is constructed. 0x006894c0 MOV dword ptr FS:[0x0],ECX restores the chain.",
+    "frame": "0x60 bytes of locals: six three-pointer string objects (36 bytes) plus two name temporaries and the scalar state byte"
+  },
+
+  "layout": {
+    "entry_address": "0x006891f0",
+    "body_start": "0x006891f0",
+    "body_end": "0x006894ca",
+    "body_span_bytes": 731,
+    "instruction_count": 239,
+    "instructions": "the full 239-instruction listing was read from ghidra_disassemble_function; the semantically load-bearing instructions are enumerated in observed_mechanics and the phase map below. The listing is not duplicated verbatim here because every entry is covered by one of the other sections.",
+    "phase_map": [
+      {"phase": "SEH prologue", "span": "0x006891f0 - 0x0068920b", "detail": "PUSH -1, PUSH 0x120c8a0, install FS:[0], SUB ESP,0x60, save EBX/EBP/ESI/EDI"},
+      {"phase": "resolve save area", "span": "0x0068920c - 0x00689220", "detail": "PUSH 0x4729a47; CALL 0x006b1f90; MOV EDX,[EAX]; MOV EAX,[EDX+0x28]; CALL EAX"},
+      {"phase": "copy base path", "span": "0x00689222 - 0x00689235", "detail": "zero a three-dword string; CALL 0x00579a90 to assign the returned path"},
+      {"phase": "deep copy + delete", "span": "0x0068923a - 0x00689286", "detail": "SUB/SAR for the length, reserve length+1, memcpy, NUL-terminate, store end, then CALL 0x00932ae0 on the copy"},
+      {"phase": "build dest", "span": "0x0068928b - 0x006892c2", "detail": "assign the second argument into a temp, then CALL 0x00688f00(base, temp)"},
+      {"phase": "build src", "span": "0x00689307 - 0x0068933c", "detail": "assign the first argument into a temp, then CALL 0x00688f00(base, temp)"},
+      {"phase": "build backup", "span": "0x00689380 - 0x006893b1", "detail": "PUSH 0x1403204 (L\".old\"), assign it, then CALL 0x00688f00(dest, suffix)"},
+      {"phase": "rotate existing aside", "span": "0x006893dd - 0x006893fb", "detail": "CALL 0x00931fa0(dest); TEST AL,AL; JZ; MOV EAX,[ESP+0x60]; PUSH 1; PUSH EAX; PUSH EBX; CALL 0x00931ff0"},
+      {"phase": "promote", "span": "0x006893fe - 0x0068940b", "detail": "MOV ESI,[ESP+0x20]; PUSH 1; PUSH EBX; PUSH ESI; CALL 0x00931ff0 - unconditional, return value discarded"},
+      {"phase": "drop the backup", "span": "0x0068940b - 0x00689426", "detail": "MOV ECX,[ESP+0x6c]; PUSH ECX; CALL 0x00931fa0; TEST AL,AL; JZ; MOV EDX,[ESP+0x60]; PUSH EDX; CALL 0x00931fd0"},
+      {"phase": "release temporaries", "span": "0x00689429 - 0x006894b5", "detail": "eight repetitions of the guarded release: SUB/AND 0xfffffffe / CMP 2 / JLE / CMP ptr,0 / JZ / PUSH ptr / CALL 0x00f47380 / ADD ESP,4"},
+      {"phase": "epilogue", "span": "0x006894b8 - 0x006894ca", "detail": "POP EDI/ESI/EBP/EBX; MOV FS:[0],ECX; ADD ESP,0x6c; RET"}
+    ],
+    "padding_after": "0x006894cb onward is the standard cc cc cc pad; 0x006894cb..0x006894cf were not disassembled because they are outside the function body Ghidra reports",
+    "reads": "no global is read anywhere in the body. The only memory reads are the two call arguments, the service-registry entry reached through 0x006b1f90, the string buffers this function itself allocated, and the two vtable slots loaded from the save area object.",
+    "writes": "only the strings this function allocates, plus the FS:[0] exception-chain link at 0x006891fe and 0x006894c0"
+  },
+
+  "observed_mechanics": [
+    "0x0068920c PUSH 0x4729a47 / 0x00689211 CALL 0x006b1f90: the immediate is Resource::SaveAreaID::GamesGame0, which the SDK header Spore/Resource/Paths.h:41 documents as \"%APPDATA%/Spore/Games/Game0\"",
+    "0x00689216 MOV EDX,dword ptr [EAX] / 0x0068921a MOV EAX,dword ptr [EDX + 0x28] / 0x00689220 CALL EAX: the resolved save area is asked for its path through virtual slot +0x28; the concrete table was not located",
+    "0x00689229/0x0068922d/0x00689231 zero three consecutive dwords and 0x00689225 LEA ECX,[ESP+0x44] is the thiscall target: a fresh empty three-pointer string object",
+    "0x00689235 CALL 0x00579a90: assign the returned path into it. 0x00579a90's own body is a strlen, a reserve of length+1, a memcpy and a NUL store, so the argument is a NUL-terminated wide string",
+    "0x0068923a MOV ESI,[ESP+0x44] / 0x0068923e MOV EBX,[ESP+0x40] / 0x00689242 SUB ESI,EBX / 0x00689244 SAR ESI,0x1: the element count in 16-bit units, computed as an arithmetic right shift of the byte difference - a zero-length string yields 0, not a negative",
+    "0x00689246 LEA ECX,[ESI+0x1] / 0x0068925e CALL 0x00429760: reserve length + 1 elements",
+    "0x00689263 MOV EBP,dword ptr [ESP+0x30]: EBP becomes the newly reserved buffer",
+    "0x00689267 ADD ESI,ESI / 0x00689269 PUSH ESI / 0x0068926a PUSH EBX / 0x0068926b PUSH EBP / 0x0068926c CALL 0x011e0744: memcpy of exactly 2 * element_count bytes",
+    "0x00689271 LEA EAX,[ESI+EBP] / 0x00689276 MOV dword ptr [ESP+0x40],EAX: the end pointer is set to buffer + byte_count",
+    "0x0068927a MOV word ptr [EAX],DX with DX zeroed at 0x00689274: an explicit 16-bit NUL terminator, proving the element size is 2 bytes",
+    "0x0068927d PUSH EBP / 0x00689286 CALL 0x00932ae0: the freshly built copy of the base path, NUL-terminated, is passed to a delete-tree port whose return value is discarded. 0x00932ae0's body is GetFileAttributesW, returning 0 when absent, 1 when the attribute says directory, and otherwise delegating to 0x00932960",
+    "0x006892b0 LEA EDX,[ESP+0x34] and 0x006892b5 LEA EAX,[ESP+0x58] with the three pushes in between are the arg2/arg1 computation for 0x00688f00; the resulting string is the concatenation of the base path and the second argument, i.e. the destination",
+    "0x0068932e LEA EDX,[ESP+0x58] reuses the first result as an input, so the second concatenation is base + first argument, i.e. the source",
+    "0x00689380 PUSH 0x1403204 is a pointer to a wide literal; a live read at 0x01403204 returns 2e 00 6f 00 6c 00 64 00 00 00, which is L\".old\"",
+    "0x006893a4 LEA ECX,[ESP+0x68] makes the destination string the first concatenation input, so the third result is dest + \".old\"",
+    "0x006893e2 CALL 0x00931fa0 / 0x006893ea TEST AL,AL / 0x006893ec JZ 0x006893fe: an existence test on the destination, and the rotation is skipped when it fails",
+    "0x00931fa0's body is `(param == 0 || *param == 0) ? 0 : (attrs != INVALID && !(attrs & 0x10))`, so it is a regular-file existence predicate despite Ghidra naming it IO_File_Remove",
+    "0x006893f6 CALL 0x00931ff0 with pushes 0x1, dest, backup: the arguments are (dest, backup, 1). 0x00931ff0's body is a guarded MoveFileExW(src, dst, 3), where 3 is MOVEFILE_REPLACE_EXISTING | MOVEFILE_COPY_ALLOWED, and the guard only fires when the overwrite flag is 0",
+    "0x00689406 CALL 0x00931ff0 with pushes 0x1, dest, src: the arguments are (src, dest, 1). This is the promotion and its return value is never tested",
+    "0x00689410 CALL 0x00931fa0 / 0x00689418 TEST AL,AL / 0x0068941a JZ 0x00689429: the backup is only deleted when it exists",
+    "0x00689421 CALL 0x00931fd0 whose entire body is `DeleteFileW(path) != 0`",
+    "0x00689431 SUB ECX,EAX / 0x00689433 AND ECX,0xfffffffe / 0x00689436 CMP ECX,0x2 / 0x00689439 JLE, repeated eight times from 0x00689429 to 0x006894b5: each string is released only when its byte span masked with 0xfffffffe exceeds 2 and its begin pointer is non-null, so one-wchar and empty strings are not freed",
+    "0x006894c7 ADD ESP,0x6c followed by 0x006894ca RET: the callee drops its own frame and its own arguments, so the convention is cdecl"
+  ],
+
+  "fields_and_offsets": [
+    {"owner": "OpaqueString16 (the local string type)", "offset": "+0x00", "access": "written 0x00689229/0x0068922d/0x00689231, read 0x0068923e", "meaning": "char16_t* begin", "confidence": "OBSERVED", "corroboration": "0x00429760 writes *param_1, param_1[1] and param_1[2] and computes param_1[2] = *param_1 + count * 2"},
+    {"owner": "OpaqueString16", "offset": "+0x04", "access": "written 0x00689276, read 0x0068923a", "meaning": "char16_t* end", "confidence": "OBSERVED"},
+    {"owner": "OpaqueString16", "offset": "+0x08", "access": "written 0x00429760, read by the release guard", "meaning": "char16_t* capacity, in bytes past begin", "confidence": "OBSERVED"},
+    {"owner": "save area object", "offset": "+0x00", "access": "read 0x00689216", "meaning": "vtable pointer; the object is the value stored in the service registry entry at [entry+0x14]", "confidence": "OBSERVED", "corroboration": "0x006b1f90's decompiled body is a map find on the key followed by `return local_4[5]`, i.e. entry + 5 dwords"},
+    {"owner": "string element size", "offset": "n/a", "access": "0x0068927a MOV word ptr [EAX],DX", "meaning": "2 bytes per element", "confidence": "OBSERVED"}
+  ],
+
+  "constants": [
+    {"value": "0x4729a47", "address": "0x0068920c", "meaning": "Resource::SaveAreaID::GamesGame0, the Game0 save folder"},
+    {"value": "0x28", "address": "0x0068921a", "meaning": "vtable slot offset of the save area's path getter, slot 10"},
+    {"value": "0x1", "address": "0x00689246", "meaning": "LEA ECX,[ESI+0x1], the reserve of element_count + 1"},
+    {"value": "0x1", "address": "0x00689244", "meaning": "SAR ESI,0x1, converting the byte span into 16-bit element count"},
+    {"value": "0x1403204", "address": "0x00689380", "meaning": "address of the wide literal L\".old\", verified by a live read"},
+    {"value": "0x2", "address": "0x00689436", "meaning": "CMP ECX,0x2 in the release guard, i.e. free only when the masked span is greater than 2"},
+    {"value": "0xfffffffe", "address": "0x00689433", "meaning": "AND ECX,0xfffffffe, rounding the byte span down to an even number"},
+    {"value": "0x1", "address": "0x006893f2", "meaning": "the overwrite flag passed to 0x00931ff0, which suppresses that function's own destination-exists bail-out"},
+    {"value": "0x3", "address": "0x00931ffd (callee)", "meaning": "the literal MoveFileExEx flags inside 0x00931ff0, MOVEFILE_REPLACE_EXISTING | MOVEFILE_COPY_ALLOWED"},
+    {"value": "0x10", "address": "0x00931fae (callee)", "meaning": "FILE_ATTRIBUTE_DIRECTORY mask tested inside 0x00931fa0"},
+    {"value": "0x6c", "address": "0x006894c7", "meaning": "ADD ESP,0x6c = 0x60 frame + 16 saved registers + 8 argument bytes"}
+  ],
+
+  "globals": [
+    {"address": "0x0120c8a0", "role": "MSVC SEH handler table pushed as the exception handler", "access": "pushed at 0x006891f2", "value": "not read; it is consumed by the OS unwinder"},
+    {"address": "0x01403204", "role": "wide string literal L\".old\"", "access": "pushed at 0x00689380", "value": "2e 00 6f 00 6c 00 64 00 00 00, read live"},
+    {"address": "0x01667bac", "role": "the shared empty string used by 0x00429760 when count < 2", "access": "not touched by this body directly; observed in the callee", "value": "not read"},
+    {"address": "0x01667bae, 0x01667bac", "role": "referenced by 0x00932ae0's callee chain, not resolved", "access": "none in this body", "value": "not read"}
+  ],
+
+  "virtual_dispatch": [
+    {
+      "site": "0x0068921a / 0x00689220",
+      "receiver_load": "0x00689216 MOV EDX,dword ptr [EAX] on the object returned by 0x006b1f90",
+      "slot_offset": "+0x28",
+      "table_address": "unknown: the save area object is created at runtime, and no static table for this receiver was located",
+      "concrete_callee": null,
+      "resolved": false,
+      "arguments": [],
+      "receiver_register": "ECX (the save area object)",
+      "return_value_use": "the returned pointer is the wide base path, immediately assigned into a fresh string at 0x00689235",
+      "sdk_candidate": "a virtual path getter on the class that implements Resource::SaveAreaID::GamesGame0; the SDK's Spore/Resource/Paths.h exposes the free function GetDirFromID(PathID) but no matching class was identified, so no name is claimed"
+    }
+  ],
+
+  "control_flow": {
+    "shape": "straight-line with two conditional blocks and no loop, no switch and no computed jump. The only backward branches are the JZ guards at 0x006893ec, 0x0068941a and the eight JLE/JZ release guards, all of which skip forward over a small block.",
+    "exits": [
+      {"address": "0x006893fe", "condition": "the destination file does not exist (0x006893ec JZ)", "effect": "skip the rotate-aside move"},
+      {"address": "0x00689429", "condition": "the backup file does not exist (0x0068941a JZ)", "effect": "skip the DeleteFileW"},
+      {"address": "0x006894ca", "condition": "always", "effect": "epilogue and return"}
+    ],
+    "branch_polarity": [
+      "0x006893ec JZ 0x006893fe: taken when the destination is absent, so the backup rotation happens only when there is something to preserve",
+      "0x0068941a JZ 0x00689429: taken when the backup is absent, so DeleteFileW is only issued for a file this call may have created",
+      "the promotion move at 0x00689406 is unconditional and its failure is never observed, so a missing source leaves the destination removed with no diagnostic"
+    ],
+    "no_early_exit": "there is no path that returns before the eight release blocks other than the two JZ skips, so no allocation can leak through a normal branch"
+  },
+
+  "callers_evidence": [
+    {"callsite": "0x00580dc9", "caller": "FUN_00580cb0", "form": "CALL, real, direct, cdecl", "setup": "0x00580db9 LEA EAX,[ESP+0x418] then 0x00580dc0 PUSH EAX; 0x00580dc1 LEA ECX,[ESP+0x21c] then 0x00580dc8 PUSH ECX. Both arguments are addresses of caller stack buffers, not literals.", "result_use": "discarded; 0x00580dce continues into a vtable call on ESI"},
+    {"callsite": "0x00b293d4", "caller": "FUN_00b28ec0", "form": "CALL, real, direct, cdecl", "setup": "0x00b293cb MOV ECX,[ESP+0x11c] / 0x00b293d2 PUSH ECX then 0x00b293d3 PUSH EBP; the arguments are a caller stack buffer and a register", "result_use": "discarded; 0x00b293dc CMP byte ptr [ESP+0x120],BL continues the caller"},
+    {"callsite": "0x00bb4f0a", "caller": "FUN_00bb4ba0", "form": "CALL, real, direct, cdecl", "setup": "not disassembled; the xref type is UNCONDITIONAL_CALL", "result_use": "not inspected"},
+    {"callsite": "0x00de48eb", "caller": "FUN_00de4850", "form": "CALL, real, direct, cdecl", "setup": "0x00de48e1 PUSH 0x145fb88 (L\"GGEUserData.dat\") then 0x00de48e6 PUSH 0x147e040 (L\"GGEUserData.dat.tmp\")", "result_use": "discarded; 0x00de48f0 loads a vtable and 0x00de4902 JMP EAX tail-transfers out of the caller"},
+    {"summary": "4 UNCONDITIONAL_CALL xrefs, all discarding the void return, all with the caller performing its own ADD ESP,0x8. No tail JMP into this address and no DATA reference, so this is not a vtable entry."}
+  ],
+
+  "callees_evidence": [
+    {"callee": "0x006b1f90", "form": "CALL, direct, cdecl, 1 arg", "operation": "service/type registry lookup by 32-bit key, returning entry[5] or null", "status": "OPAQUE PORT", "note": "the key 0x4729a47 is identified as Resource::SaveAreaID::GamesGame0 from the SDK header; the registry itself is not reconstructed"},
+    {"callee": "0x00579a90", "form": "CALL, direct, __thiscall, callee-clean, 1 arg", "operation": "assign a NUL-terminated UTF-16 string into a three-pointer string, with a reserve of length+1, a memcpy and a NUL store", "status": "OPAQUE PORT", "note": "its body was read to establish the string layout and the 2-byte element size; it is not reconstructed"},
+    {"callee": "0x00429760", "form": "CALL, direct, __thiscall, 1 arg", "operation": "reserve count elements; when count < 2 it points the object at the shared empty string 0x01667bac, otherwise at a fresh EASTL allocation attributed to the source file 'c:\\\\BuildAgent\\\\max-spore001-spore\\\\CMBuild\\\\SporeEP1_RL\\\\Core\\\\UTFKernel\\\\EASTL\\\\include\\\\EASTL/allocator.h' line 0xd1", "status": "OPAQUE PORT"},
+    {"callee": "0x00688f00", "form": "CALL, direct, __thiscall, callee-clean, 3 args", "operation": "concatenate two strings into a cleared destination with no separator inserted", "status": "OPAQUE PORT", "note": "its body was read: clear, reserve(len_a + len_b + 1), NUL-terminate, append a, append b"},
+    {"callee": "0x00931fa0 (Ghidra: IO_File_Remove)", "form": "CALL, direct, cdecl, 1 arg, twice", "operation": "regular-file existence test built on GetFileAttributesW; the name is wrong", "status": "OPAQUE PORT"},
+    {"callee": "0x00931ff0", "form": "CALL, direct, cdecl, 3 args, twice", "operation": "MoveFileExW(src, dst, MOVEFILE_REPLACE_EXISTING | MOVEFILE_COPY_ALLOWED), guarded by a destination-exists bail-out when the overwrite flag is 0", "status": "OPAQUE PORT"},
+    {"callee": "0x00931fd0", "form": "CALL, direct, cdecl, 1 arg", "operation": "DeleteFileW wrapper", "status": "OPAQUE PORT"},
+    {"callee": "0x00932ae0", "form": "CALL, direct, cdecl, 1 arg", "operation": "0 when the path is absent, 1 when it is a directory, otherwise delegates to 0x00932960; modelled as a recursive delete whose return value is discarded here", "status": "OPAQUE PORT", "warning": "the argument is provably a NUL-terminated copy of the base directory path, which is the single most consequential unresolved point of this reconstruction"},
+    {"callee": "0x011e0744 (memcpy)", "form": "CALL, direct, cdecl, 3 args", "operation": "the CRT memcpy named by Ghidra", "status": "CRT"},
+    {"callee": "0x00f47380", "form": "CALL, direct, cdecl, 1 arg, eight times", "operation": "null-guarded EASTL deallocate", "status": "CRT/EASTL"}
+  ],
+
+  "analogue_functions": [
+    {"address": "0x00429580", "relationship": "the append-range primitive that 0x00688f00 calls twice; establishes the three-pointer string invariants and the 8-or-double growth policy", "confidence": "OBSERVED"},
+    {"address": "0x0040f360", "relationship": "none for this target; recorded only because it is the release idiom used by 0x005772b0 in the same batch", "confidence": "OBSERVED"}
+  ],
+
+  "sdk_correspondence": {
+    "status": "STRONG FOR THE IDENTIFIERS, UNNAMED FOR THE FUNCTION",
+    "identifiers_confirmed": [
+      {"claim": "0x4729a47 is Resource::SaveAreaID::GamesGame0", "basis": "exact literal match against Spore/Resource/Paths.h:41, whose comment gives %APPDATA%/Spore/Games/Game0", "confidence": "CONFIRMED_STATIC"},
+      {"claim": "the suffix is exactly L\".old\"", "basis": "live read of the immediate's target at 0x01403204", "confidence": "CONFIRMED_STATIC"},
+      {"claim": "the two call arguments at 0x00de48eb are L\"GGEUserData.dat.tmp\" and L\"GGEUserData.dat\"", "basis": "live reads of 0x0147e040 and 0x0145fb88", "confidence": "CONFIRMED_STATIC"}
+    ],
+    "not_asserted": [
+      "the original function name - nothing in the binary or the SDK names it; the reconstruction calls it editor_promote_save_file_006891f0 purely as a handle",
+      "the class that owns the save-area object's virtual slot +0x28, and the name of that slot",
+      "whether the intended base path ends with a separator. The concatenation inserts none, so the path returned by slot +0x28 must already end with one, but no such string was read from the binary because the receiver is created at runtime.",
+      "the meaning of 0x00932960, the routine 0x00932ae0 delegates to"
+    ],
+    "sdk_paths_read": [
+      "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Resource/Paths.h"
+    ]
+  },
+
+  "semantic_contract": "cdecl free function, two UTF-16 file-name arguments, no return value, SEH-framed. Argument 1 is the temporary source name and argument 2 is the final destination name. Invariants, in the order the body performs them: (1) resolve the Resource::SaveAreaID::GamesGame0 service and read its directory path through virtual slot +0x28; (2) deep-copy that path into a local 16-bit string; (3) call the delete-tree port on that copy and discard the result, so whatever is at the save-area path is removed before anything is installed; (4) build dest = base + dest_name; (5) build src = base + source_name; (6) build backup = dest + \".old\"; (7) if dest exists as a regular file, move dest to backup with MOVEFILE_REPLACE_EXISTING | MOVEFILE_COPY_ALLOWED; (8) unconditionally move src to dest with the same flags, ignoring the result entirely; (9) if backup exists, delete it with DeleteFileW; (10) release all eight string buffers, freeing a buffer only when its masked byte span exceeds 2 and the pointer is non-null. The net effect is a temp-file promotion with a transient one-step rollback copy: the previous contents of dest survive a failed promotion only for the duration of the call, and both failure paths are silent because no return value is tested.",
+
+  "classification": "BOUNDED_SEMANTIC",
+  "classification_rationale": "Every one of the 239 instructions is read, all eleven callees are resolved to their operations from their own decompiled bodies, all constants and literals are verified by live reads, the two caller arguments are read as literal strings, the base directory id matches an SDK enum value exactly, and the file-operation semantics are proven from GetFileAttributesW / MoveFileExW / DeleteFileW inside the callees rather than assumed. It is not STRONG_SEMANTIC because of one specific unresolved mechanical point rather than a naming gap: the delete-tree port at 0x00689286 is provably called with a NUL-terminated copy of the base directory path, and a recursive delete of the Game0 save directory immediately before moving a file into a subdirectory of that same directory is self-contradictory unless the port's directory branch does not actually remove the directory or the returned path is a file rather than a folder. The evidence fixes what the call is, not why it is there, so the function's purpose is bounded rather than fully determined.",
+
+  "semantic_findings": [
+    "The routine is a save-file promotion: temp name -> final name, with a \".old\" copy used only to keep the previous contents recoverable across the move and deleted before returning.",
+    "The three paths are built by plain concatenation with no separator, so the base path returned by the save area must already be separator-terminated; this is a constraint on the unseen getter, not something the body establishes.",
+    "The existence test and the DeleteFileW are both guarded, but the promotion move is not, and no return value is examined anywhere. A missing source file therefore leaves the destination removed with no error reported to the caller.",
+    "Ghidra's name IO_File_Remove for 0x00931fa0 is wrong: its body is GetFileAttributesW plus a not-a-directory test, i.e. a file-existence predicate. Recording this because the name would otherwise invert the two guarded branches.",
+    "The MOVE flags are the literal 3, i.e. MOVEFILE_REPLACE_EXISTING | MOVEFILE_COPY_ALLOWED, and the overwrite argument is the literal 1 at both call sites, which disables the callee's own destination-exists bail-out. The rotation therefore overwrites a stale .old unconditionally.",
+    "The string type is a three-pointer UTF-16 buffer with a byte-valued capacity, and the NUL store at 0x0068927a is a 16-bit store, which fixes the element size at 2 bytes independently of the host ABI.",
+    "All four call sites are in unrelated subsystems (the editor region, the user-data/boot region and two others) and all pass their names as caller stack buffers, so this is a shared file utility rather than an editor-specific one. The briefing's Editor subsystem label is a clustering artefact.",
+    "The function is not a vtable entry anywhere Ghidra has typed, and no DATA reference points at it."
+  ],
+
+  "unresolved_questions": [
+    "Why is a recursive delete issued on the save-area base path at 0x00689286, before any file is moved into it? The argument is proven to be that path, but the intent is not recoverable from the binary. Either the path returned by slot +0x28 is a file rather than a directory, or the delete is intended to clear a stale folder whose recreation is handled elsewhere, or the call is dead in the shipping build because its result is discarded.",
+    "What does virtual slot +0x28 on the save area return, and does it end with a path separator? The receiver is constructed at runtime so no string was read.",
+    "What is 0x00932960, the routine 0x00932ae0 delegates to for a non-directory path? Not decompiled in this pass.",
+    "What is the original function name and owning class? Nothing in the binary or the SDK names it.",
+    "Why are the two exists/delete branches guarded while the promotion is not? The asymmetry may be deliberate (best-effort cleanup) or an oversight; the binary does not say.",
+    "Do the callers at 0x00580dc9 and 0x00b293d4 pass names with an embedded separator, given that the concatenation inserts none? Their arguments are stack buffers whose contents were not read.",
+    "Is the promote-and-delete sequence ever observed to run with a destination that does not exist, i.e. is the first-time-install path exercised? Static analysis cannot tell."
+  ],
+
+  "runtime_gates": [
+    "No original-process trace exists for this function. A differential trace must record the string returned by the save-area virtual slot +0x28, since the whole path algebra depends on whether it is separator-terminated.",
+    "A trace must record the return value and the observable effect of 0x00932ae0 on the base path, which is the only way to resolve whether the leading delete is live behaviour or a no-op.",
+    "A trace must record whether MoveFileExW at 0x00689406 succeeds in practice, because the body discards the result and static analysis cannot predict the filesystem state."
+  ],
+
+  "blockers": [],
+
+  "evidence": [
+    "reconstruction/evidence/006891f0/evidence.json",
+    "reconstruction/evidence/006891f0/context.json",
+    "/tmp/opencode/wave/w1/b03/briefings.json entry for 0x006891f0",
+    "/home/juanr/apps/Spore-ModAPI/Spore ModAPI/Spore/Resource/Paths.h",
+    "live ghidra_decompile_function / disassemble_function / get_function_callers / get_function_callees / get_xrefs_to / disassemble_bytes / read_memory on SporeApp.exe"
+  ],
+
+  "tooling_evidence": [
+    {"tool": "ghidra_decompile_function", "address": "0x006891f0", "observation": "confirms the four-phase structure: save-area lookup, deep copy of the path, three 0x00688f00 concatenations, the guarded IO_File_Remove / FUN_00931ff0 / FUN_00931fd0 sequence, and eight 0x00f47380 releases. It also names the literals L\".old\", param_1 and param_2."},
+    {"tool": "ghidra_disassemble_function", "address": "0x006891f0", "observation": "239 instructions, 0x006891f0..0x006894ca, matching the briefing's body_bytes 731. SEH prologue at 0x006891f0, ADD ESP,0x6c + bare RET at the tail."},
+    {"tool": "ghidra_get_function_callers", "address": "0x006891f0", "observation": "4 callers: FUN_00580cb0, FUN_00b28ec0, FUN_00bb4ba0, FUN_00de4850 - none of them named as editor code, which is why the subsystem label is treated as a clustering artefact."},
+    {"tool": "ghidra_get_function_callees", "address": "0x006891f0", "observation": "11 callees exactly as listed in callees_evidence, matching the briefing's callee_count 11."},
+    {"tool": "ghidra_get_xrefs_to", "address": "0x006891f0", "observation": "4 UNCONDITIONAL_CALL references at 0x00b293d4, 0x00bb4f0a, 0x00580dc9, 0x00de48eb; no DATA or JMP reference."},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x00de48b0", "observation": "0x00de48e1 PUSH 0x145fb88 ; 0x00de48e6 PUSH 0x147e040 ; 0x00de48eb CALL 0x006891f0 ; 0x00de48f5 ADD ESP,0x8 - proves cdecl and fixes the argument order."},
+    {"tool": "ghidra_read_memory", "address": "0x0147e040", "observation": "470047004500550073006500720044006100740061002e006400610074002e0074006d007000 00 = L\"GGEUserData.dat.tmp\", the first argument."},
+    {"tool": "ghidra_read_memory", "address": "0x0145fb88", "observation": "470047004500550073006500720044006100740061002e00640061007400 00 = L\"GGEUserData.dat\", the second argument."},
+    {"tool": "ghidra_read_memory", "address": "0x01403204", "observation": "2e006f006c00640000 00 = L\".old\", the literal pushed at 0x00689380."},
+    {"tool": "ghidra_decompile_function", "address": "0x00931fa0", "observation": "GetFileAttributesW + (attrs & 0x10) == 0, i.e. IO_File_Exists for a regular file; Ghidra's IO_File_Remove name is a misnomer that would invert the branch reading."},
+    {"tool": "ghidra_decompile_function", "address": "0x00931ff0", "observation": "guarded MoveFileExW(param_1, param_2, 3); returns a nonzero 'already exists' code when the overwrite flag is 0 and the destination exists. Flags 3 = REPLACE_EXISTING | COPY_ALLOWED."},
+    {"tool": "ghidra_decompile_function", "address": "0x00931fd0", "observation": "DeleteFileW wrapper, single call, boolean result."},
+    {"tool": "ghidra_decompile_function", "address": "0x00932ae0", "observation": "GetFileAttributesW; 0 when absent, 1 when FILE_ATTRIBUTE_DIRECTORY, else delegates to 0x00932960. This is the port called on the base path at 0x00689286."},
+    {"tool": "ghidra_decompile_function", "address": "0x00688f00", "observation": "clear dst, reserve(len_a + len_b + 1), NUL-terminate, append a then append b - plain concatenation with no separator."},
+    {"tool": "ghidra_decompile_function", "address": "0x00429760", "observation": "reserve port: for count < 2 it points the object at 0x01667bac, otherwise it allocates count * 2 bytes via the EASTL allocator with the build path of the original allocation site."},
+    {"tool": "ghidra_decompile_function", "address": "0x00579a90", "observation": "assign-from-C-string: strlen, reserve(length + 1), memcpy, NUL store. Establishes the 2-byte element."},
+    {"tool": "ghidra_decompile_function", "address": "0x006b1f90", "observation": "map find on the key then `return local_4[5]` - a service registry lookup returning the object at entry + 0x14, or null when the key is absent. The function is not null-checked by the caller."},
+    {"tool": "ghidra_decompile_function", "address": "0x00429580", "observation": "append-range primitive used by 0x00688f00; confirms the three-pointer layout and the 8-or-double growth."},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x00580d90", "observation": "0x00580db9/0x00580dc0 and 0x00580dc1/0x00580dc8 push two caller stack addresses, then 0x00580dc9 CALL and 0x00580dd3 ADD ESP,0x8."},
+    {"tool": "ghidra_disassemble_bytes", "address": "0x00b293b0", "observation": "0x00b293d2 PUSH ECX / 0x00b293d3 PUSH EBP / 0x00b293d4 CALL 0x006891f0 / 0x00b293d9 ADD ESP,0x8 - a third cdecl site with register and stack-buffer arguments."}
+  ],
+
+  "validation": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/wave13-w1-dispatch-b03 reconstruction/staging/wave13-w1-dispatch-b03/editor_promote_save_file.cpp reconstruction/staging/wave13-w1-dispatch-b03/editor_promote_save_file_test.cpp",
+    "model_test_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/wave13-w1-dispatch-b03 reconstruction/staging/wave13-w1-dispatch-b03/editor_promote_save_file.cpp reconstruction/staging/wave13-w1-dispatch-b03/editor_promote_save_file_test.cpp -o /tmp/opencode/6891f0-model && /tmp/opencode/6891f0-model",
+    "syntax": "passed",
+    "model_test": "passed (exit 0). The harness records the port call sequence and asserts it equals delete_tree(base) / exists(dest) / move(src -> dest, overwrite=1) / exists(dest + \".old\"), with no delete because both exists predicates are stubbed false.",
+    "modelling_note": "The reconstruction uses char16_t rather than the host wchar_t. On Windows x86-32 wchar_t is 2 bytes, and every length in this function is a byte computation over that element; using the host 4-byte wchar_t silently halves every count. This was caught by the model test and is recorded so the choice is not mistaken for a stylistic one."
+  },
+
+  "body_reconstruction": {
+    "source": "reconstruction/staging/wave13-w1-dispatch-b03/editor_promote_save_file.cpp",
+    "status": "implemented",
+    "claim_scope": "All 239 instructions are accounted for in the phase map and the operation order, the three path expressions, both file-existence guards, the two moves, the delete and the eight releases are reconstructed. Every external operation is an explicitly declared opaque port; no filesystem, registry or string implementation is fabricated.",
+    "not_modelled": [
+      "the original function name and owning class",
+      "the class behind the save-area virtual slot +0x28",
+      "0x00932960, the recursive delete helper",
+      "the intent of the leading delete-tree call on the base path"
+    ],
+    "confidence": {
+      "body_bytes": 1.0,
+      "control_flow": 1.0,
+      "constants_and_literals": 1.0,
+      "file_operation_semantics": 0.95,
+      "calling_convention": 1.0,
+      "argument_order": 0.9,
+      "base_directory_identity": 0.95,
+      "purpose_of_the_leading_delete": 0.3,
+      "semantic_name": 0.4
+    }
+  },
+
+  "confidence": {
+    "body_and_control_flow": "high - the complete 239-instruction listing was read and every branch resolved",
+    "file_operation_semantics": "high - proven from the Win32 calls inside the callees, not inferred from names",
+    "identifiers": "high - the save-area enum, the \".old\" suffix and both caller literals were read live",
+    "calling_convention": "high - three call sites each perform ADD ESP,0x8",
+    "purpose_of_the_leading_delete": "low - this is the honest gap and is why the classification is bounded",
+    "semantic_name_of_the_routine": "medium - the promote-with-rollback reading is strong, the exact original name is unknown",
+    "runtime_behaviour": "none - no trace exists"
+  },
+
+  "provenance": {
+    "binary": "SPORE/SporeBin/SporeApp.exe",
+    "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+    "image_base": "0x00400000",
+    "worker_id": "wave13-w1-dispatch-b03",
+    "batch_id": "b03",
+    "package": "wave13-w1-dispatch-b03",
+    "subsystem": "shared file utility (briefing labels it Editor / cluster editor-core; the 4 call sites are in 4 unrelated regions)",
+    "package_ids": ["PKG-10-EDITOR-DISPATCH"],
+    "date": "2026-09-26",
+    "tools": "live ghidra MCP against program SporeApp.exe; Spore-ModAPI read-only"
+  }
+}

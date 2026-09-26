@@ -1,0 +1,175 @@
+{
+  "schema": "pkg-ui-safe-wave10.function-handoff.v1",
+  "package": "PKG-UI-SAFE-WAVE10",
+  "subsystem": "UI.ImageArchive",
+  "va": "0x00635700",
+  "ghidra_name": "FUN_00635700",
+  "normalized_symbol": "image_archive_scalar_deleting_destructor_00635700",
+  "semantic_label": "image archive scalar deleting destructor: write the derived vtable pair, tear down both handles and both service subobjects, restore the base vtable pair and optionally deallocate",
+  "declaration": "OpaqueImageArchive* __thiscall image_archive_scalar_deleting_destructor_00635700(OpaqueImageArchive* archive, std::uint32_t deleting)",
+  "abi": {
+    "architecture": "x86-32",
+    "calling_convention": "thiscall with callee stack cleanup",
+    "receiver_register": "ECX",
+    "receiver_type": "OpaqueImageArchive*",
+    "frame": "PUSH ESI / MOV ESI,ECX; no stack frame is allocated",
+    "stack_arguments": [
+      {
+        "position": 1,
+        "entry_offset": "ESP+0x04",
+        "width_bytes": 4,
+        "machine_type": "std::uint32_t",
+        "normalized_name": "deleting",
+        "native_reads": [
+          "TEST byte ptr [ESP + 0x8],0x1"
+        ],
+        "note": "the slot is one word wide but only its low byte is read; after PUSH ESI it is observed at ESP+0x8"
+      }
+    ],
+    "stack_cleanup_bytes": 4,
+    "ret_form": "RET 0x4",
+    "return_register": "EAX",
+    "return_width_bytes": 4,
+    "return_contract": "the incoming ECX receiver, unchanged; MOV EAX,ESI at 0x00635759",
+    "exit_count": 1
+  },
+  "observed_body": {
+    "entry": "0x00635700",
+    "body_end_inclusive": "0x0063575f",
+    "instruction_count": 30,
+    "byte_length": 95,
+    "raw_bytes_sha256": "bd5a612b40341c599befa0e1be6bcda0d1cbe4a81ec317efb2ef78f4386ee7b5",
+    "raw_bytes_hex": "568bf1c70628e73f01c7460418e73f018b4e6885c974078b018b5004ffd28b4e6485c974078b018b5004ffd28d4e2ce8acc81d008d4e14e8a4c81d00f644240801c7460458c43e01c70638b93e01740956e82a1c910083c4048bc65ec20400",
+    "instruction_list": [
+      "0x00635703 MOV [ESI],0x13fe728 / MOV [ESI+0x4],0x13fe718  (write the derived vtable pair)",
+      "0x00635710 MOV ECX,[ESI+0x68] / TEST ECX,ECX / JZ / MOV EAX,[ECX] / MOV EDX,[EAX+0x4] / CALL EDX  (late handle release)",
+      "0x0063571e MOV ECX,[ESI+0x64] / TEST ECX,ECX / JZ / MOV EAX,[ECX] / MOV EDX,[EAX+0x4] / CALL EDX  (early handle release)",
+      "0x0063572c LEA ECX,[ESI+0x2c] / CALL 0x00811fe0  (second service destructor)",
+      "0x00635734 LEA ECX,[ESI+0x14] / CALL 0x00811fe0  (first service destructor)",
+      "0x0063573c TEST byte ptr [ESP + 0x8],0x1  (deleting gate is read after the teardown)",
+      "0x00635741 MOV [ESI+0x4],0x13ec458 / MOV [ESI],0x13eb938  (restore the base vtable pair)",
+      "0x0063574e JZ 0x00635759 / PUSH ESI / CALL 0x00f47380 / ADD ESP,0x4  (deallocate)",
+      "0x00635759 MOV EAX,ESI / POP ESI / RET 0x4"
+    ],
+    "direct_callee_calls": [
+      "0x00811fe0",
+      "0x00f47380"
+    ]
+  },
+  "mechanics": [
+    "write the derived primary vtable 0x013fe728 at +0x00 and the derived secondary vtable 0x013fe718 at +0x04 before any teardown",
+    "release the handle at +0x68 through its vtable slot +0x04 when it is non null",
+    "release the handle at +0x64 through its vtable slot +0x04 when it is non null",
+    "the late handle at +0x68 is torn down before the early handle at +0x64",
+    "destroy the service subobject at +0x2c then the one at +0x14",
+    "read the low byte of the deleting word only after the whole teardown has run",
+    "restore the base secondary vtable 0x013ec458 at +0x04 and the base primary vtable 0x013eb938 at +0x00",
+    "call the deallocation port 0x00f47380 with the receiver when the deleting low bit is set",
+    "return the receiver unchanged on every gate",
+    "no byte of the receiver outside the two vtable slots is written"
+  ],
+  "ports": [
+    {
+      "va": "0x00811fe0",
+      "name": "FUN_00811fe0",
+      "kind": "thiscall service destructor",
+      "port_field": "service_destroy",
+      "body_defined_here": false,
+      "observed_abi": "thiscall, receiver only, called twice with ECX = receiver+0x2c then receiver+0x14",
+      "default": "package-local inert sink, replaceable through image_archive_set_ports"
+    },
+    {
+      "va": "0x00f47380",
+      "name": "FUN_00f47380",
+      "kind": "cdecl deallocation",
+      "port_field": "deallocate",
+      "body_defined_here": false,
+      "observed_abi": "cdecl, one stack word, caller cleanup ADD ESP,0x4",
+      "default": "package-local inert sink, replaceable through image_archive_set_ports"
+    },
+    {
+      "va": "handle vtable slot +0x04",
+      "name": "release slot",
+      "kind": "indirect thiscall release",
+      "port_field": "OpaqueSlotVtablePort::release_04",
+      "body_defined_here": false,
+      "observed_abi": "thiscall, receiver only, return value ignored",
+      "default": "supplied by the caller of the package"
+    }
+  ],
+  "runtime_gates": [
+    "runtime validation not performed; static decompilation and disassembly only",
+    "the two handle release slots at handle+0x04 and the service destructor 0x00811fe0 are opaque seams and are not promoted",
+    "the four vtable words 0x013fe728, 0x013fe718, 0x013ec458 and 0x013eb938 are literal image addresses with no class attribution in the live database",
+    "the deallocation port 0x00f47380 is shared with other campaign packages and is not promoted here",
+    "the deleting flag is a one word formal whose low byte is the only bit read; the higher bits are not interpreted"
+  ],
+  "phase": "integrated",
+  "review_status": "reviewed_static_semantic_abi_and_runtime_lifecycle",
+  "runtime_validation": 0,
+  "worker_ownership": "pkg-ui-safe-wave10-target-only",
+  "ghidra_provenance": {
+    "ghidra_program": "SporeApp.exe",
+    "ghidra_project": "SporeProject",
+    "ghidra_mutated": false,
+    "ghidra_saved": false,
+    "binary": "SPORE/SporeBin/SporeApp.exe",
+    "version": "3.1.0.22",
+    "architecture": "x86:LE:32",
+    "image_base": "0x00400000",
+    "captured_on": "2026-09-25",
+    "tools": [
+      "ghidra_get_function_by_address",
+      "ghidra_disassemble_function",
+      "ghidra_get_current_program_info"
+    ],
+    "evidence_rule": "The disassembly listed in observed_body was read back from the live Ghidra database for SporeApp.exe at the addresses shown, and the byte extent was read from the .text section of SPORE/SporeBin/SporeApp.exe (.text VMA 0x00401000, file offset 0x400). The sha256 below covers exactly that byte extent. No Ghidra symbol, structure, comment or program state was created or modified."
+  },
+  "implementation": {
+    "status": "promoted to canonical",
+    "canonical_status": "present; promoted by the sole integrator in batch-2026-09-25-wave10-safe-core",
+    "namespace": "openspore::reconstruction::pkg_ui_safe_wave10",
+    "header": "src/reconstruction/pkg_ui_safe_wave10/ui_safe_wave10.hpp",
+    "source": "src/reconstruction/pkg_ui_safe_wave10/ui_safe_wave10.cpp",
+    "model_test": "src/reconstruction/pkg_ui_safe_wave10/ui_safe_wave10_model_test.cpp",
+    "staged_from": "reconstruction/staging/pkg-ui-safe-wave10",
+    "metadata": "reconstruction/metadata/pkg-ui-safe-wave10/00635700.json"
+  },
+  "model_test_cases": [
+    "test_release_and_destroy_order",
+    "test_vptr_teardown",
+    "test_null_handles_are_skipped",
+    "test_bit_zero_delete_gate",
+    "test_returns_self_on_every_gate",
+    "test_body_outside_the_vptrs_is_untouched",
+    "test_default_ports_are_callable",
+    "test_stack_discipline"
+  ],
+  "focused_test_evidence": {
+    "command": "clang++ -m32 -std=c++17 -O0/-O2 [-DNDEBUG] -Wall -Wextra -Wpedantic -Werror -I <canonical dir> <source> <model test> && <binary>",
+    "configurations": [
+      "-O0",
+      "-O2",
+      "-O0 -DNDEBUG",
+      "-O2 -DNDEBUG"
+    ],
+    "normal": "passed at -O0 and at -O2",
+    "ndebug": "passed at -O0 -DNDEBUG and at -O2 -DNDEBUG",
+    "assertions_weakened": 0,
+    "assertions_removed": 0,
+    "test_count": 8,
+    "compiled_ret_form_matches_ghidra": true
+  },
+  "helper_and_data_vas_not_promoted": [
+    "0x00571db0",
+    "0x00e30f90",
+    "0x00f47380",
+    "0x008105b0",
+    "0x005c29c0",
+    "0x005507a0",
+    "0x0067dcc0",
+    "0x00b3d240",
+    "0x00b3d3c0",
+    "0x011e0744"
+  ]
+}

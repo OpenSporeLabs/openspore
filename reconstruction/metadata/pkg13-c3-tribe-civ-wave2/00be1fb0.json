@@ -1,0 +1,172 @@
+{
+  "schema": "pkg13-c3-tribe-civ-wave2.function-handoff.v1",
+  "package": "PKG-13-C3-TRIBE-CIV-WAVE2",
+  "function_address": "0x00be1fb0",
+  "ghidra_name": "FUN_00be1fb0",
+  "normalized_symbol": "city_add_building_00be1fb0",
+  "binary": {
+    "program": "SporeApp.exe",
+    "version": "3.1.0.22",
+    "architecture": "x86:LE:32",
+    "image_base": "0x00400000"
+  },
+  "phase": "body-reconstruction",
+  "status": "implemented in worker-owned staging",
+  "staging_paths": [
+    "reconstruction/staging/pkg13-c3-tribe-civ-wave2/tribe_civilization_wave2.hpp",
+    "reconstruction/staging/pkg13-c3-tribe-civ-wave2/tribe_civilization_wave2.cpp",
+    "reconstruction/staging/pkg13-c3-tribe-civ-wave2/tribe_civilization_wave2_model_test.cpp"
+  ],
+  "declaration": "OpaqueBuilding* __thiscall city_add_building_00be1fb0(OpaqueCity* city)",
+  "abi": {
+    "architecture": "x86-32",
+    "calling_convention": "thiscall",
+    "hidden_this_register": "ECX",
+    "hidden_this_type": "OpaqueCity* city",
+    "ordinary_stack_arguments": [],
+    "stack_cleanup_bytes": 0,
+    "return_register": "EAX",
+    "return_width_bytes": 4,
+    "return_type": "OpaqueBuilding* newly created building identity or null",
+    "termination": "plain RET",
+    "saved_registers": ["EBX", "ESI", "EBP", "EDI"]
+  },
+  "mechanics": {
+    "execution_order": [
+      "Save the city receiver in EBX and call 0x00b3d300 to obtain the current opaque root.",
+      "Call 0x00b20c60 with the current root in ECX and fixed factory key 0x0436f342. Return null immediately when the factory result is null.",
+      "Load the factory vtable, call vtable+0x0c with fixed building key 0x0436f315, and save the returned building identity in ESI. Return null immediately when the building result is null.",
+      "Call the building vtable slot +0x00 with ECX=building before touching the city building vector.",
+      "Read city+0x358 as the vector end word and city+0x35c as the capacity word. If unsigned end is below capacity, increment the end word first, then write the building pointer at the old end when that pointer is non-null and call building vtable+0x00 again.",
+      "If end is not below capacity, call 0x00edafd0 with ECX=city+0x354, the old end pointer, and a pointer to the saved building identity. The helper grows the vector, copies the old elements, stores the building at the insertion position, calls building vtable+0x00 for the inserted value, releases old storage when it is not the sentinel, and updates begin/end/capacity.",
+      "Call building vtable+0x04 with ECX=building after vector insertion. This release follows both the initial AddRef and the vector insertion AddRef.",
+      "Push the city receiver and call 0x00bd2310 with ECX=building. The building owner/setup helper therefore runs after the vector release.",
+      "Load the city owner vtable word at city+0x120, call vtable+0x2c with ECX=city+0x120, and save the returned 32-bit value in EAX.",
+      "Load the building owner vtable word at building+0x34 and call vtable+0x38 with ECX=building+0x34 and the saved city-owner value on the stack.",
+      "Return the original building identity from ESI unchanged."
+    ],
+    "factory_dependency": {
+      "root_provider": "0x00b3d300",
+      "factory_helper": "0x00b20c60",
+      "factory_key": "0x0436f342",
+      "factory_vtable_create_slot": "0x0c",
+      "building_key": "0x0436f315",
+      "helper_observed_allocation": {
+        "size": "0x0c",
+        "domain": "Simulator",
+        "source_word": "0x013ebb38",
+        "line_word": "0x00d1"
+      },
+      "opaque_boundary": "The target only consumes the factory pointer and its +0x0c result. The factory helper's service lookup, link-list writes, and its own ref operations remain outside the target's direct body."
+    },
+    "vector_contract": {
+      "vector_receiver": "city+0x354",
+      "begin_offset": "0x00",
+      "end_offset": "0x04",
+      "capacity_offset": "0x08",
+      "storage_sentinel_offset": "0x10",
+      "in_place_order": ["increment end", "store building at old end", "AddRef inserted building"],
+      "growth_order": ["allocate doubled capacity or one slot", "copy prefix", "store building", "AddRef inserted building", "copy suffix", "release old non-sentinel storage", "publish begin/end/capacity"],
+      "growth_capacity": "one slot for an empty vector, otherwise signed element count doubled",
+      "count": "signed (end-begin) >> 2",
+      "order": "append-only for this target; source position is the old end"
+    },
+    "refcount_order": {
+      "before_vector": "building vtable+0x00",
+      "during_vector": "building vtable+0x00 after the pointer is stored in the vector",
+      "after_vector": "building vtable+0x04",
+      "returned_identity": "The vector retains the inserted pointer; the post-insert release is complete before building owner/setup and both owner hooks."
+    },
+    "owner_hook_order": [
+      "0x00bd2310(building, city)",
+      "city+0x120 vtable+0x2c(city+0x120)",
+      "building+0x34 vtable+0x38(building+0x34, city_hook_result)"
+    ],
+    "null_and_failure_paths": [
+      "A null current root is passed unchanged to 0x00b20c60; no target-local root null guard exists.",
+      "A null factory result returns null before any building vtable call.",
+      "A null building result from factory vtable+0x0c returns null before any AddRef, vector, owner, or release call.",
+      "The target assumes the returned building, its vtable, the city vector words, and both owner vtables are valid.",
+      "The target has no graceful vector-allocation failure branch; the 0x00edafd0 dependency uses the native allocator result directly."
+    ]
+  },
+  "direct_callers": [
+    {"address": "0x00be3850", "role": "city placement/update path"},
+    {"address": "0x00be3990", "role": "city placement/update path with a building request"},
+    {"address": "0x00d130d0", "role": "command/property path requesting a city building"}
+  ],
+  "direct_callees": [
+    {"address": "0x00b3d300", "role": "current root provider"},
+    {"address": "0x00b20c60", "role": "factory wrapper"},
+    {"address": "0x00edafd0", "role": "building vector insertion/growth"},
+    {"address": "0x00bd2310", "role": "building owner/setup helper"},
+    {"address": "vtable+0x00", "role": "building AddRef before and during vector insertion"},
+    {"address": "vtable+0x04", "role": "building release after insertion"},
+    {"address": "city+0x120 vtable+0x2c", "role": "city owner hook"},
+    {"address": "building+0x34 vtable+0x38", "role": "building owner hook"}
+  ],
+  "ownership_and_state": {
+    "returned_identity": "The returned pointer is the exact object produced by factory vtable+0x0c; no replacement pointer is created.",
+    "vector_ownership": "The vector stores the returned building pointer and retains one vector reference. The post-insert release removes the temporary reference used by the target path.",
+    "city_state": "Only the opaque city building vector at city+0x354 and the city owner hook receiver at city+0x120 are directly touched.",
+    "building_state": "Only the opaque building owner receiver at building+0x34 and its vtable hook are directly touched after factory setup.",
+    "population": "No population state is accepted or written by this target.",
+    "persistence": "No persistence or serialization state is accepted or written by this target.",
+    "tribe_state": "No tribe receiver or tribe state is accepted or written by this target."
+  },
+  "evidence": [
+    {"tool": "ghidra_get_function_by_address", "address": "0x00be1fb0", "observation": "Live function range is 0x00be1fb0 through 0x00be206b."},
+    {"tool": "ghidra_decompile_function", "address": "0x00be1fb0", "observation": "Live pseudocode shows the root lookup, factory key 0x0436f342, factory slot +0x0c key 0x0436f315, two AddRef paths, vector append/growth, release, bd2310, city hook, building hook, and returned identity."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00be1fb0", "observation": "75 live instructions fix ECX receivers, fixed words, city offsets 0x120, 0x354, 0x358, and 0x35c, vtable slots 0x00, 0x04, 0x2c, and 0x38, and the exact call order."},
+    {"tool": "ghidra_get_function_callers", "address": "0x00be1fb0", "observation": "The live query returned three direct caller functions."},
+    {"tool": "ghidra_get_function_callees", "address": "0x00be1fb0", "observation": "The live query returned four named direct callees: 0x00b3d300, 0x00b20c60, 0x00edafd0, and 0x00bd2310; vtable calls are indirect."},
+    {"tool": "ghidra_get_xrefs_to", "address": "0x00be1fb0", "observation": "The live query returned three code xrefs, matching the three callers."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00edafd0", "observation": "The vector helper uses old end/capacity at +0x04/+0x08, doubles the count or allocates one slot, copies the range, AddRefs the inserted value, frees old non-sentinel storage, and publishes the new pointers."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00b20c60", "observation": "The factory wrapper uses a 0x0c allocation with the recorded source words and returns the factory object; its internal linked-list effects remain outside the target."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00bd2310", "observation": "The called building helper accepts ECX=building and the pushed city receiver, and performs its own opaque owner setup before returning."}
+  ],
+  "unresolved": [
+    "The concrete root, factory, building, city-owner, and building-owner types remain opaque.",
+    "The 0x00b20c60 service object and its internal linked-list/ref operations are not reclassified as city or building ownership by this target.",
+    "The 0x00bd2310 helper's complete owner graph and runtime release behavior are outside this body.",
+    "The native vector allocator's failure behavior is not replaced with a target-local error policy.",
+    "No population, persistence, or tribe-state owner is inferred from the city/building offsets."
+  ],
+  "tests": {
+    "path": "reconstruction/staging/pkg13-c3-tribe-civ-wave2/tribe_civilization_wave2_model_test.cpp",
+    "coverage": [
+      "current root and fixed factory key propagation",
+      "null factory and null building factory-result failure paths",
+      "empty vector default append",
+      "existing-capacity append order and preserved order",
+      "vector growth from one full slot and from null storage",
+      "growth allocation, copy, AddRef, old-storage release, and pointer publication order",
+      "temporary AddRef, vector AddRef, and post-insert release ordering",
+      "exact returned building identity",
+      "building setup, city owner hook, and building owner hook ordering/value propagation",
+      "city vector, tribe bytes, population probe, and persistence probe separation"
+    ],
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/pkg13-c3-tribe-civ-wave2 reconstruction/staging/pkg13-c3-tribe-civ-wave2/tribe_civilization_wave2.cpp reconstruction/staging/pkg13-c3-tribe-civ-wave2/tribe_civilization_wave2_model_test.cpp",
+    "normal_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg13-c3-tribe-civ-wave2 reconstruction/staging/pkg13-c3-tribe-civ-wave2/tribe_civilization_wave2.cpp reconstruction/staging/pkg13-c3-tribe-civ-wave2/tribe_civilization_wave2_model_test.cpp -o /tmp/opencode/pkg13-c3-tribe-civ-wave2-model && /tmp/opencode/pkg13-c3-tribe-civ-wave2-model",
+    "ndebug_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -DNDEBUG -I reconstruction/staging/pkg13-c3-tribe-civ-wave2 reconstruction/staging/pkg13-c3-tribe-civ-wave2/tribe_civilization_wave2.cpp reconstruction/staging/pkg13-c3-tribe-civ-wave2/tribe_civilization_wave2_model_test.cpp -o /tmp/opencode/pkg13-c3-tribe-civ-wave2-model-ndebug && /tmp/opencode/pkg13-c3-tribe-civ-wave2-model-ndebug",
+    "format_command": "clang-format --dry-run --Werror --style='{BasedOnStyle: Google, FixNamespaceComments: false}' reconstruction/staging/pkg13-c3-tribe-civ-wave2/tribe_civilization_wave2.hpp reconstruction/staging/pkg13-c3-tribe-civ-wave2/tribe_civilization_wave2.cpp reconstruction/staging/pkg13-c3-tribe-civ-wave2/tribe_civilization_wave2_model_test.cpp",
+    "results": {
+      "syntax": "passed normal and NDEBUG",
+      "model": "passed normal and NDEBUG",
+      "format": "passed",
+      "json": "passed",
+      "diff_check": "passed"
+    },
+    "runtime_validation": 0
+  },
+  "static_vs_runtime_boundary": {
+    "static": "The exact thiscall body, fixed factory words, vector offsets, append/growth branches, refcount order, owner setup call, owner hook order, and returned identity are fixed by live Ghidra evidence.",
+    "runtime": "No original-process execution or pointer-validity trace was performed.",
+    "claims_not_made": [
+      "semantic owner names for the opaque root, factory, building, or owner vtables",
+      "population, persistence, or tribe ownership",
+      "runtime behavior of 0x00b20c60, 0x00bd2310, or native vector allocation failure",
+      "semantic meaning of the two owner hook return values"
+    ]
+  }
+}

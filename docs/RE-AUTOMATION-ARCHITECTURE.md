@@ -71,7 +71,7 @@ What exists and works today (all verified):
   `tests/fixtures/cell/fixtures.json` (5 scenarios, 42 floats) frozen by
   double-run byte identity; `replace_diff_test` 64/64 MATCH.
 - **Scripts-as-MCP-candidates**: kg.py, dossier.py, asset_resolver.py,
-  analyze.py, observe.py, gen_cell_fixtures.py, ctest — the 21-tool MCP surface
+  analyze.py, observe.py, gen_cell_fixtures.py, ctest — the 24-tool MCP surface
   is a thin facade over exactly these.
 - **Status board**: `docs/replacement-status.json` — 18 subsystems, 9-level
   vocabulary; only `cell-movement-mouse-steering` at `replaced-approx`.
@@ -106,7 +106,8 @@ The 4 structural weaknesses:
                                                            | stdio (JSON-RPC 2.0)
                      +-------------------------------------v----------------------
                      | tools/mcp/server.py  (stdlib, ~300 LOC protocol surface)    |
-                     | 21 tools: pipeline_state target_select kg_query kg_neighbors |
+                     | 24 tools: pipeline_state target_select function_context     |
+                     | frontier_context reconstruction_status kg_query kg_neighbors |
                      | kg_record dossier_read dossier_regenerate ghidra_decompile  |
                      | ghidra_function ghidra_search ghidra_snapshot_save          |
                      | asset_resolve asset_scan vtable_lookup trace_run*           |
@@ -572,7 +573,7 @@ trace (or is infra the platform cannot function without).
 | 1 | Schema patch: `node` cols (`evidence_level`, `updated_at`, `binary_sha256`), tables `field`/`trace_run`/`investigations`, labels Class/Hypothesis/Adjudication, rels memberOf/depends_on, 6 indexes, `kg.py _migrate` | **NOW** | §5 | spine; additive, re-runnable, test-pinned |
 | 2 | `knowledgegraph/scale.py` — canonical 7-level scale + 9→7 `STATUS2EV` (fixes the 2 missing keys) + Map B back-compat | **NOW** | §5 | the one scale; kills the 3-way prose translation |
 | 3 | Seed generator (7 committed inputs; 1,670 SDK fns + 18 subsystems + `investigations` rows; replaces hand literals; reproduces 96/115/14) | **NOW** | §5 | kills hand-written state rot; fixes STATUS2EV |
-| 4 | MCP server `tools/mcp/server.py` + registry (21 tools incl. `queue_op`) + `opencode.json` entry + `tests/mcp/test_server.py` | **NOW** | §4 | the single agent↔machine interface; CI-testable |
+| 4 | MCP server `tools/mcp/server.py` + registry (24 tools incl. `queue_op` and reconstruction context) + `opencode.json` entry + `tests/mcp/test_server.py` | **NOW** | §4 | the single agent↔machine interface; CI-testable |
 | 5 | Decompilation disk cache keyed on `(binary_sha256, rva, ghidra_version, program)` | **NOW** | §4 | makes #8/#11 cheap + deterministic; disposable |
 | 6 | `binary_sha256` pinning (`config.py`; embedded in every manifest/queue row/node) | **NOW** | §3-4 | the anti-stale mechanism; EP1 flip handled |
 | 7 | `investigations` queue + `queue_op` #21 + dedup key `(kind, va, binary_sha256)` | **NOW** | §6 | no re-investigation; the lifecycle the platform exists for |
@@ -600,7 +601,7 @@ trace (or is infra the platform cannot function without).
 |---|---|---|
 | S0 | Precondition: kill the stale `SporeApp.exe` (PID 213519 at analysis time) + `wineserver -k`; install `xdotool x11-utils maim python3-xlib` (approval) | `xdotool version` runs; `wine --version` = wine-11.17; stale game process gone; `SPORE/` untouched |
 | S1 | Schema patch + `scale.py` + seed generator (§5, items 1-3, 7) | `python3 -m unittest discover -s tests` green incl. new seed tests: 96/115/14 reproduced from `seed-literals.json`; byte-deterministic re-run; all 9 statuses of `replacement-status.json` seed without `KeyError`; KG shows 18 `Subsystem` nodes; `investigations` seeded (1,670 fn rows + 18 sub rows + 1 `done` cell row) |
-| S2 | MCP server + 21 tools + decompile cache + `opencode.json` entry (items 4-6) | `tests/mcp/test_server.py` green end-to-end over pipes: handshake, 21 valid schemas, pure tools on committed data, `no_spo` degradation, fake-REST decompile cache hit (no second upstream call), gate refusals without `OPENSPORE_MCP_TRUSTED`; from opencode: `pipeline_state` answers and embeds `binary_sha256` |
+| S2 | MCP server + 24 tools + decompile cache + `opencode.json` entry (items 4-6) | `tests/mcp/test_server.py` green end-to-end over pipes: handshake, 24 valid schemas, pure tools on committed data, `no_spo` degradation, fake-REST decompile cache hit (no second upstream call), gate refusals without `OPENSPORE_MCP_TRUSTED`; from opencode: `pipeline_state` answers and embeds `binary_sha256` |
 | S3 | `menu_walk.sh` + overlay + stop key + input log + shot manifest + ladder + machine lock (items 8-10) | script + overlay committed and diff-reviewed; dry-run lists every step without issuing events; overlay appears/destroys cleanly; `Ctrl+Alt+Backspace` stop verified once by hand; lock acquired/released |
 | S4 | **MANUAL validation run** (item 13): human watches; fresh `wineserver -k`; boot on `:0`; one `xdotool click --window $WIN` + one `key --window $WIN` | Documented verdict: (a) synthetic events reach the game → proceed as designed; (b) rejected → `windowactivate`+send fallback re-tested once; (c) both fail → **record the negative result as the deliverable**, park the trace, sprint ends at S3 with the evidence |
 | S5 | Unattended walk ×3 + cell trace (item 11): `trace_run` under approval (human present) with the walk as precondition; probes = `cell_movement.json` | ≥1 run with ≥1 cell-stage probe event fired (positive); OR the level-3 stop: manifest `outcome` + partial JSONL + `Observation` recorded — the negative result IS a deliverable (9-run precedent). Either way: manifest + JSONL + committed keyframes + `trace_run` rows + dossier regenerated with the runtime section |

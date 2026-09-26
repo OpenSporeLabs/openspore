@@ -1,0 +1,352 @@
+{
+  "schema": "openspore-worker-metadata-1",
+  "package": "wave13-w1-core-b10",
+  "va": "0x00c0c130",
+  "address": "0x00c0c130",
+  "function_address": "0x00c0c130",
+  "entry_address": "0x00c0c130",
+  "ghidra_name": "FUN_00c0c130",
+  "normalized_symbol": "wave13_w1_core_b10_00c0c130",
+  "reconstructed_symbol": "SimEntityCollection_GetFlagB91_00c0c130",
+  "declaration": "std::uint8_t SimEntityCollection_GetFlagB91_00c0c130(OpaqueSimEntityCollection* collection);",
+  "source_files": [
+    "reconstruction/staging/wave13-w1-core-b10/c0c130_flag_b91.hpp",
+    "reconstruction/staging/wave13-w1-core-b10/c0c130_flag_b91.cpp",
+    "reconstruction/staging/wave13-w1-core-b10/b10_observed_types.hpp"
+  ],
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "calling_convention_observation": "0x00c0c130 reads ECX+0xbb1 and never writes ECX, so the receiver arrives in ECX. 0x00c0c136 is a bare C3, so the callee pops zero stack words and the function has no argument in any convention.",
+    "return_type": "std::uint8_t",
+    "return_semantics": "the raw byte stored at receiver + 0xbb1, forwarded unchanged; it is not normalised to 0 or 1",
+    "return_register": "EAX",
+    "return_width_bytes": 1,
+    "return_observation": "0x00c0c130: MOV AL,byte ptr [ECX + 0xbb1] is a one-byte load into AL. Bits 8..31 of EAX are left exactly as the caller left them and are therefore undefined on exit. Both inspected consumers test only AL (0x00c03962 and 0x00c03b1c), so the undefined upper bits are never observed.",
+    "ret_form": "RET",
+    "termination": "RET",
+    "stack_cleanup_bytes": 0,
+    "stack_cleanup_owner": "caller",
+    "stack_arguments": [],
+    "ordinary_stack_argument_slots": 0,
+    "saved_registers": [],
+    "receiver": true,
+    "receiver_register": "ECX",
+    "hidden_receiver": "read",
+    "hidden_this_register": "ECX is the only register mentioned by either instruction"
+  },
+  "layout": {
+    "entry_address": "0x00c0c130",
+    "body_start": "0x00c0c130",
+    "body_end": "0x00c0c136",
+    "body_span_bytes": 7,
+    "body_bytes_hex": "8a81b10b0000c3",
+    "instruction_count": 2,
+    "instructions": [
+      {
+        "address": "0x00c0c130",
+        "bytes": "8a 81 b1 0b 00 00",
+        "mnemonic": "MOV",
+        "operands": "AL,byte ptr [ECX + 0xbb1]"
+      },
+      {
+        "address": "0x00c0c136",
+        "bytes": "c3",
+        "mnemonic": "RET",
+        "operands": ""
+      }
+    ],
+    "padding_after": "0x00c0c137 through 0x00c0c13f are cc cc cc cc cc cc cc cc cc (INT3); the next function starts at 0x00c0c140",
+    "frame": "none: no PUSH, no SUB ESP, no MOV EBP,ESP, no register save or restore",
+    "reads": "one byte at receiver + 0xbb1; nothing else in the entire body",
+    "writes": "AL only. No memory write, no global, no field write."
+  },
+  "observed_mechanics": [
+    "0x00c0c130: MOV AL,byte ptr [ECX + 0xbb1], encoded 8a 81 b1 0b 00 00, a one-byte load with the 32-bit displacement 0x0bb1",
+    "0x00c0c136: C3 bare RET, so the caller owns all stack cleanup and the function takes no argument",
+    "ghidra_read_memory at 0x00c0c130 returns 8a 81 b1 0b 00 00 c3 cc cc cc cc cc cc cc cc cc, confirming the two instructions and the nine-byte pad",
+    "ghidra_read_memory at 0x00c0c0c0 (the enclosing accessor block) returns the same function followed at 0x00c0c0d0 by 8b 81 60 0a 00 00, showing 0x00c0c130 is the last member of a contiguous one-line accessor block",
+    "0x00c0c120, the immediately preceding sibling, is MOV AL,byte ptr [ECX + 0xbb0] ; RET -- the same seven-byte shape one byte lower, so +0xbb0 and +0xbb1 are two independent byte flags of the same receiver",
+    "0x00c03950 (caller): MOV ECX,EBX at 0x00c0395b ; CALL 0x00c0c130 at 0x00c0395d ; TEST AL,AL at 0x00c03962 ; JZ 0x00c03970 at 0x00c03964 -- when the flag is set the function returns 0 at 0x00c03967 (XOR AL,AL) and skips the body that would have read [EBX + 0xc0] at 0x00c03970",
+    "0x00c03b00 region (second caller): CALL 0x00c0c130 at 0x00c03b17 ; TEST AL,AL at 0x00c03b1c ; JNZ 0x00c03b60 at 0x00c03b1e, the mirror-image polarity: when the flag is set control jumps away from the fallthrough, which continues with a float comparison at 0x00c03b20 and 0x00c03b26",
+    "Both consumers therefore treat the answer as a boolean predicate and both place the flag test immediately before the work the flag gates, which is the shape of an enable, suppression or short-circuit marker",
+    "ghidra_get_function_xrefs at 0x00c0c130 returns 21 UNCONDITIONAL_CALL references from 14 distinct caller functions, all direct calls with no data references",
+    "ghidra_search_functions and ghidra_get_function_by_address were not needed: the body is two instructions and fully determined",
+    "A positive-controlled .rdata/.data dword scan found no vtable slot pointing at 0x00c0c130 or 0x00c0c120, so this accessor is a free function on a concrete class, not an interface method",
+    "The receiver class is independently fixed by the sibling block 0x00c0c0d0..0x00c0c1c0, whose members read and write +0xa60, +0xb34, +0xb74, +0xbb0, +0xbb1, +0xe80 and +0xe84 of the same object; 0x00c0c080 in the same block searches that object's collection through vtable slots +0xb0 and +0xb4"
+  ],
+  "fields_and_offsets": [
+    {
+      "offset": "0x00000bb1",
+      "instruction": "0x00c0c130: MOV AL,byte ptr [ECX + 0xbb1]",
+      "meaning": "the single byte this function returns; a flag of the receiver, semantics unestablished",
+      "confidence": "OBSERVED (offset and width); INFERRED (that it is a flag rather than a small counter)"
+    },
+    {
+      "offset": "0x00000bb0",
+      "instruction": "0x00c0c120: MOV AL,byte ptr [ECX + 0xbb0]",
+      "meaning": "the adjacent byte flag of the same receiver, read by the seven-byte sibling one byte lower",
+      "confidence": "OBSERVED"
+    },
+    {
+      "offset": "0x00000a60",
+      "instruction": "0x00c0c0d0: MOV EAX,dword ptr [ECX + 0xa60]",
+      "meaning": "pointer field of the same receiver, dereferenced then read as a float at +0x574 by 0x00c0c0d6",
+      "confidence": "OBSERVED (neighbouring accessor, same class)"
+    },
+    {
+      "offset": "0x00000b34",
+      "instruction": "0x00c0c1c1: CMP dword ptr [ECX + 0xb34],0x1",
+      "meaning": "dword field of the same receiver compared against 1",
+      "confidence": "OBSERVED (neighbouring accessor, same class)"
+    },
+    {
+      "offset": "0x00000b74",
+      "instruction": "0x00c0c1b0: MOV EAX,dword ptr [ECX + 0xb74]",
+      "meaning": "dword field of the same receiver",
+      "confidence": "OBSERVED (neighbouring accessor, same class)"
+    },
+    {
+      "offset": "0x00000e80",
+      "instruction": "0x00c0c180: MOV dword ptr [ECX + 0xe80],EAX",
+      "meaning": "dword field of the same receiver, written from [incoming + 0x10]",
+      "confidence": "OBSERVED (neighbouring accessor, same class)"
+    },
+    {
+      "offset": "0x00000e84",
+      "instruction": "0x00c0c180: MOV dword ptr [ECX + 0xe84],EAX",
+      "meaning": "pointer field of the same receiver; the bytes at [ptr + 0x388] and [ptr + 0x389] are tested by 0x00c0c0ea and 0x00c0c10a",
+      "confidence": "OBSERVED (neighbouring accessor, same class)"
+    }
+  ],
+  "constants": [
+    {
+      "value": "0x00000bb1",
+      "address": "0x00c0c130",
+      "meaning": "the byte displacement of the flag this function returns",
+      "kind": "displacement"
+    },
+    {
+      "value": "0x00000bb0",
+      "address": "0x00c0c120",
+      "meaning": "the adjacent flag's displacement in the seven-byte sibling",
+      "kind": "displacement (sibling)"
+    },
+    {
+      "value": "0x00000001",
+      "address": "0x00c0c1c1",
+      "meaning": "the constant compared against [ECX + 0xb34] by the neighbouring accessor 0x00c0c1c0",
+      "kind": "immediate (neighbouring accessor)"
+    },
+    {
+      "value": "0x00000388 / 0x00000389",
+      "instruction": "0x00c0c0ea and 0x00c00c10a",
+      "address": "0x00c0c0ea / 0x00c0c100",
+      "meaning": "two byte flags inside the object at receiver +0xe84, read by the neighbouring accessors 0x00c0c0e0 and 0x00c0c100",
+      "kind": "displacement (neighbouring accessors)"
+    }
+  ],
+  "globals": [],
+  "virtual_dispatch": [],
+  "control_flow": {
+    "switch_tables": [],
+    "loops": [],
+    "early_exits": [],
+    "branch_polarity": "0x00c0c130 contains no branch at all; the polarity that matters is in the callers. 0x00c03962/0x00c03964 is TEST AL,AL / JZ, so a set flag short-circuits to an early return of 0 at 0x00c03967. 0x00c03b1c/0x00c03b1e is TEST AL,AL / JNZ, so a set flag jumps out of the fallthrough into the block at 0x00c03b60. In both cases the flag diverts control away from the code immediately following the call, so the flag gates rather than supplies a value.",
+    "note": "The body is a single load and a single return, so it cannot fail, cannot loop and cannot have an early exit of its own."
+  },
+  "callers_evidence": [
+    {
+      "callsite": "0x00c0395d",
+      "caller": "0x00c03950",
+      "form": "CALL (MOV ECX,EBX at 0x00c0395b)",
+      "result_use": "0x00c03962 TEST AL,AL ; 0x00c03964 JZ 0x00c03970. On the set path the function returns 0 at 0x00c03967; on the clear path it continues at 0x00c03970 with MOV EAX,dword ptr [EBX + 0xc0]. The caller itself ends in RET 0xc at 0x00c0396d, so it is a three-argument member."
+    },
+    {
+      "callsite": "0x00c03b17",
+      "caller": "not resolved by the xref record (inside the 0x00c03b00 region)",
+      "form": "CALL (MOV ECX,[ESP + 0x30] at 0x00c03b11)",
+      "result_use": "0x00c03b1c TEST AL,AL ; 0x00c03b1e JNZ 0x00c03b60. The fallthrough continues with MOVSS XMM0,[ESP + 0x34] and COMISS XMM0,[ESP + 0x38] at 0x00c03b26, i.e. the flag gates a float comparison."
+    },
+    {
+      "callsite": "0x00c08c9e / 0x00c08d34",
+      "caller": "0x00c08350",
+      "form": "CALL",
+      "result_use": "not disassembled"
+    },
+    {
+      "callsite": "0x00c09545 / 0x00c095ee / 0x00c09827 / 0x00c09866",
+      "caller": "0x00c09410",
+      "form": "CALL",
+      "result_use": "not disassembled"
+    },
+    {
+      "callsite": "0x00c0596c / 0x00c059bd",
+      "caller": "0x00c05810",
+      "form": "CALL",
+      "result_use": "not disassembled"
+    },
+    {
+      "callsite": "0x00c24921",
+      "caller": "0x00c248d0",
+      "form": "CALL",
+      "result_use": "not disassembled"
+    },
+    {
+      "callsite": "0x00c7ddae",
+      "caller": "0x00c7dcb0",
+      "form": "CALL",
+      "result_use": "not disassembled"
+    },
+    {
+      "callsite": "0x00d422fd",
+      "caller": "0x00d41a70",
+      "form": "CALL",
+      "result_use": "not disassembled"
+    },
+    {
+      "callsite": "0x00d69a2a",
+      "caller": "0x00d697a0",
+      "form": "CALL",
+      "result_use": "not disassembled"
+    },
+    {
+      "callsite": "0x00d6ac17",
+      "caller": "0x00d6abe0",
+      "form": "CALL",
+      "result_use": "not disassembled"
+    },
+    {
+      "callsite": "0x00d836e0",
+      "caller": "0x00d83370",
+      "form": "CALL",
+      "result_use": "not disassembled"
+    },
+    {
+      "callsite": "0x00d1eabe",
+      "caller": "0x00d1e930",
+      "form": "CALL",
+      "result_use": "not disassembled"
+    },
+    {
+      "callsite": "0x00e8c672",
+      "caller": "0x00e8c120",
+      "form": "CALL",
+      "result_use": "not disassembled"
+    },
+    {
+      "callsite": "0x00e8cbbf / 0x00e8cc24",
+      "caller": "not resolved by the xref record",
+      "form": "CALL",
+      "result_use": "not disassembled"
+    },
+    {
+      "callsite": "0x00dbb512",
+      "caller": "not resolved by the xref record",
+      "form": "CALL",
+      "result_use": "not disassembled"
+    }
+  ],
+  "callees_evidence": [],
+  "semantic_contract": "0x00c0c130 is a single-byte flag accessor on a polymorphic simulator object. Its entire behaviour is: load the byte at receiver + 0xbb1 into AL and return. It reads no other field, writes no memory, touches no global, calls nothing, cannot fail and has no branch. The value is forwarded raw rather than normalised, so a byte of 0xff returns as 0xff, and only AL is defined on exit. The two inspected consumers both treat it as a boolean gate on the code immediately following the call: in 0x00c03950 a set flag makes the caller return 0 without reading [EBX + 0xc0], and in the 0x00c03b00 region a set flag jumps out of a float-comparison sequence. The receiver is the same object whose collection 0x00c0c080 searches and whose fields at +0xa60, +0xb34, +0xb74, +0xbb0, +0xe80 and +0xe84 the neighbouring accessors in 0x00c0c0d0..0x00c0c1c0 read and write, so +0xbb0 and +0xbb1 are two independent one-byte states sitting side by side in a larger per-object state block. What the flag means is not established by any evidence in this batch.",
+  "classification": "BOUNDED_SEMANTIC",
+  "classification_rationale": "Both instructions, the exact bytes, the field offset, the byte width, the raw-value semantics, the undefined upper bits of EAX, the ABI, the absence of any write and the absence of any branch are read directly from the disassembly and from a live memory read, and the gating behaviour is corroborated by two inspected callers in the same code region. STRONG_SEMANTIC is withheld for two named bounds. First, the owning class is not established: no MSVC RTTI exists, a positive-controlled .rdata/.data scan found no vtable entry for 0x00c0c130 or its sibling 0x00c0c120, and no ModAPI header declares a class with byte fields at +0xbb0 and +0xbb1. Second, and more materially, the meaning of the flag is not established: the field is only ever read here and by its sibling, no writer of +0xbb1 was located, and the two consumers gate unrelated work (a dword read at +0xc0 in one, a float comparison in the other) without agreeing on a subject. The bound is the flag's semantics and the class identity; the load-and-return behaviour carries no residual uncertainty.",
+  "semantic_findings": [
+    "0x00c0c130 returns one byte from receiver +0xbb1 and does nothing else; the whole contract is a field read.",
+    "The value is raw, not a normalised boolean: MOV AL rather than MOV EAX, and no TEST or AND against 1.",
+    "Only AL is defined on exit, so the function's C++ signature must return a byte-sized type; an int-returning declaration would read eight undefined bits.",
+    "The immediately adjacent sibling 0x00c0c120 has the identical seven-byte shape one byte lower, so +0xbb0 and +0xbb1 are a pair of independent byte flags rather than a byte and its high half of anything.",
+    "Both inspected callers branch on the result immediately after the call, so the flag is a gate on the following work rather than a value that is consumed arithmetically.",
+    "The flag is a per-instance state, not a global: it is read through ECX, and 0x00c03950 and the 0x00c03b00 region pass two different receivers.",
+    "Neither 0x00c0c130 nor 0x00c0c120 is a vtable entry, so this accessor is a free function over a concrete class and no SDK interface name applies.",
+    "The receiver is a large stateful object: the same instance also carries a float source at +0xa60, a dword compared against 1 at +0xb34, a dword at +0xb74, a pointer with two byte flags at +0xe84, and a searchable collection reached through vtable slots +0xb0 and +0xb4."
+  ],
+  "unresolved_questions": [
+    "The binary carries no MSVC RTTI, so no class identity can be read from typeinfo; class claims in this record rest only on observed vtable data and SDK header text.",
+    "No original-process trace exists for any function in this batch. Every statement here is static.",
+    "What does the byte at +0xbb1 mean? It gates an early return in one caller and a float comparison in another, so it is some enable or suppression state, but no writer of the field was located and no ModAPI header names it.",
+    "What class owns 0x00c0c130? The receiver's offset signature is known but no vtable was located and no ModAPI declaration matches.",
+    "How does the flag at +0xbb0 (read by 0x00c0c120) relate to the one at +0xbb1? They are adjacent and independently read, but no code in this batch writes either, so no relationship is established.",
+    "Is the byte a boolean at all, or a small counter or enum whose only observed values are 0 and non-zero? No writer was found, so the range is unknown.",
+    "Twelve of the fourteen observed caller functions were not disassembled, so only two call sites have a verified use of the return value.",
+    "The second inspected caller, at 0x00c03b17, has no owning function in the xref record; its enclosing function was not identified."
+  ],
+  "confidence": {
+    "body_bytes_and_instructions": 1.0,
+    "field_offset_and_width": 1.0,
+    "return_semantics_including_undefined_upper_bits": 1.0,
+    "abi": 1.0,
+    "absence_of_side_effects": 1.0,
+    "gating_behaviour_in_callers": 0.9,
+    "owning_type": 0.15,
+    "semantic_meaning_of_the_flag": 0.2
+  },
+  "runtime_gates": [
+    "No original-process trace has been captured for 0x00c0c130, so the claim that the field is only ever 0 or non-zero is unverified; the value's range is unknown.",
+    "A runtime differential test must record writes to receiver + 0xbb1, since no static writer was found and the field's lifecycle is entirely unobserved.",
+    "A runtime check must confirm the upper bits of EAX are genuinely ignored by all twenty-one callers, which is inferred from the two inspected sites only."
+  ],
+  "blockers": [],
+  "evidence": [
+    "/tmp/opencode/wave/w1/b10/batch.json",
+    "/tmp/opencode/wave/w1/b10/briefs.json",
+    "reconstruction/evidence/00c37360/evidence.json",
+    "reconstruction/evidence/00c37360/context.json",
+    "reconstruction/evidence/00bd8210/evidence.json",
+    "reconstruction/evidence/00c0c080/evidence.json",
+    "reconstruction/evidence/00c70150/evidence.json",
+    "reconstruction/evidence/00c0c130/evidence.json",
+    "reconstruction/staging/wave13-w1-core-b10/b10_observed_types.hpp",
+    "reconstruction/staging/wave13-w1-core-b10/b10_batch_model_test.cpp",
+    "ghidra_disassemble_bytes over 0x00c0c0ce..0x00c0c1c9 (the eleven sibling accessors that fix the receiver class)",
+    "ghidra_disassemble_bytes at 0x00c03950 and 0x00c03b00 (the two inspected consumers)"
+  ],
+  "tooling_evidence": [
+    {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x00c0c130",
+      "observation": "2 instructions: MOV AL,byte ptr [ECX + 0xbb1] ; RET"
+    },
+    {
+      "tool": "ghidra_read_memory",
+      "address": "0x00c0c130",
+      "observation": "8a81b10b0000c3cccccccccccccccccc: MOV AL,byte ptr [ECX + 0xbb1] ; RET, then nine INT3 pad bytes"
+    },
+    {
+      "tool": "ghidra_disassemble_bytes",
+      "address": "0x00c0c0ce",
+      "observation": "0x00c0c120: MOV AL,byte ptr [ECX + 0xbb0] ; RET immediately precedes 0x00c0c130, and 0x00c0c140 (the 0x0d/0x52 fallback caller of 0x00c0c080) immediately follows it"
+    },
+    {
+      "tool": "ghidra_get_function_xrefs",
+      "address": "0x00c0c130",
+      "observation": "21 UNCONDITIONAL_CALL references from 14 distinct caller functions, no data references"
+    },
+    {
+      "tool": "ghidra_disassemble_bytes",
+      "address": "0x00c03950",
+      "observation": "0x00c0395b MOV ECX,EBX ; 0x00c0395d CALL 0x00c0c130 ; 0x00c03962 TEST AL,AL ; 0x00c03964 JZ 0x00c03970 ; 0x00c03967 XOR AL,AL ; 0x00c0396d RET 0xc ; 0x00c03970 MOV EAX,[EBX + 0xc0]"
+    },
+    {
+      "tool": "ghidra_disassemble_bytes",
+      "address": "0x00c03b00",
+      "observation": "0x00c03b11 MOV ECX,[ESP + 0x30] ; 0x00c03b17 CALL 0x00c0c130 ; 0x00c03b1c TEST AL,AL ; 0x00c03b1e JNZ 0x00c03b60 ; 0x00c03b20 MOVSS XMM0,[ESP + 0x34] ; 0x00c03b26 COMISS XMM0,[ESP + 0x38]"
+    },
+    {
+      "tool": "run_script_inline",
+      "address": ".rdata/.data",
+      "observation": "VSLOTSCANRES| [e7d660@01485590/.rdata] -- only the positive control matched; 0x00c0c130 and 0x00c0c120 are not vtable entries"
+    }
+  ],
+  "provenance": {
+    "binary": "SPORE/SporeBin/SporeApp.exe",
+    "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+    "binary_version": "Spore 3.1.0.22, x86-32 PE, image base 0x00400000",
+    "worker_id": "wave13-w1-core-b10",
+    "batch_id": "b10",
+    "wave": "wave13 / wave1 / core",
+    "package": "wave13-w1-core-b10",
+    "date": "2026-09-26",
+    "method": "static only; live ghidra_* MCP against program=SporeApp.exe"
+  }
+}

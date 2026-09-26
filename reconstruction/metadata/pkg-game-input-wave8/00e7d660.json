@@ -1,0 +1,366 @@
+{
+  "schema": "pkg-game-input-wave8.function-handoff.v1",
+  "package": "PKG-GAME-INPUT-WAVE8",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "va": "0x00e7d660",
+  "address": "0x00e7d660",
+  "symbol": "App::cCellModeStrategy::OnMouseWheel",
+  "normalized_symbol": "cell_mode_strategy_on_mouse_wheel_00e7d660",
+  "target_state": "integrated canonical source; runtime validation gated",
+  "phase": "body reconstruction implemented and statically verified",
+  "captured_on": "2026-09-25",
+  "intended_paths": {
+    "canonical_reconstruction": [
+      "src/reconstruction/pkg_game_input_wave8/game_input_wave8.hpp",
+      "src/reconstruction/pkg_game_input_wave8/game_input_wave8.cpp",
+      "src/reconstruction/pkg_game_input_wave8/game_input_wave8_model_test.cpp"
+    ],
+    "metadata": "reconstruction/metadata/pkg-game-input-wave8/00e7d660.json"
+  },
+  "implementation": {
+    "declaration": "extern \"C\" bool __thiscall cell_mode_strategy_on_mouse_wheel_00e7d660(OpaqueCellModeStrategy*, WheelDelta, float, float, MouseState)",
+    "linkage": "C language linkage",
+    "calling_convention": "x86-32 thiscall",
+    "receiver": "ECX OpaqueCellModeStrategy*, never dereferenced",
+    "ordinary_stack_argument_slots": 4,
+    "input_word_count": 5,
+    "input_word_contract": "ECX receiver plus ESP+4, ESP+8, ESP+0xc, and ESP+0x10 stack words; EDX is not an input word",
+    "return_type": "bool in AL, true on every path except one",
+    "health_tick_port_shape": "The 0x00e7d070 port is a plain-RET two-stack-word shape: the integer mode at ESP+0 and the float amount at ESP+4, with the eight cleanup bytes removed by the caller. The in-EAX sentinel and the ECX residue are not port parameters at any C++ level; both are installed by the inline-assembly trampoline call_health_tick_raw_00e7d070, which is the only path that reaches the port. The prototype is cdecl rather than thiscall because the i386 thiscall convention is callee-clean and would double-pop the two words against the native caller-side ADD ESP,0x8; the ECX receiver is therefore delivered by the trampoline rather than by the prototype.",
+    "state": "forwards the four arguments to GameInput::OnMouseWheel, then on the zoom path divides the wheel delta by 120 and applies a zoom-out step, on the health path resolves the local object index and applies a health tick for negative deltas, and otherwise applies a zoom-in step with the raw delta, returning false only when the health path cannot resolve the local object",
+    "status": "integrated",
+    "header": "src/reconstruction/pkg_game_input_wave8/game_input_wave8.hpp",
+    "source": "src/reconstruction/pkg_game_input_wave8/game_input_wave8.cpp",
+    "model_test": "src/reconstruction/pkg_game_input_wave8/game_input_wave8_model_test.cpp",
+    "canonical_status": "present",
+    "canonical_path": "src/reconstruction/pkg_game_input_wave8"
+  },
+  "function_extent": {
+    "entry": "0x00e7d660",
+    "body_end_inclusive": "0x00e7d714",
+    "instruction_count": 68,
+    "single_linear_flow": false,
+    "frame": "no explicit frame allocation; EBX and ESI are pushed and popped on every path",
+    "return_sites": [
+      "0x00e7d6b7: RET 0x10 with AL=1 on the zoom path",
+      "0x00e7d6e4: RET 0x10 with AL=0 when the local object lookup yields zero",
+      "0x00e7d704: RET 0x10 with AL=1 after the health tick",
+      "0x00e7d714: RET 0x10 with AL=1 on the shared zoom-in and nonnegative-delta path"
+    ]
+  },
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "thiscall",
+    "hidden_receiver": "ECX App::cCellModeStrategy*",
+    "receiver_use": "ECX is overwritten by MOV ECX,[0x016b3c0c] at 0x00e7d664 before any use, so the incoming receiver is never read and no cCellModeStrategy field is dereferenced.",
+    "ordinary_stack_arguments": [
+      {
+        "slot": 0,
+        "offset": "ESP+4",
+        "type": "int32",
+        "name": "nWheelDelta",
+        "evidence": "captured into ESI by MOV ESI,[ESP+0xc] at 0x00e7d670 while ESP was the entry stack pointer minus 8, and used by IMUL ESI, TEST ESI,ESI, and JGE as a signed 32-bit value"
+      },
+      {
+        "slot": 1,
+        "offset": "ESP+8",
+        "name": "mouseX",
+        "type": "raw float dword",
+        "evidence": "loaded by FLD float ptr [ESP+0x1c] at 0x00e7d67c into the forwarded word at 0x00e7d680"
+      },
+      {
+        "slot": 2,
+        "offset": "ESP+0xc",
+        "name": "mouseY",
+        "type": "raw float dword",
+        "evidence": "loaded by FLD float ptr [ESP+0xc] at 0x00e7d660 into the forwarded word at 0x00e7d678"
+      },
+      {
+        "slot": 3,
+        "offset": "ESP+0x10",
+        "name": "mouseState",
+        "type": "uint32",
+        "width_bytes": 4,
+        "evidence": "captured into EBX by MOV EBX,[ESP+0x14] at 0x00e7d66b while ESP was the entry stack pointer minus 4, and tested with TEST BL,0x1 and TEST BL,0x2"
+      }
+    ],
+    "input_word_count": 5,
+    "edx_behavior": "EDX is only a scratch register for the cell game pointer and its offset 0x411c word; it is never an input word",
+    "stack_cleanup_bytes": 16,
+    "ret_form": "RET 0x10 on all four return sites",
+    "return_register": "AL, set by MOV AL,0x1 or XOR AL,AL",
+    "decompiler_signature_discrepancy": "Live Ghidra reports the calling convention as unknown and renders the first stack word as a parameter named this, then compares that same word against 0x3e8 and treats it as a wheel count. The machine forwards the four stack words in original order to GameInput::OnMouseWheel at 0x00697b40, whose body adds the first word to the accumulator at ECX+0x44 and returns with RET 0x10, and the local retcount of 0x10 proves four stack words. The implementation therefore models an ECX receiver plus four stack words."
+  },
+  "live_provenance": {
+    "program": "SporeApp.exe",
+    "analysis_basis": "Read-only live Ghidra queries against the open x86:LE:32 program.",
+    "ghidra_mutations": 0,
+    "ghidra_saves": 0,
+    "tools": [
+      "ghidra_get_function_by_address",
+      "ghidra_decompile_function",
+      "ghidra_disassemble_function",
+      "ghidra_get_function_callers",
+      "ghidra_get_function_callees",
+      "ghidra_get_function_xrefs",
+      "ghidra_get_xrefs_to",
+      "ghidra_read_memory",
+      "ghidra_disassemble_function for every callee used to recover ret immediates"
+    ],
+    "decompile": "The live body exposes the unconditional GameInput forward, the two low-byte mouseState tests, the always-true gate, the magic-number division, the object index lookup, the health tick, and the zoom-in fallback.",
+    "disassembly": "The prologue loads ECX from the absolute global 0x016b3c0c, pushes EBX and ESI, forwards four words to 0x00697b40, then branches on TEST BL,0x1 and TEST BL,0x2 with a gate call on each set bit.",
+    "callers": {
+      "direct_count": 0
+    },
+    "callees": {
+      "direct_count": 6,
+      "addresses": [
+        "0x00697b40",
+        "0x00b1fbf0",
+        "0x00b721d0",
+        "0x00e50f60",
+        "0x00e51060",
+        "0x00e7d070"
+      ]
+    },
+    "function_xrefs": {
+      "total": 1,
+      "references": [
+        {
+          "from_address": "0x01485590",
+          "type": "DATA"
+        }
+      ]
+    },
+    "callee_abi_recovery": {
+      "0x00697b40": "thiscall, ECX GameInput, four stack words wheel delta, mouseX, mouseY, mouseState, RET 0x10; body adds the first word to the accumulator at ECX+0x44 and returns",
+      "0x00b1fbf0": "cdecl, no stack words, RET, body is exactly MOV AL,0x1 followed by RET, so it returns true unconditionally in the observed build",
+      "0x00e50f60": "cdecl, one stack word, caller ADD ESP 4; body subtracts the word times 100.0 from the float at Cell state offset 0x80 and clamps it into 20.0 through 1000.0, then clears the word at offset 0x88",
+      "0x00b721d0": "thiscall, ECX cell object index at Cell game offset 0x1c, one stack word, RET 4; returns zero when the word is zero or its low 16 bits exceed the index count, otherwise a masked table entry or zero. The body clobbers ECX with XOR ECX,ECX followed by SETNZ CL and DEC ECX, so on its entry-found return path it leaves ECX equal to 0xffffffff",
+      "0x00e7d070": "thiscall, ECX receiver never read because the first body instruction MOV ECX,[0x016b3c04] overwrites it, exactly two stack words at ESP+0 and ESP+4 holding the integer 3 and the float 0.0f, caller ADD ESP 8 with a plain callee RET, and one in-EAX sentinel word loaded from 0x016b3c14 by the caller at 0x00e7d6ed; the body copies the incoming EAX into EDI at 0x00e7d07a and compares it against the absolute word at 0x016b3c14 at 0x00e7d0a2, skipping the 0x00e4cc40 sub-object lookup when they are equal. The i386 thiscall convention of the reconstruction emits RET 8, so the eight cleanup bytes are removed by the callee instead of by the caller; the callee-visible word positions, the ECX residue, and the EAX sentinel are identical",
+      "0x00e51060": "cdecl, one stack word, caller ADD ESP 4; the live decompile types the parameter as float while reading it as an int, so the caller pushes the raw 32-bit delta word"
+    },
+    "constant_evidence": {
+      "0x88888889": "signed 32-bit magic used with IMUL ESI, ADD EDX,ESI, SAR EDX,0x6, SHR EAX,0x1f, ADD EAX,EDX; this is the compiler sequence for signed division by 0x78 with truncation toward zero",
+      "0x016b3c14": "absolute sentinel word read into EAX at 0x00e7d6ed immediately before the 0x00e7d070 call and compared by 0x00e7d070 itself; it is the only cross-reference consumer that supplies it as an in-register input",
+      "0x016b3c04": "absolute Cell game global read at 0x00e7d6c8; its offset 0x411c supplies the 0x00b721d0 stack word and its offset 0x1c supplies the 0x00b721d0 receiver"
+    }
+  },
+  "vtable_evidence": {
+    "data_xrefs": [
+      {
+        "from_address": "0x01485590",
+        "target": "0x00e7d660",
+        "type": "DATA"
+      }
+    ],
+    "table_window": "0x01485550",
+    "slot_offset": "0x40",
+    "slot_count_observed": 27,
+    "neighboring_slots": [
+      {
+        "address": "0x0148558c",
+        "target": "0x00e81030",
+        "symbol": "unnamed slot between OnMouseUp and OnMouseWheel"
+      },
+      {
+        "address": "0x01485590",
+        "target": "0x00e7d660",
+        "symbol": "App::cCellModeStrategy::OnMouseWheel"
+      },
+      {
+        "address": "0x01485594",
+        "target": "0x00e80980",
+        "symbol": "App::cCellModeStrategy::Update"
+      }
+    ],
+    "gate_slot_identity": {
+      "gate_address": "0x00b1fbf0",
+      "vtable_slot_offset": "0x14",
+      "status": "INFERRED",
+      "reasoning": "The Cell mode strategy vtable places Initialize at offset 0x18 and Dispose at offset 0x1c, a uniform shift of plus eight from the SDK header offsets 0x10 and 0x14. Applying the same shift maps the SDK slot func0Ch at offset 0x0c to the observed offset 0x14, which holds 0x00b1fbf0.",
+      "load_bearing_fact": "Irrespective of the slot name, the live body of 0x00b1fbf0 is MOV AL,0x1 followed by RET, so it returns true unconditionally. Both wheel branches in this function are therefore statically unreachable in the observed build, and only the zoom-in fallback executes.",
+      "call_style": "The gate is invoked by a direct call, not a virtual dispatch, so a derived class override at the same slot would not be reached."
+    },
+    "limit": "The data xref proves the function-pointer entry, not the concrete runtime receiver or dispatch reachability."
+  },
+  "observed_execution_order": [
+    {
+      "order": 1,
+      "operation": "call 0x00697b40 with the global GameInput base in ECX and nWheelDelta, mouseX, mouseY, mouseState as the four forwarded stack words",
+      "result": "unconditional and always first, on all four return paths"
+    },
+    {
+      "order": 2,
+      "operation": "test the low byte of mouseState against 0x1 at 0x00e7d689",
+      "result": "a clear bit skips the zoom path and the gate is not called"
+    },
+    {
+      "order": 3,
+      "operation": "on the zoom path call 0x00b1fbf0 with no stack words and jump past the branch when AL is nonzero",
+      "result": "with the observed always-true body the zoom path is never taken"
+    },
+    {
+      "order": 4,
+      "operation": "on the zoom path compute nWheelDelta divided by 0x78 with the signed magic sequence, then call 0x00e50f60 with that quotient and return true",
+      "result": "the division truncates toward zero, so negative deltas round toward zero and -120 yields exactly -1"
+    },
+    {
+      "order": 5,
+      "operation": "test the low byte of mouseState against 0x2 at 0x00e7d6ba",
+      "result": "a clear bit skips the health path and the gate is not called"
+    },
+    {
+      "order": 6,
+      "operation": "on the health path call 0x00b1fbf0 again and jump past the branch when AL is nonzero",
+      "result": "the gate is a second, independent call, so with both bits set and a true gate the gate runs twice"
+    },
+    {
+      "order": 7,
+      "operation": "on the health path call 0x00b721d0 with ECX set to Cell game offset 0x1c and the Cell game word at offset 0x411c as the single stack word",
+      "result": "a zero result returns false immediately with no further side effect"
+    },
+    {
+      "order": 8,
+      "operation": "on the health path with a nonzero result, test ESI with TEST ESI,ESI and JGE",
+      "result": "a nonnegative delta returns true with no health tick, sharing the tail with the zoom-in fallthrough"
+    },
+    {
+      "order": 9,
+      "operation": "on the health path with a negative delta, load the sentinel word from 0x016b3c14 into EAX with MOV EAX,[0x016b3c14] at 0x00e7d6ed, reuse the PUSH ECX slot at 0x00e7d6f2 to hold the float 0.0f through FSTP [ESP], push the integer 3 at 0x00e7d6f6, and call 0x00e7d070 with ECX holding the 0xffffffff residue left by 0x00b721d0",
+      "result": "exactly two stack words reach the callee, at ESP+0 for the integer 3 and at ESP+4 for the float 0.0f, and the sentinel travels in EAX as a register input. The sentinel is a live input, not a dead load, because 0x00e7d070 copies it into EDI and compares it against the same absolute word."
+    },
+    {
+      "order": 10,
+      "operation": "otherwise call 0x00e51060 with the raw 32-bit delta word and return true",
+      "result": "this is the only path reachable with the observed always-true gate"
+    }
+  ],
+  "state_contract": {
+    "forward_is_unconditional": "The GameInput forward runs before both tests, so the wheel accumulator at Game input offset 0x44 is updated on every path, including the false return.",
+    "state_word_test_width": "Both tests are TEST BL against masks 0x1 and 0x2, low-byte tests. Masks inside the low byte make low-byte extraction and 32-bit masking equivalent; the implementation extracts the low byte to preserve the observed test width.",
+    "gate_is_short_circuit": "The gate is called only when the corresponding state bit is set, and it is a fresh call for each bit, so a state word with both bits set calls it twice.",
+    "gate_is_observed_always_true": "The live body of 0x00b1fbf0 returns one unconditionally, so in the observed build the zoom path, the health path, the false return, and the health tick are all unreachable. The implementation keeps them because the gate is a port and the branches are statically present.",
+    "zoom_quotient_width": "The division is a full 32-bit signed division by 0x78 with truncation toward zero, matching IMUL, ADD, SAR, SHR, ADD; it is not a shift and not an absolute value.",
+    "zoom_out_receives_quotient": "0x00e50f60 receives the divided value, while 0x00e51060 receives the raw undelided delta word.",
+    "zoom_in_argument_width": "The zoom-in port word is the raw 32-bit delta pushed by PUSH ESI, not a float conversion; the live callee reinterprets the slot as an int despite a float-typed parameter.",
+    "delta_sign_gate": "The health tick runs only for a strictly negative delta; zero and positive deltas return true with no tick.",
+    "null_sentinel_behavior": "A zero 0x00b721d0 result is the only path that returns false, and it performs no mutation after the GameInput forward.",
+    "health_tick_sentinel_behavior": "The sentinel is loaded from the absolute word at 0x016b3c14 into EAX at the call site and is not any function argument. 0x00e7d070 consumes exactly two stack words and additionally reads that in-EAX word, copying it into EDI and comparing it against the same absolute word, so a matching value makes the callee skip its 0x00e7d070 sub-object lookup path at 0x00e4cc40 and a differing value makes it perform the lookup. The implementation installs the sentinel in EAX through the trampoline and the model test drives the matching and the differing values through a naked probe target that records EAX, ECX, and both stack words.",
+    "no_cell_state_writes": "This function performs no direct store to the Cell state object. All state changes happen inside the forwarded GameInput call and inside the called ports.",
+    "callback_order": "GameInput forward, then at most one gate call per set state bit, then the zoom-out step or the object lookup followed by at most one health tick, or the zoom-in step.",
+    "health_tick_receiver_residue": "The ECX value at the 0x00e7d070 call is 0xffffffff residue produced inside 0x00b721d0 by XOR ECX,ECX, SETNZ CL, and DEC ECX on its entry-found return path. It is not the object index that 0x00e7d6d3 loaded into ECX two instructions earlier, and 0x00e7d070 overwrites ECX with [0x016b3c04] before any read, so the receiver carries no contract. The implementation passes a null receiver and records the residue as the constant kHealthTickDeadReceiver."
+  },
+  "implementation_deviations": [
+    "The two stack-slot reuses at 0x00e7d6f2 and 0x00e7d6ed are reproduced as raw register and stack effects rather than as C++ argument passing: the push slot becomes the 0.0f second stack word and the EAX load becomes the EAX register input, and neither is expressed as a C++ parameter of the port, so no third stack word exists at any C++ level.",
+    "The 0x00b721d0 ECX residue of 0xffffffff is reproduced as the ECX value the trampoline installs, so the port receiver genuinely receives 0xffffffff rather than a null placeholder; the constant kHealthTickDeadReceiver names it and the model test asserts the observed ECX word.",
+    "The gate is a port rather than a hardcoded true, because the original performs a real call whose result is tested; the observed always-true body is recorded as evidence and covered by a dedicated test that exercises the observed build shape and the gated shape.",
+    "0x00697b40, 0x00b1fbf0, 0x00b721d0, 0x00e50f60, 0x00e51060, and 0x00e7d070 are represented as package-owned ports with the recovered argument and cleanup contracts rather than as raw native function pointers."
+  ],
+  "unresolved_questions": [
+    "concrete runtime receiver identity and vtable dispatch reachability for slot 0x40",
+    "whether the always-true 0x00b1fbf0 body is a shipped default, a build-configuration stub, or a patch target",
+    "the identity of the unnamed strategy slot 0x3c target 0x00e81030 between OnMouseUp and OnMouseWheel",
+    "the semantic meaning of mode value 3 in the 0x00e7d070 call and of the sentinel word at 0x016b3c14",
+    "whether the 0x016b3c14 sentinel can ever differ from the value the caller loads at 0x00e7d6ed, which would decide whether the 0x00e7d070 sub-object lookup path is ever taken",
+    "runtime reachability of the zoom and health paths, which is zero under the observed gate body"
+  ],
+  "evidence_level": "OBSERVED",
+  "semantic_status": "static_control_flow_abi_division_and_dispatch_observed_gate_body_observed_unreachable_branches_runtime_values_unknown",
+  "reconstruction_confidence": 0.91,
+  "runtime_gate": {
+    "status": "required",
+    "runtime_validation": 0,
+    "gate": "gate-cell-mode-mouse-wheel",
+    "condition": "Observe the concrete vtable call shape, the effective return of 0x00b1fbf0 including any patching, the 0x00b721d0 lookup result, the wheel accumulator at Game input offset 0x44, and the 0x00e7d070 effects in the original Cell mode."
+  },
+  "raw_call_boundary_00e7d070": {
+    "adapter": "call_health_tick_raw_00e7d070, an inline noinline assembly trampoline in src/reconstruction/pkg_game_input_wave8/game_input_wave8.hpp",
+    "why_an_adapter_is_required": "A C++ parameter of a four-byte type on this target is always passed in a stack word, so no C++ prototype can express an in-EAX input. The sentinel must therefore be installed by assembly.",
+    "instruction_sequence": [
+      "MOVL <base>, %EBX parks the slot-block address in a register so every later access is register-relative and immune to the ESP changes below; this is emitted as a separate asm statement that performs no ESP change",
+      "PUSHL %EBX saves the callee-saved scratch register",
+      "MOVL 0(%EBX), %ECX installs the 0xffffffff dead receiver residue",
+      "MOVL 4(%EBX), %EAX installs the in-EAX sentinel",
+      "MOVL 8(%EBX), %EDX loads the port pointer",
+      "PUSHL 12(%EBX) pushes the amount word",
+      "PUSHL 16(%EBX) pushes the mode word, so on callee entry the mode word is at ESP+0 and the amount word at ESP+4",
+      "CALL *%EDX transfers control with the ECX residue, the in-EAX sentinel, and exactly two stack words",
+      "MOVL 0(%ESP), %EDX and MOVL 4(%ESP), %EDX capture the two words back out of the outgoing area",
+      "MOVL %EAX and MOVL %ECX capture the register inputs as the callee left them",
+      "the four captured words are written through the output pointer inside the asm, because x86 inline assembly cannot declare EAX, ECX, EDX, or EBX as clobbered and any C++ read after the block would observe a clobbered register",
+      "ADDL $8, %ESP removes the two pushed words, reproducing the native caller-side ADD ESP,0x8",
+      "POPL %EBX restores the scratch register, leaving the stack exactly as it was on entry"
+    ],
+    "stack_words_pushed": 2,
+    "stack_words_removed_by_trampoline": 2,
+    "stack_words_pushed_minus_removed": 0,
+    "stack_word_widths": [
+      4,
+      4
+    ],
+    "register_inputs": {
+      "ECX": "0xffffffff dead receiver residue from 0x00b721d0, never read by the callee",
+      "EAX": "in-EAX sentinel word from the absolute global 0x016b3c14"
+    },
+    "cleanup": "The trampoline pushes exactly two words and removes exactly two words with ADDL $8, %ESP immediately after the call, so the net stack effect is zero and the callee returns with a plain RET. This reproduces the native instruction sequence exactly instead of delegating the cleanup to a callee-side RET 8.",
+    "no_third_stack_word": "The sentinel is never pushed and no observation word is ever added. The model test observes the boundary with two naked probe targets that use the two existing outgoing words as their return channel and that transform each word with a distinct witness, so an assertion of pushed value plus witness proves the callee read ESP+0 and ESP+4.",
+    "stack_balance_assertions": "The model test drives 200000 consecutive trampoline calls and then asserts that a sixteen-word canary array is intact, that the canary base and anchor addresses are unchanged, and that a frame-local word is unchanged. An unbalanced trampoline grows the stack by eight bytes per call, and 200000 calls would overrun the stack and corrupt the caller frame. A second test drives 4096 calls with varying mode and amount words and asserts every captured word and an eight-word guard array.",
+    "register_survival_constraint": "Before this repair the block declared no fixed-register clobbers, so the compiler assumed EAX, ECX, and EDX survived it. The copy-out was consequently forced into the block and the base load was pushed into a separate statement that clobbered EBX without declaring it, which left the caller-visible EBX holding the slot-block address. With eax, ebx, ecx, and edx declared, the compiler preserves the callee-saved EBX itself and keeps EAX, ECX, and EDX live values out of the block.",
+    "clobber_declarations": {
+      "declared_clobbers": [
+        "eax",
+        "ebx",
+        "ecx",
+        "edx",
+        "memory",
+        "cc"
+      ],
+      "eax": "written by the block both as the in-EAX sentinel on entry and as the copy-out scratch; never restored, so it is declared.",
+      "ecx": "written by the block both as the ECX residue on entry and as the capture scratch; never restored, so it is declared.",
+      "edx": "written by the block as the port pointer, the capture scratch, and the output pointer; never restored, so it is declared.",
+      "ebx": "written by the block to hold the slot-block address; declared, which makes the compiler emit its own save and restore for this callee-saved register, so the block needs no manual PUSHL %EBX or POPL %EBX.",
+      "memory": "declared because the block reads and writes the slot block and writes through the observation pointer.",
+      "cc": "declared because the call may change the condition codes.",
+      "not_declared_esp": "ESP is modified by the two PUSHL word pushes and by the trailing ADDL $8, %ESP, and the net effect is zero. ESP cannot appear in a clobber list on this target, and no declaration is needed because the net delta is zero.",
+      "not_declared_ebp_esi_edi": "The block never writes EBP, ESI, or EDI, so declaring them would be inaccurate.",
+      "base_handling": "The slot-block address is moved into a C++ local by a first asm statement that writes only its own output operand, and the block then takes that local as a register input. Using a register input rather than a memory operand keeps every access inside the block register-relative and immune to the ESP changes caused by the two word pushes, and it avoids a second statement that would have to change ESP."
+    },
+    "ebx_preservation_evidence": "EBX preservation is established from the emitted assembly rather than from a runtime observation. At -O2 the compiler allocates the base register to EDI, emits MOVL %EDI, %EBX as the first instruction of the block, and brackets the block with its own PUSHL %EBX in the function prologue and POPL %EBX on exit; the block itself contains no manual EBX save. A runtime test cannot observe this reliably, because an optimization-level-dependent register-resident local is reloaded from memory across the call and would mask an EBX corruption, so no such test is claimed."
+  },
+  "integration_status": "integrated",
+  "canonical_files": [
+    "src/reconstruction/pkg_game_input_wave8/game_input_wave8.hpp",
+    "src/reconstruction/pkg_game_input_wave8/game_input_wave8.cpp",
+    "src/reconstruction/pkg_game_input_wave8/game_input_wave8_model_test.cpp"
+  ],
+  "wheel_division_contract": {
+    "machine_sequence": [
+      "0x00e7d697 B8 89888888          MOV EAX,0x88888889",
+      "0x00e7d69c F7 EE                IMUL ESI, signed 32x32 to 64, result in EDX:EAX",
+      "0x00e7d69e 03 D6                ADD EDX,ESI",
+      "0x00e7d6a0 C1 FA 06             SAR EDX,6",
+      "0x00e7d6a3 8B C2                MOV EAX,EDX",
+      "0x00e7d6a5 C1 E8 1F             SHR EAX,0x1f",
+      "0x00e7d6a8 03 C2                ADD EAX,EDX",
+      "0x00e7d6aa 50                   PUSH EAX",
+      "0x00e7d6ab E8 ...               CALL 0x00e50f60"
+    ],
+    "byte_evidence": "Read back from the live program at 0x00e7d697: b889888888 f7ee 03d6 c1fa06 8bc2 c1e81f 03c2 50 e8b038fd. The shr is logical, the sar is arithmetic on 6, and the magic constant 0x88888889 sign-extends to -2004318071, which is exactly -(2^32 * 7/15) rounded, the classic signed magic-number form for a power-of-two-aligned divisor.",
+    "resolved_operation": "Signed division by 120 (0x78) with truncation toward zero. The identity is quotient = (mulhi_signed(n, 0x88888889) + n) >> 6, then plus the sign bit of that shifted value, which is the standard add-the-sign-bit correction for a truncating signed division.",
+    "verified_values": {
+      "240": 2,
+      "-120": -1,
+      "480": 4,
+      "1200": 10,
+      "0x7fffffff": 17895697,
+      "-0x80000000": -17895697
+    },
+    "exhaustive_check": "An offline evaluation of the exact sequence over every delta in [-2000000, 2000000] agrees with signed truncating division by 120 at every point, with zero mismatches. Signed division by 60 mismatches at all but zero.",
+    "rejected_expectations": "A repair request asserted 240 maps to 5 and -120 maps to -4. Those values are not produced by the machine sequence and are not mutually consistent with any single divisor: 240 divided by 5 is 48 while -120 divided by -4 is 30. The verified machine behavior of 240 to 2 and -120 to -1 was kept, and the model wheel_step_quotient was left unchanged because it was already correct.",
+    "model_form": "wheel_step_quotient returns delta / kWheelStep with kWheelStep equal to 0x78. C++ signed integer division on this target already truncates toward zero, which is why the C++ form and the magic-number form are bit-identical over the whole int32 range.",
+    "test_coverage": "test_wheel_step_quotient compares the model against an independent C++ restatement of the exact machine sequence across a 36-entry boundary table, an exhaustive sweep of [-300000, 300000], the int32 extremes, and explicit per-value assertions at 0, plus and minus 1, 59, 60, 61, 119, 120, 121, 239, 240, 241. The restatement sign-extends 0x88888889 as a signed 32-bit value, which is what the machine does.",
+    "mutation_evidence": "The test was validated by mutation: substituting divisor 60, substituting a true floor division, and substituting an absolute-value-then-floor variant each make it fail, while the unmutated build passes."
+  }
+}

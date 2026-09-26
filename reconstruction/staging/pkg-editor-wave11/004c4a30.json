@@ -1,0 +1,70 @@
+{
+  "va": "0x004c4a30",
+  "body": "0x004c4a30..0x004c4d25",
+  "range_convention": "every a..b range in this file names the last byte of the body, the same convention the body field uses, so 0x004c4d25 is the last byte of the RET 0x2c at 0x004c4d23 and 0x004ccb6b is the last byte of the RET 0x28 at 0x004ccb69; an instruction is always named by its own start address and never as a range end",
+  "instructions": 206,
+  "symbol": "editor_bake_select_004c4a30",
+  "abi": {
+    "convention": "thiscall",
+    "receiver": "ECX, an OpaqueBakeRoot",
+    "stack_words": [
+      "Signed mode",
+      "Real low_x",
+      "Real low_y",
+      "Real low_z",
+      "Real high_x",
+      "Real high_y",
+      "Real high_z",
+      "Word * out_first",
+      "Word * out_second",
+      "Real * out_value",
+      "Byte flag"
+    ],
+    "return": "byte in AL",
+    "stack_cleanup": "RET 0x2c, which is the eleven stack words",
+    "saved_registers": "EBP only",
+    "frame": "SUB ESP, 0x94"
+  },
+  "port": {
+    "target": "0x004ccae0",
+    "body": "0x004ccae0..0x004ccb6b",
+    "convention": "thiscall with the receiver in ECX, four stack words beyond the two inline extent triples, boolean result in AL",
+    "stack_cleanup": "the port body is 0x004ccae0..0x004ccb6b and its last instruction is the RET 0x28 at 0x004ccb69, that is 0x18 bytes of by value extents plus 0x10 bytes of stack words, and the three call sites push no stack adjustment after the call",
+    "argument_block_base": "[EBP+0x8] is the first argument slot on entry, not [EBP+0x4], because [EBP+0x4] still holds the return address at the RET 0x28; the whole caller argument block is [EBP+0x8..0x30], the eleven words the caller itself receives, and the port reads the low extent triple at [EBP+0x8] with the LEA EAX,[EBP+0x8] at 0x004ccb56, reads and rewrites the high extent triple in place at [EBP+0x14], [EBP+0x18] and [EBP+0x1c] with the LEA EDX,[EBP+0x14] at 0x004ccb52 and the stores at 0x004ccafb, 0x004ccb01 and 0x004ccb07, takes the flag as a BYTE at [EBP+0x2c] with the MOVZX ECX, BYTE PTR [EBP+0x2c] at 0x004ccb4d, and pushes the three output pointers from [EBP+0x20], [EBP+0x24] and [EBP+0x28] at 0x004ccb3d, 0x004ccb41 and 0x004ccb47; all ten words line up under the [EBP+0x8] base",
+    "extent_triples_are_by_value": "the two extent triples arrive by value, not as caller pointers: at 0x004c4a81 and 0x004c4aad the caller executes SUB ESP,0xc and then three MOVSS, which is a twelve byte inline copy of each triple, so the only pointers the port ever forms are to its own incoming copies of the two triples, at 0x004ccae9 for the high triple and at 0x004ccb56 for the low triple, and those addresses are passed to 0x00449c20 and 0x0050bd90",
+    "pushed_bytes_at_each_call_site": "0x10 for the four stack words plus 0xc plus 0xc for the two by value triples, which is the 0x28 the port releases",
+    "arguments_in_memory_order": [
+      "the low extent triple by value, three words at [EBP+0x8], [EBP+0xc] and [EBP+0x10], copied from the mode arguments three, four and five at 0x004c4aad",
+      "the high extent triple by value, three words at [EBP+0x14], [EBP+0x18] and [EBP+0x1c], copied from the mode arguments six, seven and eight at 0x004c4a81",
+      "out_first in mode zero and one, or &out_a in mode two, read at [EBP+0x20]",
+      "out_second in mode zero and one, or &out_b in mode two, read at [EBP+0x24]",
+      "out_value in mode zero and one, or &out_f in mode two, read at [EBP+0x28]",
+      "the flag byte zero extended to a word from [EBP+0x2c]"
+    ]
+  },
+  "input_blocks_are_floats": "the assembly reads the six scalar arguments with MOVSS from four byte stack slots, so the reconstruction declares them Real; that reproduces the four byte slots and the movss loads exactly, whereas declaring them as words would have produced an integer to float conversion",
+  "modes": {
+    "0": "return the port result for receiver this+0x18, unchanged",
+    "1": "return the port result for receiver this+0x1c, unchanged",
+    "2": "scan, see below",
+    "other": "return false through the shared epilogue with no dispatch"
+  },
+  "scan": {
+    "bound": "the four byte distance between this+0x4c and this+0x48, then an arithmetic shift right by three, so an eight byte entry",
+    "skip": "an entry whose first word is zero is skipped without a dispatch",
+    "receiver": "the second word of the entry, not the first",
+    "keep_rule": "keep the answer when no answer is held yet, or when the returned scalar is strictly less than the held scalar; COMISS with JBE, so a tie keeps the earlier entry",
+    "snapshot_order": "the scalar first, then the first block, then the second block",
+    "publish": "out_first[0..2] from the winning first block, then out_second[0..2] from the winning second block, then a scalar store to out_value, then return true",
+    "empty": "return false and leave all three outs untouched"
+  },
+  "return_width_evidence": "0x004c4c89 MOVZX EDX, BYTE PTR [EBP-0x93] is the capture of the port result, the byte stored from AL at 0x004c4c83, and the other two return sites are 0x004c4d1a MOV AL,1 and 0x004c4d1e XOR AL,AL, so every return path writes only the low byte before the shared epilogue at 0x004c4d20; 0x004c4cde is not a return site, it is the MOVZX ECX, BYTE PTR [EBP-0x1] that tests the found flag; the same disassembly fixes the stack widths, because 0x004c4a3f MOV EAX,[EBP+0x8] is the mode argument, 0x004c4a70 MOVZX ECX, BYTE PTR [EBP+0x30] is the flag and 0x004c4d23 is the shared RET 0x2c, so the eleven stack words of the caller and the 0x28 of the port are both confirmed",
+  "decompilation_defects_corrected": [
+    "the decompilation places the mode two output slots four bytes higher than the assembly: the assembly takes the address at frame 0x1c for the first block, 0x30 for the second and 0x20 for the scalar, and snapshots from 0x1c into 0x10 at 0x004c4cb4, from 0x30 into 0x3c at 0x004c4cc6 and from 0x20 into 0x24 at 0x004c4ca7 and 0x004c4cac; the decompilation names them 0x20, 0x34 and 0x24, that is four bytes above the assembly's 0x1c, 0x30 and 0x20",
+    "the decompilation reports the port as taking no arguments and therefore loses the whole six word argument order",
+    "the decompilation types the mode arguments three to eight as words, which hides that the assembly moves them as scalars",
+    "the decompilation renders the two extent triples as pointers; the SUB ESP,0xc plus three MOVSS pairs at 0x004c4a81 and 0x004c4aad, and the port reading them in place at [EBP+0x8] and [EBP+0x14], show that they arrive by value"
+  ],
+  "reconstruction": "editor_bake_select_004c4a30 in editor_wave11.cpp",
+  "confidence": "high; the argument order, the snapshot layout and the tie rule were all read from the assembly, and the by value extent triples, the [EBP+0x8] port argument base and the 0x28 port cleanup were re-verified against 0x004c4a81, 0x004c4aad, the port LEAs at 0x004ccb52 and 0x004ccb56 and the port epilogue at 0x004ccb69"
+}

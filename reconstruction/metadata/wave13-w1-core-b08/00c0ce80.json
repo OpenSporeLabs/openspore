@@ -1,0 +1,982 @@
+{
+  "schema": "openspore-worker-metadata-1",
+  "package": "wave13-w1-core-b08",
+  "va": "0x00c0ce80",
+  "address": "0x00c0ce80",
+  "function_address": "0x00c0ce80",
+  "entry_address": "0x00c0ce80",
+  "ghidra_name": "FUN_00c0ce80",
+  "normalized_symbol": "sim_core_00c0ce80_tier_value_lookup",
+  "reconstructed_symbol": "SimCore_00c0ce80_tier_value_lookup",
+  "declaration": "extern \"C\" float SimCore_00c0ce80_tier_value_lookup(OpaqueC0ce80Tiers* self, std::uint32_t tier, std::uint32_t use_base_offset);",
+  "source_files": [
+    "reconstruction/staging/wave13-w1-core-b08/wave13_w1_core_b08.hpp",
+    "reconstruction/staging/wave13-w1-core-b08/wave13_w1_core_b08_reconstructed.hpp",
+    "reconstruction/staging/wave13-w1-core-b08/wave13_w1_core_b08_test_stubs.hpp",
+    "reconstruction/staging/wave13-w1-core-b08/wave13_w1_core_b08_test_stubs.cpp",
+    "reconstruction/staging/wave13-w1-core-b08/c0b780_sub_object_flag_608.cpp",
+    "reconstruction/staging/wave13-w1-core-b08/c0ce80_tier_value_lookup.cpp",
+    "reconstruction/staging/wave13-w1-core-b08/b8dad0_spice_gen_key_ptr.cpp",
+    "reconstruction/staging/wave13-w1-core-b08/c47180_manager_slot_replace.cpp",
+    "reconstruction/staging/wave13-w1-core-b08/ae9f50_session_boot_register.cpp",
+    "reconstruction/staging/wave13-w1-core-b08/ba61b0_make_planet_record.cpp",
+    "reconstruction/staging/wave13-w1-core-b08/wave13_w1_core_b08_model_test.cpp",
+    "reconstruction/staging/wave13-w1-core-b08/wave13_w1_core_b08_model_test2.cpp"
+  ],
+  "subsystem": "Simulator",
+  "cluster": "sim-core-systems",
+  "triage_category": "GAMEPLAY_LOGIC",
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__thiscall",
+    "calling_convention_observation": "The receiver is read from ECX at 0x00c0ce89 MOV EDI,ECX. Two stack dwords: 0x00c0ce81 MOV EAX,[ESP + 0x8] reads the first, 0x00c0ce99 MOV ECX,[ESP + 0x10] reads the second. All three exits are RET 0x8 (0x00c0cf36, 0x00c0cf40, 0x00c0cf49), so the callee pops both.",
+    "return_type": "float",
+    "return_semantics": "ST0 on return, consumed by FSTP. Two shapes. Gate false: the base value, unchanged. Gate true: v + 0.5f * |first_arg_reinterpreted_as_float - v|. The second shape is asymmetric: when the float operand is at or below v the result is the midpoint (v + a) / 2, but when a is above v the result is (3v - a) / 2, which overshoots.",
+    "return_register": "ST0",
+    "return_width_bytes": 4,
+    "ret_form": "RET 0x8",
+    "termination": "three exits, all RET 0x8: 0x00c0cf36 gate true, 0x00c0cf40 gate false, 0x00c0cf49 first argument zero",
+    "stack_cleanup_bytes": 8,
+    "stack_cleanup_owner": "callee",
+    "stack_arguments": [
+      {
+        "index": 0,
+        "offset_at_entry": "[ESP + 0x4]",
+        "width_bytes": 4,
+        "use_1": "TEST EAX,EAX at 0x00c0ce91: zero returns 0.0f immediately, with no callee invoked",
+        "use_2": "FLD float ptr [ESP + 0xC] at 0x00c0cf24, reached after the POP ESI and POP EDI, so the same word is the float operand of FSUBR ST0,ST1",
+        "note": "Ghidra's `param_2 == 0.0` test and its `ABS(local_4 - param_2)` are the same single stack word read two ways. The decompiler additionally aliases the zero-initialised local at [E0-4] onto this parameter, which is wrong: 0x00c0ce8b writes 0.0f into the saved-ECX slot, not into the parameter slot. Recorded as a correction."
+      },
+      {
+        "index": 1,
+        "offset_at_entry": "[ESP + 0x8]",
+        "width_bytes": 4,
+        "use_1": "pushed at 0x00c0ce9e as the second argument of 0x00C0CE30, where it is tested for zero and, when zero, causes receiver+0xFA0 to be added to the index"
+      }
+    ],
+    "ordinary_stack_argument_slots": 2,
+    "saved_registers": [
+      "EDI",
+      "ESI (only on the 0x00c0cf1f path)"
+    ],
+    "receiver": true,
+    "hidden_receiver": "ECX, copied to EDI at 0x00c0ce89",
+    "hidden_this_register": "ECX is live until 0x00c0cea0 where MOV ECX,EDI re-establishes it for 0x00C0CE30; after 0x00c0ce89 it is never read again, and 0x00c0cee1 overwrites it with receiver+0xC0 for the virtual call.",
+    "x87_stack_delta": "Balanced. Every returning path has FLDed exactly once after 0x00c0cf1f / 0x00c0cf39 / 0x00c0cf43 and consumed it, either with FADDP on the gate-true path or by returning directly with a single FLD on the other two.",
+    "decompiler_corrections": [
+      "Ghidra types the first stack argument as float. It is tested as an INTEGER at 0x00c0ce91. Both readings are real; the word is aliased.",
+      "Ghidra's ABS(local_4 - param_2) uses the wrong operand order relative to the decompiled param_2 reassignment. The disassembly loads the shared slot first (0x00c0cf1f) and the stack word second (0x00c0cf24), and FSUBR ST0,ST1 then computes ST1 - ST0. The reconstruction follows the disassembly.",
+      "Ghidra's decompiled body places the neighbour load in the same slot as the base value, which is correct, but it also assigns the neighbour to `param_2`. That is the decompiler's slot-allocation artefact, not an observed aliasing of the stack word."
+    ]
+  },
+  "layout": {
+    "entry_address": "0x00c0ce80",
+    "body_start": "0x00c0ce80",
+    "body_end": "0x00c0cf49",
+    "body_span_bytes": 204,
+    "body_bytes_hex": null,
+    "instruction_count": 63,
+    "instructions": [
+      {
+        "address": "0x00c0ce80",
+        "bytes": "51",
+        "mnemonic": "PUSH",
+        "operands": "ECX"
+      },
+      {
+        "address": "0x00c0ce81",
+        "bytes": "8B 44 24 08",
+        "mnemonic": "MOV",
+        "operands": "EAX,dword ptr [ESP + 0x8]"
+      },
+      {
+        "address": "0x00c0ce85",
+        "bytes": "0F EF C0",
+        "mnemonic": "XORPS",
+        "operands": "XMM0,XMM0"
+      },
+      {
+        "address": "0x00c0ce88",
+        "bytes": "57",
+        "mnemonic": "PUSH",
+        "operands": "EDI"
+      },
+      {
+        "address": "0x00c0ce89",
+        "bytes": "8B F9",
+        "mnemonic": "MOV",
+        "operands": "EDI,ECX"
+      },
+      {
+        "address": "0x00c0ce8b",
+        "bytes": "F3 0F 11 44 24 04",
+        "mnemonic": "MOVSS",
+        "operands": "dword ptr [ESP + 0x4],XMM0"
+      },
+      {
+        "address": "0x00c0ce91",
+        "bytes": "85 C0",
+        "mnemonic": "TEST",
+        "operands": "EAX,EAX"
+      },
+      {
+        "address": "0x00c0ce93",
+        "bytes": "0F 84 AA 00 00 00",
+        "mnemonic": "JZ",
+        "operands": "0x00c0cf43"
+      },
+      {
+        "address": "0x00c0ce99",
+        "bytes": "8B 4C 24 10",
+        "mnemonic": "MOV",
+        "operands": "ECX,dword ptr [ESP + 0x10]"
+      },
+      {
+        "address": "0x00c0ce9d",
+        "bytes": "56",
+        "mnemonic": "PUSH",
+        "operands": "ESI"
+      },
+      {
+        "address": "0x00c0ce9e",
+        "bytes": "51",
+        "mnemonic": "PUSH",
+        "operands": "ECX"
+      },
+      {
+        "address": "0x00c0ce9f",
+        "bytes": "50",
+        "mnemonic": "PUSH",
+        "operands": "EAX"
+      },
+      {
+        "address": "0x00c0cea0",
+        "bytes": "8B CF",
+        "mnemonic": "MOV",
+        "operands": "ECX,EDI"
+      },
+      {
+        "address": "0x00c0cea2",
+        "bytes": "E8 89 FF FF FF",
+        "mnemonic": "CALL",
+        "operands": "0x00C0CE30"
+      },
+      {
+        "address": "0x00c0cea7",
+        "bytes": "8B F0",
+        "mnemonic": "MOV",
+        "operands": "ESI,EAX"
+      },
+      {
+        "address": "0x00c0cea9",
+        "bytes": "E8 52 E8 F9 FF",
+        "mnemonic": "CALL",
+        "operands": "0x00B5B800"
+      },
+      {
+        "address": "0x00c0ceae",
+        "bytes": "3D 10 4C 65 01",
+        "mnemonic": "CMP",
+        "operands": "EAX,0x1654C10"
+      },
+      {
+        "address": "0x00c0ceb3",
+        "bytes": "75 14",
+        "mnemonic": "JNZ",
+        "operands": "0x00c0cec9"
+      },
+      {
+        "address": "0x00c0ceb5",
+        "bytes": "56",
+        "mnemonic": "PUSH",
+        "operands": "ESI"
+      },
+      {
+        "address": "0x00c0ceb6",
+        "bytes": "57",
+        "mnemonic": "PUSH",
+        "operands": "EDI"
+      },
+      {
+        "address": "0x00c0ceb7",
+        "bytes": "E8 A4 63 F9 FF",
+        "mnemonic": "CALL",
+        "operands": "0x00C03260"
+      },
+      {
+        "address": "0x00c0cebc",
+        "bytes": "8B C8",
+        "mnemonic": "MOV",
+        "operands": "ECX,EAX"
+      },
+      {
+        "address": "0x00c0cebe",
+        "bytes": "E8 3D 66 8E 02",
+        "mnemonic": "CALL",
+        "operands": "0x00F31500"
+      },
+      {
+        "address": "0x00c0cec3",
+        "bytes": "D9 5C 24 08",
+        "mnemonic": "FSTP",
+        "operands": "float ptr [ESP + 0x8]"
+      },
+      {
+        "address": "0x00c0cec7",
+        "bytes": "EB 0F",
+        "mnemonic": "JMP",
+        "operands": "0x00c0ced8"
+      },
+      {
+        "address": "0x00c0cec9",
+        "bytes": "F3 0F 10 04 B5 50 96 5D 01",
+        "mnemonic": "MOVSS",
+        "operands": "XMM0,dword ptr [ESI*0x4 + 0x15D9650]"
+      },
+      {
+        "address": "0x00c0ced2",
+        "bytes": "F3 0F 11 44 24 08",
+        "mnemonic": "MOVSS",
+        "operands": "dword ptr [ESP + 0x8],XMM0"
+      },
+      {
+        "address": "0x00c0ced8",
+        "bytes": "8B 7A C0",
+        "mnemonic": "MOV",
+        "operands": "EDX,dword ptr [EDI + 0xC0]"
+      },
+      {
+        "address": "0x00c0cede",
+        "bytes": "8B 42 58",
+        "mnemonic": "MOV",
+        "operands": "EAX,dword ptr [EDX + 0x58]"
+      },
+      {
+        "address": "0x00c0cee1",
+        "bytes": "8D 4B C0",
+        "mnemonic": "LEA",
+        "operands": "ECX,[EDI + 0xC0]"
+      },
+      {
+        "address": "0x00c0cee7",
+        "bytes": "FF D0",
+        "mnemonic": "CALL",
+        "operands": "EAX"
+      },
+      {
+        "address": "0x00c0cee9",
+        "bytes": "84 C0",
+        "mnemonic": "TEST",
+        "operands": "AL,AL"
+      },
+      {
+        "address": "0x00c0ceeb",
+        "bytes": "74 4C",
+        "mnemonic": "JZ",
+        "operands": "0x00c0cf39"
+      },
+      {
+        "address": "0x00c0ceed",
+        "bytes": "F3 0F 10 44 24 08",
+        "mnemonic": "MOVSS",
+        "operands": "XMM0,dword ptr [ESP + 0x8]"
+      },
+      {
+        "address": "0x00c0cef3",
+        "bytes": "8D 4E 01",
+        "mnemonic": "LEA",
+        "operands": "ECX,[ESI + 0x1]"
+      },
+      {
+        "address": "0x00c0cef6",
+        "bytes": "F3 0F 11 44 24 10",
+        "mnemonic": "MOVSS",
+        "operands": "dword ptr [ESP + 0x10],XMM0"
+      },
+      {
+        "address": "0x00c0cefc",
+        "bytes": "83 F9 06",
+        "mnemonic": "CMP",
+        "operands": "ECX,0x6"
+      },
+      {
+        "address": "0x00c0ceff",
+        "bytes": "73 0D",
+        "mnemonic": "JNC",
+        "operands": "0x00c0cf0c"
+      },
+      {
+        "address": "0x00c0cf01",
+        "bytes": "F3 0F 10 04 BD 54 96 5D 01",
+        "mnemonic": "MOVSS",
+        "operands": "XMM0,dword ptr [ESI*0x4 + 0x15D9654]"
+      },
+      {
+        "address": "0x00c0cf0a",
+        "bytes": "EB 0D",
+        "mnemonic": "JMP",
+        "operands": "0x00c0cf19"
+      },
+      {
+        "address": "0x00c0cf0c",
+        "bytes": "85 F6",
+        "mnemonic": "TEST",
+        "operands": "ESI,ESI"
+      },
+      {
+        "address": "0x00c0cf0e",
+        "bytes": "76 0F",
+        "mnemonic": "JBE",
+        "operands": "0x00c0cf1f"
+      },
+      {
+        "address": "0x00c0cf10",
+        "bytes": "F3 0F 10 04 B5 4C 96 5D 01",
+        "mnemonic": "MOVSS",
+        "operands": "XMM0,dword ptr [ESI*0x4 + 0x15D964C]"
+      },
+      {
+        "address": "0x00c0cf19",
+        "bytes": "F3 0F 11 44 24 10",
+        "mnemonic": "MOVSS",
+        "operands": "dword ptr [ESP + 0x10],XMM0"
+      },
+      {
+        "address": "0x00c0cf1f",
+        "bytes": "D9 44 24 08",
+        "mnemonic": "FLD",
+        "operands": "float ptr [ESP + 0x8]"
+      },
+      {
+        "address": "0x00c0cf23",
+        "bytes": "5E",
+        "mnemonic": "POP",
+        "operands": "ESI"
+      },
+      {
+        "address": "0x00c0cf24",
+        "bytes": "D9 44 24 0C",
+        "mnemonic": "FLD",
+        "operands": "float ptr [ESP + 0xC]"
+      },
+      {
+        "address": "0x00c0cf28",
+        "bytes": "5F",
+        "mnemonic": "POP",
+        "operands": "EDI"
+      },
+      {
+        "address": "0x00c0cf29",
+        "bytes": "D9 E0",
+        "mnemonic": "FSUBR",
+        "operands": "ST0,ST1"
+      },
+      {
+        "address": "0x00c0cf2b",
+        "bytes": "D9 E1",
+        "mnemonic": "FABS",
+        "operands": ""
+      },
+      {
+        "address": "0x00c0cf2d",
+        "bytes": "D9 05 64 10 47 01",
+        "mnemonic": "FMUL",
+        "operands": "float ptr [0x01471064]"
+      },
+      {
+        "address": "0x00c0cf33",
+        "bytes": "DE C1",
+        "mnemonic": "FADDP",
+        "operands": ""
+      },
+      {
+        "address": "0x00c0cf35",
+        "bytes": "59",
+        "mnemonic": "POP",
+        "operands": "ECX"
+      },
+      {
+        "address": "0x00c0cf36",
+        "bytes": "C2 08 00",
+        "mnemonic": "RET",
+        "operands": "0x8"
+      },
+      {
+        "address": "0x00c0cf39",
+        "bytes": "D9 44 24 08",
+        "mnemonic": "FLD",
+        "operands": "float ptr [ESP + 0x8]"
+      },
+      {
+        "address": "0x00c0cf3d",
+        "bytes": "5E",
+        "mnemonic": "POP",
+        "operands": "ESI"
+      },
+      {
+        "address": "0x00c0cf3e",
+        "bytes": "5F",
+        "mnemonic": "POP",
+        "operands": "EDI"
+      },
+      {
+        "address": "0x00c0cf3f",
+        "bytes": "59",
+        "mnemonic": "POP",
+        "operands": "ECX"
+      },
+      {
+        "address": "0x00c0cf40",
+        "bytes": "C2 08 00",
+        "mnemonic": "RET",
+        "operands": "0x8"
+      },
+      {
+        "address": "0x00c0cf43",
+        "bytes": "D9 44 24 04",
+        "mnemonic": "FLD",
+        "operands": "float ptr [ESP + 0x4]"
+      },
+      {
+        "address": "0x00c0cf47",
+        "bytes": "5F",
+        "mnemonic": "POP",
+        "operands": "EDI"
+      },
+      {
+        "address": "0x00c0cf48",
+        "bytes": "59",
+        "mnemonic": "POP",
+        "operands": "ECX"
+      },
+      {
+        "address": "0x00c0cf49",
+        "bytes": "C2 08 00",
+        "mnemonic": "RET",
+        "operands": "0x8"
+      }
+    ],
+    "padding_after": "0x00c0cf4a onward was not read. The next recorded function in this region starts at 0x00c0cf50.",
+    "frame": "No SUB ESP and no EBP frame. Entry is PUSH ECX ; MOV EAX,[ESP + 0x8] ; XORPS XMM0,XMM0 ; PUSH EDI. The saved-ECX slot at [E0-4] is then reused as a float local by 0x00c0ce8b, so only EDI is genuinely saved, and it is saved because the receiver must survive four calls. No register spill anywhere.",
+    "reads": "the two caller stack dwords; the receiver fields at +0xC0 (and through the sub-object's vtable at +0x58); the six-entry float table at 0x015D9650 via three different base addresses; the float constant at 0x01471064; the global-address sentinel 0x01654C10 is compared, not read; the receiver fields +0xFA0 and +0xB20 are read inside callee 0x00C0CE30.",
+    "writes": "no memory write of any kind. The only register writes are EAX, ECX, EDX, ESI, EDI and the x87 stack, all of them scratch."
+  },
+  "observed_mechanics": [
+    "0x00c0ce85 XORPS XMM0,XMM0 / 0x00c0ce8b MOVSS dword ptr [ESP + 0x4],XMM0: the saved-ECX slot becomes a float local initialised to 0.0f. The receiver is safe in EDI, so overwriting the saved copy is free.",
+    "0x00c0ce91 TEST EAX,EAX / 0x00c0ce93 JZ 0x00c0cf43: the first stack word is tested as an integer. Zero returns 0.0f via 0x00c0cf43 FLD float ptr [ESP + 0x4], invoking no callee at all.",
+    "0x00c0cea2 CALL 0x00C0CE30 with (ECX = receiver, arg0, arg1) and RET 0x8, so the two words pushed at 0x00c0ce9e and 0x00c0ce9f are consumed. The result index is kept in ESI.",
+    "0x00c0cea9 CALL 0x00B5B800 with no argument setup at all. That function is 7 bytes: CALL 0x00B3D320 / TEST EAX,EAX / JZ / MOV ECX,EAX / JMP 0x00A42730, else OR EAX,0xFFFFFFFF / RET. It is a global lookup that answers -1 on failure.",
+    "0x00c0ceae CMP EAX,0x1654C10 / 0x00c0ceb3 JNZ: the sentinel is the ADDRESS 0x01654C10, not its contents. That dword is 0 in the file image, so this is a runtime-value test and the sentinel branch is not statically reachable.",
+    "0x00c0ceb5 PUSH ESI / 0x00c0ceb6 PUSH EDI / 0x00c0ceb7 CALL 0x00C03260: that function ends in a bare RET, so the two words survive and become the stack arguments of the next call. This is the compiler reusing one push pair for two different callees.",
+    "0x00c0cebc MOV ECX,EAX / 0x00c0cebe CALL 0x00F31500: that function ends in RET 0x8 and pops exactly those two words. It is called as (singleton, receiver, index).",
+    "0x00c0cec3 FSTP float ptr [ESP + 0x8] with ESP = E0-12 writes [E0-4], the same slot the non-sentinel arm writes at 0x00c0ced2. Both arms store the base value into one float local.",
+    "0x00c0ced8 MOV EDX,[EDI + 0xC0] then 0x00c0cee1 LEA ECX,[EDI + 0xC0]: the receiver of the virtual call is receiver+0xC0, and the vtable pointer is the first dword of that same address. So receiver+0xC0 is itself the polymorphic sub-object, not a pointer to one.",
+    "0x00c0cede MOV EAX,[EDX + 0x58] / 0x00c0cee7 CALL EAX: vtable slot +0x58, no stack arguments, ECX = receiver+0xC0. 0x00c0cee9 TEST AL,AL / 0x00c0ceeb JZ 0x00c0cf39.",
+    "0x00c0cef3 LEA ECX,[ESI + 0x1] / 0x00c0cefc CMP ECX,0x6 / 0x00c0ceff JNC: the compare is UNSIGNED, so the neighbour is table[index + 1] whenever index <= 4. There is no table[6] read.",
+    "0x00c0cf01 MOVSS XMM0,[ESI*0x4 + 0x15D9654]: base 0x015D9654 == 0x015D9650 + 4, so this is table[index + 1] of the same six-entry table read at 0x00c0cec9.",
+    "0x00c0cf0c TEST ESI,ESI / 0x00c0cf0e JBE 0x00c0cf1f: the base value is KEPT in the shared slot when index == 0. Unreachable given the [0,5] clamp in 0x00C0CE30, because index + 1 < 6 already covers index 0. A defensive branch.",
+    "0x00c0cf10 MOVSS XMM0,[ESI*0x4 + 0x15D964C]: 0x015D964C == 0x015D9650 - 4, so this is table[index - 1]. With the [0,5] clamp it is reached only at index 5 and yields table[4].",
+    "0x00c0cef6 MOVSS [ESP + 0x10],XMM0 is a DEAD store: with ESP = E0-12 it writes the same [E0-4] slot the base value already occupies. It matters only because 0x00c0cf0e can skip the neighbour load, leaving the base in that slot. The reconstruction models the slot as a single variable so both the dead store and the skip are preserved.",
+    "0x00c0cf29 FSUBR ST0,ST1 computes ST0 = ST1 - ST0. With ST0 = the slot value and ST1 = the first stack word, that is first_arg_as_float - v, so the absolute value is |first_arg - v| either way and the operand order does not affect the result.",
+    "0x00c0cf2d FMUL float ptr [0x01471064]: the file image at 0x01471064 is 3F 00 00 00, i.e. 0.5f.",
+    "0x00c0cf33 FADDP adds the base ST0 and pops, leaving v + 0.5f * |first_arg - v|.",
+    "0x00c0ce30 reads receiver+0xB20 and returns 0 if it is null, otherwise index = FUN_00C0CDB0() + DAT_015716D8[arg0], plus receiver+0xFA0 when arg1 == 0, then clamped to [0,5] by 0x00c0ce6a CMP EAX,0x6 / 0x00c0ce6d JL / 0x00c0ce6f MOV EAX,5.",
+    "ghidra_run_script_inline dword scan of all initialised readable non-executable blocks: 0 hits for this VA; the positive control 0x00e7d660 was found once at 0x01485590"
+  ],
+  "fields_and_offsets": [
+    {
+      "offset": "+0xC0",
+      "access": "read",
+      "width_bytes": 4,
+      "instruction": "0x00c0ced8: MOV EDX,dword ptr [EDI + 0xC0]",
+      "meaning": "first dword of a polymorphic sub-object; also the receiver (ECX) of the slot +0x58 call via 0x00c0cee1 LEA ECX,[EDI + 0xC0]",
+      "confidence": "OBSERVED"
+    },
+    {
+      "offset": "+0xFA0",
+      "access": "read (in callee 0x00C0CE30)",
+      "width_bytes": 4,
+      "instruction": "0x00c0ce59 inside 0x00C0CE30: ADD EAX,dword ptr [ESI + 0xFA0]",
+      "meaning": "added into the table index when the second stack argument is 0",
+      "confidence": "OBSERVED, in the callee, on the same receiver"
+    },
+    {
+      "offset": "+0xFA8",
+      "access": "read (in caller 0x00C0CFA0)",
+      "width_bytes": 16,
+      "instruction": "0x00c0cfe0 inside 0x00C0CFA0: *(float *)(param_1 + 0xFA8 + arg * 4)",
+      "meaning": "a four-entry float cache indexed by the caller's own argument",
+      "confidence": "OBSERVED, in the caller"
+    },
+    {
+      "offset": "+0xFB0",
+      "access": "read (in caller 0x00C0CF50)",
+      "width_bytes": 4,
+      "instruction": "0x00C0CF50: *(undefined4 *)(param_1 + 0x2A4) = *(undefined4 *)(param_1 + 0xFB0)",
+      "meaning": "cache slot 2, mirrored into +0x2A4",
+      "confidence": "OBSERVED, in the caller"
+    },
+    {
+      "offset": "+0xB20",
+      "access": "read (in callee 0x00C0CE30)",
+      "width_bytes": 4,
+      "instruction": "0x00c0ce35 inside 0x00C0CE30: CMP dword ptr [ESI + 0xB20],EAX",
+      "meaning": "presence check; the index is forced to 0 when it is null",
+      "confidence": "OBSERVED, in the callee, on the same receiver"
+    },
+    {
+      "offset": "+0xBB0",
+      "access": "read (in caller 0x00C0CFA0)",
+      "width_bytes": 1,
+      "instruction": "0x00c0cf94 inside 0x00C0CFA0: CMP byte ptr [ESI + 0xBB0],0",
+      "meaning": "byte flag that forces the 0x43F2590-shaped branch in the caller",
+      "confidence": "OBSERVED, in the caller"
+    }
+  ],
+  "constants": [
+    {
+      "value": "0x1654C10",
+      "address": "0x00c0ceae",
+      "kind": "branch",
+      "meaning": "sentinel ADDRESS compared against 0x00B5B800's result"
+    },
+    {
+      "value": "6",
+      "address": "0x00c0cefc",
+      "kind": "branch",
+      "meaning": "unsigned bound on index + 1; selects table[index + 1] versus table[index - 1]"
+    },
+    {
+      "value": "0x58",
+      "address": "0x00c0cede",
+      "kind": "vtable slot",
+      "meaning": "the boolean gate on the sub-object at receiver+0xC0"
+    },
+    {
+      "value": "0x15D9650",
+      "address": "0x00c0cec9",
+      "kind": "table base",
+      "meaning": "six-entry float table, all zero in the file image"
+    },
+    {
+      "value": "0x15D9654",
+      "address": "0x00c0cf01",
+      "kind": "table base + 4",
+      "meaning": "the same table, entry index + 1"
+    },
+    {
+      "value": "0x15D964C",
+      "address": "0x00c0cf10",
+      "kind": "table base - 4",
+      "meaning": "the same table, entry index - 1"
+    },
+    {
+      "value": "0x1471064",
+      "address": "0x00c0cf2d",
+      "kind": "float operand",
+      "meaning": "file image 0x3F000000 = 0.5f, the averaging factor"
+    },
+    {
+      "value": "0",
+      "address": "0x00c0ce93",
+      "kind": "early exit",
+      "meaning": "first stack argument == 0 returns 0.0f"
+    },
+    {
+      "value": "0x0",
+      "address": "0x00c0ce85 / 0x00c0ce8b",
+      "kind": "stack",
+      "meaning": "the XORPS and MOVSS pair that zeroes the float local"
+    }
+  ],
+  "globals": [
+    {
+      "address": "0x015D9650",
+      "size_bytes": 24,
+      "observed_value": "all zero",
+      "access": "read",
+      "note": "runtime-initialised; the shipped image carries zeros, so in the file image every path through this table returns 0"
+    },
+    {
+      "address": "0x01471064",
+      "size_bytes": 4,
+      "observed_value": "0x3F000000 (0.5f)",
+      "access": "read"
+    },
+    {
+      "address": "0x01654C10",
+      "size_bytes": 4,
+      "observed_value": "0x00000000",
+      "access": "address-compared only",
+      "note": "the dword is never read; the ADDRESS is the sentinel"
+    },
+    {
+      "address": "0x015716D8",
+      "size_bytes": 16,
+      "observed_value": "[0] = 0, [1] = -1, [2] = 0, [3] = 1",
+      "access": "read by callee 0x00C0CE30",
+      "note": "signed per-tier index deltas"
+    },
+    {
+      "address": "0x0168D824",
+      "size_bytes": 4,
+      "observed_value": "0x00000000",
+      "access": "read and written by callee 0x00C03260",
+      "note": "lazy singleton slot. On first call 0x00C03260 allocates 0x24 bytes via 0x00F473A0(0x24, 0x0145F924, 0, 0, 0, 0), runs 0x00F30BC0 as the constructor and caches the pointer here, or caches 0 on allocation failure."
+    }
+  ],
+  "virtual_dispatch": [
+    {
+      "callsite": "0x00c0cee7",
+      "receiver_expression": "[EDI + 0xC0]",
+      "vtable_base": "the dword stored at receiver + 0xC0",
+      "slot_offset": "+0x58",
+      "arguments": "none",
+      "concrete_callee_resolved": false,
+      "note": "The receiver passed is receiver+0xC0, so the sub-object is polymorphic in its own right and its first dword is its vtable pointer. No vtable containing a +0x58 slot reachable from this function was located, so the owning class and the concrete callee are unresolved. The result is a byte predicate, consumed by TEST AL,AL and used only as a gate."
+    }
+  ],
+  "control_flow": {
+    "switch_tables": [],
+    "loops": [],
+    "early_exits": [
+      {
+        "address": "0x00c0ce93",
+        "condition": "first stack dword == 0",
+        "target": "0x00c0cf43",
+        "effect": "returns 0.0f with no callee invoked"
+      },
+      {
+        "address": "0x00c0ceeb",
+        "condition": "vtable slot +0x58 returns zero in AL",
+        "target": "0x00c0cf39",
+        "effect": "returns the base value unchanged"
+      },
+      {
+        "address": "0x00c0cf0e",
+        "condition": "index == 0 (unsigned <=)",
+        "target": "0x00c0cf1f",
+        "effect": "keeps the base value in the shared slot; unreachable under the [0,5] clamp in 0x00C0CE30"
+      }
+    ],
+    "branch_polarity": "0x00c0ceeb JZ means a FALSE gate returns the base value; a TRUE gate switches to the neighbour-averaged formula. 0x00c0ceff JNC on CMP ECX,6 is an UNSIGNED compare, so index 5 wraps to table[index - 1] rather than running off the end of the table. 0x00c0cf0e JBE is an unsigned compare on the index itself, so it fires only for index 0.",
+    "terminations": [
+      {
+        "address": "0x00c0cf36",
+        "form": "RET 0x8",
+        "condition": "gate true, neighbour taken"
+      },
+      {
+        "address": "0x00c0cf40",
+        "form": "RET 0x8",
+        "condition": "gate false"
+      },
+      {
+        "address": "0x00c0cf49",
+        "form": "RET 0x8",
+        "condition": "first argument zero"
+      }
+    ],
+    "basic_blocks": 9,
+    "shared_stack_slot": "One float local at [E0-4] holds the base value and then, on the gate-true path, the neighbour value. The reconstruction models it as a single variable so the dead store at 0x00c0cef6 and the skip at 0x00c0cf0e are preserved exactly."
+  },
+  "callers_evidence": [
+    {
+      "callsite": "0x00c0cf62 / 0x00c0cf73 / 0x00c0cf84",
+      "caller": "0x00c0cf50",
+      "form": "CALL",
+      "receiver_setup": "ECX = this",
+      "result_use": "stored to receiver + 0xFAC, +0xFB0 and +0xFB4 respectively"
+    },
+    {
+      "callsite": "0x00c0cfad / 0x00c0cfe4",
+      "caller": "0x00c0cfa0",
+      "form": "CALL",
+      "receiver_setup": "ECX = this",
+      "result_use": "returned to 0x00c0cfa0's own caller as a float"
+    },
+    {
+      "callsite": "0x00c0d00a / 0x00c0d02e",
+      "caller": "0x00c0cff0",
+      "form": "CALL",
+      "receiver_setup": "not disassembled",
+      "result_use": "not inspected beyond the call"
+    },
+    {
+      "callsite": "0x00c0d074 / 0x00c0d084",
+      "caller": "0x00c0d050",
+      "form": "CALL",
+      "receiver_setup": "not disassembled",
+      "result_use": "not inspected beyond the call"
+    },
+    {
+      "callsite": "0x00c0d186 / 0x00c0d196",
+      "caller": "0x00c0d0c0",
+      "form": "CALL",
+      "receiver_setup": "not disassembled",
+      "result_use": "not inspected beyond the call"
+    },
+    {
+      "callsite": "0x00c193ab / 0x00c193bc, 0x00c1abba / 0x00c1abc9, 0x00c1adbc / 0x00c1adcc / 0x00c1ae85 / 0x00c1ae95, 0x00c1b43f / 0x00c1b450, 0x00c1c165 / 0x00c1c174, 0x00c1c2c2 / 0x00c1c2d1, 0x00c1c87d / 0x00c1c88c, 0x00c1e1fc / 0x00c1e20d, 0x00c1fdae / 0x00c1fdbf / 0x00c1fdd0, 0x00c21ebb",
+      "caller": "9 further callers",
+      "form": "CALL",
+      "receiver_setup": "not individually disassembled",
+      "result_use": "not individually inspected"
+    }
+  ],
+  "callees_evidence": [
+    {
+      "address": "0x00c0ce30",
+      "name": "FUN_00C0CE30",
+      "form": "CALL at 0x00c0cea2",
+      "ret_form": "RET 0x8",
+      "identified": true,
+      "reading": "__thiscall(receiver, arg0, arg1) -> int, 26 instructions. Returns 0 if receiver+0xB20 is null or arg0 is 0. Otherwise index = FUN_00C0CDB0() + DAT_015716D8[arg0], plus receiver+0xFA0 when arg1 == 0, then returns 0 if the total is negative and 5 if it is at or above 6. So the index is clamped to [0,5]."
+    },
+    {
+      "address": "0x00b5b800",
+      "name": "FUN_00B5B800",
+      "form": "CALL at 0x00c0cea9",
+      "ret_form": "bare RET",
+      "identified": true,
+      "reading": "7 bytes. CALL 0x00B3D320 ; TEST EAX,EAX ; JZ -> OR EAX,0xFFFFFFFF ; RET ; else MOV ECX,EAX ; JMP 0x00A42730. Answers the global lookup or -1."
+    },
+    {
+      "address": "0x00c03260",
+      "name": "FUN_00C03260",
+      "form": "CALL at 0x00c0ceb7",
+      "ret_form": "bare RET",
+      "identified": true,
+      "reading": "Lazy singleton getter, 20 instructions. If [0x0168D824] is non-null it returns it. Otherwise it calls 0x00F473A0(0x24, 0x0145F924, 0,0,0,0), and on success runs 0x00F30BC0 as the constructor, caches the result at 0x0168D824 and returns it, or caches 0 and returns 0 on allocation failure. Engine-boundary call."
+    },
+    {
+      "address": "0x00f31500",
+      "name": "FUN_00F31500",
+      "form": "CALL at 0x00c0cebe",
+      "ret_form": "RET 0x8",
+      "identified": "partial",
+      "reading": "__thiscall(singleton, receiver, index) -> float, 54 instructions. If the float vector at singleton+0x10 is non-empty (its begin and end dwords at +0x10 and +0x14 differ) it returns immediately. Otherwise it looks up 0x01654C10 through 0x00B3D320 and 0x00B1DAF0, builds a value with 0x006A08B0 keyed by the immediate 0xC0B3B39A, reserves the vector with 0x004AFC80(count = receiver) and copies floats into it. It then returns vector[index], or FLD1, i.e. 1.0f, when index is at or past the element count. Read far enough to establish the return contract; the fill path's internals are not reconstructed."
+    }
+  ],
+  "sibling_and_analogue_evidence": [
+    {
+      "address": "0x00c0cf50",
+      "name": "FUN_00C0CF50",
+      "reading": "The cache-filling caller. Sets receiver+0xFA8 to 0, then calls this function three times with the pairs (1,1), (2,1) and (3,1), storing the results at +0xFAC, +0xFB0 and +0xFB4, and finally copies +0xFB0 into +0x2A4. So the four dwords at +0xFA8 form a cache indexed by the first argument, with index 0 pre-zeroed and never computed.",
+      "status": "OBSERVED"
+    },
+    {
+      "address": "0x00c0cfa0",
+      "name": "FUN_00C0CFA0",
+      "reading": "If receiver+0xBB0 is non-zero it returns this function's (2,1) result plus the float at _DAT_0150C900. Otherwise, when its own third argument is non-zero it returns the cached float at receiver + 0xFA8 + argument * 4, and when that argument is zero it calls this function with BOTH arguments zero, which takes the 0.0f early exit at 0x00c0ce93.",
+      "status": "OBSERVED"
+    },
+    {
+      "address": "0x00c0cff0 / 0x00c0d050 / 0x00c0d0c0",
+      "reading": "Three more immediate neighbours, each calling this function twice, all within 0xA0 bytes of its entry. A five-function cluster in 0x30 bytes of address space that all funnel into this one.",
+      "status": "OBSERVED from the canonical call graph"
+    }
+  ],
+  "caller_semantics": [
+    {
+      "caller": "0x00c0cf50",
+      "name": "FUN_00C0CF50",
+      "observation": "The three calls pass the first argument as the small integers 1, 2 and 3. 0x00c0cf24 reinterprets that word as a float, where those bit patterns are denormals of magnitude about 1e-44, so the effective operand is zero and the gate-true result degenerates to 1.5 * v.",
+      "reading": "The float operand of the averaging formula is, in the observed build, effectively zero for every real callsite. This is asserted in the model test rather than smoothed over.",
+      "status": "OBSERVED"
+    }
+  ],
+  "shared_batch_finding": {
+    "tool": "ghidra_run_script_inline",
+    "observation": "A dword scan of every initialised, readable, NON-EXECUTABLE memory block for each of the six target VAs returned 0 hits. The same scan was validated with a positive control in the same run: 0x00e7d660 was found exactly once, at 0x01485590 in .rdata, which matches the table already recorded in reconstruction/metadata/pkg-shared-default-true-wave12/00b1fbf0.json.",
+    "conclusion": "None of the six targets appears as a dword in any data block, so none of them is a vtable entry or a function-pointer-table entry. All six are reached only by direct CALL. Virtual dispatch INTO these six is excluded by a direct memory read, not inferred from call-graph absence."
+  },
+  "sdk_correspondence": {
+    "caveat": "Spore-ModAPI is a third-party clean-room reconstruction, not original EA source and not EA documentation. Where it is cited below it supplies CANDIDATE NAMES only. The binary is the sole authority for every offset, constant, branch polarity and call shape asserted in this record.",
+    "candidates": []
+  },
+  "semantic_contract": "A two-argument tier lookup on a tiered scalar field. Returns 0.0f when the first argument is 0, invoking nothing. Otherwise it asks 0x00C0CE30 for an index clamped to [0,5], reads a base value either from the lazy singleton's float vector through 0x00F31500 (when the global lookup 0x00B5B800 answers the sentinel address 0x01654C10) or from the six-entry float table at 0x015D9650, and returns that base unchanged when the vtable slot +0x58 of the sub-object at receiver+0xC0 answers false. When that gate answers true it takes v = table[index + 1] for index <= 4 and v = table[4] for index == 5, keeping the base only in the unreachable index == 0 case, and returns v + 0.5f * |first_argument_reinterpreted_as_float - v|. The first argument is read twice from the same stack word: once as an integer zero test and once as a float operand, so the small integers 1, 2 and 3 that 0x00C0CF50 passes become denormals and the effective shipping-build result is v + 0.5f * v for non-negative v. The function writes no memory, calls no writer, and pops its own two stack words.",
+  "classification": "BOUNDED_SEMANTIC",
+  "classification_rationale": "Not STRONG_SEMANTIC. The complete body, the ABI, the control flow, both table addressing modes, the 0.5f constant and the slot +0x58 gate are all read directly, but three material elements are bounded rather than established: the owning class and concrete callee behind vtable slot +0x58 on the sub-object at receiver+0xC0; the runtime contents of the six-entry float table at 0x015D9650 and of the singleton's vector at +0x10, both of which are zero or empty in the file image; and the internal fill path of 0x00F31500, which was read only far enough to establish its return contract. Not STRUCTURAL_ONLY, because the whole arithmetic and every branch polarity are established, not merely the frame.",
+  "semantic_findings": [
+    "The first stack argument is aliased: TESTed as an integer at 0x00c0ce91 and FLDed as a float at 0x00c0cf24. Ghidra's `param_2 == 0.0` and its `ABS(local_4 - param_2)` are the same single word read two ways.",
+    "Ghidra additionally aliases the zero-initialised local at [E0-4] onto that parameter, which is wrong. 0x00c0ce8b writes 0.0f into the saved-ECX slot. The reconstruction follows the disassembly and keeps them separate. Recorded as a decompiler correction.",
+    "The gate is vtable slot +0x58 on a sub-object that begins at receiver+0xC0 and is passed to the call as receiver+0xC0, so it is polymorphic in its own right.",
+    "The neighbour index wraps: (uint)(index + 1) < 6 selects table[index + 1], and the fallback is table[index - 1], which under the [0,5] clamp means table[4] at index 5. There is no table[6] read.",
+    "The averaging factor is the float 0.5f read from 0x01471064, and the formula is asymmetric: v + 0.5f*|a - v| equals the midpoint (v + a)/2 when a <= v, but equals (3v - a)/2 when a > v.",
+    "The three real callsites pass 1, 2 and 3, whose bit patterns are denormals as floats, so the float operand is effectively zero and the result is 1.5*v in the observed build. Asserted in the model test.",
+    "0x00C0CE30 adds receiver+0xFA0 to the index exactly when the second argument is 0, which is the only difference between the (tier, 1) and (tier, 0) call shapes.",
+    "0x00C0CFA0 caches this function's results in the four-float array at receiver+0xFA8 and short-circuits to 0.0f when asked for index 0, so the early exit is live.",
+    "0x00C0CEB7 and 0x00C0CEBE reuse one push pair for two callees with different cleanup conventions: 0x00C03260 is bare RET and 0x00F31500 is RET 0x8. The stack is balanced only because of that pairing."
+  ],
+  "unresolved_questions": [
+    "Which class owns the sub-object at receiver+0xC0, and what is its slot +0x58? No vtable reachable from this function was located and the binary has no RTTI.",
+    "What is the boolean at slot +0x58? It is only ever consumed as a gate on whether the neighbour-averaged formula is applied.",
+    "What are the six runtime values of the float table at 0x015D9650? The shipped image carries zeros, so on the file image every path through this table returns 0.",
+    "What populates the singleton at 0x0168D824 and its float vector at +0x10? Only the lazy-allocation path of 0x00C03260 is read; the writer is not identified.",
+    "What is 0x0145F924, the type descriptor 0x00C03260 passes to the allocator? It is read as an immediate only.",
+    "Why does 0x00C0CE30 read receiver+0xFA0 and add it to the index? It is read only inside that callee and this worker did not reconstruct 0x00C0CE30's own inputs.",
+    "Is the sentinel test 0x00B5B800() == 0x01654C10 a type check or an instance check? The same constant is pushed to 0x00B3D320 inside 0x00F31500, which is consistent with either reading.",
+    "What is the name of the float at _DAT_0150C900 that 0x00C0CFA0 adds to this result? It was not read.",
+    "Ten of the fifteen recorded callsites were not individually disassembled."
+  ],
+  "runtime_gates": [
+    "No original-process trace exists. A differential run must confirm the six table values at 0x015D9650 and the boolean behind slot +0x58 at the moment this function runs.",
+    "The sentinel branch is only reachable once 0x01654C10 has been populated at runtime; in the file image it holds 0, so the branch cannot be exercised statically.",
+    "The concrete receiver behind the slot +0x58 dispatch must be observed before the owning class can be named.",
+    "The value of the singleton's float vector at singleton+0x10 can only be observed at runtime, which also determines whether 0x00F31500 returns a real element or FLD1."
+  ],
+  "blockers": [],
+  "evidence": [
+    "reconstruction/evidence/wave13-w1-core-b08/evidence.json",
+    "/tmp/opencode/wave/w1/b08/batch.json",
+    "/tmp/opencode/wave/w1/b08/briefings.json",
+    "knowledgegraph/research/21-decompilation-coverage.json",
+    "knowledgegraph/research/semantic-blueprint.json",
+    "Spore-ModAPI headers listed per target under sdk_candidates",
+    "reconstruction/staging/wave13-w1-core-b08/c0ce80_tier_value_lookup.cpp"
+  ],
+  "tooling_evidence": [
+    {
+      "tool": "ghidra_decompile_function",
+      "address_or_argument": "0x00c0ce80",
+      "observation": "63 instructions of pseudocode; the param_2 / local_4 aliasing is the decompiler's, not the binary's"
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address_or_argument": "0x00c0ce80",
+      "observation": "63 instructions, listed in layout"
+    },
+    {
+      "tool": "ghidra_get_function_by_address",
+      "address_or_argument": "0x00c0ce80",
+      "observation": "body 0x00c0ce80..0x00c0cf49"
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address_or_argument": "0x00c0ce30",
+      "observation": "RET 0x8; the [0,5] clamp at 0x00c0ce6a; reads receiver+0xB20 and receiver+0xFA0"
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address_or_argument": "0x00b5b800",
+      "observation": "7 bytes, bare RET, answers -1 on failure, tail-jumps to 0x00A42730"
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address_or_argument": "0x00c03260",
+      "observation": "lazy singleton at 0x0168D824, size 0x24, type descriptor 0x0145F924, ctor 0x00F30BC0"
+    },
+    {
+      "tool": "ghidra_disassemble_function",
+      "address_or_argument": "0x00f31500",
+      "observation": "RET 0x8; returns vector[index] or FLD1; fill path uses 0x006A08B0 and 0x004AFC80"
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address_or_argument": "0x00c0cdb0",
+      "observation": "reaches the same receiver+0xB20 sub-object and reads +0x544; also calls a virtual slot +0x0C with the property id 0xD0036E08"
+    },
+    {
+      "tool": "ghidra_read_memory",
+      "address_or_argument": "0x015d9640, length 40",
+      "observation": "0x015D9650..0x015D9667 are all zero in the file image"
+    },
+    {
+      "tool": "ghidra_read_memory",
+      "address_or_argument": "0x01471060, length 16",
+      "observation": "0x01471064 = 3F 00 00 00 = 0.5f"
+    },
+    {
+      "tool": "ghidra_read_memory",
+      "address_or_argument": "0x015716d0, length 24",
+      "observation": "0x015716D8 = 0, [1] = -1, [2] = 0, [3] = 1; 0x015716D0 is a float 0xBFB0151C"
+    },
+    {
+      "tool": "ghidra_read_memory",
+      "address_or_argument": "0x01654c08, length 16",
+      "observation": "0x01654C10 = 0 in the file image"
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address_or_argument": "0x00c0cf50",
+      "observation": "calls with (1,1), (2,1), (3,1) into the +0xFA8 cache and mirrors +0xFB0 into +0x2A4"
+    },
+    {
+      "tool": "ghidra_decompile_function",
+      "address_or_argument": "0x00c0cfa0",
+      "observation": "reads the +0xFA8 cache, gates on +0xBB0, adds _DAT_0150C900"
+    },
+    {
+      "tool": "ghidra_run_script_inline",
+      "address_or_argument": "last-instruction scan of 40 callees",
+      "observation": "RET forms confirmed: 0x00BA9370 / 0x00B20750 / 0x00B32250 / 0x00E14C10 / 0x00BA6D80 RET 0x4; 0x00C0CE30 / 0x00AE0930 RET 0x8 / RET 0x18; 0x00F31500 RET 0x8; 0x00C03260 / 0x00435ED0 / 0x00421CF0 / 0x0067DCC0 bare RET"
+    },
+    {
+      "tool": "ghidra_run_script_inline",
+      "address_or_argument": "ghidra_run_script_inline dword scan of all initialised readable non-executable blocks: 0 hits for this VA; the positive control 0x00e7d660 was found once at 0x01485590",
+      "observation": "0 hits; control found at 0x01485590"
+    }
+  ],
+  "confidence": {
+    "body_bytes": 1.0,
+    "control_flow": 1.0,
+    "abi": 0.9,
+    "field_offsets": 0.95,
+    "table_addressing": 1.0,
+    "float_constant_0_5": 1.0,
+    "first_argument_aliasing": 0.95,
+    "vslot_58_slot_offset": 1.0,
+    "vslot_58_concrete_callee": 0.0,
+    "vslot_58_owning_class": 0.0,
+    "runtime_table_values": 0.0,
+    "callee_00f31500_internals": 0.45,
+    "callee_00c0ce30": 0.9,
+    "semantic_role": 0.5,
+    "caller_coverage": 0.35
+  },
+  "body_reconstruction": {
+    "source": "reconstruction/staging/wave13-w1-core-b08/c0ce80_tier_value_lookup.cpp",
+    "status": "implemented",
+    "claim_scope": "The 204-byte body is reconstructed in full, including the shared float stack slot, the dead store and the skipped neighbour load. The vtable target at slot +0x58, the runtime table values and the internals of 0x00F31500 are left as explicitly opaque.",
+    "preserved_semantics": [
+      "one float local at the saved-ECX slot, reused for the base value and then the neighbour value, with the dead store at 0x00c0cef6 preserved",
+      "the first stack argument read twice from the same word, once as an integer and once as a float",
+      "the early 0.0f return when the first argument is 0, with no callee invoked",
+      "the sentinel ADDRESS comparison, not a comparison of the dword at 0x01654C10",
+      "one push pair consumed by two callees with different cleanup conventions",
+      "the unsigned (index + 1) < 6 test and the table[index - 1] wrap at index 5",
+      "the defensive index == 0 branch that keeps the base value",
+      "the 0.5f multiplier read from 0x01471064, not a literal in the reconstruction",
+      "the gate polarity: FALSE returns the base, TRUE averages",
+      "no memory write at all"
+    ],
+    "byte_check": "Not attempted. The body contains two indirect and two direct calls plus a full x87 sequence whose stack discipline the compiler chose; a byte comparison would compare call displacements and register allocation rather than the reconstruction. Structural equivalence is asserted by the model test instead: it pins the early exit, the gate polarity, both neighbour-index paths, the sentinel call order and the 0.5f arithmetic.",
+    "validation": {
+      "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/wave13-w1-core-b08 reconstruction/staging/wave13-w1-core-b08/*.cpp",
+      "model_test_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/wave13-w1-core-b08 reconstruction/staging/wave13-w1-core-b08/*.cpp -o /tmp/opencode/b08-model && /tmp/opencode/b08-model",
+      "syntax": "passed",
+      "model_test": "passed, exit 0",
+      "byte_check": "not applicable, see byte_check"
+    }
+  },
+  "provenance": {
+    "binary": "SPORE/SporeBin/SporeApp.exe",
+    "binary_version": "Spore 3.1.0.22, GOG digital build, no DRM",
+    "binary_sha256": "25d42a7a5c4d438fb155233230f57d29e2849bfdff5c889a5d0847f0469d914e",
+    "image_base": "0x00400000",
+    "architecture": "x86-32 PE",
+    "worker_id": "wave13-w1-core-b08",
+    "implementer_id": "wave13-w1-core-b08",
+    "batch_id": "b08",
+    "package": "wave13-w1-core-b08",
+    "package_ids": [
+      "PKG-11-SIM-CORE"
+    ],
+    "date": "2026-09-26",
+    "analysis_tool": "Ghidra 12.1.2 headless via GhidraMCP, program SporeApp.exe",
+    "rtti_note": "SporeApp.exe carries no MSVC RTTI. No class identity is asserted for any receiver in this batch unless an owning vtable or a literal type-name string was located by this worker.",
+    "runtime_evidence": "none. The original Cell stage has never been entered in any recorded run. Every claim in this record is static.",
+    "evidence_boundary": "Static reads only: live ghidra_* tool calls against SporeApp.exe and read-only inspection of Spore-ModAPI headers. No original-process execution, no trace, no differential fixture."
+  }
+}

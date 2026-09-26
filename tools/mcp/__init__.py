@@ -2,7 +2,7 @@
 
 Subpackages:
   config   -- repo-root resolution, path helpers, sha256 helper.
-  registry -- the 21 tool schemas plus the dispatch table.
+  registry -- the 24 tool schemas plus the dispatch table.
   server   -- the stdio JSON-RPC loop (protocol on stdout, logs on stderr).
 
 No third-party dependencies. Later subagents add safety.py, cache.py and

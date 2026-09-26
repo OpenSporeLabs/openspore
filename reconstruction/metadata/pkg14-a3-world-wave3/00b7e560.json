@@ -1,0 +1,94 @@
+{
+  "schema": "pkg14-a3-world-wave3-function-handoff-v1",
+  "package": "PKG-14-A3-WORLD-WAVE3",
+  "function_address": "0x00b7e560",
+  "ghidra_name": "FUN_00b7e560",
+  "normalized_symbol": "sphere_draw_direction_00b7e560",
+  "source_files": [
+    "reconstruction/staging/pkg14-a3-world-wave3/world_wave3.hpp",
+    "reconstruction/staging/pkg14-a3-world-wave3/world_wave3.cpp",
+    "reconstruction/staging/pkg14-a3-world-wave3/world_wave3_model_test.cpp"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "void sphere_draw_direction_00b7e560(float* direction);",
+  "abi": {
+    "calling_convention": "cdecl",
+    "hidden_this_register": "none",
+    "stack_arguments": [
+      {"position": 1, "entry_offset": "ESP+0x04", "name": "direction", "type": "float*"}
+    ],
+    "stack_cleanup_bytes": 0,
+    "return_type": "void",
+    "termination": "plain RET",
+    "body_start": "0x00b7e560",
+    "body_end_exclusive": "0x00b7e672",
+    "live_stack_load": "direction is loaded from entry ESP+0x04 after the 0x10-byte local allocation, at ESP+0x14"
+  },
+  "raw_body_hex": "83ec10b960176001e8637bdbffdcc0d9e8dce9d9c9dbf17310ddd9dd0510444501dbf17604ddd9eb02ddd8b960176001d95c2404e8377bdbffdcc0d9e8dce9d9c9dbf17310ddd9dd0510444501dbf17604ddd9eb02ddd8b960176001d95c2408e80b7bdbffdcc0d9e8dce9d9c9dbf17310ddd9dd0510444501dbf17604ddd9eb02ddd8f30f10542404d95c240cf30f105c240cf30f106424080f28c3f30f59c30f28caf30f59caf30f58c10f28ccf30f59ccf30f58c10f2f0520574801f30f1104240f873bfffffff30f100da0bc3e010f2fc80f872affffffd904248b442414d9fad9e8def1d91c24f30f1004240f28c8f30f59ca0f28d0f30f59d4f30f59c3f30f1108f30f115004f30f11400883c4",
+  "mechanics": {
+    "sample_receiver": "Each scalar sample calls 0x009360d0 with ECX set to the live x86-32 constant 0x01601760.",
+    "sample_transform": "For each of x, y, and z, transform the sample with sample plus sample minus one and clamp the transformed value to the inclusive range [-1, 1].",
+    "retry": "Compute norm as z squared plus x squared plus y squared. Reject and draw another complete triple when norm is greater than one or less than 0.0001. The exact one and 0.0001 boundaries are accepted.",
+    "final_normalization": "After acceptance, compute one divided by the square root of norm, multiply x, y, and z by that inverse, and store the results at direction+0, +4, and +8.",
+    "output_identity": "The output pointer is read once and all three output stores use that pointer. There is no null check and no return value.",
+    "side_effect_boundary": "The only memory writes are the three final float stores. The render sample service is an opaque unresolved random source."
+  },
+  "ports": {
+    "render_sample": "0x009360d0",
+    "render_helper_address": "0x01601760",
+    "upper_norm_bound": "0x01485720 = 1.0",
+    "lower_norm_bound": "0x013ebca0 = 0.0001",
+    "negative_one": "0x01454410 = -1.0"
+  },
+  "port_abi": {
+    "0x009360d0": {"receiver": "ECX", "receiver_type": "OpaqueRenderHelper*", "stack_words": 0, "cleanup": "plain RET", "return": "float"}
+  },
+  "call_graph": {
+    "direct_callers": {
+      "ghidra_count": 14,
+      "representative_functions": [
+        "0x00b81720",
+        "0x00b81a40",
+        "0x00b84730",
+        "0x00c4c790",
+        "0x00c4fc00",
+        "0x00cb5770",
+        "0x00d5cfd0",
+        "0x00d5ef80",
+        "0x00e5cae0",
+        "0x00e6ff60",
+        "0x00e75350",
+        "0x01007bf0",
+        "0x0105b350",
+        "Simulator::cPlanetModel::ToSurface"
+      ]
+    },
+    "direct_callees": ["0x009360d0"],
+    "function_xref_count_live": 19
+  },
+  "model_tests": [
+    "rejects a norm greater than one and retries the full triple",
+    "clamps upper and lower transformed samples",
+    "accepts the exact norm-one boundary",
+    "rejects a zero-length triple and retries",
+    "normalizes final components in x, y, z order",
+    "passes the opaque render helper address to every sample call",
+    "stores exactly three output floats through the supplied pointer"
+  ],
+  "verification": {
+    "syntax": "passed: clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only",
+    "normal": "passed: strict x86-32 optimized model",
+    "ndebug": "passed: strict x86-32 optimized NDEBUG model",
+    "format": "passed: clang-format Google with FixNamespaceComments false",
+    "json": "passed: python3 -m json.tool and raw-body byte-length validation",
+    "objdump": "passed: x86-32 model shows one cdecl output pointer and plain RET",
+    "diff": "passed: only authorized package paths are untracked"
+  },
+  "unresolved_questions": [
+    "The distribution and state ownership behind 0x009360d0 remain opaque.",
+    "The helper address 0x01601760 is preserved as the live receiver identity without dereferencing it in the model."
+  ],
+  "blockers": [
+    "No original-process runtime trace is available for the opaque render sample service."
+  ]
+}

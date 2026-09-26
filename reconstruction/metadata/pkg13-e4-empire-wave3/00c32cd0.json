@@ -1,0 +1,131 @@
+{
+  "schema": "pkg13-e4-empire-wave3.function-handoff.v1",
+  "package": "PKG-13-E4-EMPIRE-WAVE3",
+  "function_address": "0x00c32cd0",
+  "ghidra_name": "FUN_00c32cd0",
+  "normalized_symbol": "EmpirePoliticalColor_00c32cd0",
+  "source_files": [
+    "reconstruction/staging/pkg13-e4-empire-wave3/empire_wave3.hpp",
+    "reconstruction/staging/pkg13-e4-empire-wave3/empire_wave3.cpp",
+    "reconstruction/staging/pkg13-e4-empire-wave3/empire_wave3_model_test.cpp",
+    "reconstruction/staging/pkg13-e4-empire-wave3/empire_wave3_boundary_test.sh"
+  ],
+  "phase": "body-reconstruction",
+  "declaration": "OpaqueFloatColor* __thiscall EmpirePoliticalColor_00c32cd0(OpaqueRecord* record, OpaqueFloatColor* output);",
+  "abi": {
+    "calling_convention": "thiscall",
+    "hidden_this_register": "ECX",
+    "hidden_this_type": "OpaqueRecord*",
+    "stack_arguments": [
+      {"position": 1, "entry_offset": "ESP+0x04", "name": "output", "type": "OpaqueFloatColor*", "width_bytes": 4}
+    ],
+    "stack_cleanup_bytes": 4,
+    "termination": "RET 0x4 on every return path",
+    "return_type": "OpaqueFloatColor*",
+    "return_location": "EAX",
+    "frame_allocation_bytes": "0x84",
+    "saved_registers": ["EBX", "EBP", "ESI", "EDI"]
+  },
+  "body": {
+    "status": "reconstructed",
+    "entry_address": "0x00c32cd0",
+    "body_addresses": ["0x00c32cd0", "0x00c33290"],
+    "instruction_count": 404,
+    "mechanics": [
+      "Read the word at record+0x10 and accept the wrapped range value-0x53dbcf3 <= 11 as a direct palette index; copy the three palette words to output and return output.",
+      "For a non-index value, query the current record through 0x01021300 and compare its raw pointer with the hidden record pointer.",
+      "On the current-record branch, when the value is not 0x53dbcf1, resolve record+0xb0, obtain the profile color at profile+0x4ec, transform it into output with 0.5 and 0.5, call 0x00b6f140 and 0x00b6f180, and write output to record+0x30 while storing 0x53dbcf1 at record+0x10.",
+      "On the current-record branch, compare record+0x30 against the three zero words; when equal, copy the palette entry for the now-current value back to record+0x30, then copy the palette entry to output.",
+      "For a distinct record with bit 6 of record+0x50 set, resolve record+0xb0, read the resource word at +0x4c, and enter the special path only when that word is 5 and record+0x10 is 0x53dbcf1.",
+      "The special path copies record+0x30 to a local color. If the local color equals the zero vector, obtain the current profile through 0x00c30c80, transform profile+0x4ec into a temporary, and write the temporary to record+0x30; output receives the original local color and returns.",
+      "After the special path, resolve the registry identity and return the fixed three words at 0x01572b54 when it equals record+0x84.",
+      "Initialize twelve distance slots to 0x7f7fffff when 0x00b6e1e0 reports inactive and to zero when active. Build the 0x30-byte query block with mask 0x1fff, radius 50.0, and the two -1.0 coordinate words.",
+      "Resolve the record's vector source through 0x005c65e0, which consumes ECX only and returns with a plain RET; the query block and source words remain pending for 0x00bb1080. Collect the vector through 0x00bb1080. For every non-null item, resolve its identity, require a non-sentinel candidate with a valid twelve-slot value, resolve both vector sources, compute the native association (first * first + third * third) + second * second, and retain the distance when it is not greater than the current slot value.",
+      "Select the slot with the greatest retained distance, store 0x53dbcf3 plus the slot index at record+0x10, copy that palette entry to output, call each non-null item's vtable slot at +0x04, and call 0x00f47380 on the vector begin only when begin is non-null and begin[-1] is non-zero.",
+      "The final output write precedes temporary item cleanup and vector storage cleanup; the current and special writebacks remain separate from the twelve-slot update."
+    ]
+  },
+  "call_order": [
+    {"order": 1, "address": "0x00b6f0c0", "condition": "direct twelve-slot index", "abi": "cdecl", "arguments": ["record+0x10"], "result": "palette color pointer"},
+    {"order": 2, "address": "0x01021300", "condition": "non-index value", "abi": "cdecl", "arguments": [], "result": "current record pointer"},
+    {"order": 3, "address": "0x00b3d2a0", "condition": "current or special handle resolution", "abi": "cdecl", "arguments": [], "result": "registry pointer"},
+    {"order": 4, "address": "0x00ba6d80", "condition": "handle resolution", "abi": "thiscall", "receiver": "registry pointer", "stack_argument": "record+0xb0"},
+    {"order": 5, "address": "0x00bb9ae0", "condition": "bit-6 special gate", "abi": "thiscall", "receiver": "resolved resource", "result": "resource+0x4c"},
+    {"order": 6, "address": "0x00c30c80", "condition": "special black path", "abi": "thiscall", "receiver": "record"},
+    {"order": 7, "address": "0x004232c0", "condition": "special color comparison", "abi": "cdecl", "arguments": ["local color", "zero color"]},
+    {"order": 8, "address": "0x00b6e4b0", "condition": "current or special black transform", "abi": "cdecl", "arguments": ["profile color", "output", "0.5", "0.5"]},
+    {"order": 9, "address": "0x00b6f140", "condition": "current transform", "abi": "cdecl", "arguments": ["output red", "output green", "output blue"]},
+    {"order": 10, "address": "0x00b6f180", "condition": "current transform", "abi": "cdecl", "arguments": []},
+    {"order": 11, "address": "0x00885c90", "condition": "distinct non-special path", "abi": "thiscall", "receiver": "registry pointer"},
+    {"order": 12, "address": "0x00b6e1e0", "condition": "each of twelve distance slots", "abi": "cdecl", "arguments": ["slot index"]},
+    {"order": 13, "address": "0x005c65e0", "condition": "nearest-vector path", "abi": "thiscall", "receiver": "resolved record resource", "stack_arguments": []},
+    {"order": 14, "address": "0x00bb1080", "condition": "nearest-vector path", "abi": "thiscall", "receiver": "registry pointer", "stack_arguments": ["vector source", "query block", "query output"]},
+    {"order": 15, "address": "0x00b1fdb0", "condition": "each non-null vector item", "abi": "thiscall", "receiver": "vector item"},
+    {"order": 16, "address": "0x00ba9370", "condition": "non-sentinel vector item", "abi": "thiscall", "receiver": "registry pointer", "stack_argument": "vector item identity"},
+    {"order": 17, "address": "0x00f47380", "condition": "each non-null vector item and final storage sentinel test", "abi": "cdecl", "stack_argument": "item or vector begin"},
+    {"order": 18, "address": "0x00b6f0c0", "condition": "identity or selected-slot output", "abi": "cdecl", "arguments": ["selected value"], "result": "palette color pointer"}
+  ],
+  "layout": {
+    "record_field_10": "0x10",
+    "record_color": "0x30..0x3b",
+    "record_flags": "0x50",
+    "record_identity": "0x84",
+    "record_handle": "0xb0",
+    "profile_color": "0x4ec..0x4f7",
+    "resource_type": "0x4c",
+    "resource_profile": "0x80",
+    "query_words": ["0x00", "0x04", "0x08", "0x0c", "0x10", "0x14", "0x18", "0x1c", "0x20", "0x24", "0x28", "0x2c"]
+  },
+  "mechanics_scope": {
+    "identity": "The current-record comparison is raw pointer identity. The distinct-record fixed-color branch compares the registry identity word with record+0x84.",
+    "color_cache": "The current-record transform writes record+0x30 and record+0x10, and the current zero-color path writes the palette result back to record+0x30 before output.",
+    "special_path": "The special path is gated by record+0x50 bit 6, resource+0x4c equal to 5, and record+0x10 equal to 0x53dbcf1. Its output is the pre-transform local color.",
+    "twelve_slots": "The twelve-slot scan computes (first * first + third * third) + second * second, retains a candidate distance when distance <= current slot distance, selects the greatest retained distance, and uses 0x53dbcf3 as the base value.",
+    "cleanup": "Output is written before item vtable cleanup and the conditional vector storage cleanup. No direct UI, communication, persistence, or event operation is introduced by this function.",
+    "opaque_ports": "Registry, resource, vector, color-table, and cleanup operations remain separate function-pointer ports; no runtime meaning is assigned to their concrete objects."
+  },
+  "call_graph": {
+    "direct_callers": ["0x00aebe90", "0x00b677e0", "0x00b6d3c0", "0x00ba0080", "0x00c33580", "0x00c33690", "0x00c737a0", "0x00cc22c0", "0x00dd4b20", "0x00e06d90", "0x00e91060", "0x00e9a940", "0x00feb510", "0x01005180", "0x01042080", "0x010421c0", "0x01047000", "0x01047300", "0x01047850", "0x010488e0", "0x0106a7b0", "0x0106ba00", "0x0106cc70", "0x010727e0"],
+    "direct_call_sites": 35,
+    "direct_callees": ["0x004232c0", "0x005c65e0", "0x00885c90", "0x00b1fdb0", "0x00b3d2a0", "0x00b6e1e0", "0x00b6e4b0", "0x00b6f0c0", "0x00b6f140", "0x00b6f180", "0x00ba6d80", "0x00ba9370", "0x00bb1080", "0x00bb9ae0", "0x00bba500", "0x00c30c80", "0x00f47380", "0x01021300"],
+    "function_xrefs": 35
+  },
+  "evidence": [
+    {"tool": "ghidra_get_function_by_address", "address": "0x00c32cd0", "observation": "Live function is 0x00c32cd0 through 0x00c33290."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00c32cd0", "observation": "Assembly proves ECX hidden this, output at entry ESP+0x04, 0x84 frame allocation, current/special/identity/twelve-slot branches, and RET 0x4."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00ba6d80", "observation": "Handle resolver returns null for 0xffffffff and consumes one stack word with RET 0x4."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00bb9ae0", "observation": "Resource type is read from receiver+0x4c with a plain thiscall return."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00b6e4b0", "observation": "Color transform reads three source words and writes three output words; the target passes 0.5 and 0.5 in the transform call sequence."},
+    {"tool": "ghidra_disassemble_function", "address": "0x00b6f0c0", "observation": "Palette lookup consumes one value word and returns a color pointer."},
+    {"tool": "ghidra_get_function_xrefs", "address": "0x00c32cd0", "observation": "35 direct call-site xrefs across 24 caller functions are reported."}
+  ],
+  "tests": [
+    "direct cached palette path",
+    "current-record transform, output writeback, palette write, and rebuild order",
+    "current-record zero-color cache writeback",
+    "special black path preserves the pre-transform local output",
+    "special nonblack path skips transform and writeback",
+    "registry identity fixed-color path",
+    "twelve-slot distance selection with candidate filtering and equality retention",
+    "native distance association regression using (1,1,0.3) versus (1,0.3,1)",
+    "null vector item and storage sentinel cleanup",
+    "output write before item and storage cleanup",
+    "opaque color, registry, vector, and cleanup ports remain separate"
+  ],
+  "confidence": {
+    "body": "high",
+    "abi_and_cleanup": "high",
+    "current_and_special_paths": "high",
+    "twelve_slot_scan": "high",
+    "opaque_runtime_objects": "medium; concrete object meanings remain opaque"
+  },
+  "verification": {
+    "syntax_command": "clang++ -m32 -std=c++17 -Wall -Wextra -Wpedantic -Werror -fsyntax-only -I reconstruction/staging/pkg13-e4-empire-wave3 reconstruction/staging/pkg13-e4-empire-wave3/empire_wave3.cpp reconstruction/staging/pkg13-e4-empire-wave3/empire_wave3_model_test.cpp",
+    "model_command": "clang++ -m32 -std=c++17 -O2 -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg13-e4-empire-wave3 reconstruction/staging/pkg13-e4-empire-wave3/empire_wave3.cpp reconstruction/staging/pkg13-e4-empire-wave3/empire_wave3_model_test.cpp -o /tmp/opencode/pkg13-e4-wave3-o2 && /tmp/opencode/pkg13-e4-wave3-o2",
+    "ndebug_command": "clang++ -m32 -std=c++17 -O2 -DNDEBUG -Wall -Wextra -Wpedantic -Werror -I reconstruction/staging/pkg13-e4-empire-wave3 reconstruction/staging/pkg13-e4-empire-wave3/empire_wave3.cpp reconstruction/staging/pkg13-e4-empire-wave3/empire_wave3_model_test.cpp -o /tmp/opencode/pkg13-e4-wave3-ndebug && /tmp/opencode/pkg13-e4-wave3-ndebug",
+    "format_command": "clang-format --dry-run --Werror --style='{BasedOnStyle: Google, FixNamespaceComments: false}' reconstruction/staging/pkg13-e4-empire-wave3/empire_wave3.hpp reconstruction/staging/pkg13-e4-empire-wave3/empire_wave3.cpp reconstruction/staging/pkg13-e4-empire-wave3/empire_wave3_model_test.cpp",
+    "json_command": "python3 -m json.tool reconstruction/metadata/pkg13-e4-empire-wave3/00c32cd0.json >/dev/null",
+    "abi_check_command": "sh reconstruction/staging/pkg13-e4-empire-wave3/empire_wave3_boundary_test.sh",
+    "results": {"syntax": "passed", "model": "passed", "ndebug": "passed", "format": "passed", "json": "passed", "abi_check": "passed"}
+  }
+}

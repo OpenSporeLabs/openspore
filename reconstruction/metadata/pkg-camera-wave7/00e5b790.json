@@ -1,0 +1,168 @@
+{
+  "schema": "pkg-camera-wave7.function-handoff.v1",
+  "package": "PKG-CAMERA-WAVE7",
+  "binary": "SPORE/SporeBin/SporeApp.exe",
+  "version": "3.1.0.22",
+  "va": "0x00e5b790",
+  "address": "0x00e5b790",
+  "symbol": "Simulator::Cell::MovePlayerToMousePosition",
+  "normalized_symbol": "cell_move_player_to_mouse_position_00e5b790",
+  "target_state": "integrated canonical source; runtime validation gated",
+  "phase": "live Ghidra body reconstruction and focused model verification",
+  "captured_on": "2026-09-25",
+  "intended_paths": {
+    "canonical_reconstruction": [
+      "src/reconstruction/pkg_camera_wave7/camera_wave7.hpp",
+      "src/reconstruction/pkg_camera_wave7/camera_wave7.cpp",
+      "src/reconstruction/pkg_camera_wave7/camera_wave7_model_test.cpp"
+    ],
+    "metadata": "reconstruction/metadata/pkg-camera-wave7/00e5b790.json"
+  },
+  "function_extent": {
+    "ghidra_entry": "0x00e5b790",
+    "body_end_inclusive": "0x00e5ba01",
+    "instruction_count": 155,
+    "return_site": "0x00e5ba01: RET"
+  },
+  "observed_original_abi": {
+    "architecture": "x86-32",
+    "calling_convention": "__cdecl",
+    "hidden_this_register": "none",
+    "ordinary_stack_argument_slots": 1,
+    "ordinary_stack_arguments": [
+      "float delta_time"
+    ],
+    "stack_cleanup_bytes": 4,
+    "return_type": "void",
+    "ret_form": "plain RET"
+  },
+  "observed_state_offsets": {
+    "cell_game": {
+      "pool": "+0x1c",
+      "avatar_index": "+0x411c",
+      "serializable_data": "+0x5190",
+      "lock": "+0x5158"
+    },
+    "cell_ui": {
+      "mode_gate_a": "+0x24",
+      "mode_gate_b": "+0x26"
+    },
+    "cell_object": {
+      "moving_flag": "+0x04",
+      "target": [
+        "+0x08",
+        "+0x0c",
+        "+0x10"
+      ],
+      "orientation": [
+        "+0x14",
+        "+0x18",
+        "+0x1c",
+        "+0x20"
+      ],
+      "current_position": [
+        "+0x4c",
+        "+0x50",
+        "+0x54"
+      ]
+    },
+    "serializable_moving_flag": "+0xe0",
+    "movement_plane_normal": [
+      "0x015a7c40",
+      "0x015a7c44",
+      "0x015a7c48"
+    ],
+    "movement_plane_point": [
+      "0x016b3c28",
+      "0x016b3c2c",
+      "0x016b3c30"
+    ]
+  },
+  "observed_call_order": [
+    "return immediately when sCellGame+0x5158 is non-zero",
+    "look up the avatar through 0x00b721d0 on sCellGame+0x1c and sCellGame+0x411c; return on null",
+    "call 0x00e5b2e0 with delta_time",
+    "initialize the local reference output to zero through 0x00743b50",
+    "resolve camera mode through the retained opaque reference port, read mode at returned+0xd4, and release the local reference through 0x00e82130",
+    "apply the mode and Cell UI gates",
+    "acquire Graphics::IRenderer through 0x0067dd10 and invoke renderer vtable +0x58",
+    "invoke 0x007c4900 to obtain direction and origin",
+    "compute the exact movement-plane intersection",
+    "on a valid non-negative hit, clear player+0x04, write target+0x08/+0x0c/+0x10, set serializable+0xe0 to 1, compute negated travel from current position, and invoke 0x0069b600 for the four orientation floats"
+  ],
+  "gate_contract": {
+    "negative_mode": "bypass material and UI mode gates",
+    "mode_0_or_1": "material check; material true or Cell UI+0x24 non-zero proceeds; otherwise Cell UI+0x26 must be non-zero",
+    "mode_2": "material check; material true proceeds; otherwise Cell UI+0x26 must be non-zero",
+    "mode_3_or_greater": "bypass material and UI mode gates"
+  },
+  "intersection_contract": {
+    "denominator": "direction.y*normal.y + direction.z*normal.z + direction.x*normal.x",
+    "zero_guard": "return when denominator equals zero",
+    "numerator": "origin.y*normal.y + origin.z*normal.z + origin.x*normal.x - point.z*normal.z - point.y*normal.y - point.x*normal.x",
+    "distance": "negative of numerator divided by denominator",
+    "negative_guard": "return when the signed distance is less than zero or unordered",
+    "target": "origin + direction * distance",
+    "travel_orientation": "negative of target minus current_position",
+    "approximation_used": false
+  },
+  "live_provenance": {
+    "program": "SporeApp.exe",
+    "analysis_basis": "Read-only live Ghidra queries against the open x86:LE:32 program.",
+    "ghidra_mutations": 0,
+    "ghidra_saves": 0,
+    "function_query": {
+      "tool": "ghidra_get_function_by_address",
+      "address": "0x00e5b790",
+      "observation": "Name Simulator::Cell::MovePlayerToMousePosition; body 0x00e5b790 through 0x00e5ba01."
+    },
+    "decompile": {
+      "tool": "ghidra_decompile_function",
+      "address": "0x00e5b790",
+      "observation": "Pseudocode exposes the lock and player guards, per-frame call, camera mode/UI branches, camera ray, plane constants, target writes, moving flag, and orientation helper."
+    },
+    "disassembly": {
+      "tool": "ghidra_disassemble_function",
+      "address": "0x00e5b790",
+      "observation": "Raw 155-instruction listing pins field offsets, call order, SSE operation ordering, mode branches, target stores, moving flag, and travel vector sign."
+    },
+    "callees": {
+      "tool": "ghidra_get_function_callees",
+      "address": "0x00e5b790",
+      "direct_addresses": [
+        "0x00b721d0",
+        "0x00e5b2e0",
+        "0x00743b50",
+        "0x00e82130",
+        "0x00e50730",
+        "0x0067dd10",
+        "0x007c4900",
+        "0x0069b600"
+      ],
+      "indirect_calls": [
+        "renderer vtable +0x58"
+      ]
+    }
+  },
+  "implementation": {
+    "source": "src/reconstruction/pkg_camera_wave7/camera_wave7.cpp",
+    "model_test": "src/reconstruction/pkg_camera_wave7/camera_wave7_model_test.cpp",
+    "native_ports": "CellCameraPorts and CameraRayPorts preserve unresolved service, pool, reference, renderer, camera conversion, and orientation boundaries; the observed plane arithmetic is implemented directly.",
+    "validation": {
+      "focused_model_test": "passed",
+      "x86_32_syntax": "passed",
+      "format": "passed",
+      "json": "passed"
+    },
+    "runtime_gate": "Original Cell-mode Wine trace and live movement-plane values are not available; no runtime promotion is claimed.",
+    "status": "integrated",
+    "canonical_path": "src/reconstruction/pkg_camera_wave7",
+    "canonical_status": "present"
+  },
+  "integration_status": "integrated",
+  "canonical_files": [
+    "src/reconstruction/pkg_camera_wave7/camera_wave7.hpp",
+    "src/reconstruction/pkg_camera_wave7/camera_wave7.cpp",
+    "src/reconstruction/pkg_camera_wave7/camera_wave7_model_test.cpp"
+  ]
+}

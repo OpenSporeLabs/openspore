@@ -1,0 +1,71 @@
+{
+  "va": "0x0043ac40",
+  "body": "0x0043ac40..0x0043bb9d",
+  "instructions": 961,
+  "symbol": "editor_paint_commit_0043ac40",
+  "abi": {
+    "convention": "thiscall",
+    "receiver": "ECX, an OpaquePaintState",
+    "stack_words": [
+      "Word value",
+      "Word extra",
+      "Byte quiet"
+    ],
+    "return": "byte in AL",
+    "stack_cleanup": "RET 0xc",
+    "saved_registers": "EBP only",
+    "frame": "SUB ESP, 0x1d8"
+  },
+  "state_writes_in_order": [
+    "this+0x3c, four bytes, the requested value, before any comparison",
+    "early out when the mirror matches and quiet is zero, returning false with no further write",
+    "this+0x40, four bytes, copied from this+0x38",
+    "this+0x44, four bytes, copied from this+0x3c",
+    "then, per arm, this+0x3ec and this+0x010 node word at +0x04 bit three and node byte at +0x5c"
+  ],
+  "comparison": "byte this+0x40 against byte this+0x38, then byte this+0x41 against byte this+0x39, then the four bytes at this+0x44 against the four bytes at this+0x3c",
+  "switch": {
+    "table": "0x0043bba0, six four byte entries",
+    "guard": "CMP value, 5; JA default",
+    "entries": {
+      "0": "0x0043b092",
+      "1": "0x0043ad14",
+      "2": "0x0043b79f",
+      "3": "0x0043bb96",
+      "4": "0x0043aed3",
+      "5": "0x0043b99d"
+    },
+    "default": "0x0043bb96, the shared return one tail, so case three and every value above five perform no side effect"
+  },
+  "arms": {
+    "0_both_set": "notify one, eight; raise only this+0x010 to eight",
+    "0_tag_only": "notify one, seven; raise this+0x3f0 and this+0x010 to seven",
+    "0_mark_only": "notify one, five; raise this+0x3f0 and this+0x010 to five",
+    "0_neither": "notify zero, ten; clear this+0x3f0 without a code write; raise this+0x010 to ten",
+    "1": "notify one, six; raise both to six",
+    "2": "notify one, nine; raise both to nine",
+    "3": "no side effect",
+    "4": "notify one, eleven; raise both to eleven",
+    "5": "notify one, twelve; raise this+0x3f0 and this+0x010 to twelve; the raise is the only live path, see dead_blocks",
+    "default": "no side effect"
+  },
+  "inline_ports": [
+    "vtable slot +0x28 of this+0x3ec, stdcall, two words"
+  ],
+  "decompilation_defects_corrected": [
+    "the decompilation renders the case five arm with the NOT then AND form, which reads as clearing bit three; the live path at 0x0043ba37 and 0x0043bb0a loads one, tests it and never branches, so the executed arms at 0x0043ba69 and 0x0043bb3c are the OR form and case five raises bit three. The decompilation shows the dead arm, not the live one",
+    "the decompilation omits the two byte comparisons of the mirror test and shows only the four byte comparison"
+  ],
+  "reconstruction": "editor_paint_commit_0043ac40 in editor_wave11.cpp",
+  "return_width_evidence": "0x0043accc XOR AL,AL and 0x0043bb96 MOV AL,0x1 both write only the low byte before the shared epilogue at 0x0043bb98",
+  "confidence": "high; every arm was read from the assembly, and the case five arm was traced instruction by instruction through the never taken JZ at 0x0043ba3e and 0x0043bb11",
+  "dead_blocks": {
+    "live_arm_first": "0x0043ba37 MOV EAX,1 / 0x0043ba3c TEST EAX,EAX / 0x0043ba3e JZ 0x0043ba75, so ZF is always zero and the fallthrough OR arm at 0x0043ba40..0x0043ba71 is the only executed path",
+    "live_arm_second": "0x0043bb0a MOV EAX,1 / 0x0043bb0f TEST EAX,EAX / 0x0043bb11 JZ 0x0043bb48, so the OR arm at 0x0043bb13..0x0043bb44 is the only executed path",
+    "dead_arm_first": "0x0043ba75..0x0043baa8, the NOT at 0x0043ba98 and AND at 0x0043baa0 form, unreachable because the JZ at 0x0043ba3e tests a register that was just loaded with one",
+    "dead_arm_second": "0x0043bb48..0x0043bb7b, the NOT at 0x0043bb6b and AND at 0x0043bb73 form, unreachable for the same reason",
+    "modulo_guard": "0x0043ba32 CMP EDX,0x20 with JNC 0x0043baaa, and 0x0043bb05 CMP EDX,0x20 with JNC 0x0043bb7d, are the shift-count guards; the index is three so both fall through",
+    "shared_tail": "0x0043baaa writes the code byte 0x0c for this+0x3f0, 0x0043bb7d writes it for this+0x010, and 0x0043bb96 sets AL to one before the epilogue",
+    "model_consequence": "case five raises bit three on both nodes and writes twelve to both code bytes; it never clears"
+  }
+}
